@@ -92,30 +92,30 @@ const SEVERITY_CONFIG: Record<IncidentSeverity, {
 }> = {
   SEV1: { 
     label: 'SEV1 - Critical', 
-    color: 'text-red-700', 
-    bgColor: 'bg-red-100', 
-    borderColor: 'border-red-500',
+    color: 'text-destructive', 
+    bgColor: 'bg-destructive-bg', 
+    borderColor: 'border-destructive-border',
     Icon: AlertOctagon 
   },
   SEV2: { 
     label: 'SEV2 - High', 
-    color: 'text-orange-700', 
-    bgColor: 'bg-orange-100', 
-    borderColor: 'border-orange-500',
+    color: 'text-warning-color', 
+    bgColor: 'bg-warning-bg', 
+    borderColor: 'border-warning-border',
     Icon: AlertTriangle 
   },
   SEV3: { 
     label: 'SEV3 - Medium', 
-    color: 'text-yellow-700', 
-    bgColor: 'bg-yellow-100', 
-    borderColor: 'border-yellow-500',
+    color: 'text-warning-color', 
+    bgColor: 'bg-warning-bg', 
+    borderColor: 'border-warning-border',
     Icon: AlertCircle 
   },
   SEV4: { 
     label: 'SEV4 - Low', 
-    color: 'text-blue-700', 
-    bgColor: 'bg-blue-100', 
-    borderColor: 'border-blue-500',
+    color: 'text-info-color', 
+    bgColor: 'bg-info-bg', 
+    borderColor: 'border-info-border',
     Icon: Info 
   },
 };
@@ -125,13 +125,13 @@ const STATUS_CONFIG: Record<IncidentStatus, {
   color: string;
   progressIndex: number;
 }> = {
-  DETECTED: { label: 'Detected', color: 'text-red-600', progressIndex: 0 },
-  TRIAGING: { label: 'Triaging', color: 'text-orange-600', progressIndex: 1 },
-  INVESTIGATING: { label: 'Investigating', color: 'text-yellow-600', progressIndex: 2 },
-  MITIGATING: { label: 'Mitigating', color: 'text-blue-600', progressIndex: 3 },
-  RESOLVED: { label: 'Resolved', color: 'text-green-600', progressIndex: 4 },
-  POST_MORTEM: { label: 'Post-Mortem', color: 'text-purple-600', progressIndex: 5 },
-  CLOSED: { label: 'Closed', color: 'text-slate-600', progressIndex: 6 },
+  DETECTED: { label: 'Detected', color: 'text-destructive', progressIndex: 0 },
+  TRIAGING: { label: 'Triaging', color: 'text-warning-color', progressIndex: 1 },
+  INVESTIGATING: { label: 'Investigating', color: 'text-warning-color', progressIndex: 2 },
+  MITIGATING: { label: 'Mitigating', color: 'text-info-color', progressIndex: 3 },
+  RESOLVED: { label: 'Resolved', color: 'text-success-color', progressIndex: 4 },
+  POST_MORTEM: { label: 'Post-Mortem', color: 'text-info-color', progressIndex: 5 },
+  CLOSED: { label: 'Closed', color: 'text-fg-muted', progressIndex: 6 },
 };
 
 // ============================================================================
@@ -156,14 +156,14 @@ function StatusTimeline({ status, detectedAt, acknowledgedAt, mitigatedAt, resol
             <div 
               className={cn(
                 'w-2 h-2 rounded-full',
-                index <= progressIndex ? 'bg-blue-500' : 'bg-slate-300'
+                index <= progressIndex ? 'bg-info-bg' : 'bg-muted'
               )}
             />
             {index < stages.length - 1 && (
               <div 
                 className={cn(
                   'w-4 h-0.5',
-                  index < progressIndex ? 'bg-blue-500' : 'bg-slate-300'
+                  index < progressIndex ? 'bg-info-bg' : 'bg-muted'
                 )}
               />
             )}
@@ -171,8 +171,8 @@ function StatusTimeline({ status, detectedAt, acknowledgedAt, mitigatedAt, resol
         ))}
       </div>
       <div className="flex justify-between mt-1">
-        <span className="text-[9px] text-slate-500">Detected</span>
-        <span className="text-[9px] text-slate-500">Resolved</span>
+        <span className="text-[9px] text-fg-muted">Detected</span>
+        <span className="text-[9px] text-fg-muted">Resolved</span>
       </div>
     </div>
   );
@@ -193,7 +193,7 @@ function ResponderAvatars({ commander, responders }: {
           key={responder.id}
           className={cn(
             'w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-medium',
-            responder.role === 'Commander' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'
+            responder.role === 'Commander' ? 'bg-destructive-bg text-destructive' : 'bg-muted text-fg'
           )}
           title={`${responder.name} (${responder.role})`}
         >
@@ -205,7 +205,7 @@ function ResponderAvatars({ commander, responders }: {
         </div>
       ))}
       {overflow > 0 && (
-        <div className="w-6 h-6 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-[10px] font-medium text-slate-600">
+        <div className="w-6 h-6 rounded-full border-2 border-white bg-muted flex items-center justify-center text-[10px] font-medium text-fg-muted">
           +{overflow}
         </div>
       )}
@@ -231,7 +231,7 @@ function DurationBadge({ detectedAt, resolvedAt }: { detectedAt: string; resolve
   }
   
   return (
-    <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+    <span className="inline-flex items-center gap-1 text-xs text-fg-muted">
       <Timer className="w-3 h-3" />
       {duration}
     </span>
@@ -253,31 +253,31 @@ function IncidentNodeComponent({ data, selected }: IncidentNodeProps) {
       className={cn(
         'min-w-[280px] max-w-[320px] rounded-lg border-2 bg-white shadow-md transition-all',
         severityConfig.borderColor,
-        selected && 'ring-2 ring-blue-400 ring-offset-2'
+        selected && 'ring-2 ring-primary ring-offset-2'
       )}
     >
       {/* Connection Handles */}
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-slate-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-muted-foreground !border-2 !border-surface"
       />
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-slate-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-muted-foreground !border-2 !border-surface"
       />
       <Handle
         type="target"
         position={Position.Left}
         id="alert"
-        className="!w-3 !h-3 !bg-orange-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-warning-color !border-2 !border-surface"
       />
       <Handle
         type="source"
         position={Position.Right}
         id="postmortem"
-        className="!w-3 !h-3 !bg-purple-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-info-color !border-2 !border-surface"
       />
       
       {/* Header */}
@@ -293,21 +293,21 @@ function IncidentNodeComponent({ data, selected }: IncidentNodeProps) {
             <span className={cn('text-xs font-medium px-2 py-0.5 rounded', statusConfig.color, 'bg-white/80')}>
               {statusConfig.label}
             </span>
-            {isResolved && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+            {isResolved && <CheckCircle2 className="w-4 h-4 text-success-color" />}
           </div>
         </div>
       </div>
       
       {/* Title */}
-      <div className="px-3 py-2 border-b border-slate-100">
-        <h3 className="text-sm font-medium text-slate-900 line-clamp-2">{data.title}</h3>
+      <div className="px-3 py-2 border-b border-border">
+        <h3 className="text-sm font-medium text-fg line-clamp-2">{data.title}</h3>
         {data.description && (
-          <p className="text-xs text-slate-500 mt-1 line-clamp-1">{data.description}</p>
+          <p className="text-xs text-fg-muted mt-1 line-clamp-1">{data.description}</p>
         )}
       </div>
       
       {/* Status Timeline */}
-      <div className="px-3 py-2 border-b border-slate-100">
+      <div className="px-3 py-2 border-b border-border">
         <StatusTimeline 
           status={data.status}
           detectedAt={data.detectedAt}
@@ -318,19 +318,19 @@ function IncidentNodeComponent({ data, selected }: IncidentNodeProps) {
       </div>
       
       {/* Affected Services */}
-      <div className="px-3 py-2 border-b border-slate-100">
+      <div className="px-3 py-2 border-b border-border">
         <div className="flex items-center gap-2 mb-1">
-          <Server className="w-3 h-3 text-slate-400" />
-          <span className="text-xs text-slate-500">Affected Services</span>
+          <Server className="w-3 h-3 text-fg-muted" />
+          <span className="text-xs text-fg-muted">Affected Services</span>
         </div>
         <div className="flex flex-wrap gap-1">
           {data.affectedServices.slice(0, 3).map((service) => (
-            <span key={service} className="px-1.5 py-0.5 text-[10px] bg-slate-100 text-slate-700 rounded">
+            <span key={service} className="px-1.5 py-0.5 text-[10px] bg-muted text-fg rounded">
               {service}
             </span>
           ))}
           {data.affectedServices.length > 3 && (
-            <span className="px-1.5 py-0.5 text-[10px] bg-slate-100 text-slate-500 rounded">
+            <span className="px-1.5 py-0.5 text-[10px] bg-muted text-fg-muted rounded">
               +{data.affectedServices.length - 3} more
             </span>
           )}
@@ -339,12 +339,12 @@ function IncidentNodeComponent({ data, selected }: IncidentNodeProps) {
       
       {/* Customer Impact */}
       {data.customerImpacted && (
-        <div className="px-3 py-2 border-b border-slate-100 bg-red-50">
+        <div className="px-3 py-2 border-b border-border bg-destructive-bg">
           <div className="flex items-center gap-2">
-            <XCircle className="w-3 h-3 text-red-500" />
-            <span className="text-xs text-red-700 font-medium">Customer Impact</span>
+            <XCircle className="w-3 h-3 text-destructive" />
+            <span className="text-xs text-destructive font-medium">Customer Impact</span>
             {data.usersAffected && (
-              <span className="text-xs text-red-600 ml-auto">
+              <span className="text-xs text-destructive ml-auto">
                 {data.usersAffected.toLocaleString()} users affected
               </span>
             )}
@@ -359,13 +359,13 @@ function IncidentNodeComponent({ data, selected }: IncidentNodeProps) {
         <div className="flex items-center gap-3">
           <DurationBadge detectedAt={data.detectedAt} resolvedAt={data.resolvedAt} />
           
-          <div className="flex items-center gap-1 text-xs text-slate-400">
+          <div className="flex items-center gap-1 text-xs text-fg-muted">
             <MessageSquare className="w-3 h-3" />
             <span>{data.timelineEventsCount}</span>
           </div>
           
           {data.hasPostMortem && (
-            <div className="flex items-center gap-1 text-xs text-purple-500" title="Post-mortem available">
+            <div className="flex items-center gap-1 text-xs text-info-color" title="Post-mortem available">
               <FileText className="w-3 h-3" />
             </div>
           )}

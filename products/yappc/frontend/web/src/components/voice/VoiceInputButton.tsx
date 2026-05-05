@@ -125,14 +125,14 @@ export function VoiceInputIndicator({
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <div className="flex items-center gap-1">
-        <span className="w-1.5 h-3 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
-        <span className="w-1.5 h-4 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
-        <span className="w-1.5 h-2 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
-        <span className="w-1.5 h-5 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '450ms' }} />
-        <span className="w-1.5 h-3 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '600ms' }} />
+      <div className="flex items-center gap-1 text-destructive">
+        <span className="w-1.5 h-3 bg-current rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
+        <span className="w-1.5 h-4 bg-current rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
+        <span className="w-1.5 h-2 bg-current rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
+        <span className="w-1.5 h-5 bg-current rounded-full animate-pulse" style={{ animationDelay: '450ms' }} />
+        <span className="w-1.5 h-3 bg-current rounded-full animate-pulse" style={{ animationDelay: '600ms' }} />
       </div>
-      <span className="text-xs text-red-500 font-medium">Listening...</span>
+      <span className="text-xs text-destructive font-medium">Listening...</span>
     </div>
   );
 }
@@ -187,7 +187,7 @@ export function VoiceInputField({
           bg-bg-default border border-divider rounded-lg
           text-text-primary placeholder-text-tertiary
           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
-          ${isListening ? 'bg-red-50 dark:bg-red-900/10 border-red-300 dark:border-red-800' : ''}
+          ${isListening ? 'bg-destructive-bg border-destructive-border' : ''}
           ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         `}
       />

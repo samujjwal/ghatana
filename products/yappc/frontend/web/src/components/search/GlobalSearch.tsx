@@ -254,12 +254,12 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
 
   const getCategoryColor = (category: SearchResult['category']) => {
     switch (category) {
-      case 'page': return 'text-blue-600 dark:text-blue-400';
-      case 'task': return 'text-green-600 dark:text-green-400';
-      case 'file': return 'text-purple-600 dark:text-purple-400';
-      case 'user': return 'text-orange-600 dark:text-orange-400';
-      case 'setting': return 'text-gray-600 dark:text-gray-400';
-      default: return 'text-gray-600 dark:text-gray-400';
+      case 'page': return 'text-info-color dark:text-info-color';
+      case 'task': return 'text-success-color dark:text-success-color';
+      case 'file': return 'text-info-color dark:text-info-color';
+      case 'user': return 'text-warning-color dark:text-warning-color';
+      case 'setting': return 'text-fg-muted dark:text-fg-muted';
+      default: return 'text-fg-muted dark:text-fg-muted';
     }
   };
 
@@ -282,11 +282,11 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
           initial={{ opacity: 0, scale: 0.95, y: -20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: -20 }}
-          className="relative w-full max-w-2xl overflow-hidden rounded-lg border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-950"
+          className="relative w-full max-w-2xl overflow-hidden rounded-lg border border-border bg-white shadow-2xl dark:border-border dark:bg-surface"
         >
           {/* Search Input */}
-          <div className="flex items-center gap-3 border-b border-gray-200 p-4 dark:border-gray-800">
-            <Search className="h-5 w-5 text-gray-400" />
+          <div className="flex items-center gap-3 border-b border-border p-4 dark:border-border">
+            <Search className="h-5 w-5 text-fg-muted" />
             <Input
               type="text"
               placeholder={placeholder}
@@ -295,13 +295,13 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
               autoFocus
               className="flex-1 border-0 bg-transparent p-0 text-lg focus:ring-0"
             />
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <kbd className="rounded bg-gray-100 px-2 py-1 font-mono dark:bg-gray-800">
+            <div className="flex items-center gap-2 text-xs text-fg-muted">
+              <kbd className="rounded bg-surface-muted px-2 py-1 font-mono dark:bg-surface">
                 <Command className="inline h-3 w-3" />K
               </kbd>
               <button
                 onClick={handleClose}
-                className="rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="rounded p-1 hover:bg-surface-muted dark:hover:bg-surface"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -312,7 +312,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
           <div className="max-h-96 overflow-y-auto">
             {isLoading ? (
               <div className="flex items-center justify-center p-8">
-                <div role="status" className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+                <div role="status" className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-blue-600" />
               </div>
             ) : filteredResults.length > 0 ? (
               <div className="p-2">
@@ -328,37 +328,37 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                       className={cn(
                         'flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors',
                         isSelected
-                          ? 'bg-blue-50 dark:bg-blue-950'
-                          : 'hover:bg-gray-50 dark:hover:bg-gray-900'
+                          ? 'bg-info-bg dark:bg-info-bg'
+                          : 'hover:bg-surface-muted dark:hover:bg-surface'
                       )}
                     >
-                      <div className={cn('rounded-lg bg-gray-100 p-2 dark:bg-gray-800', getCategoryColor(result.category))}>
+                      <div className={cn('rounded-lg bg-surface-muted p-2 dark:bg-surface', getCategoryColor(result.category))}>
                         <Icon className="h-4 w-4" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-gray-900 dark:text-gray-100">
+                        <div className="font-medium text-fg dark:text-fg-muted">
                           {result.title}
                         </div>
                         {result.description && (
-                          <div className="truncate text-sm text-gray-500 dark:text-gray-400">
+                          <div className="truncate text-sm text-fg-muted dark:text-fg-muted">
                             {result.description}
                           </div>
                         )}
                       </div>
-                      <ArrowRight className="h-4 w-4 text-gray-400" />
+                      <ArrowRight className="h-4 w-4 text-fg-muted" />
                     </button>
                   );
                 })}
               </div>
             ) : query.trim() ? (
-              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+              <div className="p-8 text-center text-fg-muted dark:text-fg-muted">
                 No results found for "{query}"
               </div>
             ) : (
               <div className="p-4">
                 {recentSearches.length > 0 && (
                   <>
-                    <div className="mb-2 flex items-center gap-2 px-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    <div className="mb-2 flex items-center gap-2 px-3 text-xs font-semibold text-fg-muted dark:text-fg-muted">
                       <Clock className="h-3 w-3" />
                       Recent Searches
                     </div>
@@ -367,9 +367,9 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                         <button
                           key={index}
                           onClick={() => setQuery(search)}
-                          className="flex w-full items-center gap-3 rounded-lg p-3 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-900"
+                          className="flex w-full items-center gap-3 rounded-lg p-3 text-left text-sm text-fg transition-colors hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface"
                         >
-                          <Clock className="h-4 w-4 text-gray-400" />
+                          <Clock className="h-4 w-4 text-fg-muted" />
                           {search}
                         </button>
                       ))}
@@ -381,20 +381,20 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="border-t border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-900">
-            <div className="flex items-center justify-between text-xs text-gray-500">
+          <div className="border-t border-border bg-surface-muted p-3 dark:border-border dark:bg-surface">
+            <div className="flex items-center justify-between text-xs text-fg-muted">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1">
-                  <kbd className="rounded bg-white px-1.5 py-0.5 font-mono dark:bg-gray-800">↑</kbd>
-                  <kbd className="rounded bg-white px-1.5 py-0.5 font-mono dark:bg-gray-800">↓</kbd>
+                  <kbd className="rounded bg-white px-1.5 py-0.5 font-mono dark:bg-surface">↑</kbd>
+                  <kbd className="rounded bg-white px-1.5 py-0.5 font-mono dark:bg-surface">↓</kbd>
                   <span>Navigate</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <kbd className="rounded bg-white px-1.5 py-0.5 font-mono dark:bg-gray-800">↵</kbd>
+                  <kbd className="rounded bg-white px-1.5 py-0.5 font-mono dark:bg-surface">↵</kbd>
                   <span>Select</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <kbd className="rounded bg-white px-1.5 py-0.5 font-mono dark:bg-gray-800">esc</kbd>
+                  <kbd className="rounded bg-white px-1.5 py-0.5 font-mono dark:bg-surface">esc</kbd>
                   <span>Close</span>
                 </div>
               </div>

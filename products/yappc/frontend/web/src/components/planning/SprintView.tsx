@@ -82,24 +82,24 @@ function formatDate(dateString: string | null): string {
 
 function getStatusColor(status: ItemStatus): string {
   const map: Record<ItemStatus, string> = {
-    NOT_STARTED: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-    IN_PROGRESS: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-    BLOCKED: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
-    IN_REVIEW: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
-    COMPLETED: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-    ARCHIVED: 'bg-gray-200 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
+    NOT_STARTED: 'bg-surface-muted text-fg dark:bg-surface-muted dark:text-fg-muted',
+    IN_PROGRESS: 'bg-info-bg text-info-color dark:bg-info-bg text-info-color',
+    BLOCKED: 'bg-destructive-bg text-destructive dark:bg-destructive-bg text-destructive',
+    IN_REVIEW: 'bg-warning-bg text-warning-color dark:bg-warning-bg text-warning-color',
+    COMPLETED: 'bg-success-bg text-success-color dark:bg-success-bg text-success-color',
+    ARCHIVED: 'bg-muted text-fg-muted dark:bg-surface dark:text-fg-muted',
   };
-  return map[status] ?? 'bg-gray-100 text-gray-700';
+  return map[status] ?? 'bg-surface-muted text-fg';
 }
 
 function getSprintStatusBadgeColor(status: Sprint['status']): string {
   const map: Record<Sprint['status'], string> = {
-    PLANNING: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
-    ACTIVE: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-    COMPLETED: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-    CANCELLED: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400',
+    PLANNING: 'bg-warning-bg text-warning-color dark:bg-warning-bg text-warning-color',
+    ACTIVE: 'bg-success-bg text-success-color dark:bg-success-bg text-success-color',
+    COMPLETED: 'bg-info-bg text-info-color dark:bg-info-bg text-info-color',
+    CANCELLED: 'bg-surface-muted text-fg-muted dark:bg-surface-muted dark:text-fg-muted',
   };
-  return map[status] ?? 'bg-gray-100 text-gray-700';
+  return map[status] ?? 'bg-surface-muted text-fg';
 }
 
 // ============================================================================
@@ -219,7 +219,7 @@ export function SprintView({ projectId, sprintId, className = '' }: SprintViewPr
     return (
       <Box className={`p-6 ${className}`}>
         <div
-          className="flex items-center justify-center gap-2 text-gray-500"
+          className="flex items-center justify-center gap-2 text-fg-muted"
           role="status"
           aria-label="Loading sprint"
         >
@@ -234,7 +234,7 @@ export function SprintView({ projectId, sprintId, className = '' }: SprintViewPr
   if (isError || !sprint) {
     return (
       <Box className={`p-6 ${className}`}>
-        <div className="flex items-center gap-2 text-red-600 dark:text-red-400" role="alert">
+        <div className="flex items-center gap-2 text-destructive dark:text-destructive" role="alert">
           <BlockedIcon className="h-5 w-5" aria-hidden="true" />
           <Typography variant="body2">
             {error instanceof Error ? error.message : 'Failed to load sprint'}
@@ -249,7 +249,7 @@ export function SprintView({ projectId, sprintId, className = '' }: SprintViewPr
       {/* Sprint Header */}
       <div className="flex items-start justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <SprintIcon className="h-5 w-5 text-blue-500" aria-hidden="true" />
+          <SprintIcon className="h-5 w-5 text-info-color" aria-hidden="true" />
           <Typography variant="h6" className="font-semibold">
             {sprint.name}
           </Typography>
@@ -292,11 +292,11 @@ export function SprintView({ projectId, sprintId, className = '' }: SprintViewPr
 
       {/* Sprint goal */}
       {sprint.goal && (
-        <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800">
+        <Card className="bg-info-bg dark:bg-info-bg border-info-border dark:border-info-border">
           <CardContent className="p-3">
             <div className="flex items-center gap-2">
-              <GoalIcon className="h-4 w-4 text-blue-500 flex-shrink-0" aria-hidden="true" />
-              <Typography variant="body2" className="text-blue-700 dark:text-blue-300">
+              <GoalIcon className="h-4 w-4 text-info-color flex-shrink-0" aria-hidden="true" />
+              <Typography variant="body2" className="text-info-color text-info-color">
                 <strong>Sprint Goal:</strong> {sprint.goal}
               </Typography>
             </div>
@@ -305,7 +305,7 @@ export function SprintView({ projectId, sprintId, className = '' }: SprintViewPr
       )}
 
       {/* Dates & Capacity row */}
-      <div className="flex items-center gap-4 flex-wrap text-sm text-gray-500">
+      <div className="flex items-center gap-4 flex-wrap text-sm text-fg-muted">
         <div className="flex items-center gap-1">
           <CalendarIcon className="h-4 w-4" aria-hidden="true" />
           <span>
@@ -327,7 +327,7 @@ export function SprintView({ projectId, sprintId, className = '' }: SprintViewPr
             <Typography variant="h4" className="font-bold text-xl">
               {metrics.total}
             </Typography>
-            <Typography variant="caption" className="text-gray-500">
+            <Typography variant="caption" className="text-fg-muted">
               Total Items
             </Typography>
           </CardContent>
@@ -336,13 +336,13 @@ export function SprintView({ projectId, sprintId, className = '' }: SprintViewPr
           <CardContent className="p-3 text-center">
             <Typography
               variant="h4"
-              className="font-bold text-xl text-blue-600 dark:text-blue-400"
+              className="font-bold text-xl text-info-color dark:text-info-color"
             >
               {metrics.inProgress}
             </Typography>
             <div className="flex items-center justify-center gap-1">
-              <InProgressIcon className="h-3 w-3 text-blue-500" aria-hidden="true" />
-              <Typography variant="caption" className="text-gray-500">
+              <InProgressIcon className="h-3 w-3 text-info-color" aria-hidden="true" />
+              <Typography variant="caption" className="text-fg-muted">
                 In Progress
               </Typography>
             </div>
@@ -352,13 +352,13 @@ export function SprintView({ projectId, sprintId, className = '' }: SprintViewPr
           <CardContent className="p-3 text-center">
             <Typography
               variant="h4"
-              className="font-bold text-xl text-red-600 dark:text-red-400"
+              className="font-bold text-xl text-destructive dark:text-destructive"
             >
               {metrics.blocked}
             </Typography>
             <div className="flex items-center justify-center gap-1">
-              <BlockedIcon className="h-3 w-3 text-red-500" aria-hidden="true" />
-              <Typography variant="caption" className="text-gray-500">
+              <BlockedIcon className="h-3 w-3 text-destructive" aria-hidden="true" />
+              <Typography variant="caption" className="text-fg-muted">
                 Blocked
               </Typography>
             </div>
@@ -368,13 +368,13 @@ export function SprintView({ projectId, sprintId, className = '' }: SprintViewPr
           <CardContent className="p-3 text-center">
             <Typography
               variant="h4"
-              className="font-bold text-xl text-green-600 dark:text-green-400"
+              className="font-bold text-xl text-success-color dark:text-success-color"
             >
               {metrics.completed}
             </Typography>
             <div className="flex items-center justify-center gap-1">
-              <DoneIcon className="h-3 w-3 text-green-500" aria-hidden="true" />
-              <Typography variant="caption" className="text-gray-500">
+              <DoneIcon className="h-3 w-3 text-success-color" aria-hidden="true" />
+              <Typography variant="caption" className="text-fg-muted">
                 Done
               </Typography>
             </div>
@@ -388,12 +388,12 @@ export function SprintView({ projectId, sprintId, className = '' }: SprintViewPr
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1">
-                <MetricsIcon className="h-4 w-4 text-gray-400" aria-hidden="true" />
-                <Typography variant="body2" className="text-gray-600 dark:text-gray-300 font-medium">
+                <MetricsIcon className="h-4 w-4 text-fg-muted" aria-hidden="true" />
+                <Typography variant="body2" className="text-fg-muted dark:text-fg-muted font-medium">
                   Sprint Progress
                 </Typography>
               </div>
-              <Typography variant="body2" className="text-gray-500">
+              <Typography variant="body2" className="text-fg-muted">
                 {metrics.completedPoints}/{metrics.totalPoints > 0 ? metrics.totalPoints : '?'}pt
                 &nbsp;({metrics.progressPercent}%)
               </Typography>
@@ -411,20 +411,20 @@ export function SprintView({ projectId, sprintId, className = '' }: SprintViewPr
         <CardContent className="p-0">
           {sprint.items.length === 0 ? (
             <div className="p-8 text-center">
-              <SprintIcon className="h-10 w-10 text-gray-300 mx-auto mb-3" aria-hidden="true" />
-              <Typography variant="body1" className="text-gray-500">
+              <SprintIcon className="h-10 w-10 text-fg-muted mx-auto mb-3" aria-hidden="true" />
+              <Typography variant="body1" className="text-fg-muted">
                 No items in this sprint
               </Typography>
-              <Typography variant="body2" className="text-gray-400 mt-1">
+              <Typography variant="body2" className="text-fg-muted mt-1">
                 Move items from the backlog to add them here
               </Typography>
             </div>
           ) : (
-            <div className="divide-y dark:divide-gray-700">
+            <div className="divide-y border-border">
               {sprint.items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/40"
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-surface-muted"
                 >
                   <span
                     className={`text-xs font-medium px-2 py-0.5 rounded ${getStatusColor(item.status)}`}

@@ -57,8 +57,8 @@ However, the implementation is still uneven. The new work often creates **good a
 6. **Plugin/runtime policy is utility-level; enforcement integration is not proven.**
 7. **Compiler/decompiler flow imports files but does not yet fully convert source → semantic model → BuilderDocument → page artifact → canvas nodes → codegen/diff/merge.**
 8. **Server validation is useful but not design-system-contract-aware enough.**
-9. **Authorization is permission-based, but resource-level workspace/project ownership checks are not obvious from the controller.**
-10. **Audit is emitted asynchronously and failures do not block sensitive operations.**
+9. **Authorization now includes fail-closed resource-scope headers for workspace/project access; full membership-backed ownership checks still need a canonical upstream access provider.**
+10. **DB-backed save + audit now has an atomic transaction path; non-DB/fallback paths still rely on rollback compensation.**
 
 ---
 

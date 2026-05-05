@@ -17,202 +17,28 @@ import {
   buildPhaseEvidence,
   buildPhaseGovernanceRecords,
   buildPhaseSuggestedSteps,
+  fetchPhaseTransitionPreview,
+  formatTimestamp,
   getPhaseCockpitConfig,
+  isLifecyclePhase,
+  parseJsonResponse,
+  parseProjectResponse,
 } from '../../../services/phase';
 import type {
+  LifecyclePhase,
   MountedPhase,
   PhaseActivityEvent,
   PhaseActivityResponse,
   PhaseProjectSnapshot,
   PhaseTransitionPreviewSnapshot,
 } from '../../../services/phase';
-
-import CanvasRoute from './canvas';
-import DeployRoute from './deploy';
-import LifecycleRoute from './lifecycle';
 import { PhaseStatusPanels } from './PhaseStatusPanels';
-import PreviewRoute from './preview';
-
-import ProjectOverviewRoute from './index';
-
-type LifecyclePhase =
-  | 'INTENT'
-  | 'SHAPE'
-  | 'VALIDATE'
-  | 'GENERATE'
-  | 'RUN'
-  | 'OBSERVE'
-  | 'LEARN'
-  | 'EVOLVE';
-
-interface RawPhaseProjectSnapshot extends Omit<PhaseProjectSnapshot, 'healthScore' | 'nextActionHints'> {
-  aiHealthScore?: number | null;
-  aiNextActions?: string[];
-}
+import { PhaseEmbeddedSurface } from './PhaseEmbeddedSurface';
 
 function asTypedList<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
-const LIFECYCLE_PHASES: readonly LifecyclePhase[] = [
-  'INTENT',
-  'SHAPE',
-  'VALIDATE',
-  'GENERATE',
-  'RUN',
-  'OBSERVE',
-  'LEARN',
-  'EVOLVE',
-];
-
-async function readResponseBody(response: Response): Promise<string> {
-  const maybeText = (response as Response & { text?: () => Promise<string> }).text;
-  if (typeof maybeText === 'function') {
-    return maybeText.call(response);
-  }
-
-  const maybeJson = (response as Response & { json?: () => Promise<unknown> }).json;
-  if (typeof maybeJson === 'function') {
-    const payload = await maybeJson.call(response);
-    if (typeof payload === 'string') {
-      return payload;
-    }
-    return JSON.stringify(payload ?? {});
-  }
-
-  return '';
-}
-
-async function parseJsonResponse<T>(
-  response: Response,
-  context: string,
-): Promise<T> {
-  const raw = await readResponseBody(response);
-
-  if (!raw) {
-    throw new Error(`${context} returned an empty response`);
-  }
-
-  try {
-    return JSON.parse(raw) as T;
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(`${context} returned invalid JSON: ${detail}`, {
-      cause: error,
-    });
-  }
-}
-
-async function parseProjectResponse(
-  response: Response,
-  context: string,
-): Promise<PhaseProjectSnapshot> {
-  const payload = await parseJsonResponse<unknown>(response, context);
-
-  const rawProject = (
-    typeof payload === 'object' &&
-    payload !== null &&
-    'project' in payload
-      ? (payload as { project: RawPhaseProjectSnapshot }).project
-      : (payload as RawPhaseProjectSnapshot)
-  );
-
-  return {
-    ...rawProject,
-    healthScore: rawProject.aiHealthScore ?? null,
-    nextActionHints: rawProject.aiNextActions ?? [],
-  };
-
-}
-
-function isLifecyclePhase(value: string): value is LifecyclePhase {
-  return (LIFECYCLE_PHASES as readonly string[]).includes(value);
-}
-
-async function fetchPhaseTransitionPreview(
-  currentPhase: LifecyclePhase,
-  projectId: string,
-): Promise<PhaseTransitionPreviewSnapshot> {
-  const response = await fetch(
-    `/api/phases/${encodeURIComponent(currentPhase)}/next?projectId=${encodeURIComponent(projectId)}`,
-    {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-      },
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error('Failed to load phase transition preview.');
-  }
-
-  return parseJsonResponse<PhaseTransitionPreviewSnapshot>(
-    response,
-    'fetch phase transition preview',
-  );
-}
-
-function formatTimestamp(timestamp: string): string {
-  return new Date(timestamp).toLocaleString([], {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
-
-function renderEmbeddedSurface(phase: MountedPhase): React.ReactNode {
-  switch (phase) {
-    case 'intent':
-      return <ProjectOverviewRoute />;
-    case 'shape':
-    case 'generate':
-      return <CanvasRoute />;
-    case 'run':
-      return <DeployRoute />;
-    case 'observe':
-      return (
-        <div className="space-y-4">
-          <div data-testid="project-preview-iframe">
-            <PreviewRoute />
-          </div>
-          <LifecycleRoute />
-        </div>
-      );
-    case 'validate':
-      return (
-        <div
-          data-testid="validate-advanced-panel"
-          className="rounded-xl border border-border bg-surface p-4 text-sm text-fg-muted"
-        >
-          Validation and approval gates are already surfaced in the phase-native cockpit panels.
-          Open Observe for full lifecycle timeline and audit history details.
-        </div>
-      );
-    case 'learn':
-      return (
-        <div
-          data-testid="learn-advanced-panel"
-          className="rounded-xl border border-border bg-surface p-4 text-sm text-fg-muted"
-        >
-          Learning summaries and reusable patterns stay phase-native. Use this panel for supporting
-          notes while preserving the focused cockpit flow.
-        </div>
-      );
-    case 'evolve':
-      return (
-        <div
-          data-testid="evolve-advanced-panel"
-          className="rounded-xl border border-border bg-surface p-4 text-sm text-fg-muted"
-        >
-          Evolution roadmap and backlog prioritization remain in the cockpit surface to avoid context switching.
-        </div>
-      );
-    default:
-      return <LifecycleRoute />;
-  }
-}
 
 function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   const { projectId } = useParams<{ projectId: string }>();
@@ -351,7 +177,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
         Last activity:{' '}
         {activity[0]?.timestamp ? formatTimestamp(activity[0].timestamp) : 'No recent backed activity'}
       </div>
-      {renderEmbeddedSurface(phase)}
+      <PhaseEmbeddedSurface phase={phase} />
     </div>
   );
 
@@ -387,7 +213,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
       >
         <div className="space-y-4" data-testid={`${phase}-native-summary`}>
           {feedback ? (
-            <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+            <div className="rounded-xl border border-info-border bg-info-bg p-4 text-sm text-info-color">
               {feedback}
             </div>
           ) : null}

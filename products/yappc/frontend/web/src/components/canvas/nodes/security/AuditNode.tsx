@@ -6,7 +6,7 @@
 // ============================================================================
 
 import { memo, useMemo } from 'react';
-import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
+import { Handle, Position, Node, NodeProps } from '@xyflow/react';
 import {
   FileText,
   User,
@@ -89,51 +89,51 @@ const CATEGORY_CONFIG: Record<AuditEventCategory, {
   AUTHENTICATION: {
     label: 'Authentication',
     icon: Lock,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-500',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
+    borderColor: 'border-info-border',
   },
   AUTHORIZATION: {
     label: 'Authorization',
     icon: Shield,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-500',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
+    borderColor: 'border-info-border',
   },
   DATA_ACCESS: {
     label: 'Data Access',
     icon: Eye,
-    color: 'text-cyan-600',
-    bgColor: 'bg-cyan-50',
-    borderColor: 'border-cyan-500',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
+    borderColor: 'border-info-border',
   },
   DATA_MODIFICATION: {
     label: 'Data Modification',
     icon: Edit,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50',
-    borderColor: 'border-orange-500',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg',
+    borderColor: 'border-warning-border',
   },
   CONFIGURATION: {
     label: 'Configuration',
     icon: Settings,
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-50',
-    borderColor: 'border-gray-500',
+    color: 'text-fg-muted',
+    bgColor: 'bg-surface-muted',
+    borderColor: 'border-border',
   },
   SECURITY: {
     label: 'Security',
     icon: Shield,
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-500',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive-bg',
+    borderColor: 'border-destructive-border',
   },
   SYSTEM: {
     label: 'System',
     icon: Server,
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-50',
-    borderColor: 'border-indigo-500',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
+    borderColor: 'border-info-border',
   },
 };
 
@@ -149,20 +149,20 @@ const STATUS_CONFIG: Record<string, {
 }> = {
   SUCCESS: {
     label: 'Success',
-    color: 'text-green-600',
-    bgColor: 'bg-green-100',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg',
     icon: CheckCircle2,
   },
   FAILURE: {
     label: 'Failure',
-    color: 'text-red-600',
-    bgColor: 'bg-red-100',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive-bg',
     icon: XCircle,
   },
   PENDING: {
     label: 'Pending',
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-100',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg',
     icon: Clock,
   },
 };
@@ -244,8 +244,8 @@ function ChangesDiff({ changes }: { changes: AuditChanges }) {
   }
 
   return (
-    <div className="rounded-md bg-gray-50 p-2 space-y-2">
-      <span className="text-xs font-medium text-gray-700">Changes</span>
+    <div className="rounded-md bg-surface-muted p-2 space-y-2">
+      <span className="text-xs font-medium text-fg">Changes</span>
       {changedFields.length > 0 ? (
         <div className="space-y-1">
           {changedFields.slice(0, 4).map((field) => {
@@ -254,15 +254,15 @@ function ChangesDiff({ changes }: { changes: AuditChanges }) {
             
             return (
               <div key={field} className="flex items-center gap-2 text-xs">
-                <span className="text-gray-600 font-medium min-w-[60px]">{field}:</span>
+                <span className="text-fg-muted font-medium min-w-[60px]">{field}:</span>
                 {before !== undefined && (
-                  <span className="text-red-600 line-through truncate max-w-[80px]">
+                  <span className="text-destructive line-through truncate max-w-[80px]">
                     {String(before)}
                   </span>
                 )}
-                <ArrowRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                <ArrowRight className="h-3 w-3 text-fg-muted flex-shrink-0" />
                 {after !== undefined && (
-                  <span className="text-green-600 truncate max-w-[80px]">
+                  <span className="text-success-color truncate max-w-[80px]">
                     {String(after)}
                   </span>
                 )}
@@ -270,14 +270,14 @@ function ChangesDiff({ changes }: { changes: AuditChanges }) {
             );
           })}
           {changedFields.length > 4 && (
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-fg-muted">
               +{changedFields.length - 4} more fields
             </span>
           )}
         </div>
       ) : (
         <div className="flex items-center gap-2 text-xs">
-          <span className="text-gray-500">
+          <span className="text-fg-muted">
             {Object.keys(changes.after || {}).length} fields modified
           </span>
         </div>
@@ -297,14 +297,14 @@ function DetailsList({ details }: { details: Record<string, unknown> }) {
     <div className="space-y-1">
       {entries.slice(0, 3).map(([key, value]) => (
         <div key={key} className="flex items-center gap-2 text-xs">
-          <span className="text-gray-500">{key}:</span>
-          <span className="text-gray-700 truncate">
+          <span className="text-fg-muted">{key}:</span>
+          <span className="text-fg truncate">
             {typeof value === 'object' ? JSON.stringify(value) : String(value)}
           </span>
         </div>
       ))}
       {entries.length > 3 && (
-        <div className="flex items-center text-xs text-blue-600 cursor-pointer hover:text-blue-700">
+        <div className="flex items-center text-xs text-info-color cursor-pointer hover:opacity-80">
           <span>View all details</span>
           <ChevronRight className="h-3 w-3" />
         </div>
@@ -335,20 +335,20 @@ function AuditNodeComponent({ data, selected }: NodeProps<AuditCanvasNode>) {
         className={cn(
           'rounded-lg border-2 bg-white p-3 shadow-sm transition-all duration-200',
           categoryConfig.borderColor,
-          selected && 'ring-2 ring-blue-500 ring-offset-2',
+          selected && 'ring-2 ring-primary ring-offset-2',
           'min-w-[200px]'
         )}
       >
-        <Handle type="target" position={Position.Left} className="!bg-gray-400" />
-        <Handle type="source" position={Position.Right} className="!bg-gray-400" />
+        <Handle type="target" position={Position.Left} className="!bg-muted-foreground" />
+        <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
 
         <div className="flex items-center gap-2">
           <CategoryIcon className={cn('h-4 w-4', categoryConfig.color)} />
-          <span className="truncate text-sm font-medium text-gray-900">{data.action}</span>
+          <span className="truncate text-sm font-medium text-fg">{data.action}</span>
         </div>
         <div className="mt-1 flex items-center justify-between">
           <span className={cn('text-xs', statusConfig.color)}>{statusConfig.label}</span>
-          <span className="text-xs text-gray-400">{formatRelativeTime(data.timestamp)}</span>
+          <span className="text-xs text-fg-muted">{formatRelativeTime(data.timestamp)}</span>
         </div>
       </div>
     );
@@ -359,13 +359,13 @@ function AuditNodeComponent({ data, selected }: NodeProps<AuditCanvasNode>) {
       className={cn(
         'rounded-lg border-2 bg-white shadow-md transition-all duration-200',
         categoryConfig.borderColor,
-        selected && 'ring-2 ring-blue-500 ring-offset-2',
-        data.status === 'FAILURE' && 'shadow-red-100',
+        selected && 'ring-2 ring-primary ring-offset-2',
+        data.status === 'FAILURE' && 'shadow-destructive/20',
         'min-w-[320px] max-w-[400px]'
       )}
     >
-      <Handle type="target" position={Position.Left} className="!bg-gray-400" />
-      <Handle type="source" position={Position.Right} className="!bg-gray-400" />
+      <Handle type="target" position={Position.Left} className="!bg-muted-foreground" />
+      <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
 
       {/* Header */}
       <div className={cn('rounded-t-lg px-4 py-3', categoryConfig.bgColor)}>
@@ -374,8 +374,8 @@ function AuditNodeComponent({ data, selected }: NodeProps<AuditCanvasNode>) {
             <CategoryIcon className={cn('h-5 w-5 mt-0.5', categoryConfig.color)} />
             <div>
               <div className="flex items-center gap-2">
-                <ActionIcon className="h-4 w-4 text-gray-500" />
-                <h3 className="font-semibold text-gray-900">{data.action}</h3>
+                <ActionIcon className="h-4 w-4 text-fg-muted" />
+                <h3 className="font-semibold text-fg">{data.action}</h3>
               </div>
               <span className={cn('text-xs font-medium', categoryConfig.color)}>
                 {categoryConfig.label}
@@ -405,27 +405,27 @@ function AuditNodeComponent({ data, selected }: NodeProps<AuditCanvasNode>) {
                 className="h-8 w-8 rounded-full"
               />
             ) : (
-              <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                <User className="h-4 w-4 text-gray-500" />
+              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                <User className="h-4 w-4 text-muted-foreground" />
               </div>
             )}
             <div>
-              <p className="text-sm font-medium text-gray-900">
+              <p className="text-sm font-medium text-fg">
                 {data.user?.name || 'Unknown User'}
               </p>
-              <p className="text-xs text-gray-500">{data.user?.email}</p>
+              <p className="text-xs text-fg-muted">{data.user?.email}</p>
             </div>
           </div>
         </div>
 
         {/* Resource */}
         <div className="flex items-start gap-2">
-          <Database className="h-4 w-4 text-gray-400 mt-0.5" />
+          <Database className="h-4 w-4 text-muted-foreground mt-0.5" />
           <div className="flex-1 min-w-0">
-            <span className="text-xs text-gray-500">Resource</span>
-            <p className="text-sm font-medium text-gray-900">{data.resource}</p>
+            <span className="text-xs text-fg-muted">Resource</span>
+            <p className="text-sm font-medium text-fg">{data.resource}</p>
             {data.resourceId && (
-              <p className="text-xs font-mono text-gray-500 truncate">{data.resourceId}</p>
+              <p className="text-xs font-mono text-fg-muted truncate">{data.resourceId}</p>
             )}
           </div>
         </div>
@@ -436,7 +436,7 @@ function AuditNodeComponent({ data, selected }: NodeProps<AuditCanvasNode>) {
         {/* Additional Details */}
         {data.details && Object.keys(data.details).length > 0 && (
           <div className="space-y-2">
-            <span className="text-xs font-medium text-gray-700">Details</span>
+            <span className="text-xs font-medium text-fg">Details</span>
             <DetailsList details={data.details} />
           </div>
         )}
@@ -446,10 +446,10 @@ function AuditNodeComponent({ data, selected }: NodeProps<AuditCanvasNode>) {
           {/* IP Address */}
           {data.ipAddress && (
             <div className="flex items-start gap-2">
-              <Globe className="h-4 w-4 text-gray-400 mt-0.5" />
+              <Globe className="h-4 w-4 text-muted-foreground mt-0.5" />
               <div>
-                <span className="text-xs text-gray-500">IP Address</span>
-                <p className="text-sm font-mono text-gray-700">{data.ipAddress}</p>
+                <span className="text-xs text-fg-muted">IP Address</span>
+                <p className="text-sm font-mono text-fg">{data.ipAddress}</p>
               </div>
             </div>
           )}
@@ -457,10 +457,10 @@ function AuditNodeComponent({ data, selected }: NodeProps<AuditCanvasNode>) {
           {/* User Agent */}
           {parsedUserAgent && (
             <div className="flex items-start gap-2">
-              <Server className="h-4 w-4 text-gray-400 mt-0.5" />
+              <Server className="h-4 w-4 text-muted-foreground mt-0.5" />
               <div>
-                <span className="text-xs text-gray-500">Client</span>
-                <p className="text-sm text-gray-700">
+                <span className="text-xs text-fg-muted">Client</span>
+                <p className="text-sm text-fg">
                   {parsedUserAgent.browser} / {parsedUserAgent.os}
                 </p>
               </div>
@@ -471,20 +471,20 @@ function AuditNodeComponent({ data, selected }: NodeProps<AuditCanvasNode>) {
         {/* Request ID */}
         {data.requestId && (
           <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-gray-400" />
-            <span className="text-xs text-gray-500">Request ID:</span>
-            <span className="text-xs font-mono text-gray-600 truncate">{data.requestId}</span>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs text-fg-muted">Request ID:</span>
+            <span className="text-xs font-mono text-fg truncate">{data.requestId}</span>
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <div className="border-t border-gray-100 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-gray-500">
+      <div className="border-t border-border px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-1.5 text-fg-muted">
           <Clock className="h-4 w-4" />
           <span className="text-xs">{formatTimestamp(data.timestamp)}</span>
         </div>
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-muted-foreground">
           {formatRelativeTime(data.timestamp)}
         </span>
       </div>

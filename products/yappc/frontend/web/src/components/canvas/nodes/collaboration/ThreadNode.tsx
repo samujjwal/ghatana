@@ -107,19 +107,19 @@ function ThreadNode({ data }: NodeProps<ThreadCanvasNode>) {
   return (
     <div
       className={cn(
-        'bg-slate-800 rounded-lg border shadow-xl min-w-[320px] max-w-[380px]',
-        thread.isResolved ? 'border-green-600/50' : 'border-slate-600'
+        'bg-surface rounded-lg border shadow-xl min-w-[320px] max-w-[380px]',
+        thread.isResolved ? 'border-success-border' : 'border-border'
       )}
     >
       {/* Input Handle */}
       <Handle
         type="target"
         position={Position.Left}
-        className="w-3 h-3 bg-blue-500 border-2 border-slate-800"
+        className="w-3 h-3 bg-info-bg border-2 border-border"
       />
 
       {/* Header */}
-      <div className="p-4 border-b border-slate-700">
+      <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div
@@ -133,11 +133,11 @@ function ThreadNode({ data }: NodeProps<ThreadCanvasNode>) {
             <div>
               <span className="text-white font-semibold text-sm">Thread</span>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-slate-500 text-xs">
+                <span className="text-fg-muted text-xs">
                   {thread.messageCount} replies
                 </span>
-                <span className="text-slate-600">•</span>
-                <span className="text-slate-500 text-xs flex items-center gap-1">
+                <span className="text-fg-muted">•</span>
+                <span className="text-fg-muted text-xs flex items-center gap-1">
                   <Users className="w-3 h-3" />
                   {thread.participantCount}
                 </span>
@@ -147,12 +147,12 @@ function ThreadNode({ data }: NodeProps<ThreadCanvasNode>) {
 
           {/* Status Badge */}
           {thread.isResolved ? (
-            <span className="flex items-center gap-1 px-2 py-1 bg-green-500/20 text-green-400 text-xs font-medium rounded-full">
+            <span className="flex items-center gap-1 px-2 py-1 bg-success-bg0/20 text-success-color text-xs font-medium rounded-full">
               <CheckCircle2 className="w-3 h-3" />
               Resolved
             </span>
           ) : (
-            <span className="flex items-center gap-1 px-2 py-1 bg-blue-500/20 text-blue-400 text-xs font-medium rounded-full">
+            <span className="flex items-center gap-1 px-2 py-1 bg-info-bg/20 text-info-color text-xs font-medium rounded-full">
               <Circle className="w-3 h-3" />
               Open
             </span>
@@ -161,8 +161,8 @@ function ThreadNode({ data }: NodeProps<ThreadCanvasNode>) {
       </div>
 
       {/* Parent Message */}
-      <div className="p-4 border-b border-slate-700 bg-slate-700/30">
-        <span className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2 block">
+      <div className="p-4 border-b border-border bg-surface-muted">
+        <span className="text-fg-muted text-xs font-medium uppercase tracking-wide mb-2 block">
           Original Message
         </span>
         <div className="flex items-start gap-2">
@@ -183,7 +183,7 @@ function ThreadNode({ data }: NodeProps<ThreadCanvasNode>) {
             <span className="text-white text-sm font-medium">
               {thread.parentMessage.author.name}
             </span>
-            <p className="text-slate-300 text-sm mt-1 line-clamp-3">
+            <p className="text-fg text-sm mt-1 line-clamp-3">
               {thread.parentMessage.content}
             </p>
           </div>
@@ -191,8 +191,8 @@ function ThreadNode({ data }: NodeProps<ThreadCanvasNode>) {
       </div>
 
       {/* Participants */}
-      <div className="p-4 border-b border-slate-700">
-        <span className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2 block">
+      <div className="p-4 border-b border-border">
+        <span className="text-fg-muted text-xs font-medium uppercase tracking-wide mb-2 block">
           Participants
         </span>
         <div className="flex items-center">
@@ -208,10 +208,10 @@ function ThreadNode({ data }: NodeProps<ThreadCanvasNode>) {
                   <img
                     src={participant.avatarUrl}
                     alt={participant.name}
-                    className="w-7 h-7 rounded-full object-cover border-2 border-slate-800"
+                    className="w-7 h-7 rounded-full object-cover border-2 border-border"
                   />
                 ) : (
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border-2 border-slate-800">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border-2 border-border">
                     <span className="text-white text-xs font-semibold">
                       {participant.name.charAt(0).toUpperCase()}
                     </span>
@@ -221,7 +221,7 @@ function ThreadNode({ data }: NodeProps<ThreadCanvasNode>) {
             ))}
           </div>
           {thread.participantCount > 6 && (
-            <span className="ml-2 text-slate-400 text-xs">
+            <span className="ml-2 text-fg-muted text-xs">
               +{thread.participantCount - 6} more
             </span>
           )}
@@ -230,14 +230,14 @@ function ThreadNode({ data }: NodeProps<ThreadCanvasNode>) {
 
       {/* Latest Replies */}
       {latestMessages.length > 0 && (
-        <div className="p-4 border-b border-slate-700">
-          <span className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2 block">
+        <div className="p-4 border-b border-border">
+          <span className="text-fg-muted text-xs font-medium uppercase tracking-wide mb-2 block">
             Latest Replies
           </span>
           <div className="space-y-3">
             {latestMessages.map((message: ThreadMessage, index: number) => (
               <div key={message.id} className="flex items-start gap-2">
-                <CornerDownRight className="w-3 h-3 text-slate-600 mt-1.5 flex-shrink-0" />
+                <CornerDownRight className="w-3 h-3 text-fg-muted mt-1.5 flex-shrink-0" />
                 {message.author.avatarUrl ? (
                   <img
                     src={message.author.avatarUrl}
@@ -253,14 +253,14 @@ function ThreadNode({ data }: NodeProps<ThreadCanvasNode>) {
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-300 text-xs font-medium">
+                    <span className="text-fg text-xs font-medium">
                       {message.author.name}
                     </span>
-                    <span className="text-slate-500 text-xs">
+                    <span className="text-fg-muted text-xs">
                       {formatTime(message.createdAt)}
                     </span>
                   </div>
-                  <p className="text-slate-400 text-xs line-clamp-2 mt-0.5">
+                  <p className="text-fg-muted text-xs line-clamp-2 mt-0.5">
                     {message.content}
                   </p>
                 </div>
@@ -272,15 +272,15 @@ function ThreadNode({ data }: NodeProps<ThreadCanvasNode>) {
 
       {/* Resolution Info */}
       {thread.isResolved && thread.resolvedBy && (
-        <div className="p-4 border-b border-slate-700 bg-green-500/5">
+        <div className="p-4 border-b border-border bg-success-bg0/5">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-green-400" />
-            <span className="text-green-400 text-sm">
+            <CheckCircle2 className="w-4 h-4 text-success-color" />
+            <span className="text-success-color text-sm">
               Resolved by <span className="font-medium">{thread.resolvedBy.name}</span>
             </span>
           </div>
           {thread.resolvedAt && (
-            <span className="text-slate-500 text-xs mt-1 block">
+            <span className="text-fg-muted text-xs mt-1 block">
               {formatTime(thread.resolvedAt)}
             </span>
           )}
@@ -288,12 +288,12 @@ function ThreadNode({ data }: NodeProps<ThreadCanvasNode>) {
       )}
 
       {/* Actions */}
-      <div className="p-4 border-b border-slate-700">
+      <div className="p-4 border-b border-border">
         <div className="flex items-center gap-2">
           {onOpenThread && (
             <button
               onClick={onOpenThread}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-info-bg text-white rounded-lg hover:bg-primary transition-colors text-sm font-medium"
             >
               <Reply className="w-4 h-4" />
               View Thread
@@ -302,7 +302,7 @@ function ThreadNode({ data }: NodeProps<ThreadCanvasNode>) {
           {!thread.isResolved && onResolve && (
             <button
               onClick={onResolve}
-              className="flex items-center justify-center gap-2 px-3 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors text-sm font-medium"
+              className="flex items-center justify-center gap-2 px-3 py-2 bg-success-bg0/20 text-success-color rounded-lg hover:bg-success-bg0/30 transition-colors text-sm font-medium"
             >
               <CheckCircle2 className="w-4 h-4" />
             </button>
@@ -310,7 +310,7 @@ function ThreadNode({ data }: NodeProps<ThreadCanvasNode>) {
           {thread.isResolved && onReopen && (
             <button
               onClick={onReopen}
-              className="flex items-center justify-center gap-2 px-3 py-2 bg-yellow-500/20 text-yellow-400 rounded-lg hover:bg-yellow-500/30 transition-colors text-sm font-medium"
+              className="flex items-center justify-center gap-2 px-3 py-2 bg-warning-bg0/20 text-warning-color rounded-lg hover:bg-warning-bg0/30 transition-colors text-sm font-medium"
             >
               <AlertCircle className="w-4 h-4" />
             </button>
@@ -319,33 +319,33 @@ function ThreadNode({ data }: NodeProps<ThreadCanvasNode>) {
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 bg-slate-900/50 rounded-b-lg">
-        <div className="flex items-center justify-between text-xs text-slate-500">
+      <div className="px-4 py-3 bg-surface-muted rounded-b-lg">
+        <div className="flex items-center justify-between text-xs text-fg-muted">
           <div className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
             <span>Started {formatTime(thread.createdAt)}</span>
           </div>
           <div className="flex items-center gap-1">
             {activityLevel === 'hot' && (
-              <span className="flex items-center gap-1 text-orange-400">
+              <span className="flex items-center gap-1 text-warning-color">
                 <Circle className="w-2 h-2 fill-orange-400 animate-pulse" />
                 Hot
               </span>
             )}
             {activityLevel === 'active' && (
-              <span className="flex items-center gap-1 text-green-400">
+              <span className="flex items-center gap-1 text-success-color">
                 <Circle className="w-2 h-2 fill-green-400" />
                 Active
               </span>
             )}
             {activityLevel === 'warm' && (
-              <span className="flex items-center gap-1 text-blue-400">
+              <span className="flex items-center gap-1 text-info-color">
                 <Circle className="w-2 h-2 fill-blue-400" />
                 Recent
               </span>
             )}
             {activityLevel === 'dormant' && (
-              <span className="flex items-center gap-1 text-slate-500">
+              <span className="flex items-center gap-1 text-fg-muted">
                 <Circle className="w-2 h-2 fill-slate-500" />
                 Dormant
               </span>
@@ -358,7 +358,7 @@ function ThreadNode({ data }: NodeProps<ThreadCanvasNode>) {
       <Handle
         type="source"
         position={Position.Right}
-        className="w-3 h-3 bg-green-500 border-2 border-slate-800"
+        className="w-3 h-3 bg-success-bg0 border-2 border-border"
       />
     </div>
   );

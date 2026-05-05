@@ -104,7 +104,7 @@ const SecurityDashboardPage: React.FC = () => {
       description: 'Run security scans',
       icon: <Bug className="w-5 h-5" />,
       href: ROUTES.security.scans(projectId || ''),
-      color: 'bg-red-500/10 text-red-400',
+      color: 'bg-destructive-bg text-destructive',
     },
     {
       label: 'Compliance',
@@ -118,7 +118,7 @@ const SecurityDashboardPage: React.FC = () => {
       description: 'Manage credentials',
       icon: <Key className="w-5 h-5" />,
       href: ROUTES.security.secrets(projectId || ''),
-      color: 'bg-amber-500/10 text-amber-400',
+      color: 'bg-warning-bg text-warning-color',
     },
     {
       label: 'Security Policies',
@@ -132,7 +132,7 @@ const SecurityDashboardPage: React.FC = () => {
       description: 'Activity history',
       icon: <FileText className="w-5 h-5" />,
       href: ROUTES.security.audit(projectId || ''),
-      color: 'bg-cyan-500/10 text-cyan-400',
+      color: 'bg-info-bg text-info-color',
     },
     {
       label: 'Threat Model',
@@ -149,7 +149,7 @@ const SecurityDashboardPage: React.FC = () => {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-white mb-2">Security</h1>
-          <p className="text-zinc-400">Monitor vulnerabilities and compliance</p>
+          <p className="text-fg-muted">Monitor vulnerabilities and compliance</p>
         </div>
         <div className="flex items-center gap-3">
           <NavLink
@@ -170,25 +170,25 @@ const SecurityDashboardPage: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30"
+          className="mb-6 p-4 rounded-xl bg-destructive-bg border border-destructive-border/30"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-2 rounded-lg bg-red-500/20">
-                <AlertTriangle className="w-5 h-5 text-red-400" />
+              <div className="p-2 rounded-lg bg-destructive-bg">
+                <AlertTriangle className="w-5 h-5 text-destructive" />
               </div>
               <div>
                 <div className="font-medium text-white">
                   {criticalVulns} Critical Vulnerabilit{criticalVulns > 1 ? 'ies' : 'y'} Detected
                 </div>
-                <div className="text-sm text-zinc-400">
+                <div className="text-sm text-fg-muted">
                   Immediate attention required
                 </div>
               </div>
             </div>
             <NavLink
               to={ROUTES.security.vulnerabilities(projectId || '') + '?severity=critical'}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive-bg text-white hover:bg-destructive-bg transition-colors"
             >
               Review Now
               <ArrowRight className="w-4 h-4" />
@@ -203,20 +203,20 @@ const SecurityDashboardPage: React.FC = () => {
           const content = (
             <div
               className={cn(
-                'p-6 rounded-xl bg-zinc-900 border border-zinc-800',
-                'hover:border-zinc-700 transition-colors',
+                'p-6 rounded-xl bg-surface border border-border',
+                'hover:border-border transition-colors',
                 metric.href && 'cursor-pointer'
               )}
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="p-2 rounded-lg bg-zinc-800 text-zinc-400">{metric.icon}</div>
+                <div className="p-2 rounded-lg bg-surface text-fg-muted">{metric.icon}</div>
                 {metric.change !== undefined && (
                   <div
                     className={cn(
                       'flex items-center gap-1 text-sm',
                       metric.trend === 'up' && 'text-emerald-400',
-                      metric.trend === 'down' && 'text-red-400',
-                      metric.trend === 'neutral' && 'text-zinc-400'
+                      metric.trend === 'down' && 'text-destructive',
+                      metric.trend === 'neutral' && 'text-fg-muted'
                     )}
                   >
                     {metric.trend === 'up' && <TrendingUp className="w-4 h-4" />}
@@ -227,7 +227,7 @@ const SecurityDashboardPage: React.FC = () => {
                 )}
               </div>
               <div className="text-3xl font-bold text-white mb-1">{metric.value}</div>
-              <div className="text-sm text-zinc-400">{metric.label}</div>
+              <div className="text-sm text-fg-muted">{metric.label}</div>
             </div>
           );
 
@@ -247,7 +247,7 @@ const SecurityDashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Vulnerability Summary */}
         <div className="lg:col-span-2">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <div className="bg-surface border border-border rounded-xl p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-white">Vulnerability Summary</h2>
               <NavLink
@@ -262,26 +262,26 @@ const SecurityDashboardPage: React.FC = () => {
             {/* Severity breakdown */}
             <div className="grid grid-cols-4 gap-4 mb-6">
               {[
-                { label: 'Critical', count: criticalVulns, color: 'bg-red-500' },
-                { label: 'High', count: highVulns, color: 'bg-orange-500' },
+                { label: 'Critical', count: criticalVulns, color: 'bg-destructive-bg' },
+                { label: 'High', count: highVulns, color: 'bg-warning-bg' },
                 {
                   label: 'Medium',
                   count: vulnerabilities.filter((v) => v.severity === 'medium').length,
-                  color: 'bg-amber-500',
+                  color: 'bg-warning-bg',
                 },
                 {
                   label: 'Low',
                   count: vulnerabilities.filter((v) => v.severity === 'low').length,
-                  color: 'bg-cyan-500',
+                  color: 'bg-info-bg',
                 },
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="p-4 rounded-lg bg-zinc-800/50 text-center"
+                  className="p-4 rounded-lg bg-surface/50 text-center"
                 >
                   <div className={cn('w-3 h-3 rounded-full mx-auto mb-2', item.color)} />
                   <div className="text-2xl font-bold text-white">{item.count}</div>
-                  <div className="text-xs text-zinc-500">{item.label}</div>
+                  <div className="text-xs text-fg-muted">{item.label}</div>
                 </div>
               ))}
             </div>
@@ -292,21 +292,21 @@ const SecurityDashboardPage: React.FC = () => {
                 <NavLink
                   key={vuln.id}
                   to={ROUTES.security.vulnerabilities(projectId || '', vuln.id)}
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-zinc-800 transition-colors"
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-surface transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <div
                       className={cn(
                         'w-2 h-2 rounded-full',
-                        vuln.severity === 'critical' && 'bg-red-500',
-                        vuln.severity === 'high' && 'bg-orange-500',
-                        vuln.severity === 'medium' && 'bg-amber-500',
-                        vuln.severity === 'low' && 'bg-cyan-500'
+                        vuln.severity === 'critical' && 'bg-destructive-bg',
+                        vuln.severity === 'high' && 'bg-warning-bg',
+                        vuln.severity === 'medium' && 'bg-warning-bg',
+                        vuln.severity === 'low' && 'bg-info-bg'
                       )}
                     />
                     <div>
                       <div className="text-sm font-medium text-white">{vuln.title}</div>
-                      <div className="text-xs text-zinc-500">
+                      <div className="text-xs text-fg-muted">
                         {vuln.cve || vuln.scanType} • {vuln.affectedComponent}
                       </div>
                     </div>
@@ -314,8 +314,8 @@ const SecurityDashboardPage: React.FC = () => {
                   <span
                     className={cn(
                       'px-2 py-1 rounded text-xs font-medium',
-                      vuln.status === 'open' && 'bg-red-500/20 text-red-400',
-                      vuln.status === 'in-progress' && 'bg-amber-500/20 text-amber-400',
+                      vuln.status === 'open' && 'bg-destructive-bg text-destructive',
+                      vuln.status === 'in-progress' && 'bg-warning-bg text-warning-color',
                       vuln.status === 'resolved' && 'bg-emerald-500/20 text-emerald-400'
                     )}
                   >
@@ -327,7 +327,7 @@ const SecurityDashboardPage: React.FC = () => {
           </div>
 
           {/* Compliance Overview */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mt-6">
+          <div className="bg-surface border border-border rounded-xl p-6 mt-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-white">Compliance Status</h2>
               <NavLink
@@ -348,9 +348,9 @@ const SecurityDashboardPage: React.FC = () => {
               ]).map((framework) => (
                 <div
                   key={framework.name}
-                  className="p-4 rounded-lg bg-zinc-800/50 text-center"
+                  className="p-4 rounded-lg bg-surface/50 text-center"
                 >
-                  <div className="text-sm text-zinc-400 mb-2">{framework.name}</div>
+                  <div className="text-sm text-fg-muted mb-2">{framework.name}</div>
                   <div className="relative w-16 h-16 mx-auto">
                     <svg className="w-full h-full transform -rotate-90">
                       <circle
@@ -360,7 +360,7 @@ const SecurityDashboardPage: React.FC = () => {
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="4"
-                        className="text-zinc-700"
+                        className="text-fg"
                       />
                       <circle
                         cx="32"
@@ -375,8 +375,8 @@ const SecurityDashboardPage: React.FC = () => {
                           framework.score >= 90
                             ? 'text-emerald-500'
                             : framework.score >= 70
-                            ? 'text-amber-500'
-                            : 'text-red-500'
+                            ? 'text-warning-color'
+                            : 'text-destructive'
                         )}
                       />
                     </svg>
@@ -393,28 +393,28 @@ const SecurityDashboardPage: React.FC = () => {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Quick Links */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <div className="bg-surface border border-border rounded-xl p-6">
             <h2 className="text-lg font-semibold text-white mb-4">Quick Access</h2>
             <div className="space-y-2">
               {quickLinks.map((link) => (
                 <NavLink
                   key={link.label}
                   to={link.href}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-800 transition-colors group"
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface transition-colors group"
                 >
                   <div className={cn('p-2 rounded-lg', link.color)}>{link.icon}</div>
                   <div className="flex-1">
                     <div className="text-sm font-medium text-white">{link.label}</div>
-                    <div className="text-xs text-zinc-500">{link.description}</div>
+                    <div className="text-xs text-fg-muted">{link.description}</div>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+                  <ArrowRight className="w-4 h-4 text-fg-muted group-hover:text-fg-muted transition-colors" />
                 </NavLink>
               ))}
             </div>
           </div>
 
           {/* Recent Alerts */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <div className="bg-surface border border-border rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-white">Security Alerts</h2>
               <NavLink
@@ -428,16 +428,16 @@ const SecurityDashboardPage: React.FC = () => {
               {alerts.slice(0, 4).map((alert) => (
                 <div
                   key={alert.id}
-                  className="p-3 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors"
+                  className="p-3 rounded-lg bg-surface/50 hover:bg-surface transition-colors"
                 >
                   <div className="flex items-start gap-3">
                     <div
                       className={cn(
                         'p-1.5 rounded',
-                        alert.severity === 'critical' && 'bg-red-500/20 text-red-400',
-                        alert.severity === 'high' && 'bg-orange-500/20 text-orange-400',
-                        alert.severity === 'medium' && 'bg-amber-500/20 text-amber-400',
-                        alert.severity === 'low' && 'bg-cyan-500/20 text-cyan-400'
+                        alert.severity === 'critical' && 'bg-destructive-bg text-destructive',
+                        alert.severity === 'high' && 'bg-warning-bg text-warning-color',
+                        alert.severity === 'medium' && 'bg-warning-bg text-warning-color',
+                        alert.severity === 'low' && 'bg-info-bg text-info-color'
                       )}
                     >
                       <AlertTriangle className="w-3 h-3" />
@@ -446,7 +446,7 @@ const SecurityDashboardPage: React.FC = () => {
                       <div className="text-sm font-medium text-white truncate">
                         {alert.title}
                       </div>
-                      <div className="text-xs text-zinc-500 mt-0.5">
+                      <div className="text-xs text-fg-muted mt-0.5">
                         {alert.triggeredAt || 'Recently'}
                       </div>
                     </div>
@@ -456,14 +456,14 @@ const SecurityDashboardPage: React.FC = () => {
               {alerts.length === 0 && (
                 <div className="text-center py-6">
                   <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-                  <p className="text-sm text-zinc-400">No active alerts</p>
+                  <p className="text-sm text-fg-muted">No active alerts</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* Security Score Breakdown */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <div className="bg-surface border border-border rounded-xl p-6">
             <h2 className="text-lg font-semibold text-white mb-4">Score Breakdown</h2>
             <div className="space-y-4">
               {[
@@ -474,18 +474,18 @@ const SecurityDashboardPage: React.FC = () => {
               ].map((item) => (
                 <div key={item.label}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-zinc-400">{item.label}</span>
+                    <span className="text-sm text-fg-muted">{item.label}</span>
                     <span className="text-sm font-medium text-white">{item.score}%</span>
                   </div>
-                  <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="h-2 bg-surface rounded-full overflow-hidden">
                     <div
                       className={cn(
                         'h-full rounded-full transition-all',
                         item.score >= 90
                           ? 'bg-emerald-500'
                           : item.score >= 70
-                          ? 'bg-amber-500'
-                          : 'bg-red-500'
+                          ? 'bg-warning-bg'
+                          : 'bg-destructive-bg'
                       )}
                       style={{ width: `${item.score}%` }}
                     />

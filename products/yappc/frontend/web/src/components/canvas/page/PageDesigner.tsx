@@ -33,6 +33,7 @@ import type { DropRequest } from './ComponentRenderer';
 import { importPageArtifactsFromCode } from './artifactCompilerBridge';
 import { AIActionLineageTracker, createAIChangeRecord } from './pageArtifactDocument';
 import type { PageArtifactAIChangeRecord } from './pageArtifactDocument';
+import { importSourceToPageArtifacts, type ImportSourceType } from '../../../services/compiler/ImportSourceWorkflow';
 import { PageBuilderCommands, type Command, type InsertComponentCommand, type MoveComponentCommand } from '../../../services/canvas/commands/PageBuilderCommands';
 import type { PhaseCanvasConfig } from '../../../services/canvas/phase-config/PhaseCanvasConfig';
 
@@ -113,6 +114,40 @@ function isDescendant(document: BuilderDocument, ancestorId: NodeId, candidateId
   }
 
   return false;
+}
+
+interface SourceImportCommand {
+  readonly sourceType: ImportSourceType;
+  readonly source: string;
+}
+
+function parseSourceImportCommand(input: string): SourceImportCommand | null {
+  const trimmed = input.trim();
+  if (!trimmed.startsWith('source:')) {
+    return null;
+  }
+
+  const command = trimmed.slice('source:'.length);
+  const separatorIndex = command.indexOf(':');
+  if (separatorIndex <= 0) {
+    return null;
+  }
+
+  const sourceType = command.slice(0, separatorIndex) as ImportSourceType;
+  const source = command.slice(separatorIndex + 1).trim();
+  if (!source) {
+    return null;
+  }
+
+  const allowedSourceTypes: readonly ImportSourceType[] = ['tsx', 'route', 'storybook', 'artifact', 'zip'];
+  if (!allowedSourceTypes.includes(sourceType)) {
+    return null;
+  }
+
+  return {
+    sourceType,
+    source,
+  };
 }
 
 /**
@@ -270,19 +305,39 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
     };
   }, [selectedInstance]);
 
-  const handleImportConfirm = useCallback(() => {
+  const handleImportConfirm = useCallback(async () => {
     setImportError(null);
-    if (!importInput.trim()) {
+    const trimmedInput = importInput.trim();
+    if (!trimmedInput) {
       setImportError('Paste a JSON semantic model to import.');
       return;
     }
 
     let artifacts: readonly import('./pageArtifactDocument').PageArtifactDocument[];
-    try {
-      artifacts = importPageArtifactsFromCode(importInput.trim(), 'import');
-    } catch (err) {
-      setImportError(err instanceof Error ? err.message : 'Invalid JSON — could not parse semantic model.');
-      return;
+    const sourceImportCommand = parseSourceImportCommand(trimmedInput);
+    if (sourceImportCommand) {
+      const importFromSourceResult = await importSourceToPageArtifacts(
+        {
+          sourceType: sourceImportCommand.sourceType,
+          source: sourceImportCommand.source,
+          projectId: 'imported-project',
+        },
+        'import',
+      );
+
+      if (!importFromSourceResult.importResult.success) {
+        setImportError(importFromSourceResult.importResult.errors[0] ?? 'Source import failed.');
+        return;
+      }
+
+      artifacts = importFromSourceResult.pageArtifacts;
+    } else {
+      try {
+        artifacts = importPageArtifactsFromCode(trimmedInput, 'import');
+      } catch (err) {
+        setImportError(err instanceof Error ? err.message : 'Invalid JSON — could not parse semantic model.');
+        return;
+      }
     }
 
     const first = artifacts[0];
@@ -665,7 +720,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         {/* Import panel — shown below palette when open */}
         {importPanelOpen && (
           <Box
-            className="mt-4 rounded-lg border border-indigo-200 bg-indigo-50 p-3"
+            className="mt-4 rounded-lg border border-border bg-muted/20 p-3"
             data-testid="page-designer-import-panel"
           >
             <Box className="flex items-center justify-between mb-2">
@@ -681,7 +736,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
               </IconButton>
             </Box>
             <Typography variant="caption" color="muted" style={{ display: 'block', marginBottom: 6 }}>
-              Paste a JSON semantic model (SemanticProductModel) to decompile into canvas components.
+              Paste a JSON semantic model, or use source import format: source:tsx:https://example.com/Page.tsx
             </Typography>
             <TextArea
               ref={importTextareaRef}

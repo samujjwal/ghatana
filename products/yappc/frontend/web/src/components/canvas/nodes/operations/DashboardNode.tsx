@@ -100,16 +100,16 @@ const WIDGET_TYPE_CONFIG: Record<DashboardWidgetType, {
   Icon: typeof LineChart;
   color: string;
 }> = {
-  LINE_CHART: { label: 'Line', Icon: LineChart, color: 'text-blue-500' },
-  BAR_CHART: { label: 'Bar', Icon: BarChart, color: 'text-green-500' },
-  PIE_CHART: { label: 'Pie', Icon: PieChart, color: 'text-purple-500' },
-  GAUGE: { label: 'Gauge', Icon: Gauge, color: 'text-orange-500' },
-  STAT: { label: 'Stat', Icon: AlignLeft, color: 'text-cyan-500' },
-  TABLE: { label: 'Table', Icon: Table2, color: 'text-slate-500' },
-  LOGS: { label: 'Logs', Icon: FileText, color: 'text-yellow-500' },
-  HEATMAP: { label: 'Heatmap', Icon: Grid3X3, color: 'text-red-500' },
-  TEXT: { label: 'Text', Icon: AlignLeft, color: 'text-slate-400' },
-  ALERT_LIST: { label: 'Alerts', Icon: Bell, color: 'text-amber-500' },
+  LINE_CHART: { label: 'Line', Icon: LineChart, color: 'text-info-color' },
+  BAR_CHART: { label: 'Bar', Icon: BarChart, color: 'text-success-color' },
+  PIE_CHART: { label: 'Pie', Icon: PieChart, color: 'text-info-color' },
+  GAUGE: { label: 'Gauge', Icon: Gauge, color: 'text-warning-color' },
+  STAT: { label: 'Stat', Icon: AlignLeft, color: 'text-info-color' },
+  TABLE: { label: 'Table', Icon: Table2, color: 'text-fg-muted' },
+  LOGS: { label: 'Logs', Icon: FileText, color: 'text-warning-color' },
+  HEATMAP: { label: 'Heatmap', Icon: Grid3X3, color: 'text-destructive' },
+  TEXT: { label: 'Text', Icon: AlignLeft, color: 'text-fg-muted' },
+  ALERT_LIST: { label: 'Alerts', Icon: Bell, color: 'text-warning-color' },
 };
 
 const TIME_RANGE_LABELS: Record<TimeRange, string> = {
@@ -151,8 +151,8 @@ function WidgetGrid({ layout, widgetCount }: {
           className={cn(
             'aspect-video rounded-sm border',
             index < filledCells 
-              ? 'bg-blue-100 border-blue-200' 
-              : 'bg-slate-50 border-slate-200 border-dashed'
+              ? 'bg-info-bg border-info-border' 
+              : 'bg-surface-muted border-border border-dashed'
           )}
         />
       ))}
@@ -176,12 +176,12 @@ function WidgetTypeSummary({ summary }: { summary: DashboardWidgetSummary[] }) {
             title={`${item.count} ${config.label} widget${item.count > 1 ? 's' : ''}`}
           >
             <Icon className={cn('w-3 h-3', config.color)} />
-            <span className="text-[10px] text-slate-500">{item.count}</span>
+            <span className="text-[10px] text-fg-muted">{item.count}</span>
           </div>
         );
       })}
       {overflow > 0 && (
-        <span className="text-[10px] text-slate-400">+{overflow} types</span>
+        <span className="text-[10px] text-fg-muted">+{overflow} types</span>
       )}
     </div>
   );
@@ -196,54 +196,54 @@ function DashboardNodeComponent({ data, selected }: DashboardNodeProps) {
     <div
       className={cn(
         'min-w-[240px] max-w-[300px] rounded-lg border bg-white shadow-md transition-all',
-        data.isDefault ? 'border-blue-300' : 'border-slate-200',
-        selected && 'ring-2 ring-blue-400 ring-offset-2'
+        data.isDefault ? 'border-info-border' : 'border-border',
+        selected && 'ring-2 ring-primary ring-offset-2'
       )}
     >
       {/* Connection Handles */}
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-slate-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-muted-foreground !border-2 !border-surface"
       />
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-slate-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-muted-foreground !border-2 !border-surface"
       />
       <Handle
         type="target"
         position={Position.Left}
         id="metric"
-        className="!w-3 !h-3 !bg-green-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-success-color !border-2 !border-surface"
       />
       <Handle
         type="source"
         position={Position.Right}
         id="share"
-        className="!w-3 !h-3 !bg-purple-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-info-color !border-2 !border-surface"
       />
       
       {/* Header */}
       <div className={cn(
         'px-3 py-2 rounded-t-lg',
-        data.isDefault ? 'bg-blue-50' : 'bg-slate-50'
+        data.isDefault ? 'bg-info-bg' : 'bg-surface-muted'
       )}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <LayoutDashboard className={cn(
               'w-4 h-4',
-              data.isDefault ? 'text-blue-600' : 'text-slate-600'
+              data.isDefault ? 'text-info-color' : 'text-fg-muted'
             )} />
             <span className={cn(
               'text-xs font-semibold',
-              data.isDefault ? 'text-blue-700' : 'text-slate-700'
+              data.isDefault ? 'text-info-color' : 'text-fg'
             )}>
               Dashboard
             </span>
           </div>
           {data.isDefault && (
-            <span className="px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded">
+            <span className="px-1.5 py-0.5 text-[10px] font-medium bg-info-bg text-info-color rounded">
               Default
             </span>
           )}
@@ -251,18 +251,18 @@ function DashboardNodeComponent({ data, selected }: DashboardNodeProps) {
       </div>
       
       {/* Dashboard Name */}
-      <div className="px-3 py-2 border-b border-slate-100">
-        <h3 className="text-sm font-medium text-slate-900 line-clamp-1">{data.name}</h3>
+      <div className="px-3 py-2 border-b border-border">
+        <h3 className="text-sm font-medium text-fg line-clamp-1">{data.name}</h3>
         {data.description && (
-          <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{data.description}</p>
+          <p className="text-xs text-fg-muted mt-0.5 line-clamp-1">{data.description}</p>
         )}
       </div>
       
       {/* Widget Grid Preview */}
-      <div className="px-3 py-3 border-b border-slate-100">
+      <div className="px-3 py-3 border-b border-border">
         <WidgetGrid layout={data.layout} widgetCount={data.widgetCount} />
         <div className="mt-2 flex items-center justify-between">
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-fg-muted">
             {data.widgetCount} widget{data.widgetCount !== 1 ? 's' : ''} • {data.layout.columns}×{data.layout.rows} grid
           </span>
         </div>
@@ -270,25 +270,25 @@ function DashboardNodeComponent({ data, selected }: DashboardNodeProps) {
       
       {/* Widget Types */}
       {data.widgetSummary.length > 0 && (
-        <div className="px-3 py-2 border-b border-slate-100">
+        <div className="px-3 py-2 border-b border-border">
           <WidgetTypeSummary summary={data.widgetSummary} />
         </div>
       )}
       
       {/* Settings Row */}
-      <div className="px-3 py-2 border-b border-slate-100 flex items-center gap-3">
-        <div className="flex items-center gap-1 text-xs text-slate-500">
+      <div className="px-3 py-2 border-b border-border flex items-center gap-3">
+        <div className="flex items-center gap-1 text-xs text-fg-muted">
           <Clock className="w-3 h-3" />
           <span>{TIME_RANGE_LABELS[data.timeRange]}</span>
         </div>
         {data.refreshInterval && (
-          <div className="flex items-center gap-1 text-xs text-slate-500">
+          <div className="flex items-center gap-1 text-xs text-fg-muted">
             <RefreshCw className="w-3 h-3" />
             <span>{data.refreshInterval}s</span>
           </div>
         )}
         {data.variableCount > 0 && (
-          <div className="flex items-center gap-1 text-xs text-slate-500">
+          <div className="flex items-center gap-1 text-xs text-fg-muted">
             <Variable className="w-3 h-3" />
             <span>{data.variableCount}</span>
           </div>
@@ -299,7 +299,7 @@ function DashboardNodeComponent({ data, selected }: DashboardNodeProps) {
       <div className="px-3 py-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div
-            className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-medium text-slate-600"
+            className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium text-fg-muted"
             title={data.createdBy.name}
           >
             {data.createdBy.avatarUrl ? (
@@ -308,11 +308,11 @@ function DashboardNodeComponent({ data, selected }: DashboardNodeProps) {
               data.createdBy.name.substring(0, 2).toUpperCase()
             )}
           </div>
-          <span className="text-[10px] text-slate-500">{data.createdBy.name}</span>
+          <span className="text-[10px] text-fg-muted">{data.createdBy.name}</span>
         </div>
         
         {data.viewCount !== undefined && (
-          <div className="flex items-center gap-1 text-[10px] text-slate-400">
+          <div className="flex items-center gap-1 text-[10px] text-fg-muted">
             <User className="w-3 h-3" />
             <span>{data.viewCount} views</span>
           </div>

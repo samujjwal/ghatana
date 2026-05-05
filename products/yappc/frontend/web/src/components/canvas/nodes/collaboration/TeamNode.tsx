@@ -78,9 +78,9 @@ export interface TeamNodeData extends Record<string, unknown> {
 type TeamCanvasNode = Node<TeamNodeData, 'team'>;
 
 const statusConfig: Record<TeamStatus, { color: string; bgColor: string; label: string }> = {
-  ACTIVE: { color: 'text-green-400', bgColor: 'bg-green-500/20', label: 'Active' },
-  INACTIVE: { color: 'text-gray-400', bgColor: 'bg-gray-500/20', label: 'Inactive' },
-  SUSPENDED: { color: 'text-red-400', bgColor: 'bg-red-500/20', label: 'Suspended' },
+  ACTIVE: { color: 'text-success-color', bgColor: 'bg-success-bg0/20', label: 'Active' },
+  INACTIVE: { color: 'text-fg-muted', bgColor: 'bg-surface-muted0/20', label: 'Inactive' },
+  SUSPENDED: { color: 'text-destructive', bgColor: 'bg-destructive-bg0/20', label: 'Suspended' },
 };
 
 const roleIcons: Record<TeamRole, typeof Crown> = {
@@ -91,10 +91,10 @@ const roleIcons: Record<TeamRole, typeof Crown> = {
 };
 
 const roleColors: Record<TeamRole, string> = {
-  OWNER: 'text-yellow-400',
-  ADMIN: 'text-purple-400',
-  MEMBER: 'text-blue-400',
-  GUEST: 'text-gray-400',
+  OWNER: 'text-warning-color',
+  ADMIN: 'text-info-color',
+  MEMBER: 'text-info-color',
+  GUEST: 'text-fg-muted',
 };
 
 function TeamNode({ data }: NodeProps<TeamCanvasNode>) {
@@ -115,16 +115,16 @@ function TeamNode({ data }: NodeProps<TeamCanvasNode>) {
   const recentChannels = (team.channels ?? []).slice(0, 4);
 
   return (
-    <div className="bg-slate-800 rounded-lg border border-slate-600 shadow-xl min-w-[320px] max-w-[380px]">
+    <div className="bg-surface rounded-lg border border-border shadow-xl min-w-[320px] max-w-[380px]">
       {/* Input Handle */}
       <Handle
         type="target"
         position={Position.Left}
-        className="w-3 h-3 bg-blue-500 border-2 border-slate-800"
+        className="w-3 h-3 bg-info-bg border-2 border-border"
       />
 
       {/* Header */}
-      <div className="p-4 border-b border-slate-700">
+      <div className="p-4 border-b border-border">
         <div className="flex items-start gap-3">
           {/* Team Avatar */}
           {team.avatarUrl ? (
@@ -152,9 +152,9 @@ function TeamNode({ data }: NodeProps<TeamCanvasNode>) {
                 {statusInfo.label}
               </span>
             </div>
-            <p className="text-slate-400 text-xs mt-0.5">/{team.slug}</p>
+            <p className="text-fg-muted text-xs mt-0.5">/{team.slug}</p>
             {team.description && (
-              <p className="text-slate-500 text-xs mt-1 line-clamp-2">{team.description}</p>
+              <p className="text-fg-muted text-xs mt-1 line-clamp-2">{team.description}</p>
             )}
           </div>
 
@@ -162,7 +162,7 @@ function TeamNode({ data }: NodeProps<TeamCanvasNode>) {
           {onOpenSettings && (
             <button
               onClick={onOpenSettings}
-              className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+              className="p-1.5 rounded-lg hover:bg-surface-muted text-fg-muted hover:text-white transition-colors"
               title="Team Settings"
             >
               <Settings className="w-4 h-4" />
@@ -172,9 +172,9 @@ function TeamNode({ data }: NodeProps<TeamCanvasNode>) {
       </div>
 
       {/* Member Stats */}
-      <div className="p-4 border-b border-slate-700">
+      <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-slate-400 text-sm">Members</span>
+          <span className="text-fg-muted text-sm">Members</span>
           <span className="text-white font-semibold">{team.memberCount}</span>
         </div>
 
@@ -186,11 +186,11 @@ function TeamNode({ data }: NodeProps<TeamCanvasNode>) {
             return (
               <div
                 key={role}
-                className="flex flex-col items-center p-2 rounded-lg bg-slate-700/50"
+                className="flex flex-col items-center p-2 rounded-lg bg-surface-muted"
               >
                 <Icon className={cn('w-4 h-4 mb-1', roleColors[role])} />
                 <span className="text-white font-medium text-sm">{count}</span>
-                <span className="text-slate-500 text-xs capitalize">
+                <span className="text-fg-muted text-xs capitalize">
                   {role.toLowerCase()}
                 </span>
               </div>
@@ -202,7 +202,7 @@ function TeamNode({ data }: NodeProps<TeamCanvasNode>) {
         {onInviteMember && (
           <button
             onClick={onInviteMember}
-            className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors text-sm font-medium"
+            className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 bg-info-bg/20 text-info-color rounded-lg hover:bg-info-bg/30 transition-colors text-sm font-medium"
           >
             <UserPlus className="w-4 h-4" />
             Invite Member
@@ -211,8 +211,8 @@ function TeamNode({ data }: NodeProps<TeamCanvasNode>) {
       </div>
 
       {/* Owner Info */}
-      <div className="p-4 border-b border-slate-700">
-        <span className="text-slate-400 text-xs font-medium uppercase tracking-wide">Owner</span>
+      <div className="p-4 border-b border-border">
+        <span className="text-fg-muted text-xs font-medium uppercase tracking-wide">Owner</span>
         <div className="flex items-center gap-2 mt-2">
           {team.owner.avatarUrl ? (
             <img
@@ -229,16 +229,16 @@ function TeamNode({ data }: NodeProps<TeamCanvasNode>) {
           )}
           <div className="flex-1 min-w-0">
             <p className="text-white text-sm font-medium truncate">{team.owner.name}</p>
-            <p className="text-slate-500 text-xs truncate">{team.owner.email}</p>
+            <p className="text-fg-muted text-xs truncate">{team.owner.email}</p>
           </div>
-          <Crown className="w-4 h-4 text-yellow-400" />
+          <Crown className="w-4 h-4 text-warning-color" />
         </div>
       </div>
 
       {/* Recent Channels */}
       {recentChannels.length > 0 && (
-        <div className="p-4 border-b border-slate-700">
-          <span className="text-slate-400 text-xs font-medium uppercase tracking-wide">
+        <div className="p-4 border-b border-border">
+          <span className="text-fg-muted text-xs font-medium uppercase tracking-wide">
             Channels
           </span>
           <div className="mt-2 space-y-1">
@@ -246,14 +246,14 @@ function TeamNode({ data }: NodeProps<TeamCanvasNode>) {
               <button
                 key={channel.id}
                 onClick={() => onOpenChannel?.(channel.id)}
-                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-700 text-left transition-colors"
+                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface-muted text-left transition-colors"
               >
                 {channel.type === 'PUBLIC' ? (
-                  <Hash className="w-4 h-4 text-slate-400" />
+                  <Hash className="w-4 h-4 text-fg-muted" />
                 ) : (
-                  <MessageSquare className="w-4 h-4 text-slate-400" />
+                  <MessageSquare className="w-4 h-4 text-fg-muted" />
                 )}
-                <span className="text-slate-300 text-sm truncate flex-1">
+                <span className="text-fg text-sm truncate flex-1">
                   {channel.name}
                 </span>
               </button>
@@ -265,27 +265,27 @@ function TeamNode({ data }: NodeProps<TeamCanvasNode>) {
       {/* Settings Summary */}
       {team.settings && (
         <div className="p-4">
-          <span className="text-slate-400 text-xs font-medium uppercase tracking-wide">
+          <span className="text-fg-muted text-xs font-medium uppercase tracking-wide">
             Settings
           </span>
           <div className="mt-2 space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-400">Guest Invites</span>
+              <span className="text-fg-muted">Guest Invites</span>
               <span
                 className={cn(
                   'font-medium',
-                  team.settings.allowGuestInvites ? 'text-green-400' : 'text-slate-500'
+                  team.settings.allowGuestInvites ? 'text-success-color' : 'text-fg-muted'
                 )}
               >
                 {team.settings.allowGuestInvites ? 'Allowed' : 'Disabled'}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-400">Join Approval</span>
+              <span className="text-fg-muted">Join Approval</span>
               <span
                 className={cn(
                   'font-medium',
-                  team.settings.requireApprovalToJoin ? 'text-yellow-400' : 'text-slate-500'
+                  team.settings.requireApprovalToJoin ? 'text-warning-color' : 'text-fg-muted'
                 )}
               >
                 {team.settings.requireApprovalToJoin ? 'Required' : 'Not Required'}
@@ -296,14 +296,14 @@ function TeamNode({ data }: NodeProps<TeamCanvasNode>) {
       )}
 
       {/* Footer */}
-      <div className="px-4 py-3 bg-slate-900/50 border-t border-slate-700 rounded-b-lg">
-        <div className="flex items-center justify-between text-xs text-slate-500">
+      <div className="px-4 py-3 bg-surface-muted border-t border-border rounded-b-lg">
+        <div className="flex items-center justify-between text-xs text-fg-muted">
           <span>Created {new Date(team.createdAt).toLocaleDateString()}</span>
           <div className="flex items-center gap-1">
             <Circle
               className={cn(
                 'w-2 h-2',
-                team.status === 'ACTIVE' ? 'fill-green-400 text-green-400' : 'fill-slate-500 text-slate-500'
+                team.status === 'ACTIVE' ? 'fill-green-400 text-success-color' : 'fill-slate-500 text-fg-muted'
               )}
             />
             <span>{team.status === 'ACTIVE' ? 'Online' : 'Offline'}</span>
@@ -316,14 +316,14 @@ function TeamNode({ data }: NodeProps<TeamCanvasNode>) {
         type="source"
         position={Position.Right}
         id="channels"
-        className="w-3 h-3 bg-green-500 border-2 border-slate-800"
+        className="w-3 h-3 bg-success-bg0 border-2 border-border"
         style={{ top: '40%' }}
       />
       <Handle
         type="source"
         position={Position.Right}
         id="members"
-        className="w-3 h-3 bg-purple-500 border-2 border-slate-800"
+        className="w-3 h-3 bg-info-bg border-2 border-border"
         style={{ top: '60%' }}
       />
     </div>

@@ -71,10 +71,10 @@ const METRIC_TYPE_CONFIG: Record<MetricType, {
   color: string;
   Icon: typeof Activity;
 }> = {
-  COUNTER: { label: 'Counter', color: 'text-blue-600', Icon: Activity },
-  GAUGE: { label: 'Gauge', color: 'text-green-600', Icon: BarChart2 },
-  HISTOGRAM: { label: 'Histogram', color: 'text-purple-600', Icon: BarChart2 },
-  SUMMARY: { label: 'Summary', color: 'text-orange-600', Icon: Activity },
+  COUNTER: { label: 'Counter', color: 'text-info-color', Icon: Activity },
+  GAUGE: { label: 'Gauge', color: 'text-success-color', Icon: BarChart2 },
+  HISTOGRAM: { label: 'Histogram', color: 'text-info-color', Icon: BarChart2 },
+  SUMMARY: { label: 'Summary', color: 'text-warning-color', Icon: Activity },
 };
 
 // ============================================================================
@@ -229,9 +229,9 @@ function TrendIndicator({ trend, changePercent }: { trend?: 'up' | 'down' | 'sta
   if (!trend) return null;
   
   const config = {
-    up: { Icon: TrendingUp, color: 'text-green-500', bgColor: 'bg-green-50' },
-    down: { Icon: TrendingDown, color: 'text-red-500', bgColor: 'bg-red-50' },
-    stable: { Icon: Minus, color: 'text-slate-400', bgColor: 'bg-slate-50' },
+    up: { Icon: TrendingUp, color: 'text-success-color', bgColor: 'bg-success-bg' },
+    down: { Icon: TrendingDown, color: 'text-destructive', bgColor: 'bg-destructive-bg' },
+    stable: { Icon: Minus, color: 'text-fg-muted', bgColor: 'bg-surface-muted' },
   };
   
   const { Icon, color, bgColor } = config[trend];
@@ -259,14 +259,14 @@ function LabelBadges({ labels }: { labels?: Record<string, string> }) {
       {entries.map(([key, value]) => (
         <span 
           key={key} 
-          className="px-1.5 py-0.5 text-[9px] bg-slate-100 text-slate-600 rounded font-mono"
+          className="px-1.5 py-0.5 text-[9px] bg-surface-muted text-fg-muted rounded font-mono"
           title={`${key}=${value}`}
         >
           {key}={value}
         </span>
       ))}
       {overflow > 0 && (
-        <span className="px-1.5 py-0.5 text-[9px] bg-slate-100 text-slate-400 rounded">
+        <span className="px-1.5 py-0.5 text-[9px] bg-surface-muted text-fg-muted rounded">
           +{overflow}
         </span>
       )}
@@ -300,7 +300,7 @@ function MetricNodeComponent({ data, selected }: MetricNodeProps) {
     <div
       className={cn(
         'min-w-[220px] max-w-[280px] rounded-lg border bg-white shadow-md transition-all',
-        'border-slate-200',
+        'border-border',
         selected && 'ring-2 ring-blue-400 ring-offset-2'
       )}
     >
@@ -308,28 +308,28 @@ function MetricNodeComponent({ data, selected }: MetricNodeProps) {
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-slate-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-surface-muted !border-2 !border-white"
       />
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-slate-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-surface-muted !border-2 !border-white"
       />
       <Handle
         type="source"
         position={Position.Right}
         id="alert"
-        className="!w-3 !h-3 !bg-orange-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-warning-bg !border-2 !border-white"
       />
       <Handle
         type="source"
         position={Position.Left}
         id="dashboard"
-        className="!w-3 !h-3 !bg-purple-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-info-bg !border-2 !border-white"
       />
       
       {/* Header */}
-      <div className="px-3 py-2 border-b border-slate-100 bg-slate-50 rounded-t-lg">
+      <div className="px-3 py-2 border-b border-border bg-surface-muted rounded-t-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <TypeIcon className={cn('w-4 h-4', typeConfig.color)} />
@@ -338,7 +338,7 @@ function MetricNodeComponent({ data, selected }: MetricNodeProps) {
             </span>
           </div>
           {data.refreshInterval && (
-            <div className="flex items-center gap-1 text-[10px] text-slate-400">
+            <div className="flex items-center gap-1 text-[10px] text-fg-muted">
               <RefreshCw className="w-3 h-3" />
               <span>{data.refreshInterval}s</span>
             </div>
@@ -347,22 +347,22 @@ function MetricNodeComponent({ data, selected }: MetricNodeProps) {
       </div>
       
       {/* Metric Name */}
-      <div className="px-3 py-2 border-b border-slate-100">
-        <h3 className="text-sm font-medium text-slate-900 line-clamp-1">{data.name}</h3>
+      <div className="px-3 py-2 border-b border-border">
+        <h3 className="text-sm font-medium text-fg line-clamp-1">{data.name}</h3>
         {data.description && (
-          <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{data.description}</p>
+          <p className="text-xs text-fg-muted mt-0.5 line-clamp-1">{data.description}</p>
         )}
       </div>
       
       {/* Current Value */}
-      <div className="px-3 py-3 border-b border-slate-100">
+      <div className="px-3 py-3 border-b border-border">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-2xl font-bold text-slate-900">
+            <div className="text-2xl font-bold text-fg">
               {formatValue(data.currentValue, data.unit)}
             </div>
             {data.aggregation && (
-              <div className="text-[10px] text-slate-400 mt-0.5">
+              <div className="text-[10px] text-fg-muted mt-0.5">
                 {data.aggregation}
               </div>
             )}
@@ -383,7 +383,7 @@ function MetricNodeComponent({ data, selected }: MetricNodeProps) {
       
       {/* Chart */}
       {!isGauge && data.historyValues && data.historyValues.length > 0 && (
-        <div className="px-3 py-2 border-b border-slate-100 flex justify-center">
+        <div className="px-3 py-2 border-b border-border flex justify-center">
           <MiniLineChart 
             values={data.historyValues} 
             thresholds={data.thresholds}
@@ -395,17 +395,17 @@ function MetricNodeComponent({ data, selected }: MetricNodeProps) {
       
       {/* Labels */}
       {data.labels && Object.keys(data.labels).length > 0 && (
-        <div className="px-3 py-2 border-b border-slate-100">
+        <div className="px-3 py-2 border-b border-border">
           <div className="flex items-center gap-1 mb-1">
-            <Tag className="w-3 h-3 text-slate-400" />
-            <span className="text-[10px] text-slate-500">Labels</span>
+            <Tag className="w-3 h-3 text-fg-muted" />
+            <span className="text-[10px] text-fg-muted">Labels</span>
           </div>
           <LabelBadges labels={data.labels} />
         </div>
       )}
       
       {/* Footer */}
-      <div className="px-3 py-2 flex items-center justify-between text-[10px] text-slate-400">
+      <div className="px-3 py-2 flex items-center justify-between text-[10px] text-fg-muted">
         <div className="flex items-center gap-1">
           <Database className="w-3 h-3" />
           <span>{data.dataSource || 'prometheus'}</span>

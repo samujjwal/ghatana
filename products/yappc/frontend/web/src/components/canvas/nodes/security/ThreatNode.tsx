@@ -102,31 +102,31 @@ const SEVERITY_CONFIG: Record<ThreatSeverity, {
 }> = {
   CRITICAL: {
     label: 'Critical',
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-500',
-    pulseColor: 'bg-red-400',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive-bg',
+    borderColor: 'border-destructive-border',
+    pulseColor: 'bg-destructive',
   },
   HIGH: {
     label: 'High',
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50',
-    borderColor: 'border-orange-500',
-    pulseColor: 'bg-orange-400',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg',
+    borderColor: 'border-warning-border',
+    pulseColor: 'bg-warning-color',
   },
   MEDIUM: {
     label: 'Medium',
-    color: 'text-yellow-600',
-    bgColor: 'bg-yellow-50',
-    borderColor: 'border-yellow-500',
-    pulseColor: 'bg-yellow-400',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg',
+    borderColor: 'border-warning-border',
+    pulseColor: 'bg-warning-color',
   },
   LOW: {
     label: 'Low',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-500',
-    pulseColor: 'bg-blue-400',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
+    borderColor: 'border-info-border',
+    pulseColor: 'bg-info-color',
   },
 };
 
@@ -142,32 +142,32 @@ const STATUS_CONFIG: Record<ThreatStatus, {
 }> = {
   DETECTED: {
     label: 'Detected',
-    color: 'text-red-600',
-    bgColor: 'bg-red-100',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive-bg',
     icon: AlertTriangle,
   },
   INVESTIGATING: {
     label: 'Investigating',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
     icon: Eye,
   },
   CONTAINED: {
     label: 'Contained',
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-100',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg',
     icon: Lock,
   },
   REMEDIATED: {
     label: 'Remediated',
-    color: 'text-green-600',
-    bgColor: 'bg-green-100',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg',
     icon: CheckCircle2,
   },
   FALSE_POSITIVE: {
     label: 'False Positive',
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-100',
+    color: 'text-fg-muted',
+    bgColor: 'bg-muted',
     icon: XCircle,
   },
 };
@@ -181,15 +181,15 @@ const CATEGORY_CONFIG: Record<ThreatCategory, {
   icon: typeof ShieldAlert;
   color: string;
 }> = {
-  MALWARE: { label: 'Malware', icon: Zap, color: 'text-red-500' },
-  INTRUSION: { label: 'Intrusion', icon: Target, color: 'text-orange-500' },
-  DATA_EXFILTRATION: { label: 'Data Exfiltration', icon: ExternalLink, color: 'text-purple-500' },
-  DDOS: { label: 'DDoS Attack', icon: Globe, color: 'text-amber-500' },
-  PHISHING: { label: 'Phishing', icon: ShieldAlert, color: 'text-pink-500' },
-  INSIDER_THREAT: { label: 'Insider Threat', icon: User, color: 'text-indigo-500' },
-  CREDENTIAL_COMPROMISE: { label: 'Credential Compromise', icon: Lock, color: 'text-cyan-500' },
-  SUSPICIOUS_ACTIVITY: { label: 'Suspicious Activity', icon: Eye, color: 'text-yellow-500' },
-  OTHER: { label: 'Other', icon: AlertTriangle, color: 'text-gray-500' },
+  MALWARE: { label: 'Malware', icon: Zap, color: 'text-destructive' },
+  INTRUSION: { label: 'Intrusion', icon: Target, color: 'text-warning-color' },
+  DATA_EXFILTRATION: { label: 'Data Exfiltration', icon: ExternalLink, color: 'text-info-color' },
+  DDOS: { label: 'DDoS Attack', icon: Globe, color: 'text-warning-color' },
+  PHISHING: { label: 'Phishing', icon: ShieldAlert, color: 'text-warning-color' },
+  INSIDER_THREAT: { label: 'Insider Threat', icon: User, color: 'text-info-color' },
+  CREDENTIAL_COMPROMISE: { label: 'Credential Compromise', icon: Lock, color: 'text-info-color' },
+  SUSPICIOUS_ACTIVITY: { label: 'Suspicious Activity', icon: Eye, color: 'text-warning-color' },
+  OTHER: { label: 'Other', icon: AlertTriangle, color: 'text-muted-foreground' },
 };
 
 // ============================================================================
@@ -252,17 +252,17 @@ function ThreatTimeline({ events, maxItems = 3 }: { events: ThreatTimelineEvent[
       {sortedEvents.map((event, index) => (
         <div key={event.id} className="flex gap-2">
           <div className="flex flex-col items-center">
-            <div className="h-2 w-2 rounded-full bg-blue-500" />
+            <div className="h-2 w-2 rounded-full bg-info-color" />
             {index < sortedEvents.length - 1 && (
-              <div className="w-0.5 flex-1 bg-gray-200 mt-1" />
+              <div className="w-0.5 flex-1 bg-muted mt-1" />
             )}
           </div>
           <div className="flex-1 pb-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-700">{event.eventType}</span>
-              <span className="text-xs text-gray-400">{formatTimestamp(event.timestamp)}</span>
+              <span className="text-xs font-medium text-fg">{event.eventType}</span>
+              <span className="text-xs text-fg-muted">{formatTimestamp(event.timestamp)}</span>
             </div>
-            <p className="text-xs text-gray-600 mt-0.5 line-clamp-1">{event.description}</p>
+            <p className="text-xs text-fg-muted mt-0.5 line-clamp-1">{event.description}</p>
           </div>
         </div>
       ))}
@@ -272,15 +272,15 @@ function ThreatTimeline({ events, maxItems = 3 }: { events: ThreatTimelineEvent[
 
 function IndicatorBadge({ indicator }: { indicator: ThreatIndicator }) {
   const confidenceColor = indicator.confidence >= 0.8 
-    ? 'text-red-600' 
+    ? 'text-destructive' 
     : indicator.confidence >= 0.5 
-    ? 'text-amber-600' 
-    : 'text-gray-600';
+    ? 'text-warning-color' 
+    : 'text-fg-muted';
 
   return (
-    <div className="flex items-center gap-2 rounded-md bg-gray-50 px-2 py-1 text-xs">
-      <span className="font-medium text-gray-700">{indicator.type}:</span>
-      <span className="font-mono text-gray-600 truncate max-w-[120px]">{indicator.value}</span>
+    <div className="flex items-center gap-2 rounded-md bg-surface-muted px-2 py-1 text-xs">
+      <span className="font-medium text-fg">{indicator.type}:</span>
+      <span className="font-mono text-fg-muted truncate max-w-[120px]">{indicator.value}</span>
       <span className={cn('font-medium', confidenceColor)}>
         {Math.round(indicator.confidence * 100)}%
       </span>
@@ -308,12 +308,12 @@ function ThreatNodeComponent({ data, selected }: NodeProps<ThreatCanvasNode>) {
         className={cn(
           'rounded-lg border-2 bg-white p-3 shadow-sm transition-all duration-200',
           severityConfig.borderColor,
-          selected && 'ring-2 ring-blue-500 ring-offset-2',
+          selected && 'ring-2 ring-primary ring-offset-2',
           'min-w-[200px]'
         )}
       >
-        <Handle type="target" position={Position.Left} className="!bg-gray-400" />
-        <Handle type="source" position={Position.Right} className="!bg-gray-400" />
+        <Handle type="target" position={Position.Left} className="!bg-muted-foreground" />
+        <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
 
         <div className="flex items-center gap-2">
           {isActive && (
@@ -329,7 +329,7 @@ function ThreatNodeComponent({ data, selected }: NodeProps<ThreatCanvasNode>) {
             </span>
           )}
           <CategoryIcon className={cn('h-4 w-4', categoryConfig.color)} />
-          <span className="truncate text-sm font-medium text-gray-900">{data.title}</span>
+          <span className="truncate text-sm font-medium text-fg">{data.title}</span>
         </div>
         <div className="mt-1 flex items-center justify-between">
           <span className={cn('text-xs', severityConfig.color)}>{severityConfig.label}</span>
@@ -344,13 +344,13 @@ function ThreatNodeComponent({ data, selected }: NodeProps<ThreatCanvasNode>) {
       className={cn(
         'rounded-lg border-2 bg-white shadow-md transition-all duration-200',
         severityConfig.borderColor,
-        selected && 'ring-2 ring-blue-500 ring-offset-2',
+        selected && 'ring-2 ring-primary ring-offset-2',
         isActive && 'shadow-lg',
         'min-w-[340px] max-w-[420px]'
       )}
     >
-      <Handle type="target" position={Position.Left} className="!bg-gray-400" />
-      <Handle type="source" position={Position.Right} className="!bg-gray-400" />
+      <Handle type="target" position={Position.Left} className="!bg-muted-foreground" />
+      <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
 
       {/* Header */}
       <div className={cn('rounded-t-lg px-4 py-3', severityConfig.bgColor)}>
@@ -371,9 +371,9 @@ function ThreatNodeComponent({ data, selected }: NodeProps<ThreatCanvasNode>) {
             <div>
               <div className="flex items-center gap-2">
                 <CategoryIcon className={cn('h-5 w-5', categoryConfig.color)} />
-                <span className="text-xs font-medium text-gray-500">{categoryConfig.label}</span>
+                <span className="text-xs font-medium text-fg-muted">{categoryConfig.label}</span>
               </div>
-              <h3 className="font-semibold text-gray-900 leading-tight mt-1">{data.title}</h3>
+              <h3 className="font-semibold text-fg leading-tight mt-1">{data.title}</h3>
             </div>
           </div>
           <div className="flex flex-col items-end gap-1">
@@ -401,25 +401,25 @@ function ThreatNodeComponent({ data, selected }: NodeProps<ThreatCanvasNode>) {
       {/* Content */}
       <div className="p-4 space-y-4">
         {/* Description */}
-        <p className="text-sm text-gray-600 line-clamp-2">{data.description}</p>
+        <p className="text-sm text-fg-muted line-clamp-2">{data.description}</p>
 
         {/* Source & Target */}
         <div className="grid grid-cols-2 gap-3">
           {data.sourceIp && (
             <div className="flex items-start gap-2">
-              <Globe className="h-4 w-4 text-red-400 mt-0.5" />
+              <Globe className="h-4 w-4 text-destructive mt-0.5" />
               <div>
-                <span className="text-xs text-gray-500">Source IP</span>
-                <p className="text-sm font-mono text-gray-900">{data.sourceIp}</p>
+                <span className="text-xs text-fg-muted">Source IP</span>
+                <p className="text-sm font-mono text-fg">{data.sourceIp}</p>
               </div>
             </div>
           )}
           {data.targetResource && (
             <div className="flex items-start gap-2">
-              <Target className="h-4 w-4 text-blue-400 mt-0.5" />
+              <Target className="h-4 w-4 text-info-color mt-0.5" />
               <div>
-                <span className="text-xs text-gray-500">Target</span>
-                <p className="text-sm text-gray-900 truncate">{data.targetResource}</p>
+                <span className="text-xs text-fg-muted">Target</span>
+                <p className="text-sm text-fg truncate">{data.targetResource}</p>
               </div>
             </div>
           )}
@@ -428,13 +428,13 @@ function ThreatNodeComponent({ data, selected }: NodeProps<ThreatCanvasNode>) {
         {/* Indicators of Compromise */}
         {data.indicators && data.indicators.length > 0 && (
           <div className="space-y-2">
-            <span className="text-xs font-medium text-gray-700">Indicators of Compromise</span>
+            <span className="text-xs font-medium text-fg">Indicators of Compromise</span>
             <div className="flex flex-wrap gap-2">
               {data.indicators.slice(0, 3).map((indicator, index) => (
                 <IndicatorBadge key={index} indicator={indicator} />
               ))}
               {data.indicators.length > 3 && (
-                <span className="text-xs text-gray-500 self-center">
+                <span className="text-xs text-fg-muted self-center">
                   +{data.indicators.length - 3} more
                 </span>
               )}
@@ -445,19 +445,19 @@ function ThreatNodeComponent({ data, selected }: NodeProps<ThreatCanvasNode>) {
         {/* Affected Assets */}
         {data.affectedAssets && data.affectedAssets.length > 0 && (
           <div className="space-y-2">
-            <span className="text-xs font-medium text-gray-700">Affected Assets</span>
+            <span className="text-xs font-medium text-fg">Affected Assets</span>
             <div className="flex flex-wrap gap-1.5">
               {data.affectedAssets.slice(0, 4).map((asset, index) => (
                 <span
                   key={index}
-                  className="inline-flex items-center gap-1 rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
+                  className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-xs text-fg"
                 >
                   <Server className="h-3 w-3" />
                   {asset}
                 </span>
               ))}
               {data.affectedAssets.length > 4 && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-fg-muted">
                   +{data.affectedAssets.length - 4} more
                 </span>
               )}
@@ -468,8 +468,8 @@ function ThreatNodeComponent({ data, selected }: NodeProps<ThreatCanvasNode>) {
         {/* Timeline */}
         {data.timeline && data.timeline.length > 0 && (
           <div className="space-y-2">
-            <span className="text-xs font-medium text-gray-700">Timeline</span>
-            <div className="rounded-md bg-gray-50 p-2">
+            <span className="text-xs font-medium text-fg">Timeline</span>
+            <div className="rounded-md bg-surface-muted p-2">
               <ThreatTimeline events={data.timeline} />
             </div>
           </div>
@@ -477,12 +477,12 @@ function ThreatNodeComponent({ data, selected }: NodeProps<ThreatCanvasNode>) {
 
         {/* Containment Actions */}
         {data.containmentActions && data.containmentActions.length > 0 && (
-          <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2">
+          <div className="rounded-md bg-warning-bg border border-warning-border px-3 py-2">
             <div className="flex items-center gap-1.5 mb-1">
-              <Lock className="h-3.5 w-3.5 text-amber-600" />
-              <span className="text-xs font-medium text-amber-700">Containment Actions</span>
+              <Lock className="h-3.5 w-3.5 text-warning-color" />
+              <span className="text-xs font-medium text-warning-color">Containment Actions</span>
             </div>
-            <ul className="text-xs text-amber-800 space-y-0.5">
+            <ul className="text-xs text-warning-color space-y-0.5">
               {data.containmentActions.slice(0, 2).map((action, index) => (
                 <li key={index} className="flex items-start gap-1">
                   <span className="mt-1">•</span>
@@ -495,15 +495,15 @@ function ThreatNodeComponent({ data, selected }: NodeProps<ThreatCanvasNode>) {
 
         {/* Remediation Steps */}
         {data.status === 'REMEDIATED' && data.remediationSteps && data.remediationSteps.length > 0 && (
-          <div className="rounded-md bg-green-50 border border-green-200 px-3 py-2">
+          <div className="rounded-md bg-success-bg border border-success-border px-3 py-2">
             <div className="flex items-center gap-1.5 mb-1">
-              <Shield className="h-3.5 w-3.5 text-green-600" />
-              <span className="text-xs font-medium text-green-700">Remediation Complete</span>
+              <Shield className="h-3.5 w-3.5 text-success-color" />
+              <span className="text-xs font-medium text-success-color">Remediation Complete</span>
             </div>
-            <ul className="text-xs text-green-800 space-y-0.5">
+            <ul className="text-xs text-success-color space-y-0.5">
               {data.remediationSteps.slice(0, 2).map((step, index) => (
                 <li key={index} className="flex items-start gap-1">
-                  <CheckCircle2 className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="h-3 w-3 text-success-color mt-0.5 flex-shrink-0" />
                   <span>{step}</span>
                 </li>
               ))}
@@ -513,7 +513,7 @@ function ThreatNodeComponent({ data, selected }: NodeProps<ThreatCanvasNode>) {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-gray-100 px-4 py-3 flex items-center justify-between">
+      <div className="border-t border-border px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* Assignee */}
           {data.assignee ? (
@@ -525,23 +525,23 @@ function ThreatNodeComponent({ data, selected }: NodeProps<ThreatCanvasNode>) {
                   className="h-5 w-5 rounded-full"
                 />
               ) : (
-                <User className="h-4 w-4 text-gray-400" />
+                <User className="h-4 w-4 text-muted-foreground" />
               )}
-              <span className="text-xs text-gray-600">{data.assignee.name}</span>
+              <span className="text-xs text-fg-muted">{data.assignee.name}</span>
             </div>
           ) : (
-            <span className="text-xs text-gray-400">Unassigned</span>
+            <span className="text-xs text-muted-foreground">Unassigned</span>
           )}
 
           {/* Duration */}
-          <div className="flex items-center gap-1 text-gray-500">
+          <div className="flex items-center gap-1 text-fg-muted">
             <Clock className="h-3.5 w-3.5" />
             <span className="text-xs">{duration}</span>
           </div>
         </div>
 
         {/* Detection Source */}
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-muted-foreground">
           via {data.source}
         </span>
       </div>

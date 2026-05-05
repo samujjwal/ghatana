@@ -74,47 +74,47 @@ const SERVICE_TYPE_CONFIG: Record<ServiceType, { label: string; icon: typeof Ser
   api: {
     label: 'REST API',
     icon: Globe,
-    color: 'text-blue-700',
-    bgColor: 'bg-blue-50 border-blue-200',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg border-info-border',
   },
   worker: {
     label: 'Worker',
     icon: Cog,
-    color: 'text-orange-700',
-    bgColor: 'bg-orange-50 border-orange-200',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg border-warning-border',
   },
   gateway: {
     label: 'Gateway',
     icon: Cloud,
-    color: 'text-purple-700',
-    bgColor: 'bg-purple-50 border-purple-200',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg border-info-border',
   },
   scheduler: {
     label: 'Scheduler',
     icon: Zap,
-    color: 'text-yellow-700',
-    bgColor: 'bg-yellow-50 border-yellow-200',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg border-warning-border',
   },
   websocket: {
     label: 'WebSocket',
     icon: Zap,
-    color: 'text-green-700',
-    bgColor: 'bg-green-50 border-green-200',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg border-success-border',
   },
   microservice: {
     label: 'Microservice',
     icon: Server,
-    color: 'text-indigo-700',
-    bgColor: 'bg-indigo-50 border-indigo-200',
+    color: 'text-fg',
+    bgColor: 'bg-surface-muted border-border',
   },
 };
 
 const METHOD_COLORS: Record<string, string> = {
-  GET: 'bg-green-100 text-green-700',
-  POST: 'bg-blue-100 text-blue-700',
-  PUT: 'bg-yellow-100 text-yellow-700',
-  DELETE: 'bg-red-100 text-red-700',
-  PATCH: 'bg-purple-100 text-purple-700',
+  GET: 'bg-success-bg text-success-color',
+  POST: 'bg-info-bg text-info-color',
+  PUT: 'bg-warning-bg text-warning-color',
+  DELETE: 'bg-destructive-bg text-destructive',
+  PATCH: 'bg-info-bg text-info-color',
 };
 
 // =============================================================================
@@ -164,22 +164,22 @@ export const ServiceNode = memo<ServiceNodeProps>(({ id, data, selected }) => {
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-blue-500 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
       />
       <Handle
         type="target"
         position={Position.Left}
-        className="!w-3 !h-3 !bg-blue-500 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
       />
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-blue-500 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="!w-3 !h-3 !bg-blue-500 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
       />
 
       {/* Header */}
@@ -190,12 +190,12 @@ export const ServiceNode = memo<ServiceNodeProps>(({ id, data, selected }) => {
           </div>
           <div>
             <span className={cn('text-xs font-semibold', config.color)}>{config.label}</span>
-            <span className="text-xs text-gray-500 ml-2">{data.technology}</span>
+            <span className="text-xs text-muted-foreground ml-2">{data.technology}</span>
           </div>
         </div>
         <div className="flex items-center gap-1">
-          {data.requiresAuth && <span title="Requires Auth"><Lock className="w-3.5 h-3.5 text-amber-600" /></span>}
-          {data.isPublic && <span title="Public"><Globe className="w-3.5 h-3.5 text-green-600" /></span>}
+          {data.requiresAuth && <span title="Requires Auth"><Lock className="w-3.5 h-3.5 text-warning-color" /></span>}
+          {data.isPublic && <span title="Public"><Globe className="w-3.5 h-3.5 text-success-color" /></span>}
           <div className="relative">
             <button
               onClick={(e) => {
@@ -204,26 +204,26 @@ export const ServiceNode = memo<ServiceNodeProps>(({ id, data, selected }) => {
               }}
               className="p-1 hover:bg-black/5 rounded"
             >
-              <MoreHorizontal className="w-4 h-4 text-gray-500" />
+              <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
             </button>
             {showMenu && (
-              <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border py-1 z-50 min-w-[120px]">
+              <div className="absolute right-0 top-full mt-1 bg-surface rounded-lg shadow-lg border border-border py-1 z-50 min-w-[120px]">
                 <button
                   onClick={handleEdit}
-                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted/40 flex items-center gap-2"
                 >
                   <Edit2 className="w-3.5 h-3.5" /> Edit
                 </button>
                 <button
                   onClick={() => data.onAddConnection?.(id)}
-                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted/40 flex items-center gap-2"
                 >
                   <Link className="w-3.5 h-3.5" /> Connect
                 </button>
                 <hr className="my-1" />
                 <button
                   onClick={handleDelete}
-                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
+                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-destructive-bg text-destructive flex items-center gap-2"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Delete
                 </button>
@@ -235,16 +235,16 @@ export const ServiceNode = memo<ServiceNodeProps>(({ id, data, selected }) => {
 
       {/* Content */}
       <div className="px-3 py-2">
-        <h3 className="text-sm font-medium text-gray-900">{data.label}</h3>
+        <h3 className="text-sm font-medium text-fg">{data.label}</h3>
         {data.description && (
-          <p className={cn('text-xs text-gray-600 mt-1', expanded ? '' : 'line-clamp-2')}>
+          <p className={cn('text-xs text-fg-muted mt-1', expanded ? '' : 'line-clamp-2')}>
             {data.description}
           </p>
         )}
       </div>
 
       {/* Quick Stats */}
-      <div className="px-3 py-2 border-t border-current/10 flex items-center justify-between text-xs text-gray-500">
+      <div className="px-3 py-2 border-t border-current/10 flex items-center justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-3">
           {data.endpoints && data.endpoints.length > 0 && (
             <span className="flex items-center gap-1">
@@ -284,14 +284,14 @@ export const ServiceNode = memo<ServiceNodeProps>(({ id, data, selected }) => {
           {/* Endpoints */}
           {data.endpoints && data.endpoints.length > 0 && (
             <div>
-              <span className="text-xs font-medium text-gray-700">Endpoints:</span>
+              <span className="text-xs font-medium text-fg">Endpoints:</span>
               <div className="mt-1 space-y-1 max-h-[120px] overflow-y-auto">
                 {data.endpoints.map((endpoint, idx) => (
                   <div key={idx} className="flex items-center gap-2 text-xs">
                     <span className={cn('px-1.5 py-0.5 rounded text-[10px] font-medium', METHOD_COLORS[endpoint.method])}>
                       {endpoint.method}
                     </span>
-                    <code className="text-gray-700 font-mono">{endpoint.path}</code>
+                    <code className="text-fg font-mono">{endpoint.path}</code>
                   </div>
                 ))}
               </div>
@@ -301,10 +301,10 @@ export const ServiceNode = memo<ServiceNodeProps>(({ id, data, selected }) => {
           {/* Database Connections */}
           {data.databaseConnections && data.databaseConnections.length > 0 && (
             <div>
-              <span className="text-xs font-medium text-gray-700">Databases:</span>
+              <span className="text-xs font-medium text-fg">Databases:</span>
               <div className="flex flex-wrap gap-1 mt-1">
                 {data.databaseConnections.map((db) => (
-                  <span key={db} className="px-1.5 py-0.5 bg-gray-100 rounded text-xs text-gray-600 flex items-center gap-1">
+                  <span key={db} className="px-1.5 py-0.5 bg-muted rounded text-xs text-muted-foreground flex items-center gap-1">
                     <Database className="w-3 h-3" />
                     {db}
                   </span>
@@ -316,10 +316,10 @@ export const ServiceNode = memo<ServiceNodeProps>(({ id, data, selected }) => {
           {/* External Services */}
           {data.externalServices && data.externalServices.length > 0 && (
             <div>
-              <span className="text-xs font-medium text-gray-700">External:</span>
+              <span className="text-xs font-medium text-fg">External:</span>
               <div className="flex flex-wrap gap-1 mt-1">
                 {data.externalServices.map((svc) => (
-                  <span key={svc} className="px-1.5 py-0.5 bg-purple-50 rounded text-xs text-purple-700 flex items-center gap-1">
+                  <span key={svc} className="px-1.5 py-0.5 bg-info-bg rounded text-xs text-info-color flex items-center gap-1">
                     <Cloud className="w-3 h-3" />
                     {svc}
                   </span>
@@ -331,8 +331,8 @@ export const ServiceNode = memo<ServiceNodeProps>(({ id, data, selected }) => {
           {/* Notes */}
           {data.notes && (
             <div>
-              <span className="text-xs font-medium text-gray-700">Notes:</span>
-              <p className="text-xs text-gray-600 mt-0.5">{data.notes}</p>
+              <span className="text-xs font-medium text-fg">Notes:</span>
+              <p className="text-xs text-fg-muted mt-0.5">{data.notes}</p>
             </div>
           )}
         </div>

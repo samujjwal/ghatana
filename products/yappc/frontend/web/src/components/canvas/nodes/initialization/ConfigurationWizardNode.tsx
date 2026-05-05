@@ -87,12 +87,12 @@ const statusConfig: Record<
   InitializationStatus,
   { color: string; bgColor: string; label: string; icon: typeof Circle }
 > = {
-  NOT_STARTED: { color: 'text-gray-400', bgColor: 'bg-gray-500/20', label: 'Not Started', icon: Circle },
-  IN_PROGRESS: { color: 'text-blue-400', bgColor: 'bg-blue-500/20', label: 'In Progress', icon: Loader2 },
-  PAUSED: { color: 'text-yellow-400', bgColor: 'bg-yellow-500/20', label: 'Paused', icon: Pause },
-  COMPLETED: { color: 'text-green-400', bgColor: 'bg-green-500/20', label: 'Completed', icon: Check },
-  FAILED: { color: 'text-red-400', bgColor: 'bg-red-500/20', label: 'Failed', icon: Circle },
-  ROLLED_BACK: { color: 'text-orange-400', bgColor: 'bg-orange-500/20', label: 'Rolled Back', icon: RotateCcw },
+  NOT_STARTED: { color: 'text-fg-muted', bgColor: 'bg-surface-muted0/20', label: 'Not Started', icon: Circle },
+  IN_PROGRESS: { color: 'text-info-color', bgColor: 'bg-info-bg/20', label: 'In Progress', icon: Loader2 },
+  PAUSED: { color: 'text-warning-color', bgColor: 'bg-warning-bg0/20', label: 'Paused', icon: Pause },
+  COMPLETED: { color: 'text-success-color', bgColor: 'bg-success-bg0/20', label: 'Completed', icon: Check },
+  FAILED: { color: 'text-destructive', bgColor: 'bg-destructive-bg0/20', label: 'Failed', icon: Circle },
+  ROLLED_BACK: { color: 'text-warning-color', bgColor: 'bg-warning-bg0/20', label: 'Rolled Back', icon: RotateCcw },
 };
 
 const resourceIcons: Record<ResourceType, typeof Database> = {
@@ -136,19 +136,19 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
   const canReset = status === 'COMPLETED' || status === 'FAILED' || status === 'ROLLED_BACK';
 
   return (
-    <div className="bg-slate-800 rounded-lg border border-slate-700 shadow-xl min-w-[420px] max-w-[500px]">
-      <Handle type="target" position={Position.Left} className="!bg-blue-500" />
-      <Handle type="source" position={Position.Right} className="!bg-blue-500" />
+    <div className="bg-surface rounded-lg border border-border shadow-xl min-w-[420px] max-w-[500px]">
+      <Handle type="target" position={Position.Left} className="!bg-info-bg" />
+      <Handle type="source" position={Position.Right} className="!bg-info-bg" />
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg">
-            <Settings className="w-5 h-5 text-blue-400" />
+            <Settings className="w-5 h-5 text-info-color" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-white">Configuration Wizard</h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-fg-muted">
               Step {currentStepIndex + 1} of {steps.length}
             </p>
           </div>
@@ -160,7 +160,7 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
       </div>
 
       {/* Step Progress Bar */}
-      <div className="px-4 py-3 border-b border-slate-700">
+      <div className="px-4 py-3 border-b border-border">
         <div className="flex items-center justify-between mb-2">
           {steps.map((step, index) => {
             const StepIcon = resourceIcons[step.resourceType];
@@ -175,30 +175,30 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
                   disabled={status !== 'NOT_STARTED'}
                   className={cn(
                     'relative flex items-center justify-center w-8 h-8 rounded-full transition-all',
-                    isActive && 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-800',
-                    isCompleted ? 'bg-green-500/20' : isPast ? 'bg-slate-600' : 'bg-slate-700',
-                    status === 'NOT_STARTED' && 'hover:bg-slate-600 cursor-pointer'
+                    isActive && 'ring-2 ring-primary ring-offset-2 ring-offset-surface',
+                    isCompleted ? 'bg-success-bg0/20' : isPast ? 'bg-muted' : 'bg-surface-muted',
+                    status === 'NOT_STARTED' && 'hover:bg-muted cursor-pointer'
                   )}
                 >
                   {isCompleted ? (
-                    <Check className="w-4 h-4 text-green-400" />
+                    <Check className="w-4 h-4 text-success-color" />
                   ) : (
                     <StepIcon
                       className={cn(
                         'w-4 h-4',
-                        isActive ? 'text-blue-400' : 'text-slate-400'
+                        isActive ? 'text-info-color' : 'text-fg-muted'
                       )}
                     />
                   )}
                   {step.isOptional && (
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full" />
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-warning-bg0 rounded-full" />
                   )}
                 </button>
                 {index < steps.length - 1 && (
                   <div
                     className={cn(
                       'w-8 h-0.5 mx-1',
-                      isCompleted ? 'bg-green-500/40' : 'bg-slate-600'
+                      isCompleted ? 'bg-success-bg0/40' : 'bg-muted'
                     )}
                   />
                 )}
@@ -210,13 +210,13 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
 
       {/* Current Step Details */}
       {steps[currentStepIndex] && (
-        <div className="px-4 py-3 border-b border-slate-700">
+        <div className="px-4 py-3 border-b border-border">
           <div className="flex items-start gap-3">
             {(() => {
               const CurrentStepIcon = resourceIcons[steps[currentStepIndex].resourceType];
               return (
-                <div className="p-2 bg-slate-700 rounded-lg">
-                  <CurrentStepIcon className="w-5 h-5 text-slate-300" />
+                <div className="p-2 bg-surface-muted rounded-lg">
+                  <CurrentStepIcon className="w-5 h-5 text-fg" />
                 </div>
               );
             })()}
@@ -224,23 +224,23 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-medium text-white">{steps[currentStepIndex].name}</h4>
                 {steps[currentStepIndex].isOptional && (
-                  <span className="text-xs text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded">
+                  <span className="text-xs text-warning-color bg-warning-bg0/10 px-1.5 py-0.5 rounded">
                     Optional
                   </span>
                 )}
               </div>
               {steps[currentStepIndex].description && (
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-fg-muted mt-1">
                   {steps[currentStepIndex].description}
                 </p>
               )}
               <div className="flex items-center gap-2 mt-2">
                 {steps[currentStepIndex].isConfigured ? (
-                  <span className="text-xs text-green-400 flex items-center gap-1">
+                  <span className="text-xs text-success-color flex items-center gap-1">
                     <Check className="w-3 h-3" /> Configured
                   </span>
                 ) : (
-                  <span className="text-xs text-slate-400 flex items-center gap-1">
+                  <span className="text-xs text-fg-muted flex items-center gap-1">
                     <Circle className="w-3 h-3" /> Not configured
                   </span>
                 )}
@@ -251,20 +251,20 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
       )}
 
       {/* Summary Stats */}
-      <div className="px-4 py-3 grid grid-cols-2 gap-3 border-b border-slate-700">
-        <div className="bg-slate-700/50 rounded-lg p-2">
+      <div className="px-4 py-3 grid grid-cols-2 gap-3 border-b border-border">
+        <div className="bg-surface-muted rounded-lg p-2">
           <div className="flex items-center gap-2 mb-1">
-            <DollarSign className="w-3.5 h-3.5 text-green-400" />
-            <span className="text-xs text-slate-400">Est. Monthly Cost</span>
+            <DollarSign className="w-3.5 h-3.5 text-success-color" />
+            <span className="text-xs text-fg-muted">Est. Monthly Cost</span>
           </div>
           <span className="text-sm font-medium text-white">
             {estimatedMonthlyCost !== undefined ? `$${estimatedMonthlyCost.toFixed(2)}` : '—'}
           </span>
         </div>
-        <div className="bg-slate-700/50 rounded-lg p-2">
+        <div className="bg-surface-muted rounded-lg p-2">
           <div className="flex items-center gap-2 mb-1">
-            <Settings className="w-3.5 h-3.5 text-blue-400" />
-            <span className="text-xs text-slate-400">Setup Time</span>
+            <Settings className="w-3.5 h-3.5 text-info-color" />
+            <span className="text-xs text-fg-muted">Setup Time</span>
           </div>
           <span className="text-sm font-medium text-white">
             {estimatedSetupTime !== undefined ? `~${estimatedSetupTime}min` : '—'}
@@ -273,8 +273,8 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
       </div>
 
       {/* Configuration Summary */}
-      <div className="px-4 py-3 border-b border-slate-700">
-        <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">
+      <div className="px-4 py-3 border-b border-border">
+        <h4 className="text-xs font-medium text-fg-muted uppercase tracking-wider mb-2">
           Configuration Summary
         </h4>
         <div className="space-y-1">
@@ -286,12 +286,12 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
                 className="flex items-center justify-between text-xs py-1"
               >
                 <div className="flex items-center gap-2">
-                  <StepIcon className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="text-slate-300">{step.name}</span>
+                  <StepIcon className="w-3.5 h-3.5 text-fg-muted" />
+                  <span className="text-fg">{step.name}</span>
                 </div>
                 <span
                   className={cn(
-                    step.isConfigured ? 'text-green-400' : 'text-slate-500'
+                    step.isConfigured ? 'text-success-color' : 'text-fg-muted'
                   )}
                 >
                   {step.isConfigured ? 'Ready' : step.isOptional ? 'Skipped' : 'Pending'}
@@ -311,8 +311,8 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
             className={cn(
               'p-2 rounded-lg transition-colors',
               canNavigatePrev
-                ? 'bg-slate-700 hover:bg-slate-600 text-white'
-                : 'bg-slate-800 text-slate-600 cursor-not-allowed'
+                ? 'bg-surface-muted hover:bg-muted text-white'
+                : 'bg-surface text-fg-muted cursor-not-allowed'
             )}
           >
             <ArrowLeft className="w-4 h-4" />
@@ -323,8 +323,8 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
             className={cn(
               'p-2 rounded-lg transition-colors',
               canNavigateNext
-                ? 'bg-slate-700 hover:bg-slate-600 text-white'
-                : 'bg-slate-800 text-slate-600 cursor-not-allowed'
+                ? 'bg-surface-muted hover:bg-muted text-white'
+                : 'bg-surface text-fg-muted cursor-not-allowed'
             )}
           >
             <ArrowRight className="w-4 h-4" />
@@ -335,7 +335,7 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
           {canReset && (
             <button
               onClick={onReset}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs text-slate-300 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-muted hover:bg-muted rounded-lg text-xs text-fg transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               Reset
@@ -344,7 +344,7 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
           {canStart && (
             <button
               onClick={onStart}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-info-bg rounded-lg text-xs text-white transition-colors"
             >
               <Play className="w-3.5 h-3.5" />
               Start Setup
@@ -353,7 +353,7 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
           {canPause && (
             <button
               onClick={onPause}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 rounded-lg text-xs text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-warning-color hover:bg-warning-bg0 rounded-lg text-xs text-white transition-colors"
             >
               <Pause className="w-3.5 h-3.5" />
               Pause
@@ -362,7 +362,7 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
           {canResume && (
             <button
               onClick={onResume}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-500 rounded-lg text-xs text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-success-color hover:bg-success-bg0 rounded-lg text-xs text-white transition-colors"
             >
               <Play className="w-3.5 h-3.5" />
               Resume

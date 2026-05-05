@@ -27,9 +27,9 @@ export interface AuditTimelineProps {
 }
 
 const LEVEL_STYLE: Record<AuditTimelineLevel, string> = {
-  INFO: 'bg-blue-100 text-blue-800',
-  WARN: 'bg-amber-100 text-amber-800',
-  ERROR: 'bg-red-100 text-red-800',
+  INFO: 'bg-info-bg text-info-color',
+  WARN: 'bg-warning-bg text-warning-color',
+  ERROR: 'bg-destructive-bg text-destructive',
 };
 
 export const AuditTimeline: React.FC<AuditTimelineProps> = ({ entries, className = '' }) => {
@@ -40,7 +40,7 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({ entries, className
       {entries.length === 0 && (
         <Card>
           <CardContent className="p-4">
-            <Typography className="text-sm text-gray-600">No audit events yet.</Typography>
+            <Typography className="text-sm text-muted-foreground">No audit events yet.</Typography>
           </CardContent>
         </Card>
       )}
@@ -54,11 +54,11 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({ entries, className
             </Box>
 
             {entry.description && (
-              <Typography className="text-sm text-gray-700">{entry.description}</Typography>
+              <Typography className="text-sm text-fg">{entry.description}</Typography>
             )}
 
-            <Typography className="text-xs text-gray-500">Actor: {entry.actor}</Typography>
-            <Typography className="text-xs text-gray-500">
+            <Typography className="text-xs text-muted-foreground">Actor: {entry.actor}</Typography>
+            <Typography className="text-xs text-muted-foreground">
               Time: {new Date(entry.createdAt).toLocaleString()}
             </Typography>
           </CardContent>

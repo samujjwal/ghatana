@@ -97,17 +97,17 @@ const ChannelListItem: React.FC<{
       onClick={onClick}
       className={cn(
         'w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition-colors',
-        isActive ? 'bg-blue-600/20 text-blue-400' : 'hover:bg-slate-700 text-slate-300'
+        isActive ? 'bg-info-bg text-info-color' : 'hover:bg-surface-muted text-fg'
       )}
     >
       <ChannelIcon type={channel.type} className="w-4 h-4 flex-shrink-0" />
       <span className="flex-1 text-sm truncate">{channel.name}</span>
       {channel.unreadCount > 0 && (
-        <span className="px-1.5 py-0.5 bg-blue-600 rounded text-xs text-white">
+        <span className="px-1.5 py-0.5 bg-primary rounded text-xs text-primary-foreground">
           {channel.unreadCount}
         </span>
       )}
-      {channel.isMuted && <BellOff className="w-3 h-3 text-slate-500" />}
+      {channel.isMuted && <BellOff className="w-3 h-3 text-fg-muted" />}
     </button>
   );
 };
@@ -154,8 +154,8 @@ const MessageBubble: React.FC<{
             className="w-8 h-8 rounded-full"
           />
         ) : (
-          <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center">
-            <span className="text-xs text-white">
+          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+            <span className="text-xs text-fg">
               {message.sender?.name?.charAt(0).toUpperCase() ?? '?'}
             </span>
           </div>
@@ -165,17 +165,17 @@ const MessageBubble: React.FC<{
       {/* Content */}
       <div className={cn('flex-1 max-w-xl', isOwn && 'text-right')}>
         <div className="flex items-baseline gap-2">
-          <span className="text-sm font-medium text-white">{message.sender?.name}</span>
-          <span className="text-xs text-slate-500">{formatTime(message.createdAt)}</span>
-          {message.isPinned && <Pin className="w-3 h-3 text-yellow-400" />}
+          <span className="text-sm font-medium text-fg">{message.sender?.name}</span>
+          <span className="text-xs text-fg-muted">{formatTime(message.createdAt)}</span>
+          {message.isPinned && <Pin className="w-3 h-3 text-warning-color" />}
           {message.isEdited && (
-            <span className="text-xs text-slate-500">(edited)</span>
+            <span className="text-xs text-fg-muted">(edited)</span>
           )}
         </div>
         <div
           className={cn(
             'mt-1 px-4 py-2 rounded-lg inline-block text-left',
-            isOwn ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-200'
+            isOwn ? 'bg-primary text-primary-foreground' : 'bg-surface-muted text-fg'
           )}
         >
           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -191,8 +191,8 @@ const MessageBubble: React.FC<{
                 className={cn(
                   'flex items-center gap-1 px-2 py-0.5 rounded-full text-xs',
                   reaction.hasReacted
-                    ? 'bg-blue-600/30 text-blue-400'
-                    : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                    ? 'bg-info-bg text-info-color'
+                    : 'bg-surface-muted text-fg-muted hover:bg-muted'
                 )}
               >
                 <span>{reaction.emoji}</span>
@@ -204,7 +204,7 @@ const MessageBubble: React.FC<{
 
         {/* Thread indicator */}
         {message.threadId && message.replyCount > 0 && (
-          <button className="flex items-center gap-2 mt-2 text-xs text-blue-400 hover:text-blue-300">
+          <button className="flex items-center gap-2 mt-2 text-xs text-info-color hover:opacity-80">
             <Reply className="w-3 h-3" />
             {message.replyCount} replies
             <ChevronRight className="w-3 h-3" />
@@ -216,7 +216,7 @@ const MessageBubble: React.FC<{
       {showActions && (
         <div
           className={cn(
-            'flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-lg p-1 shadow-lg',
+            'flex items-center gap-1 bg-surface border border-border rounded-lg p-1 shadow-lg',
             isOwn ? 'order-first' : ''
           )}
         >
@@ -224,12 +224,12 @@ const MessageBubble: React.FC<{
           <div className="relative">
             <button
               onClick={() => setShowReactions(!showReactions)}
-              className="p-1.5 hover:bg-slate-700 rounded"
+              className="p-1.5 hover:bg-surface-muted rounded"
             >
-              <Smile className="w-4 h-4 text-slate-400" />
+              <Smile className="w-4 h-4 text-fg-muted" />
             </button>
             {showReactions && (
-              <div className="absolute bottom-full left-0 mb-1 flex gap-1 bg-slate-800 border border-slate-700 rounded-lg p-1 shadow-lg">
+              <div className="absolute bottom-full left-0 mb-1 flex gap-1 bg-surface border border-border rounded-lg p-1 shadow-lg">
                 {reactions.map(({ emoji, icon: Icon }) => (
                   <button
                     key={emoji}
@@ -237,27 +237,27 @@ const MessageBubble: React.FC<{
                       onReact(emoji);
                       setShowReactions(false);
                     }}
-                    className="p-1.5 hover:bg-slate-700 rounded"
+                    className="p-1.5 hover:bg-surface-muted rounded"
                   >
-                    <Icon className="w-4 h-4 text-slate-400" />
+                    <Icon className="w-4 h-4 text-fg-muted" />
                   </button>
                 ))}
               </div>
             )}
           </div>
-          <button onClick={onReply} className="p-1.5 hover:bg-slate-700 rounded">
-            <Reply className="w-4 h-4 text-slate-400" />
+          <button onClick={onReply} className="p-1.5 hover:bg-surface-muted rounded">
+            <Reply className="w-4 h-4 text-fg-muted" />
           </button>
-          <button onClick={onPin} className="p-1.5 hover:bg-slate-700 rounded">
-            <Pin className="w-4 h-4 text-slate-400" />
+          <button onClick={onPin} className="p-1.5 hover:bg-surface-muted rounded">
+            <Pin className="w-4 h-4 text-fg-muted" />
           </button>
           {isOwn && (
             <>
-              <button onClick={onEdit} className="p-1.5 hover:bg-slate-700 rounded">
-                <Edit2 className="w-4 h-4 text-slate-400" />
+              <button onClick={onEdit} className="p-1.5 hover:bg-surface-muted rounded">
+                <Edit2 className="w-4 h-4 text-fg-muted" />
               </button>
-              <button onClick={onDelete} className="p-1.5 hover:bg-slate-700 rounded">
-                <Trash2 className="w-4 h-4 text-red-400" />
+              <button onClick={onDelete} className="p-1.5 hover:bg-surface-muted rounded">
+                <Trash2 className="w-4 h-4 text-destructive" />
               </button>
             </>
           )}
@@ -278,11 +278,11 @@ const TypingIndicator: React.FC<{ users: string[] }> = ({ users }) => {
       : `${users[0]} and ${users.length - 1} others are typing...`;
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2 text-sm text-slate-400">
+    <div className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground">
       <div className="flex gap-1">
-        <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-        <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-        <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+        <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+        <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
       </div>
       <span>{text}</span>
     </div>
@@ -402,24 +402,24 @@ const TeamChatPage: React.FC = () => {
   }, [channels, searchQuery]);
 
   return (
-    <div className="flex h-screen bg-slate-900">
+    <div className="flex h-screen bg-background">
       {/* Sidebar - Channel List */}
-      <aside className="w-64 flex-shrink-0 border-r border-slate-700 flex flex-col">
+      <aside className="w-64 flex-shrink-0 border-r border-border flex flex-col">
         {/* Team Header */}
-        <div className="p-4 border-b border-slate-700">
-          <h2 className="text-lg font-semibold text-white">Team Chat</h2>
+        <div className="p-4 border-b border-border">
+          <h2 className="text-lg font-semibold text-fg">Team Chat</h2>
         </div>
 
         {/* Search */}
-        <div className="p-3 border-b border-slate-700">
+        <div className="p-3 border-b border-border">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
             <input
               type="text"
               placeholder="Search channels..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 pr-3 py-1.5 bg-surface border border-border rounded-lg text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
         </div>
@@ -427,14 +427,14 @@ const TeamChatPage: React.FC = () => {
         {/* Channels List */}
         <div className="flex-1 overflow-y-auto p-3 space-y-1">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+            <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
               Channels
             </span>
             <button
               onClick={() => navigate(`/teams/${teamId}/channels/new`)}
-              className="p-1 hover:bg-slate-700 rounded"
+              className="p-1 hover:bg-surface-muted rounded"
             >
-              <Plus className="w-4 h-4 text-slate-400" />
+              <Plus className="w-4 h-4 text-fg-muted" />
             </button>
           </div>
           {filteredChannels
@@ -449,11 +449,11 @@ const TeamChatPage: React.FC = () => {
             ))}
 
           <div className="flex items-center justify-between mt-4 mb-2">
-            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+            <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
               Direct Messages
             </span>
-            <button className="p-1 hover:bg-slate-700 rounded">
-              <Plus className="w-4 h-4 text-slate-400" />
+            <button className="p-1 hover:bg-surface-muted rounded">
+              <Plus className="w-4 h-4 text-fg-muted" />
             </button>
           </div>
           {filteredChannels
@@ -474,13 +474,13 @@ const TeamChatPage: React.FC = () => {
         {channel ? (
           <>
             {/* Channel Header */}
-            <header className="flex items-center justify-between px-6 py-3 border-b border-slate-700 bg-slate-800">
+            <header className="flex items-center justify-between px-6 py-3 border-b border-border bg-surface">
               <div className="flex items-center gap-3">
-                <ChannelIcon type={channel.type} className="w-5 h-5 text-slate-400" />
+                <ChannelIcon type={channel.type} className="w-5 h-5 text-fg-muted" />
                 <div>
-                  <h3 className="text-lg font-semibold text-white">{channel.name}</h3>
+                  <h3 className="text-lg font-semibold text-fg">{channel.name}</h3>
                   {channel.topic && (
-                    <p className="text-sm text-slate-400">{channel.topic}</p>
+                    <p className="text-sm text-fg-muted">{channel.topic}</p>
                   )}
                 </div>
               </div>
@@ -489,15 +489,15 @@ const TeamChatPage: React.FC = () => {
                   onClick={() => setShowSearch(!showSearch)}
                   className={cn(
                     'p-2 rounded-lg transition-colors',
-                    showSearch ? 'bg-blue-600 text-white' : 'hover:bg-slate-700 text-slate-400'
+                    showSearch ? 'bg-primary text-primary-foreground' : 'hover:bg-surface-muted text-fg-muted'
                   )}
                 >
                   <Search className="w-5 h-5" />
                 </button>
-                <button className="p-2 hover:bg-slate-700 rounded-lg text-slate-400">
+                <button className="p-2 hover:bg-surface-muted rounded-lg text-fg-muted">
                   <Users className="w-5 h-5" />
                 </button>
-                <button className="p-2 hover:bg-slate-700 rounded-lg text-slate-400">
+                <button className="p-2 hover:bg-surface-muted rounded-lg text-fg-muted">
                   <Settings className="w-5 h-5" />
                 </button>
               </div>
@@ -531,26 +531,26 @@ const TeamChatPage: React.FC = () => {
 
             {/* Reply Context */}
             {replyingTo && (
-              <div className="px-6 py-2 bg-slate-800 border-t border-slate-700 flex items-center justify-between">
+              <div className="px-6 py-2 bg-surface border-t border-border flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Reply className="w-4 h-4 text-slate-400" />
-                  <span className="text-sm text-slate-400">
-                    Replying to <span className="text-white">{replyingTo.sender?.name}</span>
+                  <Reply className="w-4 h-4 text-fg-muted" />
+                  <span className="text-sm text-fg-muted">
+                    Replying to <span className="text-fg">{replyingTo.sender?.name}</span>
                   </span>
                 </div>
                 <button
                   onClick={() => setReplyingTo(null)}
-                  className="p-1 hover:bg-slate-700 rounded"
+                  className="p-1 hover:bg-surface-muted rounded"
                 >
-                  <X className="w-4 h-4 text-slate-400" />
+                  <X className="w-4 h-4 text-fg-muted" />
                 </button>
               </div>
             )}
 
             {/* Message Input */}
-            <div className="px-6 py-4 border-t border-slate-700 bg-slate-800">
+            <div className="px-6 py-4 border-t border-border bg-surface">
               <div className="flex items-end gap-3">
-                <button className="p-2 hover:bg-slate-700 rounded-lg text-slate-400">
+                <button className="p-2 hover:bg-surface-muted rounded-lg text-fg-muted">
                   <Paperclip className="w-5 h-5" />
                 </button>
                 <div className="flex-1 relative">
@@ -561,13 +561,13 @@ const TeamChatPage: React.FC = () => {
                     onKeyDown={handleKeyDown}
                     placeholder={`Message #${channel.name}`}
                     rows={1}
-                    className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 bg-surface-muted border border-border rounded-lg text-fg placeholder:text-fg-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
-                <button className="p-2 hover:bg-slate-700 rounded-lg text-slate-400">
+                <button className="p-2 hover:bg-surface-muted rounded-lg text-fg-muted">
                   <Smile className="w-5 h-5" />
                 </button>
-                <button className="p-2 hover:bg-slate-700 rounded-lg text-slate-400">
+                <button className="p-2 hover:bg-surface-muted rounded-lg text-fg-muted">
                   <AtSign className="w-5 h-5" />
                 </button>
                 <button
@@ -576,8 +576,8 @@ const TeamChatPage: React.FC = () => {
                   className={cn(
                     'p-2 rounded-lg transition-colors',
                     messageText.trim()
-                      ? 'bg-blue-600 hover:bg-blue-500 text-white'
-                      : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                      ? 'bg-primary hover:opacity-90 text-primary-foreground'
+                      : 'bg-muted text-fg-muted cursor-not-allowed'
                   )}
                 >
                   <Send className="w-5 h-5" />
@@ -588,9 +588,9 @@ const TeamChatPage: React.FC = () => {
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <MessageSquare className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-400">Select a channel</h3>
-              <p className="text-sm text-slate-500 mt-1">
+              <MessageSquare className="w-16 h-16 text-fg-muted mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-fg-muted">Select a channel</h3>
+              <p className="text-sm text-fg-muted mt-1">
                 Choose a channel from the sidebar to start chatting
               </p>
             </div>

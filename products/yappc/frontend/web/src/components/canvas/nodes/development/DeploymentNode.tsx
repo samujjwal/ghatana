@@ -89,32 +89,32 @@ const STATUS_CONFIG: Record<DeploymentStatus, { label: string; icon: typeof Rock
   pending: {
     label: 'Pending',
     icon: Clock,
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-50 border-amber-200',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg border-warning-border',
   },
   in_progress: {
     label: 'In Progress',
     icon: Loader2,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50 border-blue-200',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg border-info-border',
   },
   succeeded: {
     label: 'Succeeded',
     icon: CheckCircle2,
-    color: 'text-emerald-600',
-    bgColor: 'bg-emerald-50 border-emerald-200',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg border-success-border',
   },
   failed: {
     label: 'Failed',
     icon: XCircle,
-    color: 'text-red-600',
-    bgColor: 'bg-red-50 border-red-200',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive-bg border-destructive-border',
   },
   rolled_back: {
     label: 'Rolled Back',
     icon: RotateCcw,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50 border-purple-200',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg border-info-border',
   },
 };
 
@@ -122,29 +122,29 @@ const ENVIRONMENT_CONFIG: Record<DeploymentEnvironment, { label: string; icon: t
   development: {
     label: 'Development',
     icon: Server,
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-100',
+    color: 'text-fg-muted',
+    bgColor: 'bg-muted',
   },
   staging: {
     label: 'Staging',
     icon: Server,
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-100',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg',
   },
   production: {
     label: 'Production',
     icon: Cloud,
-    color: 'text-red-600',
-    bgColor: 'bg-red-100',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive-bg',
   },
 };
 
 const STAGE_STATUS_CONFIG: Record<PipelineStage['status'], { color: string; bgColor: string }> = {
-  pending: { color: 'text-gray-400', bgColor: 'bg-gray-200' },
-  running: { color: 'text-blue-500', bgColor: 'bg-blue-500' },
-  passed: { color: 'text-emerald-500', bgColor: 'bg-emerald-500' },
-  failed: { color: 'text-red-500', bgColor: 'bg-red-500' },
-  skipped: { color: 'text-gray-400', bgColor: 'bg-gray-300' },
+  pending: { color: 'text-fg-muted', bgColor: 'bg-muted' },
+  running: { color: 'text-info-color', bgColor: 'bg-info-color' },
+  passed: { color: 'text-success-color', bgColor: 'bg-success-color' },
+  failed: { color: 'text-destructive', bgColor: 'bg-destructive' },
+  skipped: { color: 'text-fg-muted', bgColor: 'bg-muted-foreground' },
 };
 
 // =============================================================================
@@ -177,19 +177,19 @@ const PipelineProgress: React.FC<PipelineProgressProps> = memo(({ stages }) => (
             <div
               className={cn(
                 'flex-1 h-2 rounded-full transition-all',
-                stage.status === 'pending' ? 'bg-gray-200' : config.bgColor,
+                stage.status === 'pending' ? 'bg-muted' : config.bgColor,
                 isRunning && 'animate-pulse'
               )}
               title={`${stage.name}: ${stage.status}${stage.duration ? ` (${formatDuration(stage.duration)})` : ''}`}
             />
             {index < stages.length - 1 && (
-              <div className="w-1 h-1 rounded-full bg-gray-300" />
+              <div className="w-1 h-1 rounded-full bg-muted-foreground" />
             )}
           </React.Fragment>
         );
       })}
     </div>
-    <div className="flex items-center justify-between text-[10px] text-gray-500">
+    <div className="flex items-center justify-between text-[10px] text-fg-muted">
       {stages.map((stage) => (
         <span key={stage.id} className="truncate max-w-[60px]" title={stage.name}>
           {stage.name}
@@ -277,9 +277,9 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
     <div
       className={cn(
         'deployment-node w-80 rounded-xl border shadow-sm transition-all duration-200',
-        'bg-white',
+        'bg-surface',
         statusConfig.bgColor,
-        selected && 'ring-2 ring-violet-500 ring-offset-2',
+        selected && 'ring-2 ring-primary ring-offset-2',
         dragging && 'opacity-75 shadow-lg scale-[1.02]'
       )}
       onDoubleClick={handleViewLogs}
@@ -288,16 +288,16 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
       <Handle
         type="target"
         position={Position.Left}
-        className="!w-3 !h-3 !bg-gray-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-muted-foreground !border-2 !border-surface"
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="!w-3 !h-3 !bg-gray-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-muted-foreground !border-2 !border-surface"
       />
 
       {/* Header */}
-      <div className="p-4 border-b border-gray-100">
+      <div className="p-4 border-b border-border">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className={cn('p-2 rounded-lg', statusConfig.bgColor)}>
@@ -305,7 +305,7 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-gray-500">{data.version}</span>
+                <span className="text-xs font-mono text-fg-muted">{data.version}</span>
                 <div className={cn('flex items-center gap-1 px-2 py-0.5 rounded-full', statusConfig.bgColor)}>
                   <StatusIcon className={cn('w-3 h-3', statusConfig.color, isInProgress && 'animate-spin')} />
                   <span className={cn('text-[10px] font-medium', statusConfig.color)}>
@@ -313,7 +313,7 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
                   </span>
                 </div>
               </div>
-              <h4 className="font-semibold text-sm text-gray-900 truncate">{data.label}</h4>
+              <h4 className="font-semibold text-sm text-fg truncate">{data.label}</h4>
             </div>
           </div>
 
@@ -324,7 +324,7 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
                 e.stopPropagation();
                 setShowMenu(!showMenu);
               }}
-              className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+              className="p-1.5 rounded hover:bg-surface-muted text-fg-muted hover:text-fg"
             >
               <MoreHorizontal className="w-4 h-4" />
             </button>
@@ -338,10 +338,10 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
                     setShowMenu(false);
                   }}
                 />
-                <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                <div className="absolute right-0 top-full mt-1 w-40 bg-surface rounded-lg shadow-lg border border-border py-1 z-20">
                   <button
                     onClick={handleViewLogs}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-fg hover:bg-surface-muted"
                   >
                     <Terminal className="w-4 h-4" />
                     View Logs
@@ -349,7 +349,7 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
                   {isPending && (
                     <button
                       onClick={handleApprove}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-emerald-600 hover:bg-emerald-50"
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-success-color hover:bg-success-bg"
                     >
                       <Play className="w-4 h-4" />
                       Approve & Deploy
@@ -358,7 +358,7 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
                   {isInProgress && (
                     <button
                       onClick={handleCancel}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-destructive hover:bg-destructive-bg"
                     >
                       <Pause className="w-4 h-4" />
                       Cancel Deployment
@@ -367,7 +367,7 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
                   {canRollback && (
                     <button
                       onClick={handleRollback}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-amber-600 hover:bg-amber-50"
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-warning-color hover:bg-warning-bg"
                     >
                       <RotateCcw className="w-4 h-4" />
                       Rollback
@@ -376,7 +376,7 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
                   {canRetry && (
                     <button
                       onClick={handleRetry}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-blue-600 hover:bg-blue-50"
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-info-color hover:bg-info-bg"
                     >
                       <Play className="w-4 h-4" />
                       Retry Deployment
@@ -398,17 +398,17 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
           </div>
           {data.environment === 'production' && (
             <span title="Production deployment">
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              <AlertTriangle className="w-4 h-4 text-warning-color" />
             </span>
           )}
         </div>
 
         {/* Commit info */}
         <div className="mt-3 flex items-center gap-2">
-          <GitCommit className="w-3.5 h-3.5 text-gray-400" />
-          <span className="text-xs font-mono text-gray-500">{data.commitSha.slice(0, 7)}</span>
+          <GitCommit className="w-3.5 h-3.5 text-fg-muted" />
+          <span className="text-xs font-mono text-fg-muted">{data.commitSha.slice(0, 7)}</span>
           {data.commitMessage && (
-            <span className="text-xs text-gray-500 truncate">{data.commitMessage}</span>
+            <span className="text-xs text-fg-muted truncate">{data.commitMessage}</span>
           )}
         </div>
 
@@ -421,11 +421,11 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
               className="w-5 h-5 rounded-full"
             />
           ) : (
-            <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
-              <User className="w-3 h-3 text-gray-500" />
+            <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
+              <User className="w-3 h-3 text-fg-muted" />
             </div>
           )}
-          <span className="text-xs text-gray-600">
+          <span className="text-xs text-fg-muted">
             Triggered by {data.triggeredBy.name}
           </span>
         </div>
@@ -433,8 +433,8 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
         {/* Approved by (for prod) */}
         {data.approvedBy && (
           <div className="mt-1 flex items-center gap-2">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="text-xs text-gray-600">
+            <CheckCircle2 className="w-3.5 h-3.5 text-success-color" />
+            <span className="text-xs text-fg-muted">
               Approved by {data.approvedBy.name}
             </span>
           </div>
@@ -442,9 +442,9 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
 
         {/* Rollback indicator */}
         {data.rollbackOf && (
-          <div className="mt-2 flex items-center gap-2 px-2 py-1 bg-purple-50 rounded-lg">
-            <RotateCcw className="w-3.5 h-3.5 text-purple-500" />
-            <span className="text-xs text-purple-700">
+          <div className="mt-2 flex items-center gap-2 px-2 py-1 bg-info-bg rounded-lg">
+            <RotateCcw className="w-3.5 h-3.5 text-info-color" />
+            <span className="text-xs text-info-color">
               Rollback of {data.rollbackOf}
             </span>
           </div>
@@ -453,11 +453,11 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
 
       {/* Pipeline progress */}
       {data.pipeline && data.pipeline.length > 0 && (
-        <div className="px-4 py-3 border-b border-gray-100">
+        <div className="px-4 py-3 border-b border-border">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-500">Pipeline</span>
+            <span className="text-xs text-fg-muted">Pipeline</span>
             {data.duration !== undefined && (
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-fg-muted">
                 <Clock className="w-3 h-3 inline mr-1" />
                 {formatDuration(data.duration)}
               </span>
@@ -469,24 +469,24 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
 
       {/* Expandable content */}
       {expanded && data.pipeline && (
-        <div className="p-4 space-y-2 border-t border-gray-100">
+        <div className="p-4 space-y-2 border-t border-border">
           {data.pipeline.map((stage) => {
             const config = STAGE_STATUS_CONFIG[stage.status];
             return (
               <div
                 key={stage.id}
-                className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                className="flex items-center justify-between p-2 bg-surface-muted rounded-lg"
               >
                 <div className="flex items-center gap-2">
                   <div className={cn('w-2 h-2 rounded-full', config.bgColor)} />
-                  <span className="text-xs text-gray-700">{stage.name}</span>
+                  <span className="text-xs text-fg">{stage.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={cn('text-xs capitalize', config.color)}>
                     {stage.status}
                   </span>
                   {stage.duration !== undefined && (
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-fg-muted">
                       {formatDuration(stage.duration)}
                     </span>
                   )}
@@ -498,8 +498,8 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
       )}
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
-        <div className="text-xs text-gray-400">
+      <div className="px-4 py-3 border-t border-border flex items-center justify-between">
+        <div className="text-xs text-fg-muted">
           Started {data.startedAt}
           {data.completedAt && ` • Completed ${data.completedAt}`}
         </div>
@@ -507,7 +507,7 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
         {data.pipeline && data.pipeline.length > 0 && (
           <button
             onClick={handleToggleExpand}
-            className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+            className="p-1 rounded hover:bg-surface-muted text-fg-muted hover:text-fg"
           >
             {expanded ? (
               <ChevronUp className="w-4 h-4" />

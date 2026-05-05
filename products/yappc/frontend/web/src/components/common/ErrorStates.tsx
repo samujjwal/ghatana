@@ -44,18 +44,18 @@ export function ErrorState({
   };
 
   const containerClass = fullScreen
-    ? 'fixed inset-0 flex items-center justify-center bg-white dark:bg-gray-900 z-50'
+    ? 'fixed inset-0 flex items-center justify-center bg-white dark:bg-surface z-50'
     : '';
 
   return (
     <div className={`${containerClass} ${className}`}>
       <Box className="flex flex-col items-center justify-center text-center p-6">
-        <AlertCircle className={`${sizeClasses[size]} text-red-500 mb-4`} />
-        <Typography className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+        <AlertCircle className={`${sizeClasses[size]} text-destructive mb-4`} />
+        <Typography className="text-lg font-medium text-fg dark:text-fg-muted mb-2">
           {message}
         </Typography>
         {details && (
-          <Typography className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          <Typography className="text-sm text-fg-muted dark:text-fg-muted mb-4">
             {details}
           </Typography>
         )}
@@ -96,11 +96,11 @@ export function PermissionDenied({
 }: PermissionDeniedProps) {
   return (
     <div className={`flex flex-col items-center justify-center text-center p-6 ${className}`}>
-      <Lock className="w-16 h-16 text-orange-500 mb-4" />
-      <Typography className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+      <Lock className="w-16 h-16 text-warning-color mb-4" />
+      <Typography className="text-lg font-medium text-fg dark:text-fg-muted mb-2">
         Permission Denied
       </Typography>
-      <Typography className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <Typography className="text-sm text-fg-muted dark:text-fg-muted mb-4">
         {message}
       </Typography>
       {onContact && (
@@ -128,11 +128,11 @@ export function AuthFailure({
 }: AuthFailureProps) {
   return (
     <div className={`flex flex-col items-center justify-center text-center p-6 ${className}`}>
-      <Shield className="w-16 h-16 text-red-500 mb-4" />
-      <Typography className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+      <Shield className="w-16 h-16 text-destructive mb-4" />
+      <Typography className="text-lg font-medium text-fg dark:text-fg-muted mb-2">
         Authentication Failed
       </Typography>
-      <Typography className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <Typography className="text-sm text-fg-muted dark:text-fg-muted mb-4">
         {message}
       </Typography>
       {onLogin && (
@@ -160,11 +160,11 @@ export function Timeout({
 }: TimeoutProps) {
   return (
     <div className={`flex flex-col items-center justify-center text-center p-6 ${className}`}>
-      <Clock className="w-16 h-16 text-yellow-500 mb-4" />
-      <Typography className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+      <Clock className="w-16 h-16 text-warning-color mb-4" />
+      <Typography className="text-lg font-medium text-fg dark:text-fg-muted mb-2">
         Request Timeout
       </Typography>
-      <Typography className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <Typography className="text-sm text-fg-muted dark:text-fg-muted mb-4">
         {message}
       </Typography>
       {onRetry && (
@@ -194,11 +194,11 @@ export function RateLimit({
 }: RateLimitProps) {
   return (
     <div className={`flex flex-col items-center justify-center text-center p-6 ${className}`}>
-      <Zap className="w-16 h-16 text-orange-500 mb-4" />
-      <Typography className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+      <Zap className="w-16 h-16 text-warning-color mb-4" />
+      <Typography className="text-lg font-medium text-fg dark:text-fg-muted mb-2">
         Rate Limit Exceeded
       </Typography>
-      <Typography className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <Typography className="text-sm text-fg-muted dark:text-fg-muted mb-4">
         {message}
         {retryAfter && ` Please retry in ${retryAfter} seconds.`}
       </Typography>
@@ -227,11 +227,11 @@ export function Offline({
 }: OfflineProps) {
   return (
     <div className={`flex flex-col items-center justify-center text-center p-6 ${className}`}>
-      <WifiOff className="w-16 h-16 text-gray-500 mb-4" />
-      <Typography className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+      <WifiOff className="w-16 h-16 text-fg-muted mb-4" />
+      <Typography className="text-lg font-medium text-fg dark:text-fg-muted mb-2">
         You're Offline
       </Typography>
-      <Typography className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <Typography className="text-sm text-fg-muted dark:text-fg-muted mb-4">
         {message}
       </Typography>
       {onRetry && (
@@ -263,20 +263,20 @@ export function ServerError({
 }: ServerErrorProps) {
   return (
     <div className={`flex flex-col items-center justify-center text-center p-6 ${className}`}>
-      <AlertTriangle className="w-16 h-16 text-red-500 mb-4" />
-      <Typography className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+      <AlertTriangle className="w-16 h-16 text-destructive mb-4" />
+      <Typography className="text-lg font-medium text-fg dark:text-fg-muted mb-2">
         Server Error
       </Typography>
       {code && (
-        <Typography className="text-sm font-mono text-gray-600 dark:text-gray-400 mb-2">
+        <Typography className="text-sm font-mono text-fg-muted dark:text-fg-muted mb-2">
           Error Code: {code}
         </Typography>
       )}
-      <Typography className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <Typography className="text-sm text-fg-muted dark:text-fg-muted mb-4">
         {message}
       </Typography>
       {details && (
-        <Typography className="text-sm text-gray-500 dark:text-gray-500 mb-4">
+        <Typography className="text-sm text-fg-muted dark:text-fg-muted mb-4">
           {details}
         </Typography>
       )}
@@ -309,20 +309,20 @@ export function ValidationError({
 }: ValidationErrorProps) {
   return (
     <div className={`flex flex-col items-center justify-center text-center p-6 ${className}`}>
-      <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
-      <Typography className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+      <AlertCircle className="w-16 h-16 text-destructive mb-4" />
+      <Typography className="text-lg font-medium text-fg dark:text-fg-muted mb-2">
         Validation Error
       </Typography>
       {field && (
-        <Typography className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+        <Typography className="text-sm text-fg-muted dark:text-fg-muted mb-2">
           Field: {field}
         </Typography>
       )}
-      <Typography className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <Typography className="text-sm text-fg-muted dark:text-fg-muted mb-4">
         {message}
       </Typography>
       {details && (
-        <Typography className="text-sm text-gray-500 dark:text-gray-500 mb-4">
+        <Typography className="text-sm text-fg-muted dark:text-fg-muted mb-4">
           {details}
         </Typography>
       )}

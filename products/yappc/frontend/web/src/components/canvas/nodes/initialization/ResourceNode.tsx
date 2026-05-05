@@ -130,37 +130,37 @@ const resourceConfig: Record<
   ResourceType,
   { icon: typeof Database; color: string; bgColor: string; label: string }
 > = {
-  REPOSITORY: { icon: GitBranch, color: 'text-gray-400', bgColor: 'bg-gray-500/20', label: 'Repository' },
-  HOSTING: { icon: Globe, color: 'text-blue-400', bgColor: 'bg-blue-500/20', label: 'Hosting' },
-  DATABASE: { icon: Database, color: 'text-purple-400', bgColor: 'bg-purple-500/20', label: 'Database' },
-  CACHE: { icon: Server, color: 'text-red-400', bgColor: 'bg-red-500/20', label: 'Cache' },
-  STORAGE: { icon: HardDrive, color: 'text-green-400', bgColor: 'bg-green-500/20', label: 'Storage' },
-  CDN: { icon: Globe, color: 'text-orange-400', bgColor: 'bg-orange-500/20', label: 'CDN' },
-  DOMAIN: { icon: Globe, color: 'text-cyan-400', bgColor: 'bg-cyan-500/20', label: 'Domain' },
-  SSL: { icon: Shield, color: 'text-emerald-400', bgColor: 'bg-emerald-500/20', label: 'SSL Certificate' },
-  CI_CD: { icon: Settings, color: 'text-yellow-400', bgColor: 'bg-yellow-500/20', label: 'CI/CD Pipeline' },
-  SECRETS: { icon: Shield, color: 'text-pink-400', bgColor: 'bg-pink-500/20', label: 'Secrets' },
-  MONITORING: { icon: Settings, color: 'text-indigo-400', bgColor: 'bg-indigo-500/20', label: 'Monitoring' },
-  LOGGING: { icon: Settings, color: 'text-teal-400', bgColor: 'bg-teal-500/20', label: 'Logging' },
+  REPOSITORY: { icon: GitBranch, color: 'text-fg-muted', bgColor: 'bg-muted', label: 'Repository' },
+  HOSTING: { icon: Globe, color: 'text-info-color', bgColor: 'bg-info-bg', label: 'Hosting' },
+  DATABASE: { icon: Database, color: 'text-info-color', bgColor: 'bg-info-bg', label: 'Database' },
+  CACHE: { icon: Server, color: 'text-destructive', bgColor: 'bg-destructive-bg', label: 'Cache' },
+  STORAGE: { icon: HardDrive, color: 'text-success-color', bgColor: 'bg-success-bg', label: 'Storage' },
+  CDN: { icon: Globe, color: 'text-warning-color', bgColor: 'bg-warning-bg', label: 'CDN' },
+  DOMAIN: { icon: Globe, color: 'text-info-color', bgColor: 'bg-info-bg', label: 'Domain' },
+  SSL: { icon: Shield, color: 'text-success-color', bgColor: 'bg-success-bg', label: 'SSL Certificate' },
+  CI_CD: { icon: Settings, color: 'text-warning-color', bgColor: 'bg-warning-bg', label: 'CI/CD Pipeline' },
+  SECRETS: { icon: Shield, color: 'text-destructive', bgColor: 'bg-destructive-bg', label: 'Secrets' },
+  MONITORING: { icon: Settings, color: 'text-info-color', bgColor: 'bg-info-bg', label: 'Monitoring' },
+  LOGGING: { icon: Settings, color: 'text-fg-muted', bgColor: 'bg-muted', label: 'Logging' },
 };
 
 const statusConfig: Record<
   ProvisioningStatus,
   { color: string; bgColor: string; label: string; icon: typeof Check }
 > = {
-  PENDING: { color: 'text-gray-400', bgColor: 'bg-gray-500/20', label: 'Pending', icon: Clock },
-  IN_PROGRESS: { color: 'text-blue-400', bgColor: 'bg-blue-500/20', label: 'Provisioning', icon: Loader2 },
-  COMPLETED: { color: 'text-green-400', bgColor: 'bg-green-500/20', label: 'Active', icon: Check },
-  FAILED: { color: 'text-red-400', bgColor: 'bg-red-500/20', label: 'Failed', icon: X },
-  ROLLBACK_PENDING: { color: 'text-yellow-400', bgColor: 'bg-yellow-500/20', label: 'Rollback Pending', icon: RotateCcw },
-  ROLLED_BACK: { color: 'text-orange-400', bgColor: 'bg-orange-500/20', label: 'Rolled Back', icon: RotateCcw },
+  PENDING: { color: 'text-fg-muted', bgColor: 'bg-muted', label: 'Pending', icon: Clock },
+  IN_PROGRESS: { color: 'text-info-color', bgColor: 'bg-info-bg', label: 'Provisioning', icon: Loader2 },
+  COMPLETED: { color: 'text-success-color', bgColor: 'bg-success-bg', label: 'Active', icon: Check },
+  FAILED: { color: 'text-destructive', bgColor: 'bg-destructive-bg', label: 'Failed', icon: X },
+  ROLLBACK_PENDING: { color: 'text-warning-color', bgColor: 'bg-warning-bg', label: 'Rollback Pending', icon: RotateCcw },
+  ROLLED_BACK: { color: 'text-warning-color', bgColor: 'bg-warning-bg', label: 'Rolled Back', icon: RotateCcw },
 };
 
 const environmentColors: Record<EnvironmentType, { color: string; bgColor: string }> = {
-  DEVELOPMENT: { color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
-  STAGING: { color: 'text-yellow-400', bgColor: 'bg-yellow-500/20' },
-  PRODUCTION: { color: 'text-green-400', bgColor: 'bg-green-500/20' },
-  PREVIEW: { color: 'text-purple-400', bgColor: 'bg-purple-500/20' },
+  DEVELOPMENT: { color: 'text-info-color', bgColor: 'bg-info-bg' },
+  STAGING: { color: 'text-warning-color', bgColor: 'bg-warning-bg' },
+  PRODUCTION: { color: 'text-success-color', bgColor: 'bg-success-bg' },
+  PREVIEW: { color: 'text-info-color', bgColor: 'bg-info-bg' },
 };
 
 const providerLogos: Record<ProviderType, string> = {
@@ -215,26 +215,26 @@ function ResourceNode({ data }: NodeProps<ResourceCanvasNode>) {
   return (
     <div
       className={cn(
-        'bg-slate-800 rounded-lg border shadow-xl min-w-[320px] max-w-[380px] transition-all',
-        isActive ? 'border-slate-700' : isFailed ? 'border-red-500/50' : 'border-slate-700',
-        isProvisioning && 'ring-2 ring-blue-500/30'
+        'bg-surface rounded-lg border shadow-xl min-w-[320px] max-w-[380px] transition-all',
+        isActive ? 'border-border' : isFailed ? 'border-destructive-border' : 'border-border',
+        isProvisioning && 'ring-2 ring-info-border'
       )}
     >
-      <Handle type="target" position={Position.Left} className="!bg-emerald-500" />
-      <Handle type="source" position={Position.Right} className="!bg-emerald-500" />
+      <Handle type="target" position={Position.Left} className="!bg-success-color" />
+      <Handle type="source" position={Position.Right} className="!bg-success-color" />
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-3">
           <div className={cn('p-2 rounded-lg', resourceInfo.bgColor)}>
             <ResourceIcon className={cn('w-5 h-5', resourceInfo.color)} />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white">{resource.name}</h3>
+            <h3 className="text-sm font-semibold text-fg">{resource.name}</h3>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs text-slate-400">{resourceInfo.label}</span>
-              <span className="text-xs text-slate-500">•</span>
-              <span className="text-xs text-slate-400">{providerLogos[resource.provider]}</span>
+              <span className="text-xs text-fg-muted">{resourceInfo.label}</span>
+              <span className="text-xs text-fg-muted">•</span>
+              <span className="text-xs text-fg-muted">{providerLogos[resource.provider]}</span>
             </div>
           </div>
         </div>
@@ -255,23 +255,23 @@ function ResourceNode({ data }: NodeProps<ResourceCanvasNode>) {
 
       {/* External ID */}
       {resource.externalId && (
-        <div className="px-4 py-2 border-b border-slate-700 bg-slate-700/30">
+        <div className="px-4 py-2 border-b border-border bg-surface-muted">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400">External ID</span>
-            <span className="text-xs font-mono text-slate-300">{resource.externalId}</span>
+            <span className="text-xs text-fg-muted">External ID</span>
+            <span className="text-xs font-mono text-fg">{resource.externalId}</span>
           </div>
         </div>
       )}
 
       {/* URL */}
       {resource.url && (
-        <div className="px-4 py-3 border-b border-slate-700">
+        <div className="px-4 py-3 border-b border-border">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-slate-400">URL</span>
+            <span className="text-xs text-fg-muted">URL</span>
             {onOpenExternal && (
               <button
                 onClick={onOpenExternal}
-                className="p-1 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"
+                className="p-1 hover:bg-muted rounded text-fg-muted hover:text-fg transition-colors"
               >
                 <ExternalLink className="w-3 h-3" />
               </button>
@@ -281,7 +281,7 @@ function ResourceNode({ data }: NodeProps<ResourceCanvasNode>) {
             href={resource.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-blue-400 hover:text-blue-300 break-all"
+            className="text-xs text-info-color hover:opacity-80 break-all"
           >
             {resource.url}
           </a>
@@ -290,14 +290,14 @@ function ResourceNode({ data }: NodeProps<ResourceCanvasNode>) {
 
       {/* Connection String */}
       {resource.connectionString && (
-        <div className="px-4 py-3 border-b border-slate-700">
+        <div className="px-4 py-3 border-b border-border">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-slate-400">Connection String</span>
+            <span className="text-xs text-fg-muted">Connection String</span>
             <div className="flex items-center gap-1">
               {onToggleCredentials && (
                 <button
                   onClick={onToggleCredentials}
-                  className="p-1 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"
+                  className="p-1 hover:bg-muted rounded text-fg-muted hover:text-fg transition-colors"
                 >
                   {showCredentials ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                 </button>
@@ -305,14 +305,14 @@ function ResourceNode({ data }: NodeProps<ResourceCanvasNode>) {
               {onCopyConnectionString && (
                 <button
                   onClick={onCopyConnectionString}
-                  className="p-1 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"
+                  className="p-1 hover:bg-muted rounded text-fg-muted hover:text-fg transition-colors"
                 >
                   <Copy className="w-3 h-3" />
                 </button>
               )}
             </div>
           </div>
-          <code className="text-xs font-mono text-slate-300 break-all block">
+          <code className="text-xs font-mono text-fg break-all block">
             {showCredentials
               ? resource.connectionString
               : resource.connectionString.replace(/(:\/\/[^:]+:)[^@]+(@)/, '$1••••••$2')}
@@ -322,12 +322,12 @@ function ResourceNode({ data }: NodeProps<ResourceCanvasNode>) {
 
       {/* Credentials */}
       {resource.credentials && (
-        <div className="px-4 py-3 border-b border-slate-700">
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+        <div className="px-4 py-3 border-b border-border">
+          <div className="flex items-center gap-1.5 text-xs text-fg-muted">
             <Shield className="w-3 h-3" />
             <span>Credentials {resource.credentials.encrypted ? 'encrypted' : 'stored'}</span>
             {resource.credentials.accessedAt && (
-              <span className="text-slate-500">
+              <span className="text-fg-muted">
                 • Last accessed {new Date(resource.credentials.accessedAt).toLocaleDateString()}
               </span>
             )}
@@ -337,13 +337,13 @@ function ResourceNode({ data }: NodeProps<ResourceCanvasNode>) {
 
       {/* Cost */}
       {resource.cost && (
-        <div className="px-4 py-3 border-b border-slate-700">
+        <div className="px-4 py-3 border-b border-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 flex items-center gap-1">
+            <span className="text-xs text-fg-muted flex items-center gap-1">
               <DollarSign className="w-3 h-3" />
               Cost ({resource.cost.period.toLowerCase()})
             </span>
-            <span className="text-sm font-medium text-white">
+            <span className="text-sm font-medium text-fg">
               {formatCurrency(resource.cost.amount, resource.cost.currency)}
             </span>
           </div>
@@ -351,8 +351,8 @@ function ResourceNode({ data }: NodeProps<ResourceCanvasNode>) {
             <div className="mt-2 space-y-1">
               {resource.cost.breakdown.map((item: ResourceCostBreakdownItem, index: number) => (
                 <div key={index} className="flex items-center justify-between text-xs">
-                  <span className="text-slate-500">{item.item}</span>
-                  <span className="text-slate-400">
+                  <span className="text-fg-muted">{item.item}</span>
+                  <span className="text-fg-muted">
                     {formatCurrency(item.amount, resource.cost!.currency)}
                   </span>
                 </div>
@@ -364,15 +364,15 @@ function ResourceNode({ data }: NodeProps<ResourceCanvasNode>) {
 
       {/* Metadata */}
       {resource.metadata && Object.keys(resource.metadata).length > 0 && (
-        <div className="px-4 py-3 border-b border-slate-700">
-          <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">
+        <div className="px-4 py-3 border-b border-border">
+          <h4 className="text-xs font-medium text-fg-muted uppercase tracking-wider mb-2">
             Metadata
           </h4>
           <div className="space-y-1">
             {Object.entries(resource.metadata).slice(0, 4).map(([key, value]) => (
               <div key={key} className="flex items-center justify-between text-xs">
-                <span className="text-slate-500">{key}</span>
-                <span className="text-slate-300 truncate max-w-[150px]">{String(value)}</span>
+                <span className="text-fg-muted">{key}</span>
+                <span className="text-fg truncate max-w-[150px]">{String(value)}</span>
               </div>
             ))}
           </div>
@@ -380,20 +380,20 @@ function ResourceNode({ data }: NodeProps<ResourceCanvasNode>) {
       )}
 
       {/* Timestamps */}
-      <div className="px-4 py-3 border-b border-slate-700 bg-slate-700/20">
+      <div className="px-4 py-3 border-b border-border bg-surface-muted">
         <div className="grid grid-cols-2 gap-2 text-xs">
           {resource.provisionedAt && (
             <div>
-              <span className="text-slate-500">Provisioned</span>
-              <div className="text-slate-300">
+              <span className="text-fg-muted">Provisioned</span>
+              <div className="text-fg">
                 {new Date(resource.provisionedAt).toLocaleString()}
               </div>
             </div>
           )}
           {resource.lastSyncedAt && (
             <div>
-              <span className="text-slate-500">Last synced</span>
-              <div className="text-slate-300">
+              <span className="text-fg-muted">Last synced</span>
+              <div className="text-fg">
                 {new Date(resource.lastSyncedAt).toLocaleString()}
               </div>
             </div>
@@ -404,7 +404,7 @@ function ResourceNode({ data }: NodeProps<ResourceCanvasNode>) {
       {/* Actions */}
       <div className="px-4 py-3 flex items-center justify-between">
         {isFailed && (
-          <div className="flex items-center gap-1 text-xs text-red-400">
+          <div className="flex items-center gap-1 text-xs text-destructive">
             <AlertTriangle className="w-3 h-3" />
             Provisioning failed
           </div>
@@ -414,7 +414,7 @@ function ResourceNode({ data }: NodeProps<ResourceCanvasNode>) {
           {isActive && onSync && (
             <button
               onClick={onSync}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs text-slate-300 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:opacity-90 rounded-lg text-xs text-fg transition-colors"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Sync
@@ -423,7 +423,7 @@ function ResourceNode({ data }: NodeProps<ResourceCanvasNode>) {
           {onDelete && (
             <button
               onClick={onDelete}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/80 hover:bg-red-600 rounded-lg text-xs text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-destructive hover:opacity-90 rounded-lg text-xs text-white transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Delete

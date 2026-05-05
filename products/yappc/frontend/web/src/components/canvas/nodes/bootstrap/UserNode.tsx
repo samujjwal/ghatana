@@ -80,50 +80,50 @@ const USER_TYPE_CONFIG: Record<UserType, { label: string; icon: typeof User; col
   admin: {
     label: 'Admin',
     icon: Shield,
-    color: 'text-red-700',
-    bgColor: 'bg-red-50 border-red-300',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive-bg border-destructive-border',
   },
   user: {
     label: 'User',
     icon: User,
-    color: 'text-blue-700',
-    bgColor: 'bg-blue-50 border-blue-300',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg border-info-border',
   },
   manager: {
     label: 'Manager',
     icon: Briefcase,
-    color: 'text-purple-700',
-    bgColor: 'bg-purple-50 border-purple-300',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg border-info-border',
   },
   guest: {
     label: 'Guest',
     icon: User,
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-50 border-gray-300',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-surface-muted border-border',
   },
   developer: {
     label: 'Developer',
     icon: UserCog,
-    color: 'text-green-700',
-    bgColor: 'bg-green-50 border-green-300',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg border-success-border',
   },
   support: {
     label: 'Support',
     icon: HeadphonesIcon,
-    color: 'text-orange-700',
-    bgColor: 'bg-orange-50 border-orange-300',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg border-warning-border',
   },
   customer: {
     label: 'Customer',
     icon: ShoppingCart,
-    color: 'text-emerald-700',
-    bgColor: 'bg-emerald-50 border-emerald-300',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg border-success-border',
   },
   vendor: {
     label: 'Vendor',
     icon: Briefcase,
-    color: 'text-amber-700',
-    bgColor: 'bg-amber-50 border-amber-300',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg border-warning-border',
   },
 };
 
@@ -177,22 +177,22 @@ export const UserNode = memo<UserNodeProps>(({ id, data, selected }) => {
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-amber-500 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
       />
       <Handle
         type="target"
         position={Position.Left}
-        className="!w-3 !h-3 !bg-amber-500 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
       />
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-amber-500 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="!w-3 !h-3 !bg-amber-500 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
       />
 
       {/* Header */}
@@ -207,7 +207,7 @@ export const UserNode = memo<UserNodeProps>(({ id, data, selected }) => {
         </div>
         <div className="flex items-center gap-1">
           {data.estimatedCount && (
-            <span className="px-1.5 py-0.5 bg-white/50 text-[10px] text-gray-600 rounded flex items-center gap-1">
+            <span className="px-1.5 py-0.5 bg-surface text-[10px] text-muted-foreground rounded flex items-center gap-1">
               <Users className="w-3 h-3" />
               {data.estimatedCount}
             </span>
@@ -220,26 +220,26 @@ export const UserNode = memo<UserNodeProps>(({ id, data, selected }) => {
               }}
               className="p-1 hover:bg-black/5 rounded"
             >
-              <MoreHorizontal className="w-4 h-4 text-gray-500" />
+              <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
             </button>
             {showMenu && (
-              <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border py-1 z-50 min-w-[130px]">
+              <div className="absolute right-0 top-full mt-1 bg-surface rounded-lg shadow-lg border border-border py-1 z-50 min-w-[130px]">
                 <button
                   onClick={handleEdit}
-                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted/40 flex items-center gap-2"
                 >
                   <Edit2 className="w-3.5 h-3.5" /> Edit
                 </button>
                 <button
                   onClick={() => data.onAddPermission?.(id)}
-                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted/40 flex items-center gap-2"
                 >
                   <Shield className="w-3.5 h-3.5" /> Add Permission
                 </button>
                 <hr className="my-1" />
                 <button
                   onClick={handleDelete}
-                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
+                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-destructive-bg text-destructive flex items-center gap-2"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Delete
                 </button>
@@ -251,9 +251,9 @@ export const UserNode = memo<UserNodeProps>(({ id, data, selected }) => {
 
       {/* Content */}
       <div className="px-3 py-2">
-        <h3 className="text-sm font-medium text-gray-900">{data.label}</h3>
+        <h3 className="text-sm font-medium text-fg">{data.label}</h3>
         {data.description && (
-          <p className={cn('text-xs text-gray-600 mt-1', expanded ? '' : 'line-clamp-2')}>
+          <p className={cn('text-xs text-fg-muted mt-1', expanded ? '' : 'line-clamp-2')}>
             {data.description}
           </p>
         )}
@@ -262,16 +262,16 @@ export const UserNode = memo<UserNodeProps>(({ id, data, selected }) => {
       {/* Goals Preview */}
       {primaryGoals.length > 0 && (
         <div className="px-3 py-1.5">
-          <div className="flex items-center gap-1 text-xs text-gray-500">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Target className="w-3.5 h-3.5" />
             <span className="truncate">{primaryGoals[0].goal}</span>
-            {primaryGoals.length > 1 && <span className="text-gray-400">+{primaryGoals.length - 1}</span>}
+            {primaryGoals.length > 1 && <span className="text-muted-foreground">+{primaryGoals.length - 1}</span>}
           </div>
         </div>
       )}
 
       {/* Quick Info */}
-      <div className="px-3 py-2 border-t border-current/10 flex items-center justify-between text-xs text-gray-500">
+      <div className="px-3 py-2 border-t border-current/10 flex items-center justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1">
             <Shield className="w-3.5 h-3.5" />
@@ -305,23 +305,23 @@ export const UserNode = memo<UserNodeProps>(({ id, data, selected }) => {
           {/* Goals */}
           {data.goals.length > 0 && (
             <div>
-              <span className="text-xs font-medium text-gray-700">Goals:</span>
+              <span className="text-xs font-medium text-fg">Goals:</span>
               <div className="mt-1 space-y-1">
                 {data.goals.map((goal, idx) => (
                   <div
                     key={idx}
                     className={cn(
                       'flex items-start gap-2 py-1 px-2 rounded text-xs',
-                      goal.priority === 'primary' ? 'bg-emerald-50' : 'bg-gray-50'
+                      goal.priority === 'primary' ? 'bg-success-bg' : 'bg-muted'
                     )}
                   >
                     <Target
                       className={cn(
                         'w-3.5 h-3.5 mt-0.5 flex-shrink-0',
-                        goal.priority === 'primary' ? 'text-emerald-600' : 'text-gray-400'
+                        goal.priority === 'primary' ? 'text-success-color' : 'text-muted-foreground'
                       )}
                     />
-                    <span className="text-gray-700">{goal.goal}</span>
+                    <span className="text-fg">{goal.goal}</span>
                   </div>
                 ))}
               </div>
@@ -331,15 +331,15 @@ export const UserNode = memo<UserNodeProps>(({ id, data, selected }) => {
           {/* Permissions */}
           {data.permissions.length > 0 && (
             <div>
-              <span className="text-xs font-medium text-gray-700">Permissions:</span>
+              <span className="text-xs font-medium text-fg">Permissions:</span>
               <div className="flex flex-wrap gap-1 mt-1">
                 {data.permissions.map((perm) => (
                   <span
                     key={perm.name}
-                    className="px-1.5 py-0.5 bg-white/50 rounded text-xs text-gray-600 flex items-center gap-1"
+                    className="px-1.5 py-0.5 bg-surface rounded text-xs text-muted-foreground flex items-center gap-1"
                     title={perm.description}
                   >
-                    <CheckCircle2 className="w-3 h-3 text-green-500" />
+                    <CheckCircle2 className="w-3 h-3 text-success-color" />
                     {perm.name}
                   </span>
                 ))}
@@ -350,10 +350,10 @@ export const UserNode = memo<UserNodeProps>(({ id, data, selected }) => {
           {/* Touchpoints */}
           {data.touchpoints && data.touchpoints.length > 0 && (
             <div>
-              <span className="text-xs font-medium text-gray-700">Touchpoints:</span>
+              <span className="text-xs font-medium text-fg">Touchpoints:</span>
               <div className="flex flex-wrap gap-1 mt-1">
                 {data.touchpoints.map((tp) => (
-                  <span key={tp} className="px-1.5 py-0.5 bg-blue-50 rounded text-xs text-blue-700">
+                  <span key={tp} className="px-1.5 py-0.5 bg-info-bg rounded text-xs text-info-color">
                     {tp}
                   </span>
                 ))}
@@ -364,11 +364,11 @@ export const UserNode = memo<UserNodeProps>(({ id, data, selected }) => {
           {/* Pain Points */}
           {data.painPoints && data.painPoints.length > 0 && (
             <div>
-              <span className="text-xs font-medium text-gray-700">Pain Points:</span>
+              <span className="text-xs font-medium text-fg">Pain Points:</span>
               <ul className="mt-1 space-y-0.5">
                 {data.painPoints.map((pp, idx) => (
-                  <li key={idx} className="text-xs text-gray-600 flex items-start gap-1">
-                    <span className="text-red-400">•</span>
+                  <li key={idx} className="text-xs text-fg-muted flex items-start gap-1">
+                    <span className="text-destructive">•</span>
                     {pp}
                   </li>
                 ))}
@@ -379,8 +379,8 @@ export const UserNode = memo<UserNodeProps>(({ id, data, selected }) => {
           {/* Notes */}
           {data.notes && (
             <div>
-              <span className="text-xs font-medium text-gray-700">Notes:</span>
-              <p className="text-xs text-gray-600 mt-0.5">{data.notes}</p>
+              <span className="text-xs font-medium text-fg">Notes:</span>
+              <p className="text-xs text-fg-muted mt-0.5">{data.notes}</p>
             </div>
           )}
         </div>

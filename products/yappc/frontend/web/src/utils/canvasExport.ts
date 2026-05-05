@@ -122,22 +122,20 @@ export async function exportAsPDF(
     const opts = { ...DEFAULT_OPTIONS, ...options };
 
     try {
-        const loadJsPdf = new Function('return import("jspdf")') as () => Promise<{
-            default: new (options: unknown) => {
-                addImage: (...args: unknown[]) => void;
-                setProperties: (props: Record<string, unknown>) => void;
-                save: (fileName: string) => void;
-            };
-        }>;
-        const loadHtml2Canvas = new Function('return import("html2canvas")') as () => Promise<{
-            default: (
-                element: HTMLElement,
-                options: Record<string, unknown>
-            ) => Promise<HTMLCanvasElement>;
-        }>;
         const [{ default: jsPDF }, html2canvas] = await Promise.all([
-            loadJsPdf(),
-            loadHtml2Canvas(),
+            import('jspdf') as Promise<{
+                default: new (options: unknown) => {
+                    addImage: (...args: unknown[]) => void;
+                    setProperties: (props: Record<string, unknown>) => void;
+                    save: (fileName: string) => void;
+                };
+            }>,
+            import('html2canvas') as Promise<{
+                default: (
+                    element: HTMLElement,
+                    options: Record<string, unknown>
+                ) => Promise<HTMLCanvasElement>;
+            }>,
         ]);
 
         // Capture canvas as image

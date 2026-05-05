@@ -26,28 +26,28 @@ interface AgentActionPanelProps {
 
 const SEVERITY_STYLES: Record<AgentActionSeverity, { bg: string; border: string; icon: string; text: string }> = {
   error: {
-    bg: 'bg-red-50 dark:bg-red-900/20',
-    border: 'border-red-200 dark:border-red-800',
+    bg: 'bg-destructive-bg dark:bg-destructive-bg',
+    border: 'border-destructive-border dark:border-destructive-border',
     icon: '🚫',
-    text: 'text-red-700 dark:text-red-300',
+    text: 'text-destructive dark:text-destructive',
   },
   warning: {
-    bg: 'bg-amber-50 dark:bg-amber-900/20',
-    border: 'border-amber-200 dark:border-amber-800',
+    bg: 'bg-warning-bg dark:bg-warning-bg',
+    border: 'border-warning-border dark:border-warning-border',
     icon: '⚠️',
-    text: 'text-amber-700 dark:text-amber-300',
+    text: 'text-warning-color dark:text-warning-color',
   },
   info: {
-    bg: 'bg-blue-50 dark:bg-blue-900/20',
-    border: 'border-blue-200 dark:border-blue-800',
+    bg: 'bg-info-bg dark:bg-info-bg',
+    border: 'border-info-border dark:border-info-border',
     icon: '💡',
-    text: 'text-blue-700 dark:text-blue-300',
+    text: 'text-info-color dark:text-info-color',
   },
   success: {
-    bg: 'bg-green-50 dark:bg-green-900/20',
-    border: 'border-green-200 dark:border-green-800',
+    bg: 'bg-success-bg dark:bg-success-bg',
+    border: 'border-success-border dark:border-success-border',
     icon: '✅',
-    text: 'text-green-700 dark:text-green-300',
+    text: 'text-success-color dark:text-success-color',
   },
 };
 
@@ -88,22 +88,22 @@ export function AgentActionPanel({
     return (
       <div className={`flex items-center gap-2 ${className}`}>
         {blockingCount > 0 && (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-xs font-medium">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-destructive-bg dark:bg-destructive-bg text-destructive dark:text-destructive text-xs font-medium">
             🚫 {blockingCount} blocking
           </span>
         )}
         {errorCount > 0 && blockingCount === 0 && (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-xs font-medium">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-destructive-bg dark:bg-destructive-bg text-destructive dark:text-destructive text-xs font-medium">
             {errorCount} error{errorCount > 1 ? 's' : ''}
           </span>
         )}
         {warningCount > 0 && (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs font-medium">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-warning-bg dark:bg-warning-bg text-warning-color dark:text-warning-color text-xs font-medium">
             {warningCount} warning{warningCount > 1 ? 's' : ''}
           </span>
         )}
         {actions.length - errorCount - warningCount > 0 && (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-info-bg dark:bg-info-bg text-info-color dark:text-info-color text-xs font-medium">
             {actions.length - errorCount - warningCount} suggestion{actions.length - errorCount - warningCount > 1 ? 's' : ''}
           </span>
         )}
@@ -118,7 +118,7 @@ export function AgentActionPanel({
         <h3 className="text-sm font-semibold text-text-primary">AI Agent Reports</h3>
         <div className="flex items-center gap-2">
           {blockingCount > 0 && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 font-medium">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-destructive-bg dark:bg-destructive-bg text-destructive dark:text-destructive font-medium">
               {blockingCount} blocking
             </span>
           )}
@@ -127,14 +127,14 @@ export function AgentActionPanel({
 
       {/* Blocking Actions (always shown first) */}
       {blockingCount > 0 && (
-        <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+        <div className="p-3 rounded-lg bg-destructive-bg dark:bg-destructive-bg border border-destructive-border dark:border-destructive-border">
           <div className="flex items-start gap-2">
             <span className="text-lg">🚫</span>
             <div className="flex-1">
-              <h4 className="text-sm font-semibold text-red-700 dark:text-red-300">
+              <h4 className="text-sm font-semibold text-destructive dark:text-destructive">
                 Deploy Blocked
               </h4>
-              <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
+              <p className="text-xs text-destructive dark:text-destructive mt-0.5">
                 {blockingCount} issue{blockingCount > 1 ? 's' : ''} must be resolved or overridden before deploying.
               </p>
             </div>
@@ -190,7 +190,7 @@ export function AgentActionPanel({
                             {action.title}
                           </span>
                           {action.type === 'block_deploy' && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 font-medium">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive-bg dark:bg-destructive-bg text-destructive dark:text-destructive font-medium">
                               BLOCKING
                             </span>
                           )}
@@ -237,7 +237,7 @@ export function AgentActionPanel({
                           {action.requiresHumanOverride && (
                             <button
                               onClick={() => onOverride(action.id)}
-                              className="px-3 py-1.5 text-xs font-medium rounded-md bg-amber-600 text-white hover:bg-amber-700 transition-colors"
+                              className="px-3 py-1.5 text-xs font-medium rounded-md bg-warning-bg text-white hover:bg-warning-bg transition-colors"
                             >
                               Override & Continue
                             </button>
@@ -288,7 +288,7 @@ export function AgentActionBadge({
     return (
       <button
         onClick={onClick}
-        className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors ${className}`}
+        className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-success-color dark:text-success-color hover:bg-success-bg dark:hover:bg-success-bg transition-colors ${className}`}
       >
         <span>✓</span>
         <span>AI OK</span>
@@ -297,16 +297,16 @@ export function AgentActionBadge({
   }
 
   const bgColor = blockingCount > 0 || errorCount > 0
-    ? 'bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30'
+    ? 'bg-destructive-bg dark:bg-destructive-bg hover:bg-destructive-bg dark:hover:bg-destructive-bg'
     : warningCount > 0
-    ? 'bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30'
-    : 'bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30';
+    ? 'bg-warning-bg dark:bg-warning-bg hover:bg-warning-bg dark:hover:bg-warning-bg'
+    : 'bg-info-bg dark:bg-info-bg hover:bg-info-bg dark:hover:bg-info-bg';
 
   const textColor = blockingCount > 0 || errorCount > 0
-    ? 'text-red-700 dark:text-red-300'
+    ? 'text-destructive dark:text-destructive'
     : warningCount > 0
-    ? 'text-amber-700 dark:text-amber-300'
-    : 'text-blue-700 dark:text-blue-300';
+    ? 'text-warning-color dark:text-warning-color'
+    : 'text-info-color dark:text-info-color';
 
   return (
     <button

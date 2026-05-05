@@ -45,7 +45,7 @@ import java.util.regex.Pattern;
  * @doc.layer product
  * @doc.pattern Repository Implementation
  */
-public final class DbPageArtifactRepository implements PageArtifactRepository {
+public final class DbPageArtifactRepository implements PageArtifactRepository, PageArtifactAtomicMutationRepository {
 
     private static final Logger LOG = LoggerFactory.getLogger(DbPageArtifactRepository.class);
     private static final Pattern DOCUMENT_REVISION_PATTERN =
@@ -95,6 +95,19 @@ public final class DbPageArtifactRepository implements PageArtifactRepository {
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
+    private static final String INSERT_AUDIT_EVENT = """
+            INSERT INTO page_artifact_audit_events (
+                action,
+                tenant_id,
+                workspace_id,
+                project_id,
+                artifact_id,
+                actor,
+                summary,
+                occurred_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """;
+
     private final JdbcTemplate jdbc;
     private final ObjectMapper objectMapper;
     private final Executor blockingExecutor;
@@ -133,114 +146,39 @@ public final class DbPageArtifactRepository implements PageArtifactRepository {
         LOG.debug("Saving page artifact: tenant={}, workspace={}, project={}, artifactId={}, documentId={}",
                 tenantId, workspaceId, projectId, document.artifactId(), document.documentId());
 
-        return Promise.ofBlocking(blockingExecutor, () -> jdbc.inTransaction(tx -> {
-            Optional<PageArtifactDocument> existing = tx.queryForObject(
-                    SELECT_ARTIFACT,
-                    this::mapRow,
-                    tenantId,
-                    workspaceId,
-                    projectId,
-                    document.artifactId()
-            );
+        return Promise.ofBlocking(blockingExecutor, () -> jdbc.inTransaction(
+            (com.ghatana.core.database.transaction.TransactionCallback<JdbcTemplate, PageArtifactDocument>)
+                tx -> saveInTransaction(tx, tenantId, workspaceId, projectId, document)
+        ));
+        }
 
-            if (existing.isEmpty()) {
+        @Override
+        public Promise<PageArtifactDocument> saveWithAudit(
+            @NotNull String tenantId,
+            @NotNull String workspaceId,
+            @NotNull String projectId,
+            @NotNull PageArtifactDocument document,
+            @NotNull String action,
+            @NotNull String actor,
+            @NotNull String summary
+        ) {
+        return Promise.ofBlocking(blockingExecutor, () -> jdbc.inTransaction(
+            (com.ghatana.core.database.transaction.TransactionCallback<JdbcTemplate, PageArtifactDocument>) tx -> {
+                PageArtifactDocument persistedDocument = saveInTransaction(tx, tenantId, workspaceId, projectId, document);
                 tx.update(
-                        INSERT_ARTIFACT,
-                        tenantId,
-                        workspaceId,
-                        projectId,
-                        document.artifactId(),
-                        document.documentId(),
-                        document.name(),
-                        document.createdBy(),
-                        document.createdAt(),
-                        document.updatedAt(),
-                        document.syncStatus(),
-                        document.trustLevel(),
-                        document.dataClassification(),
-                        document.source(),
-                        toJson(document.builderDocument()),
-                        toJson(document.validationSummary()),
-                        toJson(document.aiChangeRecords()),
-                        document.residualIslandCount(),
-                        document.roundTripFidelity()
-                );
-                LOG.debug("Inserted new page artifact: {}", document.artifactId());
-                return document;
-            }
-
-            PageArtifactDocument existingDoc = existing.get();
-            if (!existingDoc.documentId().equals(document.documentId())) {
-                LOG.warn("Conflict detected for artifact {}: expected documentId={}, got documentId={}",
-                        document.artifactId(), existingDoc.documentId(), document.documentId());
-                throw new PageArtifactConflictException(
-                        document.artifactId(),
-                        existingDoc.documentId()
-                );
-            }
-
-            PageArtifactDocument persistedDocument = new PageArtifactDocument(
+                    INSERT_AUDIT_EVENT,
+                    action,
+                    tenantId,
+                    workspaceId,
+                    projectId,
                     document.artifactId(),
-                    nextDocumentId(existingDoc.documentId()),
-                    document.name(),
-                    existingDoc.createdBy(),
-                    existingDoc.createdAt(),
-                    Instant.now(),
-                    document.syncStatus(),
-                    document.trustLevel(),
-                    document.dataClassification(),
-                    document.builderDocument(),
-                    document.validationSummary(),
-                    document.aiChangeRecords(),
-                    document.source(),
-                    document.residualIslandCount(),
-                    document.roundTripFidelity()
-            );
-
-            long artifactId = getArtifactId(tx, tenantId, workspaceId, projectId, document.artifactId());
-            archiveVersion(
-                    tx,
-                    artifactId,
-                    tenantId,
-                    workspaceId,
-                    projectId,
-                    existingDoc,
-                    "Version before update to " + persistedDocument.documentId()
-            );
-
-            int updated = tx.update(
-                    UPDATE_ARTIFACT,
-                    persistedDocument.documentId(),
-                    persistedDocument.name(),
-                    persistedDocument.updatedAt(),
-                    persistedDocument.syncStatus(),
-                    persistedDocument.trustLevel(),
-                    persistedDocument.dataClassification(),
-                    persistedDocument.source(),
-                    toJson(persistedDocument.builderDocument()),
-                    toJson(persistedDocument.validationSummary()),
-                    toJson(persistedDocument.aiChangeRecords()),
-                    persistedDocument.residualIslandCount(),
-                    persistedDocument.roundTripFidelity(),
-                    tenantId,
-                    workspaceId,
-                    projectId,
-                    persistedDocument.artifactId(),
-                    existingDoc.documentId()
-            );
-
-            if (updated == 0) {
-                LOG.warn("No rows updated for artifact {}, possible concurrent modification",
-                        document.artifactId());
-                throw new PageArtifactConflictException(
-                        document.artifactId(),
-                        existingDoc.documentId()
+                    actor,
+                    summary,
+                    Instant.now()
                 );
+                return persistedDocument;
             }
-
-            LOG.debug("Updated page artifact: {}", document.artifactId());
-            return persistedDocument;
-        }));
+        ));
     }
 
     @Override
@@ -335,6 +273,121 @@ public final class DbPageArtifactRepository implements PageArtifactRepository {
                 artifactId
         ).orElseThrow(() -> new IllegalStateException("Artifact not found: " + artifactId));
     }
+
+        private PageArtifactDocument saveInTransaction(
+            @NotNull JdbcTemplate tx,
+            @NotNull String tenantId,
+            @NotNull String workspaceId,
+            @NotNull String projectId,
+            @NotNull PageArtifactDocument document
+        ) {
+        Optional<PageArtifactDocument> existing = tx.queryForObject(
+            SELECT_ARTIFACT,
+            this::mapRow,
+            tenantId,
+            workspaceId,
+            projectId,
+            document.artifactId()
+        );
+
+        if (existing.isEmpty()) {
+            tx.update(
+                INSERT_ARTIFACT,
+                tenantId,
+                workspaceId,
+                projectId,
+                document.artifactId(),
+                document.documentId(),
+                document.name(),
+                document.createdBy(),
+                document.createdAt(),
+                document.updatedAt(),
+                document.syncStatus(),
+                document.trustLevel(),
+                document.dataClassification(),
+                document.source(),
+                toJson(document.builderDocument()),
+                toJson(document.validationSummary()),
+                toJson(document.aiChangeRecords()),
+                document.residualIslandCount(),
+                document.roundTripFidelity()
+            );
+            LOG.debug("Inserted new page artifact: {}", document.artifactId());
+            return document;
+        }
+
+        PageArtifactDocument existingDoc = existing.get();
+        if (!existingDoc.documentId().equals(document.documentId())) {
+            LOG.warn("Conflict detected for artifact {}: expected documentId={}, got documentId={}",
+                document.artifactId(), existingDoc.documentId(), document.documentId());
+            throw new PageArtifactConflictException(
+                document.artifactId(),
+                existingDoc.documentId()
+            );
+        }
+
+        PageArtifactDocument persistedDocument = new PageArtifactDocument(
+            document.artifactId(),
+            nextDocumentId(existingDoc.documentId()),
+            document.name(),
+            existingDoc.createdBy(),
+            existingDoc.createdAt(),
+            Instant.now(),
+            document.syncStatus(),
+            document.trustLevel(),
+            document.dataClassification(),
+            document.builderDocument(),
+            document.validationSummary(),
+            document.aiChangeRecords(),
+            document.source(),
+            document.residualIslandCount(),
+            document.roundTripFidelity()
+        );
+
+        long artifactId = getArtifactId(tx, tenantId, workspaceId, projectId, document.artifactId());
+        archiveVersion(
+            tx,
+            artifactId,
+            tenantId,
+            workspaceId,
+            projectId,
+            existingDoc,
+            "Version before update to " + persistedDocument.documentId()
+        );
+
+        int updated = tx.update(
+            UPDATE_ARTIFACT,
+            persistedDocument.documentId(),
+            persistedDocument.name(),
+            persistedDocument.updatedAt(),
+            persistedDocument.syncStatus(),
+            persistedDocument.trustLevel(),
+            persistedDocument.dataClassification(),
+            persistedDocument.source(),
+            toJson(persistedDocument.builderDocument()),
+            toJson(persistedDocument.validationSummary()),
+            toJson(persistedDocument.aiChangeRecords()),
+            persistedDocument.residualIslandCount(),
+            persistedDocument.roundTripFidelity(),
+            tenantId,
+            workspaceId,
+            projectId,
+            persistedDocument.artifactId(),
+            existingDoc.documentId()
+        );
+
+        if (updated == 0) {
+            LOG.warn("No rows updated for artifact {}, possible concurrent modification",
+                document.artifactId());
+            throw new PageArtifactConflictException(
+                document.artifactId(),
+                existingDoc.documentId()
+            );
+        }
+
+        LOG.debug("Updated page artifact: {}", document.artifactId());
+        return persistedDocument;
+        }
 
     private void archiveVersion(
             JdbcTemplate tx,

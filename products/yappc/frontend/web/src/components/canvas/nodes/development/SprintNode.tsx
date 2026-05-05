@@ -91,8 +91,8 @@ const STATUS_CONFIG: Record<SprintStatus, { label: string; icon: typeof Play; co
   planning: {
     label: 'Planning',
     icon: PauseCircle,
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-100 border-gray-200',
+    color: 'text-fg-muted',
+    bgColor: 'bg-surface-muted border-border',
   },
   active: {
     label: 'Active',
@@ -103,14 +103,14 @@ const STATUS_CONFIG: Record<SprintStatus, { label: string; icon: typeof Play; co
   completed: {
     label: 'Completed',
     icon: CheckCircle2,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50 border-blue-200',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg border-info-border',
   },
   cancelled: {
     label: 'Cancelled',
     icon: XCircle,
-    color: 'text-red-600',
-    bgColor: 'bg-red-50 border-red-200',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive-bg border-destructive-border',
   },
 };
 
@@ -192,8 +192,8 @@ const TeamAvatars: React.FC<TeamAvatarsProps> = memo(({ members, maxDisplay = 4 
         </div>
       ))}
       {remaining > 0 && (
-        <div className="w-6 h-6 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center">
-          <span className="text-[9px] font-medium text-gray-600">+{remaining}</span>
+        <div className="w-6 h-6 rounded-full border-2 border-white bg-muted flex items-center justify-center">
+          <span className="text-[9px] font-medium text-fg-muted">+{remaining}</span>
         </div>
       )}
     </div>
@@ -289,16 +289,16 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
       <Handle
         type="target"
         position={Position.Left}
-        className="!w-3 !h-3 !bg-violet-500 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-violet-500 !border-2 !border-surface"
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="!w-3 !h-3 !bg-violet-500 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-violet-500 !border-2 !border-surface"
       />
 
       {/* Header */}
-      <div className="p-4 border-b border-gray-100">
+      <div className="p-4 border-b border-border">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className={cn('p-2 rounded-lg', statusConfig.bgColor)}>
@@ -306,7 +306,7 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-gray-500">
+                <span className="text-xs font-mono text-fg-muted">
                   Sprint {data.number}
                 </span>
                 <div className={cn('flex items-center gap-1 px-2 py-0.5 rounded-full', statusConfig.bgColor)}>
@@ -316,7 +316,7 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
                   </span>
                 </div>
               </div>
-              <h4 className="font-semibold text-gray-900 truncate">{data.label}</h4>
+              <h4 className="font-semibold text-fg truncate">{data.label}</h4>
             </div>
           </div>
 
@@ -327,7 +327,7 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
                 e.stopPropagation();
                 setShowMenu(!showMenu);
               }}
-              className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+              className="p-1.5 rounded hover:bg-surface-muted text-fg-muted hover:text-fg-muted"
             >
               <MoreHorizontal className="w-4 h-4" />
             </button>
@@ -341,10 +341,10 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
                     setShowMenu(false);
                   }}
                 />
-                <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-border py-1 z-20">
                   <button
                     onClick={handleEdit}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-fg hover:bg-surface-muted"
                   >
                     <Edit2 className="w-4 h-4" />
                     Edit Sprint
@@ -361,7 +361,7 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
                   {data.status === 'active' && (
                     <button
                       onClick={handleComplete}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-blue-600 hover:bg-blue-50"
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-info-color hover:bg-info-bg"
                     >
                       <CheckCircle2 className="w-4 h-4" />
                       Complete Sprint
@@ -369,7 +369,7 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
                   )}
                   <button
                     onClick={handleDelete}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-destructive hover:bg-destructive-bg"
                   >
                     <Trash2 className="w-4 h-4" />
                     Delete
@@ -382,21 +382,21 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
 
         {/* Goal */}
         {data.goal && (
-          <p className="mt-2 text-sm text-gray-600 line-clamp-2">{data.goal}</p>
+          <p className="mt-2 text-sm text-fg-muted line-clamp-2">{data.goal}</p>
         )}
 
         {/* Date range */}
-        <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
+        <div className="mt-3 flex items-center gap-2 text-xs text-fg-muted">
           <Calendar className="w-3.5 h-3.5" />
           <span>{data.startDate}</span>
           <span>→</span>
           <span>{data.endDate}</span>
           {data.daysRemaining !== undefined && data.status === 'active' && (
             <>
-              <span className="text-gray-300">|</span>
+              <span className="text-fg-muted">|</span>
               <Clock className="w-3.5 h-3.5" />
               <span className={cn(
-                data.daysRemaining <= 2 ? 'text-red-500 font-medium' : ''
+                data.daysRemaining <= 2 ? 'text-destructive font-medium' : ''
               )}>
                 {data.daysRemaining} days left
               </span>
@@ -410,12 +410,12 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
         {/* Points progress */}
         <div>
           <div className="flex items-center justify-between text-xs mb-1.5">
-            <span className="text-gray-500">Points Progress</span>
-            <span className="font-medium text-gray-700">
+            <span className="text-fg-muted">Points Progress</span>
+            <span className="font-medium text-fg">
               {data.completedPoints} / {data.plannedPoints} pts ({progress}%)
             </span>
           </div>
-          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div
               className={cn(
                 'h-full rounded-full transition-all',
@@ -429,14 +429,14 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
         {/* Stories progress */}
         <div>
           <div className="flex items-center justify-between text-xs mb-1.5">
-            <span className="text-gray-500">Stories</span>
-            <span className="font-medium text-gray-700">
+            <span className="text-fg-muted">Stories</span>
+            <span className="font-medium text-fg">
               {data.completedStoryCount} / {data.storyCount} ({storyProgress}%)
             </span>
           </div>
-          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div
-              className="h-full bg-blue-500 rounded-full transition-all"
+              className="h-full bg-info-bg rounded-full transition-all"
               style={{ width: `${Math.min(storyProgress, 100)}%` }}
             />
           </div>
@@ -444,9 +444,9 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
 
         {/* Mini burndown */}
         {data.burndownData && data.burndownData.length > 1 && (
-          <div className="mt-3 pt-3 border-t border-gray-100">
+          <div className="mt-3 pt-3 border-t border-border">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-gray-500">Burndown</span>
+              <span className="text-xs text-fg-muted">Burndown</span>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -464,15 +464,15 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
 
       {/* Expandable content */}
       {expanded && (
-        <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3">
+        <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
           {/* Velocity */}
           {data.velocity !== undefined && (
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs text-gray-500">
+              <div className="flex items-center gap-2 text-xs text-fg-muted">
                 <TrendingUp className="w-3.5 h-3.5" />
                 <span>Velocity</span>
               </div>
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-medium text-fg">
                 {data.velocity} pts/sprint
               </span>
             </div>
@@ -481,7 +481,7 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
           {/* Team members */}
           {data.members && data.members.length > 0 && (
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs text-gray-500">
+              <div className="flex items-center gap-2 text-xs text-fg-muted">
                 <Users className="w-3.5 h-3.5" />
                 <span>Team ({data.members.length})</span>
               </div>
@@ -508,7 +508,7 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
               }}
               className={cn(
                 'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium',
-                'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors'
+                'bg-surface-muted text-fg hover:bg-muted transition-colors'
               )}
             >
               <Layers className="w-3.5 h-3.5" />
@@ -519,8 +519,8 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
       )}
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
-        <div className="flex items-center gap-3 text-gray-400">
+      <div className="px-4 py-3 border-t border-border flex items-center justify-between">
+        <div className="flex items-center gap-3 text-fg-muted">
           <div className="flex items-center gap-1.5" title="Total stories">
             <Layers className="w-3.5 h-3.5" />
             <span className="text-xs">{data.storyCount}</span>
@@ -541,7 +541,7 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
 
         <button
           onClick={handleToggleExpand}
-          className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+          className="p-1 rounded hover:bg-surface-muted text-fg-muted hover:text-fg-muted"
         >
           {expanded ? (
             <ChevronUp className="w-4 h-4" />

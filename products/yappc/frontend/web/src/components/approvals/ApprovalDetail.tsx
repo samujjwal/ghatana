@@ -51,17 +51,17 @@ export interface ApprovalDetailProps {
 }
 
 const STATUS_STYLES: Record<ApprovalDecisionStatus, string> = {
-  PENDING: 'bg-amber-100 text-amber-800',
+  PENDING: 'bg-warning-bg text-warning-color',
   APPROVED: 'bg-emerald-100 text-emerald-800',
-  REJECTED: 'bg-red-100 text-red-800',
-  CHANGES_REQUESTED: 'bg-blue-100 text-blue-800',
-  EXPIRED: 'bg-gray-200 text-gray-700',
+  REJECTED: 'bg-destructive-bg text-destructive',
+  CHANGES_REQUESTED: 'bg-info-bg text-info-color',
+  EXPIRED: 'bg-surface-muted text-fg',
 };
 
 const POLICY_STYLES: Record<PolicyDecisionSummary['status'], string> = {
   ALLOWED: 'bg-emerald-100 text-emerald-800',
-  REQUIRES_REVIEW: 'bg-amber-100 text-amber-800',
-  BLOCKED: 'bg-red-100 text-red-800',
+  REQUIRES_REVIEW: 'bg-warning-bg text-warning-color',
+  BLOCKED: 'bg-destructive-bg text-destructive',
 };
 
 export const ApprovalDetail: React.FC<ApprovalDetailProps> = ({
@@ -90,40 +90,40 @@ export const ApprovalDetail: React.FC<ApprovalDetailProps> = ({
 
         <Box className="space-y-1">
           <Typography className="text-sm font-medium">Requested action</Typography>
-          <Typography className="text-sm text-gray-700">{approval.requestedAction}</Typography>
+          <Typography className="text-sm text-fg">{approval.requestedAction}</Typography>
         </Box>
 
         {aiSummary && (
           <Box className="space-y-1">
             <Typography className="text-sm font-medium">AI rationale</Typography>
-            <Typography className="text-sm text-gray-700">{aiSummary}</Typography>
+            <Typography className="text-sm text-fg">{aiSummary}</Typography>
             {typeof confidence === 'number' && (
-              <Typography className="text-xs text-gray-500">Confidence: {Math.round(confidence * 100)}%</Typography>
+              <Typography className="text-xs text-fg-muted">Confidence: {Math.round(confidence * 100)}%</Typography>
             )}
           </Box>
         )}
 
         {enrichmentSuggestion && (
           <Box
-            className="space-y-3 rounded-md border border-blue-100 bg-blue-50 p-4"
+            className="space-y-3 rounded-md border border-info-border bg-info-bg p-4"
             aria-label="AI enrichment suggestion"
             data-testid="enrichment-suggestion"
           >
-            <Typography className="text-sm font-semibold text-blue-900">AI Enrichment Details</Typography>
+            <Typography className="text-sm font-semibold text-info-color">AI Enrichment Details</Typography>
 
             {enrichmentSuggestion.normalizedTitle && (
               <Box className="space-y-0.5">
-                <Typography className="text-xs font-medium text-blue-700 uppercase tracking-wide">Normalized Title</Typography>
-                <Typography className="text-sm text-blue-900">{enrichmentSuggestion.normalizedTitle}</Typography>
+                <Typography className="text-xs font-medium text-info-color uppercase tracking-wide">Normalized Title</Typography>
+                <Typography className="text-sm text-info-color">{enrichmentSuggestion.normalizedTitle}</Typography>
               </Box>
             )}
 
             {enrichmentSuggestion.acceptanceCriteria.length > 0 && (
               <Box className="space-y-1">
-                <Typography className="text-xs font-medium text-blue-700 uppercase tracking-wide">Acceptance Criteria</Typography>
+                <Typography className="text-xs font-medium text-info-color uppercase tracking-wide">Acceptance Criteria</Typography>
                 <ul className="list-inside list-disc space-y-0.5">
                   {enrichmentSuggestion.acceptanceCriteria.map((criterion, idx) => (
-                    <li key={idx} className="text-sm text-blue-900">{criterion}</li>
+                    <li key={idx} className="text-sm text-info-color">{criterion}</li>
                   ))}
                 </ul>
               </Box>
@@ -131,8 +131,8 @@ export const ApprovalDetail: React.FC<ApprovalDetailProps> = ({
 
             {enrichmentSuggestion.storyTrace && (
               <Box className="space-y-0.5">
-                <Typography className="text-xs font-medium text-blue-700 uppercase tracking-wide">Story Trace</Typography>
-                <Typography className="text-sm text-blue-900">{enrichmentSuggestion.storyTrace}</Typography>
+                <Typography className="text-xs font-medium text-info-color uppercase tracking-wide">Story Trace</Typography>
+                <Typography className="text-sm text-info-color">{enrichmentSuggestion.storyTrace}</Typography>
               </Box>
             )}
 
@@ -142,15 +142,15 @@ export const ApprovalDetail: React.FC<ApprovalDetailProps> = ({
                 confidence={enrichmentSuggestion.source === 'MODEL' ? enrichmentSuggestion.confidence : undefined}
                 rationale={enrichmentSuggestion.rationale}
               />
-              <Typography className="text-xs font-medium text-blue-700 uppercase tracking-wide">Confidence</Typography>
+              <Typography className="text-xs font-medium text-info-color uppercase tracking-wide">Confidence</Typography>
               <Box
                 className={[
                   'rounded-full px-2 py-0.5 text-xs font-medium',
                   enrichmentSuggestion.confidence >= 0.8
                     ? 'bg-emerald-100 text-emerald-800'
                     : enrichmentSuggestion.confidence >= 0.6
-                    ? 'bg-amber-100 text-amber-800'
-                    : 'bg-red-100 text-red-800',
+                    ? 'bg-warning-bg text-warning-color'
+                    : 'bg-destructive-bg text-destructive',
                 ].join(' ')}
                 aria-label={`Confidence: ${Math.round(enrichmentSuggestion.confidence * 100)}%`}
               >
@@ -160,8 +160,8 @@ export const ApprovalDetail: React.FC<ApprovalDetailProps> = ({
 
             {enrichmentSuggestion.rationale && (
               <Box className="space-y-0.5">
-                <Typography className="text-xs font-medium text-blue-700 uppercase tracking-wide">Rationale</Typography>
-                <Typography className="text-sm text-blue-900">{enrichmentSuggestion.rationale}</Typography>
+                <Typography className="text-xs font-medium text-info-color uppercase tracking-wide">Rationale</Typography>
+                <Typography className="text-sm text-info-color">{enrichmentSuggestion.rationale}</Typography>
               </Box>
             )}
           </Box>
@@ -169,15 +169,15 @@ export const ApprovalDetail: React.FC<ApprovalDetailProps> = ({
 
         {(originalContent || proposedContent) && (
           <Box className="grid gap-3 md:grid-cols-2">
-            <Box className="rounded border border-gray-200 p-3">
+            <Box className="rounded border border-border p-3">
               <Typography className="mb-1 text-sm font-medium">Current</Typography>
-              <Typography className="whitespace-pre-wrap text-sm text-gray-700">
+              <Typography className="whitespace-pre-wrap text-sm text-fg">
                 {originalContent ?? 'No existing content'}
               </Typography>
             </Box>
-            <Box className="rounded border border-gray-200 p-3">
+            <Box className="rounded border border-border p-3">
               <Typography className="mb-1 text-sm font-medium">Proposed</Typography>
-              <Typography className="whitespace-pre-wrap text-sm text-gray-700">
+              <Typography className="whitespace-pre-wrap text-sm text-fg">
                 {proposedContent ?? 'No proposal'}
               </Typography>
             </Box>
@@ -190,11 +190,11 @@ export const ApprovalDetail: React.FC<ApprovalDetailProps> = ({
             {policyDecisions.map((decision) => (
               <Box
                 key={decision.id}
-                className="flex items-center justify-between rounded border border-gray-200 px-3 py-2"
+                className="flex items-center justify-between rounded border border-border px-3 py-2"
               >
                 <Box>
-                  <Typography className="text-sm text-gray-700">{decision.reason}</Typography>
-                  <Typography className="text-xs text-gray-500">{new Date(decision.evaluatedAt).toLocaleString()}</Typography>
+                  <Typography className="text-sm text-fg">{decision.reason}</Typography>
+                  <Typography className="text-xs text-fg-muted">{new Date(decision.evaluatedAt).toLocaleString()}</Typography>
                 </Box>
                 <Chip label={decision.status} size="sm" className={POLICY_STYLES[decision.status]} />
               </Box>

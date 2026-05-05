@@ -81,23 +81,23 @@ const SEVERITY_CONFIG: Record<AlertSeverity, {
 }> = {
   CRITICAL: { 
     label: 'Critical', 
-    color: 'text-red-700', 
-    bgColor: 'bg-red-100', 
-    borderColor: 'border-red-500',
+    color: 'text-destructive', 
+    bgColor: 'bg-destructive-bg', 
+    borderColor: 'border-destructive-border',
     Icon: AlertTriangle 
   },
   WARNING: { 
     label: 'Warning', 
-    color: 'text-orange-700', 
-    bgColor: 'bg-orange-100', 
-    borderColor: 'border-orange-500',
+    color: 'text-warning-color', 
+    bgColor: 'bg-warning-bg', 
+    borderColor: 'border-warning-border',
     Icon: AlertCircle 
   },
   INFO: { 
     label: 'Info', 
-    color: 'text-blue-700', 
-    bgColor: 'bg-blue-100', 
-    borderColor: 'border-blue-500',
+    color: 'text-info-color', 
+    bgColor: 'bg-info-bg', 
+    borderColor: 'border-info-border',
     Icon: Info 
   },
 };
@@ -108,10 +108,10 @@ const STATUS_CONFIG: Record<AlertStatus, {
   bgColor: string;
   Icon: typeof Bell;
 }> = {
-  FIRING: { label: 'Firing', color: 'text-red-600', bgColor: 'bg-red-100', Icon: Bell },
-  RESOLVED: { label: 'Resolved', color: 'text-green-600', bgColor: 'bg-green-100', Icon: CheckCircle2 },
-  ACKNOWLEDGED: { label: 'Acknowledged', color: 'text-blue-600', bgColor: 'bg-blue-100', Icon: Check },
-  SILENCED: { label: 'Silenced', color: 'text-slate-600', bgColor: 'bg-slate-100', Icon: BellOff },
+  FIRING: { label: 'Firing', color: 'text-destructive', bgColor: 'bg-destructive-bg', Icon: Bell },
+  RESOLVED: { label: 'Resolved', color: 'text-success-color', bgColor: 'bg-success-bg', Icon: CheckCircle2 },
+  ACKNOWLEDGED: { label: 'Acknowledged', color: 'text-info-color', bgColor: 'bg-info-bg', Icon: Check },
+  SILENCED: { label: 'Silenced', color: 'text-fg-muted', bgColor: 'bg-muted', Icon: BellOff },
 };
 
 const CHANNEL_ICONS: Record<string, typeof Mail> = {
@@ -142,15 +142,15 @@ function ThresholdGauge({ currentValue, threshold, operator, severity }: {
   
   return (
     <div className="mt-2">
-      <div className="flex justify-between text-[10px] text-slate-500 mb-1">
+      <div className="flex justify-between text-[10px] text-fg-muted mb-1">
         <span>Current: {currentValue.toFixed(2)}</span>
         <span>Threshold: {threshold}</span>
       </div>
-      <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+      <div className="h-2 bg-muted rounded-full overflow-hidden">
         <div 
           className={cn(
             'h-full transition-all',
-            isBreached ? 'bg-red-500' : 'bg-green-500'
+            isBreached ? 'bg-destructive-bg0' : 'bg-success-bg0'
           )}
           style={{ width: `${Math.min(percentage, 100)}%` }}
         />
@@ -159,7 +159,7 @@ function ThresholdGauge({ currentValue, threshold, operator, severity }: {
         className="relative h-0"
         style={{ left: `${Math.min((threshold / (Math.max(currentValue, threshold) * 1.2)) * 100, 100)}%` }}
       >
-        <div className="absolute -top-2 w-0.5 h-4 bg-slate-600" />
+        <div className="absolute -top-2 w-0.5 h-4 bg-muted" />
       </div>
     </div>
   );
@@ -213,15 +213,15 @@ function ChannelBadges({ channels }: { channels: AlertChannel[] }) {
         return (
           <div
             key={index}
-            className="w-5 h-5 rounded bg-slate-100 flex items-center justify-center"
+            className="w-5 h-5 rounded bg-muted flex items-center justify-center"
             title={`${channel.type}: ${channel.name}`}
           >
-            <Icon className="w-3 h-3 text-slate-500" />
+            <Icon className="w-3 h-3 text-fg-muted" />
           </div>
         );
       })}
       {channels.length > 4 && (
-        <span className="text-[10px] text-slate-400">+{channels.length - 4}</span>
+        <span className="text-[10px] text-fg-muted">+{channels.length - 4}</span>
       )}
     </div>
   );
@@ -231,9 +231,9 @@ function TrendIndicator({ trend }: { trend?: 'up' | 'down' | 'stable' }) {
   if (!trend) return null;
   
   const config = {
-    up: { Icon: TrendingUp, color: 'text-red-500' },
-    down: { Icon: TrendingDown, color: 'text-green-500' },
-    stable: { Icon: Minus, color: 'text-slate-400' },
+    up: { Icon: TrendingUp, color: 'text-destructive' },
+    down: { Icon: TrendingDown, color: 'text-success-color' },
+    stable: { Icon: Minus, color: 'text-fg-muted' },
   };
   
   const { Icon, color } = config[trend];
@@ -255,33 +255,33 @@ function AlertNodeComponent({ data, selected }: AlertNodeProps) {
     <div
       className={cn(
         'min-w-[260px] max-w-[300px] rounded-lg border-2 bg-white shadow-md transition-all',
-        isFiring ? severityConfig.borderColor : 'border-slate-300',
+        isFiring ? severityConfig.borderColor : 'border-border',
         isFiring && 'animate-pulse',
-        selected && 'ring-2 ring-blue-400 ring-offset-2'
+        selected && 'ring-2 ring-primary ring-offset-2'
       )}
     >
       {/* Connection Handles */}
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-slate-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-muted-foreground !border-2 !border-surface"
       />
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-slate-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-muted-foreground !border-2 !border-surface"
       />
       <Handle
         type="source"
         position={Position.Right}
         id="incident"
-        className="!w-3 !h-3 !bg-red-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-destructive !border-2 !border-surface"
       />
       <Handle
         type="target"
         position={Position.Left}
         id="metric"
-        className="!w-3 !h-3 !bg-blue-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-info-color !border-2 !border-surface"
       />
       
       {/* Header */}
@@ -303,24 +303,24 @@ function AlertNodeComponent({ data, selected }: AlertNodeProps) {
       </div>
       
       {/* Alert Name */}
-      <div className="px-3 py-2 border-b border-slate-100">
+      <div className="px-3 py-2 border-b border-border">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-slate-900 line-clamp-1">{data.name}</h3>
+          <h3 className="text-sm font-medium text-fg line-clamp-1">{data.name}</h3>
           <TrendIndicator trend={data.trend} />
         </div>
         {data.description && (
-          <p className="text-xs text-slate-500 mt-1 line-clamp-1">{data.description}</p>
+          <p className="text-xs text-fg-muted mt-1 line-clamp-1">{data.description}</p>
         )}
       </div>
       
       {/* Condition */}
-      <div className="px-3 py-2 border-b border-slate-100 bg-slate-50">
+      <div className="px-3 py-2 border-b border-border bg-surface-muted">
         <div className="flex items-center gap-2">
-          <code className="text-[10px] text-slate-600 font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200 line-clamp-1 flex-1">
+          <code className="text-[10px] text-fg-muted font-mono bg-white px-1.5 py-0.5 rounded border border-border line-clamp-1 flex-1">
             {data.metricQuery} {data.operator} {data.threshold}
           </code>
         </div>
-        <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-500">
+        <div className="flex items-center gap-2 mt-1 text-[10px] text-fg-muted">
           <Clock className="w-3 h-3" />
           <span>for {data.duration}s</span>
         </div>
@@ -328,7 +328,7 @@ function AlertNodeComponent({ data, selected }: AlertNodeProps) {
       
       {/* Threshold Gauge */}
       {data.currentValue !== undefined && (
-        <div className="px-3 py-2 border-b border-slate-100">
+        <div className="px-3 py-2 border-b border-border">
           <ThresholdGauge 
             currentValue={data.currentValue}
             threshold={data.threshold}
@@ -340,8 +340,8 @@ function AlertNodeComponent({ data, selected }: AlertNodeProps) {
       
       {/* History Sparkline */}
       {data.historyValues && data.historyValues.length > 0 && (
-        <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
-          <span className="text-[10px] text-slate-500">Last 24h</span>
+        <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+          <span className="text-[10px] text-fg-muted">Last 24h</span>
           <MiniSparkline values={data.historyValues} threshold={data.threshold} />
         </div>
       )}
@@ -352,13 +352,13 @@ function AlertNodeComponent({ data, selected }: AlertNodeProps) {
         
         <div className="flex items-center gap-2">
           {data.silencedUntil && (
-            <div className="flex items-center gap-1 text-[10px] text-slate-400">
+            <div className="flex items-center gap-1 text-[10px] text-fg-muted">
               <VolumeX className="w-3 h-3" />
               <span>Until {new Date(data.silencedUntil).toLocaleTimeString()}</span>
             </div>
           )}
           {data.acknowledgedBy && (
-            <div className="flex items-center gap-1 text-[10px] text-blue-500">
+            <div className="flex items-center gap-1 text-[10px] text-info-color">
               <Check className="w-3 h-3" />
               <span>{data.acknowledgedBy}</span>
             </div>

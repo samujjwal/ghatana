@@ -103,7 +103,7 @@ describe('UnifiedCanvasToolbar', () => {
     it('should highlight active tool', () => {
       render(<UnifiedCanvasToolbar {...defaultProps} activeTool="select" />);
       const selectButton = screen.getByTitle('Select (V)');
-      expect(selectButton).toHaveClass('bg-blue-100');
+      expect(selectButton).toHaveClass('bg-info-bg');
     });
   });
 
@@ -215,7 +215,7 @@ describe('UnifiedCanvasToolbar', () => {
       fireEvent.click(screen.getByTitle('More Options'));
       
       const gridButton = screen.getByTitle('Toggle Grid');
-      expect(gridButton).toHaveClass('bg-blue-100');
+      expect(gridButton).toHaveClass('bg-info-bg');
     });
   });
 

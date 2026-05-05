@@ -291,6 +291,95 @@ class PageArtifactValidatorTest {
         assertThat(result.errors()).anyMatch(error -> error.contains("prop 'disabled' must be of type boolean"));
     }
 
+    @Test
+    @DisplayName("inline event handler props are rejected")
+    void validate_inlineEventHandlerPropFails() {
+        PageArtifactDocument document = sampleDocument(
+                "manual",
+                Map.of(
+                        "rootNodes", List.of("root"),
+                        "nodes", Map.of(
+                                "root", Map.of(
+                                        "contractName", "Button",
+                                        "props", Map.of("onClick", "alert(1)"),
+                                        "slots", Map.of("default", List.of())
+                                )
+                        )
+                ),
+                List.of()
+        );
+
+        PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anyMatch(error -> error.contains("must not contain inline executable handlers"));
+    }
+
+    @Test
+    @DisplayName("unsafe image src schemes are rejected")
+    void validate_unsafeImageSourceFails() {
+        PageArtifactDocument document = sampleDocument(
+                "manual",
+                Map.of(
+                        "rootNodes", List.of("root"),
+                        "nodes", Map.of(
+                                "root", Map.of(
+                                        "contractName", "Image",
+                                        "props", Map.of("src", "javascript:alert(1)"),
+                                        "slots", Map.of()
+                                )
+                        )
+                ),
+                List.of()
+        );
+
+        PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anyMatch(error -> error.contains("unsupported src scheme"));
+    }
+
+    @Test
+    @DisplayName("governance record scope must match document")
+    void validate_governanceScopeMismatchFails() {
+        PageArtifactDocument document = sampleDocument(
+                "generated",
+                Map.of(
+                        "rootNodes", List.of("root"),
+                        "nodes", Map.of(
+                                "root", Map.of(
+                                        "contractName", "Box",
+                                        "props", Map.of(),
+                                        "slots", Map.of("default", List.of())
+                                )
+                        )
+                ),
+                List.of(
+                        new PageArtifactDocument.GovernanceRecord(
+                                "other-artifact",
+                                "other-document",
+                                new PageArtifactDocument.GovernanceLineage(
+                                        "action-1",
+                                        "property-completion",
+                                        "generated",
+                                        0.9,
+                                        true,
+                                        "approved",
+                                        List.of("root"),
+                                        Instant.parse("2026-01-01T00:00:00Z").toString(),
+                                        List.of("evidence:1")
+                                )
+                        )
+                )
+        );
+
+        PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anyMatch(error -> error.contains("artifactId does not match document artifactId"));
+        assertThat(result.errors()).anyMatch(error -> error.contains("documentId does not match document documentId"));
+    }
+
     private static PageArtifactDocument sampleDocument(
             String source,
             Map<String, Object> builderDocument,

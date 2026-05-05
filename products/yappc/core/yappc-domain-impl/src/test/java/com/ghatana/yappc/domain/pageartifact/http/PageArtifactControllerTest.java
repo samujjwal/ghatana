@@ -65,6 +65,8 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
                 .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
                 .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Workspace-IDs"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Project-IDs"), PROJECT_ID)
                 .withHeader(HttpHeaders.of("X-User-ID"), USER_ID)
                 .withHeader(HttpHeaders.of("X-User-Role"), "EDITOR")
                 .withHeader(HttpHeaders.of("If-Match"), "doc-1")
@@ -89,6 +91,8 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
                 .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
                 .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Workspace-IDs"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Project-IDs"), PROJECT_ID)
                 .withHeader(HttpHeaders.of("If-Match"), "doc-2")
                 .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(document)))
                 .build();
@@ -124,6 +128,7 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
                 .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
                 .withHeader(HttpHeaders.of("X-Authorized-Workspace-IDs"), "ws-2,ws-3")
+                .withHeader(HttpHeaders.of("X-Authorized-Project-IDs"), PROJECT_ID)
                 .withHeader(HttpHeaders.of("If-Match"), "doc-5")
                 .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(document)))
                 .build();
@@ -155,6 +160,8 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
                 .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
                 .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Workspace-IDs"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Project-IDs"), PROJECT_ID)
                 .withHeader(HttpHeaders.of("If-Match"), "doc-7")
                 .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(document)))
                 .build();
@@ -184,6 +191,8 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
                 .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
                 .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Workspace-IDs"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Project-IDs"), PROJECT_ID)
                 .withHeader(HttpHeaders.of("If-Match"), "doc-6")
                 .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(document)))
                 .build();
@@ -211,6 +220,8 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
                 .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
                 .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Workspace-IDs"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Project-IDs"), PROJECT_ID)
                 .withHeader(HttpHeaders.of("If-Match"), "doc-3")
                 .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(created)))
                 .build();
@@ -231,6 +242,8 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
                 .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
                 .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Workspace-IDs"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Project-IDs"), PROJECT_ID)
                 .build();
 
         HttpResponse response = runPromise(() -> controller.loadDocument(attachPrincipal(request, "VIEWER")));
@@ -267,6 +280,8 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
                 .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
                 .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Workspace-IDs"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Project-IDs"), PROJECT_ID)
                 .build();
 
         HttpResponse response = runPromise(() -> controller.loadDocument(attachPrincipal(request, "VIEWER")));

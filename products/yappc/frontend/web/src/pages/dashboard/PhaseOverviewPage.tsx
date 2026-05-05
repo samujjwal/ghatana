@@ -113,37 +113,37 @@ const PhaseOverviewPage: React.FC = () => {
   const getStatusColor = (status: PhaseTask['status']) => {
     switch (status) {
       case 'completed':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+        return 'bg-success-bg text-success-color dark:bg-success-bg dark:text-success-color';
       case 'in_progress':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+        return 'bg-info-bg text-info-color dark:bg-info-bg dark:text-info-color';
       case 'pending':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+        return 'bg-surface-muted text-fg dark:bg-surface dark:text-fg-muted';
       case 'blocked':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+        return 'bg-destructive-bg text-destructive dark:bg-destructive-bg dark:text-destructive';
     }
   };
 
   const getPriorityColor = (priority: PhaseTask['priority']) => {
     switch (priority) {
       case 'high':
-        return 'text-red-600 dark:text-red-400';
+        return 'text-destructive dark:text-destructive';
       case 'medium':
-        return 'text-yellow-600 dark:text-yellow-400';
+        return 'text-warning-color dark:text-warning-color';
       case 'low':
-        return 'text-gray-600 dark:text-gray-400';
+        return 'text-fg-muted dark:text-fg-muted';
     }
   };
 
   return (
-    <div className="h-full overflow-auto bg-gray-50 p-6 dark:bg-gray-900">
+    <div className="h-full overflow-auto bg-surface-muted p-6 dark:bg-surface">
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            <h1 className="text-2xl font-bold text-fg dark:text-fg-muted">
               {phase ? phase.charAt(0).toUpperCase() + phase.slice(1) : 'Phase'} Overview
             </h1>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-sm text-fg-muted dark:text-fg-muted">
               Track progress and manage tasks for this phase
             </p>
           </div>
@@ -162,21 +162,21 @@ const PhaseOverviewPage: React.FC = () => {
                 key={metric.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-950"
+                className="rounded-lg border border-border bg-white p-6 dark:border-border dark:bg-surface"
               >
                 <div className="flex items-center justify-between">
-                  <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900">
-                    <Icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <div className="rounded-lg bg-info-bg p-2 dark:bg-info-bg">
+                    <Icon className="h-5 w-5 text-info-color dark:text-info-color" />
                   </div>
                   {metric.change && (
                     <span
                       className={cn(
                         'text-sm font-medium',
                         metric.trend === 'up'
-                          ? 'text-green-600 dark:text-green-400'
+                          ? 'text-success-color dark:text-success-color'
                           : metric.trend === 'down'
-                            ? 'text-red-600 dark:text-red-400'
-                            : 'text-gray-600 dark:text-gray-400'
+                            ? 'text-destructive dark:text-destructive'
+                            : 'text-fg-muted dark:text-fg-muted'
                       )}
                     >
                       {metric.change}
@@ -184,8 +184,8 @@ const PhaseOverviewPage: React.FC = () => {
                   )}
                 </div>
                 <div className="mt-4">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{metric.label}</p>
-                  <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                  <p className="text-sm text-fg-muted dark:text-fg-muted">{metric.label}</p>
+                  <p className="mt-1 text-2xl font-semibold text-fg dark:text-fg-muted">
                     {metric.value}
                   </p>
                 </div>
@@ -195,9 +195,9 @@ const PhaseOverviewPage: React.FC = () => {
         </div>
 
         {/* Recent Tasks */}
-        <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
-          <div className="border-b border-gray-200 p-6 dark:border-gray-800">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <div className="rounded-lg border border-border bg-white dark:border-border dark:bg-surface">
+          <div className="border-b border-border p-6 dark:border-border">
+            <h2 className="text-lg font-semibold text-fg dark:text-fg-muted">
               Recent Tasks
             </h2>
           </div>
@@ -205,11 +205,11 @@ const PhaseOverviewPage: React.FC = () => {
             {recentTasks.map((task) => (
               <div
                 key={task.id}
-                className="flex items-center justify-between p-6 transition-colors hover:bg-gray-50 dark:hover:bg-gray-900"
+                className="flex items-center justify-between p-6 transition-colors hover:bg-surface-muted dark:hover:bg-surface"
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100">
+                    <h3 className="font-medium text-fg dark:text-fg-muted">
                       {task.title}
                     </h3>
                     <span
@@ -221,7 +221,7 @@ const PhaseOverviewPage: React.FC = () => {
                       {task.status.replace('_', ' ')}
                     </span>
                   </div>
-                  <div className="mt-1 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                  <div className="mt-1 flex items-center gap-4 text-sm text-fg-muted dark:text-fg-muted">
                     <span className={getPriorityColor(task.priority)}>
                       {task.priority} priority
                     </span>
@@ -237,16 +237,16 @@ const PhaseOverviewPage: React.FC = () => {
         </div>
 
         {/* AI Suggestions */}
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-6 dark:border-blue-900 dark:bg-blue-950">
+        <div className="rounded-lg border border-info-border bg-info-bg p-6 dark:border-info-border dark:bg-info-bg">
           <div className="flex items-start gap-4">
-            <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900">
-              <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <div className="rounded-lg bg-info-bg p-2 dark:bg-info-bg">
+              <TrendingUp className="h-5 w-5 text-info-color dark:text-info-color" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-blue-900 dark:text-blue-100">
+              <h3 className="font-semibold text-info-color dark:text-info-color">
                 AI Suggestion
               </h3>
-              <p className="mt-1 text-sm text-blue-800 dark:text-blue-200">
+              <p className="mt-1 text-sm text-info-color dark:text-info-color">
                 Based on your current progress, consider prioritizing infrastructure setup
                 to unblock dependent tasks. This could accelerate your timeline by 2 days.
               </p>

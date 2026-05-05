@@ -89,13 +89,13 @@ const categoryConfig: Record<
   PresetCategory,
   { color: string; bgColor: string; icon: typeof Layers; label: string }
 > = {
-  STARTER: { color: 'text-green-400', bgColor: 'bg-green-500/20', icon: Rocket, label: 'Starter' },
-  FULL_STACK: { color: 'text-blue-400', bgColor: 'bg-blue-500/20', icon: Layers, label: 'Full Stack' },
-  API_ONLY: { color: 'text-purple-400', bgColor: 'bg-purple-500/20', icon: Server, label: 'API Only' },
-  STATIC_SITE: { color: 'text-cyan-400', bgColor: 'bg-cyan-500/20', icon: Layout, label: 'Static Site' },
-  MONOREPO: { color: 'text-orange-400', bgColor: 'bg-orange-500/20', icon: Box, label: 'Monorepo' },
-  MICROSERVICES: { color: 'text-pink-400', bgColor: 'bg-pink-500/20', icon: Grid3X3, label: 'Microservices' },
-  CUSTOM: { color: 'text-gray-400', bgColor: 'bg-gray-500/20', icon: Package, label: 'Custom' },
+  STARTER: { color: 'text-success-color', bgColor: 'bg-success-bg', icon: Rocket, label: 'Starter' },
+  FULL_STACK: { color: 'text-info-color', bgColor: 'bg-info-bg', icon: Layers, label: 'Full Stack' },
+  API_ONLY: { color: 'text-info-color', bgColor: 'bg-info-bg', icon: Server, label: 'API Only' },
+  STATIC_SITE: { color: 'text-info-color', bgColor: 'bg-info-bg', icon: Layout, label: 'Static Site' },
+  MONOREPO: { color: 'text-warning-color', bgColor: 'bg-warning-bg', icon: Box, label: 'Monorepo' },
+  MICROSERVICES: { color: 'text-warning-color', bgColor: 'bg-warning-bg', icon: Grid3X3, label: 'Microservices' },
+  CUSTOM: { color: 'text-fg-muted', bgColor: 'bg-muted', icon: Package, label: 'Custom' },
 };
 
 function PresetNode({ data }: NodeProps<PresetCanvasNode>) {
@@ -108,18 +108,18 @@ function PresetNode({ data }: NodeProps<PresetCanvasNode>) {
   return (
     <div
       className={cn(
-        'bg-slate-800 rounded-lg border shadow-xl min-w-[340px] max-w-[400px] transition-all',
-        isSelected ? 'border-blue-500 ring-2 ring-blue-500/30' : 'border-slate-700'
+        'bg-surface rounded-lg border shadow-xl min-w-[340px] max-w-[400px] transition-all',
+        isSelected ? 'border-primary ring-2 ring-primary/30' : 'border-border'
       )}
     >
-      <Handle type="target" position={Position.Left} className="!bg-purple-500" />
-      <Handle type="source" position={Position.Right} className="!bg-purple-500" />
+      <Handle type="target" position={Position.Left} className="!bg-info-color" />
+      <Handle type="source" position={Position.Right} className="!bg-info-color" />
 
       {/* Header */}
-      <div className="flex items-start justify-between px-4 py-3 border-b border-slate-700">
+      <div className="flex items-start justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-3">
           {preset.icon ? (
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-slate-700 to-slate-600 flex items-center justify-center text-2xl">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-surface-muted to-muted flex items-center justify-center text-2xl">
               {preset.icon}
             </div>
           ) : (
@@ -128,7 +128,7 @@ function PresetNode({ data }: NodeProps<PresetCanvasNode>) {
             </div>
           )}
           <div>
-            <h3 className="text-sm font-semibold text-white">{preset.name}</h3>
+            <h3 className="text-sm font-semibold text-fg">{preset.name}</h3>
             <div className="flex items-center gap-2 mt-0.5">
               <span className={cn('text-xs px-1.5 py-0.5 rounded', categoryInfo.bgColor, categoryInfo.color)}>
                 {categoryInfo.label}
@@ -137,19 +137,19 @@ function PresetNode({ data }: NodeProps<PresetCanvasNode>) {
           </div>
         </div>
         {isSelected && (
-          <div className="p-1 bg-blue-500 rounded-full">
+          <div className="p-1 bg-primary rounded-full">
             <Check className="w-3 h-3 text-white" />
           </div>
         )}
       </div>
 
       {/* Description */}
-      <div className="px-4 py-3 border-b border-slate-700">
-        <p className="text-xs text-slate-400 line-clamp-2">{preset.description}</p>
+      <div className="px-4 py-3 border-b border-border">
+        <p className="text-xs text-fg-muted line-clamp-2">{preset.description}</p>
       </div>
 
       {/* Popularity & Estimates */}
-      <div className="px-4 py-3 grid grid-cols-3 gap-2 border-b border-slate-700">
+      <div className="px-4 py-3 grid grid-cols-3 gap-2 border-b border-border">
         <div className="text-center">
           <div className="flex items-center justify-center gap-0.5 mb-1">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -157,59 +157,59 @@ function PresetNode({ data }: NodeProps<PresetCanvasNode>) {
                 key={i}
                 className={cn(
                   'w-3 h-3',
-                  i < popularityStars ? 'text-yellow-400 fill-yellow-400' : 'text-slate-600'
+                  i < popularityStars ? 'text-warning-color fill-warning-color' : 'text-muted-foreground'
                 )}
               />
             ))}
           </div>
-          <span className="text-xs text-slate-400">{preset.popularity} uses</span>
+          <span className="text-xs text-fg-muted">{preset.popularity} uses</span>
         </div>
-        <div className="text-center border-x border-slate-700">
+        <div className="text-center border-x border-border">
           <div className="flex items-center justify-center gap-1 mb-1">
-            <Clock className="w-3.5 h-3.5 text-blue-400" />
-            <span className="text-sm font-medium text-white">~{preset.estimatedSetupTime}m</span>
+            <Clock className="w-3.5 h-3.5 text-info-color" />
+            <span className="text-sm font-medium text-fg">~{preset.estimatedSetupTime}m</span>
           </div>
-          <span className="text-xs text-slate-400">Setup time</span>
+          <span className="text-xs text-fg-muted">Setup time</span>
         </div>
         <div className="text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
-            <DollarSign className="w-3.5 h-3.5 text-green-400" />
-            <span className="text-sm font-medium text-white">${preset.estimatedMonthlyCost}</span>
+            <DollarSign className="w-3.5 h-3.5 text-success-color" />
+            <span className="text-sm font-medium text-fg">${preset.estimatedMonthlyCost}</span>
           </div>
-          <span className="text-xs text-slate-400">/month</span>
+          <span className="text-xs text-fg-muted">/month</span>
         </div>
       </div>
 
       {/* Stack Configuration */}
-      <div className="px-4 py-3 border-b border-slate-700">
-        <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Stack</h4>
+      <div className="px-4 py-3 border-b border-border">
+        <h4 className="text-xs font-medium text-fg-muted uppercase tracking-wider mb-2">Stack</h4>
         <div className="flex flex-wrap gap-1.5">
           {preset.config.stack.language && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-700 rounded text-xs text-slate-300">
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded text-xs text-fg">
               <Code className="w-3 h-3" />
               {preset.config.stack.language}
             </span>
           )}
           {preset.config.stack.framework && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-700 rounded text-xs text-slate-300">
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded text-xs text-fg">
               <Zap className="w-3 h-3" />
               {preset.config.stack.framework}
             </span>
           )}
           {preset.config.stack.frontend && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-700 rounded text-xs text-slate-300">
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded text-xs text-fg">
               <Globe className="w-3 h-3" />
               {preset.config.stack.frontend}
             </span>
           )}
           {preset.config.stack.backend && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-700 rounded text-xs text-slate-300">
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded text-xs text-fg">
               <Server className="w-3 h-3" />
               {preset.config.stack.backend}
             </span>
           )}
           {preset.config.stack.database && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-700 rounded text-xs text-slate-300">
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded text-xs text-fg">
               <Database className="w-3 h-3" />
               {preset.config.stack.database}
             </span>
@@ -218,48 +218,48 @@ function PresetNode({ data }: NodeProps<PresetCanvasNode>) {
       </div>
 
       {/* Included Services */}
-      <div className="px-4 py-3 border-b border-slate-700">
-        <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Includes</h4>
+      <div className="px-4 py-3 border-b border-border">
+        <h4 className="text-xs font-medium text-fg-muted uppercase tracking-wider mb-2">Includes</h4>
         <div className="grid grid-cols-2 gap-1">
           {preset.config.includeRepository && (
-            <div className="flex items-center gap-1.5 text-xs text-slate-300">
-              <Check className="w-3 h-3 text-green-400" />
+            <div className="flex items-center gap-1.5 text-xs text-fg">
+              <Check className="w-3 h-3 text-success-color" />
               Repository
             </div>
           )}
           {preset.config.includeHosting && (
-            <div className="flex items-center gap-1.5 text-xs text-slate-300">
-              <Check className="w-3 h-3 text-green-400" />
+            <div className="flex items-center gap-1.5 text-xs text-fg">
+              <Check className="w-3 h-3 text-success-color" />
               Hosting
             </div>
           )}
           {preset.config.includeDatabase && (
-            <div className="flex items-center gap-1.5 text-xs text-slate-300">
-              <Check className="w-3 h-3 text-green-400" />
+            <div className="flex items-center gap-1.5 text-xs text-fg">
+              <Check className="w-3 h-3 text-success-color" />
               Database
             </div>
           )}
           {preset.config.includeCache && (
-            <div className="flex items-center gap-1.5 text-xs text-slate-300">
-              <Check className="w-3 h-3 text-green-400" />
+            <div className="flex items-center gap-1.5 text-xs text-fg">
+              <Check className="w-3 h-3 text-success-color" />
               Cache
             </div>
           )}
           {preset.config.includeStorage && (
-            <div className="flex items-center gap-1.5 text-xs text-slate-300">
-              <Check className="w-3 h-3 text-green-400" />
+            <div className="flex items-center gap-1.5 text-xs text-fg">
+              <Check className="w-3 h-3 text-success-color" />
               Storage
             </div>
           )}
           {preset.config.includeCICD && (
-            <div className="flex items-center gap-1.5 text-xs text-slate-300">
-              <Check className="w-3 h-3 text-green-400" />
+            <div className="flex items-center gap-1.5 text-xs text-fg">
+              <Check className="w-3 h-3 text-success-color" />
               CI/CD
             </div>
           )}
           {preset.config.includeMonitoring && (
-            <div className="flex items-center gap-1.5 text-xs text-slate-300">
-              <Check className="w-3 h-3 text-green-400" />
+            <div className="flex items-center gap-1.5 text-xs text-fg">
+              <Check className="w-3 h-3 text-success-color" />
               Monitoring
             </div>
           )}
@@ -268,17 +268,17 @@ function PresetNode({ data }: NodeProps<PresetCanvasNode>) {
 
       {/* Features */}
       {preset.features.length > 0 && (
-        <div className="px-4 py-3 border-b border-slate-700">
-          <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Features</h4>
+        <div className="px-4 py-3 border-b border-border">
+          <h4 className="text-xs font-medium text-fg-muted uppercase tracking-wider mb-2">Features</h4>
           <ul className="space-y-1">
             {preset.features.slice(0, 4).map((feature: string, index: number) => (
-              <li key={index} className="flex items-start gap-1.5 text-xs text-slate-300">
-                <Zap className="w-3 h-3 text-yellow-400 mt-0.5 flex-shrink-0" />
+              <li key={index} className="flex items-start gap-1.5 text-xs text-fg">
+                <Zap className="w-3 h-3 text-warning-color mt-0.5 flex-shrink-0" />
                 <span>{feature}</span>
               </li>
             ))}
             {preset.features.length > 4 && (
-              <li className="text-xs text-slate-500">
+              <li className="text-xs text-fg-muted">
                 +{preset.features.length - 4} more features
               </li>
             )}
@@ -288,14 +288,14 @@ function PresetNode({ data }: NodeProps<PresetCanvasNode>) {
 
       {/* Requirements */}
       {preset.requirements && preset.requirements.length > 0 && (
-        <div className="px-4 py-3 border-b border-slate-700 bg-amber-500/5">
-          <h4 className="text-xs font-medium text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+        <div className="px-4 py-3 border-b border-border bg-warning-bg">
+          <h4 className="text-xs font-medium text-warning-color uppercase tracking-wider mb-2 flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />
             Requirements
           </h4>
           <ul className="space-y-1">
             {preset.requirements.map((req: string, index: number) => (
-              <li key={index} className="text-xs text-amber-200/80">
+              <li key={index} className="text-xs text-warning-color">
                 • {req}
               </li>
             ))}
@@ -305,12 +305,12 @@ function PresetNode({ data }: NodeProps<PresetCanvasNode>) {
 
       {/* Tags */}
       {preset.tags.length > 0 && (
-        <div className="px-4 py-3 border-b border-slate-700">
+        <div className="px-4 py-3 border-b border-border">
           <div className="flex flex-wrap gap-1">
             {preset.tags.map((tag: string) => (
               <span
                 key={tag}
-                className="text-xs px-2 py-0.5 bg-slate-700/50 text-slate-400 rounded-full"
+                className="text-xs px-2 py-0.5 bg-muted text-fg-muted rounded-full"
               >
                 #{tag}
               </span>
@@ -324,7 +324,7 @@ function PresetNode({ data }: NodeProps<PresetCanvasNode>) {
         {onPreview && (
           <button
             onClick={onPreview}
-            className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs text-slate-300 transition-colors"
+            className="px-3 py-1.5 bg-muted hover:opacity-90 rounded-lg text-xs text-fg transition-colors"
           >
             Preview
           </button>
@@ -335,8 +335,8 @@ function PresetNode({ data }: NodeProps<PresetCanvasNode>) {
             className={cn(
               'px-3 py-1.5 rounded-lg text-xs transition-colors',
               isSelected
-                ? 'bg-green-600 text-white'
-                : 'bg-blue-600 hover:bg-blue-500 text-white'
+                ? 'bg-success-color text-white'
+                : 'bg-primary hover:opacity-90 text-primary-foreground'
             )}
           >
             {isSelected ? 'Selected' : 'Use Preset'}

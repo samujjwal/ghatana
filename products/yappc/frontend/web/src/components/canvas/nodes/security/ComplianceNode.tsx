@@ -69,58 +69,58 @@ const FRAMEWORK_CONFIG: Record<ComplianceFramework, {
   SOC2: {
     name: 'SOC 2',
     fullName: 'SOC 2 Type II',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-500',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
+    borderColor: 'border-info-border',
   },
   ISO27001: {
     name: 'ISO 27001',
     fullName: 'ISO/IEC 27001:2022',
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-50',
-    borderColor: 'border-indigo-500',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
+    borderColor: 'border-info-border',
   },
   HIPAA: {
     name: 'HIPAA',
     fullName: 'Health Insurance Portability',
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-500',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
+    borderColor: 'border-info-border',
   },
   PCI_DSS: {
     name: 'PCI DSS',
     fullName: 'Payment Card Industry',
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50',
-    borderColor: 'border-orange-500',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg',
+    borderColor: 'border-warning-border',
   },
   GDPR: {
     name: 'GDPR',
     fullName: 'General Data Protection',
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-500',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg',
+    borderColor: 'border-success-border',
   },
   NIST: {
     name: 'NIST',
     fullName: 'NIST Cybersecurity Framework',
-    color: 'text-cyan-600',
-    bgColor: 'bg-cyan-50',
-    borderColor: 'border-cyan-500',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
+    borderColor: 'border-info-border',
   },
   CCPA: {
     name: 'CCPA',
     fullName: 'California Consumer Privacy',
-    color: 'text-teal-600',
-    bgColor: 'bg-teal-50',
-    borderColor: 'border-teal-500',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg',
+    borderColor: 'border-success-border',
   },
   FEDRAMP: {
     name: 'FedRAMP',
     fullName: 'Federal Risk Authorization',
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-500',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive-bg',
+    borderColor: 'border-destructive-border',
   },
 };
 
@@ -136,26 +136,26 @@ const STATUS_CONFIG: Record<ComplianceStatus, {
 }> = {
   COMPLIANT: {
     label: 'Compliant',
-    color: 'text-green-600',
-    bgColor: 'bg-green-100',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg',
     icon: CheckCircle2,
   },
   NON_COMPLIANT: {
     label: 'Non-Compliant',
-    color: 'text-red-600',
-    bgColor: 'bg-red-100',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive-bg',
     icon: XCircle,
   },
   PARTIAL: {
     label: 'Partial',
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-100',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg',
     icon: AlertCircle,
   },
   NOT_ASSESSED: {
     label: 'Not Assessed',
-    color: 'text-gray-500',
-    bgColor: 'bg-gray-100',
+    color: 'text-fg-muted',
+    bgColor: 'bg-muted',
     icon: Clock,
   },
 };
@@ -238,48 +238,48 @@ function ControlStatusBar({ controls }: { controls: ControlSummary[] }) {
 
   return (
     <div className="space-y-2">
-      <div className="flex h-2 rounded-full overflow-hidden bg-gray-100">
+      <div className="flex h-2 rounded-full overflow-hidden bg-muted">
         {statusCounts.COMPLIANT > 0 && (
           <div
-            className="bg-green-500 transition-all duration-300"
+            className="bg-success-color transition-all duration-300"
             style={{ width: `${(statusCounts.COMPLIANT / total) * 100}%` }}
           />
         )}
         {statusCounts.PARTIAL > 0 && (
           <div
-            className="bg-amber-500 transition-all duration-300"
+            className="bg-warning-color transition-all duration-300"
             style={{ width: `${(statusCounts.PARTIAL / total) * 100}%` }}
           />
         )}
         {statusCounts.NOT_ASSESSED > 0 && (
           <div
-            className="bg-gray-400 transition-all duration-300"
+            className="bg-muted-foreground transition-all duration-300"
             style={{ width: `${(statusCounts.NOT_ASSESSED / total) * 100}%` }}
           />
         )}
         {statusCounts.NON_COMPLIANT > 0 && (
           <div
-            className="bg-red-500 transition-all duration-300"
+            className="bg-destructive transition-all duration-300"
             style={{ width: `${(statusCounts.NON_COMPLIANT / total) * 100}%` }}
           />
         )}
       </div>
-      <div className="flex items-center justify-between text-xs text-gray-500">
+      <div className="flex items-center justify-between text-xs text-fg-muted">
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-green-500" />
+            <span className="h-2 w-2 rounded-full bg-success-color" />
             {statusCounts.COMPLIANT}
           </span>
           <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-amber-500" />
+            <span className="h-2 w-2 rounded-full bg-warning-color" />
             {statusCounts.PARTIAL}
           </span>
           <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-red-500" />
+            <span className="h-2 w-2 rounded-full bg-destructive" />
             {statusCounts.NON_COMPLIANT}
           </span>
           <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-gray-400" />
+            <span className="h-2 w-2 rounded-full bg-muted-foreground" />
             {statusCounts.NOT_ASSESSED}
           </span>
         </div>
@@ -335,17 +335,17 @@ function ComplianceNodeComponent({ data, selected }: NodeProps<ComplianceCanvasN
         className={cn(
           'rounded-lg border-2 bg-white p-3 shadow-sm transition-all duration-200',
           frameworkConfig.borderColor,
-          selected && 'ring-2 ring-blue-500 ring-offset-2',
+          selected && 'ring-2 ring-primary ring-offset-2',
           'min-w-[180px]'
         )}
       >
-        <Handle type="target" position={Position.Left} className="!bg-gray-400" />
-        <Handle type="source" position={Position.Right} className="!bg-gray-400" />
+        <Handle type="target" position={Position.Left} className="!bg-muted-foreground" />
+        <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className={cn('h-4 w-4', frameworkConfig.color)} />
-            <span className="font-medium text-gray-900">{frameworkConfig.name}</span>
+            <span className="font-medium text-fg">{frameworkConfig.name}</span>
           </div>
           <ComplianceScoreGauge score={data.complianceScore} size="small" />
         </div>
@@ -358,12 +358,12 @@ function ComplianceNodeComponent({ data, selected }: NodeProps<ComplianceCanvasN
       className={cn(
         'rounded-lg border-2 bg-white shadow-md transition-all duration-200',
         frameworkConfig.borderColor,
-        selected && 'ring-2 ring-blue-500 ring-offset-2',
+        selected && 'ring-2 ring-primary ring-offset-2',
         'min-w-[320px] max-w-[400px]'
       )}
     >
-      <Handle type="target" position={Position.Left} className="!bg-gray-400" />
-      <Handle type="source" position={Position.Right} className="!bg-gray-400" />
+      <Handle type="target" position={Position.Left} className="!bg-muted-foreground" />
+      <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
 
       {/* Header */}
       <div className={cn('rounded-t-lg px-4 py-3', frameworkConfig.bgColor)}>
@@ -371,8 +371,8 @@ function ComplianceNodeComponent({ data, selected }: NodeProps<ComplianceCanvasN
           <div className="flex items-center gap-3">
             <Shield className={cn('h-6 w-6', frameworkConfig.color)} />
             <div>
-              <h3 className="font-semibold text-gray-900">{frameworkConfig.name}</h3>
-              <p className="text-xs text-gray-600">{frameworkConfig.fullName}</p>
+              <h3 className="font-semibold text-fg">{frameworkConfig.name}</h3>
+              <p className="text-xs text-fg-muted">{frameworkConfig.fullName}</p>
             </div>
           </div>
           <ComplianceScoreGauge score={data.complianceScore} />
@@ -383,7 +383,7 @@ function ComplianceNodeComponent({ data, selected }: NodeProps<ComplianceCanvasN
       <div className="p-4 space-y-4">
         {/* Overall Status */}
         <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-500">Overall Status</span>
+          <span className="text-sm text-fg-muted">Overall Status</span>
           <div className={cn(
             'flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium',
             statusConfig.bgColor,
@@ -397,7 +397,7 @@ function ComplianceNodeComponent({ data, selected }: NodeProps<ComplianceCanvasN
         {/* Control Progress */}
         {data.controls && data.controls.length > 0 && (
           <div className="space-y-2">
-            <span className="text-sm font-medium text-gray-700">Control Status</span>
+            <span className="text-sm font-medium text-fg">Control Status</span>
             <ControlStatusBar controls={data.controls} />
           </div>
         )}
@@ -405,7 +405,7 @@ function ComplianceNodeComponent({ data, selected }: NodeProps<ComplianceCanvasN
         {/* Control Categories */}
         {Object.keys(groupedControls).length > 0 && (
           <div className="space-y-2">
-            <span className="text-sm font-medium text-gray-700">Categories</span>
+            <span className="text-sm font-medium text-fg">Categories</span>
             <div className="space-y-1">
               {Object.entries(groupedControls).slice(0, 4).map(([category, controls]) => {
                 const compliant = controls.filter((c) => c.status === 'COMPLIANT').length;
@@ -414,18 +414,18 @@ function ComplianceNodeComponent({ data, selected }: NodeProps<ComplianceCanvasN
                 
                 return (
                   <div key={category} className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 truncate flex-1">{category}</span>
+                    <span className="text-fg truncate flex-1">{category}</span>
                     <div className="flex items-center gap-2">
-                      <div className="w-16 h-1.5 rounded-full bg-gray-200">
+                      <div className="w-16 h-1.5 rounded-full bg-muted">
                         <div
                           className={cn(
                             'h-full rounded-full',
-                            percentage >= 80 ? 'bg-green-500' : percentage >= 50 ? 'bg-amber-500' : 'bg-red-500'
+                            percentage >= 80 ? 'bg-success-color' : percentage >= 50 ? 'bg-warning-color' : 'bg-destructive'
                           )}
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
-                      <span className="text-xs text-gray-500 w-12 text-right">
+                      <span className="text-xs text-fg-muted w-12 text-right">
                         {compliant}/{total}
                       </span>
                     </div>
@@ -433,7 +433,7 @@ function ComplianceNodeComponent({ data, selected }: NodeProps<ComplianceCanvasN
                 );
               })}
               {Object.keys(groupedControls).length > 4 && (
-                <div className="flex items-center text-xs text-blue-600 hover:text-blue-700 cursor-pointer">
+                <div className="flex items-center text-xs text-info-color hover:opacity-80 cursor-pointer">
                   <span>View all categories</span>
                   <ChevronRight className="h-3 w-3" />
                 </div>
@@ -445,35 +445,35 @@ function ComplianceNodeComponent({ data, selected }: NodeProps<ComplianceCanvasN
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-2">
           {data.findingsCount !== undefined && (
-            <div className="rounded-lg bg-gray-50 p-2 text-center">
+            <div className="rounded-lg bg-surface-muted p-2 text-center">
               <div className="flex items-center justify-center gap-1">
-                <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
-                <span className="font-semibold text-gray-900">{data.findingsCount}</span>
+                <AlertCircle className="h-3.5 w-3.5 text-warning-color" />
+                <span className="font-semibold text-fg">{data.findingsCount}</span>
               </div>
-              <span className="text-xs text-gray-500">Findings</span>
+              <span className="text-xs text-fg-muted">Findings</span>
               {data.criticalFindingsCount !== undefined && data.criticalFindingsCount > 0 && (
-                <span className="text-xs text-red-600">
+                <span className="text-xs text-destructive">
                   ({data.criticalFindingsCount} critical)
                 </span>
               )}
             </div>
           )}
           {data.evidenceCount !== undefined && (
-            <div className="rounded-lg bg-gray-50 p-2 text-center">
+            <div className="rounded-lg bg-surface-muted p-2 text-center">
               <div className="flex items-center justify-center gap-1">
-                <FileText className="h-3.5 w-3.5 text-blue-500" />
-                <span className="font-semibold text-gray-900">{data.evidenceCount}</span>
+                <FileText className="h-3.5 w-3.5 text-info-color" />
+                <span className="font-semibold text-fg">{data.evidenceCount}</span>
               </div>
-              <span className="text-xs text-gray-500">Evidence</span>
+              <span className="text-xs text-fg-muted">Evidence</span>
             </div>
           )}
           {data.controls && (
-            <div className="rounded-lg bg-gray-50 p-2 text-center">
+            <div className="rounded-lg bg-surface-muted p-2 text-center">
               <div className="flex items-center justify-center gap-1">
-                <BarChart3 className="h-3.5 w-3.5 text-green-500" />
-                <span className="font-semibold text-gray-900">{data.controls.length}</span>
+                <BarChart3 className="h-3.5 w-3.5 text-success-color" />
+                <span className="font-semibold text-fg">{data.controls.length}</span>
               </div>
-              <span className="text-xs text-gray-500">Controls</span>
+              <span className="text-xs text-fg-muted">Controls</span>
             </div>
           )}
         </div>
@@ -481,7 +481,7 @@ function ComplianceNodeComponent({ data, selected }: NodeProps<ComplianceCanvasN
         {/* Assessment Dates */}
         <div className="flex items-center justify-between text-sm">
           {data.lastAssessmentAt && (
-            <div className="flex items-center gap-1.5 text-gray-500">
+            <div className="flex items-center gap-1.5 text-fg-muted">
               <Clock className="h-4 w-4" />
               <span>Last: {formatDate(data.lastAssessmentAt)}</span>
             </div>
@@ -490,8 +490,8 @@ function ComplianceNodeComponent({ data, selected }: NodeProps<ComplianceCanvasN
             <div className={cn(
               'flex items-center gap-1.5',
               daysUntilAssessment !== null && daysUntilAssessment < 30 
-                ? 'text-amber-600' 
-                : 'text-gray-500'
+                ? 'text-warning-color' 
+                : 'text-fg-muted'
             )}>
               <Calendar className="h-4 w-4" />
               <span>
@@ -506,22 +506,22 @@ function ComplianceNodeComponent({ data, selected }: NodeProps<ComplianceCanvasN
       </div>
 
       {/* Footer */}
-      <div className="border-t border-gray-100 px-4 py-2">
+      <div className="border-t border-border px-4 py-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {data.enabled ? (
-              <span className="inline-flex items-center gap-1 text-xs text-green-600">
-                <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+              <span className="inline-flex items-center gap-1 text-xs text-success-color">
+                <span className="h-1.5 w-1.5 rounded-full bg-success-color" />
                 Active
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+              <span className="inline-flex items-center gap-1 text-xs text-fg-muted">
+                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
                 Inactive
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1 text-xs text-gray-500">
+          <div className="flex items-center gap-1 text-xs text-fg-muted">
             <TrendingUp className="h-3 w-3" />
             <span>+5% this quarter</span>
           </div>

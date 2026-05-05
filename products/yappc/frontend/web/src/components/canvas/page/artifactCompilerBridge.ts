@@ -12,6 +12,14 @@ import {
   type PageArtifactDocument,
 } from './pageArtifactDocument';
 
+export interface ImportedSourceArtifactInput {
+  readonly projectId: string;
+  readonly componentName?: string;
+  readonly source: string;
+  readonly sourceType: 'tsx' | 'route' | 'storybook' | 'artifact' | 'zip';
+  readonly importedAt: string;
+}
+
 interface SemanticPageLike {
   readonly id?: string;
   readonly name?: string;
@@ -119,4 +127,47 @@ export function importPageArtifactsFromCode(
 
     throw error;
   }
+}
+
+export function compileImportedSourceToPageArtifacts(
+  imported: ImportedSourceArtifactInput,
+  createdBy: string,
+): readonly PageArtifactDocument[] {
+  const normalizedName = (imported.componentName ?? inferNameFromSource(imported.source) ?? 'ImportedPage').trim();
+  const artifactId = `${imported.projectId}-${slugifyForArtifactId(normalizedName)}`;
+  const builderDocument = createEmptyBuilderDocument(normalizedName, createdBy);
+
+  return [
+    {
+      ...createPageArtifactDocument({
+        artifactId,
+        document: builderDocument,
+        name: normalizedName,
+        createdBy,
+        source: 'imported',
+      }),
+      validationSummary: {
+        valid: true,
+        errorCount: 0,
+        warningCount: 0,
+      },
+      updatedAt: imported.importedAt,
+    },
+  ];
+}
+
+function inferNameFromSource(source: string): string | null {
+  const fileName = source.split('/').pop() ?? source;
+  const name = fileName.replace(/\.[^.]+$/, '');
+  return name.length > 0 ? name : null;
+}
+
+function slugifyForArtifactId(value: string): string {
+  const normalized = value
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+
+  return normalized.length > 0 ? normalized : 'imported-page';
 }

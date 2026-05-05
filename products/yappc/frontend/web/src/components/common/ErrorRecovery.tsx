@@ -20,7 +20,7 @@ import {
   AlertCircle as WarningIcon,
   Info as InfoIcon,
 } from 'lucide-react';
-import { Typography, Button, Box, Card, CardContent, CardActions, Alert } from '@ghatana/design-system';
+import { Typography, Button, Card, CardContent, CardActions, Alert } from '@ghatana/design-system';
 import type { ErrorInfo, ErrorCategory, ErrorSeverity } from '../../hooks/useErrorRecovery';
 
 // ============================================================================
@@ -56,15 +56,15 @@ function ErrorIconComponent({ category, severity }: ErrorIconComponentProps): Re
   };
 
   const getColor = () => {
-    if (category === 'offline') return 'text-orange-600 dark:text-orange-400';
-    if (severity === 'critical') return 'text-red-600 dark:text-red-400';
-    if (severity === 'high') return 'text-orange-600 dark:text-orange-400';
-    if (severity === 'medium') return 'text-blue-600 dark:text-blue-400';
-    return 'text-green-600 dark:text-green-400';
+    if (category === 'offline') return 'text-warning-color';
+    if (severity === 'critical') return 'text-destructive';
+    if (severity === 'high') return 'text-warning-color';
+    if (severity === 'medium') return 'text-info-color';
+    return 'text-success-color';
   };
 
   return (
-    <div className={`${getColor()} p-2 bg-gray-100 dark:bg-gray-800 rounded-full`}>
+    <div className={`${getColor()} p-2 bg-muted rounded-full`}>
       {getIcon()}
     </div>
   );
@@ -91,16 +91,16 @@ export function ErrorRecovery({
   const getCategoryColor = (category: ErrorCategory): string => {
     switch (category) {
       case 'offline':
-        return 'border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/20';
+        return 'border-warning-border bg-warning-bg';
       case 'network':
-        return 'border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20';
+        return 'border-info-border bg-info-bg';
       case 'authentication':
       case 'authorization':
-        return 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20';
+        return 'border-destructive-border bg-destructive-bg';
       case 'server':
-        return 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20';
+        return 'border-destructive-border bg-destructive-bg';
       default:
-        return 'border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800';
+        return 'border-border bg-surface-muted';
     }
   };
 
@@ -133,13 +133,13 @@ export function ErrorRecovery({
                   size="sm"
                   variant="text"
                   onClick={onDismiss}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-muted-foreground"
                 >
                   <CloseIcon className="w-4 h-4" />
                 </Button>
               )}
             </div>
-            <Typography className="text-sm text-gray-700 dark:text-gray-300 mt-1">
+            <Typography className="text-sm text-fg mt-1">
               {errorInfo.message}
             </Typography>
           </div>
@@ -154,13 +154,13 @@ export function ErrorRecovery({
 
         {/* Error Details */}
         <div className="space-y-2 mb-3">
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span>Category: {errorInfo.category}</span>
             <span>•</span>
             <span>Time: {new Date(errorInfo.timestamp).toLocaleTimeString()}</span>
           </div>
           {retryCount > 0 && (
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-muted-foreground">
               Retry attempt {retryCount}
             </div>
           )}
@@ -216,15 +216,15 @@ export function OfflineBanner({
   className = '',
 }: OfflineBannerProps): ReactNode {
   return (
-    <Alert severity="warning" className={`border-2 border-orange-300 dark:border-orange-700 ${className}`}>
+    <Alert severity="warning" className={`border-2 border-warning-border ${className}`}>
       <div className="flex items-center gap-3">
-        <OfflineIcon className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+        <OfflineIcon className="w-5 h-5 text-warning-color" />
         <div className="flex-1">
           <Typography className="font-medium text-sm">
             You're offline
           </Typography>
           {hasPendingOperations > 0 && (
-            <Typography className="text-xs text-gray-600 dark:text-gray-400">
+            <Typography className="text-xs text-muted-foreground">
               {hasPendingOperations} operation{hasPendingOperations !== 1 ? 's' : ''} pending
             </Typography>
           )}
@@ -284,13 +284,13 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       }
 
       return (
-        <Card className="border-2 border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 m-4">
+        <Card className="border-2 border-destructive-border bg-destructive-bg m-4">
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-4">
-              <ErrorIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
+              <ErrorIcon className="w-6 h-6 text-destructive" />
               <Typography className="font-semibold">Something went wrong</Typography>
             </div>
-            <Typography className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+            <Typography className="text-sm text-fg mb-4">
               {this.state.error?.message || 'An unexpected error occurred'}
             </Typography>
             <Button

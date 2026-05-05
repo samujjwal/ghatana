@@ -93,10 +93,10 @@ function getRoleIcon(role: WorkspaceMemberRole): ReactNode {
 
 function getRoleColor(role: WorkspaceMemberRole): string {
   const map: Record<WorkspaceMemberRole, string> = {
-    OWNER: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
-    ADMIN: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-    EDITOR: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-    VIEWER: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
+    OWNER: 'bg-info-bg text-info-color dark:bg-info-bg dark:text-info-color',
+    ADMIN: 'bg-info-bg text-info-color dark:bg-info-bg dark:text-info-color',
+    EDITOR: 'bg-success-bg text-success-color dark:bg-success-bg dark:text-success-color',
+    VIEWER: 'bg-surface-muted text-fg-muted dark:bg-surface-muted dark:text-fg-muted',
   };
   return map[role];
 }
@@ -170,11 +170,11 @@ function InvitePanel({ workspaceId, onInvited, onClose }: InvitePanelProps): Rea
   const users = searchQuery.data?.users ?? [];
 
   return (
-    <Card className="border-2 border-blue-200 dark:border-blue-800">
+    <Card className="border-2 border-info-border dark:border-info-border">
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <InviteIcon className="h-4 w-4 text-blue-500" aria-hidden="true" />
+            <InviteIcon className="h-4 w-4 text-info-color" aria-hidden="true" />
             <Typography variant="body2" className="font-semibold">
               Invite Member
             </Typography>
@@ -182,7 +182,7 @@ function InvitePanel({ workspaceId, onInvited, onClose }: InvitePanelProps): Rea
           <button
             onClick={onClose}
             aria-label="Close invite panel"
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="text-fg-muted hover:text-fg-muted dark:hover:text-fg-muted"
           >
             <CloseIcon className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -192,7 +192,7 @@ function InvitePanel({ workspaceId, onInvited, onClose }: InvitePanelProps): Rea
           {/* Search input */}
           <div className="relative flex-1">
             <SearchIcon
-              className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+              className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-muted"
               aria-hidden="true"
             />
             <input
@@ -201,7 +201,7 @@ function InvitePanel({ workspaceId, onInvited, onClose }: InvitePanelProps): Rea
               onChange={handleSearchChange}
               placeholder="Search by name or email…"
               aria-label="Search users"
-              className="w-full pl-8 pr-3 py-1.5 text-sm border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-8 pr-3 py-1.5 text-sm border rounded-md dark:bg-surface dark:border-border focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -210,7 +210,7 @@ function InvitePanel({ workspaceId, onInvited, onClose }: InvitePanelProps): Rea
             value={selectedRole}
             onChange={handleRoleChange}
             aria-label="Select role"
-            className="text-sm border rounded-md px-2 py-1.5 dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="text-sm border rounded-md px-2 py-1.5 dark:bg-surface dark:border-border focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {ROLES.map((role) => (
               <option key={role} value={role}>
@@ -222,22 +222,22 @@ function InvitePanel({ workspaceId, onInvited, onClose }: InvitePanelProps): Rea
 
         {/* Search results */}
         {searchQuery.isLoading && (
-          <Typography variant="caption" className="text-gray-400">
+          <Typography variant="caption" className="text-fg-muted">
             Searching…
           </Typography>
         )}
         {users.length > 0 && (
-          <div className="divide-y dark:divide-gray-700 border dark:border-gray-700 rounded-md">
+          <div className="divide-y dark:divide-gray-700 border dark:border-border rounded-md">
             {users.map((user) => (
               <div
                 key={user.id}
-                className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/40"
+                className="flex items-center justify-between px-3 py-2 hover:bg-surface-muted dark:hover:bg-surface/40"
               >
                 <div>
                   <Typography variant="body2" className="text-sm font-medium">
                     {user.name}
                   </Typography>
-                  <Typography variant="caption" className="text-gray-400 text-xs">
+                  <Typography variant="caption" className="text-fg-muted text-xs">
                     {user.email}
                   </Typography>
                 </div>
@@ -259,13 +259,13 @@ function InvitePanel({ workspaceId, onInvited, onClose }: InvitePanelProps): Rea
         {userSearch.trim().length >= 2 &&
           !searchQuery.isLoading &&
           users.length === 0 && (
-            <Typography variant="caption" className="text-gray-400">
+            <Typography variant="caption" className="text-fg-muted">
               No users found matching &quot;{userSearch}&quot;
             </Typography>
           )}
 
         {inviteMutation.isError && (
-          <Typography variant="caption" className="text-red-500 mt-2">
+          <Typography variant="caption" className="text-destructive mt-2">
             {inviteMutation.error instanceof Error
               ? inviteMutation.error.message
               : 'Failed to add member'}
@@ -307,7 +307,7 @@ function MemberRow({
   }, [onRemove, member.userId]);
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/40">
+    <div className="flex items-center gap-3 px-4 py-3 hover:bg-surface-muted dark:hover:bg-surface/40">
       {/* Avatar placeholder */}
       <div
         className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
@@ -321,7 +321,7 @@ function MemberRow({
         <Typography variant="body2" className="text-sm font-medium truncate">
           {member.user.name}
         </Typography>
-        <Typography variant="caption" className="text-gray-400 text-xs truncate">
+        <Typography variant="caption" className="text-fg-muted text-xs truncate">
           {member.user.email}
         </Typography>
       </div>
@@ -333,7 +333,7 @@ function MemberRow({
           onChange={handleRoleChange}
           disabled={isMutating}
           aria-label={`Role for ${member.user.name}`}
-          className="text-xs border rounded-md px-1.5 py-1 dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="text-xs border rounded-md px-1.5 py-1 dark:bg-surface dark:border-border focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           {ROLES.map((role) => (
             <option key={role} value={role}>
@@ -359,7 +359,7 @@ function MemberRow({
           onClick={handleRemove}
           disabled={isMutating}
           aria-label={`Remove ${member.user.name}`}
-          className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 p-1.5"
+          className="text-destructive hover:text-destructive hover:bg-destructive-bg dark:hover:bg-destructive-bg p-1.5"
         >
           <RemoveIcon className="h-4 w-4" aria-hidden="true" />
         </Button>
@@ -473,7 +473,7 @@ export function WorkspaceMembers({
     return (
       <Box className={`p-6 ${className}`}>
         <div
-          className="flex items-center justify-center gap-2 text-gray-500"
+          className="flex items-center justify-center gap-2 text-fg-muted"
           role="status"
           aria-label="Loading members"
         >
@@ -487,7 +487,7 @@ export function WorkspaceMembers({
   if (isError) {
     return (
       <Box className={`p-6 ${className}`}>
-        <div className="flex items-center gap-2 text-red-600 dark:text-red-400" role="alert">
+        <div className="flex items-center gap-2 text-destructive dark:text-destructive" role="alert">
           <MembersIcon className="h-5 w-5" aria-hidden="true" />
           <Typography variant="body2">
             {error instanceof Error ? error.message : 'Failed to load workspace members'}
@@ -502,7 +502,7 @@ export function WorkspaceMembers({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <MembersIcon className="h-5 w-5 text-gray-500" aria-hidden="true" />
+          <MembersIcon className="h-5 w-5 text-fg-muted" aria-hidden="true" />
           <Typography variant="h6" className="font-semibold">
             Members
           </Typography>
@@ -546,8 +546,8 @@ export function WorkspaceMembers({
         <CardContent className="p-0">
           {members.length === 0 ? (
             <div className="p-8 text-center">
-              <MembersIcon className="h-10 w-10 text-gray-300 mx-auto mb-3" aria-hidden="true" />
-              <Typography variant="body1" className="text-gray-500">
+              <MembersIcon className="h-10 w-10 text-fg-muted mx-auto mb-3" aria-hidden="true" />
+              <Typography variant="body1" className="text-fg-muted">
                 No members yet
               </Typography>
             </div>
@@ -570,14 +570,14 @@ export function WorkspaceMembers({
 
       {/* Mutation errors */}
       {updateRoleMutation.isError && (
-        <Typography variant="caption" className="text-red-500">
+        <Typography variant="caption" className="text-destructive">
           {updateRoleMutation.error instanceof Error
             ? updateRoleMutation.error.message
             : 'Failed to update role'}
         </Typography>
       )}
       {removeMutation.isError && (
-        <Typography variant="caption" className="text-red-500">
+        <Typography variant="caption" className="text-destructive">
           {removeMutation.error instanceof Error
             ? removeMutation.error.message
             : 'Failed to remove member'}

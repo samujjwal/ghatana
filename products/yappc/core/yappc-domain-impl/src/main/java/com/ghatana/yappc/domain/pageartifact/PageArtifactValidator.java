@@ -109,7 +109,14 @@ public final class PageArtifactValidator {
         validateRoundTripFidelity(document.roundTripFidelity(), errors, warnings);
 
         // Validate governance records
-        validateGovernanceRecords(document.aiChangeRecords(), document.source(), errors, warnings);
+        validateGovernanceRecords(
+            document.aiChangeRecords(),
+            document.source(),
+            document.artifactId(),
+            document.documentId(),
+            errors,
+            warnings
+        );
 
         LOG.debug("Validation complete: errors={}, warnings={}", errors.size(), warnings.size());
 
@@ -287,6 +294,8 @@ public final class PageArtifactValidator {
                             + propRule.getValue().name().toLowerCase());
                 }
             }
+
+            validateContractPolicy(nodeId, contractName, propsMap, errors);
         }
 
         Object slots = nodeMap.get("slots");
@@ -312,6 +321,48 @@ public final class PageArtifactValidator {
             case BOOLEAN -> value instanceof Boolean;
             case NUMBER -> value instanceof Number;
         };
+    }
+
+    private static void validateContractPolicy(
+            @NotNull String nodeId,
+            @NotNull String contractName,
+            @NotNull Map<?, ?> propsMap,
+            @NotNull List<String> errors
+    ) {
+        for (Map.Entry<?, ?> entry : propsMap.entrySet()) {
+            if (!(entry.getKey() instanceof String propName)) {
+                continue;
+            }
+
+            Object propValue = entry.getValue();
+            if (propValue instanceof String stringValue) {
+                String normalizedPropName = propName.toLowerCase();
+                if (normalizedPropName.startsWith("on") && !normalizedPropName.equals("onevent")) {
+                    errors.add("BuilderDocument node '" + nodeId + "' contract '" + contractName
+                            + "' prop '" + propName + "' must not contain inline executable handlers");
+                    continue;
+                }
+
+                if (containsExecutablePattern(stringValue)) {
+                    errors.add("BuilderDocument node '" + nodeId + "' contract '" + contractName
+                            + "' prop '" + propName + "' contains unsafe executable payload");
+                }
+            }
+        }
+
+        if ("Image".equals(contractName)) {
+            Object src = propsMap.get("src");
+            if (src instanceof String srcValue) {
+                String normalizedSrc = srcValue.trim().toLowerCase();
+                boolean safeDataImage = normalizedSrc.startsWith("data:image/");
+                boolean safeRelative = normalizedSrc.startsWith("/");
+                boolean safeHttp = normalizedSrc.startsWith("http://") || normalizedSrc.startsWith("https://");
+
+                if (!safeDataImage && !safeRelative && !safeHttp) {
+                    errors.add("BuilderDocument node '" + nodeId + "' contract 'Image' has unsupported src scheme");
+                }
+            }
+        }
     }
 
     private static void validateTreeShape(
@@ -394,11 +445,19 @@ public final class PageArtifactValidator {
         }
 
         if (currentValue instanceof String stringValue) {
-            String lowered = stringValue.toLowerCase();
-            if (lowered.contains("eval(") || lowered.contains("<script") || lowered.contains("javascript:")) {
+            if (containsExecutablePattern(stringValue)) {
                 errors.add("BuilderDocument contains potentially executable content and is rejected");
             }
         }
+    }
+
+    private static boolean containsExecutablePattern(@NotNull String value) {
+        String lowered = value.toLowerCase();
+        return lowered.contains("eval(")
+                || lowered.contains("new function(")
+                || lowered.contains("<script")
+                || lowered.contains("javascript:")
+                || lowered.contains("expression(");
     }
 
     private static void validateSyncStatus(String syncStatus, @NotNull List<String> errors) {
@@ -471,6 +530,8 @@ public final class PageArtifactValidator {
     private static void validateGovernanceRecords(
             @NotNull List<PageArtifactDocument.GovernanceRecord> governanceRecords,
             String source,
+            @NotNull String documentArtifactId,
+            @NotNull String documentId,
             @NotNull List<String> errors,
             @NotNull List<String> warnings
     ) {
@@ -491,9 +552,13 @@ public final class PageArtifactValidator {
             }
             if (record.artifactId() == null || record.artifactId().isBlank()) {
                 errors.add("Governance record missing artifactId");
+            } else if (!documentArtifactId.equals(record.artifactId())) {
+                errors.add("Governance record artifactId does not match document artifactId");
             }
             if (record.documentId() == null || record.documentId().isBlank()) {
                 errors.add("Governance record missing documentId");
+            } else if (!documentId.equals(record.documentId())) {
+                errors.add("Governance record documentId does not match document documentId");
             }
         }
     }

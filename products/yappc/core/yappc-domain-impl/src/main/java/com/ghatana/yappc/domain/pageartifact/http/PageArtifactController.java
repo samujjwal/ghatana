@@ -26,6 +26,7 @@ import com.ghatana.platform.security.rbac.AccessDeniedException;
 import com.ghatana.platform.security.rbac.SyncAuthorizationService;
 import com.ghatana.platform.security.model.User;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactAuditRepository;
+import com.ghatana.yappc.domain.pageartifact.PageArtifactAtomicMutationRepository;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactConflictException;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactDocument;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactPermission;
@@ -215,7 +216,25 @@ public final class PageArtifactController {
                 LOG.info("Saving page artifact: tenant={}, workspace={}, project={}, artifactId={}",
                         tenantId, workspaceId, projectId, artifactId);
 
-                return repository.save(tenantId, workspaceId, projectId, document)
+                String auditActor = userId == null || userId.isBlank() ? "system" : userId;
+                String auditSummary = "Document persisted";
+
+                Promise<PageArtifactDocument> savePromise;
+                if (repository instanceof PageArtifactAtomicMutationRepository atomicRepository) {
+                    savePromise = atomicRepository.saveWithAudit(
+                        tenantId,
+                        workspaceId,
+                        projectId,
+                        document,
+                        "saved",
+                        auditActor,
+                        auditSummary
+                    );
+                } else {
+                    savePromise = repository.save(tenantId, workspaceId, projectId, document);
+                }
+
+                return savePromise
                         .then(persistedDocument -> {
                             metrics.incrementCounter("yappc.page_artifact.saved",
                                     "tenant_id", tenantId,
@@ -230,6 +249,9 @@ public final class PageArtifactController {
                                         "syncStatus", persistedDocument.syncStatus()
                                 ))
                                 .build();
+                            if (repository instanceof PageArtifactAtomicMutationRepository) {
+                                return Promise.of(response);
+                            }
                             return recordAuditEvent(
                                     "saved",
                                     tenantId,
@@ -485,7 +507,9 @@ public final class PageArtifactController {
 
     private void enforceScopeHeader(@Nullable String allowedValuesHeader, @NotNull String requestedId, @NotNull String resourceType) {
         if (allowedValuesHeader == null || allowedValuesHeader.isBlank()) {
-            return;
+            throw new AccessDeniedException(
+                "Missing authorized " + resourceType + " scope header"
+            );
         }
 
         boolean allowed = Arrays.stream(allowedValuesHeader.split(","))

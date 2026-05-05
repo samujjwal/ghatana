@@ -1,6 +1,6 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const {
   validateDocumentMock,
@@ -23,6 +23,9 @@ vi.mock('@ghatana/design-system', () => ({
     React.createElement('button', { onClick, title, 'data-testid': testId }, children),
   Button: ({ children, onClick, title, 'data-testid': testId }: React.PropsWithChildren<{ onClick?: () => void; title?: string; 'data-testid'?: string }>) =>
     React.createElement('button', { onClick, title, 'data-testid': testId }, children),
+  TextArea: React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
+    (props, ref) => React.createElement('textarea', { ...props, ref }),
+  ),
   Surface: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
     React.createElement('div', props, children),
   Drawer: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
@@ -448,12 +451,18 @@ describe('PageDesigner', () => {
 
 const {
   importPageArtifactsFromCodeMock,
+  importSourceToPageArtifactsMock,
 } = vi.hoisted(() => ({
   importPageArtifactsFromCodeMock: vi.fn(),
+  importSourceToPageArtifactsMock: vi.fn(),
 }));
 
 vi.mock('../artifactCompilerBridge', () => ({
   importPageArtifactsFromCode: (...args: unknown[]) => importPageArtifactsFromCodeMock(...args),
+}));
+
+vi.mock('../../../../services/compiler/ImportSourceWorkflow', () => ({
+  importSourceToPageArtifacts: (...args: unknown[]) => importSourceToPageArtifactsMock(...args),
 }));
 
 describe('PageDesigner — import panel', () => {
@@ -482,6 +491,40 @@ describe('PageDesigner — import panel', () => {
         residualIslandIds: ['island-a'],
       },
     ]);
+    importSourceToPageArtifactsMock.mockResolvedValue({
+      importResult: {
+        success: true,
+        componentId: 'imported-project/ImportedRemotePage',
+        files: [],
+        warnings: [],
+        errors: [],
+        metadata: {
+          sourceType: 'tsx',
+          source: 'https://example.com/Page.tsx',
+          importedAt: new Date().toISOString(),
+          componentName: 'ImportedRemotePage',
+          dependencies: [],
+          fileCount: 0,
+          totalSize: 0,
+        },
+      },
+      pageArtifacts: [
+        {
+          artifactId: 'imported-project-imported-remote-page',
+          documentId: 'doc-source-import',
+          serializedBuilderDocument: emptySerializedDocument,
+          source: 'imported',
+          syncStatus: 'dirty',
+          trustLevel: 'low',
+          dataClassification: 'public',
+          createdBy: 'import',
+          updatedBy: 'import',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          residualIslandIds: [],
+        },
+      ],
+    });
     validateDocumentMock.mockReturnValue({ valid: true, errors: [], warnings: [] });
   });
 
@@ -526,6 +569,24 @@ describe('PageDesigner — import panel', () => {
     );
     expect(screen.getByTestId('page-designer-residuals')).toBeInTheDocument();
     expect(screen.getByText(/island-a/i)).toBeInTheDocument();
+  });
+
+  it('imports from source command syntax and emits imported artifacts', async () => {
+    const onImportArtifacts = vi.fn();
+    render(<PageDesigner onImportArtifacts={onImportArtifacts} />);
+    fireEvent.click(screen.getByTestId('page-designer-import-btn'));
+    const textarea = screen.getByTestId('page-designer-import-textarea') as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: 'source:tsx:https://example.com/Page.tsx' } });
+    fireEvent.click(screen.getByTestId('page-designer-import-confirm'));
+
+    await waitFor(() => {
+      expect(importSourceToPageArtifactsMock).toHaveBeenCalled();
+    });
+    expect(onImportArtifacts).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ artifactId: 'imported-project-imported-remote-page' }),
+      ]),
+    );
   });
 
   it('closes the import panel after a successful import', () => {

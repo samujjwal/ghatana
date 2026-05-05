@@ -103,17 +103,17 @@ function StepIndicator({ currentStep, steps }: { currentStep: number; steps: Onb
                 <React.Fragment key={step.id}>
                     <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300 ${index < currentStep
-                            ? 'bg-green-500 text-white'
+                            ? 'bg-success-bg text-white'
                             : index === currentStep
-                                ? 'bg-blue-500 text-white ring-4 ring-blue-500/30'
-                                : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
+                                ? 'bg-info-bg text-white ring-4 ring-blue-500/30'
+                                : 'bg-surface-muted dark:bg-surface-muted text-fg-muted'
                             }`}
                     >
                         {index < currentStep ? '✓' : index + 1}
                     </div>
                     {index < steps.length - 1 && (
                         <div
-                            className={`w-12 h-0.5 transition-colors duration-300 ${index < currentStep ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
+                            className={`w-12 h-0.5 transition-colors duration-300 ${index < currentStep ? 'bg-success-bg' : 'bg-surface-muted dark:bg-surface-muted'
                                 }`}
                         />
                     )}
@@ -209,7 +209,7 @@ function WorkspaceStep({
 
             <div className="space-y-6">
                 {errorMessage && (
-                    <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-300">
+                    <div className="p-3 rounded-lg bg-destructive-bg dark:bg-destructive-bg border border-destructive-border dark:border-destructive-border text-sm text-destructive dark:text-destructive">
                         {errorMessage}
                     </div>
                 )}
@@ -222,20 +222,20 @@ function WorkspaceStep({
                         value={workspaceName}
                         onChange={(e) => setWorkspaceName(e.target.value)}
                         placeholder="My Awesome Workspace"
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full px-4 py-3 border border-border dark:border-border rounded-xl bg-white dark:bg-surface text-text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         autoFocus
                     />
                 </div>
 
                 {(isLoadingSuggestion || suggestedName) && (
-                    <div className="p-3 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg border border-purple-100 dark:border-purple-800 animate-fadeIn">
+                    <div className="p-3 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg border border-info-border dark:border-info-border animate-fadeIn">
                         <div className="flex items-center gap-2">
                             {isLoadingSuggestion ? (
-                                <span className="text-sm text-purple-600 dark:text-purple-400">
+                                <span className="text-sm text-info-color dark:text-info-color">
                                     AI is thinking...
                                 </span>
                             ) : (
-                                <span className="text-sm text-purple-600 dark:text-purple-400">
+                                <span className="text-sm text-info-color dark:text-info-color">
                                     Suggested:{' '}
                                     <button
                                         onClick={useSuggestion}
@@ -263,8 +263,8 @@ function WorkspaceStep({
                                     key={personaId}
                                     onClick={() => togglePersona(personaId)}
                                     className={`p-3 rounded-lg border-2 transition-all text-center ${isSelected
-                                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                                            ? 'border-info-border bg-info-bg dark:bg-info-bg'
+                                            : 'border-border dark:border-border hover:border-border dark:hover:border-border'
                                         }`}
                                 >
                                     <div className="text-2xl mb-1">{persona.icon}</div>
@@ -272,8 +272,8 @@ function WorkspaceStep({
                                         {persona.shortName}
                                     </p>
                                     <div className={`w-4 h-4 mx-auto mt-2 rounded border-2 flex items-center justify-center ${isSelected
-                                            ? 'border-blue-500 bg-blue-500'
-                                            : 'border-gray-300 dark:border-gray-600'
+                                            ? 'border-info-border bg-info-bg'
+                                            : 'border-border dark:border-border'
                                         }`}>
                                         {isSelected && (
                                             <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -294,14 +294,14 @@ function WorkspaceStep({
             <div className="flex gap-3 mt-8">
                 <button
                     onClick={onBack}
-                    className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-primary rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    className="flex-1 px-4 py-3 border border-border dark:border-border text-text-primary rounded-xl font-medium hover:bg-surface-muted dark:hover:bg-surface transition-colors"
                 >
                     ← Back
                 </button>
                 <button
                     onClick={onNext}
                     disabled={!workspaceName.trim() || selectedPersonas.length === 0}
-                    className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 px-4 py-3 bg-info-bg text-white rounded-xl font-medium hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 >
                     Continue →
                 </button>
@@ -357,8 +357,8 @@ function ProjectStep({
                             key={type.id}
                             onClick={() => setProjectType(type.id)}
                             className={`p-4 rounded-xl border-2 transition-all text-left ${isSelected
-                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                                ? 'border-info-border bg-info-bg dark:bg-info-bg'
+                                : 'border-border dark:border-border hover:border-border dark:hover:border-border'
                                 }`}
                         >
                             <div
@@ -383,19 +383,19 @@ function ProjectStep({
                         value={projectName}
                         onChange={(e) => setProjectName(e.target.value)}
                         placeholder="My First Project"
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full px-4 py-3 border border-border dark:border-border rounded-xl bg-white dark:bg-surface text-text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     />
                 </div>
 
                 {(isLoadingSuggestion || suggestedName) && (
-                    <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg border border-green-100 dark:border-green-800 animate-fadeIn">
+                    <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg border border-success-border dark:border-success-border animate-fadeIn">
                         <div className="flex items-center gap-2">
                             {isLoadingSuggestion ? (
-                                <span className="text-sm text-green-600 dark:text-green-400">
+                                <span className="text-sm text-success-color dark:text-success-color">
                                     AI is thinking...
                                 </span>
                             ) : (
-                                <span className="text-sm text-green-600 dark:text-green-400">
+                                <span className="text-sm text-success-color dark:text-success-color">
                                     Suggested:{' '}
                                     <button
                                         onClick={useSuggestion}
@@ -413,14 +413,14 @@ function ProjectStep({
             <div className="flex gap-3 mt-8">
                 <button
                     onClick={onBack}
-                    className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-primary rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    className="flex-1 px-4 py-3 border border-border dark:border-border text-text-primary rounded-xl font-medium hover:bg-surface-muted dark:hover:bg-surface transition-colors"
                 >
                     Back
                 </button>
                 <button
                     onClick={onNext}
                     disabled={!projectName.trim() || !projectType}
-                    className="flex-1 px-4 py-3 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 px-4 py-3 bg-success-bg text-white rounded-xl font-medium hover:bg-success-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 >
                     Create & Finish
                     <span>✓</span>
@@ -443,7 +443,7 @@ function CompleteStep({ onFinish, isCreating }: { onFinish: () => void; isCreati
         <div className="text-center animate-fadeIn">
             {isCreating ? (
                 <>
-                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-info-bg dark:bg-info-bg flex items-center justify-center">
                         <span className="text-3xl animate-spin">...</span>
                     </div>
                     <h2 className="text-2xl font-bold text-text-primary mb-2">
@@ -455,7 +455,7 @@ function CompleteStep({ onFinish, isCreating }: { onFinish: () => void; isCreati
                 </>
             ) : (
                 <>
-                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center animate-bounce">
+                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-success-bg dark:bg-success-bg flex items-center justify-center animate-bounce">
                         <span className="text-3xl">✓</span>
                     </div>
 
@@ -636,7 +636,7 @@ export function OnboardingFlow({ onComplete, redirectTo = '/' }: OnboardingFlowP
             <div className="w-full max-w-2xl">
                 <StepIndicator currentStep={currentStep} steps={STEPS} />
 
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 min-h-[400px] flex flex-col justify-center">
+                <div className="bg-white dark:bg-surface rounded-2xl shadow-xl p-8 min-h-[400px] flex flex-col justify-center">
                     {step.id === 'welcome' && <WelcomeStep key="welcome" onNext={handleNext} />}
 
                     {step.id === 'workspace' && (

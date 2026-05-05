@@ -73,50 +73,50 @@ const DATABASE_CONFIG: Record<DatabaseType, { label: string; icon: typeof Databa
   postgresql: {
     label: 'PostgreSQL',
     icon: Database,
-    color: 'text-blue-700',
-    bgColor: 'bg-blue-50 border-blue-300',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg border-info-border',
   },
   mysql: {
     label: 'MySQL',
     icon: Database,
-    color: 'text-orange-700',
-    bgColor: 'bg-orange-50 border-orange-300',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg border-warning-border',
   },
   mongodb: {
     label: 'MongoDB',
     icon: Layers,
-    color: 'text-green-700',
-    bgColor: 'bg-green-50 border-green-300',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg border-success-border',
   },
   redis: {
     label: 'Redis',
     icon: HardDrive,
-    color: 'text-red-700',
-    bgColor: 'bg-red-50 border-red-300',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive-bg border-destructive-border',
   },
   elasticsearch: {
     label: 'Elasticsearch',
     icon: Search,
-    color: 'text-yellow-700',
-    bgColor: 'bg-yellow-50 border-yellow-300',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg border-warning-border',
   },
   dynamodb: {
     label: 'DynamoDB',
     icon: FileJson,
-    color: 'text-amber-700',
-    bgColor: 'bg-amber-50 border-amber-300',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg border-warning-border',
   },
   s3: {
     label: 'S3 Storage',
     icon: HardDrive,
-    color: 'text-orange-700',
-    bgColor: 'bg-orange-50 border-orange-300',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg border-warning-border',
   },
   sqlite: {
     label: 'SQLite',
     icon: Database,
-    color: 'text-cyan-700',
-    bgColor: 'bg-cyan-50 border-cyan-300',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg border-info-border',
   },
 };
 
@@ -174,22 +174,22 @@ export const DatabaseNode = memo<DatabaseNodeProps>(({ id, data, selected }) => 
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-indigo-500 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
       />
       <Handle
         type="target"
         position={Position.Left}
-        className="!w-3 !h-3 !bg-indigo-500 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
       />
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-indigo-500 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="!w-3 !h-3 !bg-indigo-500 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
       />
 
       {/* Header */}
@@ -200,17 +200,17 @@ export const DatabaseNode = memo<DatabaseNodeProps>(({ id, data, selected }) => 
           </div>
           <div>
             <span className={cn('text-xs font-semibold', config.color)}>{config.label}</span>
-            {data.version && <span className="text-xs text-gray-500 ml-1">v{data.version}</span>}
+            {data.version && <span className="text-xs text-muted-foreground ml-1">v{data.version}</span>}
           </div>
         </div>
         <div className="flex items-center gap-1">
           {data.isManaged && (
-            <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] rounded" title="Cloud Managed">
+            <span className="px-1.5 py-0.5 bg-success-bg text-success-color text-[10px] rounded" title="Cloud Managed">
               Managed
             </span>
           )}
-          {data.backupEnabled && <span title="Backups Enabled"><HardDrive className="w-3.5 h-3.5 text-blue-600" /></span>}
-          {data.hasReplication && <span title="Replication"><Layers className="w-3.5 h-3.5 text-purple-600" /></span>}
+          {data.backupEnabled && <span title="Backups Enabled"><HardDrive className="w-3.5 h-3.5 text-info-color" /></span>}
+          {data.hasReplication && <span title="Replication"><Layers className="w-3.5 h-3.5 text-warning-color" /></span>}
           <div className="relative">
             <button
               onClick={(e) => {
@@ -219,26 +219,26 @@ export const DatabaseNode = memo<DatabaseNodeProps>(({ id, data, selected }) => 
               }}
               className="p-1 hover:bg-black/5 rounded"
             >
-              <MoreHorizontal className="w-4 h-4 text-gray-500" />
+              <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
             </button>
             {showMenu && (
-              <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border py-1 z-50 min-w-[120px]">
+              <div className="absolute right-0 top-full mt-1 bg-surface rounded-lg shadow-lg border border-border py-1 z-50 min-w-[120px]">
                 <button
                   onClick={handleEdit}
-                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted/40 flex items-center gap-2"
                 >
                   <Edit2 className="w-3.5 h-3.5" /> Edit
                 </button>
                 <button
                   onClick={() => data.onAddEntity?.(id)}
-                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted/40 flex items-center gap-2"
                 >
                   <Table2 className="w-3.5 h-3.5" /> Add Table
                 </button>
                 <hr className="my-1" />
                 <button
                   onClick={handleDelete}
-                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
+                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-destructive-bg text-destructive flex items-center gap-2"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Delete
                 </button>
@@ -250,16 +250,16 @@ export const DatabaseNode = memo<DatabaseNodeProps>(({ id, data, selected }) => 
 
       {/* Content */}
       <div className="px-3 py-2">
-        <h3 className="text-sm font-medium text-gray-900">{data.label}</h3>
+        <h3 className="text-sm font-medium text-fg">{data.label}</h3>
         {data.description && (
-          <p className={cn('text-xs text-gray-600 mt-1', expanded ? '' : 'line-clamp-2')}>
+          <p className={cn('text-xs text-fg-muted mt-1', expanded ? '' : 'line-clamp-2')}>
             {data.description}
           </p>
         )}
       </div>
 
       {/* Entity Count */}
-      <div className="px-3 py-2 border-t border-current/10 flex items-center justify-between text-xs text-gray-500">
+      <div className="px-3 py-2 border-t border-current/10 flex items-center justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1">
             <Table2 className="w-3.5 h-3.5" />
@@ -288,19 +288,19 @@ export const DatabaseNode = memo<DatabaseNodeProps>(({ id, data, selected }) => 
       {/* Expanded Entities */}
       {expanded && data.entities.length > 0 && (
         <div className="px-3 py-2 border-t border-current/10">
-          <span className="text-xs font-medium text-gray-700">
+          <span className="text-xs font-medium text-fg">
             {data.databaseType === 'mongodb' ? 'Collections' : data.databaseType === 's3' ? 'Buckets' : 'Tables'}:
           </span>
           <div className="mt-1 space-y-1 max-h-[150px] overflow-y-auto">
             {data.entities.map((entity) => {
               const EntityIcon = ENTITY_ICONS[entity.type] || Table2;
               return (
-                <div key={entity.name} className="flex items-start gap-2 py-1 px-2 bg-white/50 rounded">
-                  <EntityIcon className="w-3.5 h-3.5 text-gray-500 mt-0.5 flex-shrink-0" />
+                <div key={entity.name} className="flex items-start gap-2 py-1 px-2 bg-surface rounded">
+                  <EntityIcon className="w-3.5 h-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div className="min-w-0">
-                    <span className="text-xs font-medium text-gray-800">{entity.name}</span>
+                    <span className="text-xs font-medium text-fg">{entity.name}</span>
                     {entity.fields && entity.fields.length > 0 && (
-                      <div className="text-[10px] text-gray-500 truncate">
+                      <div className="text-[10px] text-muted-foreground truncate">
                         {entity.fields.slice(0, 4).join(', ')}
                         {entity.fields.length > 4 && ` +${entity.fields.length - 4} more`}
                       </div>
@@ -312,8 +312,8 @@ export const DatabaseNode = memo<DatabaseNodeProps>(({ id, data, selected }) => 
           </div>
           {data.notes && (
             <div className="mt-2">
-              <span className="text-xs font-medium text-gray-700">Notes:</span>
-              <p className="text-xs text-gray-600 mt-0.5">{data.notes}</p>
+              <span className="text-xs font-medium text-fg">Notes:</span>
+              <p className="text-xs text-fg-muted mt-0.5">{data.notes}</p>
             </div>
           )}
         </div>

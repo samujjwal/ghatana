@@ -69,13 +69,13 @@ export function RiskAlerts({
   const getSeverityIcon = (severity: RiskSeverity) => {
     switch (severity) {
       case 'critical':
-        return <AlertTriangle className="w-5 h-5 text-red-600" />;
+        return <AlertTriangle className="w-5 h-5 text-destructive" />;
       case 'high':
-        return <AlertTriangle className="w-5 h-5 text-orange-600" />;
+        return <AlertTriangle className="w-5 h-5 text-warning-color" />;
       case 'medium':
-        return <AlertTriangle className="w-5 h-5 text-yellow-600" />;
+        return <AlertTriangle className="w-5 h-5 text-warning-color" />;
       case 'low':
-        return <AlertTriangle className="w-5 h-5 text-green-600" />;
+        return <AlertTriangle className="w-5 h-5 text-success-color" />;
       default:
         return null;
     }
@@ -101,25 +101,25 @@ export function RiskAlerts({
   const getSeverityColor = (severity: RiskSeverity) => {
     switch (severity) {
       case 'critical':
-        return 'bg-red-100 text-red-700 border-red-300';
+        return 'bg-destructive-bg text-destructive border-destructive-border';
       case 'high':
-        return 'bg-orange-100 text-orange-700 border-orange-300';
+        return 'bg-warning-bg text-warning-color border-warning-border';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-300';
+        return 'bg-warning-bg text-warning-color border-warning-border';
       case 'low':
-        return 'bg-green-100 text-green-700 border-green-300';
+        return 'bg-success-bg text-success-color border-success-border';
       default:
-        return 'bg-gray-100 text-gray-700 border-gray-300';
+        return 'bg-surface-muted text-fg border-border';
     }
   };
 
   const getStatusBadge = (status: RiskAlert['status']) => {
     const statusConfig = {
-      open: { color: 'bg-red-100 text-red-700', label: 'Open' },
-      mitigating: { color: 'bg-blue-100 text-blue-700', label: 'Mitigating' },
-      mitigated: { color: 'bg-green-100 text-green-700', label: 'Mitigated' },
-      escalated: { color: 'bg-purple-100 text-purple-700', label: 'Escalated' },
-      ignored: { color: 'bg-gray-100 text-gray-700', label: 'Ignored' },
+      open: { color: 'bg-destructive-bg text-destructive', label: 'Open' },
+      mitigating: { color: 'bg-info-bg text-info-color', label: 'Mitigating' },
+      mitigated: { color: 'bg-success-bg text-success-color', label: 'Mitigated' },
+      escalated: { color: 'bg-info-bg text-info-color', label: 'Escalated' },
+      ignored: { color: 'bg-surface-muted text-fg', label: 'Ignored' },
     };
 
     const config = statusConfig[status];
@@ -141,7 +141,7 @@ export function RiskAlerts({
       </div>
       <Paper className="rounded-lg overflow-hidden border">
         {activeAlerts.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+          <div className="p-8 text-center text-fg-muted dark:text-fg-muted">
             <Shield className="mb-2 w-20 h-20 opacity-50 mx-auto" />
             <Typography>
               No active risk alerts. System is healthy!
@@ -153,7 +153,7 @@ export function RiskAlerts({
               {activeAlerts.map((alert) => (
                 <div
                   key={alert.id}
-                  className={`py-4 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${selectedAlerts.has(alert.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                  className={`py-4 px-4 hover:bg-surface-muted dark:hover:bg-surface transition-colors ${selectedAlerts.has(alert.id) ? 'bg-info-bg dark:bg-info-bg' : ''}`}
                 >
                   <div className="flex items-start gap-4">
                     {hasActions && (
@@ -161,7 +161,7 @@ export function RiskAlerts({
                         type="checkbox"
                         checked={selectedAlerts.has(alert.id)}
                         onChange={() => toggleSelection(alert.id)}
-                        className="w-4 h-4 mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="w-4 h-4 mt-1 rounded border-border text-info-color focus:ring-blue-500"
                       />
                     )}
                     <div className="flex-shrink-0">
@@ -174,34 +174,34 @@ export function RiskAlerts({
                         </Typography>
                         {getStatusBadge(alert.status)}
                       </div>
-                      <Typography className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      <Typography className="text-sm text-fg-muted dark:text-fg-muted mb-2">
                         {alert.description}
                       </Typography>
                       <div className="flex items-center gap-4 flex-wrap">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getSeverityColor(alert.severity)}`}>
                           {alert.severity.toUpperCase()}
                         </span>
-                        <span className="flex items-center gap-1 text-sm text-gray-500">
+                        <span className="flex items-center gap-1 text-sm text-fg-muted">
                           {getCategoryIcon(alert.category)}
                           {alert.category}
                         </span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-fg-muted">
                           {alert.affectedComponents.length} component{alert.affectedComponents.length !== 1 ? 's' : ''} affected
                         </span>
                         {alert.dueDate && (
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-fg-muted">
                             Due: {new Date(alert.dueDate).toLocaleDateString()}
                           </span>
                         )}
                         {alert.escalatedTo && (
-                          <span className="flex items-center gap-1 text-sm text-purple-600">
+                          <span className="flex items-center gap-1 text-sm text-info-color">
                             <ArrowUp className="w-4 h-4" />
                             Escalated to: {alert.escalatedTo}
                           </span>
                         )}
                       </div>
                       {alert.mitigationPlan && (
-                        <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-sm text-blue-700 dark:text-blue-300">
+                        <div className="mt-2 p-2 bg-info-bg dark:bg-info-bg rounded text-sm text-info-color dark:text-info-color">
                           <span className="font-medium">Mitigation Plan:</span> {alert.mitigationPlan}
                         </div>
                       )}
@@ -212,7 +212,7 @@ export function RiskAlerts({
                           {onEscalate && alert.status !== 'escalated' && (
                             <button
                               onClick={() => handleEscalate(alert.id)}
-                              className="p-2 rounded-md bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
+                              className="p-2 rounded-md bg-info-bg text-info-color hover:bg-info-bg transition-colors"
                               title="Escalate"
                             >
                               <ArrowUp className="w-4 h-4" />
@@ -221,7 +221,7 @@ export function RiskAlerts({
                           {onUpdateStatus && alert.status === 'open' && (
                             <button
                               onClick={() => handleUpdateStatus(alert.id, 'mitigating')}
-                              className="p-2 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                              className="p-2 rounded-md bg-info-bg text-info-color hover:bg-info-bg transition-colors"
                               title="Start Mitigation"
                             >
                               <Shield className="w-4 h-4" />
@@ -230,7 +230,7 @@ export function RiskAlerts({
                           {onUpdateStatus && (alert.status === 'mitigating' || alert.status === 'escalated') && (
                             <button
                               onClick={() => handleUpdateStatus(alert.id, 'mitigated')}
-                              className="p-2 rounded-md bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+                              className="p-2 rounded-md bg-success-bg text-success-color hover:bg-success-bg transition-colors"
                               title="Mark as Mitigated"
                             >
                               <FileCheck className="w-4 h-4" />
@@ -238,13 +238,13 @@ export function RiskAlerts({
                           )}
                         </div>
                       )}
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                      <ChevronRight className="w-5 h-5 text-fg-muted" />
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="p-2 text-center bg-gray-100 dark:bg-gray-800">
+            <div className="p-2 text-center bg-surface-muted dark:bg-surface">
               <Button size="sm" endIcon={<ChevronRight />} onClick={onViewAll}>Go to Risk Alerts</Button>
             </div>
           </>

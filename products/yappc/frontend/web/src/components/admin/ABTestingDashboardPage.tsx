@@ -142,11 +142,11 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
       case 'running':
         return 'bg-emerald-900/30 text-emerald-400';
       case 'completed':
-        return 'bg-blue-900/30 text-blue-400';
+        return 'bg-info-bg text-info-color';
       case 'paused':
-        return 'bg-amber-900/30 text-amber-400';
+        return 'bg-warning-bg text-warning-color';
       default:
-        return 'bg-zinc-800 text-zinc-400';
+        return 'bg-surface text-fg-muted';
     }
   };
 
@@ -155,11 +155,11 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-zinc-100 mb-2 flex items-center gap-2">
-              <TrendingUpIcon size={24} className="text-blue-400" />
+            <h1 className="text-2xl font-bold text-fg-muted mb-2 flex items-center gap-2">
+              <TrendingUpIcon size={24} className="text-info-color" />
               A/B Testing Dashboard
             </h1>
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-fg-muted">
               Manage A/B testing experiments, view results, and promote winning variants.
             </p>
           </div>
@@ -168,7 +168,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
               type="button"
               onClick={() => void refetch()}
               disabled={isLoading}
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-surface hover:bg-surface-muted text-fg-muted text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
               title="Refresh experiments"
             >
               <RefreshIcon size={14} className={isLoading ? 'animate-spin' : ''} />
@@ -176,7 +176,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
             <button
               type="button"
               onClick={() => setCreateDialogOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors"
               data-testid="btn-create-experiment"
             >
               <AddIcon size={16} />
@@ -185,19 +185,19 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
           </div>
         </div>
 
-        <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-4 text-blue-400 text-sm">
+        <div className="bg-info-bg border border-info-border rounded-lg p-4 text-info-color text-sm">
           This page is for administrators only. Changes here affect AI model selection across all tenants.
         </div>
 
         {isLoading && (
           <div className="flex items-center justify-center py-16" data-testid="loading-spinner">
-            <SpinnerIcon size={32} className="animate-spin text-blue-400" />
+            <SpinnerIcon size={32} className="animate-spin text-info-color" />
           </div>
         )}
 
         {isError && (
           <div
-            className="flex items-center gap-3 p-4 bg-red-900/20 border border-red-800 rounded-lg text-red-400"
+            className="flex items-center gap-3 p-4 bg-destructive-bg border border-destructive-border rounded-lg text-destructive"
             data-testid="error-message"
           >
             <ErrorIcon size={18} className="shrink-0" />
@@ -209,7 +209,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
 
         {!isLoading && !isError && experiments.length === 0 && (
           <div
-            className="flex flex-col items-center justify-center py-16 text-zinc-500 space-y-3"
+            className="flex flex-col items-center justify-center py-16 text-fg-muted space-y-3"
             data-testid="empty-state"
           >
             <TrendingUpIcon size={40} className="opacity-30" />
@@ -217,7 +217,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
             <button
               type="button"
               onClick={() => setCreateDialogOpen(true)}
-              className="text-sm text-blue-400 hover:text-blue-300 underline underline-offset-2"
+              className="text-sm text-info-color hover:text-info-color underline underline-offset-2"
             >
               Create your first experiment
             </button>
@@ -229,13 +229,13 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
             {experiments.map((experiment) => (
               <div
                 key={experiment.id}
-                className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors"
+                className="bg-surface border border-border rounded-xl p-5 hover:border-border transition-colors"
                 data-testid={`experiment-row-${experiment.id}`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-zinc-100 mb-1">{experiment.name}</h2>
-                    <p className="text-sm text-zinc-400">{experiment.description}</p>
+                    <h2 className="text-lg font-semibold text-fg-muted mb-1">{experiment.name}</h2>
+                    <p className="text-sm text-fg-muted">{experiment.description}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span
@@ -244,7 +244,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                       {experiment.status}
                     </span>
                     {experiment.winnerId && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-purple-900/30 text-purple-400 text-xs font-medium">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-info-bg text-info-color text-xs font-medium">
                         <WinnerIcon size={12} />
                         Winner: {experiment.variants.find((v) => v.variantId === experiment.winnerId)?.variantName}
                       </span>
@@ -258,19 +258,19 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                       key={variant.variantId}
                       className={`p-3 rounded-lg border ${
                         experiment.winnerId === variant.variantId
-                          ? 'border-purple-500 bg-purple-900/10'
-                          : 'border-zinc-800 bg-zinc-800/50'
+                          ? 'border-info-border bg-info-bg'
+                          : 'border-border bg-surface/50'
                       }`}
                     >
-                      <div className="text-sm font-medium text-zinc-300 mb-2">{variant.variantName}</div>
-                      <div className="space-y-1 text-xs text-zinc-400">
+                      <div className="text-sm font-medium text-fg-muted mb-2">{variant.variantName}</div>
+                      <div className="space-y-1 text-xs text-fg-muted">
                         <div className="flex justify-between">
                           <span>Conversions:</span>
-                          <span className="text-zinc-300">{(variant.conversionRate * 100).toFixed(1)}%</span>
+                          <span className="text-fg-muted">{(variant.conversionRate * 100).toFixed(1)}%</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Quality:</span>
-                          <span className="text-zinc-300">{variant.avgQualityScore.toFixed(1)}</span>
+                          <span className="text-fg-muted">{variant.avgQualityScore.toFixed(1)}</span>
                         </div>
                         {variant.statisticalSignificance && (
                           <div className="text-emerald-400">Statistically significant</div>
@@ -280,8 +280,8 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                   ))}
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
-                  <div className="text-xs text-zinc-500">
+                <div className="flex items-center justify-between pt-3 border-t border-border">
+                  <div className="text-xs text-fg-muted">
                     Created: {new Date(experiment.createdAt).toLocaleString()}
                     {experiment.endedAt && ` – Ended: ${new Date(experiment.endedAt).toLocaleString()}`}
                   </div>
@@ -289,7 +289,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                     <button
                       type="button"
                       onClick={() => handleView(experiment)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium rounded-lg transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface hover:bg-surface-muted text-fg-muted text-xs font-medium rounded-lg transition-colors"
                       data-testid={`btn-view-${experiment.id}`}
                     >
                       <ViewIcon size={14} />
@@ -300,7 +300,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                         type="button"
                         onClick={() => pauseMutation.mutate(experiment.id)}
                         disabled={pauseMutation.isPending}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-700/40 hover:bg-amber-700/60 text-amber-300 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warning-bg hover:bg-warning-bg text-warning-color text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
                         data-testid={`btn-pause-${experiment.id}`}
                       >
                         {pauseMutation.isPending ? (
@@ -315,7 +315,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                       <button
                         type="button"
                         onClick={() => handlePromote(experiment)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium rounded-lg transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-info-bg hover:bg-info-bg text-white text-xs font-medium rounded-lg transition-colors"
                         data-testid={`btn-promote-${experiment.id}`}
                       >
                         <PromoteIcon size={14} />
@@ -332,13 +332,13 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
 
       {viewDialogOpen && selectedExperiment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" data-testid="view-dialog">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-4xl w-full max-h-[80vh] overflow-auto">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-800">
-              <h2 className="text-lg font-semibold text-zinc-100">Experiment Details</h2>
+          <div className="bg-surface border border-border rounded-xl max-w-4xl w-full max-h-[80vh] overflow-auto">
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h2 className="text-lg font-semibold text-fg-muted">Experiment Details</h2>
               <button
                 type="button"
                 onClick={() => setViewDialogOpen(false)}
-                className="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200"
+                className="p-1 rounded hover:bg-surface text-fg-muted hover:text-fg-muted"
               >
                 <CloseIcon size={20} />
               </button>
@@ -346,51 +346,51 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
             <div className="p-4 space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-zinc-400">Name:</span>
+                  <span className="text-fg-muted">Name:</span>
                   <span className="ml-2 text         ">{selectedExperiment.name}</span>
                 </div>
                 <div>
-                  <span className="text-zinc-400">Status:</span>
+                  <span className="text-fg-muted">Status:</span>
                   <span className={`ml-2 capitalize ${getStatusColor(selectedExperiment.status)}`}>
                     {selectedExperiment.status}
                   </span>
                 </div>
               </div>
               <div>
-                <h3 className="text-base font-semibold text-zinc-100 mb-3">Variant Performance</h3>
+                <h3 className="text-base font-semibold text-fg-muted mb-3">Variant Performance</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-zinc-800">
-                        <th className="text-left py-2 px-3 text-xs font-medium text-zinc-400 uppercase tracking-wider">Variant</th>
-                        <th className="text-right py-2 px-3 text-xs font-medium text-zinc-400 uppercase tracking-wider">Impressions</th>
-                        <th className="text-right py-2 px-3 text-xs font-medium text-zinc-400 uppercase tracking-wider">Conv. Rate</th>
-                        <th className="text-right py-2 px-3 text-xs font-medium text-zinc-400 uppercase tracking-wider">Quality</th>
-                        <th className="text-right py-2 px-3 text-xs font-medium text-zinc-400 uppercase tracking-wider">Cost</th>
-                        <th className="text-right py-2 px-3 text-xs font-medium text-zinc-400 uppercase tracking-wider">Significance</th>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-2 px-3 text-xs font-medium text-fg-muted uppercase tracking-wider">Variant</th>
+                        <th className="text-right py-2 px-3 text-xs font-medium text-fg-muted uppercase tracking-wider">Impressions</th>
+                        <th className="text-right py-2 px-3 text-xs font-medium text-fg-muted uppercase tracking-wider">Conv. Rate</th>
+                        <th className="text-right py-2 px-3 text-xs font-medium text-fg-muted uppercase tracking-wider">Quality</th>
+                        <th className="text-right py-2 px-3 text-xs font-medium text-fg-muted uppercase tracking-wider">Cost</th>
+                        <th className="text-right py-2 px-3 text-xs font-medium text-fg-muted uppercase tracking-wider">Significance</th>
                       </tr>
                     </thead>
                     <tbody>
                       {selectedExperiment.variants.map((variant) => (
-                        <tr key={variant.variantId} className="border-b border-zinc-800">
-                          <td className="py-2 px-3 text-sm text-zinc-300">
+                        <tr key={variant.variantId} className="border-b border-border">
+                          <td className="py-2 px-3 text-sm text-fg-muted">
                             {variant.variantName}
                             {selectedExperiment.winnerId === variant.variantId && (
-                              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-900/30 text-purple-400 text-xs">
+                              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-info-bg text-info-color text-xs">
                                 <WinnerIcon size={10} />
                                 Winner
                               </span>
                             )}
                           </td>
-                          <td className="py-2 px-3 text-sm text-zinc-300 text-right">{variant.impressions.toLocaleString()}</td>
-                          <td className="py-2 px-3 text-sm text-zinc-300 text-right">{(variant.conversionRate * 100).toFixed(1)}%</td>
-                          <td className="py-2 px-3 text-sm text-zinc-300 text-right">{variant.avgQualityScore.toFixed(1)}</td>
-                          <td className="py-2 px-3 text-sm text-zinc-300 text-right">${variant.avgCostUsd.toFixed(3)}</td>
+                          <td className="py-2 px-3 text-sm text-fg-muted text-right">{variant.impressions.toLocaleString()}</td>
+                          <td className="py-2 px-3 text-sm text-fg-muted text-right">{(variant.conversionRate * 100).toFixed(1)}%</td>
+                          <td className="py-2 px-3 text-sm text-fg-muted text-right">{variant.avgQualityScore.toFixed(1)}</td>
+                          <td className="py-2 px-3 text-sm text-fg-muted text-right">${variant.avgCostUsd.toFixed(3)}</td>
                           <td className="py-2 px-3 text-sm text-right">
                             {variant.statisticalSignificance ? (
                               <span className="text-emerald-400">yes (p={variant.pValue?.toFixed(3)})</span>
                             ) : (
-                              <span className="text-zinc-500">no</span>
+                              <span className="text-fg-muted">no</span>
                             )}
                           </td>
                         </tr>
@@ -400,11 +400,11 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                 </div>
               </div>
             </div>
-            <div className="flex justify-end p-4 border-t border-zinc-800">
+            <div className="flex justify-end p-4 border-t border-border">
               <button
                 type="button"
                 onClick={() => setViewDialogOpen(false)}
-                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-surface hover:bg-surface-muted text-fg-muted rounded-lg text-sm font-medium transition-colors"
               >
                 Close
               </button>
@@ -415,19 +415,19 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
 
       {promoteDialogOpen && selectedExperiment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" data-testid="promote-dialog">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-md w-full">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-800">
-              <h2 className="text-lg font-semibold text-zinc-100">Promote Winner</h2>
+          <div className="bg-surface border border-border rounded-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h2 className="text-lg font-semibold text-fg-muted">Promote Winner</h2>
               <button
                 type="button"
                 onClick={() => setPromoteDialogOpen(false)}
-                className="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200"
+                className="p-1 rounded hover:bg-surface text-fg-muted hover:text-fg-muted"
               >
                 <CloseIcon size={20} />
               </button>
             </div>
             <div className="p-4 space-y-4">
-              <p className="text-sm text-zinc-300">
+              <p className="text-sm text-fg-muted">
                 Select the winning variant. It will be promoted as the production default.
               </p>
               <div className="space-y-2">
@@ -439,19 +439,19 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                     data-testid={`variant-option-${variant.variantId}`}
                     className={`w-full p-3 rounded-lg border text-left transition-colors ${
                       selectedVariantId === variant.variantId
-                        ? 'border-purple-500 bg-purple-900/20'
-                        : 'border-zinc-800 bg-zinc-800/50 hover:border-zinc-700'
+                        ? 'border-info-border bg-info-bg'
+                        : 'border-border bg-surface/50 hover:border-border'
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="text-sm font-medium text-zinc-300">{variant.variantName}</div>
-                      <div className="text-xs text-zinc-400">{(variant.conversionRate * 100).toFixed(1)}% conversion</div>
+                      <div className="text-sm font-medium text-fg-muted">{variant.variantName}</div>
+                      <div className="text-xs text-fg-muted">{(variant.conversionRate * 100).toFixed(1)}% conversion</div>
                     </div>
                   </button>
                 ))}
               </div>
               <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1" htmlFor="promote-reason">
+                <label className="block text-xs font-medium text-fg-muted mb-1" htmlFor="promote-reason">
                   Reason (optional)
                 </label>
                 <input
@@ -460,21 +460,21 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                   value={promoteReason}
                   onChange={(e) => setPromoteReason(e.target.value)}
                   placeholder="Why are you promoting this variant?"
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm rounded-lg placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full px-3 py-2 bg-surface border border-border text-fg-muted text-sm rounded-lg placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-purple-500"
                 />
               </div>
               {promoteMutation.isError && (
-                <p className="text-sm text-red-400">
+                <p className="text-sm text-destructive">
                   {promoteMutation.error instanceof Error ? promoteMutation.error.message : 'Failed to promote winner.'}
                 </p>
               )}
             </div>
-            <div className="flex justify-end gap-2 p-4 border-t border-zinc-800">
+            <div className="flex justify-end gap-2 p-4 border-t border-border">
               <button
                 type="button"
                 onClick={() => setPromoteDialogOpen(false)}
                 disabled={promoteMutation.isPending}
-                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                className="px-4 py-2 bg-surface hover:bg-surface-muted text-fg-muted rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -482,7 +482,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                 type="button"
                 onClick={handleConfirmPromote}
                 disabled={!selectedVariantId || promoteMutation.isPending}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-info-bg hover:bg-info-bg text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
                 data-testid="btn-confirm-promote"
               >
                 {promoteMutation.isPending && <SpinnerIcon size={14} className="animate-spin" />}
@@ -495,21 +495,21 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
 
       {createDialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" data-testid="create-dialog">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-md w-full">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-800">
-              <h2 className="text-lg font-semibold text-zinc-100">Create Experiment</h2>
+          <div className="bg-surface border border-border rounded-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h2 className="text-lg font-semibold text-fg-muted">Create Experiment</h2>
               <button
                 type="button"
                 onClick={() => setCreateDialogOpen(false)}
-                className="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200"
+                className="p-1 rounded hover:bg-surface text-fg-muted hover:text-fg-muted"
               >
                 <CloseIcon size={20} />
               </button>
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1" htmlFor="exp-name">
-                  Experiment Name <span className="text-red-400">*</span>
+                <label className="block text-xs font-medium text-fg-muted mb-1" htmlFor="exp-name">
+                  Experiment Name <span className="text-destructive">*</span>
                 </label>
                 <input
                   id="exp-name"
@@ -517,11 +517,11 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                   value={newExperimentName}
                   onChange={(e) => setNewExperimentName(e.target.value)}
                   placeholder="e.g. Prompt Template A/B Test"
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm rounded-lg placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-surface border border-border text-fg-muted text-sm rounded-lg placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1" htmlFor="exp-desc">
+                <label className="block text-xs font-medium text-fg-muted mb-1" htmlFor="exp-desc">
                   Description
                 </label>
                 <textarea
@@ -530,12 +530,12 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                   onChange={(e) => setNewExperimentDescription(e.target.value)}
                   placeholder="What are you testing?"
                   rows={3}
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm rounded-lg placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                  className="w-full px-3 py-2 bg-surface border border-border text-fg-muted text-sm rounded-lg placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1" htmlFor="exp-prompt">
-                  Prompt Name <span className="text-red-400">*</span>
+                <label className="block text-xs font-medium text-fg-muted mb-1" htmlFor="exp-prompt">
+                  Prompt Name <span className="text-destructive">*</span>
                 </label>
                 <input
                   id="exp-prompt"
@@ -543,11 +543,11 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                   value={newExperimentPromptName}
                   onChange={(e) => setNewExperimentPromptName(e.target.value)}
                   placeholder="e.g. requirement-gen-v1"
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm rounded-lg placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-surface border border-border text-fg-muted text-sm rounded-lg placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1" htmlFor="exp-va">
+                <label className="block text-xs font-medium text-fg-muted mb-1" htmlFor="exp-va">
                   Variant A (Baseline)
                 </label>
                 <input
@@ -556,11 +556,11 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                   value={newExperimentVariantA}
                   onChange={(e) => setNewExperimentVariantA(e.target.value)}
                   placeholder="e.g. template-a"
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm rounded-lg placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-surface border border-border text-fg-muted text-sm rounded-lg placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1" htmlFor="exp-vb">
+                <label className="block text-xs font-medium text-fg-muted mb-1" htmlFor="exp-vb">
                   Variant B (Challenger)
                 </label>
                 <input
@@ -569,21 +569,21 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                   value={newExperimentVariantB}
                   onChange={(e) => setNewExperimentVariantB(e.target.value)}
                   placeholder="e.g. template-b"
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm rounded-lg placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-surface border border-border text-fg-muted text-sm rounded-lg placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
               {createMutation.isError && (
-                <p className="text-sm text-red-400">
+                <p className="text-sm text-destructive">
                   {createMutation.error instanceof Error ? createMutation.error.message : 'Failed to create experiment.'}
                 </p>
               )}
             </div>
-            <div className="flex justify-end gap-2 p-4 border-t border-zinc-800">
+            <div className="flex justify-end gap-2 p-4 border-t border-border">
               <button
                 type="button"
                 onClick={() => setCreateDialogOpen(false)}
                 disabled={createMutation.isPending}
-                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                className="px-4 py-2 bg-surface hover:bg-surface-muted text-fg-muted rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -591,7 +591,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                 type="button"
                 onClick={handleCreateExperiment}
                 disabled={!newExperimentName.trim() || !newExperimentPromptName.trim() || createMutation.isPending}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-info-bg text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
                 data-testid="btn-confirm-create"
               >
                 {createMutation.isPending && <SpinnerIcon size={14} className="animate-spin" />}

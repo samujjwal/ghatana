@@ -39,18 +39,18 @@ export interface ReleasePacketPanelProps {
 const APPROVAL_STATUS_CONFIG: Record<string, { icon: React.ReactNode; color: string; bgColor: string }> = {
     pending: {
         icon: <HourglassEmpty className="w-4 h-4" />,
-        color: 'text-yellow-600',
-        bgColor: 'bg-yellow-100 dark:bg-yellow-900/30',
+        color: 'text-warning-color',
+        bgColor: 'bg-warning-bg dark:bg-warning-bg',
     },
     approved: {
         icon: <CheckCircle className="w-4 h-4" />,
-        color: 'text-green-600',
-        bgColor: 'bg-green-100 dark:bg-green-900/30',
+        color: 'text-success-color',
+        bgColor: 'bg-success-bg dark:bg-success-bg',
     },
     rejected: {
         icon: <Cancel className="w-4 h-4" />,
-        color: 'text-red-600',
-        bgColor: 'bg-red-100 dark:bg-red-900/30',
+        color: 'text-destructive',
+        bgColor: 'bg-destructive-bg dark:bg-destructive-bg',
     },
 };
 
@@ -110,18 +110,18 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
                 <div className="flex items-center gap-3">
                     <div
                         className={`p-2 rounded-lg ${allApproved
-                                ? 'bg-green-100 dark:bg-green-900/30'
+                                ? 'bg-success-bg dark:bg-success-bg'
                                 : anyRejected
-                                    ? 'bg-red-100 dark:bg-red-900/30'
-                                    : 'bg-yellow-100 dark:bg-yellow-900/30'
+                                    ? 'bg-destructive-bg dark:bg-destructive-bg'
+                                    : 'bg-warning-bg dark:bg-warning-bg'
                             }`}
                     >
                         <Inventory
                             className={`w-5 h-5 ${allApproved
-                                    ? 'text-green-600'
+                                    ? 'text-success-color'
                                     : anyRejected
-                                        ? 'text-red-600'
-                                        : 'text-yellow-600'
+                                        ? 'text-destructive'
+                                        : 'text-warning-color'
                                 }`}
                         />
                     </div>
@@ -313,19 +313,19 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
                                                 <div className="text-xs text-text-secondary">Total</div>
                                             </div>
                                             <div className="text-center">
-                                                <div className="text-xl font-bold text-green-500">
+                                                <div className="text-xl font-bold text-success-color">
                                                     {evidencePack.testResults.passed}
                                                 </div>
                                                 <div className="text-xs text-text-secondary">Passed</div>
                                             </div>
                                             <div className="text-center">
-                                                <div className="text-xl font-bold text-red-500">
+                                                <div className="text-xl font-bold text-destructive">
                                                     {evidencePack.testResults.failed}
                                                 </div>
                                                 <div className="text-xs text-text-secondary">Failed</div>
                                             </div>
                                             <div className="text-center">
-                                                <div className="text-xl font-bold text-yellow-500">
+                                                <div className="text-xl font-bold text-warning-color">
                                                     {evidencePack.testResults.skipped}
                                                 </div>
                                                 <div className="text-xs text-text-secondary">Skipped</div>
@@ -342,10 +342,10 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
                                                 <div className="mt-1 h-2 bg-grey-200 dark:bg-grey-700 rounded-full overflow-hidden">
                                                     <div
                                                         className={`h-full ${evidencePack.testResults.coverage >= 80
-                                                                ? 'bg-green-500'
+                                                                ? 'bg-success-bg'
                                                                 : evidencePack.testResults.coverage >= 60
-                                                                    ? 'bg-yellow-500'
-                                                                    : 'bg-red-500'
+                                                                    ? 'bg-warning-bg'
+                                                                    : 'bg-destructive-bg'
                                                             }`}
                                                         style={{ width: `${evidencePack.testResults.coverage}%` }}
                                                     />
@@ -363,19 +363,19 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
                                         </h4>
                                         <div className="grid grid-cols-4 gap-3">
                                             <div className="text-center">
-                                                <div className="text-xl font-bold text-red-500">
+                                                <div className="text-xl font-bold text-destructive">
                                                     {evidencePack.securityScan.critical}
                                                 </div>
                                                 <div className="text-xs text-text-secondary">Critical</div>
                                             </div>
                                             <div className="text-center">
-                                                <div className="text-xl font-bold text-orange-500">
+                                                <div className="text-xl font-bold text-warning-color">
                                                     {evidencePack.securityScan.high}
                                                 </div>
                                                 <div className="text-xs text-text-secondary">High</div>
                                             </div>
                                             <div className="text-center">
-                                                <div className="text-xl font-bold text-yellow-500">
+                                                <div className="text-xl font-bold text-warning-color">
                                                     {evidencePack.securityScan.medium}
                                                 </div>
                                                 <div className="text-xs text-text-secondary">Medium</div>
@@ -405,8 +405,8 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
                                                     <span className="text-text-primary">{item.name}</span>
                                                     <span
                                                         className={`px-2 py-0.5 rounded text-xs ${item.status === 'passed'
-                                                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                                                                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                                                                ? 'bg-success-bg text-success-color dark:bg-success-bg dark:text-success-color'
+                                                                : 'bg-destructive-bg text-destructive dark:bg-destructive-bg dark:text-destructive'
                                                             }`}
                                                     >
                                                         {item.status}
@@ -427,9 +427,9 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
                             <div
                                 key={gate.id}
                                 className={`p-4 border rounded-lg ${gate.status === 'approved'
-                                        ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
+                                        ? 'border-success-border dark:border-success-border bg-success-bg dark:bg-success-bg'
                                         : gate.status === 'rejected'
-                                            ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
+                                            ? 'border-destructive-border dark:border-destructive-border bg-destructive-bg dark:bg-destructive-bg'
                                             : 'border-divider bg-bg-paper'
                                     }`}
                             >
@@ -483,14 +483,14 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
                                             <button
                                                 onClick={() => handleReject(gate.id)}
                                                 disabled={processingGate === gate.id || !approvalComments[gate.id]?.trim()}
-                                                className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
+                                                className="px-4 py-2 text-sm text-destructive hover:bg-destructive-bg dark:hover:bg-destructive-bg rounded-lg transition-colors disabled:opacity-50"
                                             >
                                                 Reject
                                             </button>
                                             <button
                                                 onClick={() => handleApprove(gate.id)}
                                                 disabled={processingGate === gate.id}
-                                                className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                                                className="px-4 py-2 text-sm bg-success-bg text-white rounded-lg hover:bg-success-bg transition-colors disabled:opacity-50"
                                             >
                                                 {processingGate === gate.id ? 'Processing...' : 'Approve'}
                                             </button>

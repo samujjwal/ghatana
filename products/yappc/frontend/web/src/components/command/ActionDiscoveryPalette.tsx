@@ -174,15 +174,15 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
   const getCategoryIcon = (category: Action['category']): React.ReactNode => {
     switch (category) {
       case 'next-best':
-        return <Zap className="w-4 h-4 text-yellow-500" />;
+        return <Zap className="w-4 h-4 text-warning-color" />;
       case 'recent':
-        return <Clock className="w-4 h-4 text-blue-500" />;
+        return <Clock className="w-4 h-4 text-info-color" />;
       case 'selection':
-        return <ArrowRight className="w-4 h-4 text-green-500" />;
+        return <ArrowRight className="w-4 h-4 text-success-color" />;
       case 'navigation':
-        return <Navigation className="w-4 h-4 text-purple-500" />;
+        return <Navigation className="w-4 h-4 text-info-color" />;
       case 'advanced':
-        return <Search className="w-4 h-4 text-gray-500" />;
+        return <Search className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
@@ -193,15 +193,15 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
       <Fade in={open}>
         <Box
           data-testid="command-palette"
-          className="absolute left-1/2 top-[20vh] w-full max-w-2xl -translate-x-1/2 overflow-hidden rounded-lg bg-white shadow-2xl"
+          className="absolute left-1/2 top-[20vh] w-full max-w-2xl -translate-x-1/2 overflow-hidden rounded-lg bg-surface shadow-2xl"
           onKeyDown={handleKeyDown}
           role="dialog"
           aria-modal="true"
           aria-label="Command palette"
         >
         {/* Search Input */}
-        <div className="flex items-center border-b border-gray-200 px-4 py-3">
-          <Search className="w-5 h-5 text-gray-400 mr-3" />
+        <div className="flex items-center border-b border-border px-4 py-3">
+          <Search className="w-5 h-5 text-muted-foreground mr-3" />
           <TextField
             ref={inputRef as unknown as React.Ref<HTMLDivElement>}
             value={query}
@@ -211,7 +211,7 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
             className="flex-1"
             data-testid="command-palette-input"
           />
-          <span className="text-xs text-gray-400 ml-2">ESC to close</span>
+          <span className="text-xs text-muted-foreground ml-2">ESC to close</span>
         </div>
 
         {/* Action List */}
@@ -225,11 +225,11 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600" />
             </div>
           ) : filteredGroups.length === 0 ? (
-            <div className="py-8 text-center text-gray-500">No actions found</div>
+            <div className="py-8 text-center text-muted-foreground">No actions found</div>
           ) : (
             filteredGroups.map((group, groupIndex) => (
-              <div key={group.title} className="border-b border-gray-100 last:border-b-0">
-                <div className="px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase">
+              <div key={group.title} className="border-b border-border last:border-b-0">
+                <div className="px-4 py-2 bg-muted/20 text-xs font-medium text-muted-foreground uppercase">
                   {group.title}
                 </div>
                 {group.actions.map((action, actionIndex) => {
@@ -253,9 +253,9 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
                         {action.icon || getCategoryIcon(action.category)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-gray-900">{action.title}</div>
+                        <div className="font-medium text-foreground">{action.title}</div>
                         {action.description && (
-                          <div className="text-sm text-gray-500 truncate">
+                          <div className="text-sm text-muted-foreground truncate">
                             {action.description}
                           </div>
                         )}
@@ -266,7 +266,7 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
                         )}
                       </div>
                       {action.shortcut && (
-                        <div className="flex-shrink-0 text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
+                        <div className="flex-shrink-0 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
                           {action.shortcut}
                         </div>
                       )}
@@ -279,13 +279,13 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-xs text-gray-500">
+        <div className="px-4 py-2 bg-muted/20 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center gap-4">
-            <Typography className="text-xs text-gray-500">↑↓ to navigate</Typography>
-            <Typography className="text-xs text-gray-500">Enter to select</Typography>
-            <Typography className="text-xs text-gray-500">ESC to close</Typography>
+            <Typography className="text-xs text-muted-foreground">↑↓ to navigate</Typography>
+            <Typography className="text-xs text-muted-foreground">Enter to select</Typography>
+            <Typography className="text-xs text-muted-foreground">ESC to close</Typography>
           </div>
-          <Typography className="text-xs text-gray-500">{allActions.length} actions</Typography>
+          <Typography className="text-xs text-muted-foreground">{allActions.length} actions</Typography>
         </div>
 
         {/* Confirmation Dialog for Dangerous Actions */}

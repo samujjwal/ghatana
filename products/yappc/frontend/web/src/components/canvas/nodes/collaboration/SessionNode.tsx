@@ -105,38 +105,38 @@ const sessionTypeConfig: Record<
   PAIR_PROGRAMMING: {
     icon: Code2,
     label: 'Pair Programming',
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-500/20',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
   },
   CODE_REVIEW: {
     icon: GitCompare,
     label: 'Code Review',
-    color: 'text-green-400',
-    bgColor: 'bg-green-500/20',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg',
   },
   WHITEBOARD: {
     icon: Layout,
     label: 'Whiteboard',
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/20',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
   },
   DOCUMENT_EDITING: {
     icon: FileText,
     label: 'Document Editing',
-    color: 'text-yellow-400',
-    bgColor: 'bg-yellow-500/20',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg',
   },
   SCREEN_SHARE: {
     icon: Monitor,
     label: 'Screen Share',
-    color: 'text-cyan-400',
-    bgColor: 'bg-cyan-500/20',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
   },
   MEETING: {
     icon: Video,
     label: 'Meeting',
-    color: 'text-orange-400',
-    bgColor: 'bg-orange-500/20',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg',
   },
 };
 
@@ -145,32 +145,32 @@ const statusConfig: Record<
   { color: string; bgColor: string; label: string; icon: typeof Circle }
 > = {
   SCHEDULED: {
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/20',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
     label: 'Scheduled',
     icon: Calendar,
   },
   ACTIVE: {
-    color: 'text-green-400',
-    bgColor: 'bg-green-500/20',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg',
     label: 'Active',
     icon: Play,
   },
   PAUSED: {
-    color: 'text-yellow-400',
-    bgColor: 'bg-yellow-500/20',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg',
     label: 'Paused',
     icon: Pause,
   },
   COMPLETED: {
-    color: 'text-slate-400',
-    bgColor: 'bg-slate-500/20',
+    color: 'text-fg-muted',
+    bgColor: 'bg-muted',
     label: 'Completed',
     icon: Square,
   },
   CANCELLED: {
-    color: 'text-red-400',
-    bgColor: 'bg-red-500/20',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive-bg',
     label: 'Cancelled',
     icon: Square,
   },
@@ -183,9 +183,9 @@ const roleIcons: Record<SessionParticipantRole, typeof Crown> = {
 };
 
 const roleColors: Record<SessionParticipantRole, string> = {
-  HOST: 'text-yellow-400',
-  PARTICIPANT: 'text-blue-400',
-  OBSERVER: 'text-slate-400',
+  HOST: 'text-warning-color',
+  PARTICIPANT: 'text-info-color',
+  OBSERVER: 'text-fg-muted',
 };
 
 function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
@@ -261,19 +261,19 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
   return (
     <div
       className={cn(
-        'bg-slate-800 rounded-lg border shadow-xl min-w-[320px] max-w-[380px]',
-        isActive ? 'border-green-500/50' : 'border-slate-600'
+        'bg-surface rounded-lg border shadow-xl min-w-[320px] max-w-[380px]',
+        isActive ? 'border-success-border' : 'border-border'
       )}
     >
       {/* Input Handle */}
       <Handle
         type="target"
         position={Position.Left}
-        className="w-3 h-3 bg-blue-500 border-2 border-slate-800"
+        className="w-3 h-3 bg-info-color border-2 border-surface"
       />
 
       {/* Header */}
-      <div className="p-4 border-b border-slate-700">
+      <div className="p-4 border-b border-border">
         <div className="flex items-start gap-3">
           {/* Type Icon */}
           <div
@@ -308,11 +308,11 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
                 {statusInfo.label}
               </span>
             </div>
-            <h3 className="text-white font-semibold mt-2 line-clamp-1">
+            <h3 className="text-fg font-semibold mt-2 line-clamp-1">
               {session.name}
             </h3>
             {session.description && (
-              <p className="text-slate-400 text-xs mt-1 line-clamp-2">
+              <p className="text-fg-muted text-xs mt-1 line-clamp-2">
                 {session.description}
               </p>
             )}
@@ -323,14 +323,14 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
         <div className="mt-3 flex items-center gap-4">
           {session.startedAt && (
             <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-slate-400" />
-              <span className="text-white font-medium">{elapsedTime}</span>
+              <Clock className="w-4 h-4 text-fg-muted" />
+              <span className="text-fg font-medium">{elapsedTime}</span>
             </div>
           )}
           {session.scheduledAt && session.status === 'SCHEDULED' && (
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-blue-400" />
-              <span className="text-blue-400 text-sm">
+              <Calendar className="w-4 h-4 text-info-color" />
+              <span className="text-info-color text-sm">
                 {formatScheduledTime(session.scheduledAt)}
               </span>
             </div>
@@ -339,8 +339,8 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
       </div>
 
       {/* Host Info */}
-      <div className="p-4 border-b border-slate-700">
-        <span className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2 block">
+      <div className="p-4 border-b border-border">
+        <span className="text-fg-muted text-xs font-medium uppercase tracking-wide mb-2 block">
           Host
         </span>
         <div className="flex items-center gap-2">
@@ -351,27 +351,27 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
               className="w-8 h-8 rounded-full object-cover"
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-warning-color to-info-color flex items-center justify-center">
               <span className="text-white text-xs font-semibold">
                 {session.host.name.charAt(0).toUpperCase()}
               </span>
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <p className="text-white text-sm font-medium truncate">{session.host.name}</p>
-            <p className="text-slate-500 text-xs truncate">{session.host.email}</p>
+            <p className="text-fg text-sm font-medium truncate">{session.host.name}</p>
+            <p className="text-fg-muted text-xs truncate">{session.host.email}</p>
           </div>
-          <Crown className="w-4 h-4 text-yellow-400" />
+          <Crown className="w-4 h-4 text-warning-color" />
         </div>
       </div>
 
       {/* Participants */}
-      <div className="p-4 border-b border-slate-700">
+      <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-slate-400 text-xs font-medium uppercase tracking-wide">
+          <span className="text-fg-muted text-xs font-medium uppercase tracking-wide">
             Participants
           </span>
-          <span className="text-slate-400 text-xs">
+          <span className="text-fg-muted text-xs">
             {activeParticipants.length}
             {session.maxParticipants && `/${session.maxParticipants}`}
           </span>
@@ -383,7 +383,7 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
             return (
               <div
                 key={participant.id}
-                className="flex items-center gap-2 p-2 rounded-lg bg-slate-700/50"
+                className="flex items-center gap-2 p-2 rounded-lg bg-surface-muted"
               >
                 {participant.user.avatarUrl ? (
                   <img
@@ -392,14 +392,14 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
                     className="w-7 h-7 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-info-color to-warning-color flex items-center justify-center">
                     <span className="text-white text-xs font-semibold">
                       {participant.user.name.charAt(0).toUpperCase()}
                     </span>
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm truncate">{participant.user.name}</p>
+                  <p className="text-fg text-sm truncate">{participant.user.name}</p>
                 </div>
                 <span title={participant.role}>
                   <RoleIcon className={cn('w-4 h-4', roleColors[participant.role])} />
@@ -407,7 +407,7 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
                 {isHost && participant.userId !== currentUserId && onKick && (
                   <button
                     onClick={() => onKick(participant.userId)}
-                    className="p-1 rounded hover:bg-slate-600 text-slate-400 hover:text-red-400 transition-colors"
+                    className="p-1 rounded hover:bg-muted text-fg-muted hover:text-destructive transition-colors"
                     title="Remove from session"
                   >
                     <UserMinus className="w-3 h-3" />
@@ -417,7 +417,7 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
             );
           })}
           {activeParticipants.length > 5 && (
-            <p className="text-slate-500 text-xs text-center">
+            <p className="text-fg-muted text-xs text-center">
               +{activeParticipants.length - 5} more participants
             </p>
           )}
@@ -426,15 +426,15 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
         {/* Capacity Bar */}
         {session.maxParticipants && (
           <div className="mt-3">
-            <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
               <div
                 className={cn(
                   'h-full rounded-full transition-all',
                   activeParticipants.length >= session.maxParticipants
-                    ? 'bg-red-500'
+                    ? 'bg-destructive'
                     : activeParticipants.length >= session.maxParticipants * 0.8
-                    ? 'bg-yellow-500'
-                    : 'bg-green-500'
+                    ? 'bg-warning-color'
+                    : 'bg-success-color'
                 )}
                 style={{
                   width: `${Math.min(
@@ -450,10 +450,10 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
 
       {/* Resource Info */}
       {session.resourceType && session.resourceId && (
-        <div className="px-4 py-3 border-b border-slate-700">
+        <div className="px-4 py-3 border-b border-border">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-400">Resource</span>
-            <span className="text-slate-300 font-medium capitalize">
+            <span className="text-fg-muted">Resource</span>
+            <span className="text-fg font-medium capitalize">
               {session.resourceType.replace(/_/g, ' ').toLowerCase()}
             </span>
           </div>
@@ -461,13 +461,13 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
       )}
 
       {/* Actions */}
-      <div className="p-4 border-b border-slate-700">
+      <div className="p-4 border-b border-border">
         <div className="flex flex-wrap items-center gap-2">
           {/* Join/Leave */}
           {canJoin && onJoin && (
             <button
               onClick={onJoin}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-success-color text-white rounded-lg hover:opacity-90 transition-colors text-sm font-medium"
             >
               <LogIn className="w-4 h-4" />
               Join Session
@@ -476,7 +476,7 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
           {canLeave && onLeave && (
             <button
               onClick={onLeave}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-colors text-sm font-medium"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-muted text-fg rounded-lg hover:opacity-90 transition-colors text-sm font-medium"
             >
               <LogOut className="w-4 h-4" />
               Leave
@@ -489,7 +489,7 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
               {session.status === 'SCHEDULED' && onStart && (
                 <button
                   onClick={onStart}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-success-color text-white rounded-lg hover:opacity-90 transition-colors text-sm font-medium"
                 >
                   <Play className="w-4 h-4" />
                   Start
@@ -498,7 +498,7 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
               {isActive && onPause && (
                 <button
                   onClick={onPause}
-                  className="flex items-center justify-center gap-2 px-3 py-2 bg-yellow-500/20 text-yellow-400 rounded-lg hover:bg-yellow-500/30 transition-colors text-sm font-medium"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-warning-bg text-warning-color rounded-lg hover:opacity-90 transition-colors text-sm font-medium"
                 >
                   <Pause className="w-4 h-4" />
                 </button>
@@ -506,7 +506,7 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
               {isPaused && onStart && (
                 <button
                   onClick={onStart}
-                  className="flex items-center justify-center gap-2 px-3 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors text-sm font-medium"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-success-bg text-success-color rounded-lg hover:opacity-90 transition-colors text-sm font-medium"
                 >
                   <Play className="w-4 h-4" />
                 </button>
@@ -514,7 +514,7 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
               {(isActive || isPaused) && onEnd && (
                 <button
                   onClick={onEnd}
-                  className="flex items-center justify-center gap-2 px-3 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors text-sm font-medium"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-destructive-bg text-destructive rounded-lg hover:opacity-90 transition-colors text-sm font-medium"
                 >
                   <Square className="w-4 h-4" />
                 </button>
@@ -525,20 +525,20 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 bg-slate-900/50 rounded-b-lg">
-        <div className="flex items-center justify-between text-xs text-slate-500">
+      <div className="px-4 py-3 bg-surface-muted rounded-b-lg">
+        <div className="flex items-center justify-between text-xs text-fg-muted">
           <span>
             Created {session.createdAt ? new Date(session.createdAt).toLocaleDateString() : 'Unknown'}
           </span>
           <div className="flex items-center gap-1">
             {isActive && (
-              <span className="flex items-center gap-1 text-green-400">
-                <Circle className="w-2 h-2 fill-green-400 animate-pulse" />
+              <span className="flex items-center gap-1 text-success-color">
+                <Circle className="w-2 h-2 fill-success-color animate-pulse" />
                 Live
               </span>
             )}
             {isPaused && (
-              <span className="flex items-center gap-1 text-yellow-400">
+              <span className="flex items-center gap-1 text-warning-color">
                 <Pause className="w-3 h-3" />
                 Paused
               </span>
@@ -552,14 +552,14 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
         type="source"
         position={Position.Right}
         id="participants"
-        className="w-3 h-3 bg-green-500 border-2 border-slate-800"
+        className="w-3 h-3 bg-success-color border-2 border-surface"
         style={{ top: '40%' }}
       />
       <Handle
         type="source"
         position={Position.Right}
         id="resource"
-        className="w-3 h-3 bg-purple-500 border-2 border-slate-800"
+        className="w-3 h-3 bg-info-color border-2 border-surface"
         style={{ top: '60%' }}
       />
     </div>

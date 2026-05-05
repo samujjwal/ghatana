@@ -92,56 +92,56 @@ const notificationTypeConfig: Record<
   MENTION: {
     icon: AtSign,
     label: 'Mention',
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/20',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg/20',
   },
   REPLY: {
     icon: Reply,
     label: 'Reply',
-    color: 'text-green-400',
-    bgColor: 'bg-green-500/20',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg0/20',
   },
   DIRECT_MESSAGE: {
     icon: MessageSquare,
     label: 'Direct Message',
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-500/20',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg/20',
   },
   CHANNEL_ACTIVITY: {
     icon: Hash,
     label: 'Channel Activity',
-    color: 'text-cyan-400',
-    bgColor: 'bg-cyan-500/20',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
   },
   TEAM_INVITE: {
     icon: UserPlus,
     label: 'Team Invite',
-    color: 'text-yellow-400',
-    bgColor: 'bg-yellow-500/20',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg0/20',
   },
   ASSIGNMENT: {
     icon: ClipboardList,
     label: 'Assignment',
-    color: 'text-orange-400',
-    bgColor: 'bg-orange-500/20',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg0/20',
   },
   COMMENT: {
     icon: MessageCircle,
     label: 'Comment',
-    color: 'text-teal-400',
-    bgColor: 'bg-teal-500/20',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
   },
   REVIEW_REQUEST: {
     icon: GitPullRequest,
     label: 'Review Request',
-    color: 'text-pink-400',
-    bgColor: 'bg-pink-500/20',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
   },
   SYSTEM: {
     icon: AlertTriangle,
     label: 'System',
-    color: 'text-gray-400',
-    bgColor: 'bg-gray-500/20',
+    color: 'text-fg-muted',
+    bgColor: 'bg-surface-muted0/20',
   },
 };
 
@@ -149,16 +149,16 @@ const priorityConfig: Record<
   NotificationPriority,
   { color: string; bgColor: string; label: string }
 > = {
-  LOW: { color: 'text-slate-400', bgColor: 'bg-slate-500/20', label: 'Low' },
-  NORMAL: { color: 'text-blue-400', bgColor: 'bg-blue-500/20', label: 'Normal' },
-  HIGH: { color: 'text-orange-400', bgColor: 'bg-orange-500/20', label: 'High' },
-  URGENT: { color: 'text-red-400', bgColor: 'bg-red-500/20', label: 'Urgent' },
+  LOW: { color: 'text-fg-muted', bgColor: 'bg-surface-muted0/20', label: 'Low' },
+  NORMAL: { color: 'text-info-color', bgColor: 'bg-info-bg/20', label: 'Normal' },
+  HIGH: { color: 'text-warning-color', bgColor: 'bg-warning-bg0/20', label: 'High' },
+  URGENT: { color: 'text-destructive', bgColor: 'bg-destructive-bg0/20', label: 'Urgent' },
 };
 
 const statusConfig: Record<NotificationStatus, { color: string; bgColor: string }> = {
-  UNREAD: { color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
-  READ: { color: 'text-slate-400', bgColor: 'bg-slate-500/20' },
-  ARCHIVED: { color: 'text-slate-500', bgColor: 'bg-slate-600/20' },
+  UNREAD: { color: 'text-info-color', bgColor: 'bg-info-bg/20' },
+  READ: { color: 'text-fg-muted', bgColor: 'bg-surface-muted0/20' },
+  ARCHIVED: { color: 'text-fg-muted', bgColor: 'bg-muted/20' },
 };
 
 function NotificationNode({ data }: NodeProps<NotificationCanvasNode>) {
@@ -191,8 +191,8 @@ function NotificationNode({ data }: NodeProps<NotificationCanvasNode>) {
   return (
     <div
       className={cn(
-        'bg-slate-800 rounded-lg border shadow-xl min-w-[300px] max-w-[360px]',
-        isUnread ? 'border-blue-500/50' : 'border-slate-600',
+        'bg-surface rounded-lg border shadow-xl min-w-[300px] max-w-[360px]',
+        isUnread ? 'border-info-border/50' : 'border-border',
         isArchived && 'opacity-60'
       )}
     >
@@ -200,11 +200,11 @@ function NotificationNode({ data }: NodeProps<NotificationCanvasNode>) {
       <Handle
         type="target"
         position={Position.Left}
-        className="w-3 h-3 bg-blue-500 border-2 border-slate-800"
+        className="w-3 h-3 bg-info-bg border-2 border-border"
       />
 
       {/* Header */}
-      <div className="p-4 border-b border-slate-700">
+      <div className="p-4 border-b border-border">
         <div className="flex items-start gap-3">
           {/* Type Icon */}
           <div
@@ -239,7 +239,7 @@ function NotificationNode({ data }: NodeProps<NotificationCanvasNode>) {
                 </span>
               )}
               {isUnread && (
-                <Circle className="w-2 h-2 fill-blue-400 text-blue-400" />
+                <Circle className="w-2 h-2 fill-blue-400 text-info-color" />
               )}
             </div>
             <h3 className="text-white font-semibold mt-2 line-clamp-2">
@@ -250,16 +250,16 @@ function NotificationNode({ data }: NodeProps<NotificationCanvasNode>) {
       </div>
 
       {/* Body */}
-      <div className="p-4 border-b border-slate-700">
-        <p className="text-slate-300 text-sm leading-relaxed">
+      <div className="p-4 border-b border-border">
+        <p className="text-fg text-sm leading-relaxed">
           {notification.body}
         </p>
       </div>
 
       {/* Actor */}
       {notification.actor && (
-        <div className="p-4 border-b border-slate-700">
-          <span className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2 block">
+        <div className="p-4 border-b border-border">
+          <span className="text-fg-muted text-xs font-medium uppercase tracking-wide mb-2 block">
             From
           </span>
           <div className="flex items-center gap-2">
@@ -280,7 +280,7 @@ function NotificationNode({ data }: NodeProps<NotificationCanvasNode>) {
               <p className="text-white text-sm font-medium truncate">
                 {notification.actor.name}
               </p>
-              <p className="text-slate-500 text-xs truncate">
+              <p className="text-fg-muted text-xs truncate">
                 {notification.actor.email}
               </p>
             </div>
@@ -290,10 +290,10 @@ function NotificationNode({ data }: NodeProps<NotificationCanvasNode>) {
 
       {/* Source Info */}
       {notification.sourceType && (
-        <div className="px-4 py-3 border-b border-slate-700">
+        <div className="px-4 py-3 border-b border-border">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-400">Source</span>
-            <span className="text-slate-300 font-medium capitalize">
+            <span className="text-fg-muted">Source</span>
+            <span className="text-fg font-medium capitalize">
               {notification.sourceType.replace(/_/g, ' ').toLowerCase()}
             </span>
           </div>
@@ -301,12 +301,12 @@ function NotificationNode({ data }: NodeProps<NotificationCanvasNode>) {
       )}
 
       {/* Actions */}
-      <div className="p-4 border-b border-slate-700">
+      <div className="p-4 border-b border-border">
         <div className="flex items-center gap-2">
           {notification.actionUrl && onNavigate && (
             <button
               onClick={onNavigate}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-info-bg text-white rounded-lg hover:bg-primary transition-colors text-sm font-medium"
             >
               <ExternalLink className="w-4 h-4" />
               View
@@ -315,7 +315,7 @@ function NotificationNode({ data }: NodeProps<NotificationCanvasNode>) {
           {isUnread && onMarkRead && (
             <button
               onClick={onMarkRead}
-              className="flex items-center justify-center gap-2 px-3 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-colors text-sm font-medium"
+              className="flex items-center justify-center gap-2 px-3 py-2 bg-surface-muted text-fg rounded-lg hover:bg-muted transition-colors text-sm font-medium"
               title="Mark as read"
             >
               <Eye className="w-4 h-4" />
@@ -324,7 +324,7 @@ function NotificationNode({ data }: NodeProps<NotificationCanvasNode>) {
           {!isArchived && onArchive && (
             <button
               onClick={onArchive}
-              className="flex items-center justify-center gap-2 px-3 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-colors text-sm font-medium"
+              className="flex items-center justify-center gap-2 px-3 py-2 bg-surface-muted text-fg rounded-lg hover:bg-muted transition-colors text-sm font-medium"
               title="Archive"
             >
               <Archive className="w-4 h-4" />
@@ -334,15 +334,15 @@ function NotificationNode({ data }: NodeProps<NotificationCanvasNode>) {
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 bg-slate-900/50 rounded-b-lg">
-        <div className="flex items-center justify-between text-xs text-slate-500">
+      <div className="px-4 py-3 bg-surface-muted rounded-b-lg">
+        <div className="flex items-center justify-between text-xs text-fg-muted">
           <div className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
             <span>{formatTime(notification.createdAt)}</span>
           </div>
           <div className="flex items-center gap-2">
             {isUnread ? (
-              <span className="flex items-center gap-1 text-blue-400">
+              <span className="flex items-center gap-1 text-info-color">
                 <Circle className="w-2 h-2 fill-blue-400" />
                 Unread
               </span>
@@ -360,7 +360,7 @@ function NotificationNode({ data }: NodeProps<NotificationCanvasNode>) {
           </div>
         </div>
         {notification.readAt && (
-          <div className="mt-1 text-xs text-slate-600">
+          <div className="mt-1 text-xs text-fg-muted">
             Read {formatTime(notification.readAt)}
           </div>
         )}
@@ -370,7 +370,7 @@ function NotificationNode({ data }: NodeProps<NotificationCanvasNode>) {
       <Handle
         type="source"
         position={Position.Right}
-        className="w-3 h-3 bg-green-500 border-2 border-slate-800"
+        className="w-3 h-3 bg-success-bg0 border-2 border-border"
       />
     </div>
   );

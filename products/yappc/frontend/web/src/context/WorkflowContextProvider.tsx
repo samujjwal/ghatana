@@ -17,6 +17,7 @@ import { atomWithStorage } from 'jotai/utils';
 
 import { LifecyclePhase, PHASE_LABELS, getOperationsForPhase } from '../types/lifecycle';
 import { useWorkspaceContext } from '../hooks/useWorkspaceData';
+import { rankNextActions } from '../services/phase';
 
 // ============================================================================
 // Types
@@ -449,18 +450,21 @@ export function WorkflowContextProvider({ children }: WorkflowContextProviderPro
         // Filter out dismissed tips
         const activeTips = phaseTips.filter((_, i) => !dismissedTips.includes(`${phase}-tip-${i}`));
 
-        // Determine next actions based on phase and completion
-        const nextActions = [];
-        const incompleteSteps = currentPhaseSteps.filter(s => !s.completed);
-        if (incompleteSteps.length > 0) {
-            nextActions.push(incompleteSteps[0].title);
-        }
-
-        // Add phase-specific next actions
+        const activeProject = [...ownedProjects, ...includedProjects].find((project) => project.id === projectContext.id);
+        const role = ownedProjects.some((project) => project.id === projectContext.id) ? 'owner' : 'collaborator';
         const phaseIndex = PHASE_ORDER.indexOf(phase);
-        if (phaseIndex < PHASE_ORDER.length - 1 && incompleteSteps.length === 0) {
-            nextActions.push(`Move to ${PHASE_LABELS[PHASE_ORDER[phaseIndex + 1]]}`);
-        }
+        const nextActions = rankNextActions({
+            phase,
+            phaseSteps: currentPhaseSteps,
+            completedSteps,
+            project: projectContext,
+            projectSignals: {
+                aiNextActions: activeProject?.aiNextActions ?? [],
+                aiHealthScore: activeProject?.aiHealthScore,
+            },
+            role,
+            canTransitionForward: phaseIndex < PHASE_ORDER.length - 1,
+        });
 
         return {
             currentPhaseSteps,
@@ -469,7 +473,15 @@ export function WorkflowContextProvider({ children }: WorkflowContextProviderPro
             completedSteps,
             showGuidancePanel,
         };
-    }, [routeContext.phase, projectContext.phase, completedSteps, dismissedTips, showGuidancePanel]);
+    }, [
+        routeContext.phase,
+        projectContext,
+        completedSteps,
+        dismissedTips,
+        showGuidancePanel,
+        ownedProjects,
+        includedProjects,
+    ]);
 
     // ========================================================================
     // Phase Navigation

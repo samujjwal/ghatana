@@ -240,20 +240,20 @@ describe('PhaseOverviewPage', () => {
       render(<PhaseOverviewPage />);
       
       const completedStatus = screen.getByText('completed');
-      expect(completedStatus).toHaveClass('bg-green-100');
+      expect(completedStatus).toHaveClass('bg-success-bg');
       
       const inProgressStatus = screen.getByText('in progress');
-      expect(inProgressStatus).toHaveClass('bg-blue-100');
+      expect(inProgressStatus).toHaveClass('bg-info-bg');
       
       const pendingStatus = screen.getByText('pending');
-      expect(pendingStatus).toHaveClass('bg-gray-100');
+      expect(pendingStatus).toHaveClass('bg-surface-muted');
     });
 
     it('should apply correct trend colors', () => {
       render(<PhaseOverviewPage />);
       
       const positiveChange = screen.getByText('+12%');
-      expect(positiveChange).toHaveClass('text-green-600');
+      expect(positiveChange).toHaveClass('text-success-color');
     });
   });
 

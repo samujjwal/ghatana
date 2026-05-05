@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import JSZip from 'jszip';
 
-import { importFromSource } from '../ImportSourceWorkflow';
+import { importFromSource, importSourceToPageArtifacts } from '../ImportSourceWorkflow';
 
 describe('ImportSourceWorkflow', () => {
   const cleanupPaths: string[] = [];
@@ -256,5 +256,37 @@ describe('ImportSourceWorkflow', () => {
         expect.stringContaining("Imported source 'DangerousWidget.tsx' was flagged as unsafe"),
       ]),
     );
+  });
+
+  it('compiles imported source output into page artifacts for canvas ingestion', async () => {
+    const projectDir = await createTempProject();
+    const componentPath = join(projectDir, 'ProfileCard.tsx');
+    await writeFile(
+      componentPath,
+      [
+        'export function ProfileCard() {',
+        '  return <section>Profile</section>;',
+        '}',
+        '',
+      ].join('\n'),
+    );
+
+    const result = await importSourceToPageArtifacts(
+      {
+        sourceType: 'tsx',
+        source: componentPath,
+        projectId: 'proj-99',
+        options: {
+          allowLocalFileAccess: true,
+        },
+      },
+      'import-runner',
+    );
+
+    expect(result.importResult.success).toBe(true);
+    expect(result.pageArtifacts).toHaveLength(1);
+    expect(result.pageArtifacts[0]?.source).toBe('imported');
+    expect(result.pageArtifacts[0]?.artifactId).toContain('proj-99');
+    expect(result.pageArtifacts[0]?.serializedBuilderDocument.name).toBe('ProfileCard');
   });
 });

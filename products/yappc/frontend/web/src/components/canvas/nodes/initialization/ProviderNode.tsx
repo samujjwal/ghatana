@@ -131,113 +131,113 @@ const providerConfig: Record<
   },
   GITLAB: {
     name: 'GitLab',
-    color: 'text-orange-400',
-    bgColor: 'bg-[#FC6D26]/20',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg',
     icon: GitBranch,
     description: 'DevOps platform',
   },
   BITBUCKET: {
     name: 'Bitbucket',
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/20',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
     icon: GitBranch,
     description: 'Code collaboration',
   },
   VERCEL: {
     name: 'Vercel',
     color: 'text-white',
-    bgColor: 'bg-slate-900',
+    bgColor: 'bg-surface-inverse',
     icon: Cloud,
     description: 'Frontend cloud',
   },
   NETLIFY: {
     name: 'Netlify',
-    color: 'text-teal-400',
-    bgColor: 'bg-teal-500/20',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg',
     icon: Cloud,
     description: 'Web hosting & serverless',
   },
   RAILWAY: {
     name: 'Railway',
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-500/20',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
     icon: Server,
     description: 'Infrastructure platform',
   },
   RENDER: {
     name: 'Render',
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/20',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg',
     icon: Server,
     description: 'Cloud application platform',
   },
   HEROKU: {
     name: 'Heroku',
-    color: 'text-violet-400',
-    bgColor: 'bg-violet-500/20',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
     icon: Cloud,
     description: 'Container platform',
   },
   AWS: {
     name: 'AWS',
-    color: 'text-orange-400',
-    bgColor: 'bg-orange-500/20',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg',
     icon: Cloud,
     description: 'Amazon Web Services',
   },
   GCP: {
     name: 'Google Cloud',
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/20',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
     icon: Cloud,
     description: 'Google Cloud Platform',
   },
   AZURE: {
     name: 'Azure',
-    color: 'text-sky-400',
-    bgColor: 'bg-sky-500/20',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
     icon: Cloud,
     description: 'Microsoft Azure',
   },
   SUPABASE: {
     name: 'Supabase',
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/20',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg',
     icon: Database,
     description: 'Open source Firebase alternative',
   },
   PLANETSCALE: {
     name: 'PlanetScale',
     color: 'text-white',
-    bgColor: 'bg-slate-800',
+    bgColor: 'bg-surface',
     icon: Database,
     description: 'Serverless MySQL',
   },
   NEON: {
     name: 'Neon',
-    color: 'text-green-400',
-    bgColor: 'bg-green-500/20',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg',
     icon: Database,
     description: 'Serverless Postgres',
   },
   UPSTASH: {
     name: 'Upstash',
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/20',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg',
     icon: Database,
     description: 'Serverless Redis & Kafka',
   },
   CLOUDFLARE: {
     name: 'Cloudflare',
-    color: 'text-orange-400',
-    bgColor: 'bg-orange-500/20',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg',
     icon: Cloud,
     description: 'CDN & edge computing',
   },
   CUSTOM: {
     name: 'Custom',
-    color: 'text-gray-400',
-    bgColor: 'bg-gray-500/20',
+    color: 'text-fg-muted',
+    bgColor: 'bg-muted',
     icon: Settings,
     description: 'Custom provider',
   },
@@ -247,10 +247,10 @@ const statusConfig: Record<
   ProviderAuthStatus,
   { color: string; bgColor: string; label: string; icon: typeof Check }
 > = {
-  NOT_CONNECTED: { color: 'text-gray-400', bgColor: 'bg-gray-500/20', label: 'Not Connected', icon: Unlink },
-  CONNECTED: { color: 'text-green-400', bgColor: 'bg-green-500/20', label: 'Connected', icon: Check },
-  EXPIRED: { color: 'text-yellow-400', bgColor: 'bg-yellow-500/20', label: 'Expired', icon: AlertTriangle },
-  ERROR: { color: 'text-red-400', bgColor: 'bg-red-500/20', label: 'Error', icon: X },
+  NOT_CONNECTED: { color: 'text-fg-muted', bgColor: 'bg-muted', label: 'Not Connected', icon: Unlink },
+  CONNECTED: { color: 'text-success-color', bgColor: 'bg-success-bg', label: 'Connected', icon: Check },
+  EXPIRED: { color: 'text-warning-color', bgColor: 'bg-warning-bg', label: 'Expired', icon: AlertTriangle },
+  ERROR: { color: 'text-destructive', bgColor: 'bg-destructive-bg', label: 'Error', icon: X },
 };
 
 const resourceTypeLabels: Record<ResourceType, string> = {
@@ -290,19 +290,19 @@ function ProviderNode({ data }: NodeProps<ProviderCanvasNode>) {
   const isExpired = status === 'EXPIRED';
 
   return (
-    <div className="bg-slate-800 rounded-lg border border-slate-700 shadow-xl min-w-[320px] max-w-[380px]">
-      <Handle type="target" position={Position.Left} className="!bg-cyan-500" />
-      <Handle type="source" position={Position.Right} className="!bg-cyan-500" />
+    <div className="bg-surface rounded-lg border border-border shadow-xl min-w-[320px] max-w-[380px]">
+      <Handle type="target" position={Position.Left} className="!bg-info-color" />
+      <Handle type="source" position={Position.Right} className="!bg-info-color" />
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-3">
           <div className={cn('p-2 rounded-lg', providerInfo.bgColor)}>
             <ProviderIcon className={cn('w-6 h-6', providerInfo.color)} />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white">{providerInfo.name}</h3>
-            <p className="text-xs text-slate-400">{providerInfo.description}</p>
+            <h3 className="text-sm font-semibold text-fg">{providerInfo.name}</h3>
+            <p className="text-xs text-fg-muted">{providerInfo.description}</p>
           </div>
         </div>
         <div className={cn('flex items-center gap-1.5 px-2 py-1 rounded-full text-xs', statusInfo.bgColor)}>
@@ -313,28 +313,28 @@ function ProviderNode({ data }: NodeProps<ProviderCanvasNode>) {
 
       {/* Connection Info */}
       {connection && isConnected && (
-        <div className="px-4 py-3 border-b border-slate-700">
+        <div className="px-4 py-3 border-b border-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400">Account</span>
-            <span className="text-xs font-medium text-white">
+            <span className="text-xs text-fg-muted">Account</span>
+            <span className="text-xs font-medium text-fg">
               {connection.accountName || connection.accountId || '—'}
             </span>
           </div>
           {connection.expiresAt && (
             <div className="flex items-center justify-between mt-2">
-              <span className="text-xs text-slate-400 flex items-center gap-1">
+              <span className="text-xs text-fg-muted flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 Expires
               </span>
-              <span className="text-xs text-slate-300">
+              <span className="text-xs text-fg">
                 {new Date(connection.expiresAt).toLocaleDateString()}
               </span>
             </div>
           )}
           {connection.lastUsedAt && (
             <div className="flex items-center justify-between mt-2">
-              <span className="text-xs text-slate-400">Last used</span>
-              <span className="text-xs text-slate-300">
+              <span className="text-xs text-fg-muted">Last used</span>
+              <span className="text-xs text-fg">
                 {new Date(connection.lastUsedAt).toLocaleDateString()}
               </span>
             </div>
@@ -344,8 +344,8 @@ function ProviderNode({ data }: NodeProps<ProviderCanvasNode>) {
 
       {/* Scopes */}
       {connection && connection.scopes.length > 0 && (
-        <div className="px-4 py-3 border-b border-slate-700">
-          <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+        <div className="px-4 py-3 border-b border-border">
+          <h4 className="text-xs font-medium text-fg-muted uppercase tracking-wider mb-2 flex items-center gap-1">
             <Shield className="w-3 h-3" />
             Permissions
           </h4>
@@ -353,13 +353,13 @@ function ProviderNode({ data }: NodeProps<ProviderCanvasNode>) {
             {connection.scopes.slice(0, 6).map((scope: string) => (
               <span
                 key={scope}
-                className="text-xs px-2 py-0.5 bg-slate-700 text-slate-300 rounded"
+                className="text-xs px-2 py-0.5 bg-muted text-fg rounded"
               >
                 {scope}
               </span>
             ))}
             {connection.scopes.length > 6 && (
-              <span className="text-xs px-2 py-0.5 bg-slate-700 text-slate-400 rounded">
+              <span className="text-xs px-2 py-0.5 bg-muted text-fg-muted rounded">
                 +{connection.scopes.length - 6} more
               </span>
             )}
@@ -371,15 +371,15 @@ function ProviderNode({ data }: NodeProps<ProviderCanvasNode>) {
       {capabilities && (
         <>
           {/* Resource Types */}
-          <div className="px-4 py-3 border-b border-slate-700">
-            <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">
+          <div className="px-4 py-3 border-b border-border">
+            <h4 className="text-xs font-medium text-fg-muted uppercase tracking-wider mb-2">
               Supported Resources
             </h4>
             <div className="flex flex-wrap gap-1">
               {capabilities.resourceTypes.map((type: ResourceType) => (
                 <span
                   key={type}
-                  className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded"
+                  className="text-xs px-2 py-0.5 bg-info-bg text-info-color rounded"
                 >
                   {resourceTypeLabels[type]}
                 </span>
@@ -388,8 +388,8 @@ function ProviderNode({ data }: NodeProps<ProviderCanvasNode>) {
           </div>
 
           {/* Tiers */}
-          <div className="px-4 py-3 border-b border-slate-700">
-            <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">
+          <div className="px-4 py-3 border-b border-border">
+            <h4 className="text-xs font-medium text-fg-muted uppercase tracking-wider mb-2">
               Available Tiers
             </h4>
             <div className="flex flex-wrap gap-1">
@@ -399,10 +399,10 @@ function ProviderNode({ data }: NodeProps<ProviderCanvasNode>) {
                   className={cn(
                     'text-xs px-2 py-0.5 rounded',
                     tier === 'FREE'
-                      ? 'bg-green-500/20 text-green-400'
+                      ? 'bg-success-bg text-success-color'
                       : tier === 'ENTERPRISE'
-                      ? 'bg-purple-500/20 text-purple-400'
-                      : 'bg-slate-700 text-slate-300'
+                      ? 'bg-info-bg text-info-color'
+                      : 'bg-muted text-fg'
                   )}
                 >
                   {tierLabels[tier]}
@@ -413,21 +413,21 @@ function ProviderNode({ data }: NodeProps<ProviderCanvasNode>) {
 
           {/* Regions */}
           {capabilities.regions.length > 0 && (
-            <div className="px-4 py-3 border-b border-slate-700">
-              <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">
+            <div className="px-4 py-3 border-b border-border">
+              <h4 className="text-xs font-medium text-fg-muted uppercase tracking-wider mb-2">
                 Regions
               </h4>
               <div className="flex flex-wrap gap-1">
                 {capabilities.regions.slice(0, 5).map((region: string) => (
                   <span
                     key={region}
-                    className="text-xs px-2 py-0.5 bg-slate-700 text-slate-300 rounded"
+                    className="text-xs px-2 py-0.5 bg-muted text-fg rounded"
                   >
                     {region}
                   </span>
                 ))}
                 {capabilities.regions.length > 5 && (
-                  <span className="text-xs px-2 py-0.5 bg-slate-700 text-slate-400 rounded">
+                  <span className="text-xs px-2 py-0.5 bg-muted text-fg-muted rounded">
                     +{capabilities.regions.length - 5} more
                   </span>
                 )}
@@ -437,8 +437,8 @@ function ProviderNode({ data }: NodeProps<ProviderCanvasNode>) {
 
           {/* Features */}
           {capabilities.features.length > 0 && (
-            <div className="px-4 py-3 border-b border-slate-700">
-              <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+            <div className="px-4 py-3 border-b border-border">
+              <h4 className="text-xs font-medium text-fg-muted uppercase tracking-wider mb-2 flex items-center gap-1">
                 <Zap className="w-3 h-3" />
                 Features
               </h4>
@@ -448,20 +448,20 @@ function ProviderNode({ data }: NodeProps<ProviderCanvasNode>) {
                     key={feature.name}
                     className="flex items-center justify-between text-xs"
                   >
-                    <span className="text-slate-300">{feature.name}</span>
+                    <span className="text-fg">{feature.name}</span>
                     {feature.available ? (
-                      <Check className="w-3 h-3 text-green-400" />
+                      <Check className="w-3 h-3 text-success-color" />
                     ) : feature.requiredTier ? (
-                      <span className="text-yellow-400 text-[10px]">
+                      <span className="text-warning-color text-[10px]">
                         {tierLabels[feature.requiredTier]}+
                       </span>
                     ) : (
-                      <X className="w-3 h-3 text-slate-500" />
+                      <X className="w-3 h-3 text-fg-muted" />
                     )}
                   </div>
                 ))}
                 {capabilities.features.length > 4 && (
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-fg-muted">
                     +{capabilities.features.length - 4} more features
                   </span>
                 )}
@@ -471,33 +471,33 @@ function ProviderNode({ data }: NodeProps<ProviderCanvasNode>) {
 
           {/* Limits */}
           {capabilities.limits && (
-            <div className="px-4 py-3 border-b border-slate-700">
-              <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">
+            <div className="px-4 py-3 border-b border-border">
+              <h4 className="text-xs font-medium text-fg-muted uppercase tracking-wider mb-2">
                 Limits
               </h4>
               <div className="grid grid-cols-2 gap-2">
                 {capabilities.limits.maxProjects && (
                   <div className="text-xs">
-                    <span className="text-slate-400">Projects:</span>{' '}
-                    <span className="text-white">{capabilities.limits.maxProjects}</span>
+                    <span className="text-fg-muted">Projects:</span>{' '}
+                    <span className="text-fg">{capabilities.limits.maxProjects}</span>
                   </div>
                 )}
                 {capabilities.limits.maxEnvironments && (
                   <div className="text-xs">
-                    <span className="text-slate-400">Environments:</span>{' '}
-                    <span className="text-white">{capabilities.limits.maxEnvironments}</span>
+                    <span className="text-fg-muted">Environments:</span>{' '}
+                    <span className="text-fg">{capabilities.limits.maxEnvironments}</span>
                   </div>
                 )}
                 {capabilities.limits.maxBandwidth && (
                   <div className="text-xs">
-                    <span className="text-slate-400">Bandwidth:</span>{' '}
-                    <span className="text-white">{capabilities.limits.maxBandwidth}</span>
+                    <span className="text-fg-muted">Bandwidth:</span>{' '}
+                    <span className="text-fg">{capabilities.limits.maxBandwidth}</span>
                   </div>
                 )}
                 {capabilities.limits.maxStorage && (
                   <div className="text-xs">
-                    <span className="text-slate-400">Storage:</span>{' '}
-                    <span className="text-white">{capabilities.limits.maxStorage}</span>
+                    <span className="text-fg-muted">Storage:</span>{' '}
+                    <span className="text-fg">{capabilities.limits.maxStorage}</span>
                   </div>
                 )}
               </div>
@@ -511,7 +511,7 @@ function ProviderNode({ data }: NodeProps<ProviderCanvasNode>) {
         {onViewDocs && (
           <button
             onClick={onViewDocs}
-            className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors"
+            className="flex items-center gap-1 text-xs text-fg-muted hover:text-fg transition-colors"
           >
             <ExternalLink className="w-3 h-3" />
             View Docs
@@ -521,7 +521,7 @@ function ProviderNode({ data }: NodeProps<ProviderCanvasNode>) {
           {isExpired && onRefresh && (
             <button
               onClick={onRefresh}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 rounded-lg text-xs text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-warning-color hover:opacity-90 rounded-lg text-xs text-white transition-colors"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Refresh Token
@@ -530,7 +530,7 @@ function ProviderNode({ data }: NodeProps<ProviderCanvasNode>) {
           {!isConnected && onConnect && (
             <button
               onClick={onConnect}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:opacity-90 rounded-lg text-xs text-primary-foreground transition-colors"
             >
               <Link className="w-3.5 h-3.5" />
               Connect
@@ -539,7 +539,7 @@ function ProviderNode({ data }: NodeProps<ProviderCanvasNode>) {
           {isConnected && onDisconnect && (
             <button
               onClick={onDisconnect}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/80 hover:bg-red-600 rounded-lg text-xs text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-destructive hover:opacity-90 rounded-lg text-xs text-white transition-colors"
             >
               <Unlink className="w-3.5 h-3.5" />
               Disconnect

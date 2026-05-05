@@ -12,7 +12,7 @@
 
 import React, { ReactNode } from 'react';
 import { ArrowRight, Zap as LightningIcon, Target as TargetIcon, TrendingUp as TrendingIcon, CheckCircle2 as CompleteIcon, Clock as TimeIcon } from 'lucide-react';
-import { Typography, Button, Chip, Box, Card, CardContent } from '@ghatana/design-system';
+import { Typography, Button, Chip, Card, CardContent } from '@ghatana/design-system';
 
 // ============================================================================
 // Types
@@ -58,26 +58,26 @@ const getActionIcon = (type: NextAction['type']) => {
 const getActionColor = (type: NextAction['type']) => {
   switch (type) {
     case 'immediate':
-      return 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20';
+      return 'text-warning-color bg-warning-bg';
     case 'recommended':
-      return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20';
+      return 'text-info-color bg-info-bg';
     case 'suggested':
-      return 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20';
+      return 'text-success-color bg-success-bg';
     default:
-      return 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20';
+      return 'text-muted-foreground bg-muted';
   }
 };
 
 const getImpactColor = (impact: NextAction['impact']) => {
   switch (impact) {
     case 'high':
-      return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300';
+      return 'bg-success-bg text-success-color';
     case 'medium':
-      return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300';
+      return 'bg-warning-bg text-warning-color';
     case 'low':
-      return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300';
+      return 'bg-muted text-muted-foreground';
     default:
-      return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300';
+      return 'bg-muted text-muted-foreground';
   }
 };
 

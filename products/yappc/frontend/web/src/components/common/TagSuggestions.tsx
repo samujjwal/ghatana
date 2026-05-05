@@ -10,9 +10,9 @@
  * @doc.pattern React Component
  */
 
-import React, { ReactNode, useState, useCallback } from 'react';
-import { Sparkles as AIIcon, Check as AcceptIcon, X as RejectIcon, Plus as AddIcon } from 'lucide-react';
-import { Typography, Button, Chip, Box, Card, CardContent } from '@ghatana/design-system';
+import React, { ReactNode, useState } from 'react';
+import { Sparkles as AIIcon, Check as AcceptIcon, X as RejectIcon } from 'lucide-react';
+import { Typography, Button, Chip, Card, CardContent } from '@ghatana/design-system';
 import type { TagSuggestion } from '../../services/ai/ClassificationService';
 
 // ============================================================================
@@ -52,20 +52,20 @@ function TagSuggestionItem({
   const getCategoryColor = (category: TagSuggestion['category']) => {
     switch (category) {
       case 'domain':
-        return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300';
+        return 'bg-info-bg text-info-color';
       case 'technology':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
+        return 'bg-surface-muted text-fg';
       case 'priority':
-        return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300';
+        return 'bg-warning-bg text-warning-color';
       case 'status':
-        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300';
+        return 'bg-success-bg text-success-color';
       default:
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
   return (
-    <div className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-800 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+    <div className="flex items-center gap-3 p-2 bg-muted/40 rounded-md hover:bg-muted/70 transition-colors">
       {/* Tag and confidence */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
@@ -79,18 +79,18 @@ function TagSuggestionItem({
           )}
         </div>
         {showReason && suggestion.reason && (
-          <Typography className="text-xs text-gray-500 dark:text-gray-400">
+          <Typography className="text-xs text-muted-foreground">
             {suggestion.reason}
           </Typography>
         )}
         <div className="flex items-center gap-2 mt-1">
-          <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
             <div
-              className="h-full bg-blue-500"
+              className="h-full bg-info-color"
               style={{ width: `${suggestion.confidence * 100}%` }}
             />
           </div>
-          <Typography className="text-xs text-gray-500">
+          <Typography className="text-xs text-muted-foreground">
             {Math.round(suggestion.confidence * 100)}%
           </Typography>
         </div>
@@ -102,7 +102,7 @@ function TagSuggestionItem({
           size="sm"
           variant="text"
           onClick={onAccept}
-          className="text-green-600 hover:text-green-700"
+          className="text-success-color"
         >
           <AcceptIcon className="w-4 h-4" />
         </Button>
@@ -110,7 +110,7 @@ function TagSuggestionItem({
           size="sm"
           variant="text"
           onClick={onReject}
-          className="text-red-600 hover:text-red-700"
+          className="text-destructive"
         >
           <RejectIcon className="w-4 h-4" />
         </Button>
@@ -145,13 +145,13 @@ export function TagSuggestions({
   }
 
   return (
-    <Card variant="outlined" className={`border-blue-200 dark:border-blue-800 ${className}`}>
+    <Card variant="outlined" className={`border-info-border ${className}`}>
       <CardContent className="p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <AIIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <Typography className="font-medium text-sm text-blue-900 dark:text-blue-100">
+            <AIIcon className="w-4 h-4 text-info-color" />
+            <Typography className="font-medium text-sm text-info-color">
               Suggested Tags
             </Typography>
             <Chip size="sm" label={filteredSuggestions.length} className="text-xs" />
@@ -161,7 +161,7 @@ export function TagSuggestions({
               size="sm"
               variant="text"
               onClick={onAcceptAll}
-              className="text-xs text-blue-600 dark:text-blue-400"
+              className="text-xs text-info-color"
             >
               Accept All
             </Button>
@@ -188,7 +188,7 @@ export function TagSuggestions({
             size="sm"
             variant="text"
             onClick={() => setExpanded(!expanded)}
-            className="w-full mt-2 text-xs text-gray-500"
+            className="w-full mt-2 text-xs text-muted-foreground"
           >
             {expanded ? 'Show less' : `Show ${suggestions.length - maxSuggestions} more`}
           </Button>

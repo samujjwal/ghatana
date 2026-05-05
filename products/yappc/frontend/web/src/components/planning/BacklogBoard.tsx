@@ -108,7 +108,7 @@ const STATUS_COLUMNS: Array<{ status: ItemStatus; label: string; icon: ReactNode
   {
     status: 'BLOCKED',
     label: 'Blocked',
-    icon: <BlockedIcon className="h-4 w-4 text-red-500" aria-hidden="true" />,
+    icon: <BlockedIcon className="h-4 w-4 text-destructive" aria-hidden="true" />,
   },
   {
     status: 'IN_REVIEW',
@@ -118,7 +118,7 @@ const STATUS_COLUMNS: Array<{ status: ItemStatus; label: string; icon: ReactNode
   {
     status: 'COMPLETED',
     label: 'Completed',
-    icon: <DoneIcon className="h-4 w-4 text-green-500" aria-hidden="true" />,
+    icon: <DoneIcon className="h-4 w-4 text-success-color" aria-hidden="true" />,
   },
 ];
 
@@ -142,26 +142,26 @@ function getTypeLabel(type: ItemType): string {
 
 function getTypeColor(type: ItemType): string {
   const colors: Record<ItemType, string> = {
-    FEATURE: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200',
-    STORY: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200',
-    TASK: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
-    BUG: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200',
-    EPIC: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200',
-    SPIKE: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200',
-    SECURITY_ISSUE: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-200',
-    TECH_DEBT: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200',
+    FEATURE: 'bg-info-bg text-info-color',
+    STORY: 'bg-info-bg text-info-color',
+    TASK: 'bg-surface-muted text-fg',
+    BUG: 'bg-destructive-bg text-destructive',
+    EPIC: 'bg-warning-bg text-warning-color',
+    SPIKE: 'bg-warning-bg text-warning-color',
+    SECURITY_ISSUE: 'bg-destructive-bg text-destructive',
+    TECH_DEBT: 'bg-warning-bg text-warning-color',
   };
-  return colors[type] ?? 'bg-gray-100 text-gray-800';
+  return colors[type] ?? 'bg-surface-muted text-fg';
 }
 
 function getPriorityColor(priority: ItemPriority): string {
   const colors: Record<ItemPriority, string> = {
-    LOW: 'text-gray-500 dark:text-gray-400',
-    MEDIUM: 'text-blue-500 dark:text-blue-400',
-    HIGH: 'text-orange-500 dark:text-orange-400',
-    CRITICAL: 'text-red-600 dark:text-red-400',
+    LOW: 'text-fg-muted dark:text-fg-muted',
+    MEDIUM: 'text-info-color dark:text-info-color',
+    HIGH: 'text-warning-color dark:text-warning-color',
+    CRITICAL: 'text-destructive dark:text-destructive',
   };
-  return colors[priority] ?? 'text-gray-500';
+  return colors[priority] ?? 'text-fg-muted';
 }
 
 // ============================================================================
@@ -212,7 +212,7 @@ function ItemCard({
                 {getTypeLabel(item.type)}
               </span>
               {item.storyPoints != null && (
-                <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded font-mono">
+                <span className="text-xs bg-surface-muted dark:bg-surface-muted text-fg-muted dark:text-fg-muted px-1.5 py-0.5 rounded font-mono">
                   {item.storyPoints}pt
                 </span>
               )}
@@ -223,7 +223,7 @@ function ItemCard({
             </Typography>
 
             {expanded && item.description && (
-              <Typography variant="caption" className="text-gray-500 mt-1 text-xs">
+              <Typography variant="caption" className="text-fg-muted mt-1 text-xs">
                 {item.description}
               </Typography>
             )}
@@ -234,7 +234,7 @@ function ItemCard({
             <button
               onClick={handleToggle}
               aria-label={expanded ? 'Collapse' : 'Expand'}
-              className="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="flex-shrink-0 text-fg-muted hover:text-fg-muted dark:hover:text-fg-muted"
             >
               <ExpandIcon className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
             </button>
@@ -266,7 +266,7 @@ function ItemCard({
             variant="ghost"
             onClick={() => onMoveToSprint(item.id, null)}
             disabled={isMutating}
-            className="mt-2 text-xs h-6 px-2 text-gray-500"
+            className="mt-2 text-xs h-6 px-2 text-fg-muted"
           >
             ← Move to Backlog
           </Button>
@@ -372,7 +372,7 @@ export function BacklogBoard({
     return (
       <Box className={`p-6 ${className}`}>
         <div
-          className="flex items-center justify-center gap-2 text-gray-500"
+          className="flex items-center justify-center gap-2 text-fg-muted"
           role="status"
           aria-label="Loading backlog"
         >
@@ -387,7 +387,7 @@ export function BacklogBoard({
     return (
       <Box className={`p-6 ${className}`}>
         <div
-          className="flex items-center gap-2 text-red-600 dark:text-red-400"
+          className="flex items-center gap-2 text-destructive dark:text-destructive"
           role="alert"
         >
           <BlockedIcon className="h-5 w-5" aria-hidden="true" />
@@ -404,7 +404,7 @@ export function BacklogBoard({
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <BacklogIcon className="h-5 w-5 text-gray-500" aria-hidden="true" />
+          <BacklogIcon className="h-5 w-5 text-fg-muted" aria-hidden="true" />
           <Typography variant="h6" className="font-semibold">
             Backlog Board
           </Typography>
@@ -420,8 +420,8 @@ export function BacklogBoard({
               aria-pressed={filterType === value}
               className={`text-xs px-2 py-1 rounded-full border transition-colors ${
                 filterType === value
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-transparent text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 hover:border-blue-400'
+                  ? 'bg-primary text-white border-info-border'
+                  : 'bg-transparent text-fg-muted dark:text-fg-muted border-border dark:border-border hover:border-info-border'
               }`}
             >
               {label}
@@ -434,11 +434,11 @@ export function BacklogBoard({
       {visibleItems.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
-            <BacklogIcon className="h-10 w-10 text-gray-300 mx-auto mb-3" aria-hidden="true" />
-            <Typography variant="body1" className="text-gray-500">
+            <BacklogIcon className="h-10 w-10 text-fg-muted mx-auto mb-3" aria-hidden="true" />
+            <Typography variant="body1" className="text-fg-muted">
               No backlog items found
             </Typography>
-            <Typography variant="body2" className="text-gray-400 mt-1">
+            <Typography variant="body2" className="text-fg-muted mt-1">
               Items will appear here once they are added to a phase
             </Typography>
           </CardContent>
@@ -452,10 +452,10 @@ export function BacklogBoard({
                 {/* Column header */}
                 <div className="flex items-center gap-2 px-1">
                   {col.icon}
-                  <Typography variant="caption" className="font-semibold text-gray-700 dark:text-gray-300">
+                  <Typography variant="caption" className="font-semibold text-fg dark:text-fg-muted">
                     {col.label}
                   </Typography>
-                  <span className="ml-auto text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-full px-1.5">
+                  <span className="ml-auto text-xs text-fg-muted bg-surface-muted dark:bg-surface-muted rounded-full px-1.5">
                     {colItems.length}
                   </span>
                 </div>
@@ -463,8 +463,8 @@ export function BacklogBoard({
                 {/* Items */}
                 <div className="flex flex-col min-h-16">
                   {colItems.length === 0 ? (
-                    <div className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
-                      <Typography variant="caption" className="text-gray-400 text-xs">
+                    <div className="border-2 border-dashed border-border dark:border-border rounded-lg p-3 text-center">
+                      <Typography variant="caption" className="text-fg-muted text-xs">
                         Empty
                       </Typography>
                     </div>

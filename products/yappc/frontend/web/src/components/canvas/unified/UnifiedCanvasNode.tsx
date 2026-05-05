@@ -210,7 +210,7 @@ export const UnifiedCanvasNode: React.FC<NodeProps<UnifiedNodeData>> = memo(({
                                     <Delete size={16} />
                                 </IconButton>
                             </Tooltip>
-                            <DragIndicator className="ml-2 text-base text-gray-500 dark:text-gray-400" />
+                            <DragIndicator className="ml-2 text-base text-muted-foreground" />
                         </Box>
                     )}
                 </NodeHeader>

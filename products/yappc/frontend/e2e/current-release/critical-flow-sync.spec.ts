@@ -74,6 +74,12 @@ test.describe('Critical Flow Sync', () => {
     const commandPalette = page.locator('[data-testid="command-palette"], [role="dialog"]');
     if (await commandPalette.isVisible().catch(() => false)) {
       await expect(commandPalette).toBeVisible();
+      const commandInput = page.locator('[data-testid="command-palette-input"] input');
+      if (await commandInput.isVisible().catch(() => false)) {
+        await expect(commandInput).toBeFocused();
+      }
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('ArrowUp');
       await page.keyboard.press('Escape');
       await expect(commandPalette).not.toBeVisible();
     }

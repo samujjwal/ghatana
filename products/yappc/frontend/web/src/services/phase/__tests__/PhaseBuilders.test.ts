@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
+import { LifecyclePhase } from '@/types/lifecycle';
 import {
   buildPhaseBlockers,
   buildPhaseEvidence,
   buildPhaseGovernanceRecords,
+  rankNextActions,
   buildPhaseSuggestedSteps,
   getPhaseCockpitConfig,
   type PhaseActivityEvent,
@@ -85,5 +87,32 @@ describe('phase services', () => {
       title: 'Review the latest lifecycle evidence',
       type: 'review',
     });
+  });
+
+  it('ranks next actions with owner-sensitive promotion guidance', () => {
+    const ranked = rankNextActions({
+      phase: LifecyclePhase.CONTEXT,
+      phaseSteps: [
+        { title: 'Add components', completed: true },
+        { title: 'Connect nodes', completed: true },
+      ],
+      completedSteps: ['shape-1', 'shape-2'],
+      project: { hasUnsavedChanges: true },
+      projectSignals: {
+        aiNextActions: ['Run lifecycle validation'],
+        aiHealthScore: 52,
+      },
+      role: 'collaborator',
+      canTransitionForward: true,
+    });
+
+    expect(ranked).toEqual(
+      expect.arrayContaining([
+        'Save and synchronize pending page artifact changes',
+        'Stabilize failing signals before promoting this phase',
+        'Run lifecycle validation',
+        'Request owner review for lifecycle promotion',
+      ]),
+    );
   });
 });

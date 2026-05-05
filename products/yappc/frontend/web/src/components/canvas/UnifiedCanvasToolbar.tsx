@@ -130,18 +130,18 @@ const ToolButton: React.FC<ToolButtonProps> = ({ tool, isActive, onClick }) => {
       className={cn(
         'group relative flex h-9 w-9 items-center justify-center rounded-lg transition-all',
         isActive
-          ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400'
-          : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+          ? 'bg-info-bg text-info-color dark:bg-info-bg dark:text-info-color'
+          : 'text-fg-muted hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface'
       )}
       title={`${tool.label}${tool.shortcut ? ` (${tool.shortcut})` : ''}`}
     >
       <Icon className="h-4 w-4" />
 
       {/* Tooltip */}
-      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-2 py-1 text-xs text-white shadow-lg group-hover:block dark:bg-gray-700">
+      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-surface px-2 py-1 text-xs text-white shadow-lg group-hover:block dark:bg-surface-muted">
         {tool.label}
         {tool.shortcut && (
-          <span className="ml-2 rounded bg-gray-700 px-1 font-mono dark:bg-gray-600">
+          <span className="ml-2 rounded bg-surface-muted px-1 font-mono dark:bg-surface-muted">
             {tool.shortcut}
           </span>
         )}
@@ -174,8 +174,8 @@ const ToolDropdown: React.FC<ToolDropdownProps> = ({
         className={cn(
           'flex h-9 items-center gap-1 rounded-lg px-2 transition-all',
           activeToolConfig
-            ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400'
-            : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+            ? 'bg-info-bg text-info-color dark:bg-info-bg dark:text-info-color'
+            : 'text-fg-muted hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface'
         )}
         title={label}
       >
@@ -194,7 +194,7 @@ const ToolDropdown: React.FC<ToolDropdownProps> = ({
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="absolute left-0 top-full z-50 mt-1 rounded-lg border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+              className="absolute left-0 top-full z-50 mt-1 rounded-lg border border-border bg-white p-1 shadow-lg dark:border-border dark:bg-surface"
             >
               {tools.map((tool) => {
                 const Icon = tool.icon;
@@ -208,14 +208,14 @@ const ToolDropdown: React.FC<ToolDropdownProps> = ({
                     className={cn(
                       'flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
                       activeTool === tool.id
-                        ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400'
-                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                        ? 'bg-info-bg text-info-color dark:bg-info-bg dark:text-info-color'
+                        : 'text-fg hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface-muted'
                     )}
                   >
                     <Icon className="h-4 w-4" />
                     <span>{tool.label}</span>
                     {tool.shortcut && (
-                      <span className="ml-auto text-xs text-gray-400">{tool.shortcut}</span>
+                      <span className="ml-auto text-xs text-fg-muted">{tool.shortcut}</span>
                     )}
                   </button>
                 );
@@ -285,7 +285,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
   return (
     <div
       className={cn(
-        'flex items-center gap-1 rounded-xl border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-900',
+        'flex items-center gap-1 rounded-xl border border-border bg-white p-1 shadow-lg dark:border-border dark:bg-surface',
         className
       )}
     >
@@ -301,7 +301,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
         ))}
       </div>
 
-      <div className="mx-1 h-6 w-px bg-gray-200 dark:bg-gray-700" />
+      <div className="mx-1 h-6 w-px bg-surface-muted dark:bg-surface-muted" />
 
       {/* Shape Tools (Dropdown for Progressive Disclosure) */}
       <ToolDropdown
@@ -319,7 +319,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
         label="Content"
       />
 
-      <div className="mx-1 h-6 w-px bg-gray-200 dark:bg-gray-700" />
+      <div className="mx-1 h-6 w-px bg-surface-muted dark:bg-surface-muted" />
 
       {/* History Controls */}
       <div className="flex items-center gap-0.5">
@@ -329,8 +329,8 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
           className={cn(
             'flex h-9 w-9 items-center justify-center rounded-lg transition-all',
             canUndo
-              ? 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
-              : 'cursor-not-allowed text-gray-300 dark:text-gray-600'
+              ? 'text-fg-muted hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface'
+              : 'cursor-not-allowed text-fg-muted dark:text-fg-muted'
           )}
           title="Undo (⌘Z)"
         >
@@ -342,8 +342,8 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
           className={cn(
             'flex h-9 w-9 items-center justify-center rounded-lg transition-all',
             canRedo
-              ? 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
-              : 'cursor-not-allowed text-gray-300 dark:text-gray-600'
+              ? 'text-fg-muted hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface'
+              : 'cursor-not-allowed text-fg-muted dark:text-fg-muted'
           )}
           title="Redo (⌘⇧Z)"
         >
@@ -351,37 +351,37 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
         </button>
       </div>
 
-      <div className="mx-1 h-6 w-px bg-gray-200 dark:bg-gray-700" />
+      <div className="mx-1 h-6 w-px bg-surface-muted dark:bg-surface-muted" />
 
       {/* Zoom Controls */}
       <div className="flex items-center gap-0.5">
         <button
           onClick={onZoomOut}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 transition-all hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted transition-all hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface"
           title="Zoom Out"
         >
           <ZoomOut className="h-4 w-4" />
         </button>
-        <span className="min-w-[3rem] text-center text-sm text-gray-600 dark:text-gray-400">
+        <span className="min-w-[3rem] text-center text-sm text-fg-muted dark:text-fg-muted">
           {Math.round(zoom * 100)}%
         </span>
         <button
           onClick={onZoomIn}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 transition-all hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted transition-all hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface"
           title="Zoom In"
         >
           <ZoomIn className="h-4 w-4" />
         </button>
         <button
           onClick={onZoomFit}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 transition-all hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted transition-all hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface"
           title="Fit to Screen"
         >
           <Maximize2 className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="mx-1 h-6 w-px bg-gray-200 dark:bg-gray-700" />
+      <div className="mx-1 h-6 w-px bg-surface-muted dark:bg-surface-muted" />
 
       {/* AI Assist Button */}
       {onAIAssist && (
@@ -401,8 +401,8 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
         className={cn(
           'flex h-9 w-9 items-center justify-center rounded-lg transition-all',
           showAdvanced
-            ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100'
-            : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+            ? 'bg-surface-muted text-fg dark:bg-surface dark:text-fg-muted'
+            : 'text-fg-muted hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface'
         )}
         title="More Options"
       >
@@ -418,7 +418,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
             exit={{ opacity: 0, width: 0 }}
             className="flex items-center gap-0.5 overflow-hidden"
           >
-            <div className="mx-1 h-6 w-px bg-gray-200 dark:bg-gray-700" />
+            <div className="mx-1 h-6 w-px bg-surface-muted dark:bg-surface-muted" />
 
             {/* Grid Toggle */}
             {onToggleGrid && (
@@ -427,8 +427,8 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
                 className={cn(
                   'flex h-9 w-9 items-center justify-center rounded-lg transition-all',
                   showGrid
-                    ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400'
-                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+                    ? 'bg-info-bg text-info-color dark:bg-info-bg dark:text-info-color'
+                    : 'text-fg-muted hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface'
                 )}
                 title="Toggle Grid"
               >
@@ -443,8 +443,8 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
                 className={cn(
                   'flex h-9 w-9 items-center justify-center rounded-lg transition-all',
                   isLocked
-                    ? 'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-400'
-                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+                    ? 'bg-warning-bg text-warning-color dark:bg-warning-bg dark:text-warning-color'
+                    : 'text-fg-muted hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface'
                 )}
                 title={isLocked ? 'Unlock Canvas' : 'Lock Canvas'}
               >
@@ -454,7 +454,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
 
             {/* Layers */}
             <button
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 transition-all hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted transition-all hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface"
               title="Layers"
             >
               <Layers className="h-4 w-4" />

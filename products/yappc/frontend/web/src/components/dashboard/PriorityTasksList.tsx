@@ -30,26 +30,26 @@ function StatusIndicator({ status }: { status?: 'pending' | 'in-progress' | 'blo
     const statusConfig = {
         'in-progress': {
             icon: <Loader2 className="w-4 h-4 animate-spin" />,
-            color: 'text-blue-600',
-            bgColor: 'bg-blue-100',
+            color: 'text-info-color',
+            bgColor: 'bg-info-bg',
             label: 'In Progress'
         },
         'completed': {
             icon: <Check className="w-4 h-4" />,
-            color: 'text-green-600',
-            bgColor: 'bg-green-100',
+            color: 'text-success-color',
+            bgColor: 'bg-success-bg',
             label: 'Completed'
         },
         'blocked': {
             icon: <AlertCircle className="w-4 h-4" />,
-            color: 'text-red-600',
-            bgColor: 'bg-red-100',
+            color: 'text-destructive',
+            bgColor: 'bg-destructive-bg',
             label: 'Blocked'
         },
         'skipped': {
             icon: <X className="w-4 h-4" />,
-            color: 'text-gray-600',
-            bgColor: 'bg-gray-100',
+            color: 'text-fg-muted',
+            bgColor: 'bg-surface-muted',
             label: 'Skipped'
         }
     };
@@ -188,14 +188,14 @@ export function PriorityTasksList({
                     {hasActions && (
                         <div className="flex gap-1">
                             <button
-                                className="px-2 py-1 text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-2 py-1 text-sm text-info-color hover:text-info-color disabled:opacity-50 disabled:cursor-not-allowed"
                                 onClick={selectAll}
                                 disabled={selectedTasks.size === tasks.length}
                             >
                                 Select All
                             </button>
                             <button
-                                className="px-2 py-1 text-sm text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-2 py-1 text-sm text-fg-muted hover:text-fg disabled:opacity-50 disabled:cursor-not-allowed"
                                 onClick={clearSelection}
                                 disabled={selectedTasks.size === 0}
                             >
@@ -234,7 +234,7 @@ export function PriorityTasksList({
             </div>
             <Paper className="rounded-lg overflow-hidden border">
                 {tasks.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                    <div className="p-8 text-center text-fg-muted dark:text-fg-muted">
                         <CheckCircleOutline className="mb-2 w-20 h-20 opacity-50 mx-auto" />
                         <Typography>
                             No priority tasks. You're all caught up!
@@ -247,7 +247,7 @@ export function PriorityTasksList({
                                 <div 
                                     key={task.id}
                                     onClick={() => onTaskClick(task)}
-                                    className={`py-4 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors ${selectedTasks.has(task.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                                    className={`py-4 px-4 hover:bg-surface-muted dark:hover:bg-surface cursor-pointer transition-colors ${selectedTasks.has(task.id) ? 'bg-info-bg dark:bg-info-bg' : ''}`}
                                 >
                                     <div className="flex items-center gap-4">
                                         {hasActions && (
@@ -256,31 +256,31 @@ export function PriorityTasksList({
                                                 checked={selectedTasks.has(task.id)}
                                                 onChange={(e) => toggleSelection(task.id, e)}
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                className="w-4 h-4 rounded border-border text-info-color focus:ring-blue-500"
                                             />
                                         )}
                                         <div className="flex-shrink-0">
-                                            {task.type === 'Code' && <CodeIcon className="w-5 h-5 text-blue-600" />}
-                                            {task.type === 'Design' && <AssignmentIcon className="w-5 h-5 text-purple-600" />}
-                                            {task.type === 'Deploy' && <DeployIcon className="w-5 h-5 text-green-600" />}
+                                            {task.type === 'Code' && <CodeIcon className="w-5 h-5 text-info-color" />}
+                                            {task.type === 'Design' && <AssignmentIcon className="w-5 h-5 text-info-color" />}
+                                            {task.type === 'Deploy' && <DeployIcon className="w-5 h-5 text-success-color" />}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <Typography className="text-lg font-medium truncate">
                                                 {task.title}
                                             </Typography>
-                                            <Typography className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                            <Typography className="text-sm text-fg-muted dark:text-fg-muted mt-1">
                                                 {task.project}
                                             </Typography>
                                             <div className="flex items-center gap-4 mt-1">
                                                 <span className={`text-sm font-medium ${
-                                                    task.priority === 'Urgent' ? 'text-red-600' :
-                                                    task.priority === 'High' ? 'text-orange-600' :
-                                                    'text-gray-600'
+                                                    task.priority === 'Urgent' ? 'text-destructive' :
+                                                    task.priority === 'High' ? 'text-warning-color' :
+                                                    'text-fg-muted'
                                                 }`}>
                                                     {task.priority}
                                                 </span>
                                                 {task.dueDate && (
-                                                    <span className="flex items-center gap-1 text-sm text-gray-500">
+                                                    <span className="flex items-center gap-1 text-sm text-fg-muted">
                                                         <AccessTime className="w-4 h-4" />
                                                         {new Date(task.dueDate).toLocaleDateString('en-US', { timeZone: 'UTC' })}
                                                     </span>
@@ -294,7 +294,7 @@ export function PriorityTasksList({
                                                     <button
                                                         onClick={(e) => handleApprove(task.id, e)}
                                                         disabled={processingTasks.has(task.id)}
-                                                        className="p-2 rounded-md bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                        className="p-2 rounded-md bg-success-bg text-success-color hover:bg-success-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                                         title="Approve task"
                                                     >
                                                         <Check className="w-4 h-4" />
@@ -302,7 +302,7 @@ export function PriorityTasksList({
                                                     <button
                                                         onClick={(e) => handleReject(task.id, e)}
                                                         disabled={processingTasks.has(task.id)}
-                                                        className="p-2 rounded-md bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                        className="p-2 rounded-md bg-destructive-bg text-destructive hover:bg-destructive-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                                         title="Reject task"
                                                     >
                                                         <X className="w-4 h-4" />
@@ -313,15 +313,15 @@ export function PriorityTasksList({
                                             <Chip
                                                 label={task.persona}
                                                 size="sm"
-                                                className="h-5 text-xs bg-gray-100 dark:bg-gray-800"
+                                                className="h-5 text-xs bg-surface-muted dark:bg-surface"
                                             />
-                                            <ChevronRight className="w-5 h-5 text-gray-400" />
+                                            <ChevronRight className="w-5 h-5 text-fg-muted" />
                                         </div>
                                     </div>
                                 </div>
                             ))}
                         </div>
-                        <div className="p-2 text-center bg-gray-100 dark:bg-gray-800">
+                        <div className="p-2 text-center bg-surface-muted dark:bg-surface">
                             <Button size="sm" endIcon={<ArrowForwardIcon />} onClick={onViewAll}>Go to Inbox</Button>
                         </div>
                     </>

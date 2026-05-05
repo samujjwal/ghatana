@@ -85,35 +85,35 @@ const channelTypeConfig: Record<
   PUBLIC: {
     icon: Hash,
     label: 'Public',
-    color: 'text-green-400',
-    bgColor: 'bg-green-500/20',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg0/20',
   },
   PRIVATE: {
     icon: Lock,
     label: 'Private',
-    color: 'text-yellow-400',
-    bgColor: 'bg-yellow-500/20',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg0/20',
   },
   DIRECT_MESSAGE: {
     icon: MessageSquare,
     label: 'Direct',
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/20',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg0/20',
   },
   GROUP_DM: {
     icon: Users,
     label: 'Group DM',
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-500/20',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg0/20',
   },
 };
 
 const presenceColors: Record<PresenceStatus, string> = {
-  ONLINE: 'bg-green-500',
-  AWAY: 'bg-yellow-500',
-  BUSY: 'bg-red-500',
-  OFFLINE: 'bg-slate-500',
-  INVISIBLE: 'bg-slate-500',
+  ONLINE: 'bg-success-bg0',
+  AWAY: 'bg-warning-bg0',
+  BUSY: 'bg-destructive-bg0',
+  OFFLINE: 'bg-surface-muted0',
+  INVISIBLE: 'bg-surface-muted0',
 };
 
 function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
@@ -148,19 +148,19 @@ function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
   return (
     <div
       className={cn(
-        'bg-slate-800 rounded-lg border shadow-xl min-w-[300px] max-w-[360px]',
-        channel.isArchived ? 'border-slate-700 opacity-60' : 'border-slate-600'
+        'bg-surface rounded-lg border shadow-xl min-w-[300px] max-w-[360px]',
+        channel.isArchived ? 'border-border opacity-60' : 'border-border'
       )}
     >
       {/* Input Handle */}
       <Handle
         type="target"
         position={Position.Left}
-        className="w-3 h-3 bg-blue-500 border-2 border-slate-800"
+        className="w-3 h-3 bg-info-bg0 border-2 border-border"
       />
 
       {/* Header */}
-      <div className="p-4 border-b border-slate-700">
+      <div className="p-4 border-b border-border">
         <div className="flex items-start gap-3">
           {/* Channel Icon */}
           <div
@@ -176,10 +176,10 @@ function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
             <div className="flex items-center gap-2">
               <h3 className="text-white font-semibold truncate">{channel.name}</h3>
               {channel.isArchived && (
-                <Archive className="w-4 h-4 text-slate-500" />
+                <Archive className="w-4 h-4 text-fg-muted" />
               )}
               {channel.unreadCount > 0 && (
-                <span className="px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full">
+                <span className="px-2 py-0.5 bg-info-bg0 text-white text-xs font-bold rounded-full">
                   {channel.unreadCount > 99 ? '99+' : channel.unreadCount}
                 </span>
               )}
@@ -194,7 +194,7 @@ function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
               >
                 {typeConfig.label}
               </span>
-              <span className="text-slate-500 text-xs flex items-center gap-1">
+              <span className="text-fg-muted text-xs flex items-center gap-1">
                 <Users className="w-3 h-3" />
                 {channel.memberCount}
               </span>
@@ -208,8 +208,8 @@ function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
               className={cn(
                 'p-1.5 rounded-lg transition-colors',
                 isMuted
-                  ? 'text-slate-500 hover:text-slate-400 hover:bg-slate-700'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                  ? 'text-fg-muted hover:text-fg-muted hover:bg-surface-muted'
+                  : 'text-fg-muted hover:text-white hover:bg-surface-muted'
               )}
               title={isMuted ? 'Unmute Channel' : 'Mute Channel'}
             >
@@ -224,28 +224,28 @@ function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
 
         {/* Topic */}
         {channel.topic && (
-          <div className="mt-3 px-3 py-2 bg-slate-700/50 rounded-lg">
-            <span className="text-slate-400 text-xs">Topic: </span>
-            <span className="text-slate-300 text-xs">{channel.topic}</span>
+          <div className="mt-3 px-3 py-2 bg-surface-muted rounded-lg">
+            <span className="text-fg-muted text-xs">Topic: </span>
+            <span className="text-fg text-xs">{channel.topic}</span>
           </div>
         )}
       </div>
 
       {/* Description */}
       {channel.description && (
-        <div className="px-4 py-3 border-b border-slate-700">
-          <p className="text-slate-400 text-sm line-clamp-2">{channel.description}</p>
+        <div className="px-4 py-3 border-b border-border">
+          <p className="text-fg-muted text-sm line-clamp-2">{channel.description}</p>
         </div>
       )}
 
       {/* Online Members */}
       {channel.members && channel.members.length > 0 && (
-        <div className="p-4 border-b border-slate-700">
+        <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-slate-400 text-xs font-medium uppercase tracking-wide">
+            <span className="text-fg-muted text-xs font-medium uppercase tracking-wide">
               Members Online
             </span>
-            <span className="text-green-400 text-xs font-medium">
+            <span className="text-success-color text-xs font-medium">
               {onlineMembers.length}/{channel.memberCount}
             </span>
           </div>
@@ -272,15 +272,15 @@ function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
                 )}
                 <div
                   className={cn(
-                    'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-800',
+                    'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-border',
                     presenceColors[member.presence ?? 'OFFLINE']
                   )}
                 />
               </div>
             ))}
             {(channel.members.length > 8) && (
-              <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
-                <span className="text-slate-400 text-xs font-medium">
+              <div className="w-8 h-8 rounded-full bg-surface-muted flex items-center justify-center">
+                <span className="text-fg-muted text-xs font-medium">
                   +{channel.members.length - 8}
                 </span>
               </div>
@@ -291,8 +291,8 @@ function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
 
       {/* Recent Messages */}
       {recentMessages.length > 0 && (
-        <div className="p-4 border-b border-slate-700">
-          <span className="text-slate-400 text-xs font-medium uppercase tracking-wide">
+        <div className="p-4 border-b border-border">
+          <span className="text-fg-muted text-xs font-medium uppercase tracking-wide">
             Recent Messages
           </span>
           <div className="mt-2 space-y-2">
@@ -313,17 +313,17 @@ function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-300 text-xs font-medium truncate">
+                    <span className="text-fg text-xs font-medium truncate">
                       {message.author.name}
                     </span>
-                    <span className="text-slate-500 text-xs">
+                    <span className="text-fg-muted text-xs">
                       {formatTime(message.createdAt)}
                     </span>
                     {message.isPinned && (
-                      <Pin className="w-3 h-3 text-yellow-400" />
+                      <Pin className="w-3 h-3 text-warning-color" />
                     )}
                   </div>
-                  <p className="text-slate-400 text-xs line-clamp-1">{message.content}</p>
+                  <p className="text-fg-muted text-xs line-clamp-1">{message.content}</p>
                 </div>
               </div>
             ))}
@@ -333,8 +333,8 @@ function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
 
       {/* Pinned Messages Count */}
       {channel.pinnedMessages && channel.pinnedMessages.length > 0 && (
-        <div className="px-4 py-3 border-b border-slate-700">
-          <div className="flex items-center gap-2 text-yellow-400">
+        <div className="px-4 py-3 border-b border-border">
+          <div className="flex items-center gap-2 text-warning-color">
             <Pin className="w-4 h-4" />
             <span className="text-sm font-medium">
               {channel.pinnedMessages.length} pinned message
@@ -346,10 +346,10 @@ function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
 
       {/* Open Channel Button */}
       {!channel.isArchived && onOpenChannel && (
-        <div className="p-4 border-b border-slate-700">
+        <div className="p-4 border-b border-border">
           <button
             onClick={onOpenChannel}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-info-bg0 text-white rounded-lg hover:bg-primary transition-colors text-sm font-medium"
           >
             <MessageSquare className="w-4 h-4" />
             Open Channel
@@ -358,8 +358,8 @@ function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
       )}
 
       {/* Footer */}
-      <div className="px-4 py-3 bg-slate-900/50 rounded-b-lg">
-        <div className="flex items-center justify-between text-xs text-slate-500">
+      <div className="px-4 py-3 bg-surface-muted rounded-b-lg">
+        <div className="flex items-center justify-between text-xs text-fg-muted">
           <div className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
             <span>
@@ -390,14 +390,14 @@ function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
         type="source"
         position={Position.Right}
         id="messages"
-        className="w-3 h-3 bg-green-500 border-2 border-slate-800"
+        className="w-3 h-3 bg-success-bg0 border-2 border-border"
         style={{ top: '40%' }}
       />
       <Handle
         type="source"
         position={Position.Right}
         id="threads"
-        className="w-3 h-3 bg-purple-500 border-2 border-slate-800"
+        className="w-3 h-3 bg-info-bg0 border-2 border-border"
         style={{ top: '60%' }}
       />
     </div>

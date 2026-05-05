@@ -102,32 +102,32 @@ const TYPE_CONFIG: Record<StoryType, { label: string; icon: typeof Layers; color
   feature: {
     label: 'Feature',
     icon: Layers,
-    color: 'text-violet-700',
-    bgColor: 'bg-violet-50 border-violet-200',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg border-info-border',
   },
   bug: {
     label: 'Bug',
     icon: Bug,
-    color: 'text-red-700',
-    bgColor: 'bg-red-50 border-red-200',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive-bg border-destructive-border',
   },
   tech_debt: {
     label: 'Tech Debt',
     icon: Wrench,
-    color: 'text-orange-700',
-    bgColor: 'bg-orange-50 border-orange-200',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg border-warning-border',
   },
   spike: {
     label: 'Spike',
     icon: Lightbulb,
-    color: 'text-amber-700',
-    bgColor: 'bg-amber-50 border-amber-200',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg border-warning-border',
   },
   improvement: {
     label: 'Improvement',
     icon: TrendingUp,
-    color: 'text-blue-700',
-    bgColor: 'bg-blue-50 border-blue-200',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg border-success-border',
   },
 };
 
@@ -135,52 +135,52 @@ const STATUS_CONFIG: Record<StoryStatus, { label: string; icon: typeof PlayCircl
   draft: {
     label: 'Draft',
     icon: Square,
-    color: 'text-gray-500',
-    bgColor: 'bg-gray-100',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted',
   },
   ready: {
     label: 'Ready',
     icon: PlayCircle,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
   },
   in_progress: {
     label: 'In Progress',
     icon: PlayCircle,
-    color: 'text-yellow-600',
-    bgColor: 'bg-yellow-100',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg',
   },
   in_review: {
     label: 'In Review',
     icon: GitPullRequest,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-100',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
   },
   testing: {
     label: 'Testing',
     icon: CheckSquare,
-    color: 'text-cyan-600',
-    bgColor: 'bg-cyan-100',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
   },
   done: {
     label: 'Done',
     icon: CheckCircle2,
-    color: 'text-emerald-600',
-    bgColor: 'bg-emerald-100',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg',
   },
   blocked: {
     label: 'Blocked',
     icon: XCircle,
-    color: 'text-red-600',
-    bgColor: 'bg-red-100',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive-bg',
   },
 };
 
 const PRIORITY_CONFIG: Record<StoryPriority, { label: string; color: string; iconColor: string }> = {
-  critical: { label: 'Critical', color: 'text-red-600', iconColor: 'text-red-500' },
-  high: { label: 'High', color: 'text-orange-600', iconColor: 'text-orange-500' },
-  medium: { label: 'Medium', color: 'text-yellow-600', iconColor: 'text-yellow-500' },
-  low: { label: 'Low', color: 'text-gray-500', iconColor: 'text-gray-400' },
+  critical: { label: 'Critical', color: 'text-danger-color', iconColor: 'text-danger-color' },
+  high: { label: 'High', color: 'text-warning-color', iconColor: 'text-warning-color' },
+  medium: { label: 'Medium', color: 'text-warning-color', iconColor: 'text-warning-color' },
+  low: { label: 'Low', color: 'text-muted-foreground', iconColor: 'text-muted-foreground' },
 };
 
 // =============================================================================
@@ -198,8 +198,8 @@ const TaskList: React.FC<TaskListProps> = memo(({ tasks, onToggle }) => {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between text-xs">
-        <span className="text-gray-500 font-medium">Tasks</span>
-        <span className="text-gray-400">
+        <span className="text-muted-foreground font-medium">Tasks</span>
+        <span className="text-muted-foreground">
           {completedCount}/{tasks.length}
         </span>
       </div>
@@ -213,19 +213,19 @@ const TaskList: React.FC<TaskListProps> = memo(({ tasks, onToggle }) => {
             }}
             className={cn(
               'flex items-center gap-2 w-full text-left p-1.5 rounded-md',
-              'hover:bg-gray-50 transition-colors',
+              'hover:bg-muted/20 transition-colors',
               'text-xs'
             )}
           >
             {task.completed ? (
-              <CheckSquare className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+              <CheckSquare className="w-3.5 h-3.5 text-success-color flex-shrink-0" />
             ) : (
-              <Square className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+              <Square className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             )}
             <span
               className={cn(
                 'truncate',
-                task.completed ? 'text-gray-400 line-through' : 'text-gray-700'
+                task.completed ? 'text-muted-foreground line-through' : 'text-foreground'
               )}
             >
               {task.title}
@@ -233,7 +233,7 @@ const TaskList: React.FC<TaskListProps> = memo(({ tasks, onToggle }) => {
           </button>
         ))}
         {tasks.length > 3 && (
-          <div className="text-xs text-gray-400 pl-6">
+          <div className="text-xs text-muted-foreground pl-6">
             +{tasks.length - 3} more tasks
           </div>
         )}
@@ -311,9 +311,9 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
     <div
       className={cn(
         'story-node w-72 rounded-xl border shadow-sm transition-all duration-200',
-        'bg-white',
+        'bg-surface',
         typeConfig.bgColor,
-        selected && 'ring-2 ring-violet-500 ring-offset-2',
+        selected && 'ring-2 ring-primary ring-offset-2',
         dragging && 'opacity-75 shadow-lg scale-[1.02]'
       )}
       onDoubleClick={handleOpenDetail}
@@ -322,28 +322,28 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
       <Handle
         type="target"
         position={Position.Left}
-        className="!w-3 !h-3 !bg-gray-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="!w-3 !h-3 !bg-gray-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
       />
       <Handle
         type="target"
         position={Position.Top}
         id="top"
-        className="!w-3 !h-3 !bg-gray-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
       />
       <Handle
         type="source"
         position={Position.Bottom}
         id="bottom"
-        className="!w-3 !h-3 !bg-gray-400 !border-2 !border-white"
+        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
       />
 
       {/* Header */}
-      <div className="p-3 border-b border-gray-100">
+      <div className="p-3 border-b border-border">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className={cn('p-1.5 rounded-lg', typeConfig.bgColor)}>
@@ -351,12 +351,12 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-gray-500">{data.key}</span>
+                <span className="text-xs font-mono text-muted-foreground">{data.key}</span>
                 {data.priority === 'critical' && (
                   <Flag className={cn('w-3 h-3', priorityConfig.iconColor)} />
                 )}
               </div>
-              <h4 className="font-semibold text-sm text-gray-900 truncate">
+              <h4 className="font-semibold text-sm text-fg truncate">
                 {data.label}
               </h4>
             </div>
@@ -365,7 +365,7 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
           <div className="flex items-center gap-1">
             {/* Points badge */}
             {data.points !== undefined && (
-              <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
+              <span className="px-2 py-0.5 bg-muted text-fg text-xs font-medium rounded-full">
                 {data.points} pts
               </span>
             )}
@@ -377,7 +377,7 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
                   e.stopPropagation();
                   setShowMenu(!showMenu);
                 }}
-                className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-fg"
               >
                 <MoreHorizontal className="w-4 h-4" />
               </button>
@@ -391,17 +391,17 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
                       setShowMenu(false);
                     }}
                   />
-                  <div className="absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                  <div className="absolute right-0 top-full mt-1 w-36 bg-surface rounded-lg shadow-lg border border-border py-1 z-20">
                     <button
                       onClick={handleEdit}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-fg hover:bg-muted/40"
                     >
                       <Edit2 className="w-4 h-4" />
                       Edit
                     </button>
                     <button
                       onClick={handleDelete}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-destructive hover:bg-destructive-bg"
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete
@@ -420,7 +420,7 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
               className="w-2 h-2 rounded-full"
               style={{ backgroundColor: data.epicColor || '#8B5CF6' }}
             />
-            <span className="text-xs text-gray-500 truncate">{data.epicName}</span>
+            <span className="text-xs text-muted-foreground truncate">{data.epicName}</span>
           </div>
         )}
 
@@ -449,7 +449,7 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
                   </span>
                 </div>
               )}
-              <span className="text-xs text-gray-600">{data.assignee.name}</span>
+              <span className="text-xs text-fg-muted">{data.assignee.name}</span>
             </div>
           ) : (
             <button
@@ -457,7 +457,7 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
                 e.stopPropagation();
                 data.onAssign?.(nodeId);
               }}
-              className="flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 text-xs"
+              className="flex items-center gap-1 px-2 py-1 rounded-full bg-muted hover:bg-muted/80 text-muted-foreground text-xs"
             >
               <User className="w-3 h-3" />
               <span>Assign</span>
@@ -467,10 +467,10 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
 
         {/* Blocked warning */}
         {data.status === 'blocked' && data.blockedReason && (
-          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+          <div className="mt-2 p-2 bg-destructive-bg border border-destructive-border rounded-lg">
             <div className="flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-              <span className="text-xs text-red-700">{data.blockedReason}</span>
+              <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+              <span className="text-xs text-destructive">{data.blockedReason}</span>
             </div>
           </div>
         )}
@@ -478,10 +478,10 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
 
       {/* Expandable content */}
       {expanded && (
-        <div className="p-3 space-y-3 border-b border-gray-100">
+        <div className="p-3 space-y-3 border-b border-border">
           {/* Description */}
           {data.description && (
-            <p className="text-xs text-gray-600 line-clamp-2">{data.description}</p>
+            <p className="text-xs text-fg-muted line-clamp-2">{data.description}</p>
           )}
 
           {/* Tasks */}
@@ -495,7 +495,7 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
               {data.labels.map((label) => (
                 <span
                   key={label}
-                  className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] rounded-full"
+                  className="px-2 py-0.5 bg-muted text-muted-foreground text-[10px] rounded-full"
                 >
                   {label}
                 </span>
@@ -507,7 +507,7 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
 
       {/* Footer */}
       <div className="p-3 flex items-center justify-between">
-        <div className="flex items-center gap-3 text-gray-400">
+        <div className="flex items-center gap-3 text-muted-foreground">
           {/* Task progress */}
           {totalTasks > 0 && (
             <div className="flex items-center gap-1.5">
@@ -515,9 +515,9 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
               <span className="text-xs">
                 {completedTasks}/{totalTasks}
               </span>
-              <div className="w-12 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              <div className="w-12 h-1.5 bg-muted rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-emerald-500 rounded-full transition-all"
+                  className="h-full bg-success-color rounded-full transition-all"
                   style={{ width: `${taskProgress}%` }}
                 />
               </div>
@@ -560,7 +560,7 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
         {/* Expand toggle */}
         <button
           onClick={handleToggleExpand}
-          className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+          className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-fg"
         >
           {expanded ? (
             <ChevronUp className="w-4 h-4" />

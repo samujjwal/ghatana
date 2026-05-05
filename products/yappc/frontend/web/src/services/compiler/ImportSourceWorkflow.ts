@@ -26,6 +26,11 @@ import {
 } from 'yappc-artifact-compiler';
 import * as ts from 'typescript';
 import { assessComponentSafety } from '@/security/UnsafeComponentHandler';
+import {
+  compileImportedSourceToPageArtifacts,
+  type ImportedSourceArtifactInput,
+} from '@/components/canvas/page/artifactCompilerBridge';
+import type { PageArtifactDocument } from '@/components/canvas/page/pageArtifactDocument';
 
 export type ImportSourceType = 'tsx' | 'route' | 'storybook' | 'artifact' | 'zip';
 
@@ -74,6 +79,11 @@ export interface ImportResult {
   errors: string[];
   /** Metadata */
   metadata: ImportMetadata;
+}
+
+export interface ImportToPageArtifactResult {
+  readonly importResult: ImportResult;
+  readonly pageArtifacts: readonly PageArtifactDocument[];
 }
 
 export interface ImportedFile {
@@ -146,6 +156,32 @@ export async function importFromSource(options: ImportSourceOptions): Promise<Im
       },
     };
   }
+}
+
+export async function importSourceToPageArtifacts(
+  options: ImportSourceOptions,
+  createdBy: string,
+): Promise<ImportToPageArtifactResult> {
+  const importResult = await importFromSource(options);
+  if (!importResult.success) {
+    return {
+      importResult,
+      pageArtifacts: [],
+    };
+  }
+
+  const artifactInput: ImportedSourceArtifactInput = {
+    projectId: options.projectId,
+    componentName: importResult.metadata.componentName,
+    source: options.source,
+    sourceType: options.sourceType,
+    importedAt: importResult.metadata.importedAt,
+  };
+
+  return {
+    importResult,
+    pageArtifacts: compileImportedSourceToPageArtifacts(artifactInput, createdBy),
+  };
 }
 
 /**
@@ -822,6 +858,7 @@ function enforceImportedComponentSafety(
 
 export default {
   importFromSource,
+  importSourceToPageArtifacts,
   importFromTSX,
   importFromRoute,
   importFromStorybook,

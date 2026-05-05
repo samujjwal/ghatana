@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createDocumentId, serializeDocument } from '@ghatana/ui-builder';
 
 import {
+  compileImportedSourceToPageArtifacts,
   compileSemanticModelToPageArtifacts,
   importPageArtifactsFromCode,
 } from '../artifactCompilerBridge';
@@ -66,5 +67,23 @@ describe('artifactCompilerBridge', () => {
     expect(artifacts[0]?.artifactId).toBe('import-page-1');
     expect(artifacts[0]?.source).toBe('decompiled');
     expect(artifacts[0]?.serializedBuilderDocument.name).toBe('Imported Page');
+  });
+
+  it('creates imported page artifacts from source import metadata', () => {
+    const artifacts = compileImportedSourceToPageArtifacts(
+      {
+        projectId: 'proj-42',
+        componentName: 'InboxPanel',
+        source: '/tmp/InboxPanel.tsx',
+        sourceType: 'tsx',
+        importedAt: '2026-05-01T10:00:00.000Z',
+      },
+      'importer',
+    );
+
+    expect(artifacts).toHaveLength(1);
+    expect(artifacts[0]?.artifactId).toBe('proj-42-inbox-panel');
+    expect(artifacts[0]?.source).toBe('imported');
+    expect(artifacts[0]?.updatedAt).toBe('2026-05-01T10:00:00.000Z');
   });
 });

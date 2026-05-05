@@ -114,25 +114,25 @@ export const RateLimitStatusWidget: React.FC<RateLimitStatusWidgetProps> = ({
    * Gets progress bar color
    */
   const getProgressColor = () => {
-    if (!status) return 'bg-gray-400';
-    if (status.percentage >= 90) return 'bg-red-600';
-    if (status.percentage >= 70) return 'bg-orange-500';
-    if (status.percentage >= 50) return 'bg-yellow-500';
-    return 'bg-green-500';
+    if (!status) return 'bg-muted-foreground';
+    if (status.percentage >= 90) return 'bg-destructive';
+    if (status.percentage >= 70) return 'bg-warning-bg0';
+    if (status.percentage >= 50) return 'bg-warning-bg0';
+    return 'bg-success-bg0';
   };
 
   /**
    * Gets tier badge color
    */
   const getTierBadgeColor = () => {
-    if (!status) return 'bg-gray-100 text-gray-800';
+    if (!status) return 'bg-surface-muted text-fg';
     switch (status.tier.toLowerCase()) {
       case 'enterprise':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-info-bg text-info-color';
       case 'pro':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-info-bg text-info-color';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-surface-muted text-fg';
     }
   };
 
@@ -152,20 +152,20 @@ export const RateLimitStatusWidget: React.FC<RateLimitStatusWidgetProps> = ({
    * Gets status label color
    */
   const getStatusLabelColor = () => {
-    if (!status) return 'text-gray-600';
-    if (status.isLimited) return 'text-red-600';
-    if (status.percentage >= 90) return 'text-red-600';
-    if (status.percentage >= 70) return 'text-orange-600';
-    if (status.percentage >= 50) return 'text-yellow-600';
-    return 'text-green-600';
+    if (!status) return 'text-fg-muted';
+    if (status.isLimited) return 'text-destructive';
+    if (status.percentage >= 90) return 'text-destructive';
+    if (status.percentage >= 70) return 'text-warning-color';
+    if (status.percentage >= 50) return 'text-warning-color';
+    return 'text-success-color';
   };
 
   if (isLoading) {
     return (
       <div className="bg-white rounded-lg shadow p-6 animate-pulse">
-        <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
-        <div className="h-8 bg-gray-200 rounded mb-2"></div>
-        <div className="h-2 bg-gray-200 rounded"></div>
+        <div className="h-4 bg-muted rounded w-1/2 mb-4"></div>
+        <div className="h-8 bg-muted rounded mb-2"></div>
+        <div className="h-2 bg-muted rounded"></div>
       </div>
     );
   }
@@ -173,7 +173,7 @@ export const RateLimitStatusWidget: React.FC<RateLimitStatusWidgetProps> = ({
   if (!status) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
-        <div className="text-red-600">Failed to load rate limit status</div>
+        <div className="text-destructive">Failed to load rate limit status</div>
       </div>
     );
   }
@@ -196,7 +196,7 @@ export const RateLimitStatusWidget: React.FC<RateLimitStatusWidgetProps> = ({
         {onUpgrade && status.tier.toLowerCase() !== 'enterprise' && (
           <button
             onClick={onUpgrade}
-            className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+            className="px-3 py-1 bg-primary text-white text-sm rounded hover:opacity-90"
           >
             Upgrade
           </button>
@@ -208,16 +208,16 @@ export const RateLimitStatusWidget: React.FC<RateLimitStatusWidgetProps> = ({
         <div className="flex justify-between items-baseline mb-2">
           <span className="text-2xl font-bold">
             {status.used.toLocaleString()}
-            <span className="text-sm text-gray-500 font-normal">
+            <span className="text-sm text-fg-muted font-normal">
               {' '}
               / {status.limit.toLocaleString()} requests
             </span>
           </span>
-          <span className="text-sm text-gray-600">{status.percentage.toFixed(1)}% used</span>
+          <span className="text-sm text-fg-muted">{status.percentage.toFixed(1)}% used</span>
         </div>
 
         {/* Progress bar */}
-        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+        <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
           <div
             className={`h-full transition-all duration-500 ${getProgressColor()}`}
             style={{ width: `${Math.min(status.percentage, 100)}%` }}
@@ -226,25 +226,25 @@ export const RateLimitStatusWidget: React.FC<RateLimitStatusWidgetProps> = ({
       </div>
 
       {/* Reset timer */}
-      <div className="flex items-center justify-between py-3 border-t border-gray-100">
-        <div className="text-sm text-gray-600">
+      <div className="flex items-center justify-between py-3 border-t border-border">
+        <div className="text-sm text-fg-muted">
           <div className="font-medium">Resets in</div>
-          <div className="text-gray-500">{timeUntilReset}</div>
+          <div className="text-fg-muted">{timeUntilReset}</div>
         </div>
-        <div className="text-right text-sm text-gray-600">
+        <div className="text-right text-sm text-fg-muted">
           <div className="font-medium">{status.remaining.toLocaleString()}</div>
-          <div className="text-gray-500">remaining</div>
+          <div className="text-fg-muted">remaining</div>
         </div>
       </div>
 
       {/* Warning message */}
       {status.isLimited && (
-        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+        <div className="mt-4 p-3 bg-destructive-bg border border-destructive-border rounded-lg">
           <div className="flex items-start">
-            <span className="text-red-600 text-lg mr-2">⚠️</span>
+            <span className="text-destructive text-lg mr-2">⚠️</span>
             <div className="flex-1">
-              <div className="text-sm font-medium text-red-800">Rate limit exceeded</div>
-              <div className="text-xs text-red-600 mt-1">
+              <div className="text-sm font-medium text-destructive">Rate limit exceeded</div>
+              <div className="text-xs text-destructive mt-1">
                 You've reached your request limit. Please wait for the reset or upgrade your plan.
               </div>
             </div>
@@ -254,12 +254,12 @@ export const RateLimitStatusWidget: React.FC<RateLimitStatusWidgetProps> = ({
 
       {/* Approaching limit warning */}
       {!status.isLimited && status.percentage >= 80 && (
-        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div className="mt-4 p-3 bg-warning-bg border border-warning-border rounded-lg">
           <div className="flex items-start">
-            <span className="text-yellow-600 text-lg mr-2">⚡</span>
+            <span className="text-warning-color text-lg mr-2">⚡</span>
             <div className="flex-1">
-              <div className="text-sm font-medium text-yellow-800">Approaching limit</div>
-              <div className="text-xs text-yellow-600 mt-1">
+              <div className="text-sm font-medium text-warning-color">Approaching limit</div>
+              <div className="text-xs text-warning-color mt-1">
                 You've used {status.percentage.toFixed(0)}% of your quota. Consider upgrading for higher limits.
               </div>
             </div>
@@ -269,7 +269,7 @@ export const RateLimitStatusWidget: React.FC<RateLimitStatusWidgetProps> = ({
 
       {/* Last request */}
       {status.lastRequestAt && (
-        <div className="mt-4 text-xs text-gray-500">
+        <div className="mt-4 text-xs text-fg-muted">
           Last request: {new Date(status.lastRequestAt).toLocaleString()}
         </div>
       )}
@@ -278,7 +278,7 @@ export const RateLimitStatusWidget: React.FC<RateLimitStatusWidgetProps> = ({
       {onViewDetails && (
         <button
           onClick={onViewDetails}
-          className="mt-4 w-full text-center text-sm text-blue-600 hover:text-blue-700"
+          className="mt-4 w-full text-center text-sm text-info-color hover:text-info-color"
         >
           View detailed usage →
         </button>

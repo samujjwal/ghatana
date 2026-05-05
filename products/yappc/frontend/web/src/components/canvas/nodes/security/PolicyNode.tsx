@@ -121,58 +121,58 @@ const TYPE_CONFIG: Record<PolicyType, {
   ACCESS_CONTROL: {
     label: 'Access Control',
     icon: Lock,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-500',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
+    borderColor: 'border-info-border',
   },
   DATA_PROTECTION: {
     label: 'Data Protection',
     icon: Shield,
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-500',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg',
+    borderColor: 'border-success-border',
   },
   NETWORK_SECURITY: {
     label: 'Network Security',
     icon: Globe,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-500',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
+    borderColor: 'border-info-border',
   },
   ENCRYPTION: {
     label: 'Encryption',
     icon: FileKey,
-    color: 'text-cyan-600',
-    bgColor: 'bg-cyan-50',
-    borderColor: 'border-cyan-500',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
+    borderColor: 'border-info-border',
   },
   AUTHENTICATION: {
     label: 'Authentication',
     icon: User,
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-50',
-    borderColor: 'border-indigo-500',
+    color: 'text-info-color',
+    bgColor: 'bg-info-bg',
+    borderColor: 'border-info-border',
   },
   COMPLIANCE: {
     label: 'Compliance',
     icon: CheckCircle2,
-    color: 'text-teal-600',
-    bgColor: 'bg-teal-50',
-    borderColor: 'border-teal-500',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg',
+    borderColor: 'border-success-border',
   },
   INFRASTRUCTURE: {
     label: 'Infrastructure',
     icon: Server,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50',
-    borderColor: 'border-orange-500',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg',
+    borderColor: 'border-warning-border',
   },
   CUSTOM: {
     label: 'Custom',
     icon: Settings,
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-50',
-    borderColor: 'border-gray-500',
+    color: 'text-fg-muted',
+    bgColor: 'bg-surface-muted',
+    borderColor: 'border-border',
   },
 };
 
@@ -188,32 +188,32 @@ const STATUS_CONFIG: Record<PolicyStatus, {
 }> = {
   DRAFT: {
     label: 'Draft',
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-100',
+    color: 'text-fg-muted',
+    bgColor: 'bg-muted',
     icon: Edit,
   },
   PENDING_APPROVAL: {
     label: 'Pending Approval',
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-100',
+    color: 'text-warning-color',
+    bgColor: 'bg-warning-bg',
     icon: Clock,
   },
   ACTIVE: {
     label: 'Active',
-    color: 'text-green-600',
-    bgColor: 'bg-green-100',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg',
     icon: CheckCircle2,
   },
   INACTIVE: {
     label: 'Inactive',
-    color: 'text-gray-500',
-    bgColor: 'bg-gray-100',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted',
     icon: XCircle,
   },
   ARCHIVED: {
     label: 'Archived',
-    color: 'text-slate-500',
-    bgColor: 'bg-slate-100',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted',
     icon: Archive,
   },
 };
@@ -223,10 +223,10 @@ const STATUS_CONFIG: Record<PolicyStatus, {
 // ============================================================================
 
 const SEVERITY_CONFIG = {
-  CRITICAL: { color: 'bg-red-500' },
-  HIGH: { color: 'bg-orange-500' },
-  MEDIUM: { color: 'bg-yellow-500' },
-  LOW: { color: 'bg-blue-500' },
+  CRITICAL: { color: 'bg-destructive' },
+  HIGH: { color: 'bg-warning-color' },
+  MEDIUM: { color: 'bg-warning-color' },
+  LOW: { color: 'bg-info-color' },
 };
 
 // ============================================================================
@@ -259,7 +259,7 @@ function RulesSummary({ rules }: { rules: PolicyRule[] }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-gray-700">Rules ({enabledRules.length}/{rules.length})</span>
+        <span className="text-xs font-medium text-fg">Rules ({enabledRules.length}/{rules.length})</span>
         <div className="flex items-center gap-1">
           {Object.entries(bySeverity).map(([severity, count]) => (
             count > 0 && (
@@ -283,12 +283,12 @@ function RulesSummary({ rules }: { rules: PolicyRule[] }) {
               'h-1.5 w-1.5 rounded-full',
               SEVERITY_CONFIG[rule.severity].color
             )} />
-            <span className="text-gray-700 truncate flex-1">{rule.name}</span>
-            <span className="text-gray-400 truncate max-w-[80px]">{rule.action}</span>
+            <span className="text-fg truncate flex-1">{rule.name}</span>
+            <span className="text-fg-muted truncate max-w-[80px]">{rule.action}</span>
           </div>
         ))}
         {enabledRules.length > 3 && (
-          <div className="flex items-center text-xs text-blue-600 cursor-pointer hover:text-blue-700">
+          <div className="flex items-center text-xs text-info-color cursor-pointer hover:opacity-80">
             <span>View all {enabledRules.length} rules</span>
             <ChevronRight className="h-3 w-3" />
           </div>
@@ -307,27 +307,27 @@ function ScopeSummary({ scope }: { scope: PolicyScope }) {
   return (
     <div className="flex flex-wrap gap-2">
       {scope.environments && scope.environments.length > 0 && (
-        <div className="flex items-center gap-1 rounded bg-purple-50 px-2 py-1 text-xs">
-          <Globe className="h-3 w-3 text-purple-500" />
-          <span className="text-purple-700">{scope.environments.length} env</span>
+        <div className="flex items-center gap-1 rounded bg-info-bg px-2 py-1 text-xs">
+          <Globe className="h-3 w-3 text-info-color" />
+          <span className="text-info-color">{scope.environments.length} env</span>
         </div>
       )}
       {scope.teams && scope.teams.length > 0 && (
-        <div className="flex items-center gap-1 rounded bg-blue-50 px-2 py-1 text-xs">
-          <Users className="h-3 w-3 text-blue-500" />
-          <span className="text-blue-700">{scope.teams.length} teams</span>
+        <div className="flex items-center gap-1 rounded bg-info-bg px-2 py-1 text-xs">
+          <Users className="h-3 w-3 text-info-color" />
+          <span className="text-info-color">{scope.teams.length} teams</span>
         </div>
       )}
       {scope.resources && scope.resources.length > 0 && (
-        <div className="flex items-center gap-1 rounded bg-gray-50 px-2 py-1 text-xs">
-          <Server className="h-3 w-3 text-gray-500" />
-          <span className="text-gray-700">{scope.resources.length} resources</span>
+        <div className="flex items-center gap-1 rounded bg-surface-muted px-2 py-1 text-xs">
+          <Server className="h-3 w-3 text-fg-muted" />
+          <span className="text-fg">{scope.resources.length} resources</span>
         </div>
       )}
       {scope.excludedResources && scope.excludedResources.length > 0 && (
-        <div className="flex items-center gap-1 rounded bg-red-50 px-2 py-1 text-xs">
-          <XCircle className="h-3 w-3 text-red-500" />
-          <span className="text-red-700">{scope.excludedResources.length} excluded</span>
+        <div className="flex items-center gap-1 rounded bg-destructive-bg px-2 py-1 text-xs">
+          <XCircle className="h-3 w-3 text-destructive" />
+          <span className="text-destructive">{scope.excludedResources.length} excluded</span>
         </div>
       )}
     </div>
@@ -339,20 +339,20 @@ function EnforcementBadge({ enforcement }: { enforcement: PolicyEnforcement }) {
     <div className="flex items-center gap-2">
       <span className={cn(
         'rounded-full px-2 py-0.5 text-xs font-medium',
-        enforcement.mode === 'ENFORCE' ? 'bg-red-100 text-red-700' :
-        enforcement.mode === 'MONITOR' ? 'bg-yellow-100 text-yellow-700' :
-        'bg-gray-100 text-gray-700'
+            enforcement.mode === 'ENFORCE' ? 'bg-destructive-bg text-destructive border border-destructive-border' :
+            enforcement.mode === 'MONITOR' ? 'bg-warning-bg text-warning-color border border-warning-border' :
+        'bg-muted text-fg'
       )}>
         {enforcement.mode}
       </span>
       {enforcement.blockOnViolation && (
-        <span className="flex items-center gap-1 rounded bg-red-50 px-1.5 py-0.5 text-xs text-red-600">
+        <span className="flex items-center gap-1 rounded bg-destructive-bg px-1.5 py-0.5 text-xs text-destructive">
           <Lock className="h-3 w-3" />
           Block
         </span>
       )}
       {enforcement.notifyOnViolation && (
-        <span className="flex items-center gap-1 rounded bg-blue-50 px-1.5 py-0.5 text-xs text-blue-600">
+        <span className="flex items-center gap-1 rounded bg-info-bg px-1.5 py-0.5 text-xs text-info-color">
           <Bell className="h-3 w-3" />
           Notify
         </span>
@@ -380,20 +380,20 @@ function PolicyNodeComponent({ data, selected }: NodeProps<PolicyCanvasNode>) {
         className={cn(
           'rounded-lg border-2 bg-white p-3 shadow-sm transition-all duration-200',
           typeConfig.borderColor,
-          selected && 'ring-2 ring-blue-500 ring-offset-2',
+          selected && 'ring-2 ring-primary ring-offset-2',
           'min-w-[200px]'
         )}
       >
-        <Handle type="target" position={Position.Left} className="!bg-gray-400" />
-        <Handle type="source" position={Position.Right} className="!bg-gray-400" />
+        <Handle type="target" position={Position.Left} className="!bg-muted-foreground" />
+        <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
 
         <div className="flex items-center gap-2">
           <TypeIcon className={cn('h-4 w-4', typeConfig.color)} />
-          <span className="truncate text-sm font-medium text-gray-900">{data.name}</span>
+          <span className="truncate text-sm font-medium text-fg">{data.name}</span>
         </div>
         <div className="mt-1 flex items-center justify-between">
           <span className={cn('text-xs', statusConfig.color)}>{statusConfig.label}</span>
-          <span className="text-xs text-gray-400">v{data.version}</span>
+          <span className="text-xs text-fg-muted">v{data.version}</span>
         </div>
       </div>
     );
@@ -404,13 +404,13 @@ function PolicyNodeComponent({ data, selected }: NodeProps<PolicyCanvasNode>) {
       className={cn(
         'rounded-lg border-2 bg-white shadow-md transition-all duration-200',
         typeConfig.borderColor,
-        selected && 'ring-2 ring-blue-500 ring-offset-2',
-        hasViolations && isActive && 'shadow-red-100',
+        selected && 'ring-2 ring-primary ring-offset-2',
+        hasViolations && isActive && 'shadow-destructive/20',
         'min-w-[320px] max-w-[400px]'
       )}
     >
-      <Handle type="target" position={Position.Left} className="!bg-gray-400" />
-      <Handle type="source" position={Position.Right} className="!bg-gray-400" />
+      <Handle type="target" position={Position.Left} className="!bg-muted-foreground" />
+      <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
 
       {/* Header */}
       <div className={cn('rounded-t-lg px-4 py-3', typeConfig.bgColor)}>
@@ -418,13 +418,13 @@ function PolicyNodeComponent({ data, selected }: NodeProps<PolicyCanvasNode>) {
           <div className="flex items-start gap-2">
             <TypeIcon className={cn('h-5 w-5 mt-0.5', typeConfig.color)} />
             <div>
-              <h3 className="font-semibold text-gray-900 leading-tight">{data.name}</h3>
+              <h3 className="font-semibold text-fg leading-tight">{data.name}</h3>
               <div className="flex items-center gap-2 mt-1">
                 <span className={cn('text-xs font-medium', typeConfig.color)}>
                   {typeConfig.label}
                 </span>
-                <span className="text-gray-300">•</span>
-                <span className="text-xs text-gray-500">v{data.version}</span>
+                <span className="text-fg-muted">•</span>
+                <span className="text-xs text-fg-muted">v{data.version}</span>
               </div>
             </div>
           </div>
@@ -443,19 +443,19 @@ function PolicyNodeComponent({ data, selected }: NodeProps<PolicyCanvasNode>) {
       <div className="p-4 space-y-4">
         {/* Description */}
         {data.description && (
-          <p className="text-sm text-gray-600 line-clamp-2">{data.description}</p>
+          <p className="text-sm text-fg-muted line-clamp-2">{data.description}</p>
         )}
 
         {/* Violations Alert */}
         {hasViolations && isActive && (
-          <div className="flex items-center gap-2 rounded-md bg-red-50 px-3 py-2 border border-red-200">
-            <AlertTriangle className="h-4 w-4 text-red-600" />
+          <div className="flex items-center gap-2 rounded-md bg-destructive-bg px-3 py-2 border border-destructive-border">
+            <AlertTriangle className="h-4 w-4 text-destructive" />
             <div className="flex-1">
-              <span className="text-sm font-medium text-red-700">
+              <span className="text-sm font-medium text-destructive">
                 {data.openViolationCount} Open Violation{data.openViolationCount !== 1 ? 's' : ''}
               </span>
               {data.violationCount && data.violationCount > (data.openViolationCount || 0) && (
-                <span className="text-xs text-red-600 ml-2">
+                <span className="text-xs text-destructive ml-2">
                   ({data.violationCount} total)
                 </span>
               )}
@@ -466,14 +466,14 @@ function PolicyNodeComponent({ data, selected }: NodeProps<PolicyCanvasNode>) {
         {/* Enforcement */}
         {data.enforcement && (
           <div className="space-y-2">
-            <span className="text-xs font-medium text-gray-700">Enforcement</span>
+            <span className="text-xs font-medium text-fg">Enforcement</span>
             <EnforcementBadge enforcement={data.enforcement} />
           </div>
         )}
 
         {/* Rules Summary */}
         {data.rules && data.rules.length > 0 && (
-          <div className="rounded-md bg-gray-50 p-3">
+          <div className="rounded-md bg-surface-muted p-3">
             <RulesSummary rules={data.rules} />
           </div>
         )}
@@ -481,7 +481,7 @@ function PolicyNodeComponent({ data, selected }: NodeProps<PolicyCanvasNode>) {
         {/* Scope */}
         {data.scope && (
           <div className="space-y-2">
-            <span className="text-xs font-medium text-gray-700">Scope</span>
+            <span className="text-xs font-medium text-fg">Scope</span>
             <ScopeSummary scope={data.scope} />
           </div>
         )}
@@ -490,21 +490,21 @@ function PolicyNodeComponent({ data, selected }: NodeProps<PolicyCanvasNode>) {
         {data.exceptions && data.exceptions.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-700">Exceptions</span>
-              <span className="text-xs text-gray-500">{data.exceptions.length} active</span>
+              <span className="text-xs font-medium text-fg">Exceptions</span>
+              <span className="text-xs text-fg-muted">{data.exceptions.length} active</span>
             </div>
             <div className="space-y-1">
               {data.exceptions.slice(0, 2).map((exception) => (
-                <div key={exception.id} className="flex items-center gap-2 text-xs rounded bg-amber-50 px-2 py-1">
-                  <AlertTriangle className="h-3 w-3 text-amber-500 flex-shrink-0" />
-                  <span className="text-amber-700 truncate flex-1">{exception.resource}</span>
+                <div key={exception.id} className="flex items-center gap-2 text-xs rounded bg-warning-bg px-2 py-1">
+                  <AlertTriangle className="h-3 w-3 text-warning-color flex-shrink-0" />
+                  <span className="text-warning-color truncate flex-1">{exception.resource}</span>
                   {exception.validUntil && (
-                    <span className="text-amber-500">until {formatDate(exception.validUntil)}</span>
+                    <span className="text-warning-color">until {formatDate(exception.validUntil)}</span>
                   )}
                 </div>
               ))}
               {data.exceptions.length > 2 && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-fg-muted">
                   +{data.exceptions.length - 2} more exceptions
                 </span>
               )}
@@ -514,7 +514,7 @@ function PolicyNodeComponent({ data, selected }: NodeProps<PolicyCanvasNode>) {
 
         {/* Effective Dates */}
         {(data.effectiveFrom || data.effectiveUntil) && (
-          <div className="flex items-center gap-4 text-xs text-gray-500">
+          <div className="flex items-center gap-4 text-xs text-fg-muted">
             {data.effectiveFrom && (
               <div className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
@@ -532,7 +532,7 @@ function PolicyNodeComponent({ data, selected }: NodeProps<PolicyCanvasNode>) {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-gray-100 px-4 py-3 flex items-center justify-between">
+      <div className="border-t border-border px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* Created By */}
           {data.createdBy ? (
@@ -544,17 +544,17 @@ function PolicyNodeComponent({ data, selected }: NodeProps<PolicyCanvasNode>) {
                   className="h-5 w-5 rounded-full"
                 />
               ) : (
-                <User className="h-4 w-4 text-gray-400" />
+                <User className="h-4 w-4 text-muted-foreground" />
               )}
-              <span className="text-xs text-gray-600">{data.createdBy.name}</span>
+              <span className="text-xs text-fg-muted">{data.createdBy.name}</span>
             </div>
           ) : (
-            <span className="text-xs text-gray-400">System</span>
+            <span className="text-xs text-muted-foreground">System</span>
           )}
 
           {/* Approved By */}
           {data.approvedBy && (
-            <div className="flex items-center gap-1 text-xs text-green-600">
+            <div className="flex items-center gap-1 text-xs text-success-color">
               <CheckCircle2 className="h-3.5 w-3.5" />
               <span>Approved by {data.approvedBy.name}</span>
             </div>
@@ -562,7 +562,7 @@ function PolicyNodeComponent({ data, selected }: NodeProps<PolicyCanvasNode>) {
         </div>
 
         {/* Last Updated */}
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-muted-foreground">
           Updated {formatDate(data.updatedAt)}
         </span>
       </div>
