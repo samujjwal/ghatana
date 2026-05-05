@@ -212,21 +212,21 @@ class AnalyticsHandlerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("engine throws exception → 500 with sanitized message")
+        @DisplayName("engine throws exception → 500 with sanitized message and traceId (DC-P1-007)")
         void engineThrows_returns500() {            when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-test");
             when(httpSupport.resolveCorrelationId(any())).thenReturn("trace-unit-001");
             when(httpSupport.objectMapper()).thenReturn(mapper);            when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap()))
                     .thenReturn(Promise.ofException(new RuntimeException("db connection lost")));
             HttpResponse err500 = mock(HttpResponse.class);
             when(err500.getCode()).thenReturn(500);
-            when(httpSupport.errorResponse(eq(500), eq("Query execution failed"))).thenReturn(err500);
+            when(httpSupport.errorResponse(eq(500), eq("Query execution failed"), eq("trace-unit-001"))).thenReturn(err500);
 
             HttpRequest req = mockRequest("{\"query\":\"SELECT * FROM orders\"}");
             HttpResponse response = runPromise(() -> handler.handleAnalyticsQuery(req));
 
             assertThat(response.getCode()).isEqualTo(500);
-            // Verify raw exception message is NOT forwarded to client
-            verify(httpSupport).errorResponse(eq(500), eq("Query execution failed"));
+            // DC-P1-007: Verify raw exception message is NOT forwarded to client; traceId is propagated
+            verify(httpSupport).errorResponse(eq(500), eq("Query execution failed"), eq("trace-unit-001"));
         }
 
         @Test
@@ -304,18 +304,44 @@ class AnalyticsHandlerTest extends EventloopTestBase {
     class CancelQueryTests {
 
         @Test
-        @DisplayName("cancel returns 501 — cancellation not supported in this deployment")
-        void cancel_returns501() {
+        @DisplayName("cancel returns 501 — cancellationSupported=false (default) — capability-consistent NOT_IMPLEMENTED")
+        void cancel_unsupported_returns501() {
+            String traceId = "trace-cancel-001";
             HttpResponse err501 = mock(HttpResponse.class);
             when(err501.getCode()).thenReturn(501);
-            when(httpSupport.errorResponse(501,
-                    "Analytics query cancellation is not supported in this deployment."))
+            when(httpSupport.resolveCorrelationId(any())).thenReturn(traceId);
+            when(httpSupport.errorResponse(eq(501),
+                    contains("analytics.cancellation"),
+                    eq(traceId)))
                     .thenReturn(err501);
 
             HttpRequest req = mockRequest("");
             when(req.getPathParameter("queryId")).thenReturn("q-cancel");
 
             HttpResponse response = runPromise(() -> handler.handleAnalyticsCancelQuery(req));
+
+            assertThat(response.getCode()).isEqualTo(501);
+            verifyNoInteractions(analyticsEngine);
+        }
+
+        @Test
+        @DisplayName("cancel returns 501 — cancellationSupported=true but no engine implementation yet")
+        void cancel_supported_flag_set_still_returns501() {
+            // cancellationSupported=true is reserved for when a distributed query tracker is wired.
+            // Until that implementation exists, both paths return 501.
+            String traceId = "trace-cancel-002";
+            HttpResponse err501 = mock(HttpResponse.class);
+            when(err501.getCode()).thenReturn(501);
+            when(httpSupport.resolveCorrelationId(any())).thenReturn(traceId);
+            when(httpSupport.errorResponse(eq(501), anyString(), eq(traceId))).thenReturn(err501);
+
+            AnalyticsHandler supported = new AnalyticsHandler(analyticsEngine, httpSupport)
+                .withCancellationSupported(true);
+
+            HttpRequest req = mockRequest("");
+            when(req.getPathParameter("queryId")).thenReturn("q-cancel-supported");
+
+            HttpResponse response = runPromise(() -> supported.handleAnalyticsCancelQuery(req));
 
             assertThat(response.getCode()).isEqualTo(501);
             verifyNoInteractions(analyticsEngine);
@@ -362,13 +388,15 @@ class AnalyticsHandlerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("engine exception → 500 with sanitized message")
+        @DisplayName("engine exception → 500 with sanitized message and traceId (DC-P1-007)")
         void engineException_returns500() {
+            String traceId = "trace-get-fail";
+            when(httpSupport.resolveCorrelationId(any())).thenReturn(traceId);
             when(analyticsEngine.getResult(anyString()))
                     .thenReturn(Promise.ofException(new RuntimeException("timeout")));
             HttpResponse err500 = mock(HttpResponse.class);
             when(err500.getCode()).thenReturn(500);
-            when(httpSupport.errorResponse(eq(500), eq("Failed to retrieve result"))).thenReturn(err500);
+            when(httpSupport.errorResponse(eq(500), eq("Failed to retrieve result"), eq(traceId))).thenReturn(err500);
 
             HttpRequest req = mockRequest("");
             when(req.getPathParameter("queryId")).thenReturn("q-fail");
@@ -376,7 +404,8 @@ class AnalyticsHandlerTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> handler.handleAnalyticsGetResult(req));
 
             assertThat(response.getCode()).isEqualTo(500);
-            verify(httpSupport).errorResponse(eq(500), eq("Failed to retrieve result"));
+            // DC-P1-007: Verify raw exception message is NOT forwarded to client; traceId is propagated
+            verify(httpSupport).errorResponse(eq(500), eq("Failed to retrieve result"), eq(traceId));
         }
 
         @Test
@@ -407,6 +436,150 @@ class AnalyticsHandlerTest extends EventloopTestBase {
             assertThat(body.get("truncated")).isEqualTo(true);
             assertThat(((Number) body.get("rowCount")).intValue()).isEqualTo(1);
             assertThat(((Number) body.get("limit")).intValue()).isEqualTo(100);
+        }
+
+        @Test
+        @DisplayName("result retrieval clamps requested limit to MAX_ROW_LIMIT")
+        void getResult_limitClampedToMax() {
+            QueryResult result = buildResult("qid-get-max", 1);
+            when(result.getTotalRows()).thenReturn(100_000);
+            when(analyticsEngine.getResult("qid-get-max")).thenReturn(Promise.of(result));
+
+            HttpResponse ok200 = mock(HttpResponse.class);
+            when(ok200.getCode()).thenReturn(200);
+            when(httpSupport.resolveCorrelationId(any())).thenReturn("trace-unit-001");
+            when(httpSupport.jsonResponse(anyMap())).thenReturn(ok200);
+
+            HttpRequest req = mockRequest("");
+            when(req.getPathParameter("queryId")).thenReturn("qid-get-max");
+            when(req.getQueryParameter("limit")).thenReturn("9999999");
+
+            HttpResponse response = runPromise(() -> handler.handleAnalyticsGetResult(req));
+
+            assertThat(response.getCode()).isEqualTo(200);
+
+            @SuppressWarnings("unchecked")
+            ArgumentCaptor<Map<String, Object>> bodyCaptor = ArgumentCaptor.forClass(Map.class);
+            verify(httpSupport).jsonResponse(bodyCaptor.capture());
+            Map<String, Object> body = bodyCaptor.getValue();
+
+            assertThat(((Number) body.get("limit")).intValue()).isEqualTo(50_000);
+            assertThat(((Number) body.get("rowCount")).intValue()).isEqualTo(1);
+            assertThat(body.get("truncated")).isEqualTo(true);
+        }
+
+        @Test
+        @DisplayName("result retrieval uses default limit when query param is invalid")
+        void getResult_invalidLimitFallsBackToDefault() {
+            QueryResult result = buildResult("qid-get-default", 1);
+            when(result.getTotalRows()).thenReturn(100_000);
+            when(analyticsEngine.getResult("qid-get-default")).thenReturn(Promise.of(result));
+
+            HttpResponse ok200 = mock(HttpResponse.class);
+            when(ok200.getCode()).thenReturn(200);
+            when(httpSupport.resolveCorrelationId(any())).thenReturn("trace-unit-001");
+            when(httpSupport.jsonResponse(anyMap())).thenReturn(ok200);
+
+            HttpRequest req = mockRequest("");
+            when(req.getPathParameter("queryId")).thenReturn("qid-get-default");
+            when(req.getQueryParameter("limit")).thenReturn("not-a-number");
+
+            HttpResponse response = runPromise(() -> handler.handleAnalyticsGetResult(req));
+
+            assertThat(response.getCode()).isEqualTo(200);
+
+            @SuppressWarnings("unchecked")
+            ArgumentCaptor<Map<String, Object>> bodyCaptor = ArgumentCaptor.forClass(Map.class);
+            verify(httpSupport).jsonResponse(bodyCaptor.capture());
+            Map<String, Object> body = bodyCaptor.getValue();
+
+            assertThat(((Number) body.get("limit")).intValue()).isEqualTo(10_000);
+            assertThat(((Number) body.get("rowCount")).intValue()).isEqualTo(1);
+            assertThat(body.get("truncated")).isEqualTo(true);
+        }
+    }
+
+    // ── handleAnalyticsGetPlan ────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("handleAnalyticsGetPlan")
+    class GetPlanTests {
+
+        @Test
+        @DisplayName("engine exception → 500 with sanitized message and traceId (DC-P1-007)")
+        void engineException_returns500() {
+            String traceId = "trace-plan-fail";
+            when(httpSupport.resolveCorrelationId(any())).thenReturn(traceId);
+            when(analyticsEngine.getPlan(anyString()))
+                .thenReturn(Promise.ofException(new RuntimeException("planner timeout: SELECT secret FROM t")));
+
+            HttpResponse err500 = mock(HttpResponse.class);
+            when(err500.getCode()).thenReturn(500);
+            when(httpSupport.errorResponse(eq(500), eq("Failed to retrieve query plan"), eq(traceId))).thenReturn(err500);
+
+            HttpRequest req = mockRequest("");
+            when(req.getPathParameter("queryId")).thenReturn("q-plan-fail");
+
+            HttpResponse response = runPromise(() -> handler.handleAnalyticsGetPlan(req));
+
+            assertThat(response.getCode()).isEqualTo(500);
+            verify(httpSupport).errorResponse(eq(500), eq("Failed to retrieve query plan"), eq(traceId));
+        }
+    }
+
+    // ── handleAnalyticsAggregate ──────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("handleAnalyticsAggregate")
+    class AggregateTests {
+
+        @Test
+        @DisplayName("engine exception → 500 with sanitized message and traceId (DC-P1-007)")
+        void engineException_returns500() {
+            String traceId = "trace-agg-fail";
+            when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-test");
+            when(httpSupport.resolveCorrelationId(any())).thenReturn(traceId);
+            when(httpSupport.objectMapper()).thenReturn(mapper);
+            when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap()))
+                .thenReturn(Promise.ofException(new RuntimeException("driver failed: jdbc://secret-host")));
+
+            HttpResponse err500 = mock(HttpResponse.class);
+            when(err500.getCode()).thenReturn(500);
+            when(httpSupport.errorResponse(eq(500), eq("Aggregate query failed"), eq(traceId))).thenReturn(err500);
+
+            HttpRequest req = mockRequest("{\"query\":\"SELECT type, COUNT(*) FROM events GROUP BY type\"}");
+            HttpResponse response = runPromise(() -> handler.handleAnalyticsAggregate(req));
+
+            assertThat(response.getCode()).isEqualTo(500);
+            verify(httpSupport).errorResponse(eq(500), eq("Aggregate query failed"), eq(traceId));
+        }
+    }
+
+    // ── handleAnalyticsExplain ────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("handleAnalyticsExplain")
+    class ExplainTests {
+
+        @Test
+        @DisplayName("engine exception → 500 with sanitized message and traceId (DC-P1-007)")
+        void engineException_returns500() {
+            String traceId = "trace-explain-fail";
+            when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-test");
+            when(httpSupport.resolveCorrelationId(any())).thenReturn(traceId);
+            when(httpSupport.objectMapper()).thenReturn(mapper);
+            when(analyticsEngine.explainQuery(anyString(), anyString(), anyMap()))
+                .thenReturn(Promise.ofException(new RuntimeException("optimizer crashed for query: SELECT ssn FROM users")));
+
+            HttpResponse err500 = mock(HttpResponse.class);
+            when(err500.getCode()).thenReturn(500);
+            when(httpSupport.errorResponse(eq(500), eq("Explain query failed"), eq(traceId))).thenReturn(err500);
+
+            HttpRequest req = mockRequest("{\"query\":\"SELECT * FROM users\"}");
+            HttpResponse response = runPromise(() -> handler.handleAnalyticsExplain(req));
+
+            assertThat(response.getCode()).isEqualTo(500);
+            verify(httpSupport).errorResponse(eq(500), eq("Explain query failed"), eq(traceId));
         }
     }
 

@@ -987,6 +987,39 @@ public class DataCloudHttpServer {
     }
 
     /**
+     * DC-P1-005: Insecure mode loopback enforcement.
+     *
+     * <p>When running without authentication (local/insecure profile), the server must
+     * only bind to the loopback interface (127.0.0.1) to prevent accidental network
+     * exposure. If an explicit non-loopback listen host has been set in insecure mode,
+     * startup is aborted.
+     *
+     * @param authConfigured         {@code true} if API-key or JWT auth is configured
+     * @param strictTenantResolution {@code true} if running in a non-local profile
+     * @param listenHost             the configured listen host (may be {@code null})
+     * @param logger                 logger used for warnings
+     * @throws IllegalStateException if a non-loopback host is used without auth
+     */
+    static void enforceLoopbackInInsecureMode(boolean authConfigured,
+                                              boolean strictTenantResolution,
+                                              String listenHost,
+                                              Logger logger) {
+        requireNonNull(logger, "logger");
+        if (authConfigured || strictTenantResolution) {
+            return;
+        }
+        boolean explicitNonLoopback = listenHost != null
+                && !listenHost.isBlank()
+                && !listenHost.equals("127.0.0.1")
+                && !listenHost.equals("localhost");
+        if (explicitNonLoopback) {
+            throw new IllegalStateException(
+                "Insecure mode (no auth) must not bind to non-loopback address '" + listenHost
+                    + "'. Configure authentication or use listenHost=127.0.0.1.");
+        }
+    }
+
+    /**
      * P0.5: Production fail-closed validation.
      * Blocks startup when critical dependencies (audit, policy, tenant resolver) are unavailable in production profiles.
      */
@@ -1084,6 +1117,7 @@ public class DataCloudHttpServer {
      */
     public void start() throws Exception {
         validateSecurityConfiguration(apiKeyResolver != null || jwtProvider != null, strictTenantResolution, log);
+        enforceLoopbackInInsecureMode(apiKeyResolver != null || jwtProvider != null, strictTenantResolution, listenHost, log);
         validateSettingsStorageConfiguration(strictTenantResolution, deploymentMode, settingsStore, log);
         validateProductionDependencies(strictTenantResolution, deploymentMode,
             auditService != null, policyEngine != null, true, log);
@@ -1305,7 +1339,7 @@ public class DataCloudHttpServer {
         DataSourceRegistryHandler dataSourceRegistryHandler;
         if (client != null) {
             dataSourceRegistryHandler = new DataSourceRegistryHandler(
-                client, httpSupport, null /* no DataFabricConnector implementation yet */);
+                client, httpSupport, null /* no DataFabricConnector implementation yet */, auditService);
         } else {
             dataSourceRegistryHandler = null;
         }
@@ -1510,7 +1544,20 @@ public class DataCloudHttpServer {
         capabilities.put("brain", capabilityEntry(brain != null, null));
         capabilities.put("learning", capabilityEntry(learningBridge != null, null));
         capabilities.put("analytics", capabilityEntry(analyticsEngine != null, null));
+        // DC-P1-001: Cancellation requires a distributed query tracker; unavailable in single-process deployment
+        Map<String, Object> analyticsCancellation = capabilityEntry(false, null);
+        analyticsCancellation.put("reason", "Query cancellation requires a distributed query tracker — not available in single-process deployment");
+        capabilities.put("analytics.cancellation", analyticsCancellation);
         capabilities.put("reporting", capabilityEntry(reportService != null, null));
+        // DC-P1-002: Data Fabric is a preview capability; disabled unless DATA_CLOUD_DATA_FABRIC=true AND connector is wired
+        boolean dataFabricEnabled = DataCloudFeatureFlags.isEnabled(DataCloudFeature.DATA_CLOUD_DATA_FABRIC);
+        Map<String, Object> dataFabricCap = capabilityEntry(dataFabricEnabled, null);
+        dataFabricCap.put("maturity", dataFabricEnabled ? "preview" : "unavailable");
+        dataFabricCap.put("mode",     dataFabricEnabled ? "preview" : "unavailable");
+        dataFabricCap.put("reason",   dataFabricEnabled
+            ? "Data Fabric is enabled in preview mode — live connector implementation may not be present"
+            : "Data Fabric requires DATA_CLOUD_DATA_FABRIC=true and a live DataFabricConnector implementation");
+        capabilities.put("dataFabric", dataFabricCap);
         capabilities.put("search.openSearch", capabilityEntry(openSearchConnector != null, null));
         capabilities.put("entityExport", capabilityEntry(exportService != null, null));
         capabilities.put("anomalyDetection", capabilityEntry(anomalyDetector != null, null));
@@ -1576,6 +1623,8 @@ public class DataCloudHttpServer {
         capabilities.put("ai.operations", capabilityEntry(aiAssistHandler != null, null));
         capabilities.put("plugins", capabilityEntry(runtimePluginManager != null, null));
         capabilities.put("agentCatalog", capabilityEntry(agentCatalogHandler != null, null));
+        // DC-P1-006: Alerting surface capability — required for UI to gate alert creation/viewing
+        capabilities.put("alerts", capabilityEntry(alertingHandler != null, null));
 
         // P0.1: Wire SDK feature flags into capability registry so clients know
         // which optional capabilities are enabled for this deployment.

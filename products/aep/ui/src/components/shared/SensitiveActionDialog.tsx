@@ -16,7 +16,7 @@
  */
 import React, { useRef, useState, useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { Button, TextField } from '@ghatana/design-system';
+import { Button, TextField, TextArea } from '@ghatana/design-system';
 
 export interface ImpactItem {
   label: string;
@@ -171,10 +171,10 @@ export function SensitiveActionDialog({
             >
               Reason {reasonRequired && <span className="text-red-500">*</span>}
             </label>
-            <textarea
+            <TextArea
               id="sensitive-reason"
               rows={2}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full"
               placeholder="Why are you performing this action?"
               value={reason}
               onChange={(e) => setReason(e.target.value)}

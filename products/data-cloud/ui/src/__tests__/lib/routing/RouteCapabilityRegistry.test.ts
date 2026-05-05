@@ -63,6 +63,14 @@ describe('RouteCapabilityRegistry', () => {
     it('returns undefined for unknown paths', () => {
       expect(getRouteByPath('/nonexistent')).toBeUndefined();
     });
+
+    it('keeps /pipelines route aligned with data-local plugin execution terminology', () => {
+      const route = getRouteByPath('/pipelines');
+      expect(route).toBeDefined();
+      expect(route?.label).toBe('Pipelines');
+      expect(route?.capabilities).toContain('plugin-execution');
+      expect(route?.description?.toLowerCase()).toContain('data-local plugin workflow execution');
+    });
   });
 
   describe('getActiveRoutes', () => {

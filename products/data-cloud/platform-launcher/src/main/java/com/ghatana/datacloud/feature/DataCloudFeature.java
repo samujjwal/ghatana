@@ -38,7 +38,26 @@ public enum DataCloudFeature {
     DATA_CLOUD_EXPORT(true),
 
     /** Statistical anomaly detection (opt-in). */
-    DATA_CLOUD_ANOMALY_DETECTION(false);
+    DATA_CLOUD_ANOMALY_DETECTION(false),
+
+    /**
+     * Data Fabric live metrics surface (opt-in, preview only).
+     *
+     * <p>DC-P1-002: Disabled by default in all profiles. Enable only when a real
+     * {@link com.ghatana.datacloud.fabric.DataFabricConnector} implementation is
+     * wired and live fabric metrics are available. When disabled, the /fabric route
+     * returns a preview-gated response with {@code capability=unavailable}.
+     */
+    DATA_CLOUD_DATA_FABRIC(false),
+
+    /**
+     * Connector lifecycle management: create, update, delete, test, enable/disable,
+     * credential rotation, and sync operations (on by default; DC-P2-006).
+     *
+     * <p>When disabled, all {@code /api/v1/connectors} and {@code /data-fabric/connectors}
+     * routes return {@code 503 Service Unavailable}.
+     */
+    DATA_CLOUD_CONNECTORS(true);
 
     private final boolean defaultEnabled;
 

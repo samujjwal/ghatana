@@ -1,9 +1,10 @@
 # DMOS 7432 Audit — Complete TODO Register
 
-**Repository:** `samujjwal/ghatana`  
-**Target:** `products/digital-marketing` plus Kernel-platform enhancements  
-**Source audit:** `dmos-7432-ultra-strict-product-correctness-audit.md`  
-**Audited commit:** `7432d84601747ed3e095555c11a5f9471f0f8595`  
+**Repository:** `samujjwal/ghatana`
+**Target:** `products/digital-marketing` plus Kernel-platform enhancements
+**Source audit:** `dmos-7432-ultra-strict-product-correctness-audit.md`
+**Audited commit:** `7432d84601747ed3e095555c11a5f9471f0f8595`
+**Last Updated:** 2026-05-04
 
 This register converts every actionable finding from the audit into implementation TODOs. It preserves all priorities present in the audit: **P0, P1, and P2**. No P3 items were identified in the audit.
 
@@ -17,6 +18,71 @@ This register converts every actionable finding from the audit into implementati
 | P1 | Must fix before release | 55 | Blocks release-quality readiness. |
 | P2 | Hardening / maintainability / quality improvements | 28 | Should be completed before GA or shortly after core gates pass. |
 | P3 | Future enhancement | 0 | No P3 items in this audit. |
+
+---
+
+## P1 Completion Status (Updated 2026-05-04)
+
+**Completed:**
+- P1-001: Create shared fail-closed HTTP context builder - COMPLETED
+- P1-002: Reject missing principal/session according to final API contract - COMPLETED
+- P1-004: Add production profile bootstrap validator - COMPLETED
+- P1-005: Prove full repository parity - COMPLETED
+- P1-006: Add full Flyway migration validation - COMPLETED
+- P1-007: Add enum/check constraints for campaign schema - COMPLETED (already existed)
+- P1-008: Preserve immutable campaign creation fields - COMPLETED (already correct)
+- P1-009: Add tenant-level integrity for AI action log - COMPLETED (already existed)
+- P1-010: Prove PII HMAC migration key wiring - COMPLETED (already existed)
+- P1-013: Correct pending approval queue semantics - COMPLETED (already existed)
+- P1-017: Implement production FeatureFlagPlugin delegation in Kernel bridge - COMPLETED
+- P1-018: Remove or fail-close default risk score behavior - COMPLETED
+- P1-019: Remove or fail-close default notification no-op behavior - COMPLETED
+- P1-021: Implement Kernel idempotency middleware/service - COMPLETED (already existed)
+- P1-022: Use mutation-scoped idempotency keys in UI - COMPLETED (already existed)
+- P1-026: Wire OpenTelemetry spans across critical flows - COMPLETED (already existed)
+- P1-027: Migrate all servlets to rate limiter metrics overload - COMPLETED (already existed)
+- P1-028: Verify structured audit events for critical actions - COMPLETED (already existed)
+- P1-030: Surface mutation errors in UI - COMPLETED (already existed)
+- P1-031: Implement per-row action pending states - COMPLETED (already existed)
+- P1-032: Cache invalidation for approval and AI action state - COMPLETED (already existed)
+
+**Blocked/Requires External Dependencies:**
+- P1-003: Derive roles/permissions server-side - BLOCKED on implementing real IdentityProvider with JWT validation or database lookups
+- P1-011: Move crypto/HMAC key management to Kernel platform - Requires Kernel platform crypto APIs
+- P1-012: Align direct strategy/budget approval with approval queue governance - Requires governance decision on canonical approval model
+- P1-023: Add Google Ads workflow/outbox execution - Requires significant implementation
+- P1-024: Add kill switch enforcement for connector writes - Requires implementation
+- P1-025: Add rollback/compensating action workflow for external writes - Requires implementation
+
+**Pending Implementation:**
+- P1-014: Add sensitive redaction tests for AI action log
+- P1-015: Expand dashboard to complete DMOS command center
+- P1-016: Make all route/page availability backend-capability driven
+- P1-020: Prove NotificationPlugin retry/DLQ behavior
+- P1-029: Add AI/model provenance for strategy and budget generation
+- P1-033: Add real strategy lifecycle E2E
+- P1-034: Add real budget lifecycle E2E
+- P1-035: Add approval role and permission matrix tests
+- P1-036: Inventory content generation backend-only surfaces
+- P1-037: Add UI or feature gates for backend-only marketed capabilities
+- P1-038: Add public intake abuse controls
+- P1-039: Add data retention and DSAR end-to-end proof
+- P1-040: Add production startup test that default-deny policy pack is loaded
+- P1-041: Add ArchUnit/lint rule against product logic in Kernel/platform plugins
+- P1-042: Add static scan for test-only utilities in production code
+- P1-043: Add exact changed-flow API integration suite
+- P1-044: Add exact changed-flow browser E2E suite
+- P1-045: Add DB state assertions to integration tests
+- P1-046: Add feature-flag off/on backend tests
+- P1-047: Add feature-flag off/on UI tests
+- P1-048: Add OpenAPI/client generation CI
+- P1-049: Add production persistence wiring proof
+- P1-050: Add migration audit/deployment metric
+- P1-051: Add frontend correlation ID display/support
+- P1-052: Add distributed-safe rate limiting or document single-node limits
+- P1-053: Add connector chaos/retry tests
+- P1-054: Replace stale root audit doc or move DMOS audit to product audit path
+- P1-055: Freeze feature expansion until P0/P1 gates are closed
 
 ---
 

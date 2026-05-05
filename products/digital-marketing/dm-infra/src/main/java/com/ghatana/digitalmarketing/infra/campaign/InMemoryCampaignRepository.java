@@ -5,9 +5,12 @@ import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import io.activej.promise.Promise;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * In-memory {@link CampaignRepository} backed by a {@link ConcurrentHashMap}.
@@ -23,6 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class InMemoryCampaignRepository implements CampaignRepository {
 
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final ConcurrentHashMap<String, Campaign> store = new ConcurrentHashMap<>();
 
     @Override
@@ -37,6 +42,35 @@ public final class InMemoryCampaignRepository implements CampaignRepository {
         Objects.requireNonNull(workspaceId, "workspaceId must not be null");
         Objects.requireNonNull(campaignId, "campaignId must not be null");
         return Promise.of(Optional.ofNullable(store.get(key(workspaceId, campaignId))));
+    }
+
+    @Override
+    public Promise<List<Campaign>> listByWorkspace(DmWorkspaceId workspaceId, int limit, int offset) {
+        Objects.requireNonNull(workspaceId, "workspaceId must not be null");
+        int boundedLimit = Math.min(Math.max(limit, 1), MAX_PAGE_SIZE);
+        int boundedOffset = Math.max(offset, 0);
+
+        String prefix = workspaceId.getValue() + ":";
+        List<Campaign> results = store.values().stream()
+            .filter(c -> c.getWorkspaceId().equals(workspaceId))
+            .sorted(Comparator.comparing(Campaign::getCreatedAt).reversed()
+                .thenComparing(Campaign::getId))
+            .skip(boundedOffset)
+            .limit(boundedLimit)
+            .collect(Collectors.toList());
+
+        return Promise.of(results);
+    }
+
+    @Override
+    public Promise<Long> countByWorkspace(DmWorkspaceId workspaceId) {
+        Objects.requireNonNull(workspaceId, "workspaceId must not be null");
+
+        long count = store.values().stream()
+            .filter(c -> c.getWorkspaceId().equals(workspaceId))
+            .count();
+
+        return Promise.of(count);
     }
 
     private static String key(DmWorkspaceId workspaceId, String campaignId) {

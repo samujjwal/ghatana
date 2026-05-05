@@ -6,6 +6,8 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.feature.DataCloudFeature;
+import com.ghatana.datacloud.feature.DataCloudFeatureFlags;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
@@ -61,7 +63,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
             "Content-Type,Authorization",
             true // strictTenantResolution — ensures missing X-Tenant-Id returns null (not a fallback)
         );
-        handler = new DataSourceRegistryHandler(client, http, null);
+        handler = new DataSourceRegistryHandler(client, http, null, null /* no audit service needed for metrics tests */);
         originalProfile = System.getenv("DATACLOUD_PROFILE");
     }
 
@@ -72,11 +74,35 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
         } else {
             System.clearProperty("DATACLOUD_PROFILE");
         }
+        DataCloudFeatureFlags.clearOverrides();
+    }
+
+    @Test
+    @DisplayName("Fabric metrics return unavailable when DATA_CLOUD_DATA_FABRIC feature flag is disabled (default)")
+    void fabricMetrics_featureFlagDisabled_returnsUnavailable() {
+        // DC-P1-002: Feature flag is disabled by default; no profile override needed
+        // DataCloudFeatureFlags.isEnabled(DATA_CLOUD_DATA_FABRIC) returns false (default)
+
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/data-fabric/metrics")
+            .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .build();
+
+        HttpResponse response = runPromise(() -> handler.handleGetFabricMetrics(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(body.get("disabled")).isEqualTo(true);
+        assertThat(body.get("preview")).isEqualTo(true);
+        assertThat(body.get("capability")).isEqualTo("unavailable");
+        assertThat(body.get("tiers")).isEqualTo(List.of());
+        assertThat(body.get("message")).asString().contains("/api/v1/capabilities");
     }
 
     @Test
     @DisplayName("Fabric metrics disabled in production profile")
     void fabricMetricsDisabledInProductionProfile() {
+        DataCloudFeatureFlags.override(DataCloudFeature.DATA_CLOUD_DATA_FABRIC, true);
         System.setProperty("DATACLOUD_PROFILE", "production");
 
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/data-fabric/metrics")
@@ -90,6 +116,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
         Map<String, Object> body = parseJsonBody(response);
         assertThat(body.get("disabled")).isEqualTo(true);
         assertThat(body.get("preview")).isEqualTo(true);
+        assertThat(body.get("capability")).isEqualTo("preview");
         assertThat(body.get("tiers")).isEqualTo(List.of());
         assertThat(body.get("totalEventsPerSec")).isEqualTo(0.0);
         assertThat(body.get("totalStorageGb")).isEqualTo(0.0);
@@ -99,6 +126,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("Fabric metrics disabled in staging profile")
     void fabricMetricsDisabledInStagingProfile() {
+        DataCloudFeatureFlags.override(DataCloudFeature.DATA_CLOUD_DATA_FABRIC, true);
         System.setProperty("DATACLOUD_PROFILE", "staging");
 
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/data-fabric/metrics")
@@ -118,6 +146,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("Fabric metrics return empty when no storage profiles configured in local profile")
     void fabricMetricsEmptyWhenNoStorageProfilesInLocalProfile() {
+        DataCloudFeatureFlags.override(DataCloudFeature.DATA_CLOUD_DATA_FABRIC, true);
         System.setProperty("DATACLOUD_PROFILE", "local");
 
         lenient().when(client.query(anyString(), anyString(), any()))
@@ -144,6 +173,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("Fabric metrics return real data from storage profiles when configured")
     void fabricMetricsReturnRealDataFromStorageProfiles() {
+        DataCloudFeatureFlags.override(DataCloudFeature.DATA_CLOUD_DATA_FABRIC, true);
         System.setProperty("DATACLOUD_PROFILE", "local");
 
         // Mock storage profile entities with real metrics
@@ -223,6 +253,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("Fabric metrics return degraded response on error")
     void fabricMetricsReturnDegradedResponseOnError() {
+        DataCloudFeatureFlags.override(DataCloudFeature.DATA_CLOUD_DATA_FABRIC, true);
         System.setProperty("DATACLOUD_PROFILE", "local");
 
         // Mock query failure

@@ -152,11 +152,11 @@ export const aepRouteRegistry: RouteCapabilityRegistry = {
     // Auditor can view pipeline list (read-only).
     auditorAllowed: true,
     lifecycle: "active",
-    capabilities: ["pipeline-list"],
+    capabilities: ["pipeline-list", "orchestration-runtime"],
     discoverable: true,
     iconName: "FileText",
     group: "build",
-    description: "Pipeline list",
+    description: "Agentic orchestration pipeline list",
   },
   buildNewPipeline: {
     path: "/build/pipelines/new",
@@ -267,11 +267,11 @@ export const aepRouteRegistry: RouteCapabilityRegistry = {
     label: "Workflows",
     minimumRole: "viewer",
     lifecycle: "active",
-    capabilities: ["workflow-catalog"],
+    capabilities: ["workflow-catalog", "orchestration-templates"],
     discoverable: true,
     iconName: "FileText",
     group: "catalog",
-    description: "Workflow catalog",
+    description: "Agentic orchestration workflow catalog",
   },
 };
 

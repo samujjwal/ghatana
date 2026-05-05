@@ -6,7 +6,7 @@
  * @doc.layer frontend
  */
 import React from 'react';
-import { Button, Select, TextField } from '@ghatana/design-system';
+import { Button, Select, TextField, TextArea } from '@ghatana/design-system';
 import type {
   MarketplaceAgentListing,
   MarketplaceInstallSimulation,
@@ -167,13 +167,13 @@ export function MarketplaceInstallDialog({
             <label htmlFor="install-reason" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Reason
             </label>
-            <textarea
+            <TextArea
               id="install-reason"
               rows={3}
               value={reason}
               onChange={(event) => setReason(event.target.value)}
               placeholder="Why should this listing be registered for tenant use?"
-              className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+              className="mt-2 w-full"
             />
           </div>
 

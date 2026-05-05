@@ -8,6 +8,7 @@ import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignStatus;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignType;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
@@ -18,7 +19,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -436,6 +440,173 @@ class DmosCampaignServletTest extends EventloopTestBase {
         assertThat(response.getCode()).isEqualTo(403);
     }
 
+    // -------------------------------------------------------------------------
+    // P0-001: List campaigns tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("GET campaigns list returns 200 with paginated results")
+    void shouldReturn200OnListCampaigns() throws Exception {
+        campaignService.listResult = Promise.of(List.of(
+            buildCampaign(CampaignStatus.DRAFT),
+            buildCampaign(CampaignStatus.LAUNCHED)
+        ));
+
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/campaigns?limit=10&offset=0")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(200);
+
+        String body = new String(response.getBody().getBytes(), StandardCharsets.UTF_8);
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> json = mapper.readValue(body, Map.class);
+
+        assertThat(json).containsKey("items");
+        assertThat(json).containsKey("count");
+        assertThat(json).containsKey("offset");
+        assertThat(json.get("count")).isEqualTo(2);
+        assertThat(json.get("offset")).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("GET campaigns list uses default pagination when params missing")
+    void shouldUseDefaultPaginationOnList() {
+        campaignService.listResult = Promise.of(List.of());
+
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/campaigns")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(campaignService.lastLimit).isEqualTo(20); // default limit
+        assertThat(campaignService.lastOffset).isEqualTo(0); // default offset
+    }
+
+    @Test
+    @DisplayName("GET campaigns list enforces max limit of 100")
+    void shouldEnforceMaxLimitOnList() {
+        campaignService.listResult = Promise.of(List.of());
+
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/campaigns?limit=500")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(campaignService.lastLimit).isEqualTo(100); // clamped to max
+    }
+
+    @Test
+    @DisplayName("GET campaigns list returns 403 when unauthorized")
+    void shouldReturn403OnListUnauthorized() {
+        campaignService.listResult = Promise.ofException(new SecurityException("Not authorized"));
+
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/campaigns")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("GET campaigns list returns 400 when tenant header missing")
+    void shouldReturn400OnListMissingTenant() {
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/campaigns")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(400);
+    }
+
+    // -------------------------------------------------------------------------
+    // P0-011: Canonical error envelope tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("Error responses include canonical envelope with correlationId")
+    void shouldReturnCanonicalErrorEnvelope() throws Exception {
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/campaigns/missing")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .build();
+
+        campaignService.getResult = Promise.ofException(new NoSuchElementException("not found"));
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(404);
+
+        String body = new String(response.getBody().getBytes(), StandardCharsets.UTF_8);
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> json = mapper.readValue(body, Map.class);
+
+        assertThat(json).containsKey("error");
+        assertThat(json).containsKey("message");
+        assertThat(json).containsKey("status");
+        assertThat(json).containsKey("correlationId");
+        assertThat(json.get("error")).isEqualTo("NOT_FOUND");
+        assertThat(json.get("status")).isEqualTo(404);
+    }
+
+    @Test
+    @DisplayName("Error envelope includes correlationId from request when provided")
+    void shouldIncludeRequestCorrelationIdInError() throws Exception {
+        String requestCorrelId = "my-request-id-123";
+
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/campaigns/missing")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Correlation-ID"), requestCorrelId)
+            .build();
+
+        campaignService.getResult = Promise.ofException(new NoSuchElementException("not found"));
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        String body = new String(response.getBody().getBytes(), StandardCharsets.UTF_8);
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> json = mapper.readValue(body, Map.class);
+
+        assertThat(json.get("correlationId")).isEqualTo(requestCorrelId);
+    }
+
+    @Test
+    @DisplayName("Error envelope generates correlationId when not provided")
+    void shouldGenerateCorrelationIdInError() throws Exception {
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/campaigns/missing")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            // No X-Correlation-ID header
+            .build();
+
+        campaignService.getResult = Promise.ofException(new NoSuchElementException("not found"));
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        String body = new String(response.getBody().getBytes(), StandardCharsets.UTF_8);
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> json = mapper.readValue(body, Map.class);
+
+        assertThat(json.get("correlationId")).isNotNull();
+        assertThat(json.get("correlationId").toString()).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("Error envelope maps status codes to correct error codes")
+    void shouldMapStatusCodesCorrectly() throws Exception {
+        // Test 400 -> BAD_REQUEST
+        HttpRequest badRequest = HttpRequest.get("http://localhost/v1/workspaces/ws-1/campaigns")
+            .build(); // Missing tenant
+
+        HttpResponse response = runPromise(() -> servlet.serve(badRequest));
+        assertThat(response.getCode()).isEqualTo(400);
+
+        String body = new String(response.getBody().getBytes(), StandardCharsets.UTF_8);
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> json = mapper.readValue(body, Map.class);
+        assertThat(json.get("error")).isEqualTo("BAD_REQUEST");
+    }
+
     private static Campaign buildCampaign(CampaignStatus status) {
         Instant now = Instant.now();
         return Campaign.builder()
@@ -455,9 +626,12 @@ class DmosCampaignServletTest extends EventloopTestBase {
         private Promise<Campaign> launchResult = Promise.of(buildCampaign(CampaignStatus.LAUNCHED));
         private Promise<Campaign> pauseResult = Promise.of(buildCampaign(CampaignStatus.PAUSED));
         private Promise<Campaign> getResult = Promise.of(buildCampaign(CampaignStatus.DRAFT));
+        private Promise<java.util.List<Campaign>> listResult = Promise.of(List.of());
 
         private DmOperationContext lastContext;
         private CreateCampaignCommand lastCommand;
+        private int lastLimit;
+        private int lastOffset;
 
         @Override
         public Promise<Campaign> createCampaign(DmOperationContext ctx, CreateCampaignCommand command) {
@@ -482,6 +656,14 @@ class DmosCampaignServletTest extends EventloopTestBase {
         public Promise<Campaign> getCampaign(DmOperationContext ctx, String campaignId) {
             this.lastContext = ctx;
             return getResult;
+        }
+
+        @Override
+        public Promise<java.util.List<Campaign>> listCampaigns(DmOperationContext ctx, int limit, int offset) {
+            this.lastContext = ctx;
+            this.lastLimit = limit;
+            this.lastOffset = offset;
+            return listResult;
         }
     }
 }

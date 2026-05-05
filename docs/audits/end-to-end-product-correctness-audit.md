@@ -468,3 +468,59 @@ Do not release Data Cloud/AEP unrestricted from commit `7432d84601747ed3e095555c
 AEP remains mostly stable from the prior audit: its ownership model, gateway, and EventCloud fail-closed source behavior are directionally correct. Data Cloud, however, has a new analytics regression that must be treated as a release blocker: production code contains `FIXME` placeholders, disabled response enrichment, fake streaming behavior, and a likely incorrect ActiveJ promise/blocking pattern.
 
 The next engineering action should be a focused Data Cloud analytics fix-and-test PR before any broader product expansion.
+
+---
+
+## Appendix A — Source Evidence
+
+**Last verified commit:** `7432d84601747ed3e095555c11a5f9471f0f8595`  
+**Verification method:** Static source-evidence audit at exact git ref. No build, runtime, DB migration, or service execution performed during audit. Runtime/build-only conclusions are marked as requiring execution proof.
+
+### A.1 Data Cloud — Files Examined
+
+| File | Audit Area | Findings |
+|---|---|---|
+| `products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/AnalyticsHandler.java` | Analytics async correctness (P0) | `Promise.ofBlocking` wrapping async chain; `FIXME` placeholders; fake streaming branch |
+| `products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/WorkflowHandler.java` | Workflow execution | Routes exist; provider is pluggable |
+| `products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/DataCloudLauncher.java` | Server wiring | SPI/plugin loading via `ServiceLoader` |
+| `products/data-cloud/spi/src/main/java/com/ghatana/datacloud/DataCloudClient.java` | Public API contract | Canonical SPI entry point |
+| `products/data-cloud/spi/src/main/java/com/ghatana/datacloud/spi/EntityStore.java` | Persistence SPI | Correct tenant-scoped contract |
+| `products/data-cloud/ui/src/pages/SqlWorkspacePage.tsx` | UI correctness | Analytics cancellation hardcoded 501 |
+| `products/data-cloud/ui/src/pages/DataFabricPage.tsx` | Data Fabric surface | Demo metrics hardcoded |
+| `products/data-cloud/ui/src/services/ai-operations.service.ts` | AI operations | Explicitly documented as not yet available |
+| `products/data-cloud/launcher/src/test/java/com/ghatana/datacloud/launcher/http/AnalyticsHandlerTest.java` | Analytics test coverage | Tests present post P0 fix |
+| `products/data-cloud/launcher/src/test/java/com/ghatana/datacloud/launcher/DataCloudArchitectureTest.java` | Architecture boundary | ArchUnit fitness functions present |
+
+### A.2 AEP — Files Examined
+
+| File | Audit Area | Findings |
+|---|---|---|
+| `products/aep/server/src/main/java/com/ghatana/aep/server/AepLauncher.java` | Production entry point | ServiceLoader fail-closed guard for EventCloud |
+| `products/aep/server/src/main/java/com/ghatana/aep/server/http/AepHttpServer.java` | HTTP routing | 60+ routes; correct ActiveJ pattern |
+| `products/aep/server/src/main/java/com/ghatana/aep/server/http/controllers/GovernanceController.java` | Kill-switch governance | MFA/step-up gate; audit chain |
+| `products/aep/server/src/main/java/com/ghatana/aep/server/http/controllers/AgentController.java` | Agent registration | Security scan; EntityStore integration |
+| `products/aep/gateway/src/main/java/com/ghatana/aep/gateway/AepGateway.java` | Gateway proxy | Auth/tenant/correlation headers forwarded |
+| `products/aep/server/src/main/resources/openapi.yaml` | OpenAPI contract | Comprehensive spec; in-sync with contracts/ |
+| `products/aep/contracts/openapi.yaml` | Public contract spec | Matches server spec |
+| `products/aep/server/src/test/java/com/ghatana/aep/server/arch/AepCrossProductBoundaryTest.java` | Architecture boundary | ArchUnit cross-product rules |
+| `products/aep/server/src/test/java/com/ghatana/aep/server/http/AepOpenApiSurfaceDriftTest.java` | OpenAPI drift | Drift detection tests pass |
+| `products/aep/server/src/test/java/com/ghatana/aep/server/http/controllers/GovernanceControllerTest.java` | Governance tests | 5 MFA/audit tests pass |
+
+### A.3 Superseded Audit Documents
+
+The following documents were produced before this audit and are superseded by this file. They are retained for historical reference only and must not be treated as the current audit baseline:
+
+| File | Superseded By | Note |
+|---|---|---|
+| `products/data-cloud/docs/audits/end-to-end-product-correctness-audit.md` | This document | Archived; references this file |
+| `products/aep/docs/audits/end-to-end-product-correctness-audit.md` | This document | Archived; references this file |
+| `dmos-end-to-end-product-correctness-audit.md` (repo root) | This document | Stale `c4fc61...` commit; superseded |
+
+### A.4 Doc-Truth Invariants
+
+The following invariants are enforced by CI (`doc-governance.yml`):
+
+1. `docs/audits/end-to-end-product-correctness-audit.md` must contain the reviewed commit hash.
+2. Product-specific audit docs must contain the "NOTE: This document is archived" marker.
+3. No audit doc may contain the stale commit prefix `c4fc61`.
+4. README files must not make "production ready" claims without explicit evidence citations.

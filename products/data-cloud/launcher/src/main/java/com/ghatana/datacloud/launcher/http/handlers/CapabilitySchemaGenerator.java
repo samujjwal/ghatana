@@ -154,10 +154,10 @@ public final class CapabilitySchemaGenerator {
             List.of("data-cloud"),
             "Data fabric topology and connector management",
             null,
-            null,
+            "enableDataFabricPreview",
             Map.of(
                 "production_ready", "false",
-                "notes", "Preview/demo-only with hardcoded demo metrics; needs production capability boundary"
+                "notes", "Preview-only; gated by enableDataFabricPreview; shows preview banner when active"
             )
         ));
 

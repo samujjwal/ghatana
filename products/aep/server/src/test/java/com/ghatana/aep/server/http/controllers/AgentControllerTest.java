@@ -395,4 +395,80 @@ class AgentControllerTest extends EventloopTestBase {
         when(request.loadBody()).thenReturn(Promise.of(ByteBuf.wrapForReading(bodyJson.getBytes(StandardCharsets.UTF_8)))); 
         return request;
     }
+
+    // ==================== Security scan: agent registration ====================
+
+    @Test
+    @DisplayName("AR-SEC-1: agent registration rejects suspicious code execution patterns")
+    void registrationRejectsSuspiciousCodePatterns() throws Exception {
+        when(dataCloudClient.entityStore()).thenReturn(entityStore);
+        AgentController registrationController = new AgentController(engine, dataCloudClient, sloMetrics);
+
+        HttpRequest request = mockRegisterRequest(
+            "{\"tenantId\":\"tenant-a\",\"id\":\"bad-agent\",\"code\":\"Runtime.exec('rm -rf /')\"}"
+        );
+
+        HttpResponse response = runPromise(() -> registrationController.handleRegisterAgent(request));
+        assertThat(response.getCode()).isEqualTo(403);
+        Map<String, Object> body = parseBody(response);
+        assertThat(body.get("message").toString()).contains("Security scan failed");
+    }
+
+    @Test
+    @DisplayName("AR-SEC-2: agent registration rejects injection attack patterns")
+    void registrationRejectsInjectionPatterns() throws Exception {
+        when(dataCloudClient.entityStore()).thenReturn(entityStore);
+        AgentController registrationController = new AgentController(engine, dataCloudClient, sloMetrics);
+
+        HttpRequest request = mockRegisterRequest(
+            "{\"tenantId\":\"tenant-a\",\"id\":\"inject-agent\",\"desc\":\"'; DROP TABLE agents;--\"}"
+        );
+
+        HttpResponse response = runPromise(() -> registrationController.handleRegisterAgent(request));
+        assertThat(response.getCode()).isEqualTo(403);
+        Map<String, Object> body = parseBody(response);
+        assertThat(body.get("message").toString()).contains("Security scan failed");
+    }
+
+    @Test
+    @DisplayName("AR-SEC-3: agent registration with clean payload proceeds to store save")
+    void registrationWithCleanPayloadProceedsToStoreSave() throws Exception {
+        when(dataCloudClient.entityStore()).thenReturn(entityStore);
+        AgentController registrationController = new AgentController(engine, dataCloudClient, sloMetrics);
+        when(entityStore.save(any(com.ghatana.datacloud.spi.TenantContext.class), any(EntityStore.Entity.class))).thenReturn(Promise.of(
+            new EntityStore.Entity(
+                EntityStore.EntityId.of("clean-agent"),
+                "aep_agents",
+                Map.of("id", "clean-agent", "tenantId", "tenant-a", "status", "ACTIVE"),
+                EntityStore.EntityMetadata.empty())));
+
+        HttpRequest request = mockRegisterRequest(
+            "{\"tenantId\":\"tenant-a\",\"id\":\"clean-agent\",\"name\":\"Safe Agent\",\"type\":\"DETERMINISTIC\"}"
+        );
+
+        HttpResponse response = runPromise(() -> registrationController.handleRegisterAgent(request));
+        assertThat(response.getCode()).isEqualTo(200);
+        Map<String, Object> body = parseBody(response);
+        assertThat(body).containsEntry("status", "ACTIVE");
+        assertThat(body).containsEntry("tenantId", "tenant-a");
+    }
+
+    @Test
+    @DisplayName("AR-SEC-4: agent registration returns 503 when agentStore is not configured")
+    void registrationReturns503WhenStoreNotConfigured() throws Exception {
+        HttpRequest request = mockRegisterRequest(
+            "{\"tenantId\":\"tenant-a\",\"name\":\"Agent\"}"
+        );
+
+        HttpResponse response = runPromise(() -> controller.handleRegisterAgent(request));
+        assertThat(response.getCode()).isEqualTo(503);
+    }
+
+    private HttpRequest mockRegisterRequest(String bodyJson) {
+        HttpRequest request = mock(HttpRequest.class);
+        when(request.getQueryParameter("tenantId")).thenReturn(null);
+        when(request.getHeader(any())).thenReturn(null);
+        when(request.loadBody()).thenReturn(Promise.of(ByteBuf.wrapForReading(bodyJson.getBytes(StandardCharsets.UTF_8))));
+        return request;
+    }
 }

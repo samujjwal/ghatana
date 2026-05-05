@@ -8,18 +8,16 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * P1-AEP-2: AEP EventCloud factory production tests
- * 
- * Tests verify the fail-closed behavior for EventCloud provider resolution:
- * - No-provider failure in production profile
- * - Provider success when provider is present
- * - Dev/test allow-flag (AEP_DEV_MODE) allows in-memory fallback
- * - Staging profile allows fallback with warning
- * - Default profile fails closed (production-safe default)
- * 
+ * AEP-P1-003: AEP EventCloud factory production fail-closed tests
+ *
+ * Tests invoke the real {@link AepEventCloudFactory#createDefault(Map)} to verify
+ * fail-closed behavior. In the test classpath there is no durable EventCloud SPI
+ * provider, so ServiceLoader always returns empty — the factory logic is the SUT.
+ *
  * @doc.type class
  * @doc.purpose Production tests for EventCloud factory fail-closed behavior
  * @doc.layer product
@@ -29,109 +27,77 @@ class AepEventCloudFactoryProductionTest {
 
     @Test
     void createDefaultThrowsInProductionProfileWhenNoProvider() {
-        // Production profile should fail closed when no provider is available
-        Map<String, String> productionEnv = Map.of(
-            "AEP_PROFILE", "production"
+        // No EventCloud SPI provider on test classpath → production profile → must throw
+        Map<String, String> productionEnv = Map.of("AEP_PROFILE", "production");
+
+        IllegalStateException ex = assertThrows(
+            IllegalStateException.class,
+            () -> AepEventCloudFactory.createDefault(productionEnv)
         );
-        
-        // When ServiceLoader finds no provider in production profile, should throw
-        // This test documents the expected behavior - actual execution depends on classpath
-        assertThrows(IllegalStateException.class, () -> {
-            // In a test environment without aep-event-cloud on classpath:
-            // AepEventCloudFactory.createDefault(productionEnv) would throw
-            throw new IllegalStateException(
-                "Expected: No EventCloud SPI provider found in production. " +
-                "Add aep-event-cloud and a data-cloud implementation to the classpath, " +
-                "or set AEP_DEV_MODE=true to acknowledge the in-memory fallback.");
-        });
+
+        assertThat(ex.getMessage())
+            .contains("No durable EventCloud SPI provider")
+            .contains("AEP_DEV_MODE=true");
     }
 
     @Test
-    void createDefaultThrowsInProductionEnvWhenNoProvider() {
+    void createDefaultThrowsWhenLegacyAepEnvIsProduction() {
         // Legacy AEP_ENV=production should also fail closed
-        Map<String, String> productionEnv = Map.of(
-            "AEP_ENV", "production"
+        Map<String, String> productionEnv = Map.of("AEP_ENV", "production");
+
+        assertThrows(
+            IllegalStateException.class,
+            () -> AepEventCloudFactory.createDefault(productionEnv)
         );
-        
-        assertThrows(IllegalStateException.class, () -> {
-            throw new IllegalStateException(
-                "Expected: No EventCloud SPI provider found in production (AEP_ENV).");
-        });
+    }
+
+    @Test
+    void createDefaultThrowsWhenNoEnvVarsSet() {
+        // Default (no env vars) must fail closed — production-safe default
+        Map<String, String> emptyEnv = Map.of();
+
+        assertThrows(
+            IllegalStateException.class,
+            () -> AepEventCloudFactory.createDefault(emptyEnv)
+        );
     }
 
     @Test
     void devModeTrueAllowsInMemoryFallback() {
-        // AEP_DEV_MODE=true should allow in-memory fallback with warning
-        Map<String, String> devEnv = Map.of(
-            "AEP_DEV_MODE", "true"
+        // AEP_DEV_MODE=true must allow in-memory fallback with no exception
+        Map<String, String> devEnv = Map.of("AEP_DEV_MODE", "true");
+
+        EventCloud result = assertDoesNotThrow(
+            () -> AepEventCloudFactory.createDefault(devEnv)
         );
-        
-        // With dev mode enabled, factory should use InMemoryEventCloud when no provider found
-        assertDoesNotThrow(() -> {
-            // Documents expected behavior: warning printed, InMemoryEventCloud returned
-        });
+
+        assertThat(result).isInstanceOf(InMemoryEventCloud.class);
     }
 
     @Test
     void devModeTrueOverridesProductionProfile() {
-        // AEP_DEV_MODE=true should override production profile for development
+        // AEP_DEV_MODE=true must override AEP_PROFILE=production
         Map<String, String> devEnv = Map.of(
             "AEP_PROFILE", "production",
             "AEP_DEV_MODE", "true"
         );
-        
-        // Dev mode should take precedence over production profile
-        assertDoesNotThrow(() -> {
-            // Documents expected behavior: dev mode allows in-memory even in production profile
-        });
-    }
 
-    @Test
-    void stagingProfileAllowsInMemoryFallbackWithWarning() {
-        // Staging profile should allow fallback with warning (not fail closed)
-        Map<String, String> stagingEnv = Map.of(
-            "AEP_PROFILE", "staging"
+        EventCloud result = assertDoesNotThrow(
+            () -> AepEventCloudFactory.createDefault(devEnv)
         );
-        
-        // Staging is a transitional state - warn but don't fail
-        assertDoesNotThrow(() -> {
-            // Documents expected behavior: warning printed, InMemoryEventCloud returned
-        });
+
+        assertThat(result).isInstanceOf(InMemoryEventCloud.class);
     }
 
     @Test
-    void defaultProfileFailsClosedWhenNoEnvVarsSet() {
-        // When no env vars are set, default is production (fail safe)
-        Map<String, String> emptyEnv = Map.of();
-        
-        // Default behavior: fail closed as production-safe default
-        assertThrows(IllegalStateException.class, () -> {
-            throw new IllegalStateException(
-                "Expected: Default profile (no env vars) fails closed as production-safe default.");
-        });
-    }
+    void stagingProfileAllowsInMemoryFallbackWithoutException() {
+        // Non-production, non-dev-mode: must warn and fall back without throwing
+        Map<String, String> stagingEnv = Map.of("AEP_PROFILE", "staging");
 
-    @Test
-    void providerPresentReturnsProviderImplementation() {
-        // When provider is present via ServiceLoader, should use it
-        Map<String, String> anyEnv = Map.of(
-            "AEP_PROFILE", "production"
+        EventCloud result = assertDoesNotThrow(
+            () -> AepEventCloudFactory.createDefault(stagingEnv)
         );
-        
-        // With aep-event-cloud on classpath, should return DataCloudBackedEventCloud
-        assertDoesNotThrow(() -> {
-            // Documents expected behavior: provider implementation used when available
-        });
-    }
 
-    @Test
-    void forTestingExplicitlyCreatesInMemoryInstance() {
-        // The forTesting() pattern (if it exists) should explicitly create in-memory
-        // This is for test isolation and should not check production flags
-        
-        // This test documents the expected pattern for test utilities
-        assertDoesNotThrow(() -> {
-            // Expected: InMemoryEventCloud created without checking env vars
-        });
+        assertThat(result).isInstanceOf(InMemoryEventCloud.class);
     }
 }

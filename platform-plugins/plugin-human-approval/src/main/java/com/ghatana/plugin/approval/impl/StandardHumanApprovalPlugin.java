@@ -195,6 +195,19 @@ public class StandardHumanApprovalPlugin implements HumanApprovalPlugin {
     }
 
     @Override
+    public Promise<List<ApprovalRecord>> listPendingForWorkspace(String workspaceId) {
+        List<ApprovalRecord> pending = records.values().stream()
+                .map(this::applyTimeoutEscalation)
+                .filter(r -> {
+                    Object ws = r.context().get("workspaceId");
+                    return ws != null && ws.toString().equals(workspaceId);
+                })
+                .filter(r -> r.status() == ApprovalStatus.PENDING)
+                .collect(Collectors.toUnmodifiableList());
+        return Promise.of(pending);
+    }
+
+    @Override
     public Promise<Void> cancelApproval(String requestId, String reason) {
         ApprovalRecord existing = records.get(requestId);
         if (existing == null) {

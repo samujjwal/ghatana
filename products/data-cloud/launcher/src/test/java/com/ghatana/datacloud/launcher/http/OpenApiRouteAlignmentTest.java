@@ -54,6 +54,18 @@ class OpenApiRouteAlignmentTest {
             .isEmpty(); 
     }
 
+    @Test
+    @DisplayName("OpenAPI description keeps Data Cloud workflow terminology boundary explicit")
+    void shouldDocumentDataCloudWorkflowBoundary() throws IOException {
+        Path repoRoot = resolveRepoRoot();
+        Path specFile = repoRoot.resolve("products/data-cloud/api/openapi.yaml");
+        String spec = Files.readString(specFile);
+
+        assertThat(spec)
+            .contains("In this API, workflow and pipeline execution means data-local plugin runtime execution.")
+            .contains("AEP still owns broader agentic orchestration");
+    }
+
     private static Set<String> readCodeRoutes(Path serverFile) throws IOException { 
         Set<String> routes = new TreeSet<>(); 
         for (String line : Files.readAllLines(serverFile)) { 

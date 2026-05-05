@@ -1,6 +1,7 @@
 package com.ghatana.datacloud.launcher.http;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
@@ -91,5 +92,103 @@ class DataCloudHttpServerSecurityConfigurationTest {
             .isEqualTo("https://app.ghatana.com");
 
         verifyNoInteractions(logger); 
+    }
+
+    // -------------------------------------------------------------------------
+    // DC-P1-005: Insecure mode loopback enforcement
+    // -------------------------------------------------------------------------
+
+    @Nested
+    @DisplayName("Insecure mode loopback binding enforcement")
+    class InsecureModeLoopbackEnforcement {
+
+        @Test
+        @DisplayName("rejects non-loopback bind address when running without auth in local mode")
+        void insecureModeRejectsNonLoopbackAddress() {
+            Logger logger = mock(Logger.class);
+
+            assertThatThrownBy(() ->
+                DataCloudHttpServer.enforceLoopbackInInsecureMode(false, false, "0.0.0.0", logger))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Insecure mode (no auth) must not bind to non-loopback address '0.0.0.0'")
+                .hasMessageContaining("127.0.0.1");
+
+            verifyNoInteractions(logger);
+        }
+
+        @Test
+        @DisplayName("rejects arbitrary external host when running without auth in local mode")
+        void insecureModeRejectsExternalHost() {
+            Logger logger = mock(Logger.class);
+
+            assertThatThrownBy(() ->
+                DataCloudHttpServer.enforceLoopbackInInsecureMode(false, false, "192.168.1.1", logger))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("192.168.1.1");
+
+            verifyNoInteractions(logger);
+        }
+
+        @Test
+        @DisplayName("allows null listen host (default port binding) when running without auth")
+        void insecureModeAllowsNullListenHost() {
+            Logger logger = mock(Logger.class);
+
+            assertThatCode(() ->
+                DataCloudHttpServer.enforceLoopbackInInsecureMode(false, false, null, logger))
+                .doesNotThrowAnyException();
+
+            verifyNoInteractions(logger);
+        }
+
+        @Test
+        @DisplayName("allows explicit 127.0.0.1 bind address in insecure mode")
+        void insecureModeAllowsLoopbackIpAddress() {
+            Logger logger = mock(Logger.class);
+
+            assertThatCode(() ->
+                DataCloudHttpServer.enforceLoopbackInInsecureMode(false, false, "127.0.0.1", logger))
+                .doesNotThrowAnyException();
+
+            verifyNoInteractions(logger);
+        }
+
+        @Test
+        @DisplayName("allows explicit localhost bind address in insecure mode")
+        void insecureModeAllowsLocalhostName() {
+            Logger logger = mock(Logger.class);
+
+            assertThatCode(() ->
+                DataCloudHttpServer.enforceLoopbackInInsecureMode(false, false, "localhost", logger))
+                .doesNotThrowAnyException();
+
+            verifyNoInteractions(logger);
+        }
+
+        @Test
+        @DisplayName("skips loopback check when auth is configured regardless of host")
+        void authenticatedModeBypassesLoopbackCheck() {
+            Logger logger = mock(Logger.class);
+
+            assertThatCode(() ->
+                DataCloudHttpServer.enforceLoopbackInInsecureMode(true, true, "0.0.0.0", logger))
+                .doesNotThrowAnyException();
+
+            verifyNoInteractions(logger);
+        }
+
+        @Test
+        @DisplayName("skips loopback check when strict tenant resolution is active (non-local profile)")
+        void strictProfileBypassesLoopbackCheck() {
+            Logger logger = mock(Logger.class);
+
+            // strict=true means non-local profile; validateSecurityConfiguration would already
+            // throw if auth is absent, so loopback enforcement is a no-op here
+            assertThatCode(() ->
+                DataCloudHttpServer.enforceLoopbackInInsecureMode(false, true, "0.0.0.0", logger))
+                .doesNotThrowAnyException();
+
+            verifyNoInteractions(logger);
+        }
     }
 }

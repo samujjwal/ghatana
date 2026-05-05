@@ -218,6 +218,32 @@ public final class ApprovalWorkflowServiceImpl implements ApprovalWorkflowServic
     }
 
     @Override
+    public Promise<List<ApprovalRecord>> listPendingApprovalsForWorkspace(
+            DmOperationContext ctx, String workspaceId) {
+        Objects.requireNonNull(ctx,          "ctx must not be null");
+        Objects.requireNonNull(workspaceId, "workspaceId must not be null");
+        if (workspaceId.isBlank()) {
+            return Promise.ofException(new IllegalArgumentException("workspaceId must not be blank"));
+        }
+        return kernelAdapter.isAuthorized(ctx, "approvals/pending", "list")
+            .then(allowed -> {
+                if (!allowed) {
+                    return Promise.ofException(
+                        new SecurityException("Actor is not authorised to list pending approvals"));
+                }
+                return approvalPlugin.listPendingForWorkspace(workspaceId)
+                    .map(records -> {
+                        metrics.increment(DmosMetricsCollector.APPROVAL_PENDING_GAUGE, Map.of(
+                            "tenantId",    ctx.getTenantId().getValue(),
+                            "workspaceId", workspaceId,
+                            "count",       String.valueOf(records.size())
+                        ));
+                        return records;
+                    });
+            });
+    }
+
+    @Override
     public Promise<Optional<ApprovalSnapshot>> getSnapshot(
             DmOperationContext ctx, String requestId) {
         Objects.requireNonNull(ctx,       "ctx must not be null");

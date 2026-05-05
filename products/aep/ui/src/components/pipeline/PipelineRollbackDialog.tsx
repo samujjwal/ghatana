@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Button } from '@ghatana/design-system';
+import { Button, Input, TextArea, Radio } from '@ghatana/design-system';
 import {
   listPipelineVersions,
   rollbackPipeline,
@@ -123,9 +123,9 @@ export function PipelineRollbackDialog({
           ) : isError ? (
             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
               Failed to load version history.
-              <button type="button" onClick={() => void refetch()} className="ml-2 underline">
+              <Button type="button" onClick={() => void refetch()} variant="link" className="ml-2 text-inherit underline p-0 h-auto">
                 Retry
-              </button>
+              </Button>
             </div>
           ) : eligibleVersions.length === 0 ? (
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
@@ -149,8 +149,7 @@ export function PipelineRollbackDialog({
                           : 'border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950',
                       ].join(' ')}
                     >
-                      <input
-                        type="radio"
+                      <Radio
                         name="rollback-version"
                         checked={selectedVersion === version.version}
                         onChange={() => setSelectedVersion(version.version)}
@@ -186,12 +185,12 @@ export function PipelineRollbackDialog({
 
           <label className="block">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Reason</span>
-            <textarea
+            <TextArea
               aria-label="Reason"
               value={reason}
               onChange={(event) => setReason(event.target.value)}
               rows={3}
-              className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+              className="mt-2 w-full"
               placeholder="Describe why this rollback is needed and what changed."
             />
           </label>
@@ -200,11 +199,11 @@ export function PipelineRollbackDialog({
             <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
               Type <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-gray-800">ROLLBACK</code> to confirm
             </span>
-            <input
+            <Input
               aria-label="Type ROLLBACK to confirm"
               value={confirmText}
               onChange={(event) => setConfirmText(event.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+              className="mt-2 w-full"
             />
           </label>
 

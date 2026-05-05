@@ -8,6 +8,12 @@
 
 The **Agentic Event Processor** is the execution runtime for Ghatana’s agentic workloads. It is not just an older event-pattern engine and should not be described that way in new documentation.
 
+## Terminology Boundary
+
+- In AEP, pipeline and workflow surfaces represent agentic orchestration/runtime behavior.
+- AEP is the orchestration control plane for agent execution, review, policy, and governance flows.
+- Data Cloud remains the owner of data-local plugin execution and persistence.
+
 AEP owns the runtime surfaces that let operators and other products:
 
 - register and inspect agents

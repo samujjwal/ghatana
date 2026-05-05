@@ -15,43 +15,27 @@
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import { isFeatureGateEnabled, loadCapabilitySchema } from "@/lib/capabilities";
+import {
+  GENERATED_FEATURE_GATE_CONFIG,
+  type GeneratedFeatureGateId,
+} from "@/lib/generated/feature-gates.generated";
 
 /**
  * Feature flag definitions
  */
-export interface FeatureFlags {
-  /** Enable the new Intelligent Hub (unified home page) */
-  enableIntelligentHub: boolean;
-  /** Enable the Command Bar (NL command input) */
-  enableCommandBar: boolean;
-  /** Enable the Ambient Intelligence Bar (bottom notifications) */
-  enableAmbientIntelligence: boolean;
-  /** Enable the Context Sidebar (always-visible assistance panel) */
-  enableContextSidebar: boolean;
-  /** Enable unified Data Explorer (merged pages) */
-  enableUnifiedDataExplorer: boolean;
-  /** Enable Smart Workflow Builder (intent-based) */
-  enableSmartWorkflowBuilder: boolean;
-  /** Keep legacy pages accessible for power users */
-  legacyPagesEnabled: boolean;
-  /** Enable simplified navigation (5 items vs 12+) */
-  enableSimplifiedNav: boolean;
-}
+export type FeatureFlags = Record<GeneratedFeatureGateId, boolean>;
 
 /**
  * Default feature flags (these are user-overridable defaults)
  * The actual availability is determined by the capability schema
  */
-const defaultFlags: FeatureFlags = {
-  enableIntelligentHub: true,
-  enableCommandBar: true,
-  enableAmbientIntelligence: true,
-  enableContextSidebar: true,
-  enableUnifiedDataExplorer: true,
-  enableSmartWorkflowBuilder: true,
-  legacyPagesEnabled: true, // Keep legacy for backwards compatibility
-  enableSimplifiedNav: true,
-};
+const defaultFlags: FeatureFlags = GENERATED_FEATURE_GATE_CONFIG.reduce(
+  (acc, gate) => {
+    acc[gate.id] = gate.defaultValue;
+    return acc;
+  },
+  {} as FeatureFlags,
+);
 
 /**
  * Feature flags atom with localStorage persistence

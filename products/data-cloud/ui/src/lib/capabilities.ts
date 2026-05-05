@@ -12,16 +12,9 @@
 /**
  * Feature flags interface (must match the store definition)
  */
-export interface FeatureFlags {
-  enableIntelligentHub: boolean;
-  enableCommandBar: boolean;
-  enableAmbientIntelligence: boolean;
-  enableContextSidebar: boolean;
-  enableUnifiedDataExplorer: boolean;
-  enableSmartWorkflowBuilder: boolean;
-  legacyPagesEnabled: boolean;
-  enableSimplifiedNav: boolean;
-}
+import type { GeneratedFeatureGateId } from "@/lib/generated/feature-gates.generated";
+
+export type FeatureFlags = Record<GeneratedFeatureGateId, boolean>;
 
 /**
  * Capability status from the unified schema

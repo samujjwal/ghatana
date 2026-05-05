@@ -25,12 +25,16 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import javax.sql.DataSource;
 import org.postgresql.ds.PGSimpleDataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -60,12 +64,14 @@ class WorkspaceLifecycleIT extends EventloopTestBase {
     private DmOperationContext writeCtx;
     private DmOperationContext readCtx;
     private Eventloop eventloop;
+    private java.util.concurrent.Executor executor;
 
     @BeforeEach
     void setUp() {
         eventloop = Eventloop.create();
+        executor = Executors.newSingleThreadExecutor();
         DataSource dataSource = createPostgresDataSource();
-        repository = new PostgresWorkspaceRepository(dataSource, eventloop);
+        repository = new PostgresWorkspaceRepository(dataSource, executor);
         kernelAdapter = new RecordingKernelAdapter();
         workspaceService = new WorkspaceServiceImpl(kernelAdapter, repository);
 
@@ -92,7 +98,31 @@ class WorkspaceLifecycleIT extends EventloopTestBase {
         dataSource.setURL(POSTGRES.getJdbcUrl());
         dataSource.setUser(POSTGRES.getUsername());
         dataSource.setPassword(POSTGRES.getPassword());
+        initializeSchema(dataSource);
         return dataSource;
+    }
+
+    private void initializeSchema(DataSource dataSource) {
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS dmos_workspaces (
+                    id          TEXT        NOT NULL PRIMARY KEY,
+                    tenant_id   TEXT        NOT NULL,
+                    name        TEXT        NOT NULL,
+                    description TEXT        NOT NULL DEFAULT '',
+                    status      TEXT        NOT NULL,
+                    created_at  TIMESTAMPTZ NOT NULL,
+                    updated_at  TIMESTAMPTZ NOT NULL,
+                    created_by  TEXT        NOT NULL
+                )
+                """);
+            stmt.execute("CREATE INDEX IF NOT EXISTS dmos_workspaces_tenant_idx ON dmos_workspaces (tenant_id)");
+            // Clean up any existing data from previous test runs
+            stmt.execute("TRUNCATE TABLE dmos_workspaces");
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to initialize database schema", e);
+        }
     }
 
     // -----------------------------------------------------------------------

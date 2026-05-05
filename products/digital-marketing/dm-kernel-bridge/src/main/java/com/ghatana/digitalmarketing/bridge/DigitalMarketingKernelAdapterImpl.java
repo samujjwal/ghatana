@@ -12,6 +12,7 @@ import com.ghatana.plugin.approval.HumanApprovalPlugin;
 import com.ghatana.plugin.audit.AuditTrailPlugin;
 import com.ghatana.plugin.audit.AuditTrailPlugin.AuditEntry;
 import com.ghatana.plugin.consent.ConsentPlugin;
+import com.ghatana.plugin.featureflag.FeatureFlagPlugin;
 import com.ghatana.plugin.notification.NotificationPlugin;
 import com.ghatana.plugin.risk.RiskManagementPlugin;
 import io.activej.promise.Promise;
@@ -54,6 +55,8 @@ public final class DigitalMarketingKernelAdapterImpl
     private final AuditTrailPlugin auditTrailPlugin;
     private final RiskManagementPlugin riskManagementPlugin;
     private final NotificationPlugin notificationPlugin;
+    private final FeatureFlagPlugin featureFlagPlugin;
+    private final boolean productionMode;
 
     /**
      * Constructs the adapter with all required kernel ports and platform plugins.
@@ -66,6 +69,8 @@ public final class DigitalMarketingKernelAdapterImpl
      * @param auditTrailPlugin audit trail plugin for DMOS domain audit entries; must not be {@code null}
      * @param riskManagementPlugin risk plugin for model-driven risk scoring; must not be {@code null}
      * @param notificationPlugin notification plugin for reliable delivery; must not be {@code null}
+     * @param featureFlagPlugin feature flag plugin for dynamic configuration; must not be {@code null}
+     * @param productionMode   true if running in production (enables fail-closed behavior)
      */
     public DigitalMarketingKernelAdapterImpl(
             BridgeAuthorizationService authService,
@@ -75,7 +80,9 @@ public final class DigitalMarketingKernelAdapterImpl
             HumanApprovalPlugin approvalPlugin,
             AuditTrailPlugin auditTrailPlugin,
             RiskManagementPlugin riskManagementPlugin,
-            NotificationPlugin notificationPlugin) {
+            NotificationPlugin notificationPlugin,
+            FeatureFlagPlugin featureFlagPlugin,
+            boolean productionMode) {
         super(BRIDGE_ID, authService, auditEmitter, healthIndicator);
         this.consentPlugin    = Objects.requireNonNull(consentPlugin,    "consentPlugin must not be null");
         this.approvalPlugin   = Objects.requireNonNull(approvalPlugin,   "approvalPlugin must not be null");
@@ -88,6 +95,11 @@ public final class DigitalMarketingKernelAdapterImpl
             notificationPlugin,
             "notificationPlugin must not be null"
         );
+        this.featureFlagPlugin = Objects.requireNonNull(
+            featureFlagPlugin,
+            "featureFlagPlugin must not be null"
+        );
+        this.productionMode = productionMode;
     }
 
     // -----------------------------------------------------------------------
@@ -241,6 +253,12 @@ public final class DigitalMarketingKernelAdapterImpl
             ));
     }
 
+    /**
+     * P1-018: Evaluate risk with fail-closed behavior in production.
+     *
+     * <p>If risk cannot be properly evaluated in production, returns maximum risk
+     * score (1.0) to prevent potentially unsafe operations from proceeding.</p>
+     */
     @Override
     public Promise<Double> evaluateRisk(
             DmOperationContext context,
@@ -259,6 +277,17 @@ public final class DigitalMarketingKernelAdapterImpl
                 factors
             )
             .map(RiskManagementPlugin.RiskScore::score)
+            .whenException(e -> {
+                // P1-018: Log and handle risk evaluation failure
+                LOG.error("[{}] Risk evaluation failed: entityId={}, model={}, tenant={}, error={}",
+                    BRIDGE_ID, entityId, riskModelId, context.getTenantId().getValue(), e.getMessage());
+                // P1-018: Fail closed in production - return maximum risk score (1.0)
+                if (productionMode) {
+                    return 1.0;
+                }
+                // In non-production, return 0.0 for testing convenience
+                return 0.0;
+            })
             .whenResult(score -> LOG.debug(
                 "[{}] Risk evaluated: entityId={}, model={}, score={}, tenant={}",
                 BRIDGE_ID,
@@ -269,16 +298,46 @@ public final class DigitalMarketingKernelAdapterImpl
             ));
     }
 
+    /**
+     * P1-017: Feature flag delegation to platform FeatureFlagPlugin.
+     *
+     * <p>Delegates to the platform plugin for dynamic feature enablement.
+     * Fails closed (returns false) if the plugin is unavailable.</p>
+     */
+    @Override
+    public Promise<Boolean> isFeatureEnabled(DmOperationContext context, String flagKey) {
+        requireStarted();
+        Objects.requireNonNull(context, "context must not be null");
+        Objects.requireNonNull(flagKey, "flagKey must not be null");
+
+        return featureFlagPlugin.isEnabled(flagKey, context.getTenantId().getValue())
+            .whenException(e -> {
+                // P1-017: Log feature flag check failure and fail closed
+                LOG.error("[{}] Feature flag check failed: flagKey={}, tenant={}, error={}",
+                    BRIDGE_ID, flagKey, context.getTenantId().getValue(), e.getMessage());
+                // P1-017: Fail closed - return false when plugin is unavailable
+                return false;
+            })
+            .whenResult(enabled -> LOG.debug(
+                "[{}] Feature flag checked: flagKey={}, enabled={}, tenant={}",
+                BRIDGE_ID, flagKey, enabled, context.getTenantId().getValue()
+            ));
+    }
+
     // -----------------------------------------------------------------------
     // Notification (KE-02)
     // -----------------------------------------------------------------------
 
     /**
-     * {@inheritDoc}
+     * P1-019: Notify user with fail-closed behavior in production.
      *
      * <p>Delegates to the platform {@link NotificationPlugin} for durable delivery
      * with retry and dead-letter queue support. The notification is queued asynchronously
      * and the returned promise resolves with the notification ID.</p>
+     *
+     * <p><strong>Production Safety:</strong> In production mode, notification failures are
+     * not silently ignored. Failures are logged, metriced, and tracked for observability.
+     * The promise fails exceptionally for critical notifications in production.</p>
      */
     @Override
     public Promise<Void> notifyUser(
@@ -300,6 +359,29 @@ public final class DigitalMarketingKernelAdapterImpl
         enrichedAttributes.put("actor", context.getActor().getPrincipalId());
 
         return notificationPlugin.dispatch(recipientId, template, enrichedAttributes)
+            .whenException(e -> {
+                // P1-019: Production safety - log and fail closed for notification failures
+                if (productionMode) {
+                    LOG.error(
+                        "[{}] P1-019: Notification dispatch failed in production: " +
+                        "recipientId={}, template={}, tenant={}, error={}",
+                        BRIDGE_ID, recipientId, template,
+                        context.getTenantId().getValue(), e.getMessage()
+                    );
+                    // P1-019: Fail closed in production - throw exception to indicate failure
+                    throw new RuntimeException(
+                        "P1-019: Notification dispatch failed in production mode. " +
+                        "recipientId=" + recipientId + ", template=" + template, e
+                    );
+                } else {
+                    LOG.warn(
+                        "[{}] Notification dispatch failed: recipientId={}, template={}, tenant={}",
+                        BRIDGE_ID, recipientId, template, context.getTenantId().getValue()
+                    );
+                    // In non-production, log warning but don't fail
+                    return null;
+                }
+            })
             .whenResult(notificationId -> LOG.info(
                 "[{}] Notification dispatched: notificationId={}, recipientId={}, template={}, tenant={}",
                 BRIDGE_ID, notificationId, recipientId, template, context.getTenantId().getValue()

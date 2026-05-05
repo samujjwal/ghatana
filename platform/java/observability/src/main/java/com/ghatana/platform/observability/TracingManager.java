@@ -144,6 +144,19 @@ public class TracingManager {
     }
 
     /**
+     * Gets the OpenTelemetry instance.
+     *
+     * <p>This provides access to the underlying OpenTelemetry SDK for advanced
+     * use cases such as custom span creation, context propagation, or integration
+     * with other OpenTelemetry-based libraries.</p>
+     *
+     * @return the OpenTelemetry instance (never null)
+     */
+    public OpenTelemetry getOpenTelemetry() {
+        return openTelemetry;
+    }
+
+    /**
      * Creates a default TracingManager with the specified service name and version.
      *
      * <p>Uses default OTLP gRPC endpoint: {@code http://localhost:4317}.</p>

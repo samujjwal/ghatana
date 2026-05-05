@@ -577,7 +577,7 @@ export function PipelineBuilderPage() {
               </Button>
               <Button
                 type="button"
-                variant="danger"
+                variant="destructive"
                 autoFocus
                 onClick={handleDiscardConfirm}
               >
@@ -791,25 +791,27 @@ export function PipelineBuilderPage() {
           <div className="flex flex-1 flex-col overflow-hidden">
             {/* Mobile panel toggle bar */}
             <div className="lg:hidden flex items-center gap-2 px-3 py-1.5 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
-              <button
+              <Button
                 type="button"
                 onClick={() => setLeftPanelOpen((p) => !p)}
+                variant="ghost"
                 className="p-1.5 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800"
                 aria-label={leftPanelOpen ? 'Hide stage palette' : 'Show stage palette'}
                 aria-pressed={leftPanelOpen}
               >
                 {leftPanelOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
-              </button>
+              </Button>
               <span className="flex-1" />
-              <button
+              <Button
                 type="button"
                 onClick={() => setRightPanelOpen((p) => !p)}
+                variant="ghost"
                 className="p-1.5 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800"
                 aria-label={rightPanelOpen ? 'Hide property panel' : 'Show property panel'}
                 aria-pressed={rightPanelOpen}
               >
                 {rightPanelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
-              </button>
+              </Button>
             </div>
 
             {/* Mobile slide-over panels */}
@@ -817,14 +819,15 @@ export function PipelineBuilderPage() {
               <div className="lg:hidden fixed inset-y-0 left-0 z-40 w-60 bg-white dark:bg-gray-950 shadow-xl border-r border-gray-200 dark:border-gray-800 overflow-y-auto">
                 <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-800">
                   <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Stages</span>
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setLeftPanelOpen(false)}
+                    variant="ghost"
                     className="p-1 rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
                     aria-label="Close stage palette"
                   >
                     <PanelLeftClose className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </div>
                 <StagePalette />
               </div>
@@ -839,14 +842,15 @@ export function PipelineBuilderPage() {
               <div className="lg:hidden fixed inset-y-0 right-0 z-40 w-72 bg-white dark:bg-gray-950 shadow-xl border-l border-gray-200 dark:border-gray-800 overflow-y-auto">
                 <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-800">
                   <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Properties</span>
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setRightPanelOpen(false)}
+                    variant="ghost"
                     className="p-1 rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
                     aria-label="Close property panel"
                   >
                     <PanelRightClose className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </div>
                 <PipelinePropertyPanel />
               </div>

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import { createHmac } from 'node:crypto';
 import { createServer, IncomingMessage, ServerResponse } from 'node:http';
 import type { FastifyInstance } from 'fastify';
@@ -407,6 +407,85 @@ describe('HTTP Reverse Proxy', () => {
     expect(res.json().error).toBe('Bad Gateway');
 
     await isolatedApp.close();
+  });
+});
+
+describe('Gateway resilience controls', () => {
+  it('enforces per-key rate limits before proxying', async () => {
+    const backend = createServer((_req: IncomingMessage, res: ServerResponse) => {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ ok: true }));
+    });
+    await new Promise<void>((resolve) => {
+      backend.listen(0, '127.0.0.1', resolve);
+    });
+    const addr = backend.address() as AddressInfo;
+
+    const app = await buildApp({
+      jwtSecret: TEST_SECRET,
+      backendUrl: `http://127.0.0.1:${addr.port}`,
+      allowedOrigins: ['http://localhost:5173'],
+      rateLimitWindowMs: 60_000,
+      rateLimitMaxRequests: 1,
+    });
+    await app.ready();
+
+    const token = validToken({ tenantId: 'tenant-rate-limit' });
+
+    const first = await app.inject({
+      method: 'GET',
+      url: '/api/v1/events',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'x-tenant-id': 'tenant-rate-limit',
+      },
+    });
+    expect(first.statusCode).toBe(200);
+
+    const second = await app.inject({
+      method: 'GET',
+      url: '/api/v1/events',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'x-tenant-id': 'tenant-rate-limit',
+      },
+    });
+    expect(second.statusCode).toBe(429);
+    expect(second.json().message).toBe('Rate limit exceeded for gateway');
+
+    await app.close();
+    await new Promise<void>((resolve) => {
+      backend.close(() => resolve());
+    });
+  });
+
+  it('opens the backend circuit breaker after threshold failures and short-circuits later calls', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockRejectedValue(new Error('simulated backend down'));
+
+    const app = await buildApp({
+      jwtSecret: TEST_SECRET,
+      backendUrl: 'http://127.0.0.1:1',
+      allowedOrigins: ['http://localhost:5173'],
+      backendRetryAttempts: 1,
+      backendBreakerFailureThreshold: 1,
+      backendBreakerOpenMs: 60_000,
+    });
+    await app.ready();
+
+    const headers = { authorization: `Bearer ${validToken()}` };
+
+    const first = await app.inject({ method: 'GET', url: '/api/v1/events', headers });
+    expect(first.statusCode).toBe(502);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    const second = await app.inject({ method: 'GET', url: '/api/v1/events', headers });
+    expect(second.statusCode).toBe(502);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    await app.close();
+    fetchMock.mockRestore();
   });
 });
 

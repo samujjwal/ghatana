@@ -1,8 +1,11 @@
 /**
  * Hook for fetching and managing budget recommendations.
  *
+ * <p>P1-032: Mutations invalidate approval queue and AI action log queries
+ * to ensure related state updates without manual refresh.</p>
+ *
  * @doc.type hook
- * @doc.purpose Fetch and mutate budget recommendations for a workspace
+ * @doc.purpose Fetch and mutate budget recommendations with cache invalidation
  * @doc.layer frontend
  */
 
@@ -47,9 +50,15 @@ export function useGenerateBudget(workspaceId: string | null): {
   const queryClient = useQueryClient();
 
   const mutation = useMutation<BudgetRecommendation, Error, GenerateBudgetRequest>({
-    mutationFn: (body) => generateBudgetRecommendation(workspaceId!, body),
+    mutationFn: (body) => {
+      // P1-022: Generate idempotency key at mutation start
+      const idempotencyKey = crypto.randomUUID();
+      return generateBudgetRecommendation(workspaceId!, body, idempotencyKey);
+    },
     onSuccess: () => {
+      // P1-032: Invalidate budget and AI action log queries
       queryClient.invalidateQueries({ queryKey: ['budget', 'latest', workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['ai-actions', workspaceId] });
     },
   });
 
@@ -70,9 +79,15 @@ export function useSubmitBudgetApproval(workspaceId: string | null): {
   const queryClient = useQueryClient();
 
   const mutation = useMutation<BudgetRecommendation, Error, string>({
-    mutationFn: (recId) => submitBudgetForApproval(workspaceId!, recId),
+    mutationFn: (recId) => {
+      // P1-022: Generate idempotency key at mutation start
+      const idempotencyKey = crypto.randomUUID();
+      return submitBudgetForApproval(workspaceId!, recId, idempotencyKey);
+    },
     onSuccess: () => {
+      // P1-032: Invalidate budget and approval queue queries
       queryClient.invalidateQueries({ queryKey: ['budget', 'latest', workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['approvals', 'pending', workspaceId] });
     },
   });
 
@@ -93,9 +108,15 @@ export function useApproveBudget(workspaceId: string | null): {
   const queryClient = useQueryClient();
 
   const mutation = useMutation<BudgetRecommendation, Error, string>({
-    mutationFn: (recId) => approveBudgetRecommendation(workspaceId!, recId),
+    mutationFn: (recId) => {
+      // P1-022: Generate idempotency key at mutation start
+      const idempotencyKey = crypto.randomUUID();
+      return approveBudgetRecommendation(workspaceId!, recId, idempotencyKey);
+    },
     onSuccess: () => {
+      // P1-032: Invalidate budget and approval queue queries
       queryClient.invalidateQueries({ queryKey: ['budget', 'latest', workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['approvals', 'pending', workspaceId] });
     },
   });
 

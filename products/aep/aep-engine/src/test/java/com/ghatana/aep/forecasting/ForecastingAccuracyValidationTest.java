@@ -146,11 +146,14 @@ class ForecastingAccuracyValidationTest extends EventloopTestBase {
         @Test
         @DisplayName("Forecasting smooths out random noise")
         void smoothsRandomNoise() {
+            // Use fixed seed for deterministic test
+            java.util.Random random = new java.util.Random(42);
+            
             // Generate data with underlying trend + random noise
             List<AepEngine.DataPoint> history = new ArrayList<>();
             for (int i = 0; i < 20; i++) {
                 double trend = 100.0 + i * 2.0;
-                double noise = (Math.random() - 0.5) * 10.0; // +/- 5 noise
+                double noise = (random.nextDouble() - 0.5) * 10.0; // +/- 5 noise
                 history.add(new AepEngine.DataPoint(T0.plusSeconds(i * 3600), trend + noise));
             }
 

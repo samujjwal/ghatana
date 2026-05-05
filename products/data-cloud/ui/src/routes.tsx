@@ -19,15 +19,7 @@ import { DefaultLayout } from './layouts/DefaultLayout';
 import { LoadingState } from './components/common/LoadingState';
 import { RouteErrorBoundary } from './components/common/RouteErrorBoundary';
 import { RoleProtectedRoute } from './components/security/RoleProtectedRoute';
-import {
-  isAgentCatalogSurfaceEnabled,
-  isAlertsSurfaceEnabled,
-  isContextSurfaceEnabled,
-  isEntityBrowserSurfaceEnabled,
-  isFabricSurfaceEnabled,
-  isMemorySurfaceEnabled,
-  isSettingsSurfaceEnabled,
-} from './lib/feature-gates';
+import { RuntimeCapabilityRouteGate } from './components/security/RuntimeCapabilityRouteGate';
 
 /** Warn in dev when a lazy chunk takes longer than this to load. */
 const SLOW_LOAD_WARN_MS = 3_000;
@@ -302,7 +294,13 @@ export const routes: RouteObject[] = [
       // Alerts - operator-facing alert triage console (restored as canonical route)
       {
         path: 'alerts',
-        element: <RoleProtectedRoute routePath="/alerts">{isAlertsSurfaceEnabled() ? withSuspense(AlertsPage) : withSuspense(NotFound)}</RoleProtectedRoute>,
+        element: (
+          <RoleProtectedRoute routePath="/alerts">
+            <RuntimeCapabilityRouteGate aliases={['alert-triage', 'monitoring', 'alerts']}>
+              {withSuspense(AlertsPage)}
+            </RuntimeCapabilityRouteGate>
+          </RoleProtectedRoute>
+        ),
       },
 
       // Operations Console - Operator-facing diagnostics and tools
@@ -324,33 +322,69 @@ export const routes: RouteObject[] = [
       // Memory Plane Viewer — restored as canonical route
       {
         path: 'memory',
-        element: <RoleProtectedRoute routePath="/memory">{isMemorySurfaceEnabled() ? withSuspense(MemoryPlaneViewerPage) : withSuspense(NotFound)}</RoleProtectedRoute>,
+        element: (
+          <RoleProtectedRoute routePath="/memory">
+            <RuntimeCapabilityRouteGate aliases={['memory-plane', 'context', 'memory']} fallback={withSuspense(NotFound)}>
+              {withSuspense(MemoryPlaneViewerPage)}
+            </RuntimeCapabilityRouteGate>
+          </RoleProtectedRoute>
+        ),
       },
       // Entity Browser — restored as canonical route
       {
         path: 'entities',
-        element: <RoleProtectedRoute routePath="/entities">{isEntityBrowserSurfaceEnabled() ? withSuspense(EntityBrowserPage) : withSuspense(NotFound)}</RoleProtectedRoute>,
+        element: (
+          <RoleProtectedRoute routePath="/entities">
+            <RuntimeCapabilityRouteGate aliases={['entity-browser', 'entities']} fallback={withSuspense(NotFound)}>
+              {withSuspense(EntityBrowserPage)}
+            </RuntimeCapabilityRouteGate>
+          </RoleProtectedRoute>
+        ),
       },
       // Context Explorer — restored as canonical route
       {
         path: 'context',
-        element: <RoleProtectedRoute routePath="/context">{isContextSurfaceEnabled() ? withSuspense(ContextExplorerPage) : withSuspense(NotFound)}</RoleProtectedRoute>,
+        element: (
+          <RoleProtectedRoute routePath="/context">
+            <RuntimeCapabilityRouteGate aliases={['context-explorer', 'context']} fallback={withSuspense(NotFound)}>
+              {withSuspense(ContextExplorerPage)}
+            </RuntimeCapabilityRouteGate>
+          </RoleProtectedRoute>
+        ),
       },
       // Data Fabric — restored as canonical operator-facing route
       {
         path: 'fabric',
-        element: <RoleProtectedRoute routePath="/fabric">{isFabricSurfaceEnabled() ? withSuspense(DataFabricPage) : withSuspense(NotFound)}</RoleProtectedRoute>,
+        element: (
+          <RoleProtectedRoute routePath="/fabric">
+            <RuntimeCapabilityRouteGate aliases={['data-fabric', 'fabric']} fallback={withSuspense(NotFound)}>
+              {withSuspense(DataFabricPage)}
+            </RuntimeCapabilityRouteGate>
+          </RoleProtectedRoute>
+        ),
       },
       // Agent Catalog — restored as canonical operator-facing route
       {
         path: 'agents',
-        element: <RoleProtectedRoute routePath="/agents">{isAgentCatalogSurfaceEnabled() ? withSuspense(AgentPluginManagerPage) : withSuspense(NotFound)}</RoleProtectedRoute>,
+        element: (
+          <RoleProtectedRoute routePath="/agents">
+            <RuntimeCapabilityRouteGate aliases={['agent-catalog', 'agents']} fallback={withSuspense(NotFound)}>
+              {withSuspense(AgentPluginManagerPage)}
+            </RuntimeCapabilityRouteGate>
+          </RoleProtectedRoute>
+        ),
       },
 
       // Settings
       {
         path: 'settings',
-        element: <RoleProtectedRoute routePath="/settings">{isSettingsSurfaceEnabled() ? withSuspense(SettingsPage) : withSuspense(NotFound)}</RoleProtectedRoute>,
+        element: (
+          <RoleProtectedRoute routePath="/settings">
+            <RuntimeCapabilityRouteGate aliases={['settings', 'config']} fallback={withSuspense(NotFound)}>
+              {withSuspense(SettingsPage)}
+            </RuntimeCapabilityRouteGate>
+          </RoleProtectedRoute>
+        ),
       },
 
       // Plugins

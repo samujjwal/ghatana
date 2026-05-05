@@ -35,9 +35,7 @@ import {
 import { useAllEpisodes, usePolicies, POLICIES_QUERY_KEY } from '@/hooks/useAgentMemory';
 import { EpisodeTimeline } from '@/components/memory/EpisodeTimeline';
 import { PolicyCard } from '@/components/memory/PolicyCard';
-import { Button } from '@ghatana/design-system';
-import { TextField } from '@ghatana/design-system';
-import { TextArea } from '@ghatana/design-system';
+import { Button, TextField, TextArea, Select } from '@ghatana/design-system';
 import { EmptyState } from '@/components/core/EmptyState';
 import { Toaster } from 'sonner';
 import { ErrorState } from '@/components/core/ErrorState';
@@ -116,15 +114,12 @@ function CreatePatternForm({ onClose, onCreated }: { onClose: () => void; onCrea
 
           <label className="block text-sm">
             <span className="text-gray-600 dark:text-gray-400">Type</span>
-            <select
-              className="mt-1 block w-full rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+            <Select
+              className="mt-1 block w-full text-sm"
               value={type}
-              onChange={(e) => setType(e.target.value as PatternType)}
-            >
-              {(['THRESHOLD', 'ANOMALY', 'SEQUENCE', 'CORRELATION', 'CUSTOM'] as const).map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
+              onChange={(e) => setType((e.target as HTMLSelectElement).value as PatternType)}
+              options={(['THRESHOLD', 'ANOMALY', 'SEQUENCE', 'CORRELATION', 'CUSTOM'] as const).map((t) => ({ value: t, label: t }))}
+            />
           </label>
 
           {type === 'THRESHOLD' && (
@@ -400,7 +395,7 @@ export function PatternStudioPage() {
               {!isLoading && !isError && (
                 <div className="space-y-2">
                   {filtered.length === 0 && (
-                    <EmptyState title="No patterns found" description="Create your first pattern to detect anomalies or thresholds." action={{ label: '+ New Pattern', onClick: () => setShowCreate(true) }} />
+                    <EmptyState title="No patterns found" description="Create your first pattern to detect anomalies or thresholds." action={<Button onClick={() => setShowCreate(true)} variant="primary">+ New Pattern</Button>} />
                   )}
                   {filtered.map((pattern) => (
                     <div

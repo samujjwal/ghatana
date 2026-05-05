@@ -16,10 +16,12 @@ function base(workspaceId: string): string {
 export async function generateBudgetRecommendation(
   workspaceId: string,
   body: GenerateBudgetRequest,
+  idempotencyKey?: string,
 ): Promise<BudgetRecommendation> {
   return apiRequest<BudgetRecommendation>(base(workspaceId), {
     method: 'POST',
     body,
+    idempotencyKey,
   });
 }
 
@@ -32,19 +34,21 @@ export async function getLatestBudgetRecommendation(
 export async function submitBudgetForApproval(
   workspaceId: string,
   recId: string,
+  idempotencyKey?: string,
 ): Promise<BudgetRecommendation> {
   return apiRequest<BudgetRecommendation>(
     `${base(workspaceId)}/${encodeURIComponent(recId)}/submit`,
-    { method: 'POST' },
+    { method: 'POST', idempotencyKey },
   );
 }
 
 export async function approveBudgetRecommendation(
   workspaceId: string,
   recId: string,
+  idempotencyKey?: string,
 ): Promise<BudgetRecommendation> {
   return apiRequest<BudgetRecommendation>(
     `${base(workspaceId)}/${encodeURIComponent(recId)}/approve`,
-    { method: 'POST' },
+    { method: 'POST', idempotencyKey },
   );
 }

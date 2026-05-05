@@ -843,13 +843,12 @@ module.exports = {
     /**
      * Rule: prefer-design-system-primitives
      *
-     * Warns when raw HTML form elements and buttons are used instead of
-     * @ghatana/design-system components. Helps enforce consistent UX,
+     * Errors when raw HTML form elements and buttons are used instead of
+     * @ghatana/design-system components. Enforces consistent UX,
      * accessibility, and styling across all product surfaces.
      *
      * Excluded:
      *   - Files inside @ghatana/design-system (they implement the primitives)
-     *   - Files that already import from @ghatana/design-system
      */
     "prefer-design-system-primitives": {
       meta: {
@@ -876,7 +875,6 @@ module.exports = {
         }
 
         // Check if the file already imports from design-system
-        let hasDsImport = false;
         const DS_PRIMITIVES = new Map([
           ["button", "Button"],
           ["input", "Input (or TextField)"],
@@ -888,30 +886,10 @@ module.exports = {
           ["input[type=\"radio\"]", "RadioGroup"],
         ]);
 
-        const sourceCode = context.getSourceCode();
-        const ast = sourceCode.ast;
-        if (ast.type === "Program" || ast.type === "File") {
-          const body = ast.body || (ast.program && ast.program.body);
-          if (Array.isArray(body)) {
-            for (const node of body) {
-              if (
-                node.type === "ImportDeclaration" &&
-                String(node.source.value).startsWith("@ghatana/design-system")
-              ) {
-                hasDsImport = true;
-                break;
-              }
-            }
-          }
-        }
-
         return {
           JSXOpeningElement(node) {
             const tag = node.name.name;
             if (!DS_PRIMITIVES.has(tag)) return;
-
-            // Don't flag if the file already uses design-system
-            if (hasDsImport) return;
 
             const dsComponent = DS_PRIMITIVES.get(tag);
             context.report({

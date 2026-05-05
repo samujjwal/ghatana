@@ -2,6 +2,12 @@
 
 Data Cloud is the data foundation product for Ghatana. It owns entity storage, event persistence, analytics, governance, lineage, agent memory persistence, plugin-backed pipeline execution, and the HTTP surface other products consume. It does not own broader agentic orchestration; AEP integrates through Data Cloud contracts and events for cross-product agent workflows.
 
+## Terminology Boundary
+
+- In Data Cloud, workflow and pipeline execution refer to data-local plugin runtime execution.
+- Data Cloud execution routes stay under `/api/v1/pipelines/*` for contract stability.
+- Agentic orchestration ownership belongs to AEP.
+
 ## Current State
 
 | Capability | Implementation state | Evidence level | Notes |

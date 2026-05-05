@@ -6,6 +6,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.launcher.http.DataCloudHttpMetrics;
 import com.ghatana.datacloud.launcher.http.plugins.WorkflowExecutionCapability;
 import io.activej.http.*;
 import io.activej.promise.Promise;
@@ -35,14 +36,27 @@ public class WorkflowExecutionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(WorkflowExecutionHandler.class);
     private static final String MISSING_TENANT_MESSAGE = "X-Tenant-Id header or tenantId query parameter is required";
+    private static final String HANDLER_NAME = "WorkflowExecutionHandler";
 
     private final DataCloudClient client;
     private final HttpHandlerSupport http;
     private WorkflowExecutionCapability executionCapability;
+    private DataCloudHttpMetrics metrics = DataCloudHttpMetrics.noop();
 
     public WorkflowExecutionHandler(DataCloudClient client, HttpHandlerSupport http) {
         this.client = client;
         this.http = http;
+    }
+
+    /**
+     * Wires a {@link DataCloudHttpMetrics} instance for observability.
+     *
+     * @param metrics metrics collector; may be {@code null} to revert to noop
+     * @return this handler (fluent)
+     */
+    public WorkflowExecutionHandler withMetrics(DataCloudHttpMetrics metrics) {
+        this.metrics = metrics != null ? metrics : DataCloudHttpMetrics.noop();
+        return this;
     }
 
     /**
@@ -75,24 +89,40 @@ public class WorkflowExecutionHandler {
             return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
         }
 
+        String correlationId = http.resolveCorrelationId(request);
+        long startMs = System.currentTimeMillis();
         return request.loadBody().then(buf -> {
             Map<String, Object> input;
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 input = parseJsonMap(body);
             } catch (Exception e) {
-                log.warn("Invalid execute pipeline request body for pipeline {} tenant {}: {}", pipelineId, tenantId, e.getMessage());
+                log.warn("[correlation={} tenant={} pipeline={}] Invalid execute pipeline request body: {}",
+                        correlationId, tenantId, pipelineId, e.getMessage());
+                metrics.recordError(HANDLER_NAME, "executePipeline", "InvalidRequest");
                 return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
             }
             return executionCapability.execute(tenantId, pipelineId, input)
-                .map(snapshot -> http.jsonResponse(Map.of(
-                    "executionId", snapshot.id(),
-                    "pipelineId", snapshot.workflowId(),
-                    "tenantId", tenantId,
-                    "status", snapshot.status(),
-                    "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString()
-                )))
-                .whenException(e -> log.error("Failed to execute pipeline {} for tenant {}: {}", pipelineId, tenantId, e.getMessage()));
+                .map(snapshot -> {
+                    long latency = System.currentTimeMillis() - startMs;
+                    log.info("[correlation={} tenant={} pipeline={} execution={}] Workflow execution started, status={}",
+                            correlationId, tenantId, pipelineId, snapshot.id(), snapshot.status());
+                    metrics.recordRequest(HANDLER_NAME, "executePipeline", tenantId, 200);
+                    metrics.recordLatency(HANDLER_NAME, "executePipeline", latency);
+                    return http.jsonResponse(Map.of(
+                        "executionId", snapshot.id(),
+                        "pipelineId", snapshot.workflowId(),
+                        "tenantId", tenantId,
+                        "status", snapshot.status(),
+                        "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString()
+                    ));
+                })
+                .then(Promise::of, e -> {
+                    log.error("[correlation={} tenant={} pipeline={}] Failed to execute pipeline: {}",
+                            correlationId, tenantId, pipelineId, e.getMessage());
+                    metrics.recordError(HANDLER_NAME, "executePipeline", e);
+                    return Promise.of(http.errorResponse(500, "Pipeline execution failed"));
+                });
         });
     }
 
@@ -186,14 +216,28 @@ public class WorkflowExecutionHandler {
             return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
         }
 
+        String correlationId = http.resolveCorrelationId(request);
+        long startMs = System.currentTimeMillis();
         return executionCapability.cancelExecution(tenantId, executionId)
-            .map(snapshot -> http.jsonResponse(Map.of(
-                "executionId", snapshot.id(),
-                "pipelineId", pipelineId,
-                "tenantId", tenantId,
-                "status", snapshot.status()
-            )))
-            .whenException(e -> log.error("Failed to cancel execution {} pipeline {} tenant {}: {}", executionId, pipelineId, tenantId, e.getMessage()));
+            .map(snapshot -> {
+                long latency = System.currentTimeMillis() - startMs;
+                log.info("[correlation={} tenant={} pipeline={} execution={}] Workflow execution cancelled, status={}",
+                        correlationId, tenantId, pipelineId, executionId, snapshot.status());
+                metrics.recordRequest(HANDLER_NAME, "cancelPipelineExecution", tenantId, 200);
+                metrics.recordLatency(HANDLER_NAME, "cancelPipelineExecution", latency);
+                return http.jsonResponse(Map.of(
+                    "executionId", snapshot.id(),
+                    "pipelineId", pipelineId,
+                    "tenantId", tenantId,
+                    "status", snapshot.status()
+                ));
+            })
+            .then(Promise::of, e -> {
+                log.error("[correlation={} tenant={} pipeline={} execution={}] Failed to cancel execution: {}",
+                        correlationId, tenantId, pipelineId, executionId, e.getMessage());
+                metrics.recordError(HANDLER_NAME, "cancelPipelineExecution", e);
+                return Promise.of(http.errorResponse(500, "Cancel execution failed"));
+            });
     }
 
     // ==================== Execution Routes ====================
@@ -255,13 +299,27 @@ public class WorkflowExecutionHandler {
             return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
         }
 
+        String correlationId = http.resolveCorrelationId(request);
+        long startMs = System.currentTimeMillis();
         return executionCapability.cancelExecution(tenantId, executionId)
-            .map(snapshot -> http.jsonResponse(Map.of(
-                "executionId", snapshot.id(),
-                "tenantId", tenantId,
-                "status", snapshot.status()
-            )))
-            .whenException(e -> log.error("Failed to cancel execution {} tenant {}: {}", executionId, tenantId, e.getMessage()));
+            .map(snapshot -> {
+                long latency = System.currentTimeMillis() - startMs;
+                log.info("[correlation={} tenant={} execution={}] Workflow execution cancelled, status={}",
+                        correlationId, tenantId, executionId, snapshot.status());
+                metrics.recordRequest(HANDLER_NAME, "cancelExecution", tenantId, 200);
+                metrics.recordLatency(HANDLER_NAME, "cancelExecution", latency);
+                return http.jsonResponse(Map.of(
+                    "executionId", snapshot.id(),
+                    "tenantId", tenantId,
+                    "status", snapshot.status()
+                ));
+            })
+            .then(Promise::of, e -> {
+                log.error("[correlation={} tenant={} execution={}] Failed to cancel execution: {}",
+                        correlationId, tenantId, executionId, e.getMessage());
+                metrics.recordError(HANDLER_NAME, "cancelExecution", e);
+                return Promise.of(http.errorResponse(500, "Cancel execution failed"));
+            });
     }
 
     public Promise<HttpResponse> handleRetryExecution(HttpRequest request) {
@@ -279,14 +337,28 @@ public class WorkflowExecutionHandler {
             return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
         }
 
+        String correlationId = http.resolveCorrelationId(request);
+        long startMs = System.currentTimeMillis();
         return executionCapability.retryExecution(tenantId, executionId)
-            .map(snapshot -> http.jsonResponse(Map.of(
-                "executionId", snapshot.id(),
-                "tenantId", tenantId,
-                "status", snapshot.status(),
-                "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString()
-            )))
-            .whenException(e -> log.error("Failed to retry execution {} tenant {}: {}", executionId, tenantId, e.getMessage()));
+            .map(snapshot -> {
+                long latency = System.currentTimeMillis() - startMs;
+                log.info("[correlation={} tenant={} execution={}] Workflow execution retried, status={}",
+                        correlationId, tenantId, executionId, snapshot.status());
+                metrics.recordRequest(HANDLER_NAME, "retryExecution", tenantId, 200);
+                metrics.recordLatency(HANDLER_NAME, "retryExecution", latency);
+                return http.jsonResponse(Map.of(
+                    "executionId", snapshot.id(),
+                    "tenantId", tenantId,
+                    "status", snapshot.status(),
+                    "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString()
+                ));
+            })
+            .then(Promise::of, e -> {
+                log.error("[correlation={} tenant={} execution={}] Failed to retry execution: {}",
+                        correlationId, tenantId, executionId, e.getMessage());
+                metrics.recordError(HANDLER_NAME, "retryExecution", e);
+                return Promise.of(http.errorResponse(500, "Retry execution failed"));
+            });
     }
 
     public Promise<HttpResponse> handleRollbackExecution(HttpRequest request) {
@@ -304,21 +376,37 @@ public class WorkflowExecutionHandler {
             return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
         }
 
+        String correlationId = http.resolveCorrelationId(request);
+        long startMs = System.currentTimeMillis();
         return request.loadBody().then(buf -> {
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> rollbackData = parseJsonMap(body);
                 // Rollback delegates to the capability which handles state transition
                 return executionCapability.cancelExecution(tenantId, executionId)
-                    .map(snapshot -> http.jsonResponse(Map.of(
-                        "executionId", snapshot.id(),
-                        "tenantId", tenantId,
-                        "status", "rolled_back",
-                        "rollbackData", rollbackData
-                    )))
-                    .whenException(e -> log.error("Failed to rollback execution {} tenant {}: {}", executionId, tenantId, e.getMessage()));
+                    .map(snapshot -> {
+                        long latency = System.currentTimeMillis() - startMs;
+                        log.info("[correlation={} tenant={} execution={}] Workflow execution rolled back",
+                                correlationId, tenantId, executionId);
+                        metrics.recordRequest(HANDLER_NAME, "rollbackExecution", tenantId, 200);
+                        metrics.recordLatency(HANDLER_NAME, "rollbackExecution", latency);
+                        return http.jsonResponse(Map.of(
+                            "executionId", snapshot.id(),
+                            "tenantId", tenantId,
+                            "status", "rolled_back",
+                            "rollbackData", rollbackData
+                        ));
+                    })
+                    .then(Promise::of, e -> {
+                        log.error("[correlation={} tenant={} execution={}] Failed to rollback execution: {}",
+                                correlationId, tenantId, executionId, e.getMessage());
+                        metrics.recordError(HANDLER_NAME, "rollbackExecution", e);
+                        return Promise.of(http.errorResponse(500, "Rollback execution failed"));
+                    });
             } catch (Exception e) {
-                log.warn("Failed to rollback execution {} for tenant {}: {}", executionId, tenantId, e.getMessage());
+                log.warn("[correlation={} tenant={} execution={}] Invalid rollback data: {}",
+                        correlationId, tenantId, executionId, e.getMessage());
+                metrics.recordError(HANDLER_NAME, "rollbackExecution", "InvalidRequest");
                 return Promise.of(http.errorResponse(400, "Invalid rollback data: " + e.getMessage()));
             }
         });
@@ -347,17 +435,33 @@ public class WorkflowExecutionHandler {
                 checkpointRecord.put("tenantId", tenantId);
                 checkpointRecord.put("savedAt", savedAt);
                 checkpointRecord.put("data", checkpointData);
+                String correlationId = http.resolveCorrelationId(request);
+                long startMs = System.currentTimeMillis();
                 return client.save(tenantId, "dc_execution_checkpoints", checkpointRecord)
-                    .map(entity -> http.jsonResponse(Map.of(
-                        "executionId", executionId,
-                        "tenantId", tenantId,
-                        "checkpointId", checkpointId,
-                        "savedAt", savedAt,
-                        "status", "checkpointed"
-                    )))
-                    .whenException(e -> log.error("Failed to save checkpoint for execution {} tenant {}: {}", executionId, tenantId, e.getMessage()));
+                    .map(entity -> {
+                        long latency = System.currentTimeMillis() - startMs;
+                        log.info("[correlation={} tenant={} execution={} checkpoint={}] Checkpoint saved",
+                                correlationId, tenantId, executionId, checkpointId);
+                        metrics.recordRequest(HANDLER_NAME, "checkpointExecution", tenantId, 200);
+                        metrics.recordLatency(HANDLER_NAME, "checkpointExecution", latency);
+                        return http.jsonResponse(Map.of(
+                            "executionId", executionId,
+                            "tenantId", tenantId,
+                            "checkpointId", checkpointId,
+                            "savedAt", savedAt,
+                            "status", "checkpointed"
+                        ));
+                    })
+                    .then(Promise::of, e -> {
+                        log.error("[correlation={} tenant={} execution={}] Failed to save checkpoint: {}",
+                                correlationId, tenantId, executionId, e.getMessage());
+                        metrics.recordError(HANDLER_NAME, "checkpointExecution", e);
+                        return Promise.of(http.errorResponse(500, "Checkpoint save failed"));
+                    });
             } catch (Exception e) {
-                log.warn("Failed to save checkpoint for execution {} tenant {}: {}", executionId, tenantId, e.getMessage());
+                log.warn("[correlation={} tenant={} execution={}] Invalid checkpoint data: {}",
+                        http.resolveCorrelationId(request), tenantId, executionId, e.getMessage());
+                metrics.recordError(HANDLER_NAME, "checkpointExecution", "InvalidRequest");
                 return Promise.of(http.errorResponse(400, "Invalid checkpoint data: " + e.getMessage()));
             }
         });
@@ -403,15 +507,29 @@ public class WorkflowExecutionHandler {
             return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
         }
 
+        String correlationId = http.resolveCorrelationId(request);
+        long startMs = System.currentTimeMillis();
         // Restore: retry the execution from its last saved state (capability handles state recovery)
         return executionCapability.retryExecution(tenantId, executionId)
-            .map(snapshot -> http.jsonResponse(Map.of(
-                "executionId", snapshot.id(),
-                "tenantId", tenantId,
-                "status", snapshot.status(),
-                "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString()
-            )))
-            .whenException(e -> log.error("Failed to restore execution {} for tenant {}: {}", executionId, tenantId, e.getMessage()));
+            .map(snapshot -> {
+                long latency = System.currentTimeMillis() - startMs;
+                log.info("[correlation={} tenant={} execution={}] Workflow execution restored, status={}",
+                        correlationId, tenantId, executionId, snapshot.status());
+                metrics.recordRequest(HANDLER_NAME, "restoreExecution", tenantId, 200);
+                metrics.recordLatency(HANDLER_NAME, "restoreExecution", latency);
+                return http.jsonResponse(Map.of(
+                    "executionId", snapshot.id(),
+                    "tenantId", tenantId,
+                    "status", snapshot.status(),
+                    "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString()
+                ));
+            })
+            .then(Promise::of, e -> {
+                log.error("[correlation={} tenant={} execution={}] Failed to restore execution: {}",
+                        correlationId, tenantId, executionId, e.getMessage());
+                metrics.recordError(HANDLER_NAME, "restoreExecution", e);
+                return Promise.of(http.errorResponse(500, "Restore execution failed"));
+            });
     }
 
     // ==================== Analytics Routes ====================

@@ -143,18 +143,25 @@ public final class SemanticSearchHandler {
         }
 
         return vectorPlugin.findSimilar(parseUuid(entityId).toString(), count, true, tenantId)
-            .map(results -> http.jsonResponse(Map.of(
-                "collection", collection,
-                "entityId", entityId,
-                "matches", results.getResults().stream().map(match -> Map.of(
-                    "id", sourceEntityId(match),
-                    "collection", match.getRecord().getRecord().getCollectionName(),
-                    "score", match.getScore(),
-                    "data", match.getRecord().getRecord().getData()
-                )).toList(),
-                "count", results.getResults().size(),
-                "requestId", requestId
-            ), requestId));
+            .map(results -> {
+                // Defense-in-depth: enforce tenant isolation even if the plugin returns cross-tenant records.
+                List<Map<String, Object>> matches = results.getResults().stream()
+                    .filter(match -> tenantId.equals(match.getRecord().getTenantId()))
+                    .map(match -> Map.of(
+                        "id", sourceEntityId(match),
+                        "collection", match.getRecord().getRecord().getCollectionName(),
+                        "score", match.getScore(),
+                        "data", match.getRecord().getRecord().getData()
+                    ))
+                    .toList();
+                return http.jsonResponse(Map.of(
+                    "collection", collection,
+                    "entityId", entityId,
+                    "matches", matches,
+                    "count", matches.size(),
+                    "requestId", requestId
+                ), requestId);
+            });
     }
 
     public Promise<HttpResponse> handleCollectionRag(HttpRequest request) {
@@ -179,7 +186,9 @@ public final class SemanticSearchHandler {
                     .k(count)
                     .build())
                 .map(results -> {
+                    // Defense-in-depth: enforce tenant isolation even if the plugin returns cross-tenant records.
                     List<Map<String, Object>> matches = results.getResults().stream()
+                        .filter(result -> tenantId.equals(result.getRecord().getTenantId()))
                         .filter(result -> collection.equals(result.getRecord().getRecord().getCollectionName()))
                         .map(result -> Map.of(
                             "id", sourceEntityId(result),

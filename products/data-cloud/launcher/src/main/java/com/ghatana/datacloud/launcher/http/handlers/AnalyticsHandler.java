@@ -43,6 +43,8 @@ public class AnalyticsHandler {
     private ReportService reportService;
     private ReportExecutionCapability reportCapability;
     private DataCloudHttpMetrics httpMetrics = DataCloudHttpMetrics.noop();
+    // DC-P1-001: cancellation is not implemented; capability registry advertises analytics.cancellation.configured=false
+    private boolean cancellationSupported = false;
 
     public AnalyticsHandler(AnalyticsQueryEngine analyticsEngine, HttpHandlerSupport http) {
         this.analyticsEngine = analyticsEngine;
@@ -61,6 +63,18 @@ public class AnalyticsHandler {
 
     public AnalyticsHandler withMetrics(DataCloudHttpMetrics metrics) {
         this.httpMetrics = metrics;
+        return this;
+    }
+
+    /**
+     * Enables cancellation support when a distributed query tracker is present.
+     * Must not be called in single-process deployments where cancellation is unavailable.
+     *
+     * @param supported whether the engine supports {@code DELETE /queries/{queryId}}
+     * @return this handler for fluent chaining
+     */
+    public AnalyticsHandler withCancellationSupported(boolean supported) {
+        this.cancellationSupported = supported;
         return this;
     }
 
@@ -145,9 +159,10 @@ public class AnalyticsHandler {
                         .then(
                             Promise::of,
                             e -> {
-                                log.error("[DC-9] analytics query execution failed traceId={}: {}", traceId, e.getMessage(), e);
+                                // DC-P1-007: Log internal detail server-side; return stable sanitized message to client
+                                log.error("[DC-9] analytics query execution failed traceId={} errorType={}: {}", traceId, e.getClass().getSimpleName(), e.getMessage(), e);
                                 httpMetrics.recordError(HANDLER_NAME, "handleAnalyticsQuery", e);
-                                return Promise.of(http.errorResponse(500, "Query execution failed"));
+                                return Promise.of(http.errorResponse(500, "Query execution failed", traceId));
                             }
                         );
                 },
@@ -211,8 +226,9 @@ public class AnalyticsHandler {
             .then(
                 Promise::of,
                 e -> {
-                    log.error("[DC-9] analytics getResult failed queryId={}: {}", queryId, e.getMessage(), e);
-                    return Promise.of(http.errorResponse(500, "Failed to retrieve result"));
+                    // DC-P1-007: Log internal detail server-side; return stable code to client without sensitive info
+                    log.error("[DC-9] analytics getResult failed queryId={} traceId={} errorType={}: {}", queryId, traceId, e.getClass().getSimpleName(), e.getMessage(), e);
+                    return Promise.of(http.errorResponse(500, "Failed to retrieve result", traceId));
                 }
             );
     }
@@ -243,8 +259,9 @@ public class AnalyticsHandler {
             .then(
                 Promise::of,
                 e -> {
-                    log.error("[DC-9] analytics getPlan failed queryId={}: {}", queryId, e.getMessage(), e);
-                    return Promise.of(http.errorResponse(500, "Failed to retrieve query plan"));
+                    log.error("[DC-9] analytics getPlan failed queryId={} traceId={} errorType={}: {}",
+                        queryId, traceId, e.getClass().getSimpleName(), e.getMessage(), e);
+                    return Promise.of(http.errorResponse(500, "Failed to retrieve query plan", traceId));
                 }
             );
     }
@@ -301,18 +318,19 @@ public class AnalyticsHandler {
                             .then(
                                 Promise::of,
                                 e -> {
-                                    log.error("[DC-9] analytics aggregate failed: {}", e.getMessage(), e);
+                                    log.error("[DC-9] analytics aggregate failed traceId={} errorType={}: {}",
+                                        traceId, e.getClass().getSimpleName(), e.getMessage(), e);
                                     httpMetrics.recordError(HANDLER_NAME, "handleAnalyticsAggregate", e);
-                                    return Promise.of(http.errorResponse(500, "Aggregate query failed"));
+                                    return Promise.of(http.errorResponse(500, "Aggregate query failed", traceId));
                                 }
                             );
                     } catch (Exception e) {
-                        log.error("[DC-9] analytics aggregate request parse error: {}", e.getMessage(), e);
+                        log.error("[DC-9] analytics aggregate request parse error traceId={}: {}", traceId, e.getMessage(), e);
                         return Promise.of(http.errorResponse(400, "Invalid request body"));
                     }
                 },
                 e -> {
-                    log.error("[DC-9] analytics aggregate body load error: {}", e.getMessage(), e);
+                    log.error("[DC-9] analytics aggregate body load error traceId={}: {}", traceId, e.getMessage(), e);
                     return Promise.of(http.errorResponse(400, "Failed to read request body"));
                 }
             );
@@ -342,6 +360,7 @@ public class AnalyticsHandler {
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
+        String traceId = http.resolveCorrelationId(request);
         return request.loadBody().then(buf -> {
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
@@ -360,15 +379,16 @@ public class AnalyticsHandler {
                             Map<String, Object> response = new LinkedHashMap<>(planFields);
                             response.put("explain", true);
                             response.put("timestamp", Instant.now().toString());
-                            response.put("traceId", http.resolveCorrelationId(request));
+                            response.put("traceId", traceId);
                             return http.jsonResponse(response);
                         })
                         .then(Promise::of, e -> {
-                            log.error("[DC-9] analytics explain failed: {}", e.getMessage(), e);
-                            return Promise.of(http.errorResponse(500, "Explain query failed"));
+                            log.error("[DC-9] analytics explain failed traceId={} errorType={}: {}",
+                                traceId, e.getClass().getSimpleName(), e.getMessage(), e);
+                            return Promise.of(http.errorResponse(500, "Explain query failed", traceId));
                         });
             } catch (Exception e) {
-                log.error("[DC-9] analytics explain parse error: {}", e.getMessage(), e);
+                log.error("[DC-9] analytics explain parse error traceId={}: {}", traceId, e.getMessage(), e);
                 return Promise.of(http.errorResponse(400, "Invalid request body"));
             }
         });
@@ -379,6 +399,7 @@ public class AnalyticsHandler {
         if (reportCapability == null && reportService == null) {
             return Promise.of(http.errorResponse(503, "Report service not available in this deployment"));
         }
+        String traceId = http.resolveCorrelationId(request);
         return request.loadBody()
             .then(buf -> {
                 try {
@@ -413,17 +434,17 @@ public class AnalyticsHandler {
                             return http.jsonResponse(response);
                         })
                         .then(Promise::of, e -> {
-                            log.error("[DC-10] report generation failed name='{}': {}",
-                                    definition.getName(), e.getMessage(), e);
-                            return Promise.of(http.errorResponse(500, "Report generation failed"));
+                            log.error("[DC-10] report generation failed name='{}' traceId={} errorType={}: {}",
+                                    definition.getName(), traceId, e.getClass().getSimpleName(), e.getMessage(), e);
+                            return Promise.of(http.errorResponse(500, "Report generation failed", traceId));
                         });
                 } catch (Exception e) {
-                    log.error("[DC-10] report request parse error: {}", e.getMessage(), e);
+                    log.error("[DC-10] report request parse error traceId={}: {}", traceId, e.getMessage(), e);
                     return Promise.of(http.errorResponse(400, "Invalid request body"));
                 }
             })
             .then(Promise::of, e -> {
-                log.error("[DC-10] report body load error: {}", e.getMessage(), e);
+                log.error("[DC-10] report body load error traceId={}: {}", traceId, e.getMessage(), e);
                 return Promise.of(http.errorResponse(400, "Failed to read request body"));
             });
     }
@@ -464,19 +485,31 @@ public class AnalyticsHandler {
     /**
      * Handles DELETE /api/v1/analytics/queries/{queryId} — cancel a running query.
      *
-     * <p>Analytics query cancellation is not supported in this deployment.
-     * This endpoint returns 501 Not Implemented as documented in the OpenAPI spec.
+     * <p>When {@link #cancellationSupported} is {@code false} (the default), this endpoint
+     * returns {@code 501 Not Implemented}. The runtime capability registry
+     * ({@code GET /api/v1/capabilities}) will expose {@code analytics.cancellation.configured=false}
+     * so that UI clients can disable the cancel action before reaching this endpoint.
      *
      * @param request HTTP request
-     * @return Promise with 501 Not Implemented response
+     * @return 200 if cancellation succeeds (future), or 501 when not supported
      */
     public Promise<HttpResponse> handleAnalyticsCancelQuery(HttpRequest request) {
         String queryId = request.getPathParameter("queryId");
-        log.info("[DC-9] cancel query requested queryId={} - NOT SUPPORTED", queryId);
-
-        // Analytics query cancellation is not supported in this deployment
+        String traceId = http.resolveCorrelationId(request);
+        if (!cancellationSupported) {
+            // DC-P1-001: Capability-consistent 501 — capability registry advertises analytics.cancellation.configured=false
+            log.info("[DC-9] cancel query rejected queryId={} traceId={} — analytics.cancellation capability is not configured in this deployment",
+                queryId, traceId);
+            return Promise.of(http.errorResponse(501,
+                "Analytics query cancellation is not supported. " +
+                "Check the analytics.cancellation entry at GET /api/v1/capabilities for current support status.",
+                traceId));
+        }
+        // Future path: cancellationSupported=true requires a distributed query tracker
+        log.info("[DC-9] cancel query requested queryId={} traceId={}", queryId, traceId);
         return Promise.of(http.errorResponse(501,
-            "Analytics query cancellation is not supported in this deployment."));
+            "Analytics query cancellation is not yet implemented for this deployment.",
+            traceId));
     }
 
     private ReportExecutionCapability reportExecutor() {

@@ -4,8 +4,9 @@ info:
   description: |
     REST API for the Agentic Event Processor (AEP).
 
-    AEP provides real-time event processing with pattern detection,
-    anomaly analysis, time-series forecasting, and pipeline management.
+    AEP provides an agentic orchestration runtime for event-driven execution,
+    including pattern detection, anomaly analysis, time-series forecasting,
+    and pipeline governance/operation surfaces.
     All multi-tenant endpoints accept an `X-Tenant-Id` header or
     a `tenantId` query parameter for tenant isolation.
   version: 1.0.0

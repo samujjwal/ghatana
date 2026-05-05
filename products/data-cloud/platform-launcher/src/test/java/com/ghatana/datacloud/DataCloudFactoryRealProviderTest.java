@@ -41,13 +41,14 @@ class DataCloudFactoryRealProviderTest extends EventloopTestBase {
     private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
         .withDatabaseName("datacloud_factory_it")
         .withUsername("dc_factory")
-        .withPassword("dc_factory_secret");
+        .withPassword("dc_factory_secret")
+        .withReuse(true);
 
     @Container
     @SuppressWarnings("resource")
     private static final KafkaContainer KAFKA = new KafkaContainer( 
         DockerImageName.parse("confluentinc/cp-kafka:7.5.0")
-    ).withEmbeddedZookeeper(); 
+    ).withEmbeddedZookeeper().withReuse(true); 
 
     @BeforeAll
     static void migrateSchemaAndConfigureProviders() { 

@@ -203,7 +203,7 @@ export function WorkflowCatalogPage() {
             Workflow Templates
           </h1>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            Browse and instantiate reusable pipeline templates
+            Browse and instantiate reusable orchestration templates
           </p>
         </div>
         {templates && (
@@ -246,7 +246,7 @@ export function WorkflowCatalogPage() {
           <EmptyState
             title={templates?.length === 0 ? 'No workflow templates registered' : 'No templates match your search'}
             description={templates?.length === 0 ? 'Register templates for this tenant to get started.' : 'Try adjusting your search terms.'}
-            action={search ? { label: 'Clear search', onClick: () => setSearch('') } : undefined}
+            action={search ? <Button onClick={() => setSearch('')} variant="secondary">Clear search</Button> : undefined}
           />
         )}
 

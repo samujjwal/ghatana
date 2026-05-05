@@ -98,7 +98,8 @@ public final class DurableHumanApprovalPlugin implements HumanApprovalPlugin {
                       expires_at        BIGINT,
                       decided_at        BIGINT,
                       reviewer_id       VARCHAR(256),
-                      reviewer_notes    VARCHAR(4096)
+                      reviewer_notes    VARCHAR(4096),
+                      workspace_id      VARCHAR(256)
                     )
                     """.formatted(APPROVALS_TABLE));
 
@@ -174,8 +175,8 @@ public final class DurableHumanApprovalPlugin implements HumanApprovalPlugin {
             String sql = """
                     INSERT INTO %s
                       (request_id, subject_id, requested_by, action, purpose, status,
-                       required_approvals, requested_at, expires_at)
-                    VALUES (?, ?, ?, ?, ?, 'PENDING', ?, ?, ?)
+                       required_approvals, requested_at, expires_at, workspace_id)
+                    VALUES (?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, ?)
                     """.formatted(APPROVALS_TABLE);
 
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -190,6 +191,13 @@ public final class DurableHumanApprovalPlugin implements HumanApprovalPlugin {
                     ps.setLong(8, expiresEpoch);
                 } else {
                     ps.setNull(8, Types.BIGINT);
+                }
+                // P1-013: Extract workspace_id from context
+                String workspaceId = extractWorkspaceId(request.context());
+                if (workspaceId != null) {
+                    ps.setString(9, workspaceId);
+                } else {
+                    ps.setNull(9, Types.VARCHAR);
                 }
                 ps.executeUpdate();
             }
@@ -297,6 +305,29 @@ public final class DurableHumanApprovalPlugin implements HumanApprovalPlugin {
     }
 
     @Override
+    public Promise<List<ApprovalRecord>> listPendingForWorkspace(String workspaceId) {
+        Objects.requireNonNull(workspaceId, "workspaceId must not be null");
+
+        String sql = "SELECT * FROM %s WHERE workspace_id = ? AND status = 'PENDING'"
+                .formatted(APPROVALS_TABLE);
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, workspaceId);
+            List<ApprovalRecord> results = new ArrayList<>();
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    results.add(applyTimeoutEscalation(conn, mapRow(rs)));
+                }
+            }
+            return Promise.of(Collections.unmodifiableList(results));
+        } catch (SQLException ex) {
+            LOG.error("Database error listing pending approvals for workspace {}", workspaceId, ex);
+            return Promise.ofException(ex);
+        }
+    }
+
+    @Override
     public Promise<Void> cancelApproval(String requestId, String reason) {
         Objects.requireNonNull(requestId, "requestId must not be null");
 
@@ -352,9 +383,16 @@ public final class DurableHumanApprovalPlugin implements HumanApprovalPlugin {
         String reviewerId    = rs.getString("reviewer_id");
         String reviewerNotes = rs.getString("reviewer_notes");
 
+        // P1-013: Read workspace_id from database
+        String workspaceId = rs.getString("workspace_id");
+        Map<String, Object> context = new HashMap<>();
+        if (workspaceId != null) {
+            context.put("workspaceId", workspaceId);
+        }
+
         return new ApprovalRecord(
                 requestId, subjectId, requestedBy, action, status,
-                requestedAt, expiresAt, decidedAt, reviewerId, reviewerNotes);
+                requestedAt, expiresAt, decidedAt, reviewerId, reviewerNotes, context);
     }
 
     private ApprovalRecord applyTimeoutEscalation(Connection conn, ApprovalRecord record) {
@@ -439,5 +477,13 @@ public final class DurableHumanApprovalPlugin implements HumanApprovalPlugin {
             return Math.max(1, num.intValue());
         }
         return 1;
+    }
+
+    private static String extractWorkspaceId(Map<String, Object> context) {
+        Object val = context.get("workspaceId");
+        if (val instanceof String str) {
+            return str;
+        }
+        return null;
     }
 }

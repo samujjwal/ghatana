@@ -83,3 +83,77 @@ jobs:
           fi
         shell: bash
         continue-on-error: true
+
+      # ── ARCH-P2-001 / DC-P1-014: Audit document truth checks ─────────────
+
+      - name: Verify shared audit doc contains reviewed commit hash
+        run: |
+          AUDIT_FILE="docs/audits/end-to-end-product-correctness-audit.md"
+          EXPECTED_COMMIT="7432d84601747ed3e095555c11a5f9471f0f8595"
+          if ! grep -qF "${EXPECTED_COMMIT}" "${AUDIT_FILE}"; then
+            echo "❌ ${AUDIT_FILE} does not reference the reviewed commit ${EXPECTED_COMMIT}."
+            echo "Update the audit doc's 'Last verified commit' when a new audit is performed."
+            exit 1
+          fi
+          echo "✅ Shared audit doc references commit ${EXPECTED_COMMIT}."
+        shell: bash
+
+      - name: Verify product-specific audit docs are marked archived
+        run: |
+          FAILED=0
+          for doc in \
+            products/data-cloud/docs/audits/end-to-end-product-correctness-audit.md \
+            products/aep/docs/audits/end-to-end-product-correctness-audit.md; do
+            if [ -f "$doc" ] && ! grep -qi "archived\|superseded" "$doc"; then
+              echo "❌ $doc is not marked as archived/superseded. Product-specific audit docs must defer to the shared doc."
+              FAILED=$((FAILED + 1))
+            fi
+          done
+          if [ "$FAILED" -gt 0 ]; then exit 1; fi
+          echo "✅ All product-specific audit docs are marked archived."
+        shell: bash
+
+      - name: Verify no audit doc references stale commit c4fc61
+        run: |
+          STALE_COMMIT="c4fc61"
+          HITS=$(grep -rl "${STALE_COMMIT}" docs/audits products/data-cloud/docs products/aep/docs 2>/dev/null || true)
+          if [ -n "$HITS" ]; then
+            echo "❌ The following audit docs still reference the stale commit ${STALE_COMMIT}:"
+            echo "$HITS"
+            exit 1
+          fi
+          echo "✅ No audit docs reference the stale commit ${STALE_COMMIT}."
+        shell: bash
+
+      - name: Lint docs for absolute local filesystem paths
+        run: |
+          # Absolute local paths (e.g. /home/user/, C:\Users\) must not appear in docs.
+          # They are a sign of accidental copy-paste from a dev machine.
+          HITS=$(grep -rn --include='*.md' -E '(^|[^`])(\/home\/[a-zA-Z]|C:\\\\Users\\\\|D:\\\\|\/Users\/[a-zA-Z])' \
+            docs products/data-cloud/docs products/aep/docs 2>/dev/null | head -20 || true)
+          if [ -n "$HITS" ]; then
+            echo "❌ Found absolute local filesystem paths in docs (must use relative repo paths):"
+            echo "$HITS"
+            exit 1
+          fi
+          echo "✅ No absolute local filesystem paths found in docs."
+        shell: bash
+        continue-on-error: true
+
+      - name: Lint docs for unsubstantiated 'production ready' claims
+        run: |
+          # README or doc files must not claim "production ready" without citing a test or evidence.
+          # This catches accidentally copy-pasted marketing text.
+          HITS=$(grep -rn --include='*.md' -iE '\bproduction.?ready\b' \
+            docs products/data-cloud/docs products/aep/docs README.md 2>/dev/null \
+            | grep -iv "not.*production.?ready\|conditional\|exit criteria\|readiness gate\|audit\|checklist\|#" \
+            | head -10 || true)
+          if [ -n "$HITS" ]; then
+            echo "⚠️  Possible unsubstantiated 'production ready' claim in docs (review required):"
+            echo "$HITS"
+          else
+            echo "✅ No unsubstantiated 'production ready' claims found."
+          fi
+        shell: bash
+        continue-on-error: true
+

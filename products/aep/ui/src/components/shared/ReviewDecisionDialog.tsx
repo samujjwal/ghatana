@@ -8,7 +8,7 @@
  * @doc.pattern Dialog
  */
 import React, { useRef, useEffect, useState } from 'react';
-import { Button } from '@ghatana/design-system';
+import { Button, TextArea } from '@ghatana/design-system';
 
 export interface ReviewDecisionDialogProps {
   open: boolean;
@@ -116,11 +116,11 @@ export function ReviewDecisionDialog({
             >
               Note / reason
             </label>
-            <textarea
+            <TextArea
               id="review-note"
               ref={textareaRef}
               rows={3}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full"
               placeholder={mode === 'approve' ? 'Why is this approved?' : 'Why is this rejected?'}
               value={note}
               onChange={(e) => setNote(e.target.value)}

@@ -345,6 +345,10 @@ public class EntityCrudHandler {
         String search = request.getQueryParameter("search");
         List<DataCloudClient.Sort> sorts = parseSorts(request.getQueryParameter("sort"));
         List<DataCloudClient.Filter> filters = parseFilters(request.getQueryParameter("filter"));
+        if (filters == null) {
+            return Promise.of(http.errorResponse(400,
+                "Invalid filter expression: expected field:operator:value with operator in [eq, ne, gt, gte, lt, lte, like]"));
+        }
 
         if (search != null && !search.isBlank()) {
             Optional<String> searchErr = ApiInputValidator.validateSearchQuery(search);
@@ -418,7 +422,8 @@ public class EntityCrudHandler {
 
     private List<DataCloudClient.Sort> parseSorts(String raw) {
         if (raw == null || raw.isBlank()) {
-            return List.of();
+            // DC-P2-007: Always ensure deterministic results by using id as tie-breaker
+            return List.of(DataCloudClient.Sort.asc("id"));
         }
         List<DataCloudClient.Sort> result = new ArrayList<>();
         for (String part : raw.split(",")) {
@@ -431,9 +436,22 @@ public class EntityCrudHandler {
             boolean ascending = tokens.length < 2 || "asc".equalsIgnoreCase(tokens[1]);
             result.add(ascending ? DataCloudClient.Sort.asc(field) : DataCloudClient.Sort.desc(field));
         }
+        // DC-P2-007: Append id tiebreaker if not already present to ensure deterministic ordering
+        boolean hasIdSort = result.stream().anyMatch(s -> "id".equals(s.field()));
+        if (!hasIdSort) {
+            result.add(DataCloudClient.Sort.asc("id"));
+        }
         return List.copyOf(result);
     }
 
+    /** Known filter operators (DC-P2-007: unknown operators return 400). */
+    private static final java.util.Set<String> KNOWN_FILTER_OPS =
+        java.util.Set.of("eq", "ne", "gt", "gte", "lt", "lte", "like");
+
+    /**
+     * Parses and validates filter expressions from the query string.
+     * Returns {@code null} (not a list) when any filter token is malformed.
+     */
     private List<DataCloudClient.Filter> parseFilters(String raw) {
         if (raw == null || raw.isBlank()) {
             return List.of();
@@ -445,21 +463,25 @@ public class EntityCrudHandler {
                 continue;
             }
             String[] tokens = trimmed.split(":");
-            if (tokens.length >= 3) {
-                String field = tokens[0];
-                String op = tokens[1];
-                String value = tokens[2];
-                result.add(switch (op) {
-                    case "eq" -> DataCloudClient.Filter.eq(field, value);
-                    case "ne" -> DataCloudClient.Filter.ne(field, value);
-                    case "gt" -> DataCloudClient.Filter.gt(field, value);
-                    case "gte" -> DataCloudClient.Filter.gte(field, value);
-                    case "lt" -> DataCloudClient.Filter.lt(field, value);
-                    case "lte" -> DataCloudClient.Filter.lte(field, value);
-                    case "like" -> DataCloudClient.Filter.like(field, value);
-                    default -> DataCloudClient.Filter.eq(field, value);
-                });
+            if (tokens.length < 3) {
+                return null; // signal malformed filter
             }
+            String field = tokens[0];
+            String op = tokens[1];
+            String value = tokens[2];
+            if (!KNOWN_FILTER_OPS.contains(op)) {
+                return null; // signal unknown operator
+            }
+            result.add(switch (op) {
+                case "eq" -> DataCloudClient.Filter.eq(field, value);
+                case "ne" -> DataCloudClient.Filter.ne(field, value);
+                case "gt" -> DataCloudClient.Filter.gt(field, value);
+                case "gte" -> DataCloudClient.Filter.gte(field, value);
+                case "lt" -> DataCloudClient.Filter.lt(field, value);
+                case "lte" -> DataCloudClient.Filter.lte(field, value);
+                case "like" -> DataCloudClient.Filter.like(field, value);
+                default -> throw new IllegalStateException("unreachable");
+            });
         }
         return List.copyOf(result);
     }

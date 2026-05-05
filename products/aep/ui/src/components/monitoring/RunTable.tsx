@@ -9,7 +9,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router';
 import type { PipelineRun } from '@/api/aep.api';
 import type { AiSuggestion } from './AiSuggestionsPanel';
-import { Button } from '@ghatana/design-system';
+import { Button, Checkbox } from '@ghatana/design-system';
 import { Zap } from 'lucide-react';
 import { ReviewDecisionDialog } from '@/components/shared/ReviewDecisionDialog';
 import { ConfidenceExplanation } from '@/components/shared/ConfidenceExplanation';
@@ -57,11 +57,12 @@ function AiSuggestionPill({
 }) {
   const routing = getAiRouting(suggestion.confidence);
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
       onClick={onToggle}
       className={[
-        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium',
+        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium h-auto',
         suggestion.severity === 'critical' || suggestion.severity === 'high'
           ? 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300'
           : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
@@ -71,7 +72,7 @@ function AiSuggestionPill({
     >
       <Zap className="h-3 w-3" aria-hidden="true" />
       {suggestion.message.length > 40 ? suggestion.message.slice(0, 38) + '…' : suggestion.message}
-    </button>
+    </Button>
   );
 }
 
@@ -105,16 +106,10 @@ export function RunTable({
           <tr>
             {onSelectToggle && (
               <th className="px-3 py-2 w-10" scope="col">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={isAllSelected ?? false}
-                  ref={(el) => {
-                    if (el && isIndeterminate) {
-                      el.indeterminate = true;
-                    }
-                  }}
+                  indeterminate={isIndeterminate}
                   onChange={onSelectAll}
-                  className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-900"
                   aria-label="Select all runs"
                 />
               </th>
@@ -138,11 +133,9 @@ export function RunTable({
             >
               {onSelectToggle && (
                 <td className="px-3 py-2">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={selectedIds?.has(run.id) ?? false}
                     onChange={() => onSelectToggle(run.id)}
-                    className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-900"
                     aria-label={`Select run ${run.id}`}
                   />
                 </td>

@@ -4,7 +4,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.application.strategy.StrategyGeneratorService;
+import com.ghatana.digitalmarketing.api.observability.DmosTelemetry;
+import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
@@ -59,10 +62,16 @@ public final class DmosStrategyServlet {
 
     private final StrategyGeneratorService strategyService;
     private final Eventloop eventloop;
+    private final DmosMetricsCollector metrics;
+    private final DmosTelemetry telemetry;
+    private final DmosHttpContextFactory httpContextFactory;
 
-    public DmosStrategyServlet(StrategyGeneratorService strategyService, Eventloop eventloop) {
-        this.strategyService = Objects.requireNonNull(strategyService, "strategyService must not be null");
-        this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
+    public DmosStrategyServlet(StrategyGeneratorService strategyService, Eventloop eventloop, DmosMetricsCollector metrics, DmosTelemetry telemetry, DmosHttpContextFactory httpContextFactory) {
+        this.strategyService   = Objects.requireNonNull(strategyService,   "strategyService must not be null");
+        this.eventloop          = Objects.requireNonNull(eventloop,          "eventloop must not be null");
+        this.metrics            = Objects.requireNonNull(metrics,            "metrics must not be null");
+        this.telemetry          = Objects.requireNonNull(telemetry,          "telemetry must not be null");
+        this.httpContextFactory = Objects.requireNonNull(httpContextFactory, "httpContextFactory must not be null");
     }
 
     /**
@@ -72,12 +81,14 @@ public final class DmosStrategyServlet {
      */
     public AsyncServlet getServlet() {
         return DmosApiRateLimiter.wrap(
-        RoutingServlet.builder(eventloop)
-            .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/strategy", this::handleGenerateStrategy)
-            .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/strategy/:strategyId/submit", this::handleSubmitForApproval)
-            .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/strategy/:strategyId/approve", this::handleApproveStrategy)
-            .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/strategy", this::handleGetLatestStrategy)
-            .build()
+            RoutingServlet.builder(eventloop)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/strategy", this::handleGenerateStrategy)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/strategy/:strategyId/submit", this::handleSubmitForApproval)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/strategy/:strategyId/approve", this::handleApproveStrategy)
+                .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/strategy", this::handleGetLatestStrategy)
+                .build(),
+            metrics,
+            "strategy"
         );
     }
 
@@ -85,27 +96,41 @@ public final class DmosStrategyServlet {
         return request.loadBody().then(__ -> {
             try {
                 String workspaceId = request.getPathParameter("workspaceId");
-                DmOperationContext ctx = buildContext(request, workspaceId, true);
+                // P1-001: Use shared fail-closed HTTP context factory
+                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
                 GenerateStrategyRequest body = MAPPER.readValue(
                     request.getBody().getString(StandardCharsets.UTF_8),
                     GenerateStrategyRequest.class
                 );
 
-                StrategyGeneratorService.GenerateStrategyCommand command =
-                    new StrategyGeneratorService.GenerateStrategyCommand(
-                        body.intakeCompletionPct(),
-                        body.serviceArea(),
-                        body.monthlyBudget(),
-                        body.auditFindingCount(),
-                        body.trackingGapsDetected(),
-                        body.keywordOpportunityCount(),
-                        body.topCompetitorCount(),
-                        body.primaryOffer()
-                    );
+                // P1-026: Create span for strategy generation
+                io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /strategy", ctx).startSpan();
+                try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                    StrategyGeneratorService.GenerateStrategyCommand command =
+                        new StrategyGeneratorService.GenerateStrategyCommand(
+                            body.intakeCompletionPct(),
+                            body.serviceArea(),
+                            body.monthlyBudget(),
+                            body.auditFindingCount(),
+                            body.trackingGapsDetected(),
+                            body.keywordOpportunityCount(),
+                            body.topCompetitorCount(),
+                            body.primaryOffer()
+                        );
 
-                return strategyService.generateStrategy(ctx, command)
-                    .map(strategy -> jsonResponse(200, StrategyResponse.from(strategy)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("generate strategy", e));
+                    return strategyService.generateStrategy(ctx, command)
+                        .map(strategy -> {
+                            telemetry.setStrategyId(strategy.getId());
+                            span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                            span.end();
+                            return jsonResponse(200, StrategyResponse.from(strategy));
+                        })
+                        .then(r -> Promise.of(r), e -> {
+                            telemetry.recordException(span, e);
+                            span.end();
+                            return mapServiceError("generate strategy", e);
+                        });
+                }
             } catch (IllegalArgumentException e) {
                 return Promise.of(errorResponse(400, e.getMessage()));
             } catch (Exception e) {
@@ -120,11 +145,25 @@ public final class DmosStrategyServlet {
             try {
                 String workspaceId = request.getPathParameter("workspaceId");
                 String strategyId = request.getPathParameter("strategyId");
-                DmOperationContext ctx = buildContext(request, workspaceId, true);
+                // P1-001: Use shared fail-closed HTTP context factory
+                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
 
-                return strategyService.submitForApproval(ctx, strategyId)
-                    .map(strategy -> jsonResponse(200, StrategyResponse.from(strategy)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("submit strategy for approval", e));
+                // P1-026: Create span for strategy submission
+                io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /strategy/:strategyId/submit", ctx).startSpan();
+                try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                    telemetry.setStrategyId(strategyId);
+                    return strategyService.submitForApproval(ctx, strategyId)
+                        .map(strategy -> {
+                            span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                            span.end();
+                            return jsonResponse(200, StrategyResponse.from(strategy));
+                        })
+                        .then(r -> Promise.of(r), e -> {
+                            telemetry.recordException(span, e);
+                            span.end();
+                            return mapServiceError("submit strategy for approval", e);
+                        });
+                }
             } catch (IllegalArgumentException e) {
                 return Promise.of(errorResponse(400, e.getMessage()));
             } catch (Exception e) {
@@ -139,11 +178,25 @@ public final class DmosStrategyServlet {
             try {
                 String workspaceId = request.getPathParameter("workspaceId");
                 String strategyId = request.getPathParameter("strategyId");
-                DmOperationContext ctx = buildContext(request, workspaceId, true);
+                // P1-001: Use shared fail-closed HTTP context factory
+                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
 
-                return strategyService.approveStrategy(ctx, strategyId)
-                    .map(strategy -> jsonResponse(200, StrategyResponse.from(strategy)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("approve strategy", e));
+                // P1-026: Create span for strategy approval
+                io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /strategy/:strategyId/approve", ctx).startSpan();
+                try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                    telemetry.setStrategyId(strategyId);
+                    return strategyService.approveStrategy(ctx, strategyId)
+                        .map(strategy -> {
+                            span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                            span.end();
+                            return jsonResponse(200, StrategyResponse.from(strategy));
+                        })
+                        .then(r -> Promise.of(r), e -> {
+                            telemetry.recordException(span, e);
+                            span.end();
+                            return mapServiceError("approve strategy", e);
+                        });
+                }
             } catch (IllegalArgumentException e) {
                 return Promise.of(errorResponse(400, e.getMessage()));
             } catch (Exception e) {
@@ -156,7 +209,8 @@ public final class DmosStrategyServlet {
     private Promise<HttpResponse> handleGetLatestStrategy(HttpRequest request) {
         try {
             String workspaceId = request.getPathParameter("workspaceId");
-            DmOperationContext ctx = buildContext(request, workspaceId, false);
+            // P1-001: Use shared fail-closed HTTP context factory
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
 
             return strategyService.getLatestStrategy(ctx)
                 .map(strategy -> jsonResponse(200, StrategyResponse.from(strategy)))
@@ -189,70 +243,9 @@ public final class DmosStrategyServlet {
         return Promise.of(errorResponse(500, "Internal error"));
     }
 
-    private DmOperationContext buildContext(HttpRequest request, String workspaceId, boolean requireIdempotencyKey) {
-        String tenantId = getRequiredHeader(request, "X-Tenant-ID");
-        String principal = getHeader(request, "X-Principal-ID", "anonymous");
-        String correlationId = getHeader(request, "X-Correlation-ID", DmCorrelationId.generate().getValue());
-        String idempotencyKeyValue = getHeader(request, "X-Idempotency-Key", null);
-        String sessionId = getHeader(request, "X-Session-ID", null);
-        Set<String> roles = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Roles")));
-        Set<String> permissions = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Permissions")));
+    // P1-001: Local buildContext method removed - using shared DmosHttpContextFactory
 
-        if (requireIdempotencyKey && (idempotencyKeyValue == null || idempotencyKeyValue.isBlank())) {
-            throw new IllegalArgumentException("X-Idempotency-Key header is required for write operations");
-        }
-
-        DmWorkspaceId workspace = DmWorkspaceId.of(workspaceId);
-        DmIdempotencyKey idempotencyKey =
-            (idempotencyKeyValue != null && !idempotencyKeyValue.isBlank())
-                ? DmIdempotencyKey.of(idempotencyKeyValue)
-                : null;
-
-        DmOperationContext baseContext = DmOperationContext.builder()
-            .tenantId(DmTenantId.of(tenantId))
-            .workspaceId(workspace)
-            .actor(ActorRef.user(principal))
-            .correlationId(DmCorrelationId.of(correlationId))
-            .build();
-
-        TenantSecurityContext securityContext = DmSecurityContextMapper.toTenantSecurityContext(
-            baseContext,
-            sessionId,
-            roles,
-            permissions,
-            null
-        );
-
-        return DmSecurityContextMapper.fromSecurityContext(
-            securityContext,
-            workspace,
-            DmCorrelationId.of(correlationId),
-            idempotencyKey
-        );
-    }
-
-    private static Set<String> parseCsvHeader(String value) {
-        if (value == null || value.isBlank()) {
-            return Set.of();
-        }
-        return Arrays.stream(value.split(","))
-            .map(String::trim)
-            .filter(token -> !token.isBlank())
-            .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    private static String getRequiredHeader(HttpRequest request, String name) {
-        String value = request.getHeader(HttpHeaders.of(name));
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("Required header missing: " + name);
-        }
-        return value;
-    }
-
-    private static String getHeader(HttpRequest request, String name, String defaultValue) {
-        String value = request.getHeader(HttpHeaders.of(name));
-        return (value != null && !value.isBlank()) ? value : defaultValue;
-    }
+    // P1-001: Local helper methods removed - using shared DmosHttpContextFactory
 
     private HttpResponse jsonResponse(int code, Object body) {
         try {

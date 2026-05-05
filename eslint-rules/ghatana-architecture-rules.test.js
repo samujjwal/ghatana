@@ -322,6 +322,87 @@ runSuite("bans devAuth imports outside guard", "no-dev-auth-in-prod", {
 });
 
 // =============================================================================
+// prefer-design-system-primitives
+// =============================================================================
+console.log("\nprefer-design-system-primitives");
+
+const jsxTester = new RuleTester({
+  languageOptions: {
+    ecmaVersion: 2022,
+    sourceType: "module",
+    parserOptions: {
+      ecmaFeatures: { jsx: true },
+    },
+  },
+});
+
+function runJsxSuite(suiteName, ruleName, tests) {
+  try {
+    jsxTester.run(suiteName, rules[ruleName], tests);
+    console.log(`  ✅ ${suiteName}`);
+    passed++;
+  } catch (err) {
+    console.error(`  ❌ ${suiteName}`);
+    console.error(`     ${err.message.split("\n")[0]}`);
+    failed++;
+  }
+}
+
+runJsxSuite(
+  "flags raw HTML interactive controls regardless of design-system imports",
+  "prefer-design-system-primitives",
+  {
+    valid: [
+      {
+        // design-system file implementing Button — excluded by path
+        filename: "/repo/platform/typescript/design-system/src/atoms/Button.tsx",
+        code: `export const Button = () => <button type="button">click</button>;`,
+      },
+      {
+        // Using design-system Button — no raw control
+        filename: "/repo/products/aep/ui/src/components/MyWidget.tsx",
+        code: `
+          import { Button } from "@ghatana/design-system";
+          export const MyWidget = () => <Button onClick={() => {}}>Go</Button>;
+        `,
+      },
+    ],
+    invalid: [
+      {
+        // Raw button even when design-system is imported
+        filename: "/repo/products/aep/ui/src/components/MyWidget.tsx",
+        code: `
+          import { Button } from "@ghatana/design-system";
+          export const Mixed = () => <button type="button">raw</button>;
+        `,
+        errors: [{ messageId: "rawPrimitive" }],
+      },
+      {
+        // Raw input — no design-system import
+        filename: "/repo/products/aep/ui/src/components/SearchBox.tsx",
+        code: `export const SearchBox = () => <input type="text" />;`,
+        errors: [{ messageId: "rawPrimitive" }],
+      },
+      {
+        // Raw select — no design-system import
+        filename: "/repo/products/aep/ui/src/components/LevelPicker.tsx",
+        code: `export const LevelPicker = () => <select><option value="a">A</option></select>;`,
+        errors: [{ messageId: "rawPrimitive" }],
+      },
+      {
+        // Raw textarea — with design-system import (mixed file scenario)
+        filename: "/repo/products/aep/ui/src/components/NoteField.tsx",
+        code: `
+          import { TextField } from "@ghatana/design-system";
+          export const NoteField = () => <textarea rows={3} />;
+        `,
+        errors: [{ messageId: "rawPrimitive" }],
+      },
+    ],
+  }
+);
+
+// =============================================================================
 // Summary
 // =============================================================================
 console.log(`\n─────────────────────────────────────────`);

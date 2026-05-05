@@ -6,6 +6,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.campaign.CampaignComplianceViolationException;
 import com.ghatana.digitalmarketing.application.campaign.CampaignService;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
+import com.ghatana.digitalmarketing.api.observability.DmosTelemetry;
+import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
@@ -30,7 +33,9 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -38,6 +43,7 @@ import java.util.Set;
  *
  * <h2>Endpoints</h2>
  * <pre>
+ *   GET    /v1/workspaces/:workspaceId/campaigns           — List campaigns (paginated)
  *   POST   /v1/workspaces/:workspaceId/campaigns           — Create a campaign
  *   GET    /v1/workspaces/:workspaceId/campaigns/:id       — Get a campaign
  *   POST   /v1/workspaces/:workspaceId/campaigns/:id/launch — Launch a campaign
@@ -47,6 +53,9 @@ import java.util.Set;
  * <p>Tenant isolation is enforced through the {@code X-Tenant-ID} header.
  * All mutating operations require an {@code X-Idempotency-Key} header.
  * The {@code X-Correlation-ID} header is propagated; a new ID is generated if absent.</p>
+ *
+ * <p>Error responses follow the canonical DMOS error envelope:
+ * {@code {error: string, message: string, status: number, correlationId: string, details?: object}}</p>
  *
  * @doc.type class
  * @doc.purpose DMOS HTTP API servlet for campaign lifecycle endpoints
@@ -65,16 +74,25 @@ public final class DmosCampaignServlet {
 
     private final CampaignService campaignService;
     private final Eventloop eventloop;
+    private final DmosMetricsCollector metrics;
+    private final DmosTelemetry telemetry;
+    private final DmosHttpContextFactory httpContextFactory;
 
     /**
      * Creates the DMOS campaign servlet.
      *
-     * @param campaignService the campaign application service; must not be null
-     * @param eventloop       the ActiveJ eventloop; must not be null
+     * @param campaignService   the campaign application service; must not be null
+     * @param eventloop          the ActiveJ eventloop; must not be null
+     * @param metrics            the metrics collector for request telemetry; must not be null
+     * @param telemetry          the OpenTelemetry instrumentation; must not be null
+     * @param httpContextFactory the shared HTTP context factory for fail-closed security; must not be null
      */
-    public DmosCampaignServlet(CampaignService campaignService, Eventloop eventloop) {
-        this.campaignService = Objects.requireNonNull(campaignService, "campaignService must not be null");
-        this.eventloop       = Objects.requireNonNull(eventloop,       "eventloop must not be null");
+    public DmosCampaignServlet(CampaignService campaignService, Eventloop eventloop, DmosMetricsCollector metrics, DmosTelemetry telemetry, DmosHttpContextFactory httpContextFactory) {
+        this.campaignService   = Objects.requireNonNull(campaignService,   "campaignService must not be null");
+        this.eventloop          = Objects.requireNonNull(eventloop,          "eventloop must not be null");
+        this.metrics            = Objects.requireNonNull(metrics,            "metrics must not be null");
+        this.telemetry          = Objects.requireNonNull(telemetry,          "telemetry must not be null");
+        this.httpContextFactory = Objects.requireNonNull(httpContextFactory, "httpContextFactory must not be null");
     }
 
     /**
@@ -84,16 +102,20 @@ public final class DmosCampaignServlet {
      */
     public AsyncServlet getServlet() {
         return DmosApiRateLimiter.wrap(
-        RoutingServlet.builder(eventloop)
-            .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns",
-                this::handleCreateCampaign)
-            .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/campaigns/:id",
-                this::handleGetCampaign)
-            .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns/:id/launch",
-                this::handleLaunchCampaign)
-            .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns/:id/pause",
-                this::handlePauseCampaign)
-            .build()
+            RoutingServlet.builder(eventloop)
+                .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/campaigns",
+                    this::handleListCampaigns)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns",
+                    this::handleCreateCampaign)
+                .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/campaigns/:id",
+                    this::handleGetCampaign)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns/:id/launch",
+                    this::handleLaunchCampaign)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns/:id/pause",
+                    this::handlePauseCampaign)
+                .build(),
+            metrics,
+            "campaign"
         );
     }
 
@@ -101,30 +123,77 @@ public final class DmosCampaignServlet {
     // Handlers
     // -------------------------------------------------------------------------
 
+    private Promise<HttpResponse> handleListCampaigns(HttpRequest request) {
+        try {
+            String workspaceId = request.getPathParameter("workspaceId");
+            // P1-001: Use shared fail-closed HTTP context factory
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
+
+            // Parse pagination parameters with defaults
+            int limit = parseIntParam(request, "limit", 20, 1, 100);
+            int offset = parseIntParam(request, "offset", 0, 0, Integer.MAX_VALUE);
+
+            return campaignService.listCampaigns(ctx, limit, offset)
+                .map(campaigns -> jsonResponse(200, new CampaignListResponse(
+                    campaigns.stream().map(CampaignResponse::from).toList(),
+                    campaigns.size(),
+                    offset
+                )))
+                .then(r -> Promise.of(r), e -> {
+                    if (e instanceof SecurityException) {
+                        return Promise.of(errorResponse(403, e.getMessage(), ctx.getCorrelationId().getValue()));
+                    }
+                    LOG.error("[DMOS] Failed to list campaigns", e);
+                    return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+                });
+        } catch (IllegalArgumentException e) {
+            String correlationId = DmCorrelationId.generate().getValue();
+            return Promise.of(errorResponse(400, e.getMessage(), correlationId));
+        } catch (Exception e) {
+            String correlationId = DmCorrelationId.generate().getValue();
+            LOG.error("[DMOS] Failed to list campaigns", e);
+            return Promise.of(errorResponse(500, "Internal error", correlationId));
+        }
+    }
+
     private Promise<HttpResponse> handleCreateCampaign(HttpRequest request) {
         return request.loadBody().then(__ -> {
             try {
                 String workspaceId = request.getPathParameter("workspaceId");
-                DmOperationContext ctx = buildContext(request, workspaceId, true);
+                // P1-001: Use shared fail-closed HTTP context factory
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
                 CreateCampaignRequest body = MAPPER.readValue(
                     request.getBody().getString(StandardCharsets.UTF_8),
                     CreateCampaignRequest.class);
 
-                return campaignService.createCampaign(ctx,
-                    new CampaignService.CreateCampaignCommand(body.name(), body.type()))
-                    .map(campaign -> jsonResponse(201, CampaignResponse.from(campaign)))
-                    .then(r -> Promise.of(r), e -> {
-                        if (e instanceof SecurityException) {
-                            return Promise.of(errorResponse(403, e.getMessage()));
-                        }
-                        LOG.error("[DMOS] Failed to create campaign", e);
-                        return Promise.of(errorResponse(500, "Internal error"));
-                    });
+                // P1-026: Create span for campaign creation
+                io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns", ctx).startSpan();
+                try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                    return campaignService.createCampaign(ctx,
+                        new CampaignService.CreateCampaignCommand(body.name(), body.type()))
+                        .map(campaign -> {
+                            telemetry.setCampaignId(campaign.getId());
+                            span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                            span.end();
+                            return jsonResponse(201, CampaignResponse.from(campaign));
+                        })
+                        .then(r -> Promise.of(r), e -> {
+                            telemetry.recordException(span, e);
+                            span.end();
+                            if (e instanceof SecurityException) {
+                                return Promise.of(errorResponse(403, e.getMessage(), ctx.getCorrelationId().getValue()));
+                            }
+                            LOG.error("[DMOS] Failed to create campaign", e);
+                            return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+                        });
+                }
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                String correlationId = DmCorrelationId.generate().getValue();
+                return Promise.of(errorResponse(400, e.getMessage(), correlationId));
             } catch (Exception e) {
+                String correlationId = DmCorrelationId.generate().getValue();
                 LOG.error("[DMOS] Failed to create campaign", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(errorResponse(500, "Internal error", correlationId));
             }
         });
     }
@@ -133,25 +202,28 @@ public final class DmosCampaignServlet {
         try {
             String workspaceId = request.getPathParameter("workspaceId");
             String campaignId  = request.getPathParameter("id");
-            DmOperationContext ctx = buildContext(request, workspaceId, false);
+            // P1-001: Use shared fail-closed HTTP context factory
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
 
             return campaignService.getCampaign(ctx, campaignId)
                 .map(campaign -> jsonResponse(200, CampaignResponse.from(campaign)))
                 .then(r -> Promise.of(r), e -> {
                     if (e instanceof SecurityException) {
-                        return Promise.of(errorResponse(403, e.getMessage()));
+                        return Promise.of(errorResponse(403, e.getMessage(), ctx.getCorrelationId().getValue()));
                     }
                     if (e instanceof java.util.NoSuchElementException) {
-                        return Promise.of(errorResponse(404, "Campaign not found: " + campaignId));
+                        return Promise.of(errorResponse(404, "Campaign not found: " + campaignId, ctx.getCorrelationId().getValue()));
                     }
                     LOG.error("[DMOS] Failed to get campaign", e);
-                    return Promise.of(errorResponse(500, "Internal error"));
+                    return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
                 });
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            String correlationId = DmCorrelationId.generate().getValue();
+            return Promise.of(errorResponse(400, e.getMessage(), correlationId));
         } catch (Exception e) {
+            String correlationId = DmCorrelationId.generate().getValue();
             LOG.error("[DMOS] Failed to get campaign", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(errorResponse(500, "Internal error", correlationId));
         }
     }
 
@@ -159,31 +231,45 @@ public final class DmosCampaignServlet {
         try {
             String workspaceId = request.getPathParameter("workspaceId");
             String campaignId  = request.getPathParameter("id");
-            DmOperationContext ctx = buildContext(request, workspaceId, true);
+            // P1-001: Use shared fail-closed HTTP context factory
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
 
-            return campaignService.launchCampaign(ctx, campaignId)
-                .map(campaign -> jsonResponse(200, CampaignResponse.from(campaign)))
-                .then(r -> Promise.of(r), e -> {
-                    if (e instanceof SecurityException) {
-                        return Promise.of(errorResponse(403, e.getMessage()));
-                    }
-                    if (e instanceof java.util.NoSuchElementException) {
-                        return Promise.of(errorResponse(404, e.getMessage()));
-                    }
-                    if (e instanceof IllegalStateException) {
-                        return Promise.of(errorResponse(409, e.getMessage()));
-                    }
-                    if (e instanceof CampaignComplianceViolationException) {
-                        return Promise.of(errorResponse(422, e.getMessage()));
-                    }
-                    LOG.error("[DMOS] Failed to launch campaign", e);
-                    return Promise.of(errorResponse(500, "Internal error"));
-                });
+            // P1-026: Create span for campaign launch
+            io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/launch", ctx).startSpan();
+            try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                telemetry.setCampaignId(campaignId);
+                return campaignService.launchCampaign(ctx, campaignId)
+                    .map(campaign -> {
+                        span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                        span.end();
+                        return jsonResponse(200, CampaignResponse.from(campaign));
+                    })
+                    .then(r -> Promise.of(r), e -> {
+                        telemetry.recordException(span, e);
+                        span.end();
+                        if (e instanceof SecurityException) {
+                            return Promise.of(errorResponse(403, e.getMessage(), ctx.getCorrelationId().getValue()));
+                        }
+                        if (e instanceof java.util.NoSuchElementException) {
+                            return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
+                        }
+                        if (e instanceof IllegalStateException) {
+                            return Promise.of(errorResponse(409, e.getMessage(), ctx.getCorrelationId().getValue()));
+                        }
+                        if (e instanceof CampaignComplianceViolationException) {
+                            return Promise.of(errorResponse(422, e.getMessage(), ctx.getCorrelationId().getValue()));
+                        }
+                        LOG.error("[DMOS] Failed to launch campaign", e);
+                        return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+                    });
+            }
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            String correlationId = DmCorrelationId.generate().getValue();
+            return Promise.of(errorResponse(400, e.getMessage(), correlationId));
         } catch (Exception e) {
+            String correlationId = DmCorrelationId.generate().getValue();
             LOG.error("[DMOS] Failed to launch campaign", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(errorResponse(500, "Internal error", correlationId));
         }
     }
 
@@ -191,28 +277,42 @@ public final class DmosCampaignServlet {
         try {
             String workspaceId = request.getPathParameter("workspaceId");
             String campaignId  = request.getPathParameter("id");
-            DmOperationContext ctx = buildContext(request, workspaceId, true);
+            // P1-001: Use shared fail-closed HTTP context factory
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
 
-            return campaignService.pauseCampaign(ctx, campaignId)
-                .map(campaign -> jsonResponse(200, CampaignResponse.from(campaign)))
+            // P1-026: Create span for campaign pause
+            io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/pause", ctx).startSpan();
+            try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                telemetry.setCampaignId(campaignId);
+                return campaignService.pauseCampaign(ctx, campaignId)
+                    .map(campaign -> {
+                        span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                        span.end();
+                        return jsonResponse(200, CampaignResponse.from(campaign));
+                    })
                 .then(r -> Promise.of(r), e -> {
+                    telemetry.recordException(span, e);
+                    span.end();
                     if (e instanceof SecurityException) {
-                        return Promise.of(errorResponse(403, e.getMessage()));
+                        return Promise.of(errorResponse(403, e.getMessage(), ctx.getCorrelationId().getValue()));
                     }
                     if (e instanceof java.util.NoSuchElementException) {
-                        return Promise.of(errorResponse(404, e.getMessage()));
+                        return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
                     }
                     if (e instanceof IllegalStateException) {
-                        return Promise.of(errorResponse(409, e.getMessage()));
+                        return Promise.of(errorResponse(409, e.getMessage(), ctx.getCorrelationId().getValue()));
                     }
                     LOG.error("[DMOS] Failed to pause campaign", e);
-                    return Promise.of(errorResponse(500, "Internal error"));
+                    return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
                 });
+            }
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            String correlationId = DmCorrelationId.generate().getValue();
+            return Promise.of(errorResponse(400, e.getMessage(), correlationId));
         } catch (Exception e) {
+            String correlationId = DmCorrelationId.generate().getValue();
             LOG.error("[DMOS] Failed to pause campaign", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(errorResponse(500, "Internal error", correlationId));
         }
     }
 
@@ -227,66 +327,21 @@ public final class DmosCampaignServlet {
      * @param workspaceId the path-parameter workspace ID
      * @param requireIdk  whether an idempotency key header is required
      */
-    private DmOperationContext buildContext(HttpRequest request, String workspaceId, boolean requireIdk) {
-        String tenantId   = getRequiredHeader(request, "X-Tenant-ID");
-        String principal  = getHeader(request, "X-Principal-ID", "anonymous");
-        String correlId   = getHeader(request, "X-Correlation-ID", DmCorrelationId.generate().getValue());
-        String idkValue   = getHeader(request, "X-Idempotency-Key", null);
-        String sessionId  = getHeader(request, "X-Session-ID", null);
-        Set<String> roles = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Roles")));
-        Set<String> permissions = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Permissions")));
+    // P1-001: Local buildContext method removed - using shared DmosHttpContextFactory
 
-        if (requireIdk && (idkValue == null || idkValue.isBlank())) {
-            throw new IllegalArgumentException("X-Idempotency-Key header is required for write operations");
-        }
+    // P1-001: Local helper methods removed - using shared DmosHttpContextFactory
 
-        DmWorkspaceId workspace = DmWorkspaceId.of(workspaceId);
-        DmIdempotencyKey idk = (idkValue != null && !idkValue.isBlank()) ? DmIdempotencyKey.of(idkValue) : null;
-
-        DmOperationContext baseContext = DmOperationContext.builder()
-            .tenantId(DmTenantId.of(tenantId))
-            .workspaceId(workspace)
-            .actor(ActorRef.user(principal))
-            .correlationId(DmCorrelationId.of(correlId))
-            .build();
-
-        TenantSecurityContext securityContext = DmSecurityContextMapper.toTenantSecurityContext(
-            baseContext,
-            sessionId,
-            roles,
-            permissions,
-            null
-        );
-
-        return DmSecurityContextMapper.fromSecurityContext(
-            securityContext,
-            workspace,
-            DmCorrelationId.of(correlId),
-            idk
-        );
-    }
-
-    private static Set<String> parseCsvHeader(String value) {
+    private static int parseIntParam(HttpRequest request, String name, int defaultValue, int min, int max) {
+        String value = request.getQueryParameter(name);
         if (value == null || value.isBlank()) {
-            return Set.of();
+            return defaultValue;
         }
-        return Arrays.stream(value.split(","))
-            .map(String::trim)
-            .filter(token -> !token.isBlank())
-            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    private static String getRequiredHeader(HttpRequest request, String name) {
-        String value = request.getHeader(HttpHeaders.of(name));
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("Required header missing: " + name);
+        try {
+            int parsed = Integer.parseInt(value);
+            return Math.min(Math.max(parsed, min), max);
+        } catch (NumberFormatException e) {
+            return defaultValue;
         }
-        return value;
-    }
-
-    private static String getHeader(HttpRequest request, String name, String defaultValue) {
-        String value = request.getHeader(HttpHeaders.of(name));
-        return (value != null && !value.isBlank()) ? value : defaultValue;
     }
 
     // -------------------------------------------------------------------------
@@ -305,8 +360,36 @@ public final class DmosCampaignServlet {
         }
     }
 
+    /**
+     * Creates a canonical DMOS error response with correlation ID.
+     *
+     * <p>Error envelope format: {@code {error, message, status, correlationId, details?}}</p>
+     */
+    private HttpResponse errorResponse(int code, String message, String correlationId) {
+        String errorCode = mapStatusToErrorCode(code);
+        return jsonResponse(code, new ErrorBody(errorCode, message, code, correlationId, null));
+    }
+
+    /**
+     * Legacy error response without correlation ID - updates handlers should migrate to the
+     * correlation-aware overload for production observability.
+     */
     private HttpResponse errorResponse(int code, String message) {
-        return jsonResponse(code, new ErrorBody(code, message));
+        return errorResponse(code, message, DmCorrelationId.generate().getValue());
+    }
+
+    private static String mapStatusToErrorCode(int status) {
+        return switch (status) {
+            case 400 -> "BAD_REQUEST";
+            case 401 -> "UNAUTHORIZED";
+            case 403 -> "FORBIDDEN";
+            case 404 -> "NOT_FOUND";
+            case 409 -> "CONFLICT";
+            case 422 -> "UNPROCESSABLE_ENTITY";
+            case 429 -> "RATE_LIMITED";
+            case 500 -> "INTERNAL_ERROR";
+            default -> "ERROR";
+        };
     }
 
     // -------------------------------------------------------------------------
@@ -341,6 +424,23 @@ public final class DmosCampaignServlet {
         }
     }
 
-    /** Error response body. */
-    record ErrorBody(int status, String message) { }
+    /** API response for paginated campaign list. */
+    record CampaignListResponse(
+        List<CampaignResponse> items,
+        int count,
+        int offset
+    ) { }
+
+    /**
+     * Canonical DMOS error response body.
+     *
+     * <p>Format: {@code {error, message, status, correlationId, details?}}</p>
+     */
+    record ErrorBody(
+        String error,
+        String message,
+        int status,
+        String correlationId,
+        Object details
+    ) { }
 }

@@ -3982,7 +3982,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AnalyticsSqlQueryResponse"
-        "503": { description: Analytics engine not wired. }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
 
   /api/v1/analytics/queries/{queryId}:
     delete:
@@ -4038,6 +4043,12 @@ paths:
                     additionalProperties: true
       responses:
         "200": { description: Aggregation result. }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
 
   /api/v1/analytics/query/{queryId}:
     get:
@@ -4057,8 +4068,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AnalyticsSqlQueryResponse"
-        "404": { description: Query not found. }
-        "503": { description: Analytics engine not wired. }
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
 
   /api/v1/analytics/query/{queryId}/plan:
     get:
@@ -4083,8 +4098,12 @@ paths:
                   plan:
                     type: object
                     additionalProperties: true
-        "404": { description: Query not found. }
-        "503": { description: Analytics engine not wired. }
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
 
   /api/v1/analytics/explain:
     post:
@@ -4133,7 +4152,12 @@ paths:
                   timestamp:
                     type: string
                     format: date-time
-        "400": { description: Missing or invalid query. }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
 
   # ── SSE streams ────────────────────────────────────────────────────────────
 
@@ -5703,6 +5727,105 @@ paths:
       responses:
         "200": { description: Governance inventory with collections, policies, holds, audit events. }
         "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /api/v1/governance/policies:
+    post:
+      summary: Create a new governance policy (DC-P1-009)
+      operationId: apiV1GovernancePoliciesPost
+      tags: [governance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
+      responses:
+        "201": { description: Policy created successfully }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
+    get:
+      summary: List all governance policies (DC-P1-009)
+      operationId: apiV1GovernancePoliciesGet
+      tags: [governance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: List of policies }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /api/v1/governance/policies/{id}:
+    get:
+      summary: Get a specific governance policy by ID (DC-P1-009)
+      operationId: apiV1GovernancePoliciesIdGet
+      tags: [governance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200": { description: Policy details }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+    put:
+      summary: Update a governance policy (DC-P1-009)
+      operationId: apiV1GovernancePoliciesIdPut
+      tags: [governance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
+      responses:
+        "200": { description: Policy updated successfully }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
+    delete:
+      summary: Delete a governance policy (DC-P1-009)
+      operationId: apiV1GovernancePoliciesIdDelete
+      tags: [governance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204": { description: Policy deleted successfully }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /api/v1/governance/policies/{id}/toggle:
+    post:
+      summary: Toggle a governance policy active/inactive (DC-P1-009)
+      operationId: apiV1GovernancePoliciesIdTogglePost
+      tags: [governance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200": { description: Policy toggled successfully }
+        "404": { $ref: "#/components/responses/NotFound" }
         "500": { $ref: "#/components/responses/InternalError" }
 
   # ── Runtime capability registry and autonomy ─────────────────────────────

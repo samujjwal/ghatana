@@ -79,6 +79,18 @@ public interface HumanApprovalPlugin extends Plugin {
     Promise<List<ApprovalRecord>> listPendingForSubject(String subjectId);
 
     /**
+     * Lists all pending approvals for a given workspace.
+     *
+     * <p>P1-013: Returns all pending approvals in a workspace that the current approver
+     * can act on based on their role/workspace membership. This enables workspace-scoped
+     * approval queues where approvers see all pending approvals relevant to their workspace.</p>
+     *
+     * @param workspaceId the workspace identifier
+     * @return Promise containing pending approval records for the workspace
+     */
+    Promise<List<ApprovalRecord>> listPendingForWorkspace(String workspaceId);
+
+    /**
      * Cancels a pending approval request.
      *
      * <p>Transitions a PENDING approval to CANCELLED. No-op on already-decided records.</p>

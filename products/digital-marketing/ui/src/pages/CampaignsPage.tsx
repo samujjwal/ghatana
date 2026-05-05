@@ -1,14 +1,20 @@
 /**
  * Campaigns Page - Campaign management UI.
  *
+ * <p>P1-030: Surfaces mutation errors with toast notifications and correlation ID.</p>
+ * <p>P1-031: Per-row action pending states for concurrent operations.</p>
+ *
  * @doc.type page
- * @doc.purpose Campaign listing, creation, launch, and pause
+ * @doc.purpose Campaign listing, creation, launch, and pause with error handling
  * @doc.layer frontend
  */
 import React, { useState, useCallback } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useCampaigns, useCreateCampaign, useLaunchCampaign, usePauseCampaign } from '@/hooks/useCampaigns';
+import { useToast } from '@/hooks/useToast';
+import { ToastContainer } from '@/components/Toast';
+import { ApiError } from '@/lib/http-client';
 import type { CampaignType } from '@/types/campaign';
 
 const CAMPAIGN_TYPES: CampaignType[] = ['EMAIL', 'SOCIAL', 'PAID_SEARCH', 'PUSH', 'SMS', 'OMNICHANNEL'];
@@ -16,30 +22,80 @@ const CAMPAIGN_TYPES: CampaignType[] = ['EMAIL', 'SOCIAL', 'PAID_SEARCH', 'PUSH'
 export function CampaignsPage(): React.ReactElement {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { isAuthenticated } = useAuth();
+  const { toasts, showSuccess, showError, dismissToast } = useToast();
   const [name, setName] = useState('');
   const [type, setType] = useState<CampaignType>('EMAIL');
 
   const { campaigns, isLoading, isError, error } = useCampaigns(workspaceId ?? null);
-  const { create, isPending: isCreating } = useCreateCampaign(workspaceId ?? null);
-  const { launch, isPending: isLaunching } = useLaunchCampaign(workspaceId ?? null);
-  const { pause, isPending: isPausing } = usePauseCampaign(workspaceId ?? null);
+
+  // P1-030: Error handlers with correlation ID for diagnostics
+  const handleCreateError = useCallback((err: ApiError) => {
+    showError(err.getUserMessage(), err.correlationId ?? undefined);
+  }, [showError]);
+
+  const handleLaunchError = useCallback((err: ApiError, campaignId: string) => {
+    const campaign = campaigns.find(c => c.id === campaignId);
+    showError(
+      `Failed to launch "${campaign?.name ?? 'campaign'}": ${err.getUserMessage()}`,
+      err.correlationId ?? undefined
+    );
+  }, [showError, campaigns]);
+
+  const handlePauseError = useCallback((err: ApiError, campaignId: string) => {
+    const campaign = campaigns.find(c => c.id === campaignId);
+    showError(
+      `Failed to pause "${campaign?.name ?? 'campaign'}": ${err.getUserMessage()}`,
+      err.correlationId ?? undefined
+    );
+  }, [showError, campaigns]);
+
+  const { create, isPending: isCreating } = useCreateCampaign(workspaceId ?? null, handleCreateError);
+
+  // P1-031: Per-row pending states via isPendingFor
+  const { launch, isPendingFor: isLaunchingFor } = useLaunchCampaign(workspaceId ?? null, handleLaunchError);
+  const { pause, isPendingFor: isPausingFor } = usePauseCampaign(workspaceId ?? null, handlePauseError);
 
   const handleCreate = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       if (!name.trim() || !workspaceId) return;
-      await create({ name: name.trim(), type });
-      setName('');
+      try {
+        await create({ name: name.trim(), type });
+        showSuccess(`Campaign "${name.trim()}" created successfully`);
+        setName('');
+      } catch {
+        // Error is handled by handleCreateError callback
+      }
     },
-    [create, name, type, workspaceId],
+    [create, name, type, workspaceId, showSuccess],
   );
+
+  const handleLaunch = useCallback(async (campaignId: string, campaignName: string) => {
+    try {
+      await launch(campaignId);
+      showSuccess(`Campaign "${campaignName}" launched successfully`);
+    } catch {
+      // Error is handled by handleLaunchError callback
+    }
+  }, [launch, showSuccess]);
+
+  const handlePause = useCallback(async (campaignId: string, campaignName: string) => {
+    try {
+      await pause(campaignId);
+      showSuccess(`Campaign "${campaignName}" paused successfully`);
+    } catch {
+      // Error is handled by handlePauseError callback
+    }
+  }, [pause, showSuccess]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
   return (
-    <main data-testid="campaigns-page" className="max-w-6xl mx-auto px-4 py-8">
+    <>
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      <main data-testid="campaigns-page" className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Campaigns</h1>
         <span className="text-sm text-gray-500">
@@ -142,21 +198,21 @@ export function CampaignsPage(): React.ReactElement {
                       {c.status === 'DRAFT' && (
                         <button
                           data-testid={`launch-campaign-${c.id}`}
-                          onClick={() => launch(c.id)}
-                          disabled={isLaunching}
+                          onClick={() => handleLaunch(c.id, c.name)}
+                          disabled={isLaunchingFor(c.id)}
                           className="px-3 py-1 bg-green-600 text-white rounded text-xs disabled:opacity-50"
                         >
-                          Launch
+                          {isLaunchingFor(c.id) ? 'Launching…' : 'Launch'}
                         </button>
                       )}
                       {c.status === 'LAUNCHED' && (
                         <button
                           data-testid={`pause-campaign-${c.id}`}
-                          onClick={() => pause(c.id)}
-                          disabled={isPausing}
+                          onClick={() => handlePause(c.id, c.name)}
+                          disabled={isPausingFor(c.id)}
                           className="px-3 py-1 bg-yellow-500 text-white rounded text-xs disabled:opacity-50"
                         >
-                          Pause
+                          {isPausingFor(c.id) ? 'Pausing…' : 'Pause'}
                         </button>
                       )}
                     </div>
@@ -167,6 +223,7 @@ export function CampaignsPage(): React.ReactElement {
           </table>
         </div>
       )}
-    </main>
+      </main>
+    </>
   );
 }

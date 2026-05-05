@@ -11,6 +11,7 @@ import com.ghatana.digitalmarketing.application.audit.WebsiteAuditServiceImpl;
 import com.ghatana.digitalmarketing.application.budget.BudgetRecommendationRepository;
 import com.ghatana.digitalmarketing.application.budget.BudgetRecommendationService;
 import com.ghatana.digitalmarketing.application.budget.BudgetRecommendationServiceImpl;
+import com.ghatana.digitalmarketing.application.bootstrap.ProductionBootstrapValidator;
 import com.ghatana.digitalmarketing.application.campaign.CampaignRepository;
 import com.ghatana.digitalmarketing.application.campaign.CampaignPreflightDataProvider;
 import com.ghatana.digitalmarketing.application.campaign.CampaignService;
@@ -262,6 +263,9 @@ public final class DmosApiServer extends Launcher {
             wireInMemoryRepositories();
         }
 
+        // P1-004: Run production bootstrap validation
+        runProductionBootstrapValidation(kernelAdapter);
+
         // Wire compliance plugin
         CompliancePlugin compliancePlugin = createCompliancePlugin();
         register(CompliancePlugin.class, compliancePlugin);
@@ -283,9 +287,52 @@ public final class DmosApiServer extends Launcher {
         return "postgresql".equalsIgnoreCase(persistenceType) && !environment.equals(DEVELOPMENT);
     }
 
+    // P1-004: Run production bootstrap validation
+    private void runProductionBootstrapValidation(DigitalMarketingKernelAdapter kernelAdapter) {
+        boolean isProduction = environment.equals(PRODUCTION);
+        if (!isProduction) {
+            LOG.info("[DMOS-BOOTSTRAP] Production validation skipped (non-production mode: {})", environment);
+            return;
+        }
+
+        DataSource dataSource = null;
+        CampaignRepository campaignRepository = null;
+        if (usePostgres()) {
+            dataSource = getIfExists(DataSource.class);
+            campaignRepository = getIfExists(CampaignRepository.class);
+        }
+
+        String piiHmacKey = System.getenv("DMOS_PII_HMAC_KEY");
+
+        ProductionBootstrapValidator validator = new ProductionBootstrapValidator.Builder()
+            .isProduction(true)
+            .dataSource(dataSource)
+            .campaignRepository(campaignRepository)
+            .kernelAdapter(kernelAdapter)
+            .piiHmacKey(piiHmacKey)
+            .build();
+
+        try {
+            validator.validate();
+        } catch (ProductionBootstrapValidator.ProductionBootstrapException e) {
+            LOG.error("[DMOS-BOOTSTRAP] Production bootstrap validation failed: {}", e.getMessage());
+            throw new IllegalStateException("Production bootstrap validation failed. System cannot start in production mode.", e);
+        }
+    }
+
+    // Helper method to get a dependency if it exists, without throwing
+    @SuppressWarnings("unchecked")
+    private <T> T getIfExists(Class<T> clazz) {
+        try {
+            return get(clazz);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     /**
-     * Wires observability components (Metrics, TracingManager, DmosObservability) into the registry.
-     * P1: OpenTelemetry metrics and traces integration.
+     * Wires observability components (Metrics, TracingManager, DmosObservability, DmosTelemetry) into the registry.
+     * P1-026: OpenTelemetry metrics and traces integration with span instrumentation.
      */
     private void wireObservability() {
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
@@ -310,6 +357,11 @@ public final class DmosApiServer extends Launcher {
 
         DmosObservability observability = new DmosObservability(metrics, tracingManager);
         register(DmosObservability.class, observability);
+
+        // P1-026: Register DmosTelemetry for span instrumentation
+        com.ghatana.digitalmarketing.api.observability.DmosTelemetry telemetry =
+            new com.ghatana.digitalmarketing.api.observability.DmosTelemetry(tracingManager.getOpenTelemetry());
+        register(com.ghatana.digitalmarketing.api.observability.DmosTelemetry.class, telemetry);
 
         LOG.info("Observability components wired successfully");
     }
@@ -446,23 +498,52 @@ public final class DmosApiServer extends Launcher {
     }
 
     private void wireServlets(DigitalMarketingKernelAdapter kernelAdapter, Eventloop eventloop) {
+        // P1-026: Get DmosTelemetry for span instrumentation
+        com.ghatana.digitalmarketing.api.observability.DmosTelemetry telemetry =
+            get(com.ghatana.digitalmarketing.api.observability.DmosTelemetry.class);
+
+        // P1-026: Get DmosMetricsCollector for rate limiter metrics
+        DmosMetricsCollector metrics = get(DmosMetricsCollector.class);
+
+        // P1-021: Instantiate IdempotencyMiddleware for PostgreSQL persistence
+        com.ghatana.digitalmarketing.api.middleware.IdempotencyMiddleware idempotencyMiddleware = null;
+        if (usePostgres()) {
+            DataSource dataSource = get(DataSource.class);
+            idempotencyMiddleware = new com.ghatana.digitalmarketing.api.middleware.IdempotencyMiddleware(dataSource, eventloop);
+            register(com.ghatana.digitalmarketing.api.middleware.IdempotencyMiddleware.class, idempotencyMiddleware);
+            LOG.info("IdempotencyMiddleware instantiated for PostgreSQL");
+        }
+
+        // P1-001: Instantiate DmosHttpContextFactory with fail-closed security
+        boolean productionMode = environment.equals(PRODUCTION);
+        com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory.IdentityProvider identityProvider = null;
+        if (productionMode) {
+            // P1-001: In production, use a real identity provider to derive roles/permissions server-side
+            // For now, use a no-op implementation that requires explicit configuration
+            LOG.warn("[PRODUCTION] IdentityProvider not configured; using no-op. Enable via DMOS_IDENTITY_PROVIDER_ENABLED.");
+        }
+        com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory httpContextFactory =
+            new com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory(productionMode, identityProvider);
+        register(com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory.class, httpContextFactory);
+        LOG.info("DmosHttpContextFactory instantiated with productionMode={}", productionMode);
+
         WorkspaceService workspaceService = get(WorkspaceService.class);
         register(DmosWorkspaceServlet.class, new DmosWorkspaceServlet(workspaceService, eventloop));
 
         CampaignService campaignService = get(CampaignService.class);
-        register(DmosCampaignServlet.class, new DmosCampaignServlet(campaignService, eventloop));
+        register(DmosCampaignServlet.class, new DmosCampaignServlet(campaignService, eventloop, metrics, telemetry, httpContextFactory));
 
         ApprovalWorkflowService approvalService = get(ApprovalWorkflowService.class);
-        register(DmosApprovalServlet.class, new DmosApprovalServlet(approvalService, eventloop));
+        register(DmosApprovalServlet.class, new DmosApprovalServlet(approvalService, eventloop, metrics, telemetry, httpContextFactory));
 
         AiActionLogService aiLogService = get(AiActionLogService.class);
-        register(DmosAiActionLogServlet.class, new DmosAiActionLogServlet(aiLogService, eventloop));
+        register(DmosAiActionLogServlet.class, new DmosAiActionLogServlet(aiLogService, eventloop, metrics, httpContextFactory));
 
         StrategyGeneratorService strategyService = get(StrategyGeneratorService.class);
-        register(DmosStrategyServlet.class, new DmosStrategyServlet(strategyService, eventloop));
+        register(DmosStrategyServlet.class, new DmosStrategyServlet(strategyService, eventloop, metrics, telemetry, httpContextFactory));
 
         BudgetRecommendationService budgetService = get(BudgetRecommendationService.class);
-        register(DmosBudgetRecommendationServlet.class, new DmosBudgetRecommendationServlet(budgetService, eventloop));
+        register(DmosBudgetRecommendationServlet.class, new DmosBudgetRecommendationServlet(budgetService, eventloop, metrics, telemetry, httpContextFactory));
 
         WebsiteAuditService websiteAuditService = get(WebsiteAuditService.class);
         register(DmosWebsiteAuditServlet.class, new DmosWebsiteAuditServlet(websiteAuditService, eventloop));

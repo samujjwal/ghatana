@@ -11,6 +11,7 @@
  */
 
 import React, { useState } from 'react';
+import { useCapabilityGate } from '../hooks/useCapabilityGate';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   memoryService,
@@ -63,6 +64,30 @@ function SalienceMeter({ value }: { value: number }): React.ReactElement {
   );
 }
 
+/**
+ * Delete button for a memory item — visible only when the memory-plane capability is active.
+ * Hides silently when the capability is unavailable so read-only users see a clean view.
+ */
+function MemoryDeleteButton({
+  itemId,
+  onDelete,
+}: {
+  itemId: string;
+  onDelete: (id: string) => void;
+}): React.ReactElement | null {
+  const canDelete = useCapabilityGate(['memory-plane', 'context'], 'active');
+  if (!canDelete) return null;
+  return (
+    <button
+      onClick={() => onDelete(itemId)}
+      className="shrink-0 text-xs text-red-400 hover:text-red-600 px-2 py-0.5 rounded hover:bg-red-50"
+      aria-label="Delete memory item"
+    >
+      Delete
+    </button>
+  );
+}
+
 function MemoryCard({
   item,
   onDelete,
@@ -79,13 +104,7 @@ function MemoryCard({
           <MemoryTypeBadge type={item.type} />
           <span className="font-mono text-xs text-gray-400 truncate">{item.id}</span>
         </div>
-        <button
-          onClick={() => onDelete(item.id)}
-          className="shrink-0 text-xs text-red-400 hover:text-red-600 px-2 py-0.5 rounded hover:bg-red-50"
-          aria-label="Delete memory item"
-        >
-          Delete
-        </button>
+        <MemoryDeleteButton itemId={item.id} onDelete={onDelete} />
       </div>
 
       <p className="mt-2 text-sm text-gray-700 line-clamp-2">{item.content}</p>

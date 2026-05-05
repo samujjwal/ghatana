@@ -66,18 +66,27 @@ public final class DmosApiHeaderValidator {
             }
         } else {
             // Log warnings in development/test
+            String remoteAddress = resolveRemoteAddress(request);
             if (tenantId == null || tenantId.isBlank()) {
                 LOG.warn("[{}] Missing header: {} - using default for development",
-                    request.getRemoteAddress(), TENANT_ID_HEADER);
+                    remoteAddress, TENANT_ID_HEADER);
             }
             if (principalId == null || principalId.isBlank()) {
                 LOG.warn("[{}] Missing header: {} - using default for development",
-                    request.getRemoteAddress(), PRINCIPAL_ID_HEADER);
+                    remoteAddress, PRINCIPAL_ID_HEADER);
             }
             if (sessionId == null || sessionId.isBlank()) {
                 LOG.warn("[{}] Missing header: {} - using default for development",
-                    request.getRemoteAddress(), SESSION_ID_HEADER);
+                    remoteAddress, SESSION_ID_HEADER);
             }
+        }
+    }
+
+    private static String resolveRemoteAddress(HttpRequest request) {
+        try {
+            return String.valueOf(request.getRemoteAddress());
+        } catch (NullPointerException ex) {
+            return "unknown";
         }
     }
 
@@ -143,7 +152,10 @@ public final class DmosApiHeaderValidator {
      * @return {@code true} if production
      */
     private static boolean isProduction() {
-        String env = System.getenv(DMOS_ENV);
+        String env = System.getProperty(DMOS_ENV);
+        if (env == null || env.isBlank()) {
+            env = System.getenv(DMOS_ENV);
+        }
         if (env == null || env.isBlank()) {
             return false;
         }
