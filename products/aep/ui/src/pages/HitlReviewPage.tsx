@@ -20,7 +20,7 @@ import { ReviewCard } from '@/components/hitl/ReviewCard';
 import type { ReviewItem } from '@/api/aep.api';
 import { Button } from '@ghatana/design-system';
 import { TextArea } from '@ghatana/design-system';
-import { EmptyState } from '@/components/core/EmptyState';
+import { EmptyState } from '@ghatana/design-system';
 import { ErrorState } from '@/components/core/ErrorState';
 import { ConfidenceExplanation } from '@/components/shared/ConfidenceExplanation';
 import {

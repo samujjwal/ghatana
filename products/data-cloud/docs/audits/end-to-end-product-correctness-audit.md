@@ -1,6 +1,6 @@
 ﻿# Data Cloud — End-to-End Product Correctness, Completeness & Production-Readiness Audit
 
-**Audit Date:** 2026-03-27 (Updated)
+**Audit Date:** 2026-03-27 (Updated: 2026-03-28)
 **Auditor:** Principal Product Engineering Review
 **Target Root:** `products/data-cloud`
 **Build Status at Audit Time:** Passing (`./gradlew clean build` exit code 0)
@@ -34,6 +34,9 @@
 3. **`WorkflowList` legacy stub is reachable and renders stub text** — `pages/WorkflowList/index.tsx` renders "This legacy stub is not the canonical pipelines list." Must redirect.
 4. **Duplicate WebSocket implementations** — `lib/websocket/client.ts` and `lib/services/websocketService.ts` both implement a full WebSocket client. Runtime behavior depends on import callsite.
 5. **Query text logged in `AIAssistServiceImpl`** — `log.info("Query processed: tenant={}, query={}", ...)` logs raw user query text, creating PII risk.
+
+**Resolved (2026-03-28):**
+- **Trust Center Policy CRUD** — Previously marked as P1 boundary-blocked, now fully implemented with backend handlers, UI mutations, and API endpoints (DC-P1-009).
 
 ### Recent Improvements (2026-03-27)
 
@@ -107,7 +110,7 @@ The following production-grade improvements have been implemented:
 | `api/capabilities.service.ts` | Capability registry | ✅ Backed | None |
 | `api/cost.service.ts` | Cost reporting | ✅ Backed | None |
 | `api/events.service.ts` | Event streaming (SSE) | ✅ Backed | None |
-| `api/governance.service.ts` | Compliance, PII, retention, redaction | ✅ Backed | Policy CRUD mutations are boundary-blocked |
+| `api/governance.service.ts` | Compliance, PII, retention, redaction | ✅ Backed | Policy CRUD fully implemented (DC-P1-009) |
 | `api/lineage.service.ts` | Lineage DAG, impact | ✅ Backed | None |
 | `api/memory.service.ts` | Memory items | ✅ Backed | Memory store write is boundary-blocked |
 | `api/plugin.service.ts` | Plugin CRUD, enable/disable | ✅ Backed | None |
@@ -167,7 +170,7 @@ The following production-grade improvements have been implemented:
 | SQL Workspace | Analyst | Monaco editor with AI suggestions and result table | 🟡 Backend unlocated |
 | Lineage Graph | Data Engineer | Visual DAG showing upstream/downstream | ✅ Complete |
 | Trust Center (read) | Compliance Officer | Policy list, retention classification, PII view | ✅ Complete |
-| Trust Center (write) | Compliance Officer | Create/update/delete policies | ❌ Boundary-blocked |
+| Trust Center (write) | Compliance Officer | Create/update/delete policies | ✅ Complete (DC-P1-009) |
 | AI Operation Suggestions | Platform Engineer | AI-recommended operations with apply action | ❌ No backend |
 | Alerts | Operator | Alert list, SSE stream, severity filtering | ✅ Complete |
 | Memory Plane | Platform Engineer | Memory items across tiers | ✅ Complete |
@@ -189,7 +192,7 @@ The following production-grade improvements have been implemented:
 | SQL Query Execute | ✅ SqlWorkspacePage | 🟡 Unlocated | 🟡 Unlocated | 🟡 Frontend tests | **Backend unlocated — P1** |
 | AI Suggestions | ✅ AISuggestionPanel | ❌ No backend | ❌ Boundary error | ✅ Boundary tests | **Boundary — P1** |
 | Trust Center Policies (read) | ✅ TrustCenter | ✅ Backed | ✅ Service | ✅ Tests | **Complete** |
-| Trust Center Policy Mutations | ✅ UI forms | ❌ Boundary | ❌ Boundary | ✅ Boundary tests | **Boundary — P1** |
+| Trust Center Policy Mutations | ✅ UI forms | ✅ Backed (DC-P1-009) | ✅ Service | ✅ Tests | **Complete** |
 | Plugin Enable/Disable | ✅ PluginsPage | ✅ Backed | ✅ `PluginRegistry` | ✅ Tests | **Complete** |
 | System Health (Ops Console) | ✅ UI card (ARCH-003 comment) | ❌ No dedicated endpoint | ❌ Falls back to capability signals | 🟡 Partial | **Placeholder — P1** |
 
@@ -206,7 +209,7 @@ The following production-grade improvements have been implemented:
 | **Execute Pipeline** | ❌ No backend | ❌ No | **P0** | Implement pipeline execution controller |
 | Run SQL Query | ✅ Yes (MSW in dev) | 🟡 Partial | P1 | Verify/locate analytics SQL controller |
 | View Trust Center Policies | ✅ Yes | ✅ Yes | — | None |
-| Create/Modify Policy | ❌ Boundary error | ❌ No | P1 | Implement policy CRUD or hide action |
+| Create/Modify Policy | ✅ Yes (DC-P1-009) | ✅ Yes | — | None |
 | AI Suggest Operation | ❌ Boundary error | ❌ No | P1 | Implement AI backend or hide surface |
 | Plugin Enable/Disable | ✅ Yes | ✅ Yes | — | None |
 | Event Explorer Stream | ✅ Yes | ✅ Yes | — | None |
@@ -239,7 +242,7 @@ The following production-grade improvements have been implemented:
 | AI suggestions | `api/ai-operations.service.ts` | POST to AI backend | ❌ Throws boundary | N/A | P1 |
 | Workflow template browse | `lib/api/workflow-client.ts:getTemplates()` | GET templates | ❌ Throws boundary | N/A | P1 |
 | Brain memory store write | `api/brain.service.ts` | POST to memory store | ❌ Throws boundary | N/A | P1 |
-| Policy CRUD mutations | `api/governance.service.ts` | CRUD endpoints | ❌ Throws boundary | N/A | P1 |
+| Policy CRUD mutations | `api/governance.service.ts` | CRUD endpoints | ✅ Backed (DC-P1-009) | N/A | — |
 | MSW activation | `main.tsx:bootstrap()` | Start MSW in dev | ✅ Correctly gated `import.meta.env.DEV` | Tree-shaken in prod | — |
 | console.log in useCommandBar | `hooks/useCommandBar.ts:279` | None or dev-gated | ❌ Bare console.log | — | P2 |
 | console.log in WebSocket client | `lib/websocket/client.ts:173,188,295` | Structured log | ❌ Bare console.log | — | P2 |

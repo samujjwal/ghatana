@@ -103,7 +103,7 @@ public final class DmosWorkspaceServlet {
     private Promise<HttpResponse> handleCreateWorkspace(HttpRequest request) {
         return request.loadBody().then(__ -> {
             try {
-                DmOperationContext ctx = buildTenantContext(request, true);
+                DmOperationContext ctx = httpContextFactory.buildContext(request, "root", true);
                 CreateWorkspaceRequest body = MAPPER.readValue(
                     request.getBody().getString(StandardCharsets.UTF_8),
                     CreateWorkspaceRequest.class);
@@ -124,7 +124,7 @@ public final class DmosWorkspaceServlet {
 
     private Promise<HttpResponse> handleListWorkspaces(HttpRequest request) {
         try {
-            DmOperationContext ctx = buildTenantContext(request, false);
+            DmOperationContext ctx = httpContextFactory.buildContext(request, "root", false);
 
             return workspaceService.listWorkspaces(ctx)
                 .map(list -> jsonResponse(200, list.stream().map(WorkspaceResponse::from).toList()))
@@ -140,7 +140,7 @@ public final class DmosWorkspaceServlet {
     private Promise<HttpResponse> handleGetWorkspace(HttpRequest request) {
         try {
             String workspaceId = request.getPathParameter("workspaceId");
-            DmOperationContext ctx = buildTenantContext(request, false);
+            DmOperationContext ctx = httpContextFactory.buildContext(request, "root", false);
 
             return workspaceService.getWorkspace(ctx, workspaceId)
                 .map(ws -> jsonResponse(200, WorkspaceResponse.from(ws)))
@@ -161,7 +161,7 @@ public final class DmosWorkspaceServlet {
     private Promise<HttpResponse> handleSuspendWorkspace(HttpRequest request) {
         try {
             String workspaceId = request.getPathParameter("workspaceId");
-            DmOperationContext ctx = buildTenantContext(request, true);
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
 
             return workspaceService.suspendWorkspace(ctx, workspaceId)
                 .map(ws -> jsonResponse(200, WorkspaceResponse.from(ws)))
@@ -185,7 +185,7 @@ public final class DmosWorkspaceServlet {
     private Promise<HttpResponse> handleReactivateWorkspace(HttpRequest request) {
         try {
             String workspaceId = request.getPathParameter("workspaceId");
-            DmOperationContext ctx = buildTenantContext(request, true);
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
 
             return workspaceService.reactivateWorkspace(ctx, workspaceId)
                 .map(ws -> jsonResponse(200, WorkspaceResponse.from(ws)))
@@ -207,61 +207,11 @@ public final class DmosWorkspaceServlet {
     }
 
     // -------------------------------------------------------------------------
-    // Context and error helpers
+    // Error helpers
     // -------------------------------------------------------------------------
 
-    /**
-     * Builds an operation context from HTTP headers for tenant-level workspace operations.
-     * Uses a synthetic workspace ID derived from the tenant ID for the context.
-     */
-    private DmOperationContext buildTenantContext(HttpRequest request, boolean requireIdk) {
-        String tenantId  = getRequiredHeader(request, "X-Tenant-ID");
-        String principal = getHeader(request, "X-Principal-ID", "anonymous");
-        String correlId  = getHeader(request, "X-Correlation-ID", DmCorrelationId.generate().getValue());
-        String idkValue  = getHeader(request, "X-Idempotency-Key", null);
-        String sessionId = getHeader(request, "X-Session-ID", null);
-        Set<String> roles = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Roles")));
-        Set<String> permissions = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Permissions")));
-
-        if (requireIdk && (idkValue == null || idkValue.isBlank())) {
-            throw new IllegalArgumentException("X-Idempotency-Key header is required for write operations");
-        }
-
-        DmIdempotencyKey idk = (idkValue != null && !idkValue.isBlank()) ? DmIdempotencyKey.of(idkValue) : null;
-        DmWorkspaceId workspace = DmWorkspaceId.of("root");
-
-        DmOperationContext baseContext = DmOperationContext.builder()
-            .tenantId(DmTenantId.of(tenantId))
-            .workspaceId(workspace)
-            .actor(ActorRef.user(principal))
-            .correlationId(DmCorrelationId.of(correlId))
-            .build();
-
-        TenantSecurityContext securityContext = DmSecurityContextMapper.toTenantSecurityContext(
-            baseContext,
-            sessionId,
-            roles,
-            permissions,
-            null
-        );
-
-        return DmSecurityContextMapper.fromSecurityContext(
-            securityContext,
-            workspace,
-            DmCorrelationId.of(correlId),
-            idk
-        );
-    }
-
-    private static Set<String> parseCsvHeader(String value) {
-        if (value == null || value.isBlank()) {
-            return Set.of();
-        }
-        return Arrays.stream(value.split(","))
-            .map(String::trim)
-            .filter(token -> !token.isBlank())
-            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
-    }
+    // P2-025: Using shared DmosHttpContextFactory for server-side identity derivation
+    // instead of parsing headers directly. This prevents spoofed identity attacks (P0-015).
 
     private Promise<HttpResponse> handleError(String operation, Throwable e) {
         if (e instanceof SecurityException) {
@@ -269,19 +219,6 @@ public final class DmosWorkspaceServlet {
         }
         LOG.error("[DMOS] Failed to {}", operation, e);
         return Promise.of(errorResponse(500, "Internal error"));
-    }
-
-    private static String getRequiredHeader(HttpRequest request, String name) {
-        String value = request.getHeader(HttpHeaders.of(name));
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("Required header missing: " + name);
-        }
-        return value;
-    }
-
-    private static String getHeader(HttpRequest request, String name, String defaultValue) {
-        String value = request.getHeader(HttpHeaders.of(name));
-        return (value != null && !value.isBlank()) ? value : defaultValue;
     }
 
     // -------------------------------------------------------------------------

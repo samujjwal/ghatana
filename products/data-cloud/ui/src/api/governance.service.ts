@@ -17,13 +17,7 @@ import {
   type ComplianceSummaryData as ComplianceSummary,
   type PiiFieldRegistryData as PiiFieldRegistry,
 } from '../contracts/schemas';
-import {
-  GOVERNANCE_POLICY_CREATE_BOUNDARY_MESSAGE,
-  GOVERNANCE_POLICY_DELETE_BOUNDARY_MESSAGE,
-  GOVERNANCE_POLICY_TOGGLE_BOUNDARY_MESSAGE,
-  GOVERNANCE_POLICY_UPDATE_BOUNDARY_MESSAGE,
-  GOVERNANCE_VIOLATION_RESOLUTION_BOUNDARY_MESSAGE,
-} from '../lib/runtime-boundaries';
+// DC-P1-009: Policy CRUD lifecycle is complete - boundary message imports removed
 
 const GovernanceEnvelopeMetaSchema = z.object({
   tenantId: z.string().optional(),
@@ -851,7 +845,7 @@ export class GovernanceService {
   async resolveViolation(violationId: string, resolution: string): Promise<void> {
     void violationId;
     void resolution;
-    throw new Error(GOVERNANCE_VIOLATION_RESOLUTION_BOUNDARY_MESSAGE);
+    throw new Error('Violation resolution is not exposed by the current Data Cloud governance API.');
   }
 
   async redactEntity(input: GovernanceRedactionRequest): Promise<GovernanceRedactionResult> {

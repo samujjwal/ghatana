@@ -5,21 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.audit.WebsiteAuditService;
-import com.ghatana.digitalmarketing.contracts.ActorRef;
-import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
-import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
+import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
-import com.ghatana.digitalmarketing.contracts.DmSecurityContextMapper;
-import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.DmosConnectorDisabledException;
 import com.ghatana.digitalmarketing.domain.DmosFeatureDisabledException;
 import com.ghatana.digitalmarketing.domain.audit.WebsiteAuditFinding;
 import com.ghatana.digitalmarketing.domain.audit.WebsiteAuditReport;
-import com.ghatana.kernel.security.TenantSecurityContext;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
-import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -30,16 +24,16 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * HTTP servlet for website audit generation and retrieval.
+ *
+ * P2-025: Uses DmosHttpContextFactory for server-side identity derivation to prevent
+ * spoofed identity attacks (P0-015). Client-provided X-Roles/X-Permissions headers are
+ * ignored in production mode.
  *
  * @doc.type class
  * @doc.purpose DMOS website audit API servlet for F1-010 website diagnostics
@@ -58,10 +52,12 @@ public final class DmosWebsiteAuditServlet {
 
     private final WebsiteAuditService auditService;
     private final Eventloop eventloop;
+    private final DmosHttpContextFactory httpContextFactory;
 
-    public DmosWebsiteAuditServlet(WebsiteAuditService auditService, Eventloop eventloop) {
+    public DmosWebsiteAuditServlet(WebsiteAuditService auditService, Eventloop eventloop, DmosHttpContextFactory httpContextFactory) {
         this.auditService = Objects.requireNonNull(auditService, "auditService must not be null");
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
+        this.httpContextFactory = Objects.requireNonNull(httpContextFactory, "httpContextFactory must not be null");
     }
 
     /**
@@ -82,31 +78,20 @@ public final class DmosWebsiteAuditServlet {
         return request.loadBody().then(__ -> {
             try {
                 String workspaceId = request.getPathParameter("workspaceId");
-                DmOperationContext ctx = buildContext(request, workspaceId, true);
+                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
                 RunAuditRequest body = MAPPER.readValue(
                     request.getBody().getString(StandardCharsets.UTF_8),
-                    RunAuditRequest.class
-                );
+                    RunAuditRequest.class);
 
-                WebsiteAuditService.RunWebsiteAuditCommand command =
-                    new WebsiteAuditService.RunWebsiteAuditCommand(
-                        body.websiteUrl(),
-                        body.reachable(),
-                        body.responseTimeMs(),
-                        body.title(),
-                        body.metaDescription(),
-                        body.h1(),
-                        body.trackingTagDetected(),
-                        body.hasLeadForm()
-                    );
-
-                return auditService.runAudit(ctx, command)
-                    .map(report -> jsonResponse(200, AuditReportResponse.from(report)))
+                return auditService.runAudit(
+                    ctx,
+                    new WebsiteAuditService.RunAuditCommand(body.url(), body.depth()))
+                    .map(report -> jsonResponse(200, WebsiteAuditResponse.from(report)))
                     .then(r -> Promise.of(r), e -> mapServiceError("run audit", e));
             } catch (IllegalArgumentException e) {
                 return Promise.of(errorResponse(400, e.getMessage()));
             } catch (Exception e) {
-                LOG.error("[DMOS] Failed to run website audit", e);
+                LOG.error("[DMOS] Failed to run audit", e);
                 return Promise.of(errorResponse(500, "Internal error"));
             }
         });
@@ -115,15 +100,15 @@ public final class DmosWebsiteAuditServlet {
     private Promise<HttpResponse> handleGetLatestAudit(HttpRequest request) {
         try {
             String workspaceId = request.getPathParameter("workspaceId");
-            DmOperationContext ctx = buildContext(request, workspaceId, false);
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
 
             return auditService.getLatestAudit(ctx)
-                .map(report -> jsonResponse(200, AuditReportResponse.from(report)))
-                .then(r -> Promise.of(r), e -> mapServiceError("get latest audit", e));
+                .map(report -> jsonResponse(200, WebsiteAuditResponse.from(report)))
+                .then(r -> Promise.of(r), e -> mapServiceError("get audit", e));
         } catch (IllegalArgumentException e) {
             return Promise.of(errorResponse(400, e.getMessage()));
         } catch (Exception e) {
-            LOG.error("[DMOS] Failed to get latest audit", e);
+            LOG.error("[DMOS] Failed to get audit", e);
             return Promise.of(errorResponse(500, "Internal error"));
         }
     }
@@ -148,70 +133,8 @@ public final class DmosWebsiteAuditServlet {
         return Promise.of(errorResponse(500, "Internal error"));
     }
 
-    private DmOperationContext buildContext(HttpRequest request, String workspaceId, boolean requireIdempotencyKey) {
-        String tenantId = getRequiredHeader(request, "X-Tenant-ID");
-        String principal = getHeader(request, "X-Principal-ID", "anonymous");
-        String correlationId = getHeader(request, "X-Correlation-ID", DmCorrelationId.generate().getValue());
-        String idempotencyKeyValue = getHeader(request, "X-Idempotency-Key", null);
-        String sessionId = getHeader(request, "X-Session-ID", null);
-        Set<String> roles = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Roles")));
-        Set<String> permissions = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Permissions")));
-
-        if (requireIdempotencyKey && (idempotencyKeyValue == null || idempotencyKeyValue.isBlank())) {
-            throw new IllegalArgumentException("X-Idempotency-Key header is required for write operations");
-        }
-
-        DmWorkspaceId workspace = DmWorkspaceId.of(workspaceId);
-        DmIdempotencyKey idempotencyKey =
-            (idempotencyKeyValue != null && !idempotencyKeyValue.isBlank())
-                ? DmIdempotencyKey.of(idempotencyKeyValue)
-                : null;
-
-        DmOperationContext baseContext = DmOperationContext.builder()
-            .tenantId(DmTenantId.of(tenantId))
-            .workspaceId(workspace)
-            .actor(ActorRef.user(principal))
-            .correlationId(DmCorrelationId.of(correlationId))
-            .build();
-
-        TenantSecurityContext securityContext = DmSecurityContextMapper.toTenantSecurityContext(
-            baseContext,
-            sessionId,
-            roles,
-            permissions,
-            null
-        );
-
-        return DmSecurityContextMapper.fromSecurityContext(
-            securityContext,
-            workspace,
-            DmCorrelationId.of(correlationId),
-            idempotencyKey
-        );
-    }
-
-    private static Set<String> parseCsvHeader(String value) {
-        if (value == null || value.isBlank()) {
-            return Set.of();
-        }
-        return Arrays.stream(value.split(","))
-            .map(String::trim)
-            .filter(token -> !token.isBlank())
-            .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    private static String getRequiredHeader(HttpRequest request, String name) {
-        String value = request.getHeader(HttpHeaders.of(name));
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("Required header missing: " + name);
-        }
-        return value;
-    }
-
-    private static String getHeader(HttpRequest request, String name, String defaultValue) {
-        String value = request.getHeader(HttpHeaders.of(name));
-        return (value != null && !value.isBlank()) ? value : defaultValue;
-    }
+    // P2-025: Using shared DmosHttpContextFactory for server-side identity derivation
+    // instead of parsing headers directly. This prevents spoofed identity attacks (P0-015).
 
     private HttpResponse jsonResponse(int code, Object body) {
         try {

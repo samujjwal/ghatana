@@ -35,8 +35,7 @@ import {
 import { useAllEpisodes, usePolicies, POLICIES_QUERY_KEY } from '@/hooks/useAgentMemory';
 import { EpisodeTimeline } from '@/components/memory/EpisodeTimeline';
 import { PolicyCard } from '@/components/memory/PolicyCard';
-import { Button, TextField, TextArea, Select } from '@ghatana/design-system';
-import { EmptyState } from '@/components/core/EmptyState';
+import { Button, TextField, TextArea, Select, EmptyState } from '@ghatana/design-system';
 import { Toaster } from 'sonner';
 import { ErrorState } from '@/components/core/ErrorState';
 import { PageState } from '@/components/shared/PageState';

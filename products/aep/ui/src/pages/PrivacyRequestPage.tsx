@@ -18,7 +18,7 @@ import {
   requestGdprErasure,
   requestGdprPortability,
 } from '@/api/aep.api';
-import { EmptyState } from '@/components/core/EmptyState';
+import { EmptyState } from '@ghatana/design-system';
 import { ConfidenceExplanation } from '@/components/shared/ConfidenceExplanation';
 import { useCapabilities } from '@/hooks/useCapabilities';
 import { getAiConfidenceTier } from '@/lib/ai-assist';

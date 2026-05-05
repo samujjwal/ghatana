@@ -25,7 +25,7 @@ import { FactTable } from '@/components/memory/FactTable';
 import { PolicyCard } from '@/components/memory/PolicyCard';
 import type { AgentFact, AgentRegistration, EpisodeRecord, AgentEpisodeRecord, LearnedPolicy } from '@/api/aep.api';
 import { Button, Select } from '@ghatana/design-system';
-import { EmptyState } from '@/components/core/EmptyState';
+import { EmptyState } from '@ghatana/design-system';
 import { ErrorState } from '@/components/core/ErrorState';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

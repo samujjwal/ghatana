@@ -26,7 +26,7 @@ import {
 } from '@/api/aep.api';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import { Button, TextField } from '@ghatana/design-system';
-import { EmptyState } from '@/components/core/EmptyState';
+import { EmptyState } from '@ghatana/design-system';
 import { ErrorState } from '@/components/core/ErrorState';
 import { PageState } from '@/components/shared/PageState';
 import { Link } from 'react-router';

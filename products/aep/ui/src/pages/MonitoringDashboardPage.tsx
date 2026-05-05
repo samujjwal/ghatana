@@ -39,7 +39,7 @@ import { useSelection } from '@/hooks/useSelection';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import { useConsent } from '@/components/privacy/ConsentManager';
 import { Button } from '@ghatana/design-system';
-import { EmptyState } from '@/components/core/EmptyState';
+import { EmptyState } from '@ghatana/design-system';
 import { ErrorState } from '@/components/core/ErrorState';
 
 // ─── Chart ───────────────────────────────────────────────────────────

@@ -26,7 +26,7 @@ import {
   getNewPipelineUrl,
   getEditPipelineUrl,
 } from '@/lib/routes';
-import { EmptyState } from '@/components/core/EmptyState';
+import { EmptyState } from '@ghatana/design-system';
 import { ErrorState } from '@/components/core/ErrorState';
 import { SensitiveActionDialog } from '@/components/shared/SensitiveActionDialog';
 import { PipelineDryRunDialog } from '@/components/pipeline/PipelineDryRunDialog';

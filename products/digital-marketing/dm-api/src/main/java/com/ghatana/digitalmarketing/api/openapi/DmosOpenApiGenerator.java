@@ -33,9 +33,68 @@ public final class DmosOpenApiGenerator {
         openApi.put("info", info);
         
         Map<String, Object> components = new LinkedHashMap<>();
+        
+        // Security schemes
         components.put("securitySchemes", Map.of(
             "bearerAuth", Map.of("type", "http", "scheme", "bearer", "bearerFormat", "JWT")
         ));
+        
+        // P0-009: Component schemas for domain types and error envelope
+        Map<String, Object> schemas = new LinkedHashMap<>();
+        schemas.put("CampaignType", Map.of(
+            "type", "string",
+            "enum", java.util.List.of("EMAIL", "SOCIAL", "PAID_SEARCH", "PUSH", "SMS", "OMNICHANNEL"),
+            "description", "The channel or method type of a DMOS campaign"
+        ));
+        schemas.put("CampaignStatus", Map.of(
+            "type", "string",
+            "enum", java.util.List.of("DRAFT", "LAUNCHED", "PAUSED", "COMPLETED", "ARCHIVED"),
+            "description", "Lifecycle status of a DMOS campaign"
+        ));
+        schemas.put("ErrorBody", Map.of(
+            "type", "object",
+            "required", java.util.List.of("error", "message", "status", "correlationId"),
+            "properties", Map.of(
+                "error", Map.of("type", "string", "description", "Error code (e.g., BAD_REQUEST, FORBIDDEN)"),
+                "message", Map.of("type", "string", "description", "Human-readable error message"),
+                "status", Map.of("type", "integer", "description", "HTTP status code"),
+                "correlationId", Map.of("type", "string", "description", "Correlation ID for tracing"),
+                "details", Map.of("type", "object", "description", "Additional error details")
+            )
+        ));
+        schemas.put("Campaign", Map.of(
+            "type", "object",
+            "required", java.util.List.of("id", "workspaceId", "name", "status", "type", "createdBy", "createdAt", "updatedAt"),
+            "properties", Map.of(
+                "id", Map.of("type", "string", "description", "Campaign ID"),
+                "workspaceId", Map.of("type", "string", "description", "Workspace ID"),
+                "name", Map.of("type", "string", "description", "Campaign name"),
+                "status", Map.of("$ref", "#/components/schemas/CampaignStatus"),
+                "type", Map.of("$ref", "#/components/schemas/CampaignType"),
+                "createdBy", Map.of("type", "string", "description", "User who created the campaign"),
+                "createdAt", Map.of("type", "string", "format", "date-time", "description", "Creation timestamp"),
+                "updatedAt", Map.of("type", "string", "format", "date-time", "description": "Last update timestamp")
+            )
+        ));
+        schemas.put("CreateCampaignRequest", Map.of(
+            "type", "object",
+            "required", java.util.List.of("name", "type"),
+            "properties", Map.of(
+                "name", Map.of("type", "string", "description", "Campaign name"),
+                "type", Map.of("$ref", "#/components/schemas/CampaignType")
+            )
+        ));
+        schemas.put("CampaignListResponse", Map.of(
+            "type", "object",
+            "required", java.util.List.of("items", "count", "offset"),
+            "properties", Map.of(
+                "items", Map.of("type", "array", "items", Map.of("$ref", "#/components/schemas/Campaign")),
+                "count", Map.of("type", "integer", "description", "Number of items in this page"),
+                "offset", Map.of("type", "integer", "description", "Pagination offset")
+            )
+        ));
+        components.put("schemas", schemas);
+        
         openApi.put("components", components);
         openApi.put("security", java.util.List.of(Map.of("bearerAuth", java.util.List.of())));
         
@@ -85,6 +144,10 @@ public final class DmosOpenApiGenerator {
             "Launch campaign", "Launch a campaign");
         addPath(paths, "/v1/workspaces/{workspaceId}/campaigns/{id}/pause", "POST", 
             "Pause campaign", "Pause a running campaign");
+        addPath(paths, "/v1/workspaces/{workspaceId}/campaigns/{id}/approve", "POST", 
+            "Approve campaign", "Approve a pending campaign approval");
+        addPath(paths, "/v1/workspaces/{workspaceId}/campaigns/{id}/reject", "POST", 
+            "Reject campaign", "Reject a pending campaign approval");
     }
 
     private static void addStrategyPaths(Map<String, Object> paths) {

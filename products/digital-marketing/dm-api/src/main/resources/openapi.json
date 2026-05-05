@@ -12,6 +12,60 @@
         "scheme": "bearer",
         "bearerFormat": "JWT"
       }
+    },
+    "schemas": {
+      "CampaignType": {
+        "type": "string",
+        "enum": ["EMAIL", "SOCIAL", "PAID_SEARCH", "PUSH", "SMS", "OMNICHANNEL"],
+        "description": "The channel or method type of a DMOS campaign"
+      },
+      "CampaignStatus": {
+        "type": "string",
+        "enum": ["DRAFT", "LAUNCHED", "PAUSED", "COMPLETED", "ARCHIVED"],
+        "description": "Lifecycle status of a DMOS campaign"
+      },
+      "ErrorBody": {
+        "type": "object",
+        "required": ["error", "message", "status", "correlationId"],
+        "properties": {
+          "error": {"type": "string", "description": "Error code (e.g., BAD_REQUEST, FORBIDDEN)"},
+          "message": {"type": "string", "description": "Human-readable error message"},
+          "status": {"type": "integer", "description": "HTTP status code"},
+          "correlationId": {"type": "string", "description": "Correlation ID for tracing"},
+          "details": {"type": "object", "description": "Additional error details"}
+        }
+      },
+      "Campaign": {
+        "type": "object",
+        "required": ["id", "workspaceId", "name", "status", "type", "createdBy", "createdAt", "updatedAt"],
+        "properties": {
+          "id": {"type": "string", "description": "Campaign ID"},
+          "workspaceId": {"type": "string", "description": "Workspace ID"},
+          "name": {"type": "string", "description": "Campaign name"},
+          "status": {"$ref": "#/components/schemas/CampaignStatus"},
+          "type": {"$ref": "#/components/schemas/CampaignType"},
+          "createdBy": {"type": "string", "description": "User who created the campaign"},
+          "createdAt": {"type": "string", "format": "date-time", "description": "Creation timestamp"},
+          "updatedAt": {"type": "string", "format": "date-time", "description": "Last update timestamp"}
+        }
+      },
+      "CreateCampaignRequest": {
+        "type": "object",
+        "required": ["name", "type"],
+        "properties": {
+          "name": {"type": "string", "description": "Campaign name"},
+          "type": {"$ref": "#/components/schemas/CampaignType"}
+        }
+      },
+      "CampaignListResponse": {
+        "type": "object",
+        "required": ["items", "count", "offset"],
+        "properties": {
+          "items": {"type": "array", "items": {"$ref": "#/components/schemas/Campaign"}},
+          "count": {"type": "integer", "description": "Number of items in this page"},
+          "offset": {"type": "integer", "description": "Pagination offset"}
+        }
+      }
     }
   },
   "security": [{"bearerAuth": []}],

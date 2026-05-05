@@ -88,20 +88,15 @@ export const AI_DATA_QUALITY_ASSESSMENT_BOUNDARY_MESSAGE =
 export const AI_RELATED_ENTITY_DISCOVERY_BOUNDARY_MESSAGE =
   'Related-entity discovery is not exposed by the current Data Cloud launcher API through this helper.';
 
-export const GOVERNANCE_POLICY_CREATE_BOUNDARY_MESSAGE =
-  'Policy creation is not exposed by the current Data Cloud governance API.';
-
-export const GOVERNANCE_POLICY_UPDATE_BOUNDARY_MESSAGE =
-  'Policy updates are not exposed by the current Data Cloud governance API.';
-
-export const GOVERNANCE_POLICY_DELETE_BOUNDARY_MESSAGE =
-  'Policy deletion is not exposed by the current Data Cloud governance API.';
-
-export const GOVERNANCE_POLICY_TOGGLE_BOUNDARY_MESSAGE =
-  'Policy toggles are not exposed by the current Data Cloud governance API.';
-
-export const GOVERNANCE_VIOLATION_RESOLUTION_BOUNDARY_MESSAGE =
-  'Violation resolution is not exposed by the current Data Cloud governance API.';
+// DC-P1-009: Policy CRUD lifecycle is complete - boundary messages removed
+// The following governance policy operations are fully implemented:
+// - POST /api/v1/governance/policies (create)
+// - PUT /api/v1/governance/policies/{id} (update)
+// - DELETE /api/v1/governance/policies/{id} (delete)
+// - POST /api/v1/governance/policies/{id}/toggle (toggle)
+// Backend handlers: DataLifecycleHandler.java
+// UI mutations: TrustCenter.tsx with capability gating
+// Service methods: governance.service.ts
 
 export const QUALITY_PII_MASK_BOUNDARY_MESSAGE =
   'Bulk field masking is not exposed by the current Data Cloud API.';

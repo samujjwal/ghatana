@@ -23,9 +23,11 @@ export const FEATURE_FLAGS = {
 
 export type FeatureFlag = typeof FEATURE_FLAGS[keyof typeof FEATURE_FLAGS];
 
-// P2-3: Flag values from environment variables (canonical source)
+// P0-004: Flag values from Vite build-time environment variables (VITE_* prefix required)
+// P0-004: Use import.meta.env instead of Node's process.env for browser compatibility
 const getFlagValue = (key: string, defaultValue: boolean): boolean => {
-  const envValue = process.env[key.toUpperCase().replace(/\./g, '_')];
+  const envKey = `VITE_${key.toUpperCase().replace(/\./g, '_')}`;
+  const envValue = import.meta.env[envKey];
   if (envValue !== undefined) {
     return envValue === 'true' || envValue === '1';
   }

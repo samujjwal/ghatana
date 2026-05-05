@@ -4,6 +4,29 @@ plugins {
 
 apply(from = "../gradle/dmos-quality-gates.gradle.kts")
 
+// P2-003: Task to generate feature flags from canonical manifest
+tasks.register("generateFeatureFlags") {
+    group = "code generation"
+    description = "Generate Java and TypeScript feature flag constants from FEATURE_FLAGS_MANIFEST.json"
+    
+    doLast {
+        val scriptFile = file("../scripts/generate-feature-flags.ts")
+        if (!scriptFile.exists()) {
+            throw GradleException("Feature flag generator script not found: ${scriptFile.absolutePath}")
+        }
+        
+        exec {
+            workingDir = projectDir
+            commandLine("npx", "tsx", scriptFile.absolutePath)
+        }
+    }
+}
+
+// P2-003: Ensure feature flags are generated before compilation
+tasks.named("compileJava") {
+    dependsOn("generateFeatureFlags")
+}
+
 group = "com.ghatana.digitalmarketing"
 description = "DMOS Application — application service layer implementing campaign, workspace, and audience use cases"
 
@@ -58,12 +81,12 @@ tasks.jacocoTestCoverageVerification {
             limit {
                 counter = "LINE"
                 value = "COVEREDRATIO"
-                minimum = "0.89".toBigDecimal()
+                minimum = "0.92".toBigDecimal()
             }
             limit {
                 counter = "BRANCH"
                 value = "COVEREDRATIO"
-                minimum = "0.75".toBigDecimal()
+                minimum = "0.80".toBigDecimal()
             }
         }
     }

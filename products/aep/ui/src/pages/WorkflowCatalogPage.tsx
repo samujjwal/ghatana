@@ -27,7 +27,7 @@ import {
   getEditPipelineUrl,
   getPipelineListUrl,
 } from '@/lib/routes';
-import { EmptyState } from '@/components/core/EmptyState';
+import { EmptyState } from '@ghatana/design-system';
 import { ErrorState } from '@/components/core/ErrorState';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
