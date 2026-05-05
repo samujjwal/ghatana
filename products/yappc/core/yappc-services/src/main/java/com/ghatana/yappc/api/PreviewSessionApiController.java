@@ -20,6 +20,11 @@ import java.util.UUID;
 
 /**
  * Issues and validates signed preview sessions for the standalone builder preview runtime.
+ *
+ * @doc.type class
+ * @doc.purpose Issues and validates signed preview sessions for the standalone builder preview runtime
+ * @doc.layer api
+ * @doc.pattern Controller
  */
 public final class PreviewSessionApiController {
 

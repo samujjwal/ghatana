@@ -317,8 +317,11 @@ subprojects {
             group = "verification"
             description = "Fails when product-specific identifiers leak into kernel or platform-plugin production sources."
 
+            val projectDirPath = projectDir
+            val projectPathValue = path
+
             doLast {
-                val mainDir = layout.projectDirectory.dir("src/main").asFile
+                val mainDir = projectDirPath.resolve("src/main")
                 if (!mainDir.exists()) {
                     return@doLast
                 }
@@ -330,14 +333,14 @@ subprojects {
                         val content = file.readText()
                         kernelBoundaryBannedPatterns.forEach { bannedPattern ->
                             if (Regex(bannedPattern).containsMatchIn(content)) {
-                                violations += "${file.relativeTo(projectDir)} contains product-specific term '$bannedPattern'"
+                                violations += "${file.relativeTo(projectDirPath)} contains product-specific term '$bannedPattern'"
                             }
                         }
                     }
 
                 if (violations.isNotEmpty()) {
                     throw GradleException(
-                        "Kernel/product boundary violations found in $path:\n" +
+                        "Kernel/product boundary violations found in $projectPathValue:\n" +
                             violations.joinToString("\n") { "  $it" }
                     )
                 }

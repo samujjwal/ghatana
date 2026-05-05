@@ -259,7 +259,8 @@ public class StandardHumanApprovalPlugin implements HumanApprovalPlugin {
             record.expiresAt(),
             Instant.now(),
             null,
-            "Approval request expired before decision"
+            "Approval request expired before decision",
+            record.context()
         );
         records.put(record.requestId(), expired);
         approvalVotes.remove(record.requestId());

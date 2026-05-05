@@ -10,6 +10,7 @@ package com.ghatana.datacloud.analytics;
  * @doc.type exception
  * @doc.purpose Indicates query was cancelled
  * @doc.layer core
+ * @doc.pattern Exception
  */
 public class QueryCancelledException extends RuntimeException {
 

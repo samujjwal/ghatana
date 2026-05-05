@@ -1,6 +1,7 @@
 package com.ghatana.plugin.approval;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -19,6 +20,7 @@ import java.util.Objects;
  * @param decidedAt     timestamp of the review decision; {@code null} while PENDING
  * @param reviewerId    identifier of the reviewer; {@code null} while PENDING
  * @param reviewerNotes notes from the reviewer; {@code null} while PENDING
+ * @param context       optional contextual metadata for the approval request
  *
  * @doc.type class
  * @doc.purpose Immutable snapshot of a human approval request lifecycle
@@ -35,7 +37,8 @@ public record ApprovalRecord(
         Instant expiresAt,
         Instant decidedAt,
         String reviewerId,
-        String reviewerNotes
+        String reviewerNotes,
+        Map<String, Object> context
 ) {
     /**
      * Compact canonical constructor that validates invariants.
@@ -64,7 +67,7 @@ public record ApprovalRecord(
                 ApprovalStatus.PENDING,
                 request.requestedAt(),
                 request.expiresAt(),
-                null, null, null
+                null, null, null, null
         );
     }
 
@@ -85,7 +88,7 @@ public record ApprovalRecord(
         return new ApprovalRecord(
                 requestId, subjectId, requestedBy, action,
                 newStatus, requestedAt, expiresAt,
-                decidedAt, reviewerId, notes
+                decidedAt, reviewerId, notes, context
         );
     }
 
@@ -100,7 +103,7 @@ public record ApprovalRecord(
         return new ApprovalRecord(
                 requestId, subjectId, requestedBy, action,
                 ApprovalStatus.CANCELLED, requestedAt, expiresAt,
-                cancelledAt, null, reason
+                cancelledAt, null, reason, context
         );
     }
 }

@@ -417,7 +417,7 @@ public final class DurableHumanApprovalPlugin implements HumanApprovalPlugin {
                 record.requestId(), record.subjectId(), record.requestedBy(), record.action(),
                 ApprovalStatus.EXPIRED,
                 record.requestedAt(), record.expiresAt(), Instant.now(),
-                null, "Auto-expired: deadline passed");
+                null, "Auto-expired: deadline passed", record.context());
     }
 
     private void recordVote(Connection conn, String requestId, String reviewerId) throws SQLException {

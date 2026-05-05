@@ -13,6 +13,11 @@ import java.util.Set;
  * YAPPC page artifacts commonly emit today. It gives the validator a concrete source of
  * truth for contract existence, slot names, required props, and basic prop typing without
  * requiring the full frontend design-system runtime in the JVM.</p>
+ *
+ * @doc.type class
+ * @doc.purpose Registry for design system contracts used in page artifact validation
+ * @doc.layer domain
+ * @doc.pattern Registry
  */
 public final class PageArtifactDesignSystemRegistry {
 

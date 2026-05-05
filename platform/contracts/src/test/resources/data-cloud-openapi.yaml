@@ -11,6 +11,7 @@ info:
 
     Data-Cloud now exposes plugin-backed workflow execution endpoints for pipeline execution,
     execution status inspection, and execution log retrieval inside the standalone launcher.
+    In this API, workflow and pipeline execution means data-local plugin runtime execution.
     AEP still owns broader agentic orchestration, but Data-Cloud can execute and observe
     pipeline workflows through its runtime plugin layer.
 
@@ -5844,6 +5845,19 @@ paths:
                 type: object
                 additionalProperties:
                   type: string
+
+  /api/v1/capabilities/schema:
+    get:
+      summary: Get the runtime capability registry schema
+      operationId: apiV1CapabilitiesSchemaGet
+      tags: [capabilities]
+      responses:
+        "200":
+          description: Capability registry schema.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
 
   /api/v1/settings:
     get:
