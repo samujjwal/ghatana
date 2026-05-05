@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: build still fails 1 [`bdb9feb`](https://github.com/samujjwal/ghatana/commit/bdb9febf44f847188945afad6e3972bed58aa6df)
 - **Changed**: yappc ref jee [`5b271ae`](https://github.com/samujjwal/ghatana/commit/5b271ae12ea4699b46b4e94ad74e42498ca17591)
 - **Changed**: yappc dfsd [`ecf9bb0`](https://github.com/samujjwal/ghatana/commit/ecf9bb03c0f4f9959d822a5774239097e8d72766)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`210d4de`](https://github.com/samujjwal/ghatana/commit/210d4de1a0efb8ca7fcde4c8ff84deec4c39fae7)
