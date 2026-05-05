@@ -96,6 +96,13 @@ public class PageArtifactModule extends AbstractModule {
             com.ghatana.platform.observability.MetricsCollector metrics
     ) {
         LOG.info("Creating PageArtifactController with authorization and observability");
-        return new PageArtifactController(repository, auditRepository, objectMapper, authorizationService, metrics);
+        return new PageArtifactController(
+                repository,
+                auditRepository,
+                objectMapper,
+                authorizationService,
+                metrics,
+                PageArtifactResourceScopeAuthorizer.allowAll()
+        );
     }
 }

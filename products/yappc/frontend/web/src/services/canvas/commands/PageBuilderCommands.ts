@@ -9,22 +9,36 @@
  */
 
 import {
+  addBinding,
   deleteNode,
   deserializeDocument,
   insertNode,
   moveNode,
+  setResponsiveVariant,
   serializeDocument,
   updateNodeProps,
   type BuilderDocument,
+  type Binding,
   type ComponentInstance,
   type NodeId,
+  type ResponsiveVariant,
+  type ReviewStatusKind,
   type SerializedDocument,
+  type StateVariant,
   type ValidationResult,
 } from '@ghatana/ui-builder';
 
 export type CommandType =
   | 'insert-component'
   | 'move-component'
+  | 'reorder-component'
+  | 'add-action-binding'
+  | 'add-data-binding'
+  | 'set-responsive-variant'
+  | 'set-state-variant'
+  | 'apply-suggested-improvement'
+  | 'map-component-to-design-system'
+  | 'review-residual-island'
   | 'update-props'
   | 'delete-component'
   | 'import-document'
@@ -69,6 +83,78 @@ export type UpdatePropsCommand = BaseCommand<
   }
 >;
 
+export type ReorderComponentCommand = BaseCommand<
+  'reorder-component',
+  {
+    readonly nodeId: NodeId;
+    readonly parentId: NodeId | null;
+    readonly slotName?: string;
+    readonly index: number;
+  }
+>;
+
+export type AddActionBindingCommand = BaseCommand<
+  'add-action-binding',
+  {
+    readonly nodeId: NodeId;
+    readonly binding: Binding;
+  }
+>;
+
+export type AddDataBindingCommand = BaseCommand<
+  'add-data-binding',
+  {
+    readonly nodeId: NodeId;
+    readonly binding: Binding;
+  }
+>;
+
+export type SetResponsiveVariantCommand = BaseCommand<
+  'set-responsive-variant',
+  {
+    readonly nodeId: NodeId;
+    readonly variant: ResponsiveVariant;
+  }
+>;
+
+export type SetStateVariantCommand = BaseCommand<
+  'set-state-variant',
+  {
+    readonly nodeId: NodeId;
+    readonly variant: StateVariant;
+  }
+>;
+
+export type ApplySuggestedImprovementCommand = BaseCommand<
+  'apply-suggested-improvement',
+  {
+    readonly suggestionId: string;
+    readonly nodeId: NodeId;
+    readonly props: Record<string, unknown>;
+    readonly name?: string;
+  }
+>;
+
+export type MapComponentToDesignSystemCommand = BaseCommand<
+  'map-component-to-design-system',
+  {
+    readonly nodeId: NodeId;
+    readonly contractName: string;
+    readonly props?: Record<string, unknown>;
+    readonly name?: string;
+  }
+>;
+
+export type ReviewResidualIslandCommand = BaseCommand<
+  'review-residual-island',
+  {
+    readonly nodeId: NodeId;
+    readonly residualIslandId: string;
+    readonly reviewStatus: Exclude<ReviewStatusKind, 'none'>;
+    readonly notes?: string;
+  }
+>;
+
 export type DeleteComponentCommand = BaseCommand<
   'delete-component',
   {
@@ -93,6 +179,14 @@ export type AutosaveDocumentCommand = BaseCommand<
 export type Command =
   | InsertComponentCommand
   | MoveComponentCommand
+  | ReorderComponentCommand
+  | AddActionBindingCommand
+  | AddDataBindingCommand
+  | SetResponsiveVariantCommand
+  | SetStateVariantCommand
+  | ApplySuggestedImprovementCommand
+  | MapComponentToDesignSystemCommand
+  | ReviewResidualIslandCommand
   | UpdatePropsCommand
   | DeleteComponentCommand
   | ImportDocumentCommand
@@ -150,7 +244,8 @@ interface NodeLocation {
 
 export class PageBuilderCommands {
   private currentDocument: BuilderDocument;
-  private readonly commandHistory: Command[] = [];
+  private readonly userCommandHistory: Command[] = [];
+  private readonly systemCommandHistory: Command[] = [];
   private readonly undoStack: CommandHistoryEntry[] = [];
   private readonly redoStack: CommandHistoryEntry[] = [];
   private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -166,7 +261,11 @@ export class PageBuilderCommands {
   }
 
   getHistory(): Command[] {
-    return [...this.commandHistory];
+    return [...this.userCommandHistory];
+  }
+
+  getSystemHistory(): Command[] {
+    return [...this.systemCommandHistory];
   }
 
   canUndo(): boolean {
@@ -178,7 +277,8 @@ export class PageBuilderCommands {
   }
 
   clearHistory(): void {
-    this.commandHistory.length = 0;
+    this.userCommandHistory.length = 0;
+    this.systemCommandHistory.length = 0;
     this.undoStack.length = 0;
     this.redoStack.length = 0;
   }
@@ -200,7 +300,11 @@ export class PageBuilderCommands {
         validationErrors,
       };
 
-      this.commandHistory.push(command);
+      if (command.type === 'autosave-document') {
+        this.systemCommandHistory.push(command);
+      } else {
+        this.userCommandHistory.push(command);
+      }
       this.undoStack.push({
         command,
         before: serializeDocument(beforeDocument),
@@ -327,6 +431,22 @@ export class PageBuilderCommands {
         return this.applyInsertComponent(document, command);
       case 'move-component':
         return this.applyMoveComponent(document, command);
+      case 'reorder-component':
+        return this.applyReorderComponent(document, command);
+      case 'add-action-binding':
+        return this.applyAddActionBinding(document, command);
+      case 'add-data-binding':
+        return this.applyAddDataBinding(document, command);
+      case 'set-responsive-variant':
+        return this.applySetResponsiveVariant(document, command);
+      case 'set-state-variant':
+        return this.applySetStateVariant(document, command);
+      case 'apply-suggested-improvement':
+        return this.applySuggestedImprovement(document, command);
+      case 'map-component-to-design-system':
+        return this.applyMapComponentToDesignSystem(document, command);
+      case 'review-residual-island':
+        return this.applyReviewResidualIsland(document, command);
       case 'update-props':
         return this.applyUpdateProps(document, command);
       case 'delete-component':
@@ -424,6 +544,140 @@ export class PageBuilderCommands {
     };
   }
 
+  private applyReorderComponent(document: BuilderDocument, command: ReorderComponentCommand): ApplyCommandOutput {
+    const nodeId = command.data.nodeId;
+    return {
+      document: reorderNode(
+        document,
+        nodeId,
+        command.data.parentId,
+        command.data.slotName,
+        command.data.index
+      ),
+      changedNodeIds: [nodeId],
+    };
+  }
+
+  private applyAddActionBinding(document: BuilderDocument, command: AddActionBindingCommand): ApplyCommandOutput {
+    if (command.data.binding.type !== 'event') {
+      throw new Error('Action bindings must use event binding type.');
+    }
+
+    return {
+      document: addBinding(document, command.data.nodeId, command.data.binding),
+      changedNodeIds: [command.data.nodeId],
+    };
+  }
+
+  private applyAddDataBinding(document: BuilderDocument, command: AddDataBindingCommand): ApplyCommandOutput {
+    if (command.data.binding.type !== 'data') {
+      throw new Error('Data bindings must use data binding type.');
+    }
+
+    return {
+      document: addBinding(document, command.data.nodeId, command.data.binding),
+      changedNodeIds: [command.data.nodeId],
+    };
+  }
+
+  private applySetResponsiveVariant(document: BuilderDocument, command: SetResponsiveVariantCommand): ApplyCommandOutput {
+    return {
+      document: setResponsiveVariant(document, command.data.nodeId, command.data.variant),
+      changedNodeIds: [command.data.nodeId],
+    };
+  }
+
+  private applySetStateVariant(document: BuilderDocument, command: SetStateVariantCommand): ApplyCommandOutput {
+    return {
+      document: setStateVariant(document, command.data.nodeId, command.data.variant),
+      changedNodeIds: [command.data.nodeId],
+    };
+  }
+
+  private applySuggestedImprovement(document: BuilderDocument, command: ApplySuggestedImprovementCommand): ApplyCommandOutput {
+    return this.applyUpdateProps(document, {
+      ...command,
+      type: 'update-props',
+      data: {
+        nodeId: command.data.nodeId,
+        props: command.data.props,
+        name: command.data.name,
+      },
+    });
+  }
+
+  private applyMapComponentToDesignSystem(document: BuilderDocument, command: MapComponentToDesignSystemCommand): ApplyCommandOutput {
+    const node = document.nodes.get(command.data.nodeId);
+    if (!node) {
+      throw new Error(`Cannot map missing node '${command.data.nodeId}' to design-system contract.`);
+    }
+
+    const mappedNode: ComponentInstance = {
+      ...node,
+      contractName: command.data.contractName,
+      props: {
+        ...node.props,
+        ...(command.data.props ?? {}),
+      },
+      metadata: {
+        ...node.metadata,
+        name: command.data.name ?? node.metadata.name,
+      },
+    };
+
+    const nextNodes = new Map(document.nodes);
+    nextNodes.set(command.data.nodeId, mappedNode);
+
+    return {
+      document: {
+        ...document,
+        nodes: nextNodes,
+        metadata: {
+          ...document.metadata,
+          updatedAt: new Date().toISOString(),
+        },
+      },
+      changedNodeIds: [command.data.nodeId],
+    };
+  }
+
+  private applyReviewResidualIsland(document: BuilderDocument, command: ReviewResidualIslandCommand): ApplyCommandOutput {
+    const node = document.nodes.get(command.data.nodeId);
+    if (!node) {
+      throw new Error(`Cannot review residual island for missing node '${command.data.nodeId}'.`);
+    }
+
+    const updatedNode: ComponentInstance = {
+      ...node,
+      metadata: {
+        ...node.metadata,
+        reviewStatus: {
+          status: command.data.reviewStatus,
+          reviewedBy: command.userId,
+          reviewedAt: new Date().toISOString(),
+          notes: command.data.notes
+            ? `[Residual ${command.data.residualIslandId}] ${command.data.notes}`
+            : `[Residual ${command.data.residualIslandId}] reviewed`,
+        },
+      },
+    };
+
+    const nextNodes = new Map(document.nodes);
+    nextNodes.set(command.data.nodeId, updatedNode);
+
+    return {
+      document: {
+        ...document,
+        nodes: nextNodes,
+        metadata: {
+          ...document.metadata,
+          updatedAt: new Date().toISOString(),
+        },
+      },
+      changedNodeIds: [command.data.nodeId],
+    };
+  }
+
   private applyDeleteComponent(document: BuilderDocument, command: DeleteComponentCommand): ApplyCommandOutput {
     const changedNodeIds = collectNodeIds(document, command.data.nodeId);
     return {
@@ -467,7 +721,7 @@ export class PageBuilderCommands {
         history: this.getHistory(),
         artifactId: autosaveCommand.artifactId,
       });
-      this.commandHistory.push(autosaveCommand);
+      this.systemCommandHistory.push(autosaveCommand);
       this.options.onTelemetry('page_builder_autosave_completed', {
         documentId: documentSnapshot.id,
         nodeCount: documentSnapshot.nodes.size,
@@ -604,6 +858,39 @@ function reorderIntoIndex(items: readonly NodeId[], nodeId: NodeId, targetIndex:
     nodeId,
     ...withoutNode.slice(clampedIndex),
   ];
+}
+
+function setStateVariant(
+  document: BuilderDocument,
+  nodeId: NodeId,
+  variant: StateVariant
+): BuilderDocument {
+  const node = document.nodes.get(nodeId);
+  if (!node) {
+    return document;
+  }
+
+  const existing = node.metadata.stateVariants ?? [];
+  const filtered = existing.filter((candidate) => candidate.state !== variant.state);
+  const updatedNode: ComponentInstance = {
+    ...node,
+    metadata: {
+      ...node.metadata,
+      stateVariants: [...filtered, variant],
+    },
+  };
+
+  const updatedNodes = new Map(document.nodes);
+  updatedNodes.set(nodeId, updatedNode);
+
+  return {
+    ...document,
+    nodes: updatedNodes,
+    metadata: {
+      ...document.metadata,
+      updatedAt: new Date().toISOString(),
+    },
+  };
 }
 
 function assertNever(value: never): never {

@@ -13,7 +13,7 @@
  * Rule: no-raw-buttons
  * Disallows raw <button> elements in favor of design-system Button component.
  */
-module.exports.rules = {
+const rules = {
   'no-raw-buttons': {
     meta: {
       type: 'suggestion',
@@ -240,3 +240,5 @@ module.exports.rules = {
     },
   },
 };
+
+export default { rules };

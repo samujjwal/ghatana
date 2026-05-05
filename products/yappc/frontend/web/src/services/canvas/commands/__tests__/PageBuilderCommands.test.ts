@@ -1,14 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { insertNode, type BuilderDocument, type ComponentInstance, type NodeId, type ValidationResult } from '@ghatana/ui-builder';
+import { insertNode, type Binding, type BuilderDocument, type ComponentInstance, type NodeId, type ValidationResult } from '@ghatana/ui-builder';
 
 import { createEmptyBuilderDocument } from '../../../../components/canvas/page/pageArtifactDocument';
 import {
+  type ApplySuggestedImprovementCommand,
+  type AddActionBindingCommand,
+  type AddDataBindingCommand,
+  type MapComponentToDesignSystemCommand,
   PageBuilderCommands,
   type DeleteComponentCommand,
   type ImportDocumentCommand,
   type InsertComponentCommand,
   type MoveComponentCommand,
+  type ReorderComponentCommand,
+  type ReviewResidualIslandCommand,
+  type SetResponsiveVariantCommand,
+  type SetStateVariantCommand,
   type UpdatePropsCommand,
 } from '../PageBuilderCommands';
 
@@ -134,6 +142,50 @@ describe('PageBuilderCommands', () => {
     expect(undone.document.nodes.get(containerId)?.slots.children).toEqual([]);
   });
 
+  it('reorders root nodes deterministically and restores previous order on undo', async () => {
+    const initialDocument = createEmptyBuilderDocument('Test Page', 'tester');
+    const { commands } = createCommands(initialDocument);
+
+    const first = await commands.execute({
+      id: 'insert-first',
+      type: 'insert-component',
+      timestamp: new Date().toISOString(),
+      data: {
+        instance: makeInstance('Hero'),
+      },
+    });
+    const second = await commands.execute({
+      id: 'insert-second',
+      type: 'insert-component',
+      timestamp: new Date().toISOString(),
+      data: {
+        instance: makeInstance('Button'),
+      },
+    });
+
+    const firstId = first.document.rootNodes[0] as NodeId;
+    const secondId = second.document.rootNodes[1] as NodeId;
+
+    const reorderCommand: ReorderComponentCommand = {
+      id: 'reorder-root',
+      type: 'reorder-component',
+      timestamp: new Date().toISOString(),
+      data: {
+        nodeId: secondId,
+        parentId: null,
+        index: 0,
+      },
+    };
+
+    const reordered = await commands.execute(reorderCommand);
+    expect(reordered.success).toBe(true);
+    expect(reordered.document.rootNodes).toEqual([secondId, firstId]);
+
+    const undone = await commands.undo();
+    expect(undone.success).toBe(true);
+    expect(undone.document.rootNodes).toEqual([firstId, secondId]);
+  });
+
   it('updates component props and metadata name and restores previous values on undo', async () => {
     const initialDocument = createEmptyBuilderDocument('Test Page', 'tester');
     const { commands } = createCommands(initialDocument);
@@ -166,6 +218,385 @@ describe('PageBuilderCommands', () => {
     const undone = await commands.undo();
     expect(undone.document.nodes.get(nodeId)?.props.label).toBeUndefined();
     expect(undone.document.nodes.get(nodeId)?.metadata.name).toBe('TextField');
+  });
+
+  it('adds event/data bindings as semantic commands and supports undo', async () => {
+    const initialDocument = createEmptyBuilderDocument('Binding Page', 'tester');
+    const { commands } = createCommands(initialDocument);
+
+    const inserted = await commands.execute({
+      id: 'insert-bind-node',
+      type: 'insert-component',
+      timestamp: new Date().toISOString(),
+      data: {
+        instance: makeInstance('Button'),
+      },
+    });
+    const nodeId = inserted.document.rootNodes[0] as NodeId;
+
+    const actionBinding: Binding = {
+      id: 'binding-event-1',
+      type: 'event',
+      source: 'actions.submitForm',
+      target: 'onClick',
+    };
+    const dataBinding: Binding = {
+      id: 'binding-data-1',
+      type: 'data',
+      source: 'dataSource.user.email',
+      target: 'label',
+    };
+
+    const addAction: AddActionBindingCommand = {
+      id: 'cmd-action-binding',
+      type: 'add-action-binding',
+      timestamp: new Date().toISOString(),
+      data: {
+        nodeId,
+        binding: actionBinding,
+      },
+    };
+
+    const addData: AddDataBindingCommand = {
+      id: 'cmd-data-binding',
+      type: 'add-data-binding',
+      timestamp: new Date().toISOString(),
+      data: {
+        nodeId,
+        binding: dataBinding,
+      },
+    };
+
+    const actionResult = await commands.execute(addAction);
+    expect(actionResult.success).toBe(true);
+    expect(actionResult.document.nodes.get(nodeId)?.bindings).toHaveLength(1);
+    expect(actionResult.document.nodes.get(nodeId)?.bindings[0]?.id).toBe('binding-event-1');
+
+    const dataResult = await commands.execute(addData);
+    expect(dataResult.success).toBe(true);
+    expect(dataResult.document.nodes.get(nodeId)?.bindings).toHaveLength(2);
+    expect(dataResult.document.nodes.get(nodeId)?.bindings[1]?.id).toBe('binding-data-1');
+
+    const undone = await commands.undo();
+    expect(undone.success).toBe(true);
+    expect(undone.document.nodes.get(nodeId)?.bindings).toHaveLength(1);
+    expect(undone.document.nodes.get(nodeId)?.bindings[0]?.id).toBe('binding-event-1');
+  });
+
+  it('rejects semantic binding commands when binding type does not match the command contract', async () => {
+    const initialDocument = createEmptyBuilderDocument('Binding Guard Page', 'tester');
+    const { commands } = createCommands(initialDocument);
+
+    const inserted = await commands.execute({
+      id: 'insert-bind-node-2',
+      type: 'insert-component',
+      timestamp: new Date().toISOString(),
+      data: {
+        instance: makeInstance('Button'),
+      },
+    });
+    const nodeId = inserted.document.rootNodes[0] as NodeId;
+
+    const invalidActionCommand: AddActionBindingCommand = {
+      id: 'cmd-invalid-action-binding',
+      type: 'add-action-binding',
+      timestamp: new Date().toISOString(),
+      data: {
+        nodeId,
+        binding: {
+          id: 'binding-invalid-1',
+          type: 'data',
+          source: 'dataSource.user.name',
+          target: 'label',
+        },
+      },
+    };
+
+    const invalidDataCommand: AddDataBindingCommand = {
+      id: 'cmd-invalid-data-binding',
+      type: 'add-data-binding',
+      timestamp: new Date().toISOString(),
+      data: {
+        nodeId,
+        binding: {
+          id: 'binding-invalid-2',
+          type: 'event',
+          source: 'actions.refresh',
+          target: 'onClick',
+        },
+      },
+    };
+
+    const actionFailure = await commands.execute(invalidActionCommand);
+    expect(actionFailure.success).toBe(false);
+    expect(actionFailure.error).toContain('Action bindings must use event binding type');
+
+    const dataFailure = await commands.execute(invalidDataCommand);
+    expect(dataFailure.success).toBe(false);
+    expect(dataFailure.error).toContain('Data bindings must use data binding type');
+  });
+
+  it('sets responsive variant overrides and restores previous values on undo', async () => {
+    const initialDocument = createEmptyBuilderDocument('Responsive Page', 'tester');
+    const { commands } = createCommands(initialDocument);
+
+    const inserted = await commands.execute({
+      id: 'insert-responsive-node',
+      type: 'insert-component',
+      timestamp: new Date().toISOString(),
+      data: {
+        instance: makeInstance('Card'),
+      },
+    });
+    const nodeId = inserted.document.rootNodes[0] as NodeId;
+
+    const setResponsiveCommand: SetResponsiveVariantCommand = {
+      id: 'set-responsive-md',
+      type: 'set-responsive-variant',
+      timestamp: new Date().toISOString(),
+      data: {
+        nodeId,
+        variant: {
+          breakpoint: 'md',
+          props: {
+            elevation: 3,
+          },
+        },
+      },
+    };
+
+    const updated = await commands.execute(setResponsiveCommand);
+    expect(updated.success).toBe(true);
+    expect(updated.document.nodes.get(nodeId)?.metadata.responsiveVariants).toEqual([
+      {
+        breakpoint: 'md',
+        props: {
+          elevation: 3,
+        },
+      },
+    ]);
+
+    const undone = await commands.undo();
+    expect(undone.success).toBe(true);
+    expect(undone.document.nodes.get(nodeId)?.metadata.responsiveVariants ?? []).toHaveLength(0);
+  });
+
+  it('sets state variants by state key and replaces existing state variant entries', async () => {
+    const initialDocument = createEmptyBuilderDocument('State Variant Page', 'tester');
+    const { commands } = createCommands(initialDocument);
+
+    const inserted = await commands.execute({
+      id: 'insert-state-node',
+      type: 'insert-component',
+      timestamp: new Date().toISOString(),
+      data: {
+        instance: makeInstance('Button'),
+      },
+    });
+    const nodeId = inserted.document.rootNodes[0] as NodeId;
+
+    const firstStateVariant: SetStateVariantCommand = {
+      id: 'set-state-hover-1',
+      type: 'set-state-variant',
+      timestamp: new Date().toISOString(),
+      data: {
+        nodeId,
+        variant: {
+          state: 'hover',
+          props: {
+            variant: 'filled',
+          },
+        },
+      },
+    };
+
+    const secondStateVariant: SetStateVariantCommand = {
+      id: 'set-state-hover-2',
+      type: 'set-state-variant',
+      timestamp: new Date().toISOString(),
+      data: {
+        nodeId,
+        variant: {
+          state: 'hover',
+          props: {
+            variant: 'outlined',
+          },
+        },
+      },
+    };
+
+    const first = await commands.execute(firstStateVariant);
+    expect(first.success).toBe(true);
+    expect(first.document.nodes.get(nodeId)?.metadata.stateVariants).toEqual([
+      {
+        state: 'hover',
+        props: {
+          variant: 'filled',
+        },
+      },
+    ]);
+
+    const second = await commands.execute(secondStateVariant);
+    expect(second.success).toBe(true);
+    expect(second.document.nodes.get(nodeId)?.metadata.stateVariants).toEqual([
+      {
+        state: 'hover',
+        props: {
+          variant: 'outlined',
+        },
+      },
+    ]);
+
+    const undone = await commands.undo();
+    expect(undone.success).toBe(true);
+    expect(undone.document.nodes.get(nodeId)?.metadata.stateVariants).toEqual([
+      {
+        state: 'hover',
+        props: {
+          variant: 'filled',
+        },
+      },
+    ]);
+  });
+
+  it('applies a suggested improvement through semantic command and supports undo', async () => {
+    const initialDocument = createEmptyBuilderDocument('Suggested Improvements', 'tester');
+    const { commands } = createCommands(initialDocument);
+
+    const inserted = await commands.execute({
+      id: 'insert-suggestion-node',
+      type: 'insert-component',
+      timestamp: new Date().toISOString(),
+      data: {
+        instance: makeInstance('TextField'),
+      },
+    });
+    const nodeId = inserted.document.rootNodes[0] as NodeId;
+
+    const applyCommand: ApplySuggestedImprovementCommand = {
+      id: 'apply-suggested-1',
+      type: 'apply-suggested-improvement',
+      timestamp: new Date().toISOString(),
+      data: {
+        suggestionId: 'improvement-aria-label',
+        nodeId,
+        props: {
+          ariaLabel: 'Email address',
+        },
+        name: 'Email input',
+      },
+    };
+
+    const applied = await commands.execute(applyCommand);
+    expect(applied.success).toBe(true);
+    expect(applied.document.nodes.get(nodeId)?.props.ariaLabel).toBe('Email address');
+    expect(applied.document.nodes.get(nodeId)?.metadata.name).toBe('Email input');
+
+    const undone = await commands.undo();
+    expect(undone.success).toBe(true);
+    expect(undone.document.nodes.get(nodeId)?.props.ariaLabel).toBeUndefined();
+    expect(undone.document.nodes.get(nodeId)?.metadata.name).toBe('TextField');
+  });
+
+  it('maps a component node to a canonical design-system contract and restores prior contract on undo', async () => {
+    const initialDocument = createEmptyBuilderDocument('Mapping Page', 'tester');
+    const { commands } = createCommands(initialDocument);
+
+    const inserted = await commands.execute({
+      id: 'insert-mapping-node',
+      type: 'insert-component',
+      timestamp: new Date().toISOString(),
+      data: {
+        instance: makeInstance('LegacyTextInput'),
+      },
+    });
+    const nodeId = inserted.document.rootNodes[0] as NodeId;
+
+    const mapCommand: MapComponentToDesignSystemCommand = {
+      id: 'map-node-to-ds',
+      type: 'map-component-to-design-system',
+      timestamp: new Date().toISOString(),
+      data: {
+        nodeId,
+        contractName: 'TextField',
+        props: {
+          placeholder: 'email@example.com',
+        },
+        name: 'Email field',
+      },
+    };
+
+    const mapped = await commands.execute(mapCommand);
+    expect(mapped.success).toBe(true);
+    expect(mapped.document.nodes.get(nodeId)?.contractName).toBe('TextField');
+    expect(mapped.document.nodes.get(nodeId)?.props.placeholder).toBe('email@example.com');
+    expect(mapped.document.nodes.get(nodeId)?.metadata.name).toBe('Email field');
+
+    const undone = await commands.undo();
+    expect(undone.success).toBe(true);
+    expect(undone.document.nodes.get(nodeId)?.contractName).toBe('LegacyTextInput');
+    expect(undone.document.nodes.get(nodeId)?.props.placeholder).toBeUndefined();
+    expect(undone.document.nodes.get(nodeId)?.metadata.name).toBe('LegacyTextInput');
+  });
+
+  it('records residual island review status on node metadata and restores previous status on undo', async () => {
+    const initialDocument = createEmptyBuilderDocument('Residual Review Page', 'tester');
+    const { commands } = createCommands(initialDocument);
+
+    const inserted = await commands.execute({
+      id: 'insert-residual-node',
+      type: 'insert-component',
+      timestamp: new Date().toISOString(),
+      data: {
+        instance: makeInstance('Card'),
+      },
+    });
+    const nodeId = inserted.document.rootNodes[0] as NodeId;
+
+    const reviewCommand: ReviewResidualIslandCommand = {
+      id: 'review-residual-1',
+      type: 'review-residual-island',
+      timestamp: new Date().toISOString(),
+      userId: 'reviewer-1',
+      data: {
+        nodeId,
+        residualIslandId: 'legacy-chart',
+        reviewStatus: 'approved',
+        notes: 'Mapped to canonical chart contract',
+      },
+    };
+
+    const reviewed = await commands.execute(reviewCommand);
+    expect(reviewed.success).toBe(true);
+    expect(reviewed.document.nodes.get(nodeId)?.metadata.reviewStatus?.status).toBe('approved');
+    expect(reviewed.document.nodes.get(nodeId)?.metadata.reviewStatus?.reviewedBy).toBe('reviewer-1');
+    expect(reviewed.document.nodes.get(nodeId)?.metadata.reviewStatus?.notes).toContain('legacy-chart');
+
+    const undone = await commands.undo();
+    expect(undone.success).toBe(true);
+    expect(undone.document.nodes.get(nodeId)?.metadata.reviewStatus).toBeUndefined();
+  });
+
+  it('fails residual review command when node is missing', async () => {
+    const initialDocument = createEmptyBuilderDocument('Residual Review Error', 'tester');
+    const { commands } = createCommands(initialDocument);
+
+    const reviewCommand: ReviewResidualIslandCommand = {
+      id: 'review-missing-node',
+      type: 'review-residual-island',
+      timestamp: new Date().toISOString(),
+      userId: 'reviewer-1',
+      data: {
+        nodeId: 'missing-node' as NodeId,
+        residualIslandId: 'legacy-widget',
+        reviewStatus: 'rejected',
+        notes: 'Cannot validate source mapping',
+      },
+    };
+
+    const result = await commands.execute(reviewCommand);
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Cannot review residual island for missing node');
   });
 
   it('deletes a component subtree and restores it on undo', async () => {
@@ -255,6 +686,8 @@ describe('PageBuilderCommands', () => {
     await vi.advanceTimersByTimeAsync(60);
 
     expect(onAutosave).toHaveBeenCalledTimes(1);
+    expect(commands.getHistory()).toHaveLength(1);
+    expect(commands.getSystemHistory()).toHaveLength(1);
     const autosavedDocument = onAutosave.mock.calls[0]?.[0];
     expect(autosavedDocument?.rootNodes).toHaveLength(1);
     expect(autosavedDocument?.nodes.size).toBe(1);

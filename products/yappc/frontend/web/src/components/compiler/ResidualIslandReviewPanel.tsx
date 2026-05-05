@@ -11,7 +11,8 @@
  */
 
 import React from 'react';
-import { Button, Textarea } from 'yappc-ui/components';
+
+import { Alert, Button, Card, CardContent, TextArea } from '@ghatana/design-system';
 
 export type ResidualIslandSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 
@@ -112,7 +113,7 @@ export const ResidualIslandReviewPanel: React.FC<ResidualIslandReviewPanelProps>
   className = '',
 }) => {
   const [selectedIsland, setSelectedIsland] = React.useState<string | null>(null);
-  const [reviewNotes, setReviewNotes] = React.useState<Record<string, string>>({});
+  const [reviewNotes, setReviewNotes] = React.useState<Map<string, string>>(new Map());
 
   const filteredIslands = islands.filter(island => {
     if (filterSeverity !== 'all' && island.severity !== filterSeverity) return false;
@@ -120,28 +121,29 @@ export const ResidualIslandReviewPanel: React.FC<ResidualIslandReviewPanelProps>
     return true;
   });
 
-  const handleReviewSubmit = (islandId: string) => {
-    const notes = reviewNotes[islandId] || '';
+  const handleReviewSubmit = (islandId: string): void => {
+    const notes = reviewNotes.get(islandId) || '';
     onReview(islandId, notes);
   };
 
-  const severityCount = islands.reduce((acc, island) => {
-    acc[island.severity] = (acc[island.severity] || 0) + 1;
+  const severityCount = islands.reduce<Map<ResidualIslandSeverity, number>>((acc, island) => {
+    const currentCount = acc.get(island.severity) ?? 0;
+    acc.set(island.severity, currentCount + 1);
     return acc;
-  }, {} as Record<ResidualIslandSeverity, number>);
+  }, new Map());
 
   return (
-    <div className={`bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 ${className}`}>
-      {/* Header */}
+    <Card className={className} variant="outlined">
+      <CardContent className="p-0">
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           Residual Islands Review
         </h3>
         <div className="mt-2 flex flex-wrap gap-2">
-          {Object.entries(severityCount).map(([severity, count]) => (
+          {Array.from(severityCount.entries()).map(([severity, count]) => (
             <span
               key={severity}
-              className={`px-2 py-1 rounded text-xs font-medium ${getSeverityColor(severity as ResidualIslandSeverity)}`}
+              className={`px-2 py-1 rounded text-xs font-medium ${getSeverityColor(severity)}`}
             >
               {severity}: {count}
             </span>
@@ -149,7 +151,6 @@ export const ResidualIslandReviewPanel: React.FC<ResidualIslandReviewPanelProps>
         </div>
       </div>
 
-      {/* Island List */}
       <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-[600px] overflow-y-auto">
         {filteredIslands.length === 0 ? (
           <div className="p-8 text-center text-gray-500 dark:text-gray-400">
@@ -189,24 +190,24 @@ export const ResidualIslandReviewPanel: React.FC<ResidualIslandReviewPanelProps>
                 <div className="flex gap-2 ml-4">
                   <Button
                     onClick={() => onAccept(island.id)}
-                    variant="contained"
-                    size="small"
+                    variant="solid"
+                    size="sm"
                     title="Accept island"
                   >
                     Accept
                   </Button>
                   <Button
                     onClick={() => onReject(island.id)}
-                    variant="contained"
-                    size="small"
+                    variant="outline"
+                    size="sm"
                     title="Reject island"
                   >
                     Reject
                   </Button>
                   <Button
                     onClick={() => setSelectedIsland(island.id)}
-                    variant="contained"
-                    size="small"
+                    variant="ghost"
+                    size="sm"
                     title="Review island"
                   >
                     Review
@@ -214,7 +215,6 @@ export const ResidualIslandReviewPanel: React.FC<ResidualIslandReviewPanelProps>
                 </div>
               </div>
 
-              {/* Code Snippet */}
               {showCode && !compact && (
                 <div className="mt-3">
                   <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-xs overflow-x-auto">
@@ -223,21 +223,29 @@ export const ResidualIslandReviewPanel: React.FC<ResidualIslandReviewPanelProps>
                 </div>
               )}
 
-              {/* Review Notes */}
               {selectedIsland === island.id && (
                 <div className="mt-3 border-t border-gray-200 dark:border-gray-700 pt-3">
-                  <Textarea
-                    value={reviewNotes[island.id] || island.reviewNotes || ''}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setReviewNotes({ ...reviewNotes, [island.id]: e.target.value })}
+                  <Alert severity="info" variant="outlined" title="Review notes" className="mb-3">
+                    Record why this residual should be accepted, rejected, or sent for follow-up review.
+                  </Alert>
+                  <TextArea
+                    value={reviewNotes.get(island.id) || island.reviewNotes || ''}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                      const nextValue = e.target.value;
+                      setReviewNotes((currentNotes) => {
+                        const nextNotes = new Map(currentNotes);
+                        nextNotes.set(island.id, nextValue);
+                        return nextNotes;
+                      });
+                    }}
                     placeholder="Add review notes..."
                     rows={3}
-                    fullWidth
                   />
                   <div className="mt-2 flex justify-end">
                     <Button
                       onClick={() => handleReviewSubmit(island.id)}
-                      variant="contained"
-                      size="small"
+                      variant="solid"
+                      size="sm"
                     >
                       Save Notes
                     </Button>
@@ -248,7 +256,8 @@ export const ResidualIslandReviewPanel: React.FC<ResidualIslandReviewPanelProps>
           ))
         )}
       </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

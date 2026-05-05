@@ -10,7 +10,7 @@
  */
 
 import { execSync } from 'child_process';
-import { writeFileSync, existsSync, mkdirSync } from 'fs';
+import { writeFileSync, existsSync, mkdirSync, readFileSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
 
 // Create the Prisma client manually
@@ -78,7 +78,6 @@ console.log('   3. Run npx prisma generate');
 console.log('');
 console.log('🔧 Current workaround allows the API server to start');
 console.log('   but database operations will not work until Prisma is fixed.');
-`;
 
 // Try to generate with adapter instead
 try {
@@ -89,16 +88,16 @@ try {
   const tempSchemaPath = join(process.cwd(), 'prisma', 'schema.temp.prisma');
   
   // Read the original schema
-  const fs = require('fs');
-  let schemaContent = fs.readFileSync(schemaPath, 'utf-8');
+  let schemaContent = readFileSync(schemaPath, 'utf-8');
   
   // Remove the url line
-  schemaContent = schemaContent.replace(/datasource db \{[\s\S]*?\}/, `datasource db {
-  provider = "postgresql"
-}`);
+  schemaContent = schemaContent.replace(
+    /datasource db \{[\s\S]*?\}/,
+    'datasource db {\n  provider = "postgresql"\n}'
+  );
   
   // Write temporary schema
-  fs.writeFileSync(tempSchemaPath, schemaContent);
+  writeFileSync(tempSchemaPath, schemaContent);
   
   // Try to generate
   try {
@@ -106,14 +105,14 @@ try {
     console.log('✅ Prisma client generated successfully!');
     
     // Clean up temp file
-    fs.unlinkSync(tempSchemaPath);
+    unlinkSync(tempSchemaPath);
   } catch (error) {
     console.log('❌ Prisma generation failed, keeping placeholder');
     console.log('🔧 Error:', error.message);
     
     // Clean up temp file if it exists
-    if (fs.existsSync(tempSchemaPath)) {
-      fs.unlinkSync(tempSchemaPath);
+    if (existsSync(tempSchemaPath)) {
+      unlinkSync(tempSchemaPath);
     }
   }
 } catch (error) {

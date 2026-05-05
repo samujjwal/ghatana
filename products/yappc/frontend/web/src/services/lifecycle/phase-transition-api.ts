@@ -1,5 +1,5 @@
-import { LifecyclePhase } from '../../types/lifecycle';
 import { parseJsonResponse } from '@/lib/http';
+import type { LifecyclePhase } from '../../types/lifecycle';
 
 const importMetaEnv = import.meta as ImportMeta & {
   env?: {
@@ -52,7 +52,7 @@ async function readPhaseTransitionError(
   }
 }
 
-async function fetchPhaseTransitionPreview(
+export async function getNextPhase(
   currentPhase: LifecyclePhase,
   projectId: string
 ): Promise<PhaseTransitionPreview> {
@@ -82,7 +82,7 @@ async function fetchPhaseTransitionPreview(
 }
 
 export const phaseTransitionAPI = {
-  getNextPhase: fetchPhaseTransitionPreview,
+  getNextPhase,
 };
 
 export { PhaseTransitionApiError };

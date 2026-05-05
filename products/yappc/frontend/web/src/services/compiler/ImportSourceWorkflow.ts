@@ -25,6 +25,7 @@ import {
   type ExtractedCsfData,
 } from 'yappc-artifact-compiler';
 import * as ts from 'typescript';
+import { assessComponentSafety } from '@/security/UnsafeComponentHandler';
 
 export type ImportSourceType = 'tsx' | 'route' | 'storybook' | 'artifact' | 'zip';
 
@@ -54,6 +55,10 @@ export interface ImportOptions {
   preserveStructure?: boolean;
   /** Custom transform function */
   transform?: (code: string) => string;
+  /** Allow direct local filesystem reads in trusted runtimes such as tests or backend tooling */
+  allowLocalFileAccess?: boolean;
+  /** Allow imports to continue when safety assessment flags risky or unsafe code */
+  allowUnsafeComponents?: boolean;
 }
 
 export interface ImportResult {
@@ -159,7 +164,7 @@ async function importFromTSX(
 
   try {
     // Fetch source content from file path or URL
-    const content = await fetchTSXContent(source);
+    const content = await fetchTSXContent(source, options);
     
     // Use real artifact compiler extractor - returns array of components
     const extractedComponents: ExtractedComponent[] = extractComponentsFromSource(content, source);
@@ -194,14 +199,18 @@ async function importFromTSX(
     });
 
     if (options?.includeStyles) {
-      files.push(...await extractStyleFiles(source));
+      files.push(...await extractStyleFiles(source, options));
     }
     if (options?.includeTests) {
-      files.push(...await extractTestFiles(source));
+      files.push(...await extractTestFiles(source, options));
     }
 
     // Extract dependencies from JSX usage
     dependencies.push(...extractedComponent.jsxUsage);
+
+    if (!enforceImportedComponentSafety(files, warnings, errors, options)) {
+      return buildFailedImportResult('tsx', source, warnings, errors, dependencies);
+    }
 
     const totalSize = files.reduce((sum, file) => sum + file.content.length, 0);
 
@@ -256,7 +265,7 @@ async function importFromRoute(
 
   try {
     // Fetch source content from file path or URL
-    const content = await fetchRouteContent(source);
+    const content = await fetchRouteContent(source, options);
     
     // Use real artifact compiler extractor for pages
     const extractedPage: ExtractedPage | null = extractPageFromSource(content, source);
@@ -289,14 +298,18 @@ async function importFromRoute(
     });
 
     if (options?.includeStyles) {
-      files.push(...await extractStyleFiles(source));
+      files.push(...await extractStyleFiles(source, options));
     }
     if (options?.includeTests) {
-      files.push(...await extractTestFiles(source));
+      files.push(...await extractTestFiles(source, options));
     }
 
     // Extract dependencies from components rendered
     dependencies.push(...extractedPage.componentsRendered);
+
+    if (!enforceImportedComponentSafety(files, warnings, errors, options)) {
+      return buildFailedImportResult('route', source, warnings, errors, dependencies);
+    }
 
     const totalSize = files.reduce((sum, file) => sum + file.content.length, 0);
 
@@ -351,7 +364,7 @@ async function importFromStorybook(
 
   try {
     // Fetch source content from file path or URL
-    const content = await fetchStorybookStory(source);
+    const content = await fetchStorybookStory(source, options);
     
     // Use real artifact compiler extractor for CSF
     const extractedCsf: ExtractedCsfData | null = parseCsfSource(content, source);
@@ -396,7 +409,8 @@ async function importFromStorybook(
     if (options?.includeDependencies) {
       const componentContent = await fetchStorybookComponent(
         source,
-        extractedCsf.componentFilePath ?? inferSiblingComponentImportPath(source)
+        extractedCsf.componentFilePath ?? inferSiblingComponentImportPath(source),
+        options,
       );
       if (componentContent) {
         files.push({
@@ -408,6 +422,10 @@ async function importFromStorybook(
         const deps = extractDependencies(componentContent);
         dependencies.push(...deps);
       }
+    }
+
+    if (!enforceImportedComponentSafety(files, warnings, errors, options)) {
+      return buildFailedImportResult('storybook', source, warnings, errors, dependencies);
     }
 
     const totalSize = files.reduce((sum, file) => sum + file.content.length, 0);
@@ -462,7 +480,7 @@ async function importFromArtifact(
   const dependencies: string[] = [];
 
   // Fetch artifact
-  const artifactData = await fetchArtifact(source);
+  const artifactData = await fetchArtifact(source, options);
   const componentName = targetComponentName || artifactData.metadata.name;
 
   files.push({
@@ -509,7 +527,7 @@ async function importFromZip(
   const dependencies: string[] = [];
 
   // Unzip archive
-  const zipFiles = await unzipArchive(source);
+  const zipFiles = await unzipArchive(source, options);
   const componentName = targetComponentName || extractComponentNameFromZip(zipFiles);
   if (!componentName) {
     throw new Error('Unable to determine component name from ZIP archive');
@@ -529,8 +547,12 @@ async function importFromZip(
         const deps = extractDependencies(file.content);
         dependencies.push(...deps);
       }
+      }
     }
-  }
+
+    if (!enforceImportedComponentSafety(files, warnings, errors, options)) {
+      return buildFailedImportResult('zip', source, warnings, errors, dependencies);
+    }
 
   const totalSize = files.reduce((sum, file) => sum + file.content.length, 0);
 
@@ -554,26 +576,30 @@ async function importFromZip(
 
 // Helper functions
 
-async function fetchTSXContent(source: string): Promise<string> {
-  return readTextSource(source);
+async function fetchTSXContent(source: string, options?: ImportOptions): Promise<string> {
+  return readTextSource(source, options);
 }
 
-async function fetchRouteContent(source: string): Promise<string> {
-  return readTextSource(source);
+async function fetchRouteContent(source: string, options?: ImportOptions): Promise<string> {
+  return readTextSource(source, options);
 }
 
-async function fetchStorybookStory(source: string): Promise<string> {
-  return readTextSource(source);
+async function fetchStorybookStory(source: string, options?: ImportOptions): Promise<string> {
+  return readTextSource(source, options);
 }
 
-async function fetchStorybookComponent(storySource: string, componentImportPath?: string): Promise<string | null> {
+async function fetchStorybookComponent(
+  storySource: string,
+  componentImportPath?: string,
+  options?: ImportOptions,
+): Promise<string | null> {
   if (!componentImportPath) {
     return null;
   }
   const candidates = resolveImportCandidates(storySource, componentImportPath);
   for (const candidate of candidates) {
     try {
-      return await readTextSource(candidate);
+      return await readTextSource(candidate, options);
     } catch {
       // Try the next supported extension/path candidate.
     }
@@ -581,8 +607,11 @@ async function fetchStorybookComponent(storySource: string, componentImportPath?
   return null;
 }
 
-async function fetchArtifact(source: string): Promise<{ metadata: { name: string }; dependencies?: string[] }> {
-  const content = await readTextSource(source);
+async function fetchArtifact(
+  source: string,
+  options?: ImportOptions,
+): Promise<{ metadata: { name: string }; dependencies?: string[] }> {
+  const content = await readTextSource(source, options);
   const artifactData = JSON.parse(content) as { metadata?: { name?: string }; dependencies?: string[] };
   return {
     metadata: { name: artifactData.metadata?.name ?? extractComponentName(content) },
@@ -590,9 +619,9 @@ async function fetchArtifact(source: string): Promise<{ metadata: { name: string
   };
 }
 
-async function unzipArchive(source: string): Promise<{ path: string; content: string }[]> {
+async function unzipArchive(source: string, options?: ImportOptions): Promise<{ path: string; content: string }[]> {
   const { default: JSZip } = await import('jszip');
-  const archive = await JSZip.loadAsync(await readBinarySource(source));
+  const archive = await JSZip.loadAsync(await readBinarySource(source, options));
   const files = await Promise.all(
     Object.values(archive.files)
       .filter((file) => !file.dir)
@@ -703,17 +732,17 @@ function extractDependencies(content: string): string[] {
   return [...dependencies];
 }
 
-async function extractStyleFiles(source: string): Promise<ImportedFile[]> {
-  return readSiblingFiles(source, ['.css', '.scss', '.sass', '.less'], 'style');
+async function extractStyleFiles(source: string, options?: ImportOptions): Promise<ImportedFile[]> {
+  return readSiblingFiles(source, ['.css', '.scss', '.sass', '.less'], 'style', options);
 }
 
-async function extractTestFiles(source: string): Promise<ImportedFile[]> {
+async function extractTestFiles(source: string, options?: ImportOptions): Promise<ImportedFile[]> {
   const fileInfo = splitSourcePath(source);
   const candidates = [
     `${fileInfo.directory}/${fileInfo.baseName}.test${fileInfo.extension}`,
     `${fileInfo.directory}/${fileInfo.baseName}.spec${fileInfo.extension}`,
   ];
-  return readExistingFiles(candidates, 'test', source);
+  return readExistingFiles(candidates, 'test', source, options);
 }
 
 function determineFileType(path: string): ImportedFile['type'] {
@@ -735,6 +764,59 @@ function determineFileType(path: string): ImportedFile['type'] {
 function shouldIncludeFile(path: string, type: ImportedFile['type'], options?: ImportOptions): boolean {
   if (type === 'test' && !options?.includeTests) return false;
   if (type === 'documentation' && !options?.includeDocumentation) return false;
+  return true;
+}
+
+function buildFailedImportResult(
+  sourceType: ImportSourceType,
+  source: string,
+  warnings: string[],
+  errors: string[],
+  dependencies: string[],
+): ImportResult {
+  return {
+    success: false,
+    files: [],
+    warnings,
+    errors,
+    metadata: {
+      sourceType,
+      source,
+      importedAt: new Date().toISOString(),
+      dependencies,
+      fileCount: 0,
+      totalSize: 0,
+    },
+  };
+}
+
+function enforceImportedComponentSafety(
+  files: ImportedFile[],
+  warnings: string[],
+  errors: string[],
+  options?: ImportOptions,
+): boolean {
+  const componentLikeFiles = files.filter((file) => file.type === 'component' || file.type === 'route');
+
+  for (const file of componentLikeFiles) {
+    const assessment = assessComponentSafety(file.content, file.path);
+    if (assessment.safetyLevel === 'safe') {
+      continue;
+    }
+
+    const message =
+      `Imported source '${file.path}' was flagged as ${assessment.safetyLevel}. ` +
+      `Recommended action: ${assessment.recommendedAction}. ` +
+      `Risk factors: ${assessment.riskFactors.join(', ')}`;
+
+    if (assessment.recommendedAction === 'block' && !options?.allowUnsafeComponents) {
+      errors.push(message);
+      return false;
+    }
+
+    warnings.push(message);
+  }
+
   return true;
 }
 
@@ -775,16 +857,19 @@ function splitSourcePath(source: string): SourcePathParts {
   };
 }
 
-async function readTextSource(source: string): Promise<string> {
+async function readTextSource(source: string, options?: ImportOptions): Promise<string> {
   if (source.startsWith('inline:')) {
     return source.slice('inline:'.length);
   }
 
   if (!isRemoteSource(source)) {
-    const localFile = await tryReadLocalFile(source);
+    const localFile = await tryReadLocalFile(source, options);
     if (localFile != null) {
       return localFile;
     }
+    throw new Error(
+      `Local source access requires an explicit trusted loader or allowLocalFileAccess for ${source}`,
+    );
   }
 
   const response = await fetch(source);
@@ -794,12 +879,15 @@ async function readTextSource(source: string): Promise<string> {
   return response.text();
 }
 
-async function readBinarySource(source: string): Promise<Uint8Array> {
+async function readBinarySource(source: string, options?: ImportOptions): Promise<Uint8Array> {
   if (!isRemoteSource(source)) {
-    const localFile = await tryReadLocalBinary(source);
+    const localFile = await tryReadLocalBinary(source, options);
     if (localFile != null) {
       return localFile;
     }
+    throw new Error(
+      `Local source access requires an explicit trusted loader or allowLocalFileAccess for ${source}`,
+    );
   }
 
   const response = await fetch(source);
@@ -809,7 +897,11 @@ async function readBinarySource(source: string): Promise<Uint8Array> {
   return new Uint8Array(await response.arrayBuffer());
 }
 
-async function tryReadLocalFile(source: string): Promise<string | null> {
+async function tryReadLocalFile(source: string, options?: ImportOptions): Promise<string | null> {
+  if (!options?.allowLocalFileAccess) {
+    return null;
+  }
+
   if (!(typeof process !== 'undefined' && Boolean(process.versions?.node))) {
     return null;
   }
@@ -822,7 +914,11 @@ async function tryReadLocalFile(source: string): Promise<string | null> {
   }
 }
 
-async function tryReadLocalBinary(source: string): Promise<Uint8Array | null> {
+async function tryReadLocalBinary(source: string, options?: ImportOptions): Promise<Uint8Array | null> {
+  if (!options?.allowLocalFileAccess) {
+    return null;
+  }
+
   if (!(typeof process !== 'undefined' && Boolean(process.versions?.node))) {
     return null;
   }
@@ -864,24 +960,26 @@ function resolveImportCandidates(storySource: string, componentImportPath: strin
 async function readSiblingFiles(
   source: string,
   extensions: string[],
-  type: ImportedFile['type']
+  type: ImportedFile['type'],
+  options?: ImportOptions,
 ): Promise<ImportedFile[]> {
   const fileInfo = splitSourcePath(source);
   const candidates = extensions.map((extension) => `${fileInfo.directory}/${fileInfo.baseName}${extension}`);
-  return readExistingFiles(candidates, type, source);
+  return readExistingFiles(candidates, type, source, options);
 }
 
 async function readExistingFiles(
   candidates: string[],
   type: ImportedFile['type'],
-  source: string
+  source: string,
+  options?: ImportOptions,
 ): Promise<ImportedFile[]> {
   const files = await Promise.all(
     candidates.map(async (candidate) => {
       try {
         return {
           path: candidate.split('/').pop() ?? candidate,
-          content: await readTextSource(candidate),
+          content: await readTextSource(candidate, options),
           type,
           source: candidate,
         } satisfies ImportedFile;

@@ -115,6 +115,92 @@ class PageArtifactControllerTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("save enforces resource-scoped workspace authorization when allowed scopes are provided")
+    void saveDocument_enforcesWorkspaceScope() throws Exception {
+        PageArtifactDocument document = sampleDocument("artifact-5", "doc-5", "manual", List.of());
+
+        HttpRequest request = HttpRequest.put("http://localhost/api/v1/page-artifacts/artifact-5/document")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
+                .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Workspace-IDs"), "ws-2,ws-3")
+                .withHeader(HttpHeaders.of("If-Match"), "doc-5")
+                .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(document)))
+                .build();
+
+        HttpResponse response = runPromise(() -> controller.saveDocument(attachPrincipal(request, "EDITOR")));
+
+        assertThat(response.getCode()).isEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("save enforces resource-scoped authorization through injected authorizer")
+    void saveDocument_enforcesInjectedResourceScopeAuthorizer() throws Exception {
+        controller = new PageArtifactController(
+                repository,
+                auditRepository,
+                objectMapper,
+                new SyncAuthorizationService(new InMemoryRolePermissionRegistry() {{
+                    registerRole("EDITOR", Set.of(PageArtifactPermission.READ, PageArtifactPermission.EDIT));
+                }}),
+                MetricsCollector.create(),
+                (userId, tenantId, workspaceId, projectId, artifactId, permission) ->
+                        Promise.ofException(new com.ghatana.platform.security.rbac.AccessDeniedException(
+                                "User is not authorized for requested project: " + projectId
+                        ))
+        );
+        PageArtifactDocument document = sampleDocument("artifact-7", "doc-7", "manual", List.of());
+
+        HttpRequest request = HttpRequest.put("http://localhost/api/v1/page-artifacts/artifact-7/document")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
+                .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("If-Match"), "doc-7")
+                .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(document)))
+                .build();
+
+        HttpResponse response = runPromise(() -> controller.saveDocument(attachPrincipal(request, "EDITOR")));
+
+        assertThat(response.getCode()).isEqualTo(403);
+        JsonNode body = objectMapper.readTree(runPromise(response::loadBody).asString(StandardCharsets.UTF_8));
+        assertThat(body.get("message").asText()).contains("requested project");
+    }
+
+    @Test
+    @DisplayName("save fails closed when audit persistence fails")
+    void saveDocument_failsClosedWhenAuditPersistenceFails() throws Exception {
+        controller = new PageArtifactController(
+                repository,
+                new FailingAuditRepository(),
+                objectMapper,
+                new SyncAuthorizationService(new InMemoryRolePermissionRegistry() {{
+                    registerRole("EDITOR", Set.of(PageArtifactPermission.READ, PageArtifactPermission.EDIT));
+                }}),
+                MetricsCollector.create()
+        );
+        PageArtifactDocument document = sampleDocument("artifact-6", "doc-6", "manual", List.of());
+
+        HttpRequest request = HttpRequest.put("http://localhost/api/v1/page-artifacts/artifact-6/document")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
+                .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("If-Match"), "doc-6")
+                .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(document)))
+                .build();
+
+        HttpResponse response = runPromise(() -> controller.saveDocument(attachPrincipal(request, "EDITOR")));
+
+        assertThat(response.getCode()).isEqualTo(500);
+        PageArtifactDocument persisted = runPromise(() -> repository.load(
+                TENANT_ID,
+                WORKSPACE_ID,
+                PROJECT_ID,
+                "artifact-6"
+        ));
+        assertThat(persisted).isNull();
+    }
+
+    @Test
     @DisplayName("save returns conflict and current version when request uses a stale etag")
     void saveDocument_returnsConflictForStaleVersion() throws Exception {
         PageArtifactDocument created = sampleDocument("artifact-3", "doc-3", "manual", List.of());
@@ -154,6 +240,41 @@ class PageArtifactControllerTest extends EventloopTestBase {
         JsonNode body = objectMapper.readTree(runPromise(response::loadBody).asString(StandardCharsets.UTF_8));
         assertThat(body.get("artifactId").asText()).isEqualTo("artifact-4");
         assertThat(body.get("documentId").asText()).isEqualTo("doc-4");
+    }
+
+    @Test
+    @DisplayName("load passes resource details into the injected resource authorizer")
+    void loadDocument_passesResourceDetailsToAuthorizer() throws Exception {
+        PageArtifactDocument document = sampleDocument("artifact-8", "doc-8", "manual", List.of());
+        runPromise(() -> repository.save(TENANT_ID, WORKSPACE_ID, PROJECT_ID, document));
+
+        List<String> observed = new ArrayList<>();
+        controller = new PageArtifactController(
+                repository,
+                auditRepository,
+                objectMapper,
+                new SyncAuthorizationService(new InMemoryRolePermissionRegistry() {{
+                    registerRole("VIEWER", Set.of(PageArtifactPermission.READ));
+                }}),
+                MetricsCollector.create(),
+                (userId, tenantId, workspaceId, projectId, artifactId, permission) -> {
+                    observed.add(String.join(":", userId, tenantId, workspaceId, projectId, artifactId, permission));
+                    return Promise.complete();
+                }
+        );
+
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/page-artifacts/artifact-8/document")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
+                .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .build();
+
+        HttpResponse response = runPromise(() -> controller.loadDocument(attachPrincipal(request, "VIEWER")));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(observed).containsExactly(
+                USER_ID + ":" + TENANT_ID + ":" + WORKSPACE_ID + ":" + PROJECT_ID + ":artifact-8:" + PageArtifactPermission.READ
+        );
     }
 
     private static PageArtifactDocument sampleDocument(
@@ -203,6 +324,13 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 public Promise<Void> record(String action, String tenantId, String workspaceId, String projectId, String artifactId, String actor, String summary) {
                         events.add(action + ":" + artifactId + ":" + actor);
                         return Promise.complete();
+                }
+        }
+
+        private static final class FailingAuditRepository implements PageArtifactAuditRepository {
+                @Override
+                public Promise<Void> record(String action, String tenantId, String workspaceId, String projectId, String artifactId, String actor, String summary) {
+                        return Promise.ofException(new RuntimeException("audit write failed"));
                 }
         }
 }

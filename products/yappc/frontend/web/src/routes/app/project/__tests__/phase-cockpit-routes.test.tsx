@@ -102,22 +102,26 @@ describe('phase cockpit routes', () => {
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } },
         ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            projectId: 'proj-42',
+            currentPhase: 'SHAPE',
+            nextPhase: 'VALIDATE',
+            canAdvance: true,
+            readiness: 92,
+            blockers: [],
+            requiredArtifacts: ['Requirements packet'],
+            completedArtifacts: ['Intent brief'],
+            estimatedReadyIn: 'Ready now',
+            estimatedReadyInHours: 0,
+            predictionConfidence: 0.8,
+            checkedAt: '2026-04-21T11:05:00.000Z',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
       );
-
-    mockGetNextPhase.mockResolvedValue({
-      projectId: 'proj-42',
-      currentPhase: 'SHAPE',
-      nextPhase: 'VALIDATE',
-      canAdvance: true,
-      readiness: 92,
-      blockers: [],
-      requiredArtifacts: ['Requirements packet'],
-      completedArtifacts: ['Intent brief'],
-      estimatedReadyIn: 'Ready now',
-      estimatedReadyInHours: 0,
-      predictionConfidence: 0.8,
-      checkedAt: '2026-04-21T11:05:00.000Z',
-    });
   });
 
   it('mounts the intent cockpit route and drives the intent action into the drawer url', async () => {
@@ -125,7 +129,11 @@ describe('phase cockpit routes', () => {
 
     expect(await screen.findByTestId('intent-cockpit')).toBeInTheDocument();
     expect(screen.getByTestId('phase-purpose')).toBeInTheDocument();
-    expect(screen.getByTestId('project-overview-stub')).toBeInTheDocument();
+    expect(screen.getByTestId('intent-native-summary')).toBeInTheDocument();
+    expect(screen.queryByTestId('project-overview-stub')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Advanced details' }));
+    expect(await screen.findByTestId('project-overview-stub')).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId('define-requirements'));
     expect(mockNavigate).toHaveBeenCalledWith('/p/proj-42/intent?drawer=idea');
@@ -135,8 +143,12 @@ describe('phase cockpit routes', () => {
     renderRoute(<ShapeRoute />);
 
     expect(await screen.findByTestId('shape-cockpit')).toBeInTheDocument();
-    expect(screen.getByTestId('canvas-container')).toBeInTheDocument();
+    expect(screen.getByTestId('shape-native-summary')).toBeInTheDocument();
+    expect(screen.queryByTestId('canvas-container')).not.toBeInTheDocument();
     expect(screen.getByTestId('primary-next-action')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Advanced details' }));
+    expect(await screen.findByTestId('canvas-container')).toBeInTheDocument();
   });
 
   it('mounts the validate cockpit route with real gate summaries', async () => {

@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { RefreshCw as Refresh, ExternalLink as OpenInNew, Smartphone, Tablet, Laptop, AlertTriangle, Loader2 } from 'lucide-react';
 import type { PreviewStatusContract } from '@/contracts/workspace-project';
+import { getExternalPreviewSandbox } from '@/security/ContentSecurityPolicy';
 
 type DeviceMode = 'mobile' | 'tablet' | 'desktop';
 
@@ -234,7 +235,9 @@ export default function PreviewPage() {
                         className="w-full h-full border-0"
                         title="Project Preview"
                         data-testid="preview-iframe"
-                        sandbox="allow-scripts allow-same-origin allow-forms"
+                        sandbox={getExternalPreviewSandbox()}
+                        referrerPolicy="no-referrer"
+                        loading="lazy"
                     />
                 </div>
             </div>

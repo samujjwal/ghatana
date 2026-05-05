@@ -42,6 +42,7 @@ describe('ImportSourceWorkflow', () => {
       source: componentPath,
       projectId: 'proj-1',
       options: {
+        allowLocalFileAccess: true,
         includeStyles: true,
         includeTests: true,
       },
@@ -79,6 +80,9 @@ describe('ImportSourceWorkflow', () => {
       sourceType: 'route',
       source: routePath,
       projectId: 'proj-1',
+      options: {
+        allowLocalFileAccess: true,
+      },
     });
 
     expect(result.success).toBe(true);
@@ -127,6 +131,7 @@ describe('ImportSourceWorkflow', () => {
       source: storyPath,
       projectId: 'proj-1',
       options: {
+        allowLocalFileAccess: true,
         includeDependencies: true,
       },
     });
@@ -158,6 +163,9 @@ describe('ImportSourceWorkflow', () => {
       sourceType: 'artifact',
       source: artifactPath,
       projectId: 'proj-1',
+      options: {
+        allowLocalFileAccess: true,
+      },
     });
 
     expect(result.success).toBe(true);
@@ -186,6 +194,7 @@ describe('ImportSourceWorkflow', () => {
       source: zipPath,
       projectId: 'proj-1',
       options: {
+        allowLocalFileAccess: true,
         includeDocumentation: true,
       },
     });
@@ -197,5 +206,55 @@ describe('ImportSourceWorkflow', () => {
       expect.arrayContaining(['Card.tsx', 'README.md'])
     );
     expect(await readFile(zipPath)).toBeTruthy();
+  });
+
+  it('rejects local file imports unless trusted local access is explicitly enabled', async () => {
+    const projectDir = await createTempProject();
+    const componentPath = join(projectDir, 'Banner.tsx');
+    await writeFile(componentPath, 'export function Banner() { return <div />; }\n');
+
+    const result = await importFromSource({
+      sourceType: 'tsx',
+      source: componentPath,
+      projectId: 'proj-1',
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('Local source access requires an explicit trusted loader or allowLocalFileAccess'),
+      ]),
+    );
+  });
+
+  it('blocks unsafe imported component code by default', async () => {
+    const projectDir = await createTempProject();
+    const componentPath = join(projectDir, 'DangerousWidget.tsx');
+    await writeFile(
+      componentPath,
+      [
+        'export function DangerousWidget() {',
+        '  eval("alert(1)");',
+        '  return <div />;',
+        '}',
+        '',
+      ].join('\n')
+    );
+
+    const result = await importFromSource({
+      sourceType: 'tsx',
+      source: componentPath,
+      projectId: 'proj-1',
+      options: {
+        allowLocalFileAccess: true,
+      },
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("Imported source 'DangerousWidget.tsx' was flagged as unsafe"),
+      ]),
+    );
   });
 });

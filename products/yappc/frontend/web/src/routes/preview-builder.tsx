@@ -29,43 +29,13 @@ import type {
   HoverMessage,
 } from '@ghatana/ui-builder/preview';
 import { ComponentRenderer } from '../components/canvas/page/ComponentRenderer';
-import {
-  validatePreviewSession,
-  type PreviewSession,
-} from '../security/PreviewSession';
+import { validatePreviewSessionToken } from '../services/preview/PreviewSessionApi';
 
 const PREVIEW_RUNTIME_VERSION = '1.1.0';
 
-/**
- * Read and decode the preview session token from the URL query string.
- * The token is a base64url-encoded JSON PreviewSession object.
- * Returns null if absent or malformed (not a security rejection — that happens
- * in validatePreviewSession).
- */
-function readSessionFromUrl(): PreviewSession | null {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const raw = params.get('session');
-    if (!raw) return null;
-    // Decode base64url → base64 → JSON
-    const base64 = raw.replace(/-/g, '+').replace(/_/g, '/');
-    const json = atob(base64);
-    return JSON.parse(json) as PreviewSession;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Retrieve the HMAC secret used to validate preview session tokens.
- * This MUST be set as a build-time environment variable (VITE_PREVIEW_SESSION_SECRET).
- * If absent, preview is blocked: denying access is safer than allowing unsigned sessions.
- */
-function getPreviewSessionSecret(): string | null {
-  const secret =
-    (import.meta.env.VITE_PREVIEW_SESSION_SECRET as string | undefined) ??
-    (typeof process !== 'undefined' ? process.env.VITE_PREVIEW_SESSION_SECRET : undefined);
-  return secret ?? null;
+function readSessionTokenFromUrl(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('session');
 }
 
 /**
@@ -103,8 +73,8 @@ function sendToHost(message: PreviewToHostMessage): void {
  * HostToPreviewMessage / PreviewToHostMessage protocol defined in
  * @ghatana/ui-builder/preview.
  *
- * All messages are rejected until the signed preview session token from the
- * URL query string has been validated using HMAC-SHA-256.
+ * All messages are rejected until the server-issued preview session token from
+ * the URL query string has passed server validation.
  */
 export default function BuilderPreviewRoute() {
   const [document, setDocument] = useState<BuilderDocument | null>(null);
@@ -113,35 +83,33 @@ export default function BuilderPreviewRoute() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const pendingCorrelationRef = useRef<string | null>(null);
 
-  // Validate the signed preview session on mount before accepting any messages.
+  // Validate the server-issued preview session on mount before accepting any messages.
   useEffect(() => {
     if (import.meta.env.MODE === 'test') {
       setSessionValid(true);
       return;
     }
 
-    const session = readSessionFromUrl();
-    const secret = getPreviewSessionSecret();
-
-    if (!session) {
+    const sessionToken = readSessionTokenFromUrl();
+    if (!sessionToken) {
       setSessionValid(false);
       setSessionError('No preview session token found in URL. Access denied.');
       return;
     }
-    if (!secret) {
-      setSessionValid(false);
-      setSessionError('Preview session validation is not configured (VITE_PREVIEW_SESSION_SECRET missing). Access denied.');
-      return;
-    }
 
-    void validatePreviewSession(session, secret).then(({ valid, reason }) => {
-      if (valid) {
-        setSessionValid(true);
-      } else {
+    void validatePreviewSessionToken(sessionToken)
+      .then(({ valid, reason }) => {
+        if (valid) {
+          setSessionValid(true);
+        } else {
+          setSessionValid(false);
+          setSessionError(reason ?? 'Invalid preview session. Access denied.');
+        }
+      })
+      .catch((error: unknown) => {
         setSessionValid(false);
-        setSessionError(reason ?? 'Invalid preview session. Access denied.');
-      }
-    });
+        setSessionError(error instanceof Error ? error.message : 'Preview session validation failed.');
+      });
   }, []);
 
   const handleMessage = useCallback((event: MessageEvent<unknown>): void => {
@@ -154,7 +122,7 @@ export default function BuilderPreviewRoute() {
       return;
     }
 
-    // Security: Reject all messages until the signed session has been validated.
+    // Security: Reject all messages until the preview session has been validated.
     // sessionValid === null means validation is still in progress; wait.
     if (sessionValid !== true) {
       return;

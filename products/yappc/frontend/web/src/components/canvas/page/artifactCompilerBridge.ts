@@ -5,12 +5,12 @@ import {
   type SerializedDocument,
 } from '@ghatana/ui-builder';
 
+import { isBuilderDocument } from './builder-document-adapter';
 import {
   createEmptyBuilderDocument,
   createPageArtifactDocument,
   type PageArtifactDocument,
 } from './pageArtifactDocument';
-import { isBuilderDocument } from './builder-document-adapter';
 
 interface SemanticPageLike {
   readonly id?: string;
@@ -109,6 +109,14 @@ export function importPageArtifactsFromCode(
   serializedSemanticModel: string,
   createdBy: string,
 ): readonly PageArtifactDocument[] {
-  const parsed = JSON.parse(serializedSemanticModel) as SemanticProductModelLike;
-  return compileSemanticModelToPageArtifacts(parsed, createdBy);
+  try {
+    const parsed = JSON.parse(serializedSemanticModel) as SemanticProductModelLike;
+    return compileSemanticModelToPageArtifacts(parsed, createdBy);
+  } catch (error: unknown) {
+    if (error instanceof SyntaxError) {
+      throw new Error('Invalid JSON - could not parse semantic model.', { cause: error });
+    }
+
+    throw error;
+  }
 }

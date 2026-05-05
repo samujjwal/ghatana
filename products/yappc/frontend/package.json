@@ -19,6 +19,7 @@
     "test:e2e:quarantine": "cross-env PLAYWRIGHT_QUARANTINE_RETRIES=2 playwright test",
     "test:coverage": "vitest --coverage",
     "lint": "cross-env NODE_OPTIONS=--max-old-space-size=8192 eslint --no-error-on-unmatched-pattern 'apps/**/src/**/*.{ts,tsx}' 'libs/**/src/**/*.{ts,tsx}' 'web/src/**/*.{ts,tsx}' --ignore-pattern '**/*.d.ts' --ignore-pattern '**/generated/**'",
+    "lint:strict:design-system": "bash ./scripts/lint-strict-design-system.sh",
     "lint:fix": "cross-env NODE_OPTIONS=--max-old-space-size=8192 eslint --no-error-on-unmatched-pattern 'apps/**/src/**/*.{ts,tsx}' 'libs/**/src/**/*.{ts,tsx}' 'web/src/**/*.{ts,tsx}' --ignore-pattern '**/*.d.ts' --ignore-pattern '**/generated/**' --fix",
     "lint:verify": "cross-env NODE_OPTIONS=--max-old-space-size=8192 eslint --no-error-on-unmatched-pattern --rule 'import/no-unused-modules: off' 'web/src/components/canvas/nodeTypes.ts' 'web/src/components/canvas/nodes/index.ts' 'web/src/components/canvas/registry/CanvasRegistryProvider.tsx' 'libs/collab/src/websocket/index.ts' 'libs/yappc-artifact-compiler/src/synthesis/engine.ts' --ignore-pattern '**/*.d.ts' --ignore-pattern '**/generated/**'",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css,scss}\"",

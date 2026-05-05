@@ -27,6 +27,7 @@ import { Handle, Position, NodeResizer, type Node, type NodeProps } from '@xyflo
 import { Box, Button, IconButton, Typography } from '@ghatana/design-system';
 import { Maximize2 as ExpandIcon, Minimize2 as CollapseIcon, Layout as PageIcon } from 'lucide-react';
 import { useSetAtom } from 'jotai';
+import { useParams } from 'react-router';
 import { usePhaseContext } from '@/context';
 import { getPhaseCanvasConfig } from '@/services/canvas/phase-config/PhaseCanvasConfig';
 
@@ -91,6 +92,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
   selected,
 }) => {
   const executeCommand = useSetAtom(executeCommandAtom);
+  const { projectId } = useParams<{ projectId: string }>();
   const [isExpanded, setIsExpanded] = useState<boolean>(data.expanded ?? false);
   const [previewSelectedNodeId, setPreviewSelectedNodeId] = useState<string | null>(null);
   const { currentPhase } = usePhaseContext();
@@ -487,6 +489,11 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
             <Box className="w-[360px] border-l border-slate-200">
               <LivePreviewPanel
                 document={builderDocument}
+                previewContext={
+                  projectId && data.pageDocument
+                    ? { projectId, artifactId: data.pageDocument.artifactId }
+                    : undefined
+                }
                 validation={data.validationSummary}
                 selectedNodeId={previewSelectedNodeId}
                 onElementClick={setPreviewSelectedNodeId}

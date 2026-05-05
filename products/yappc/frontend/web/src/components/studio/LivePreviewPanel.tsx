@@ -10,6 +10,10 @@ import {
 } from '@ghatana/ui-builder/preview';
 import type { BuilderDocument } from '@ghatana/ui-builder';
 import { getPreviewSync } from '@/services/canvas/preview/BidirectionalPreviewSync';
+import {
+  issuePreviewSession,
+  type PreviewSessionContext,
+} from '@/services/preview/PreviewSessionApi';
 
 /**
  * Live Preview Panel component.
@@ -26,6 +30,7 @@ export interface LivePreviewPanelProps {
   document?: BuilderDocument;
   componentPath?: string;
   previewUrl?: string;
+  previewContext?: PreviewSessionContext;
   onRefresh?: () => void;
   className?: string;
   viewportKey?: keyof typeof PRESET_VIEWPORTS;
@@ -47,6 +52,7 @@ export function LivePreviewPanel({
   document,
   componentPath,
   previewUrl,
+  previewContext,
   onRefresh,
   className,
   viewportKey = 'desktop',
@@ -62,6 +68,7 @@ export function LivePreviewPanel({
   const [currentViewport, setCurrentViewport] = useState<keyof typeof PRESET_VIEWPORTS>(viewportKey);
   const [currentTheme, setCurrentTheme] = useState('default');
   const [currentLocale, setCurrentLocale] = useState('en-US');
+  const [resolvedPreviewUrl, setResolvedPreviewUrl] = useState<string | null>(previewUrl ?? null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const previewServiceRef = useRef<PreviewHostService | null>(null);
   const mountedDocumentIdRef = useRef<string | null>(null);
@@ -69,11 +76,11 @@ export function LivePreviewPanel({
 
   const previewPolicy = useMemo(() => {
     // Default to the built-in same-origin preview runtime so postMessage can flow.
-    const resolvedPreviewUrl = previewUrl ?? '/preview/builder';
+    const effectivePreviewUrl = resolvedPreviewUrl ?? previewUrl ?? '/preview/builder';
 
     const trustedOrigins = (() => {
       try {
-        return [new URL(resolvedPreviewUrl, window.location.origin).origin];
+        return [new URL(effectivePreviewUrl, window.location.origin).origin];
       } catch {
         return [] as string[];
       }
@@ -89,7 +96,51 @@ export function LivePreviewPanel({
     });
 
     return resolvePreviewExecutionPolicy(document, sandboxProfile);
-  }, [currentLocale, currentTheme, currentViewport, document, previewUrl]);
+  }, [currentLocale, currentTheme, currentViewport, document, previewUrl, resolvedPreviewUrl]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (previewUrl) {
+      setResolvedPreviewUrl(previewUrl);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (!previewContext) {
+      setResolvedPreviewUrl('/preview/builder');
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    void issuePreviewSession(previewContext)
+      .then(({ sessionToken }) => {
+        if (cancelled) {
+          return;
+        }
+        setResolvedPreviewUrl(`/preview/builder?session=${encodeURIComponent(sessionToken)}`);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) {
+          return;
+        }
+        setError(err instanceof Error ? err.message : 'Failed to prepare preview session.');
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [previewContext, previewUrl]);
 
   // Initialize preview host service
   useEffect(() => {
@@ -302,18 +353,25 @@ export function LivePreviewPanel({
               </Button>
             </div>
           </div>
-        ) : !document && !componentPath && !previewUrl ? (
+        ) : !document && !componentPath && !previewUrl && !previewContext ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-gray-500 dark:text-gray-400">
               <span className="text-4xl mb-2">👁️</span>
               <p className="text-sm">Select a document or component to preview</p>
             </div>
           </div>
+        ) : previewContext && !previewUrl && !resolvedPreviewUrl ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center text-gray-500 dark:text-gray-400">
+              <span className="text-4xl mb-2">🔐</span>
+              <p className="text-sm">Preparing secure preview session…</p>
+            </div>
+          </div>
         ) : (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 min-h-[200px]">
             <iframe
               ref={iframeRef}
-              src={previewUrl ?? '/preview/builder'}
+              src={resolvedPreviewUrl ?? previewUrl ?? '/preview/builder'}
               title="Live Preview"
               className="w-full h-full border-0"
               sandbox={previewPolicy.sandbox.join(' ')}

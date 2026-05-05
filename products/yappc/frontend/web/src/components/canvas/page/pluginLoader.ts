@@ -10,7 +10,15 @@
  * @doc.pattern Security Boundary
  */
 
-import type { BuilderRendererManifest } from './rendererManifest';
+import { rendererManifestRegistry, type BuilderRendererManifest } from './rendererManifest';
+import {
+  createDefaultPluginRuntimePolicy,
+  createPluginRuntimeEnvironment,
+  createTrustedPluginRuntimePolicy,
+  type PluginRuntimeEnvironment,
+  type PluginRuntimePolicy,
+} from '../../../services/plugins/PluginRuntimePolicy';
+import { assessComponentSafety } from '../../../security/UnsafeComponentHandler';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -72,6 +80,7 @@ const CURRENT_BUILDER_VERSION = '1.0.0';
 export class ComponentPluginLoader {
   private readonly loadedPackages = new Map<string, ComponentPackageManifest>();
   private readonly allowedPackages = new Set<string>();
+  private readonly runtimeEnvironments = new Map<string, PluginRuntimeEnvironment>();
 
   /**
    * Validates a component package manifest.
@@ -113,6 +122,27 @@ export class ComponentPluginLoader {
       if (typeof renderer.render !== 'function') {
         errors.push(`Renderer ${renderer.contractName} has no render function`);
       }
+
+      if (renderer.sourceCode) {
+        const assessment = assessComponentSafety(renderer.sourceCode, renderer.contractName);
+        if (assessment.recommendedAction === 'block') {
+          errors.push(
+            `Renderer ${renderer.contractName} blocked by security assessment: ${assessment.riskFactors.join(', ')}`
+          );
+          return;
+        }
+
+        const hasElevatedAccess = Boolean(
+          manifest.securityPolicy?.requiresElevatedPermissions && this.isPackageAllowed(manifest.packageName)
+        );
+
+        if (assessment.reviewRequired && !hasElevatedAccess) {
+          errors.push(
+            `Renderer ${renderer.contractName} requires elevated permissions due to risky runtime APIs. ` +
+            `Add package '${manifest.packageName}' to the plugin allowlist before loading.`
+          );
+        }
+      }
     });
 
     // Validate security policy
@@ -137,14 +167,15 @@ export class ComponentPluginLoader {
       return validation;
     }
 
-    // Register renderers
-    const { rendererManifestRegistry } = require('./rendererManifest');
+    const runtimeEnvironment = createPluginRuntimeEnvironment(this.createRuntimePolicy(manifest));
+
     manifest.renderers.forEach((renderer) => {
       rendererManifestRegistry.register(renderer);
     });
 
     // Track loaded package
     this.loadedPackages.set(manifest.packageName, manifest);
+    this.runtimeEnvironments.set(manifest.packageName, runtimeEnvironment);
 
     return validation;
   }
@@ -158,14 +189,13 @@ export class ComponentPluginLoader {
       return;
     }
 
-    // Unregister renderers
-    const { rendererManifestRegistry } = require('./rendererManifest');
     manifest.renderers.forEach((renderer) => {
       rendererManifestRegistry.unregister(renderer.contractName);
     });
 
     // Remove from loaded packages
     this.loadedPackages.delete(packageName);
+    this.runtimeEnvironments.delete(packageName);
   }
 
   /**
@@ -194,6 +224,10 @@ export class ComponentPluginLoader {
    */
   getLoadedPackages(): readonly ComponentPackageManifest[] {
     return Array.from(this.loadedPackages.values());
+  }
+
+  getRuntimeEnvironment(packageName: string): PluginRuntimeEnvironment | null {
+    return this.runtimeEnvironments.get(packageName) ?? null;
   }
 
   // -------------------------------------------------------------------------
@@ -228,7 +262,7 @@ export class ComponentPluginLoader {
     } catch (e) {
       return {
         compatible: false,
-        error: `Invalid version format: ${e}`,
+        error: `Invalid version format: ${e instanceof Error ? e.message : String(e)}`,
       };
     }
   }
@@ -247,6 +281,33 @@ export class ComponentPluginLoader {
       }
     }
     return 0;
+  }
+
+  private createRuntimePolicy(manifest: ComponentPackageManifest): PluginRuntimePolicy {
+    const hasElevatedAccess = Boolean(
+      manifest.securityPolicy?.requiresElevatedPermissions && this.isPackageAllowed(manifest.packageName)
+    );
+    const policy = hasElevatedAccess
+      ? createTrustedPluginRuntimePolicy(manifest.packageName, manifest.version)
+      : createDefaultPluginRuntimePolicy(manifest.packageName, manifest.version);
+
+    if (manifest.securityPolicy?.allowedDomains) {
+      policy.network.allowNetworkRequests = manifest.securityPolicy.allowedDomains.length > 0;
+      policy.network.allowedDomains = [...manifest.securityPolicy.allowedDomains];
+    }
+
+    if (manifest.securityPolicy?.allowBrowserAPIs) {
+      policy.browserAPI.allowClipboard = true;
+      policy.browserAPI.allowWebSockets = true;
+      policy.browserAPI.allowedAPIs = ['clipboard', 'websockets'];
+    }
+
+    if (manifest.securityPolicy?.allowLocalStorage) {
+      policy.storage.allowLocalStorage = true;
+      policy.storage.allowSessionStorage = true;
+    }
+
+    return policy;
   }
 }
 

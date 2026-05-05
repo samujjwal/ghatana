@@ -12,6 +12,8 @@
 
 import React from 'react';
 
+import { Button, Card, CardContent } from '@ghatana/design-system';
+
 export interface Blocker {
   id: string;
   title: string;
@@ -70,25 +72,29 @@ export const PhaseBlockerPanel: React.FC<PhaseBlockerPanelProps> = ({
       </h3>
       <div className="space-y-3">
         {blockers.map((blocker) => (
-          <div
+          <Card
             key={blocker.id}
-            className={`border rounded-lg p-4 ${SEVERITY_COLORS[blocker.severity]}`}
+            variant="outlined"
+            className={SEVERITY_COLORS[blocker.severity]}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1">
-                <h4 className="font-medium mb-1">{blocker.title}</h4>
-                <p className="text-sm opacity-90">{blocker.description}</p>
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <h4 className="font-medium mb-1">{blocker.title}</h4>
+                  <p className="text-sm opacity-90">{blocker.description}</p>
+                </div>
+                {blocker.actionLabel && blocker.onAction && (
+                  <Button
+                    onClick={blocker.onAction}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {blocker.actionLabel}
+                  </Button>
+                )}
               </div>
-              {blocker.actionLabel && blocker.onAction && (
-                <button
-                  onClick={blocker.onAction}
-                  className="flex-shrink-0 px-3 py-1.5 text-sm font-medium bg-white dark:bg-gray-800 rounded border border-current opacity-90 hover:opacity-100 transition-opacity"
-                >
-                  {blocker.actionLabel}
-                </button>
-              )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>

@@ -10,8 +10,10 @@
  * @doc.pattern Dashboard
  */
 
-import React from 'react';
 import { ArrowRight, AlertCircle, Plus, CheckCircle, Activity } from 'lucide-react';
+import React from 'react';
+
+import { Alert, Button, Card, CardContent } from '@ghatana/design-system';
 
 export interface NextAction {
   id: string;
@@ -52,147 +54,121 @@ export const NextActionDashboard: React.FC<NextActionDashboardProps> = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+        <div
+          aria-label="Loading dashboard"
+          className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"
+        />
       </div>
     );
   }
 
-  const getHealthIcon = (status: HealthIndicator['status']) => {
+  const getHealthIcon = (status: HealthIndicator['status']): React.ReactNode => {
     switch (status) {
       case 'healthy':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
+        return <CheckCircle className="w-4 h-4 text-fg-muted" />;
       case 'warning':
-        return <AlertCircle className="w-4 h-4 text-yellow-500" />;
+        return <AlertCircle className="w-4 h-4 text-fg-muted" />;
       case 'critical':
-        return <AlertCircle className="w-4 h-4 text-red-500" />;
+        return <AlertCircle className="w-4 h-4 text-fg-muted" />;
     }
   };
 
-  const getHealthColor = (status: HealthIndicator['status']) => {
+  const getHealthTone = (status: HealthIndicator['status']): 'success' | 'warning' | 'error' => {
     switch (status) {
       case 'healthy':
-        return 'text-green-600';
+        return 'success';
       case 'warning':
-        return 'text-yellow-600';
+        return 'warning';
       case 'critical':
-        return 'text-red-600';
+        return 'error';
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Primary Next Action */}
-      <div
-        data-testid="primary-next-action"
-        className="bg-primary-50 border border-primary-200 rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
-        onClick={primaryAction.action}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            primaryAction.action();
-          }
-        }}
-      >
-        <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 mt-1">
-            {primaryAction.icon || <ArrowRight className="w-6 h-6 text-primary-600" />}
+      <Card data-testid="primary-next-action" variant="outlined">
+        <CardContent className="space-y-4 p-6">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 mt-1">
+              {primaryAction.icon || <ArrowRight className="w-6 h-6 text-primary-600" />}
+            </div>
+            <div className="flex-1">
+              <h2 className="text-lg font-semibold text-fg mb-2">
+                Continue: {primaryAction.title}
+              </h2>
+              <p className="text-fg-muted">{primaryAction.description}</p>
+            </div>
           </div>
-          <div className="flex-1">
-            <h2 className="text-lg font-semibold text-primary-900 mb-2">
-              Continue: {primaryAction.title}
-            </h2>
-            <p className="text-primary-700">{primaryAction.description}</p>
-          </div>
-        </div>
-      </div>
+          <Button onClick={primaryAction.action} rightIcon={<ArrowRight className="w-4 h-4" />}>
+            Open next step
+          </Button>
+        </CardContent>
+      </Card>
 
-      {/* Secondary Action */}
       {secondaryAction && (
-        <div
+        <Alert
           data-testid="secondary-action"
-          className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-          onClick={secondaryAction.action}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              secondaryAction.action();
-            }
-          }}
+          severity="warning"
+          variant="standard"
+          title={`Review: ${secondaryAction.title}`}
+          icon={secondaryAction.icon || <AlertCircle className="w-5 h-5" />}
+          action={
+            <Button size="sm" variant="outline" colorScheme="warning" onClick={secondaryAction.action}>
+              Review
+            </Button>
+          }
         >
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 mt-0.5">
-              {secondaryAction.icon || <AlertCircle className="w-5 h-5 text-yellow-600" />}
-            </div>
-            <div className="flex-1">
-              <h3 className="text-base font-medium text-yellow-900 mb-1">
-                Review: {secondaryAction.title}
-              </h3>
-              <p className="text-sm text-yellow-700">{secondaryAction.description}</p>
-            </div>
-          </div>
-        </div>
+          {secondaryAction.description}
+        </Alert>
       )}
 
-      {/* Tertiary Action */}
       {tertiaryAction && (
-        <div
-          data-testid="tertiary-action"
-          className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-          onClick={tertiaryAction.action}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              tertiaryAction.action();
-            }
-          }}
-        >
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 mt-0.5">
-              {tertiaryAction.icon || <Plus className="w-5 h-5 text-gray-600" />}
+        <Card data-testid="tertiary-action" variant="outlined">
+          <CardContent className="flex items-start justify-between gap-4 p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-0.5">
+                {tertiaryAction.icon || <Plus className="w-5 h-5 text-fg-muted" />}
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-medium text-fg mb-1">
+                  {tertiaryAction.title}
+                </h3>
+                <p className="text-sm text-fg-muted">{tertiaryAction.description}</p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h3 className="text-base font-medium text-gray-900 mb-1">
-                {tertiaryAction.title}
-              </h3>
-              <p className="text-sm text-gray-600">{tertiaryAction.description}</p>
-            </div>
-          </div>
-        </div>
+            <Button size="sm" variant="ghost" colorScheme="grey" onClick={tertiaryAction.action}>
+              Open
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Quiet Health Indicators */}
       {healthIndicators.length > 0 && (
-        <div
-          data-testid="health-indicators"
-          className="bg-white border border-gray-200 rounded-lg p-4"
-        >
-          <h4 className="text-sm font-medium text-gray-500 mb-3 flex items-center gap-2">
-            <Activity className="w-4 h-4" />
-            System Health
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {healthIndicators.map((indicator) => (
-              <div
-                key={indicator.id}
-                className="flex items-center gap-2 text-sm"
-              >
-                {getHealthIcon(indicator.status)}
-                <span className="text-gray-600">{indicator.label}:</span>
-                {indicator.value && (
-                  <span className={`font-medium ${getHealthColor(indicator.status)}`}>
-                    {indicator.value}
+        <Card data-testid="health-indicators" variant="outlined">
+          <CardContent className="p-4">
+            <h4 className="text-sm font-medium text-fg-muted mb-3 flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              Health
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {healthIndicators.map((indicator) => (
+                <Alert
+                  key={indicator.id}
+                  severity={getHealthTone(indicator.status)}
+                  variant="outlined"
+                  hideIcon
+                  title={indicator.label}
+                  className="h-full"
+                >
+                  <span className="flex items-center gap-2">
+                    {getHealthIcon(indicator.status)}
+                    <span>{indicator.value ?? 'No recent signal'}</span>
                   </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+                </Alert>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

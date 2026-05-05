@@ -154,6 +154,7 @@ public final class PageArtifactValidator {
         if (rootNodes instanceof List<?> rootNodeList && !nodesMap.isEmpty()) {
             validateRootNodeReferences(rootNodeList, nodesMap, errors);
             validateSlotReferences(nodesMap, errors);
+            validateTreeShape(rootNodeList, nodesMap, errors, warnings);
         }
 
         // Reject executable payloads (security concern, fail-closed)
@@ -173,7 +174,10 @@ public final class PageArtifactValidator {
             Object contractName = nodeMap.get("contractName");
             if (!(contractName instanceof String contract) || contract.isBlank()) {
                 errors.add("BuilderDocument node '" + entry.getKey() + "' missing contractName");
+                continue;
             }
+
+            validateContractRules(entry.getKey(), contract, nodeMap, errors);
 
             Object props = nodeMap.get("props");
             if (props != null && !(props instanceof Map<?, ?>)) {
@@ -211,6 +215,7 @@ public final class PageArtifactValidator {
             @NotNull Map<String, Object> nodesMap,
             @NotNull List<String> errors
     ) {
+        Set<String> referencedChildren = new HashSet<>();
         for (Map.Entry<String, Object> entry : nodesMap.entrySet()) {
             if (!(entry.getValue() instanceof Map<?, ?> nodeMap)) {
                 continue;
@@ -222,8 +227,12 @@ public final class PageArtifactValidator {
             }
 
             for (Map.Entry<?, ?> slotEntry : slotsMap.entrySet()) {
+                if (!(slotEntry.getKey() instanceof String slotName) || slotName.isBlank()) {
+                    errors.add("BuilderDocument node '" + entry.getKey() + "' has invalid slot name");
+                    continue;
+                }
                 if (!(slotEntry.getValue() instanceof List<?> childIds)) {
-                    errors.add("BuilderDocument node '" + entry.getKey() + "' slot '" + slotEntry.getKey() + "' must be a list");
+                    errors.add("BuilderDocument node '" + entry.getKey() + "' slot '" + slotName + "' must be a list");
                     continue;
                 }
 
@@ -234,10 +243,136 @@ public final class PageArtifactValidator {
                     }
                     if (!nodesMap.containsKey(childNodeId)) {
                         errors.add("BuilderDocument node '" + entry.getKey() + "' references missing child node '" + childNodeId + "'");
+                        continue;
+                    }
+                    if (!referencedChildren.add(childNodeId)) {
+                        errors.add("BuilderDocument child node '" + childNodeId + "' is referenced by multiple parents or slots");
                     }
                 }
             }
         }
+    }
+
+    private static void validateContractRules(
+            @NotNull String nodeId,
+            @NotNull String contractName,
+            @NotNull Map<?, ?> nodeMap,
+            @NotNull List<String> errors
+    ) {
+        PageArtifactDesignSystemRegistry.ContractRule contractRule = PageArtifactDesignSystemRegistry.findContract(contractName)
+                .orElse(null);
+        if (contractRule == null) {
+            errors.add("BuilderDocument node '" + nodeId + "' references unknown contract '" + contractName + "'");
+            return;
+        }
+
+        Object props = nodeMap.get("props");
+        if (props instanceof Map<?, ?> propsMap) {
+            for (String requiredProp : contractRule.requiredProps()) {
+                Object value = propsMap.get(requiredProp);
+                if (value == null || (value instanceof String stringValue && stringValue.isBlank())) {
+                    errors.add("BuilderDocument node '" + nodeId + "' contract '" + contractName
+                            + "' missing required prop '" + requiredProp + "'");
+                }
+            }
+
+            for (Map.Entry<String, PageArtifactDesignSystemRegistry.PropType> propRule : contractRule.propTypes().entrySet()) {
+                Object value = propsMap.get(propRule.getKey());
+                if (value == null) {
+                    continue;
+                }
+                if (!matchesPropType(value, propRule.getValue())) {
+                    errors.add("BuilderDocument node '" + nodeId + "' contract '" + contractName
+                            + "' prop '" + propRule.getKey() + "' must be of type "
+                            + propRule.getValue().name().toLowerCase());
+                }
+            }
+        }
+
+        Object slots = nodeMap.get("slots");
+        if (slots instanceof Map<?, ?> slotsMap) {
+            for (Object slotNameObj : slotsMap.keySet()) {
+                if (!(slotNameObj instanceof String slotName) || slotName.isBlank()) {
+                    continue;
+                }
+                if (!contractRule.allowedSlots().contains(slotName)) {
+                    errors.add("BuilderDocument node '" + nodeId + "' contract '" + contractName
+                            + "' does not allow slot '" + slotName + "'");
+                }
+            }
+        }
+    }
+
+    private static boolean matchesPropType(
+            @NotNull Object value,
+            @NotNull PageArtifactDesignSystemRegistry.PropType expectedType
+    ) {
+        return switch (expectedType) {
+            case STRING -> value instanceof String;
+            case BOOLEAN -> value instanceof Boolean;
+            case NUMBER -> value instanceof Number;
+        };
+    }
+
+    private static void validateTreeShape(
+            @NotNull List<?> rootNodes,
+            @NotNull Map<String, Object> nodesMap,
+            @NotNull List<String> errors,
+            @NotNull List<String> warnings
+    ) {
+        Set<String> reachable = new HashSet<>();
+        Set<String> visiting = new HashSet<>();
+
+        for (Object rootNode : rootNodes) {
+            if (rootNode instanceof String rootId && nodesMap.containsKey(rootId)) {
+                traverseNode(rootId, nodesMap, reachable, visiting, errors);
+            }
+        }
+
+        for (String nodeId : nodesMap.keySet()) {
+            if (!reachable.contains(nodeId)) {
+                errors.add("BuilderDocument contains orphan node not reachable from rootNodes: " + nodeId);
+            }
+        }
+
+        if (reachable.isEmpty() && !nodesMap.isEmpty()) {
+            warnings.add("BuilderDocument contains nodes but no reachable root graph");
+        }
+    }
+
+    private static void traverseNode(
+            @NotNull String nodeId,
+            @NotNull Map<String, Object> nodesMap,
+            @NotNull Set<String> reachable,
+            @NotNull Set<String> visiting,
+            @NotNull List<String> errors
+    ) {
+        if (reachable.contains(nodeId)) {
+            return;
+        }
+        if (!visiting.add(nodeId)) {
+            errors.add("BuilderDocument contains a component cycle involving node: " + nodeId);
+            return;
+        }
+
+        Object rawNode = nodesMap.get(nodeId);
+        if (rawNode instanceof Map<?, ?> nodeMap) {
+            Object slots = nodeMap.get("slots");
+            if (slots instanceof Map<?, ?> slotsMap) {
+                for (Object childList : slotsMap.values()) {
+                    if (childList instanceof List<?> childIds) {
+                        for (Object childId : childIds) {
+                            if (childId instanceof String childNodeId && nodesMap.containsKey(childNodeId)) {
+                                traverseNode(childNodeId, nodesMap, reachable, visiting, errors);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        visiting.remove(nodeId);
+        reachable.add(nodeId);
     }
 
     private static void checkForExecutablePayloads(
@@ -356,6 +491,9 @@ public final class PageArtifactValidator {
             }
             if (record.artifactId() == null || record.artifactId().isBlank()) {
                 errors.add("Governance record missing artifactId");
+            }
+            if (record.documentId() == null || record.documentId().isBlank()) {
+                errors.add("Governance record missing documentId");
             }
         }
     }

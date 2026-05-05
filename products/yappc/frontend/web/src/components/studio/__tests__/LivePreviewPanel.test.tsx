@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { render } from '@/test-utils/test-utils';
 import { LivePreviewPanel } from '../LivePreviewPanel';
 
 const mountDocumentMock = vi.fn();
@@ -7,6 +8,7 @@ const updateDocumentMock = vi.fn();
 const sendMock = vi.fn();
 const teardownMock = vi.fn();
 const resolvePreviewExecutionPolicyMock = vi.fn();
+const issuePreviewSessionMock = vi.fn();
 
 vi.mock('@ghatana/ui-builder/preview', () => ({
   PRESET_VIEWPORTS: {
@@ -38,6 +40,10 @@ vi.mock('@ghatana/ui-builder/preview', () => ({
   },
 }));
 
+vi.mock('@/services/preview/PreviewSessionApi', () => ({
+  issuePreviewSession: (...args: unknown[]) => issuePreviewSessionMock(...args),
+}));
+
 const baseDocument = {
   id: 'test-doc',
   version: '1',
@@ -66,6 +72,7 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
     sendMock.mockReset();
     teardownMock.mockReset();
     resolvePreviewExecutionPolicyMock.mockReset();
+    issuePreviewSessionMock.mockReset();
     resolvePreviewExecutionPolicyMock.mockReturnValue({
       profile: {
         id: 'yappc-preview',
@@ -81,6 +88,11 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
       contentSecurityPolicy: "default-src 'self' https://preview.example.com; frame-ancestors 'none'",
       diagnostics: ['Preview requires network access.'],
     });
+    issuePreviewSessionMock.mockResolvedValue({
+      sessionId: 'preview-1',
+      sessionToken: 'signed-preview-token',
+      expiresAt: '2026-04-21T12:00:00.000Z',
+    });
   });
 
   describe('Component Rendering', () => {
@@ -89,23 +101,25 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
       expect(screen.getByText('Select a document or component to preview')).toBeInTheDocument();
     });
 
-    it('renders the iframe with policy-derived sandbox and diagnostics', () => {
+    it('renders the iframe with policy-derived sandbox and diagnostics', async () => {
       render(
         <LivePreviewPanel
           document={baseDocument}
-          previewUrl="https://preview.example.com/frame"
+          previewContext={{ projectId: 'proj-1', artifactId: 'artifact-1' }}
         />,
       );
 
-      const iframe = screen.getByTitle('Live Preview');
+      expect(screen.getByText('Preparing secure preview session…')).toBeInTheDocument();
+
+      const iframe = await screen.findByTitle('Live Preview');
       expect(iframe).toHaveAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms');
-      expect(iframe).toHaveAttribute(
-        'csp',
-        "default-src 'self' https://preview.example.com; frame-ancestors 'none'",
-      );
+      expect(iframe).toHaveAttribute('src', '/preview/builder?session=signed-preview-token');
       expect(screen.getByText('TRUSTED WORKSPACE')).toBeInTheDocument();
       expect(screen.getByText('Preview requires network access.')).toBeInTheDocument();
-      expect(mountDocumentMock).toHaveBeenCalledWith(baseDocument);
+      expect(issuePreviewSessionMock).toHaveBeenCalledWith({
+        projectId: 'proj-1',
+        artifactId: 'artifact-1',
+      });
     });
   });
 

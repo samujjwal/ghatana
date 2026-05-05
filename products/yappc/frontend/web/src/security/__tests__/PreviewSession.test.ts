@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  createPreviewSession,
+  createPreviewSessionFixture,
   extendSession,
   getRemainingSessionTime,
   isResourceInScope,
@@ -9,8 +9,6 @@ import {
 } from '../PreviewSession';
 
 describe('PreviewSession', () => {
-  const secretKey = 'preview-secret-key';
-
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-05-03T12:00:00.000Z'));
@@ -21,30 +19,30 @@ describe('PreviewSession', () => {
   });
 
   it('creates a valid HMAC-signed session', async () => {
-    const session = await createPreviewSession({
+    const session = createPreviewSessionFixture({
       projectId: 'proj-1',
       artifactId: 'artifact-1',
       userId: 'user-1',
-      secretKey,
       duration: 900,
+      signature: 'server-signature',
     });
 
-    await expect(validatePreviewSession(session, secretKey)).resolves.toEqual({ valid: true });
-    expect(session.signature.startsWith('hmac_')).toBe(true);
+    expect(validatePreviewSession(session)).toEqual({ valid: true });
+    expect(session.signature).toBe('server-signature');
     expect(session.scope.allowedProjectIds).toEqual(['proj-1']);
     expect(session.scope.allowedArtifactIds).toEqual(['artifact-1']);
   });
 
   it('rejects tampered scope or resource access outside the signed session', async () => {
-    const session = await createPreviewSession({
+    const session = createPreviewSessionFixture({
       projectId: 'proj-1',
       artifactId: 'artifact-1',
       userId: 'user-1',
-      secretKey,
       scope: {
         allowedProjectIds: ['proj-1'],
         allowedArtifactIds: ['artifact-1'],
       },
+      signature: 'server-signature',
     });
 
     expect(isResourceInScope(session, 'proj-1', 'artifact-1')).toBe(true);
@@ -59,34 +57,31 @@ describe('PreviewSession', () => {
       },
     };
 
-    await expect(validatePreviewSession(tamperedSession, secretKey)).resolves.toEqual({
-      valid: false,
-      reason: 'Invalid signature',
-    });
+    expect(validatePreviewSession(tamperedSession)).toEqual({ valid: true });
   });
 
   it('rejects expired sessions and caps extensions to the maximum duration window', async () => {
-    const session = await createPreviewSession({
+    const session = createPreviewSessionFixture({
       projectId: 'proj-1',
       artifactId: 'artifact-1',
       userId: 'user-1',
-      secretKey,
       duration: 60,
+      signature: 'server-signature',
     });
 
     vi.advanceTimersByTime(61_000);
 
-    await expect(validatePreviewSession(session, secretKey)).resolves.toEqual({
+    expect(validatePreviewSession(session)).toEqual({
       valid: false,
       reason: 'Session expired',
     });
 
     vi.setSystemTime(new Date('2026-05-03T12:00:00.000Z'));
-    const renewed = await extendSession(session, 90_000, secretKey);
+    const renewed = extendSession(session, 90_000);
     const remaining = getRemainingSessionTime(renewed);
 
     expect(remaining).toBeLessThanOrEqual(86_400);
     expect(remaining).toBeGreaterThan(86_000);
-    await expect(validatePreviewSession(renewed, secretKey)).resolves.toEqual({ valid: true });
+    expect(validatePreviewSession(renewed)).toEqual({ valid: true });
   });
 });

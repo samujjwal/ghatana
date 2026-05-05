@@ -29,13 +29,13 @@ export interface PreviewSessionScope {
   maxDuration?: number;
 }
 
-export interface PreviewSessionOptions {
+export interface PreviewSessionFixtureOptions {
   projectId: string;
   artifactId: string;
   userId: string;
-  secretKey: string;
   scope?: PreviewSessionScope;
   duration?: number;
+  signature?: string;
 }
 
 const DEFAULT_SESSION_DURATION = 3600;
@@ -65,62 +65,21 @@ function sortUnique(values: string[]): string[] {
   return [...new Set(values)].sort();
 }
 
-function createSigningPayload(session: Omit<PreviewSession, 'signature'>): string {
-  return JSON.stringify({
-    sessionId: session.sessionId,
-    projectId: session.projectId,
-    artifactId: session.artifactId,
-    userId: session.userId,
-    createdAt: session.createdAt,
-    expiresAt: session.expiresAt,
-    scope: {
-      ...session.scope,
-      allowedProjectIds: sortUnique(session.scope.allowedProjectIds ?? []),
-      allowedArtifactIds: sortUnique(session.scope.allowedArtifactIds ?? []),
-    },
-  });
-}
-
-async function importSigningKey(secretKey: string): Promise<CryptoKey> {
-  const subtle = globalThis.crypto?.subtle;
-  if (!subtle) {
-    throw new Error('Web Crypto API is unavailable');
-  }
-
-  return subtle.importKey(
-    'raw',
-    new TextEncoder().encode(secretKey),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-}
-
-function toBase64Url(bytes: Uint8Array): string {
-  let binary = '';
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
-  }
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-}
-
-async function generateSignature(
-  session: Omit<PreviewSession, 'signature'>,
-  secretKey: string
-): Promise<string> {
-  const subtle = globalThis.crypto?.subtle;
-  if (!subtle) {
-    throw new Error('Web Crypto API is unavailable');
-  }
-
-  const signingKey = await importSigningKey(secretKey);
-  const payload = createSigningPayload(session);
-  const signature = await subtle.sign('HMAC', signingKey, new TextEncoder().encode(payload));
-  return `hmac_${toBase64Url(new Uint8Array(signature))}`;
-}
-
-export async function createPreviewSession(options: PreviewSessionOptions): Promise<PreviewSession> {
-  const { projectId, artifactId, userId, secretKey, scope = {}, duration = DEFAULT_SESSION_DURATION } = options;
+/**
+ * Builds a local preview-session fixture for tests.
+ * Production code must obtain preview sessions from the server API.
+ */
+export function createPreviewSessionFixture(
+  options: PreviewSessionFixtureOptions,
+): PreviewSession {
+  const {
+    projectId,
+    artifactId,
+    userId,
+    scope = {},
+    duration = DEFAULT_SESSION_DURATION,
+    signature = '',
+  } = options;
   const actualDuration = Math.min(duration, MAX_SESSION_DURATION);
   const now = new Date();
   const createdAt = now.toISOString();
@@ -139,14 +98,13 @@ export async function createPreviewSession(options: PreviewSessionOptions): Prom
 
   return {
     ...sessionWithoutSignature,
-    signature: await generateSignature(sessionWithoutSignature, secretKey),
+    signature,
   };
 }
 
-export async function validatePreviewSession(
-  session: PreviewSession,
-  secretKey: string
-): Promise<{ valid: boolean; reason?: string }> {
+export function validatePreviewSession(
+  session: PreviewSession
+): { valid: boolean; reason?: string } {
   const createdAt = new Date(session.createdAt);
   const expiresAt = new Date(session.expiresAt);
 
@@ -167,27 +125,16 @@ export async function validatePreviewSession(
     return { valid: false, reason: 'Session expired' };
   }
 
-  const expectedSignature = await generateSignature(
-    {
-      sessionId: session.sessionId,
-      projectId: session.projectId,
-      artifactId: session.artifactId,
-      userId: session.userId,
-      createdAt: session.createdAt,
-      expiresAt: session.expiresAt,
-      scope: normalizeScope(
-        session.projectId,
-        session.artifactId,
-        session.scope,
-        session.scope.maxDuration ?? actualDurationSeconds
-      ),
-    },
-    secretKey
-  );
-
-  if (session.signature !== expectedSignature) {
-    return { valid: false, reason: 'Invalid signature' };
+  if (!session.signature || session.signature.trim().length === 0) {
+    return { valid: false, reason: 'Missing server-issued signature' };
   }
+
+  normalizeScope(
+    session.projectId,
+    session.artifactId,
+    session.scope,
+    session.scope.maxDuration ?? actualDurationSeconds
+  );
 
   return { valid: true };
 }
@@ -224,11 +171,10 @@ export function getRemainingSessionTime(session: PreviewSession): number {
   return Math.max(0, Math.floor(remainingMs / 1000));
 }
 
-export async function extendSession(
+export function extendSession(
   session: PreviewSession,
-  additionalDuration: number,
-  secretKey: string
-): Promise<PreviewSession> {
+  additionalDuration: number
+): PreviewSession {
   const createdAt = new Date(session.createdAt);
   const currentExpiresAt = getSessionExpirationTime(session);
   const maxExpiresAt = new Date(createdAt.getTime() + MAX_SESSION_DURATION * 1000);
@@ -249,23 +195,11 @@ export async function extendSession(
 
   return {
     ...updatedSession,
-    signature: await generateSignature(
-      {
-        sessionId: updatedSession.sessionId,
-        projectId: updatedSession.projectId,
-        artifactId: updatedSession.artifactId,
-        userId: updatedSession.userId,
-        createdAt: updatedSession.createdAt,
-        expiresAt: updatedSession.expiresAt,
-        scope: updatedSession.scope,
-      },
-      secretKey
-    ),
+    signature: session.signature,
   };
 }
 
 export default {
-  createPreviewSession,
   validatePreviewSession,
   isResourceInScope,
   getSessionExpirationTime,

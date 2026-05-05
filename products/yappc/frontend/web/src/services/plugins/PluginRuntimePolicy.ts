@@ -112,6 +112,16 @@ export interface PluginSandboxBoundary {
   };
 }
 
+export interface PluginRuntimeEnvironment {
+  readonly policy: PluginRuntimePolicy;
+  readonly boundary: PluginSandboxBoundary;
+  readonly sandboxAttribute: string;
+  fetch: (input: string, init?: RequestInit) => Promise<Response>;
+  useStorage: (storageType: 'localStorage' | 'sessionStorage' | 'indexedDB' | 'cookie') => void;
+  useBrowserAPI: (api: string) => void;
+  emitTelemetry: (eventName: string, payload?: unknown) => boolean;
+}
+
 /**
  * Default network policy (restrictive)
  */
@@ -271,18 +281,82 @@ export function enforceNetworkPolicy(
     return { allowed: false, reason: 'Network requests not allowed' };
   }
 
-  if (policy.blockedDomains?.some(domain => url.includes(domain))) {
+  const parsedUrl = parseNetworkUrl(url);
+  if (!parsedUrl) {
+    return { allowed: false, reason: 'Invalid URL' };
+  }
+
+  if (policy.blockedDomains?.some(domain => matchesAllowedDomain(parsedUrl, domain))) {
     return { allowed: false, reason: 'Domain is blocked' };
   }
 
   if (policy.allowedDomains?.length > 0) {
-    const allowed = policy.allowedDomains.some(domain => url.includes(domain));
+    const allowed = policy.allowedDomains.some(domain => matchesAllowedDomain(parsedUrl, domain));
     if (!allowed) {
       return { allowed: false, reason: 'Domain not in allowlist' };
     }
   }
 
   return { allowed: true };
+}
+
+function parseNetworkUrl(url: string): URL | null {
+  try {
+    return new URL(url);
+  } catch {
+    return null;
+  }
+}
+
+function matchesAllowedDomain(url: URL, rule: string): boolean {
+  const normalizedRule = rule.trim().toLowerCase();
+  if (!normalizedRule) {
+    return false;
+  }
+
+  if (normalizedRule.includes('://')) {
+    try {
+      const allowedUrl = new URL(normalizedRule);
+      return url.origin === allowedUrl.origin;
+    } catch {
+      return false;
+    }
+  }
+
+  // Explicit origin rule: origin:https://example.com
+  if (normalizedRule.startsWith('origin:')) {
+    const originRule = normalizedRule.slice('origin:'.length).trim();
+    if (!originRule) {
+      return false;
+    }
+
+    try {
+      const allowedOrigin = new URL(originRule);
+      return url.origin === allowedOrigin.origin;
+    } catch {
+      return false;
+    }
+  }
+
+  // Explicit host rule: host:api.example.com
+  if (normalizedRule.startsWith('host:')) {
+    const hostRule = normalizedRule.slice('host:'.length).trim();
+    return hostRule.length > 0 && url.hostname.toLowerCase() === hostRule;
+  }
+
+  // Wildcard host rule: *.example.com
+  if (normalizedRule.startsWith('*.')) {
+    const suffix = normalizedRule.slice(2);
+    if (!suffix) {
+      return false;
+    }
+    const hostname = url.hostname.toLowerCase();
+    return hostname.endsWith(`.${suffix}`);
+  }
+
+  const hostname = url.hostname.toLowerCase();
+  // Default rule is exact host match only.
+  return hostname === normalizedRule;
 }
 
 /**
@@ -390,6 +464,53 @@ export function generateSandboxAttribute(boundary: PluginSandboxBoundary): strin
   return boundary.sandboxAttributes?.join(' ') || '';
 }
 
+export function createPluginRuntimeEnvironment(
+  policy: PluginRuntimePolicy,
+  options?: {
+    readonly boundary?: PluginSandboxBoundary;
+    readonly fetchImpl?: typeof fetch;
+    readonly telemetryEmitter?: (eventName: string, payload?: unknown) => void;
+  }
+): PluginRuntimeEnvironment {
+  const boundary =
+    options?.boundary ??
+    createPluginSandboxBoundary(policy.pluginId, policy.sandboxRequired ? 'basic' : 'none');
+  const fetchImpl = options?.fetchImpl ?? fetch;
+
+  return {
+    policy,
+    boundary,
+    sandboxAttribute: generateSandboxAttribute(boundary),
+    async fetch(input: string, init?: RequestInit) {
+      const decision = enforceNetworkPolicy(input, policy.network);
+      if (!decision.allowed) {
+        throw new Error(`Plugin network request blocked: ${decision.reason}`);
+      }
+      return fetchImpl(input, init);
+    },
+    useStorage(storageType) {
+      const decision = enforceStoragePolicy(storageType, policy.storage);
+      if (!decision.allowed) {
+        throw new Error(`Plugin storage access blocked: ${decision.reason}`);
+      }
+    },
+    useBrowserAPI(api) {
+      const decision = enforceBrowserAPIPolicy(api, policy.browserAPI);
+      if (!decision.allowed) {
+        throw new Error(`Plugin browser API blocked: ${decision.reason}`);
+      }
+    },
+    emitTelemetry(eventName, payload) {
+      const decision = enforceTelemetryPolicy(eventName, policy.telemetry);
+      if (!decision.allowed) {
+        return false;
+      }
+      options?.telemetryEmitter?.(eventName, payload);
+      return true;
+    },
+  };
+}
+
 export default {
   DEFAULT_NETWORK_POLICY,
   DEFAULT_STORAGE_POLICY,
@@ -404,4 +525,5 @@ export default {
   enforceBrowserAPIPolicy,
   enforceTelemetryPolicy,
   generateSandboxAttribute,
+  createPluginRuntimeEnvironment,
 };

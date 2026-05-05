@@ -20,6 +20,7 @@ export {
   enforceBrowserAPIPolicy,
   enforceTelemetryPolicy,
   generateSandboxAttribute,
+  createPluginRuntimeEnvironment,
 } from './PluginRuntimePolicy';
 
 export type {
@@ -29,6 +30,7 @@ export type {
   TelemetryPolicy,
   PluginRuntimePolicy,
   PluginSandboxBoundary,
+  PluginRuntimeEnvironment,
 } from './PluginRuntimePolicy';
 
 export {

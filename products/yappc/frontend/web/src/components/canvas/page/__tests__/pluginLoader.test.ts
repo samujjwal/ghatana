@@ -165,6 +165,56 @@ describe('ComponentPluginLoader', () => {
   });
 
   describe('security policy', () => {
+    it('should reject renderers with unsafe source code', () => {
+      const renderer: BuilderRendererManifest = {
+        contractName: 'UnsafeComponent',
+        render: () => null,
+        sourceCode: 'export const UnsafeComponent = () => <div>{eval("2+2")}</div>;',
+      };
+
+      const manifest: ComponentPackageManifest = {
+        packageName: 'unsafe-package',
+        version: '1.0.0',
+        minBuilderVersion: '1.0.0',
+        renderers: [renderer],
+      };
+
+      const result = loader.validatePackage(manifest);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some((error) => error.includes('blocked by security assessment'))).toBe(true);
+    });
+
+    it('should require allowlisted elevated permissions for risky renderers', () => {
+      const renderer: BuilderRendererManifest = {
+        contractName: 'RiskyComponent',
+        render: () => null,
+        sourceCode: 'export const RiskyComponent = () => { return <button onClick={() => fetch("https://api.example.com")}>Run</button>; };',
+      };
+
+      const manifest: ComponentPackageManifest = {
+        packageName: 'risky-package',
+        version: '1.0.0',
+        minBuilderVersion: '1.0.0',
+        renderers: [renderer],
+      };
+
+      const denied = loader.validatePackage(manifest);
+      expect(denied.isValid).toBe(false);
+      expect(denied.errors.some((error) => error.includes('requires elevated permissions'))).toBe(true);
+
+      loader.allowPackage('risky-package');
+      const elevatedManifest: ComponentPackageManifest = {
+        ...manifest,
+        securityPolicy: {
+          requiresElevatedPermissions: true,
+        },
+      };
+      const allowed = loader.validatePackage(elevatedManifest);
+
+      expect(allowed.isValid).toBe(true);
+    });
+
     it('should reject package requiring elevated permissions if not allowed', () => {
       const renderer: BuilderRendererManifest = {
         contractName: 'TestComponent',
@@ -229,6 +279,7 @@ describe('ComponentPluginLoader', () => {
 
       expect(result.isValid).toBe(true);
       expect(loader.getLoadedPackages()).toHaveLength(1);
+      expect(loader.getRuntimeEnvironment('test-package')).not.toBeNull();
     });
 
     it('should not load invalid package', () => {
@@ -263,6 +314,32 @@ describe('ComponentPluginLoader', () => {
 
       loader.unloadPackage('test-package');
       expect(loader.getLoadedPackages()).toHaveLength(0);
+      expect(loader.getRuntimeEnvironment('test-package')).toBeNull();
+    });
+
+    it('creates a runtime environment that enforces plugin policy at call time', async () => {
+      const renderer: BuilderRendererManifest = {
+        contractName: 'TestComponent',
+        render: () => null,
+      };
+
+      const manifest: ComponentPackageManifest = {
+        packageName: 'runtime-package',
+        version: '1.0.0',
+        minBuilderVersion: '1.0.0',
+        renderers: [renderer],
+        securityPolicy: {
+          allowedDomains: ['api.ghatana.com'],
+        },
+      };
+
+      const result = loader.loadPackage(manifest);
+      const runtime = loader.getRuntimeEnvironment('runtime-package');
+
+      expect(result.isValid).toBe(true);
+      expect(runtime?.sandboxAttribute).toContain('allow-scripts');
+      await expect(runtime?.fetch('https://evil.example/export')!).rejects.toThrow('Plugin network request blocked');
+      expect(() => runtime?.useStorage('localStorage')).toThrow('Plugin storage access blocked');
     });
   });
 

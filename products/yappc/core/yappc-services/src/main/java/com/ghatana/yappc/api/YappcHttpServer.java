@@ -37,7 +37,8 @@ public class YappcHttpServer extends HttpServerLauncher {
             EvolveApiController evolveController,
             LifecycleApiController lifecycleController,
             ArtifactGraphController artifactGraphController,
-            PageArtifactController pageArtifactController) {
+            PageArtifactController pageArtifactController,
+            PreviewSessionApiController previewSessionApiController) {
 
         ApiVersionPolicy versionPolicy = new ApiVersionPolicy();
 
@@ -93,6 +94,10 @@ public class YappcHttpServer extends HttpServerLauncher {
                 .with(HttpMethod.POST, "/api/v1/yappc/artifact/graph/query", secureVersioned(authFilter, artifactGraphController::query, versionPolicy))
                 .with(HttpMethod.POST, "/api/v1/yappc/artifact/residual/analyze", secureVersioned(authFilter, artifactGraphController::analyzeResidual, versionPolicy))
 
+                // Preview session endpoints
+                .with(HttpMethod.POST, "/api/v1/yappc/preview/sessions", secureVersioned(authFilter, previewSessionApiController::createSession, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/preview/sessions/validate", secureVersioned(authFilter, previewSessionApiController::validateSession, versionPolicy))
+
                 // API info
                 .with(HttpMethod.GET, "/api/v1/yappc/info", versionPolicy.apply(request ->
                     Promise.of(HttpResponse.ok200().withJson("""
@@ -125,6 +130,14 @@ public class YappcHttpServer extends HttpServerLauncher {
     @Provides
     YappcApiAuthFilter yappcApiAuthFilter() {
         return YappcApiAuthFilter.fromEnvironment();
+    }
+
+    @Provides
+    PreviewSessionApiController previewSessionApiController() {
+        return new PreviewSessionApiController(
+                new com.fasterxml.jackson.databind.ObjectMapper(),
+                System.getenv("YAPPC_PREVIEW_SESSION_SECRET")
+        );
     }
 
     public static void main(String[] args) throws Exception {

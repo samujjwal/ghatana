@@ -1,577 +1,891 @@
+
 ## 1. Verified baseline
 
-Reviewed commit: `997207aff233cfdfb93fa8edce8c1c12b7497333`.
+The requested commit `b104716d78970ef6184fedb96b4cea7717f3bfea` is **changelog-only**. It updates `products/yappc/CHANGELOG.md` and points to the substantive implementation commit `210d4de1a0efb8ca7fcde4c8ff84deec4c39fae7`. 
 
-This is a **substantive commit**, not only a changelog pointer. The commit message is `yappc + build 2344`, and it includes YAPPC changes plus broader platform/Data Cloud/AEP/DMOS changes. 
-
-I reviewed the YAPPC source statically through GitHub. I did **not** clone the repo locally or execute Gradle, pnpm, Vitest, Playwright, DB migrations, or runtime services, so runtime/build conclusions need execution proof.
-
-I also checked current external guidance for two areas: WCAG 2.2 keyboard accessibility expects functionality to be operable through a keyboard, and MDN’s `postMessage` security guidance says to validate sender identity and specify an exact `targetOrigin`, not `*`, where possible. ([W3C GitHub][1])
+I compared the previous reviewed head `719869ab1ac1bdef9608c8646079d96d28441c5b` against `210d4de1a0efb8ca7fcde4c8ff84deec4c39fae7`. The delta is significant for YAPPC: it adds phase cockpits, provenance badges, next-action dashboard, action discovery palette, semantic page-builder commands, source-import workflow, residual island review UI, DB-backed page artifact persistence, server validation, preview sessions, unsafe component handling, plugin runtime policy, and additional tests.
 
 ---
 
 # 2. Executive summary
 
-YAPPC improved significantly at `997207a`.
+YAPPC has improved materially since the previous review. The product now has real movement toward the desired vision:
 
-The latest head now includes real work in the exact areas we previously identified:
+```text
+low cognitive load
++ phase-specific UX
++ page-builder/canvas integration
++ durable page artifact backend
++ provenance
++ action discovery
++ preview/runtime security
++ plugin policy utilities
++ compiler/decompiler workflow scaffolding
+```
 
-* Phase-specific cockpit routing for all eight phases.
-* Provenance badges for backed/derived/suggested/preview/unavailable content.
-* Next-action dashboard and action-discovery palette.
-* DB-backed page artifact repository, migration, validation, permissions, controller metrics, and route wiring.
-* Semantic page-builder command service.
-* Phase-aware canvas configuration.
-* Bidirectional preview-sync service.
-* Source import workflow, codegen preview/diff/merge service, and residual island review UI.
-* Preview session security, CSP helpers, unsafe component handler, plugin runtime policy, and compatibility validator.
-* Design-system enforcement lint rules and Playwright E2E specs.
+However, the implementation is still uneven. The new work often creates **good architectural entry points**, but several are not yet wired deeply enough to be production-grade.
 
-However, the implementation is still **not fully production-grade**. The main pattern is: many excellent modules now exist, but several are still **service-level scaffolds** rather than fully wired, enforced, observable, and tested in the mounted product path.
+## Biggest improvements
 
-## Overall maturity
+1. **Phase-specific cockpits now exist.** Phase routes no longer simply export canvas/lifecycle directly; they wrap each phase in `_phaseCockpit.tsx` with primary action, blockers, evidence, suggestions, governance trace, and supporting surface. 
 
-| Area                            | Score |
-| ------------------------------- | ----: |
-| Full UI/UX flow                 |    72 |
-| Cognitive-load reduction        |    70 |
-| Phase cockpit maturity          |    78 |
-| Canvas maturity                 |    68 |
-| Page builder maturity           |    72 |
-| Design-system consistency       |    55 |
-| Compiler/decompiler integration |    62 |
-| Live preview                    |    70 |
-| Persistence                     |    78 |
-| Security/privacy                |    67 |
-| Auditability                    |    55 |
-| Observability                   |    62 |
-| Implicit automation             |    58 |
-| Test confidence                 |    52 |
-| Production readiness            |    64 |
+2. **Run phase is no longer just a disabled placeholder.** `run.tsx` now routes to `RunCockpitRoute`, preserving a useful cockpit surface even while execution capabilities remain constrained. 
 
----
+3. **Backend page artifact persistence has become real.** `DbPageArtifactRepository` adds database-backed persistence, optimistic concurrency, version archiving, tenant/workspace/project scoping, and JSON persistence for builder documents and governance records. 
 
-# 3. Top critical findings
+4. **Server-side validation exists.** `PageArtifactValidator` checks structure, root references, slot references, sync/trust/data-classification values, residual island limits, round-trip fidelity, governance requirements, and simple executable payload patterns. 
 
-## P0-1 — Phase cockpits are real now, but still embed older generic surfaces
+5. **Page artifact controller now has authz, metrics, tracing, validation, audit, conflict handling, and tenant mismatch checks.** 
 
-The new `_phaseCockpit.tsx` defines all eight phase configs and mounts a cockpit with primary action, blockers, evidence, suggestions, governance, and supporting surfaces.  Individual phase routes now point into the cockpit route, for example Intent exports `IntentCockpitRoute`. 
+6. **Semantic page-builder commands now exist.** `PageBuilderCommands` supports insert, move, update props, delete, import, autosave, undo/redo, audit callback, telemetry callback, validation, and autosave scheduling. 
 
-**Remaining issue:** the cockpit still embeds older surfaces: Intent embeds project overview, Shape/Generate embed canvas, Run embeds deploy, Observe embeds preview + lifecycle, and Validate/Learn/Evolve embed lifecycle.  This is better than aliases, but it can still feel like “cockpit wrapper + generic content.”
+7. **Compiler/decompiler UX is starting to become real.** `ImportSourceWorkflow` supports TSX, route, Storybook, artifact, and ZIP source types and calls artifact compiler extractors. 
 
-**Fix:** keep the supporting surfaces, but make each phase’s embedded content phase-filtered and action-scoped.
+8. **Preview/session/runtime security is stronger.** Signed preview sessions, scoped artifacts/projects, expiration, HMAC signatures, and validation helpers now exist. 
 
----
+9. **Unsafe custom component handling exists.** Static analysis now detects risky browser APIs, network/storage use, inline scripts, `eval`, `Function`, and can apply policy transforms. 
 
-## P0-2 — Design-system enforcement exists, but the UI still violates it widely
+10. **Design-system enforcement files exist.** Custom ESLint rules now attempt to block raw `button`, `input`, `select`, hardcoded colors, and ad-hoc card classes. 
 
-There is now an ESLint rule package for raw buttons, raw inputs, raw selects, hardcoded colors, and ad-hoc card classes.  But the rules are configured as `warn`, not fail-the-build. 
+## Biggest risks
 
-Many new components still use raw controls and hardcoded Tailwind colors, including `PhasePrimaryActionCard`, `NextActionDashboard`, and `ActionDiscoveryPalette`.    `DashboardView` imports design-system components but still uses `// @ts-nocheck`, custom classes, hardcoded gradients, and mixed layout patterns. 
-
-**Fix:** move lint rules from `warn` to `error` after migration, and prioritize replacing raw controls in newly added cockpit/action components.
+1. **Many new systems are scaffolds or wrappers, not yet complete product-grade flows.**
+2. **Phase cockpits still embed old supporting surfaces, so cognitive load is reduced but not eliminated.**
+3. **Design-system enforcement rules exist but are not wired into the main ESLint config.**
+4. **Page-builder “E2E” tests are still not true E2E; they mock core internals.**
+5. **Preview session signing appears client-side capable, which is risky if a secret key ever reaches browser code.**
+6. **Plugin/runtime policy is utility-level; enforcement integration is not proven.**
+7. **Compiler/decompiler flow imports files but does not yet fully convert source → semantic model → BuilderDocument → page artifact → canvas nodes → codegen/diff/merge.**
+8. **Server validation is useful but not design-system-contract-aware enough.**
+9. **Authorization is permission-based, but resource-level workspace/project ownership checks are not obvious from the controller.**
+10. **Audit is emitted asynchronously and failures do not block sensitive operations.**
 
 ---
 
-## P0-3 — Page artifact persistence is much stronger, but audit is still log-only
+# 3. Full user journey review
 
-The new `DbPageArtifactRepository` provides durable persistence with tenant/workspace/project scoping, optimistic concurrency, document versioning, and historical version archiving.  The migration creates `page_artifacts` and `page_artifact_versions` with constraints and indexes.  The HTTP controller now performs auth checks, validation, metrics, and conflict handling.  The server wires the page artifact routes through `authFilter.secure`. 
+## 3.1 Login → onboarding → workspace
 
-**Remaining issue:** `emitAuditEvent` only logs audit messages; it does not persist them as first-class audit records. 
+The prior issues still largely stand: onboarding is useful and guided, but historically used explicit “AI” wording. The new codebase starts moving toward next-action and cockpit patterns, but I did not see enough evidence that login/onboarding/workspace were fully migrated to design-system primitives or fully purged of visible AI wording.
 
-**Fix:** replace log-only audit with a real audit repository/event bus entry.
-
----
-
-## P0-4 — Authorization is present, but identity source needs hardening
-
-The controller checks permissions using `SyncAuthorizationService`, `X-User-ID`, and `X-User-Role` headers.  Permission constants are defined for read, edit, force save, import/decompile, approve changes, delete, and manage. 
-
-**Risk:** unless `YappcApiAuthFilter` reliably injects and validates those headers server-side, user/role headers can become spoofable. The reviewed controller itself trusts request headers.
-
-**Fix:** derive authenticated principal and permissions from the auth context, not raw client-controllable headers.
+**Needed:** login/onboarding/workspace should be migrated to design-system components, with outcome-oriented suggestion language and no visible AI-first wording.
 
 ---
 
-## P0-5 — Server-side validation exists, but contract/security enforcement is shallow
+## 3.2 Dashboard
 
-`PageArtifactValidator` validates root nodes, node maps, slots, sync status, trust level, classification, residual island count, fidelity, and governance record presence. 
+A new `NextActionDashboard` exists and matches the desired UX direction: primary action, secondary action, tertiary action, and quiet health indicators. 
 
-**Gaps:**
+### Strength
 
-* It checks `contractName` exists but does not verify contract validity against the design-system registry.
-* It treats executable payloads such as `eval(`, `<script`, and `javascript:` as **warnings**, not errors. 
-* It does not validate prop schemas, slot constraints, action bindings, or data bindings deeply.
+This directly supports the desired “dashboard-first, next best action” model.
 
-**Fix:** fail closed for executable payloads and verify contract/prop/slot/action/data-binding compliance against the canonical registry.
+### Problems
 
----
+`NextActionDashboard` uses raw clickable `<div role="button">`, raw classes, hardcoded status colors, and direct icon/color logic instead of design-system `Card`, `Button`, `Alert`, `Chip`, and status-token helpers. 
 
-## P0-6 — Preview sessions exist but are not wired into preview runtime
+### Required fix
 
-`PreviewSession.ts` implements signed HMAC preview sessions with scope, expiration, signature validation, resource scope checks, and extension.  But `preview-builder.tsx` still uses referrer-origin validation only and does not validate a session query token. 
-
-**Fix:** require `/preview/builder?session=...`, validate the signed preview session before accepting messages, and reject missing/expired/out-of-scope sessions.
+Convert `NextActionDashboard` to design-system primitives and use actual `button`/`Button` semantics rather than clickable divs.
 
 ---
 
-## P0-7 — Bidirectional preview sync exists but is not integrated into preview-builder
+## 3.3 Project phase journey
 
-`BidirectionalPreviewSync` models click/hover/focus/blur sync, state, history, and telemetry.  But `preview-builder.tsx` renders `ComponentRenderer` with `selectedNodeId={null}` and no selection callbacks. 
+The biggest improvement is `_phaseCockpit.tsx`. It creates phase-specific config for Intent, Shape, Validate, Generate, Run, Observe, Learn, and Evolve, with phase-specific primary actions, descriptions, blockers, evidence, suggestions, governance trace, and embedded supporting surfaces. 
 
-**Fix:** wire preview click/hover messages into `HostToPreviewMessage`/`PreviewToHostMessage`, update `ComponentRenderer` to emit node IDs, and update builder selection from preview events.
+`intent.tsx` now imports `IntentCockpitRoute`, which is a real upgrade from the earlier route alias model. 
 
----
+`run.tsx` now renders `RunCockpitRoute`, replacing the old hard-disabled placeholder with a cockpit route. 
 
-## P0-8 — Compiler/decompiler workflow improved, but codegen merge logic is not production-grade
+### Strength
 
-`ImportSourceWorkflow` now supports TSX, route, Storybook, artifact, and ZIP imports and calls the artifact compiler extractors.  `ResidualIslandReviewPanel` gives users a review UI for residual islands.  `CodegenPreview` models ownership regions, diffs, and merge conflicts. 
+The phase cockpit structure directly addresses the prior cognitive-load gap:
 
-**Gaps:**
-
-* `CodegenPreview` uses a simple line-by-line diff.
-* `mergeCode` creates an empty local `conflicts` array, mutates that empty array, then returns `preview.conflicts`; merge options do not actually update returned conflict resolutions. 
-* Import workflow returns files/metadata, not fully integrated `PageArtifactDocument[]` canvas nodes.
-
-**Fix:** use a real diff/merge engine, correct conflict resolution logic, and convert import results into BuilderDocument/page-artifact/canvas-node flows.
-
----
-
-## P0-9 — Plugin policy exists but is not fail-closed enough
-
-`PluginRuntimePolicy` defines network, storage, browser API, telemetry, sandbox, and resource policies. 
-
-**Critical issue:** `enforceBrowserAPIPolicy` allows unknown APIs by default.  For plugin security, unknown APIs should be blocked or require explicit allowlisting.
-
-**Fix:** make all unknown APIs deny-by-default. Add runtime enforcement, not just policy evaluation helpers.
-
----
-
-## P0-10 — Tests are better but still have weak/assumption-heavy areas
-
-The page-builder test is no longer the placeholder-only test from the prior review, and it now verifies mount validation, import parse errors, residuals, fidelity, and governance panel visibility. 
-
-But it mocks `ComponentRenderer`, `rendererManifest`, and `artifactCompilerBridge`, so it does not prove real drag/drop, rendering, manifest loading, or compiler behavior. 
-
-The new Playwright full-flow spec validates the 8-phase cockpit sweep.  But the security/accessibility E2E spec references paths like `/shape`, `/validate`, `/artifacts/other-tenant/...` and test IDs like `open-preview`, `preview-iframe`, `session-invalid`, and `plugin-rejected`; these need verification against actual mounted routes and DOM. 
-
-**Fix:** reduce mocks in builder tests and align Playwright specs with actual mounted routes and real test IDs.
-
----
-
-# 4. Full flow analysis
-
-## Login
-
-**Current state:** Login remains a conventional form with email/password, session-expired state, and demo login behavior from earlier review.
-
-**Main gap:** design-system consistency should be enforced here; login must also support accessible auth flows and clear error distinction.
-
-**Priority:** P1.
-
----
-
-## Onboarding
-
-**Improved direction:** the previous AI-visible language should be reduced. At this commit, auto/next-action services exist, but onboarding still needs a full wording pass if old “AI suggests/thinking” language remains in mounted components.
-
-**Needed behavior:** onboarding should say “Suggested workspace name,” not “AI suggests.”
-
-**Priority:** P1.
-
----
-
-## Dashboard
-
-The new `NextActionDashboard` aligns strongly with the goal: primary action, secondary action, tertiary action, and quiet health indicators. 
-
-But `DashboardView` is still not clean: it has `// @ts-nocheck`, mixed design-system and custom styling, hardcoded gradients, and a “Collaborative IDE” card that may increase cognitive load if not tied to the project’s next action. 
-
-**Recommendation:** use `NextActionDashboard` as the primary dashboard and demote IDE/projects/workflows into secondary progressive disclosure.
-
----
-
-## Project phase flow
-
-This is the largest improvement.
-
-Each phase now has a cockpit pattern:
-
-* Phase purpose.
-* Primary action.
-* Blockers.
-* Evidence.
-* Suggested automation.
+* One primary action.
+* Blocker panel.
+* Evidence panel.
+* Suggested next step.
 * Governance trace.
-* Supporting route surface.
+* Supporting surface below.
 
-`PhaseCockpitLayout` explicitly encodes that structure.  `PhasePrimaryActionCard` states the goal that users should understand the next action in under five seconds. 
+The `PhaseCockpitLayout` explicitly encodes this structure. 
 
-**Remaining gap:** many cockpit components use raw controls and hardcoded colors, so the UX architecture improved faster than design-system execution. 
+### Critical issue
 
----
+The cockpit still embeds old surfaces below the new cockpit:
 
-## Canvas
+* Intent embeds project overview.
+* Shape and Generate embed canvas.
+* Validate/Learn/Evolve embed lifecycle.
+* Observe embeds preview plus lifecycle.
+* Run embeds deploy route. 
 
-`PhaseCanvasConfig` now defines phase-aware modes, visible tools, editing permissions, validation, and preview behavior. 
+This is better than aliasing, but still not a full phase-specific experience. The cockpit is currently a **wrapper layer**, not yet a fully decomposed phase UX.
 
-**Concern:** the config uses `LifecyclePhase.IMPROVE` and `LifecyclePhase.INSTITUTIONALIZE`, while the product UI route model uses Learn and Evolve.  This may be valid if the enum maps those concepts, but it should be verified because route labels and lifecycle enum concepts must not drift.
+### Required fix
 
-**Needed:** actually apply `PhaseCanvasConfig` to canvas toolbar/mode/tool visibility and test that Shape/Validate/Generate/Run/Observe expose different toolsets.
-
----
-
-## Page/UI builder
-
-The builder now has a semantic command service: insert, move, update props, delete, import, autosave, undo, redo, audit callback, telemetry callback, validation callback, and autosave scheduling. 
-
-**Gaps:**
-
-* Missing command types for responsive variants, state variants, action bindings, data bindings, and apply-suggestion workflows.
-* Commands are service-level; verify PageDesigner actually routes user edits through them.
-* Autosave history is added but not necessarily correlated to server artifact save/versioning.
+Each phase should gradually replace generic embedded surfaces with phase-specific panels. The embedded old route can remain as an advanced/supporting surface, but the primary workflow should be native to the cockpit.
 
 ---
 
-## Preview
+# 4. Area-by-area review
 
-`preview-builder.tsx` has secure origin/source validation and explicit target origin messaging.  That aligns with MDN guidance to validate sender identity and avoid wildcard target origins. ([MDN Web Docs][2])
+## 4.1 Information architecture
 
-**Remaining gaps:**
+### Current state
 
-* Signed preview session not integrated.
-* Bidirectional preview sync not integrated.
-* CSP helpers exist but need application proof.
-* Preview still does not emit selection/hover back into builder.
+YAPPC now has a better IA because phase routes are cockpit-backed. The phase config is explicit and readable, and each phase has its own purpose and action labels. 
 
----
+### Problems
 
-## Compiler/decompiler
+The config is hardcoded in one large route file. That makes it harder to localize, personalize by role, gate by tier, or adapt by workspace/org policy.
 
-Import, residual review, and codegen preview services now exist.   
+### Required improvement
 
-**Main gap:** the services are not yet a complete mounted workflow from source import → BuilderDocument → canvas node → residual review → codegen diff → safe merge/apply.
+Move `PHASE_CONFIG`, phase blocker generation, evidence generation, and suggested steps into a typed phase domain service:
 
----
-
-# 5. Area-by-area review
-
-## UI/UX
-
-**Strengths**
-
-* Phase cockpit architecture now directly targets cognitive load.
-* Provenance badge model is strong.
-* Next-action dashboard concept is correct.
-* Command palette moved toward action discovery.
-
-**Problems**
-
-* Raw controls and hardcoded colors persist.
-* Some primary actions still use technical labels like “Generate Code.”
-* Some supporting surfaces are generic.
-* Dashboard still mixes next-action and development hub patterns.
-* `// @ts-nocheck` in dashboard is unacceptable for production-grade UI. 
+```text
+src/services/phase/PhaseCockpitConfigService.ts
+src/services/phase/PhaseEvidenceBuilder.ts
+src/services/phase/PhaseBlockerBuilder.ts
+src/services/phase/PhaseSuggestionBuilder.ts
+```
 
 ---
 
-## Design system
+## 4.2 Cognitive load
 
-**Strengths**
+### Current state
 
-* Design-system lint rules exist. 
-* Design-system mapping docs were added according to the commit delta, and `DashboardView` uses design-system imports. 
+Phase cockpits, next-action dashboard, action discovery, provenance badges, and governance trace are all aligned with low cognitive load.    
 
-**Problems**
+### Problems
 
-* Enforcement is warning-only. 
-* New cockpit/action components violate the spirit of the rule.
-* Hardcoded status colors and Tailwind classes remain widespread.
+Several new components still expose implementation-level or generic language:
 
----
+* “Supporting surface”
+* “Mounted from the existing project route”
+* “Generated output details will appear once preview planning is available”
+* `aiHealthScore`
+* `aiNextActions`
 
-## Security/privacy/o11y/audit
+These may be okay internally, but visible copy should be outcome-oriented and user-centered.
 
-**Strengths**
+### Required improvement
 
-* Page artifact API now has auth checks, metrics, tracing, validation. 
-* Preview session signing exists. 
-* CSP/sandbox helpers exist. 
-* Unsafe component handler uses TypeScript AST analysis. 
+Replace “supporting surface” with task-specific names:
 
-**Problems**
-
-* Audit is log-only in `PageArtifactController`. 
-* Preview session not integrated with preview route.
-* CSP helper exists, but application proof is not shown.
-* `DEFAULT_CSP` allows `'unsafe-inline'` and `'unsafe-eval'` for development; production must never use that. 
-* Plugin unknown APIs are allowed by default. 
+| Current                                 | Better                       |
+| --------------------------------------- | ---------------------------- |
+| Supporting surface                      | Details                      |
+| Mounted from existing route             | Review details below         |
+| aiHealthScore                           | Health score                 |
+| aiNextActions                           | Suggested next actions       |
+| Generated output details will appear... | Output plan is not ready yet |
 
 ---
 
-# 6. P0 / P1 / P2 findings
+## 4.3 Design system
 
-| ID           | Severity | Area          | Finding                                                               | Fix                                                            |
-| ------------ | -------- | ------------- | --------------------------------------------------------------------- | -------------------------------------------------------------- |
-| YAPPC-P0-001 | P0       | Audit         | Page artifact audit is log-only.                                      | Persist audit events to audit trail/event bus.                 |
-| YAPPC-P0-002 | P0       | Auth          | Controller trusts user/role headers.                                  | Derive principal from auth context.                            |
-| YAPPC-P0-003 | P0       | Security      | Executable payloads are warnings.                                     | Treat script/eval/javascript payloads as save-blocking errors. |
-| YAPPC-P0-004 | P0       | Preview       | Signed preview sessions exist but are not enforced.                   | Require and validate preview session in `/preview/builder`.    |
-| YAPPC-P0-005 | P0       | Plugins       | Unknown browser APIs allowed.                                         | Deny unknown APIs by default.                                  |
-| YAPPC-P0-006 | P0       | Design system | Lint rules are warn-only and violations remain.                       | Migrate components, then change to errors.                     |
-| YAPPC-P1-001 | P1       | Phase UX      | Cockpits still embed generic routes.                                  | Phase-filter embedded surfaces.                                |
-| YAPPC-P1-002 | P1       | Canvas        | Phase config may not align with Learn/Evolve route model.             | Align enum and route lifecycle terminology.                    |
-| YAPPC-P1-003 | P1       | Builder       | Missing semantic commands for bindings/responsive/state/suggestions.  | Extend `PageBuilderCommands`.                                  |
-| YAPPC-P1-004 | P1       | Preview       | Bidirectional sync service is not wired.                              | Add preview click/hover message flow.                          |
-| YAPPC-P1-005 | P1       | Compiler      | Import/codegen services not fully mounted.                            | Integrate source import → canvas node → diff/merge.            |
-| YAPPC-P1-006 | P1       | Tests         | E2E specs may reference non-mounted routes/test IDs.                  | Align Playwright specs to actual app routes.                   |
-| YAPPC-P2-001 | P2       | Next action   | Next-best-action logic is hardcoded and duplicated with phase config. | Centralize ranking from real project state.                    |
+### Current state
 
----
+Custom ESLint rules exist for raw buttons, raw inputs, raw selects, hardcoded colors, and ad-hoc card classes. 
 
-# 7. Implementation plan
+### Critical issue
 
-## Milestone 1 — Make persistence and audit production-grade
+The main ESLint config does **not** appear to import or register the custom `design-system-enforcement.js` plugin/rules. It imports standard plugins like `react`, `jsx-a11y`, `security`, `sonarjs`, etc., but not the local design-system enforcement rules. 
 
-Tasks:
+So design-system enforcement currently appears to be **implemented but not active**.
 
-1. Replace `emitAuditEvent` logging with persistent audit events.
-2. Derive authenticated principal from `authFilter` context, not raw `X-User-ID` / `X-User-Role`.
-3. Make executable payload validation fail-closed.
-4. Validate component contracts against the design-system registry.
-5. Add integration tests for cross-tenant access, stale ETag, validation failure, persisted audit, and version history.
+### Additional issue
 
-Acceptance criteria:
+Many newly added components still use raw buttons, raw inputs, raw details/summary, hardcoded colors, and ad-hoc cards:
 
-* Every save/load/conflict/validation failure creates an audit record.
-* Spoofed user headers cannot grant access.
-* Unsafe documents cannot be persisted.
-* Version history supports rollback.
+* `PhaseCockpitLayout` uses raw classes and native `details`. 
+* `NextActionDashboard` uses clickable divs and raw colors. 
+* `ActionDiscoveryPalette` uses raw `button`, `input`, and hardcoded colors. 
+* `ResidualIslandReviewPanel` imports from `yappc-ui/components`, not consistently from `@ghatana/design-system`. 
+
+### Required fix
+
+1. Wire the custom ESLint plugin into `eslint.config.js`.
+2. Start in warning mode, then move to error mode.
+3. Replace new raw controls in the new components before migrating older routes.
 
 ---
 
-## Milestone 2 — Complete phase cockpit UX
+## 4.4 Canvas
 
-Tasks:
+### Current state
 
-1. Convert each cockpit’s supporting surface into phase-specific content.
-2. Remove or hide generic lifecycle sections unless relevant.
-3. Ensure one primary action per phase.
-4. Use provenance badges for all evidence and suggestions.
-5. Replace “Generate Code” with “Prepare Implementation” where user-facing.
+The new phase cockpit structure makes canvas phase-aware at the route layer. Shape and Generate mount canvas as the supporting surface. 
 
-Acceptance criteria:
+A new `PhaseCanvasConfig.ts` file exists in the delta, but I did not inspect enough evidence to conclude it is fully wired into the canvas runtime.
 
-* Each phase has a unique purpose and primary action.
-* Users can tell backed vs derived vs suggested vs preview content.
-* Advanced panels are collapsed by default.
+### Risk
 
----
+Canvas may still behave similarly across Shape and Generate, because `_phaseCockpit.tsx` embeds the same `CanvasRoute` for both. 
 
-## Milestone 3 — Enforce design-system consistency
+### Required fix
 
-Tasks:
+Canvas must adapt palette/tools/mode by phase:
 
-1. Replace raw buttons/inputs in `PhasePrimaryActionCard`, `NextActionDashboard`, and `ActionDiscoveryPalette`.
-2. Remove `// @ts-nocheck` from `DashboardView`.
-3. Replace hardcoded gradients/colors with tokens.
-4. Move `.eslintrc.design-system.json` rules from `warn` to `error` after migration.
-5. Add CI gate for design-system enforcement.
-
-Acceptance criteria:
-
-* No raw controls in product routes except approved low-level primitives.
-* No hardcoded colors outside theme/token files.
-* CI fails on violations.
+* Shape: requirements, components, page builder, layout.
+* Generate: codegen plan, output artifacts, validation gates, diff readiness.
+* Validate: review overlays and approval comments.
+* Observe: preview and telemetry nodes.
 
 ---
 
-## Milestone 4 — Wire canvas/page-builder command system
+## 4.5 Page/UI builder
 
-Tasks:
+### Current state
 
-1. Route PageDesigner insert/move/update/delete through `PageBuilderCommands`.
-2. Add commands for responsive variants, state variants, action bindings, data bindings, and apply-suggestion.
-3. Correlate command audit with server page-artifact audit.
-4. Add command-level undo/redo tests using real BuilderDocument operations.
+`PageBuilderCommands` is a strong improvement. It introduces semantic commands with validation, audit, telemetry, autosave, and undo/redo. 
 
-Acceptance criteria:
+### Strengths
 
-* Every builder action is semantic, undoable, auditable, observable, and autosaved.
-* No whole-document replacement for simple prop changes unless import/restore requires it.
+* Semantic command types exist.
+* Undo/redo stacks serialize before/after.
+* Audit callback exists.
+* Telemetry callback exists.
+* Autosave exists.
+* Validation callback exists.
 
----
+### Problems
 
-## Milestone 5 — Complete live preview security and sync
+The command set is still incomplete compared with the product vision.
 
-Tasks:
+Missing command types:
 
-1. Require signed preview session for `/preview/builder`.
-2. Wire `BidirectionalPreviewSync` into preview route and LivePreviewPanel.
-3. Add `ELEMENT_CLICK` and `ELEMENT_HOVER` message handling.
-4. Apply CSP/sandbox helpers in actual iframe/server response.
-5. Add tests for missing/expired/out-of-scope sessions.
+```text
+ReorderComponentCommand
+SetResponsiveVariantCommand
+SetStateVariantCommand
+AddActionBindingCommand
+AddDataBindingCommand
+ApplySuggestedImprovementCommand
+ReviewResidualIslandCommand
+MapComponentToDesignSystemCommand
+```
 
-Acceptance criteria:
+Also, autosave is added into `commandHistory`, which can pollute meaningful user operation history with internal persistence operations. 
 
-* Preview cannot run without a valid scoped session.
-* Preview click selects builder node.
-* Builder selection highlights preview node.
-* CSP and sandbox are verified in E2E.
+### Required fix
 
----
+Separate:
 
-## Milestone 6 — Make compiler/decompiler a full mounted workflow
+```text
+User operation history
+System operation history
+Persistence/sync history
+Audit trail
+```
 
-Tasks:
-
-1. Add mounted source import UI using `ImportSourceWorkflow`.
-2. Convert imported files/extracted data into `PageArtifactDocument[]`.
-3. Show `ResidualIslandReviewPanel` after import.
-4. Fix `CodegenPreview.mergeCode`.
-5. Replace simple line diff with a real diff algorithm.
-6. Add safe apply/export/PR workflow.
-
-Acceptance criteria:
-
-* TSX/route/storybook import produces canvas page nodes.
-* Residuals block unsafe generation.
-* Codegen diff/merge preserves user-owned regions.
-* Merge conflicts are accurately reported and resolvable.
+Autosave should not be treated as a normal user command.
 
 ---
 
-## Milestone 7 — Harden plugin/runtime policy
+## 4.6 Compiler/decompiler
 
-Tasks:
+### Current state
 
-1. Change unknown browser API behavior to deny-by-default.
-2. Enforce plugin network/storage/browser/telemetry policy at runtime.
-3. Connect `UnsafeComponentHandler` to plugin/component loading.
-4. Require elevated plugin approval.
-5. Add sandbox boundary tests.
+`ImportSourceWorkflow` supports `tsx`, `route`, `storybook`, `artifact`, and `zip` import source types and uses `yappc-artifact-compiler` extractors for components, pages, and CSF. 
 
-Acceptance criteria:
+### Strength
 
-* Unsafe custom components render fallback by default.
-* Plugin cannot access network/storage/browser APIs without policy approval.
-* Policy violations are audited.
+This is a major improvement over pasted JSON-only import.
+
+### Critical issue
+
+The workflow still primarily returns imported files and metadata, not full page artifacts or BuilderDocuments. It does not yet complete:
+
+```text
+source
+→ extractors
+→ ArtifactGraph
+→ SemanticProductModel
+→ BuilderDocument
+→ PageArtifactDocument
+→ canvas nodes
+→ residual review
+→ codegen/diff/merge
+```
+
+### Browser/runtime concern
+
+`ImportSourceWorkflow` attempts local `node:fs/promises` reads when it detects Node, otherwise fetches the source.  This may be fine for tests/dev tools, but product web runtime needs a clearer server-backed source import model. Browser UI cannot safely read arbitrary local repo paths.
+
+### Required fix
+
+Move source import to a backend/source-service boundary and make the frontend call a governed import API.
 
 ---
 
-## Milestone 8 — Strengthen tests
+## 4.7 Residual islands
 
-Tasks:
+### Current state
 
-1. Reduce mocks in `pageBuilderE2E.test.tsx`.
-2. Add real drag/drop tests.
-3. Align Playwright route paths to `/p/:projectId/:phase`.
-4. Add real test data setup for project/activity/phase preview.
-5. Add DB-backed page artifact integration tests.
-6. Add accessibility tests aligned with WCAG keyboard operability expectations. ([W3C GitHub][1])
+`ResidualIslandReviewPanel` exists and supports severity, required action, code snippet, source path/line, accept/reject/review, and review notes. 
 
-Acceptance criteria:
+### Strength
 
-* E2E tests fail when mounted UI breaks.
-* Security/accessibility tests use actual mounted DOM.
-* No placeholder or assumption-only tests.
+This is exactly the kind of UI needed for decompiler transparency.
+
+### Problems
+
+* It does not show round-trip fidelity.
+* It does not show provenance badges.
+* It does not distinguish blocking vs advisory residuals strongly enough.
+* It uses `yappc-ui/components`, not the canonical design system.
+* Accept/reject callbacks are local; no persistence/audit integration is shown in this component.
+
+### Required fix
+
+Residual review must integrate with:
+
+```text
+governance records
+source locations
+fidelity score
+codegen blocking
+audit trail
+review persistence
+design-system mapping
+```
 
 ---
 
-# 8. Test plan
+## 4.8 Backend persistence and audit
+
+### Current state
+
+Backend persistence is now substantially better:
+
+* `DbPageArtifactRepository` persists artifacts and archives versions. 
+* `PageArtifactValidator` validates server-side documents. 
+* `PageArtifactController` enforces authz, validates tenant mismatch, runs validation, emits metrics, and records audit. 
+
+### Critical risks
+
+#### Risk 1 — authorization appears permission-only, not resource-specific
+
+The controller checks `authorizationService.hasPermission(user, requiredPermission)`, but it does not visibly check whether the user has access to this specific workspace/project/artifact. 
+
+Required:
+
+```text
+can user edit artifact in this workspace/project?
+can user read this project?
+can user force-save this artifact?
+can user import/decompile in this workspace?
+```
+
+#### Risk 2 — audit is asynchronous and non-blocking
+
+`emitAuditEvent` calls `auditRepository.record(...).whenException(...)`, but save/load can continue even if audit persistence fails. 
+
+For first-class auditability, sensitive operations should either:
+
+* write audit synchronously in the same transaction, or
+* write to a durable outbox in the same transaction.
+
+#### Risk 3 — validation is structural, not contract-aware enough
+
+The validator checks `contractName` exists, but does not verify:
+
+* contract exists in design-system registry
+* props match contract schema
+* required props exist
+* slots are valid for the component
+* data bindings/actions are policy-compliant
+* duplicate child refs across slots
+* cycles in component tree
+* orphan nodes
+* privacy classification propagation
+
+
+
+---
+
+## 4.9 Preview security
+
+### Current state
+
+`PreviewSession` adds HMAC-signed sessions, scope, expiration, project/artifact restrictions, and validation. 
+
+### Strength
+
+The model is correct directionally.
+
+### Critical risk
+
+`createPreviewSession` takes `secretKey` in frontend TypeScript. If this is ever called in browser code with a real secret, the signing model is compromised. 
+
+### Required fix
+
+Preview sessions must be created and signed server-side only.
+
+Frontend should only receive:
+
+```text
+previewSessionId
+signedToken
+expiresAt
+allowedArtifactIds
+allowedProjectIds
+```
+
+It should never receive the signing secret.
+
+---
+
+## 4.10 Unsafe component and plugin runtime policy
+
+### Current state
+
+`UnsafeComponentHandler` statically analyzes component code and can detect dangerous APIs. 
+
+`PluginRuntimePolicy` defines network/storage/browser API/telemetry policies and enforcement helpers. 
+
+### Strength
+
+The security model is getting richer and closer to the desired “custom/decompiled components are safe by default” posture.
+
+### Critical issues
+
+#### Issue 1 — utility-level enforcement is not enough
+
+I saw policy helpers, but not evidence that rendering/import/plugin execution paths always invoke them before execution.
+
+#### Issue 2 — domain allowlist uses substring matching
+
+`enforceNetworkPolicy` checks `url.includes(domain)`.  This can be bypassed by malicious domains containing the allowed substring.
+
+Use URL parsing and exact origin/hostname matching.
+
+#### Issue 3 — static scanning is not a sandbox
+
+`UnsafeComponentHandler` is useful as a preflight, but static analysis cannot be the only runtime security mechanism. 
+
+Required:
+
+* iframe/sandbox execution
+* CSP
+* import map restrictions
+* network proxy/allowlist
+* server-side review gates
+* no arbitrary runtime code in the main app context
+
+---
+
+# 5. P0 / P1 / P2 findings
+
+## P0-001 — Design-system enforcement exists but is not active
+
+**Evidence:** Custom ESLint rules exist in `design-system-enforcement.js`, but `eslint.config.js` does not register that plugin/rules.  
+
+**Impact:** Raw controls, hardcoded colors, and ad-hoc cards will continue to enter the codebase.
+
+**Fix:** Import and register local ESLint plugin in `eslint.config.js`.
+
+**Acceptance criteria:**
+
+* CI reports raw controls in product UI.
+* New raw `button/input/select` use fails in error mode.
+* Approved exceptions are explicit.
+
+---
+
+## P0-002 — Phase cockpits reduce cognitive load but still embed generic route surfaces
+
+**Evidence:** `_phaseCockpit.tsx` renders old route components as supporting surfaces: project overview, canvas, lifecycle, deploy, preview. 
+
+**Impact:** Users still face dense generic screens after the cockpit wrapper.
+
+**Fix:** Gradually decompose embedded surfaces into phase-native panels.
+
+**Acceptance criteria:**
+
+* Validate shows approval/gate workflow first, lifecycle details second.
+* Generate shows codegen package/diff first, canvas second.
+* Observe shows metrics/preview/incidents first, lifecycle second.
+* Learn shows retrospective/patterns first.
+* Evolve shows roadmap/backlog first.
+
+---
+
+## P0-003 — Page-builder E2E still mocks core internals
+
+**Evidence:** `pageBuilderE2E.test.tsx` mocks `artifactCompilerBridge`, `rendererManifest`, and `ComponentRenderer`; it tests some behavior but not real drag/drop/render/compiler paths. 
+
+**Impact:** Tests still do not prove the actual builder workflow.
+
+**Fix:** Add real Playwright E2E and component integration tests without mocking renderer/compiler.
+
+**Acceptance criteria:**
+
+* Real drag from palette.
+* Real drop into slot.
+* Real reorder.
+* Real property edit.
+* Real preview update.
+* Real save/reload/conflict.
+
+---
+
+## P0-004 — Preview signing must not be client-secret based
+
+**Evidence:** `createPreviewSession` accepts `secretKey` in frontend security module. 
+
+**Impact:** If used in browser, signing is meaningless.
+
+**Fix:** Move signing server-side; frontend validates/uses token only.
+
+**Acceptance criteria:**
+
+* No secret key in frontend bundle.
+* Server issues preview sessions.
+* Preview route validates token/session.
+* Expired/forged sessions fail.
+
+---
+
+## P0-005 — Page artifact authorization is not resource-specific enough
+
+**Evidence:** Controller checks permission strings with `authorizationService.hasPermission`, but resource-level workspace/project/artifact checks are not evident. 
+
+**Impact:** A user with generic permission may access artifacts outside allowed workspace/project if upstream routing does not prevent it.
+
+**Fix:** Add resource-scoped authorization.
+
+**Acceptance criteria:**
+
+* User with edit permission in workspace A cannot edit workspace B.
+* Tenant/project mismatch returns 403.
+* Tests cover cross-tenant, cross-workspace, cross-project cases.
+
+---
+
+## P0-006 — Audit must be durable for sensitive operations
+
+**Evidence:** Audit write is asynchronous and failure does not block the page artifact save/load response. 
+
+**Impact:** Audit can be lost while mutation succeeds.
+
+**Fix:** Use same-transaction audit write or durable outbox.
+
+**Acceptance criteria:**
+
+* Save and audit are atomic, or outbox event is atomic.
+* Audit write failure is visible.
+* Compliance-critical operations cannot silently lose audit.
+
+---
+
+## P1-001 — Server validation lacks design-system contract enforcement
+
+**Evidence:** `PageArtifactValidator` checks node `contractName` but not registry contract existence, prop schemas, required props, slot validity, cycles, orphan nodes, or privacy propagation. 
+
+**Fix:** Add contract-aware validation.
+
+---
+
+## P1-002 — Compiler workflow still returns files, not full BuilderDocument/page artifact graph
+
+**Evidence:** `ImportSourceWorkflow` calls extractors and returns files/metadata, not complete semantic product model → BuilderDocument → canvas artifact flow. 
+
+**Fix:** Integrate artifact compiler pipeline all the way into page artifacts and canvas nodes.
+
+---
+
+## P1-003 — Plugin network allowlist is bypassable
+
+**Evidence:** `enforceNetworkPolicy` uses `url.includes(domain)`. 
+
+**Fix:** Parse URL and compare exact host/origin.
+
+---
+
+## P1-004 — Action discovery is useful but still raw UI
+
+**Evidence:** `ActionDiscoveryPalette` uses raw `button`, `input`, hardcoded colors, and local confirmation UI. 
+
+**Fix:** Rebuild with design-system `Dialog`, `CommandList`, `Button`, `Alert`, `Badge`, and focus trap.
+
+---
+
+## P1-005 — Next-best-action service is deterministic but simplistic
+
+**Evidence:** `NextBestActionService` ranks actions based on hardcoded phase actions, blockers, state, activity, permissions, and capabilities. 
+
+**Fix:** Feed actual project health, validation, artifact readiness, role/persona, feature flags, recent user actions, and policy gates.
+
+---
+
+# 6. Implementation plan
+
+## Milestone 1 — Activate design-system enforcement
+
+### Tasks
+
+1. Register `design-system-enforcement.js` in `eslint.config.js`.
+2. Add warning mode for all product UI files.
+3. Add error mode for new/changed files.
+4. Migrate new components first:
+
+   * `NextActionDashboard`
+   * `ActionDiscoveryPalette`
+   * `PhaseCockpitLayout`
+   * `ResidualIslandReviewPanel`
+5. Add CI rule to fail on raw controls in changed files.
+
+### Acceptance criteria
+
+* CI catches raw `button/input/select`.
+* New components use design-system primitives.
+* No hardcoded colors in new product UI.
+
+---
+
+## Milestone 2 — Make phase cockpits truly phase-native
+
+### Tasks
+
+1. Split `_phaseCockpit.tsx` into smaller services/components.
+2. Replace generic embedded route content with phase-native panels.
+3. Keep old routes under “Advanced details.”
+4. Add phase-specific empty states and errors.
+5. Add provenance badges to all evidence, blockers, suggestions, and governance records.
+
+### Acceptance criteria
+
+* Each phase has one clear primary CTA.
+* Each phase is useful without opening the embedded old route.
+* Supporting surface is secondary, not primary.
+
+---
+
+## Milestone 3 — Harden page artifact backend
+
+### Tasks
+
+1. Add resource-scoped authorization.
+2. Add contract-aware validation.
+3. Add cycle/orphan/duplicate-child validation.
+4. Add atomic audit/outbox.
+5. Add test cases for cross-tenant/workspace/project access.
+6. Add metrics cardinality review; avoid artifact IDs in high-cardinality metric labels.
+
+### Acceptance criteria
+
+* Cross-scope access fails.
+* Invalid contract/props/slots fail server validation.
+* Audit is durable.
+* Metrics are safe for production cardinality.
+
+---
+
+## Milestone 4 — Complete semantic page-builder commands
+
+### Tasks
+
+Add commands:
+
+```text
+ReorderComponentCommand
+SetResponsiveVariantCommand
+SetStateVariantCommand
+AddActionBindingCommand
+AddDataBindingCommand
+ApplySuggestedImprovementCommand
+ReviewResidualIslandCommand
+MapComponentToDesignSystemCommand
+```
+
+Refactor autosave into system sync history.
+
+### Acceptance criteria
+
+* Undo/redo works at semantic operation level.
+* Audit says exactly what changed.
+* Autosave does not pollute user history.
+* All commands are tested.
+
+---
+
+## Milestone 5 — Real compiler/decompiler flow
+
+### Tasks
+
+1. Move source import to backend/source service.
+2. Convert source → semantic model → BuilderDocument.
+3. Create PageArtifactDocuments from imports.
+4. Create canvas page nodes for each imported page.
+5. Preserve residual islands and source locations.
+6. Add codegen preview/diff/merge.
+7. Block unsafe low-fidelity generation.
+
+### Acceptance criteria
+
+* Import TSX/route/story produces reviewable page artifacts.
+* Multi-page imports become multiple canvas page nodes.
+* Residuals require review.
+* Codegen cannot silently overwrite unsupported logic.
+
+---
+
+## Milestone 6 — Preview and plugin runtime hardening
+
+### Tasks
+
+1. Move preview signing server-side.
+2. Validate preview token in `/preview/builder`.
+3. Add CSP and sandbox headers.
+4. Replace substring domain checks with exact URL parsing.
+5. Ensure unsafe component handler is invoked in import/render/plugin paths.
+6. Add runtime sandbox for custom components.
+
+### Acceptance criteria
+
+* No preview secret in frontend.
+* Forged/expired session fails.
+* Unknown custom component never runs arbitrary code.
+* Plugin network/storage/browser APIs are enforced at runtime.
+
+---
+
+## Milestone 7 — Test quality upgrade
+
+### Tasks
+
+1. Rewrite `pageBuilderE2E.test.tsx` as real integration tests.
+2. Add Playwright browser tests for:
+
+   * onboarding → project → phase cockpit
+   * shape → page builder → preview
+   * validate → approval gate
+   * generate → codegen preview
+   * run → readiness plan
+   * observe → preview/metrics
+   * learn/evolve flow
+3. Add backend integration tests for page artifact DB repository/controller.
+4. Add security tests for preview sessions and plugin policies.
+5. Add accessibility tests for keyboard/focus/ARIA.
+
+### Acceptance criteria
+
+* No placeholder tests.
+* No route component stubbing for critical flow tests.
+* Tests fail when real UI breaks.
+* Security tests cover malicious origin, forged token, unsafe component, cross-tenant access.
+
+---
+
+# 7. Test plan
 
 ## Unit tests
 
-* `PageArtifactValidator`
-* `PageBuilderCommands`
-* `NextBestActionService`
-* `AutoApplyImprovements`
-* `PreviewSession`
-* `UnsafeComponentHandler`
-* `PluginRuntimePolicy`
-* `ComponentCompatibilityValidator`
-* `CodegenPreview`
+* Phase config builders.
+* Provenance badge variants.
+* Next-best-action ranking.
+* PageBuilderCommands.
+* PageArtifactValidator.
+* PreviewSession.
+* UnsafeComponentHandler.
+* PluginRuntimePolicy.
 
 ## Integration tests
 
-* Page artifact DB save/load/conflict/version history.
-* Page artifact authz/tenant isolation.
-* Builder command → autosave → API persistence.
-* Source import → residuals → page artifact.
-* Plugin package → policy → renderer manifest.
+* Page artifact controller + DB repository.
+* Phase cockpit with real project/activity/preview APIs.
+* Page builder with real renderer manifests.
+* Import source workflow with real compiler fixture inputs.
 
-## Browser E2E
+## E2E tests
 
-* Login/onboarding/workspace/project.
-* 8-phase cockpit sweep.
-* Shape canvas page builder.
-* Builder live preview update.
-* Validate approval gate.
-* Generate codegen preview.
-* Run capability gate.
-* Observe project preview.
-* Learn retrospective.
-* Evolve roadmap/backlog.
+* Full lifecycle route flow.
+* Canvas/page-builder/preview flow.
+* Save/reload/conflict flow.
+* Import/decompile/review/codegen flow.
 
 ## Security tests
 
-* Spoofed preview origin.
-* Missing/expired preview session.
-* Unsafe plugin.
-* Cross-tenant artifact read/write.
-* CSP header present.
-* Iframe sandbox denies top navigation.
+* Cross-tenant artifact access.
+* Preview session forgery/expiry.
+* Plugin network allowlist bypass.
+* Unsafe component execution.
+* CSP/sandbox behavior.
 
 ## Accessibility tests
 
-* Keyboard-only onboarding.
 * Keyboard-only command palette.
-* Keyboard-only phase navigation.
-* Keyboard-only page builder selection/inspector.
-* Focus traps.
-* Accessible labels.
-* Heading hierarchy.
-* Skip link.
-* Drag alternatives, because WCAG 2.2 expects keyboard operability and includes newer focus/dragging-related expectations. ([W3C GitHub][1])
+* Keyboard-only phase cockpit.
+* Keyboard-only page builder.
+* Focus trap in dialogs.
+* Status/provenance labels.
 
 ---
 
-# 9. Final prioritized backlog
+# 8. Readiness score
 
-| Priority | Task                                                  | Area                | Dependency                   | Acceptance criteria                           |
-| -------- | ----------------------------------------------------- | ------------------- | ---------------------------- | --------------------------------------------- |
-| P0       | Persist page artifact audit events                    | Backend/audit       | Audit repository/event bus   | Audit no longer log-only                      |
-| P0       | Use authenticated principal for page artifact authz   | Security            | Auth filter context          | Client headers cannot spoof identity          |
-| P0       | Fail closed on executable payloads                    | Validation/security | Validator update             | Unsafe document save returns 422              |
-| P0       | Enforce signed preview sessions                       | Preview/security    | `PreviewSession` integration | Missing/invalid session blocks preview        |
-| P0       | Deny unknown plugin APIs                              | Plugin security     | `PluginRuntimePolicy`        | Unknown APIs blocked by default               |
-| P0       | Replace raw controls in new cockpit/action components | UI/design system    | DS components                | Lint passes as error                          |
-| P1       | Wire bidirectional preview sync                       | Preview/builder     | Protocol event support       | Preview click selects builder node            |
-| P1       | Extend semantic builder commands                      | Builder/canvas      | `PageBuilderCommands`        | Bindings/responsive/state supported           |
-| P1       | Fix codegen merge logic                               | Compiler            | `CodegenPreview`             | Conflicts resolved accurately                 |
-| P1       | Mount source import workflow                          | Compiler/UI         | Import service + canvas      | TSX/route/story import creates page artifacts |
-| P1       | Align phase canvas config with route lifecycle        | Canvas/IA           | Lifecycle enum review        | Learn/Evolve behavior unambiguous             |
-| P1       | Correct E2E route/test-id assumptions                 | Tests               | Mounted app setup            | E2E proves real UI                            |
+| Area                            | Score | Notes                                                                             |
+| ------------------------------- | ----: | --------------------------------------------------------------------------------- |
+| Full UI/UX flow                 |    68 | Phase cockpit improves flow, but old surfaces remain embedded.                    |
+| Cognitive-load reduction        |    70 | Much better, but copy and supporting surfaces still need refinement.              |
+| Phase cockpit maturity          |    72 | Real layer exists; needs decomposition and phase-native panels.                   |
+| Canvas maturity                 |    68 | Powerful, but phase-aware behavior is not fully proven.                           |
+| Page builder maturity           |    72 | Semantic commands and builder foundation exist; still incomplete commands/tests.  |
+| Design-system consistency       |    45 | Enforcement rules exist but are not wired; raw UI persists.                       |
+| Compiler/decompiler integration |    58 | Import workflow exists but not full artifact graph/page artifact/codegen loop.    |
+| Live preview                    |    72 | Stronger security/session direction; server-side signing still needed.            |
+| Persistence                     |    78 | DB repository and controller exist; resource auth/audit atomicity need hardening. |
+| Security/privacy                |    62 | Many utilities exist; runtime enforcement integration not fully proven.           |
+| Auditability                    |    60 | Audit exists but non-blocking/async.                                              |
+| Observability                   |    65 | Metrics/tracing added in controller; broader UI/canvas OTel incomplete.           |
+| AI/automation implicitness      |    63 | Better next-action direction; AI naming still leaks in fields/legacy components.  |
+| Test confidence                 |    52 | More tests, but still mocks critical pieces.                                      |
+| Production readiness            |    61 | Solid progress but not yet production-grade.                                      |
 
 ---
 
-# 10. Bottom line
+# 9. Prioritized backlog
 
-At `997207aff233cfdfb93fa8edce8c1c12b7497333`, YAPPC is clearly moving from “planned architecture” toward a real, integrated product system. The biggest improvements are phase cockpits, durable page artifact persistence, semantic builder commands, source import/codegen services, provenance, plugin/security helpers, and E2E coverage.
+| Priority | ID         | Work item                                                         | Area                | Dependency                        | Acceptance criteria                                               |
+| -------- | ---------- | ----------------------------------------------------------------- | ------------------- | --------------------------------- | ----------------------------------------------------------------- |
+| P0       | DS-001     | Wire design-system ESLint rules into CI                           | UI/UX               | existing rule file                | Raw controls flagged in changed product UI                        |
+| P0       | AUTH-001   | Add resource-scoped page artifact authz                           | Backend security    | PageArtifactController            | Cross-workspace/project artifact access denied                    |
+| P0       | AUDIT-001  | Make audit durable/atomic                                         | Audit               | Db repositories                   | Mutations cannot succeed without durable audit/outbox             |
+| P0       | TEST-001   | Replace mocked page-builder E2E with real interactions            | Testing             | PageBuilderCommands, PageDesigner | Drag/drop/edit/preview/save tested without core mocks             |
+| P0       | SEC-001    | Move preview session signing server-side                          | Preview security    | PreviewSession                    | No secret in frontend bundle                                      |
+| P1       | PHASE-001  | Decompose `_phaseCockpit.tsx` into phase services                 | UI architecture     | Phase cockpit                     | Config/evidence/blockers/suggestions testable separately          |
+| P1       | PHASE-002  | Replace generic embedded surfaces with native phase panels        | UX                  | Phase services                    | Each phase useful without opening old route                       |
+| P1       | VALID-001  | Add contract-aware server validation                              | Backend validation  | design-system registry            | Invalid props/slots/contracts rejected                            |
+| P1       | CANVAS-001 | Complete semantic builder command set                             | Canvas/page builder | PageBuilderCommands               | Responsive/actions/bindings/residual review are command-backed    |
+| P1       | COMP-001   | Convert import workflow into full artifact graph flow             | Compiler            | yappc-artifact-compiler           | Source import creates BuilderDocument/page artifacts/canvas nodes |
+| P1       | SEC-002    | Replace plugin URL substring checks                               | Plugin security     | PluginRuntimePolicy               | Exact origin/domain matching                                      |
+| P1       | SEC-003    | Wire unsafe component handler into import/render/plugin paths     | Plugin security     | UnsafeComponentHandler            | Unsafe components never execute by default                        |
+| P2       | NBA-001    | Connect next-best-action service to real project signals          | Automation          | APIs/phase state                  | Dashboard/command palette show real ranked actions                |
+| P2       | DS-002     | Migrate new cockpit/action components to design-system primitives | Design system       | DS lint                           | No raw controls/hardcoded status colors                           |
+| P2       | A11Y-001   | Add keyboard/focus tests for all cockpits and command palette     | Accessibility       | UI routes                         | Keyboard-only use works                                           |
 
-The remaining work is not about adding more files. It is about **wiring, enforcement, and proof**:
+---
 
-```text id="6x6ela"
-log-only audit → persisted audit
-header-based auth context → authenticated principal
-warning-level security → fail-closed validation
-security helpers → enforced runtime policy
-service-level compiler → mounted source-to-canvas workflow
-design-system warnings → CI-blocking consistency
-E2E assumptions → real mounted journey proof
+# Bottom line
+
+At `b104716d`, YAPPC is no longer just adding plans; it has real implementation movement in the right places: phase cockpits, backend page-artifact persistence, server validation, semantic builder commands, source import workflow, provenance, preview sessions, unsafe component analysis, plugin policy, and design-system enforcement scaffolding.
+
+The critical next step is **integration hardening**:
+
+```text
+activate enforcement
++ make phase cockpits native
++ make persistence resource-secure and audit-atomic
++ make tests real
++ move preview signing server-side
++ make compiler/decompiler produce actual page artifacts
++ enforce plugin/runtime policy in execution paths
 ```
 
-YAPPC is now around **64% production-ready** overall. The fastest path to a strong product is to harden the new foundations rather than introduce new surface area.
-
-[1]: https://w3c.github.io/wcag/guidelines/22/?utm_source=chatgpt.com "Web Content Accessibility Guidelines (WCAG) 2.2"
-[2]: https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage.?utm_source=chatgpt.com "Window: postMessage() method - Web APIs | MDN"
+The product is moving toward the right architecture, but the review should stay intentionally strict: several improvements are currently **valid architecture foundations**, not yet full production-grade user flows.

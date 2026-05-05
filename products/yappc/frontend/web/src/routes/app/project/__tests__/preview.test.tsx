@@ -1,6 +1,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { getExternalPreviewSandbox } from '@/security/ContentSecurityPolicy';
 
 vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router')>();
@@ -43,6 +44,8 @@ describe('preview route', () => {
     });
     expect(screen.getByText('Preview via external host')).toBeDefined();
     expect(screen.getByTitle('Project Preview')).toHaveAttribute('src', 'https://preview.example.test/preview/proj-42');
+    expect(screen.getByTitle('Project Preview')).toHaveAttribute('sandbox', getExternalPreviewSandbox());
+    expect(screen.getByTitle('Project Preview')).toHaveAttribute('referrerpolicy', 'no-referrer');
 
     fireEvent.click(screen.getByTitle('Open in New Tab'));
 

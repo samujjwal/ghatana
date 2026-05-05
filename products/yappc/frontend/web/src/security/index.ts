@@ -30,7 +30,6 @@ export {
 export type { ComponentSafetyAssessment, ComponentPolicy } from './UnsafeComponentHandler';
 
 export {
-  createPreviewSession,
   validatePreviewSession,
   isResourceInScope,
   getSessionExpirationTime,
@@ -39,4 +38,4 @@ export {
   extendSession,
 } from './PreviewSession';
 
-export type { PreviewSession, PreviewSessionScope, PreviewSessionOptions } from './PreviewSession';
+export type { PreviewSession, PreviewSessionScope } from './PreviewSession';

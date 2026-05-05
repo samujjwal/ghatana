@@ -18,6 +18,8 @@
 
 import React, { ReactNode } from 'react';
 
+import { Button, Card, CardContent } from '@ghatana/design-system';
+
 export interface PhaseCockpitLayoutProps {
   /** Current phase name */
   phaseName: string;
@@ -35,6 +37,10 @@ export interface PhaseCockpitLayoutProps {
   governanceTrace?: ReactNode;
   /** Advanced tools content (optional, collapsed by default) */
   advancedTools?: ReactNode;
+  /** Title for the native phase details panel */
+  supportingTitle?: string;
+  /** Label for the advanced tools disclosure */
+  advancedToolsLabel?: string;
   /** Additional content slots */
   children?: ReactNode;
   /** Custom className */
@@ -61,10 +67,15 @@ export const PhaseCockpitLayout: React.FC<PhaseCockpitLayoutProps> = ({
   suggestedAutomation,
   governanceTrace,
   advancedTools,
+  supportingTitle = 'Details',
+  advancedToolsLabel = 'Advanced details',
   children,
   className = '',
   testId,
 }) => {
+  const [governanceOpen, setGovernanceOpen] = React.useState(false);
+  const [advancedOpen, setAdvancedOpen] = React.useState(false);
+
   return (
     <div
       className={`phase-cockpit-layout ${className}`}
@@ -113,54 +124,70 @@ export const PhaseCockpitLayout: React.FC<PhaseCockpitLayoutProps> = ({
             </section>
           )}
           {children && (
-            <section data-testid="supporting-surface-panel">
-              {children}
+            <section aria-label={supportingTitle} data-testid="supporting-surface-panel">
+              <Card variant="outlined">
+                <CardContent className="space-y-4 p-4">
+                  <div>
+                    <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-fg-muted">
+                      {supportingTitle}
+                    </h2>
+                    <p className="mt-2 text-sm text-fg-muted">
+                      Review the current phase summary before opening advanced details.
+                    </p>
+                  </div>
+                  {children}
+                </CardContent>
+              </Card>
             </section>
           )}
         </div>
       </div>
 
-      {/* Collapsible Governance Trace */}
       {governanceTrace && (
         <section
           className="mb-6 border-t border-gray-200 dark:border-gray-700 pt-6"
           data-testid="governance-trace-panel"
         >
-          <details className="group">
-            <summary className="flex items-center justify-between cursor-pointer list-none">
-              <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Governance Trace
-              </h2>
-              <span className="transform group-open:rotate-180 transition-transform">
-                ▼
-              </span>
-            </summary>
-            <div className="mt-4">
-              {governanceTrace}
-            </div>
-          </details>
+          <Button
+            variant="ghost"
+            className="w-full justify-between px-0"
+            aria-expanded={governanceOpen}
+            onClick={() => setGovernanceOpen((value) => !value)}
+          >
+            <span>Governance Trace</span>
+            <span aria-hidden="true" className={`transition-transform ${governanceOpen ? 'rotate-180' : ''}`}>
+              ▼
+            </span>
+          </Button>
+          {governanceOpen && (
+            <Card variant="outlined" className="mt-4">
+              <CardContent className="p-4">{governanceTrace}</CardContent>
+            </Card>
+          )}
         </section>
       )}
 
-      {/* Collapsible Advanced Tools */}
       {advancedTools && (
         <section
           className="border-t border-gray-200 dark:border-gray-700 pt-6"
           data-testid="advanced-tools-panel"
         >
-          <details className="group">
-            <summary className="flex items-center justify-between cursor-pointer list-none">
-              <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Advanced Tools
-              </h2>
-              <span className="transform group-open:rotate-180 transition-transform">
-                ▼
-              </span>
-            </summary>
-            <div className="mt-4">
-              {advancedTools}
-            </div>
-          </details>
+          <Button
+            variant="ghost"
+            className="w-full justify-between px-0"
+            aria-expanded={advancedOpen}
+            onClick={() => setAdvancedOpen((value) => !value)}
+          >
+            <span>{advancedToolsLabel}</span>
+            <span aria-hidden="true" className={`transition-transform ${advancedOpen ? 'rotate-180' : ''}`}>
+              ▼
+            </span>
+          </Button>
+          {advancedOpen && (
+            <Card variant="outlined" className="mt-4">
+              <CardContent className="p-4">{advancedTools}</CardContent>
+            </Card>
+          )}
         </section>
       )}
     </div>

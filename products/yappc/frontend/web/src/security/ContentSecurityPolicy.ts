@@ -102,6 +102,16 @@ export const PREVIEW_SANDBOX: SandboxConfig = {
   allowTopNavigationByUserActivation: false,
 };
 
+export const EXTERNAL_PREVIEW_SANDBOX: SandboxConfig = {
+  allowSameOrigin: false,
+  allowScripts: true,
+  allowForms: true,
+  allowPopups: false,
+  allowModals: false,
+  allowTopNavigation: false,
+  allowTopNavigationByUserActivation: false,
+};
+
 /**
  * Sandbox configuration for trusted content
  */
@@ -169,6 +179,10 @@ export function getPreviewSandbox(): string {
   return sandboxConfigToAttribute(PREVIEW_SANDBOX);
 }
 
+export function getExternalPreviewSandbox(): string {
+  return sandboxConfigToAttribute(EXTERNAL_PREVIEW_SANDBOX);
+}
+
 /**
  * Get sandbox attribute for trusted content
  */
@@ -180,10 +194,12 @@ export default {
   DEFAULT_CSP,
   STRICT_CSP,
   PREVIEW_SANDBOX,
+  EXTERNAL_PREVIEW_SANDBOX,
   TRUSTED_SANDBOX,
   cspConfigToHeader,
   sandboxConfigToAttribute,
   getCSPHeader,
   getPreviewSandbox,
+  getExternalPreviewSandbox,
   getTrustedSandbox,
 };

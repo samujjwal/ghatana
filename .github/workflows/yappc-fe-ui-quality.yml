@@ -3,11 +3,10 @@ name: "YAPPC FE: UI Quality & DoD Enforcement"
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
-      paths: ['products/yappc/frontend/**']
+    paths: ['products/yappc/frontend/**']
   push:
     branches: [main]
-
-      paths: ['products/yappc/frontend/**']
+    paths: ['products/yappc/frontend/**']
 defaults:
   run:
     working-directory: products/yappc/frontend
@@ -29,6 +28,9 @@ jobs:
       - name: Run ESLint
         run: pnpm -w -s lint
 
+      - name: Run strict design-system lint gate
+        run: pnpm -w -s --dir products/yappc/frontend lint:strict:design-system
+
       - name: Run duplication check (jscpd)
         run: pnpm run jscpd
 
@@ -39,7 +41,7 @@ jobs:
 
       - name: Render depcruise graph (container)
         if: always()
-        uses: addnab/docker-run-action@v4
+        uses: addnab/docker-run-action@v3
         with:
           image: docker.io/graphviz/graphviz:latest
           options: --entrypoint ""

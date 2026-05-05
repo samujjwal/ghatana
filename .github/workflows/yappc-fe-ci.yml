@@ -40,6 +40,9 @@ jobs:
       - name: Lint
         run: pnpm run lint
 
+      - name: Lint (strict design-system gate)
+        run: pnpm run lint:strict:design-system
+
       - name: Enforce frontend duplication boundaries
         run: pnpm run check:duplication-boundaries
 

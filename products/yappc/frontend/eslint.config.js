@@ -8,6 +8,7 @@ import securityPlugin from 'eslint-plugin-security';
 import sonarjsPlugin from 'eslint-plugin-sonarjs';
 import unicornPlugin from 'eslint-plugin-unicorn';
 import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
+import designSystemEnforcement from './web/eslint-rules/design-system-enforcement.js';
 
 /**
  * ESLint Configuration with Governance Rules
@@ -290,6 +291,42 @@ const governanceOverrides = [
       ],
     },
   },
+  {
+    files: [
+      'web/src/components/dashboard/**/*.{ts,tsx}',
+      'web/src/components/command/**/*.{ts,tsx}',
+      'web/src/components/compiler/**/*.{ts,tsx}',
+      'web/src/components/phase/**/*.{ts,tsx}',
+      'web/src/routes/app/project/**/*.{ts,tsx}',
+    ],
+    rules: {
+      'design-system-enforcement/no-raw-buttons': 'error',
+      'design-system-enforcement/no-raw-inputs': 'error',
+      'design-system-enforcement/no-raw-select': 'error',
+      'design-system-enforcement/no-hardcoded-color-tokens': 'error',
+      'design-system-enforcement/no-ad-hoc-card-classes': 'error',
+    },
+  },
+  {
+    files: [
+      'web/src/components/dashboard/NextActionDashboard.tsx',
+      'web/src/components/command/ActionDiscoveryPalette.tsx',
+      'web/src/components/compiler/ResidualIslandReviewPanel.tsx',
+      'web/src/components/phase/PhaseCockpitLayout.tsx',
+      'web/src/components/phase/PhasePrimaryActionCard.tsx',
+      'web/src/components/phase/PhaseSuggestedNextStep.tsx',
+      'web/src/components/phase/PhaseBlockerPanel.tsx',
+      'web/src/routes/app/project/_phaseCockpit.tsx',
+      'web/src/routes/app/project/PhaseStatusPanels.tsx',
+    ],
+    rules: {
+      'design-system-enforcement/no-raw-buttons': 'error',
+      'design-system-enforcement/no-raw-inputs': 'error',
+      'design-system-enforcement/no-raw-select': 'error',
+      'design-system-enforcement/no-hardcoded-color-tokens': 'error',
+      'design-system-enforcement/no-ad-hoc-card-classes': 'error',
+    },
+  },
 
   // Canvas components - relaxed complexity due to domain complexity
   {
@@ -363,6 +400,7 @@ export default tseslint.config(
       sonarjs: sonarjsPlugin,
       unicorn: unicornPlugin,
       'jsx-a11y': jsxA11yPlugin,
+      'design-system-enforcement': designSystemEnforcement,
     },
     languageOptions: {
       parserOptions: {

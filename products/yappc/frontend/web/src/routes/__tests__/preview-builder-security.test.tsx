@@ -3,23 +3,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import BuilderPreviewRoute from '../preview-builder';
 import type { HostToPreviewMessage } from '@ghatana/ui-builder/preview';
-import { validatePreviewSession } from '../../security/PreviewSession';
+import { validatePreviewSessionToken } from '../../services/preview/PreviewSessionApi';
 
-vi.mock('../../security/PreviewSession', () => ({
-  validatePreviewSession: vi.fn(async () => ({ valid: true })),
+vi.mock('../../services/preview/PreviewSessionApi', () => ({
+  validatePreviewSessionToken: vi.fn(async () => ({ valid: true })),
 }));
-
-function makeSessionParam(): string {
-  const encoded = btoa(JSON.stringify({ sessionId: 'security-test-session' }));
-  return encoded.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-}
 
 describe('BuilderPreviewRoute security', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_PREVIEW_SESSION_SECRET', 'test-secret');
-    const session = makeSessionParam();
-    window.history.replaceState({}, '', `/preview/builder?session=${session}`);
-    vi.mocked(validatePreviewSession).mockResolvedValue({ valid: true });
+    window.history.replaceState({}, '', '/preview/builder?session=server-issued-preview-token');
+    vi.mocked(validatePreviewSessionToken).mockResolvedValue({ valid: true });
   });
 
   it('sends messages with explicit origin (never wildcard)', async () => {

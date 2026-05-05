@@ -24,8 +24,8 @@ import type {
 } from '@ghatana/ui-builder/preview';
 import type { BuilderDocument } from '@ghatana/ui-builder';
 
-vi.mock('../../security/PreviewSession', () => ({
-  validatePreviewSession: vi.fn(async () => ({ valid: true })),
+vi.mock('../../services/preview/PreviewSessionApi', () => ({
+  validatePreviewSessionToken: vi.fn(async () => ({ valid: true })),
 }));
 
 // ---- Mock ComponentRenderer to avoid pulling in the full React tree ----
@@ -77,7 +77,7 @@ function dispatchFromParent(message: HostToPreviewMessage): void {
 }
 
 describe('BuilderPreviewRoute', () => {
-  const session = btoa(JSON.stringify({ sessionId: 's1' })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  const session = 'server-issued-preview-token';
   const expectedOrigin = document.referrer
     ? new URL(document.referrer).origin
     : window.location.origin;

@@ -211,6 +211,10 @@ jobs:
         working-directory: products/yappc/frontend
         run: pnpm lint
 
+      - name: Lint (strict design-system gate)
+        working-directory: products/yappc/frontend
+        run: pnpm lint:strict:design-system
+
       - name: Unit Tests
         working-directory: products/yappc/frontend
         run: pnpm test

@@ -10,8 +10,10 @@
  * @doc.pattern Command Palette
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Search, Clock, Navigation, Zap, AlertTriangle, ArrowRight } from 'lucide-react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+
+import { Alert, Box, Button, Fade, Modal, TextField, Typography } from '@ghatana/design-system';
 
 export interface Action {
   id: string;
@@ -44,6 +46,14 @@ export interface ActionDiscoveryPaletteProps {
   loading?: boolean;
 }
 
+function getSelectedAction(actions: readonly Action[], index: number): Action | undefined {
+  if (index < 0 || index >= actions.length) {
+    return undefined;
+  }
+
+  return actions.find((_, currentIndex) => currentIndex === index);
+}
+
 export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
   actionGroups,
   open,
@@ -59,7 +69,7 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
   const listRef = useRef<HTMLDivElement>(null);
 
   // Filter actions based on query
-  const filteredGroups = React.useMemo(() => {
+  const filteredGroups = React.useMemo<ActionGroup[]>(() => {
     if (!query.trim()) {
       return actionGroups;
     }
@@ -78,7 +88,7 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
   }, [actionGroups, query]);
 
   // Flatten actions for keyboard navigation
-  const allActions = React.useMemo(
+  const allActions = React.useMemo<Action[]>(
     () => filteredGroups.flatMap((group) => group.actions),
     [filteredGroups]
   );
@@ -107,10 +117,10 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
           e.preventDefault();
           setSelectedIndex((prev) => Math.max(prev - 1, 0));
           break;
-        case 'Enter':
+        case 'Enter': {
           e.preventDefault();
-          if (allActions[selectedIndex]) {
-            const action = allActions[selectedIndex];
+          const action = getSelectedAction(allActions, selectedIndex);
+          if (action) {
             if (action.disabled) return;
             if (action.dangerous) {
               setPendingAction(action);
@@ -121,6 +131,7 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
             }
           }
           break;
+        }
         case 'Escape':
           e.preventDefault();
           if (showConfirmation) {
@@ -135,7 +146,7 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
     [allActions, selectedIndex, onClose, showConfirmation]
   );
 
-  const handleActionClick = (action: Action) => {
+  const handleActionClick = (action: Action): void => {
     if (action.disabled) return;
     if (action.dangerous) {
       setPendingAction(action);
@@ -146,7 +157,7 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
     }
   };
 
-  const handleConfirmDangerousAction = () => {
+  const handleConfirmDangerousAction = (): void => {
     if (pendingAction) {
       pendingAction.onExecute();
       setShowConfirmation(false);
@@ -155,12 +166,12 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
     }
   };
 
-  const handleCancelConfirmation = () => {
+  const handleCancelConfirmation = (): void => {
     setShowConfirmation(false);
     setPendingAction(null);
   };
 
-  const getCategoryIcon = (category: Action['category']) => {
+  const getCategoryIcon = (category: Action['category']): React.ReactNode => {
     switch (category) {
       case 'next-best':
         return <Zap className="w-4 h-4 text-yellow-500" />;
@@ -178,29 +189,26 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
   if (!open) return null;
 
   return (
-    <div
-      data-testid="command-palette"
-      className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh] bg-black/50"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Command palette"
-    >
-      <div
-        className="bg-white rounded-lg shadow-2xl w-full max-w-2xl mx-4 overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={handleKeyDown}
-      >
+    <Modal open={open} onClose={onClose}>
+      <Fade in={open}>
+        <Box
+          data-testid="command-palette"
+          className="absolute left-1/2 top-[20vh] w-full max-w-2xl -translate-x-1/2 overflow-hidden rounded-lg bg-white shadow-2xl"
+          onKeyDown={handleKeyDown}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Command palette"
+        >
         {/* Search Input */}
         <div className="flex items-center border-b border-gray-200 px-4 py-3">
           <Search className="w-5 h-5 text-gray-400 mr-3" />
-          <input
-            ref={inputRef}
-            type="text"
+          <TextField
+            ref={inputRef as unknown as React.Ref<HTMLDivElement>}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search actions..."
-            className="flex-1 outline-none text-gray-900 placeholder-gray-400"
+            placeholder="Search actions"
+            aria-label="Search actions"
+            className="flex-1"
             data-testid="command-palette-input"
           />
           <span className="text-xs text-gray-400 ml-2">ESC to close</span>
@@ -231,14 +239,15 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
                   const isSelected = globalIndex === selectedIndex;
 
                   return (
-                    <button
+                    <Button
                       key={action.id}
                       data-testid={`action-${action.id}`}
                       onClick={() => handleActionClick(action)}
                       disabled={action.disabled}
-                      className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
-                        isSelected ? 'bg-blue-50' : ''
-                      } ${action.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                      variant={isSelected ? 'outline' : 'ghost'}
+                      className={`w-full justify-start rounded-none px-4 py-3 ${
+                        action.disabled ? 'opacity-50' : ''
+                      }`}
                     >
                       <div className="flex-shrink-0 mt-0.5">
                         {action.icon || getCategoryIcon(action.category)}
@@ -261,7 +270,7 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
                           {action.shortcut}
                         </div>
                       )}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -272,11 +281,11 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
         {/* Footer */}
         <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center gap-4">
-            <span>↑↓ to navigate</span>
-            <span>Enter to select</span>
-            <span>ESC to close</span>
+            <Typography className="text-xs text-gray-500">↑↓ to navigate</Typography>
+            <Typography className="text-xs text-gray-500">Enter to select</Typography>
+            <Typography className="text-xs text-gray-500">ESC to close</Typography>
           </div>
-          <div>{allActions.length} actions</div>
+          <Typography className="text-xs text-gray-500">{allActions.length} actions</Typography>
         </div>
 
         {/* Confirmation Dialog for Dangerous Actions */}
@@ -285,33 +294,36 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
             data-testid="dangerous-action-confirmation"
             className="absolute inset-0 bg-white flex flex-col items-center justify-center p-6"
           >
-            <AlertTriangle className="w-12 h-12 text-red-500 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Confirm Action
-            </h3>
-            <p className="text-gray-600 text-center mb-6">
-              This action ({pendingAction.title}) cannot be undone. Are you sure you want to proceed?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={handleCancelConfirmation}
-                className="px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors"
-                data-testid="cancel-dangerous-action"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmDangerousAction}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                data-testid="confirm-dangerous-action"
-              >
-                Confirm
-              </button>
-            </div>
+            <Alert
+              severity="warning"
+              variant="standard"
+              title="Confirm action"
+              icon={<AlertTriangle className="w-5 h-5" />}
+              action={
+                <div className="flex gap-3">
+                  <Button
+                    onClick={handleCancelConfirmation}
+                    variant="ghost"
+                    data-testid="cancel-dangerous-action"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleConfirmDangerousAction}
+                    data-testid="confirm-dangerous-action"
+                  >
+                    Confirm
+                  </Button>
+                </div>
+              }
+            >
+              {`This action (${pendingAction.title}) cannot be undone. Are you sure you want to proceed?`}
+            </Alert>
           </div>
         )}
-      </div>
-    </div>
+        </Box>
+      </Fade>
+    </Modal>
   );
 };
 
