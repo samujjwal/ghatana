@@ -69,7 +69,7 @@ describe('apiRequest — header injection', () => {
   });
 
   it('sends X-Tenant-ID and X-Principal-ID when context is set', async () => {
-    setRequestContext('tenant-abc', 'user-xyz', [], []);
+    setRequestContext('tenant-abc', 'user-xyz', 'session-1', [], []);
     mockFetch.mockResolvedValue(okResponse());
     await apiRequest('/v1/test');
     const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
@@ -78,7 +78,7 @@ describe('apiRequest — header injection', () => {
   });
 
   it('sends X-Roles as comma-separated list', async () => {
-    setRequestContext('t1', 'u1', ['admin', 'approver'], []);
+    setRequestContext('t1', 'u1', 'session-1', ['admin', 'approver'], []);
     mockFetch.mockResolvedValue(okResponse());
     await apiRequest('/v1/test');
     const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
@@ -86,7 +86,7 @@ describe('apiRequest — header injection', () => {
   });
 
   it('sends X-Permissions as comma-separated list', async () => {
-    setRequestContext('t1', 'u1', [], ['read:approvals', 'write:approvals']);
+    setRequestContext('t1', 'u1', 'session-1', [], ['read:approvals', 'write:approvals']);
     mockFetch.mockResolvedValue(okResponse());
     await apiRequest('/v1/test');
     const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
@@ -94,7 +94,7 @@ describe('apiRequest — header injection', () => {
   });
 
   it('does NOT send X-Roles or X-Permissions when empty', async () => {
-    setRequestContext('t1', 'u1', [], []);
+    setRequestContext('t1', 'u1', 'session-1', [], []);
     mockFetch.mockResolvedValue(okResponse());
     await apiRequest('/v1/test');
     const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
@@ -103,7 +103,7 @@ describe('apiRequest — header injection', () => {
   });
 
   it('clears context headers after clearRequestContext()', async () => {
-    setRequestContext('t1', 'u1', ['admin'], []);
+    setRequestContext('t1', 'u1', 'session-1', ['admin'], []);
     clearRequestContext();
     mockFetch.mockResolvedValue(okResponse());
     await apiRequest('/v1/test');

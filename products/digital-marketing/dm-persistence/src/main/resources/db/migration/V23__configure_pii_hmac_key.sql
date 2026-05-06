@@ -38,7 +38,7 @@ RETURNS BOOLEAN AS $$
 BEGIN
     -- This is a placeholder - actual key validation happens in application layer
     -- The key should be provided via environment variable or secure secret store
-    -- and passed to Flyway as ${dmos.pii_hmac_key}
+    -- and passed to Flyway as the dmos.pii_hmac_key setting
     RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql;

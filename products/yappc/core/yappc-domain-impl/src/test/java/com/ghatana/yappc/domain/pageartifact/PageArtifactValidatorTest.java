@@ -336,7 +336,9 @@ class PageArtifactValidatorTest {
         PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
 
         assertThat(result.valid()).isFalse();
-        assertThat(result.errors()).anyMatch(error -> error.contains("unsupported src scheme"));
+        assertThat(result.errors()).anyMatch(
+                error -> error.contains("unsafe") || error.contains("executable payload")
+        );
     }
 
     @Test

@@ -1,60 +1,104 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from './fixtures';
+import {
+  APPROVAL_APPROVED,
+  APPROVAL_PENDING,
+  AI_ACTION,
+  TEST_TENANT,
+  TEST_WORKSPACE,
+  loginAs,
+  mockDmosApi,
+} from './fixtures';
 
-/**
- * Visual regression tests (DMOS-P2-004)
- *
- * @doc.type test
- * @doc.purpose Verify visual consistency with screenshots
- * @doc.layer e2e
- */
-test.describe('Visual Regression @visual', () => {
-  test.beforeEach(async ({ page }) => {
-    await loginAs(page);
+test.describe('DMOS visual regression @visual', () => {
+  test('dashboard shell matches baseline', async ({ page }) => {
+    await mockDmosApi(page);
+    await loginAs(page, { roles: ['marketing-director'] });
+    await page.goto(`/workspaces/${TEST_WORKSPACE}/dashboard`);
+    await expect(page.locator('[data-testid="dashboard-page"]')).toBeVisible();
+    await expect(page).toHaveScreenshot('dmos-dashboard-shell.png');
   });
 
-  test('dashboard visual snapshot', async ({ page }) => {
-    await page.goto('/dashboard');
-    await expect(page).toHaveScreenshot('dashboard.png');
+  test('permission denied shell matches baseline', async ({ page }) => {
+    await mockDmosApi(page);
+    await loginAs(page, { roles: [] });
+    await page.goto(`/workspaces/${TEST_WORKSPACE}/campaigns`);
+    await expect(page.locator('[data-testid="feature-unavailable-page"]')).toBeVisible();
+    await expect(page).toHaveScreenshot('dmos-permission-denied-shell.png');
   });
 
-  test('approvals page visual snapshot', async ({ page }) => {
-    await page.goto('/approvals');
-    await expect(page).toHaveScreenshot('approvals.png');
+  test('loading state matches baseline', async ({ page }) => {
+    let releaseResponse: (() => void) | null = null;
+    const responseBarrier = new Promise<void>((resolve) => {
+      releaseResponse = resolve;
+    });
+
+    await page.route(`**/v1/workspaces/${TEST_WORKSPACE}/approvals/pending/*`, async (route) => {
+      await responseBarrier;
+      await route.fulfill({ json: { items: [APPROVAL_PENDING, APPROVAL_APPROVED] } });
+    });
+
+    await loginAs(page, { roles: ['marketing-director'] });
+    await page.goto(`/workspaces/${TEST_WORKSPACE}/approvals`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-testid="approval-queue-loading"]')).toBeVisible();
+    await expect(page).toHaveScreenshot('dmos-approval-loading.png');
+
+    releaseResponse?.();
   });
 
-  test('strategy page visual snapshot', async ({ page }) => {
-    await page.goto('/strategy');
-    await expect(page).toHaveScreenshot('strategy.png');
+  test('error state matches baseline', async ({ page }) => {
+    await page.route(`**/v1/workspaces/${TEST_WORKSPACE}/approvals/pending/*`, async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Approval queue unavailable' }),
+      });
+    });
+
+    await loginAs(page, { roles: ['marketing-director'] });
+    await page.goto(`/workspaces/${TEST_WORKSPACE}/approvals`);
+    await expect(page.locator('[data-testid="approval-queue-error"]')).toBeVisible();
+    await expect(page).toHaveScreenshot('dmos-approval-error.png');
   });
 
-  test('content page visual snapshot', async ({ page }) => {
-    await page.goto('/content');
-    await expect(page).toHaveScreenshot('content.png');
-  });
+  test('empty state matches baseline', async ({ page }) => {
+    await page.route(`**/v1/workspaces/${TEST_WORKSPACE}/ai-actions`, async (route) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ items: [] }),
+      });
+    });
+    await page.route(`**/v1/workspaces/${TEST_WORKSPACE}/approvals/pending/${TEST_TENANT}`, async (route) => {
+      await route.fulfill({ json: { items: [APPROVAL_PENDING] } });
+    });
+    await page.route(`**/v1/workspaces/${TEST_WORKSPACE}/approvals/${APPROVAL_PENDING.requestId}`, async (route) => {
+      await route.fulfill({ json: APPROVAL_PENDING });
+    });
+    await page.route(
+      `**/v1/workspaces/${TEST_WORKSPACE}/approvals/${APPROVAL_PENDING.requestId}/snapshot`,
+      async (route) => {
+        await route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({
+            requestId: APPROVAL_PENDING.requestId,
+            targetType: APPROVAL_PENDING.targetType,
+            targetId: APPROVAL_PENDING.targetId,
+            targetWorkspaceId: TEST_WORKSPACE,
+            snapshotSummary: APPROVAL_PENDING.snapshotSummary,
+            validationResultId: null,
+            riskLevel: APPROVAL_PENDING.riskLevel,
+            requiredApproverRole: APPROVAL_PENDING.requiredApproverRole,
+            snapshotAt: APPROVAL_PENDING.snapshotAt,
+          }),
+        });
+      },
+    );
+    await page.route(`**/v1/workspaces/${TEST_WORKSPACE}/ai-actions/*`, async (route) => {
+      await route.fulfill({ json: AI_ACTION });
+    });
 
-  test('campaigns page visual snapshot', async ({ page }) => {
-    await page.goto('/campaigns');
-    await expect(page).toHaveScreenshot('campaigns.png');
-  });
-
-  test('leads page visual snapshot', async ({ page }) => {
-    await page.goto('/leads');
-    await expect(page).toHaveScreenshot('leads.png');
-  });
-
-  test('analytics page visual snapshot', async ({ page }) => {
-    await page.goto('/analytics');
-    await expect(page).toHaveScreenshot('analytics.png');
-  });
-
-  test('connectors page visual snapshot', async ({ page }) => {
-    await page.goto('/connectors');
-    await expect(page).toHaveScreenshot('connectors.png');
-  });
-
-  test('AI recommendations page visual snapshot', async ({ page }) => {
-    await page.goto('/ai-recommendations');
-    await expect(page).toHaveScreenshot('ai-recommendations.png');
+    await loginAs(page, { roles: ['marketing-director'] });
+    await page.goto(`/workspaces/${TEST_WORKSPACE}/ai-actions`);
+    await expect(page.locator('[data-testid="ai-action-log-page-empty"]')).toBeVisible();
+    await expect(page).toHaveScreenshot('dmos-ai-action-empty.png');
   });
 });

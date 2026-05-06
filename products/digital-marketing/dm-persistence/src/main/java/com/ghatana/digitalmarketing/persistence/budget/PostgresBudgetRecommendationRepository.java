@@ -44,35 +44,36 @@ public final class PostgresBudgetRecommendationRepository implements BudgetRecom
     private static final String UPSERT_SQL =
         "INSERT INTO dmos_budget_recommendations " +
         "  (recommendation_id, workspace_id, monthly_budget, channel_split, daily_caps, " +
-        "   risk_level, rationale, assumptions, model_version, generated_at, generated_by) " +
-        "VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?, ?, ?, ?, ?, ?) " +
+        "   risk_level, rationale, assumptions, model_version, generated_at, generated_by, strategy_id) " +
+        "VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?, ?, ?, ?, ?, ?, ?) " +
         "ON CONFLICT (recommendation_id, workspace_id) DO UPDATE SET " +
         "  monthly_budget = EXCLUDED.monthly_budget, " +
         "  channel_split = EXCLUDED.channel_split, " +
         "  daily_caps = EXCLUDED.daily_caps, " +
         "  risk_level = EXCLUDED.risk_level, " +
         "  rationale = EXCLUDED.rationale, " +
-        "  assumptions = EXCLUDED.assumptions";
+        "  assumptions = EXCLUDED.assumptions, " +
+        "  strategy_id = EXCLUDED.strategy_id";
 
     private static final String SELECT_BY_ID_SQL =
         "SELECT recommendation_id, workspace_id, monthly_budget, channel_split, daily_caps, " +
-        "       risk_level, rationale, assumptions, model_version, generated_at, generated_by " +
+        "       risk_level, rationale, assumptions, model_version, generated_at, generated_by, strategy_id " +
         "FROM dmos_budget_recommendations " +
         "WHERE recommendation_id = ? AND workspace_id = ?";
 
     private static final String SELECT_BY_RECOMMENDATION_ID_ONLY_SQL =
         "SELECT recommendation_id, workspace_id, monthly_budget, channel_split, daily_caps, " +
-        "       risk_level, rationale, assumptions, model_version, generated_at, generated_by " +
+        "       risk_level, rationale, assumptions, model_version, generated_at, generated_by, strategy_id " +
         "FROM dmos_budget_recommendations " +
         "WHERE recommendation_id = ? " +
         "LIMIT 1";
 
     private static final String SELECT_LATEST_BY_WORKSPACE_SQL =
         "SELECT recommendation_id, workspace_id, monthly_budget, channel_split, daily_caps, " +
-        "       risk_level, rationale, assumptions, model_version, generated_at, generated_by " +
+        "       risk_level, rationale, assumptions, model_version, generated_at, generated_by, strategy_id " +
         "FROM dmos_budget_recommendations " +
         "WHERE workspace_id = ? " +
-        "ORDER BY generated_at DESC " +
+        "ORDER BY generated_at DESC, recommendation_id DESC " +
         "LIMIT 1";
 
     private final DataSource dataSource;
@@ -102,6 +103,7 @@ public final class PostgresBudgetRecommendationRepository implements BudgetRecom
                 stmt.setString(9, recommendation.getModelVersion());
                 stmt.setTimestamp(10, Timestamp.from(recommendation.getGeneratedAt()));
                 stmt.setString(11, recommendation.getGeneratedBy());
+                stmt.setString(12, recommendation.getStrategyId());
                 stmt.executeUpdate();
                 LOG.info("[DMOS-PERSIST] budget recommendation upserted: id={} workspace={}",
                     recommendation.getRecommendationId(), recommendation.getWorkspaceId().getValue());
@@ -160,6 +162,29 @@ public final class PostgresBudgetRecommendationRepository implements BudgetRecom
         });
     }
 
+    @Override
+    public Promise<Optional<BudgetRecommendation>> findById(DmWorkspaceId workspaceId, String recommendationId) {
+        Objects.requireNonNull(workspaceId, "workspaceId must not be null");
+        Objects.requireNonNull(recommendationId, "recommendationId must not be null");
+        return Promise.ofBlocking(executor, () -> {
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(SELECT_BY_ID_SQL)) {
+                stmt.setString(1, recommendationId);
+                stmt.setString(2, workspaceId.getValue());
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        return Optional.of(mapRow(rs));
+                    }
+                    return Optional.empty();
+                }
+            } catch (SQLException e) {
+                LOG.error("[DMOS-PERSIST] failed to find recommendation id={} workspace={}: {}",
+                    recommendationId, workspaceId.getValue(), e.getMessage(), e);
+                throw new DmPersistenceException("Failed to find budget recommendation: " + recommendationId, e);
+            }
+        });
+    }
+
     private static BudgetRecommendation mapRow(ResultSet rs) throws SQLException, JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         Instant generatedAt = rs.getTimestamp("generated_at").toInstant();
@@ -169,7 +194,7 @@ public final class PostgresBudgetRecommendationRepository implements BudgetRecom
         return BudgetRecommendation.builder()
             .recommendationId(rs.getString("recommendation_id"))
             .workspaceId(DmWorkspaceId.of(rs.getString("workspace_id")))
-            .strategyId(null) // Not stored in current schema, can be added later
+            .strategyId(rs.getString("strategy_id"))
             .totalMonthlyCap(rs.getDouble("monthly_budget"))
             .changeThresholdPct(rs.getInt("risk_level") / 10.0)
             .channelAllocations(channelAllocations)

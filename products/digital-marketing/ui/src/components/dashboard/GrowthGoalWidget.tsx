@@ -6,10 +6,10 @@
  * @doc.layer frontend
  */
 import React from 'react';
-import { isFeatureEnabled } from '@/lib/feature-flags';
+import { FEATURE_FLAGS, isFeatureEnabled } from '@/lib/feature-flags';
 
 export const GrowthGoalWidget: React.FC = () => {
-  if (!isFeatureEnabled('DASHBOARD_GROWTH_METRICS')) {
+  if (!isFeatureEnabled(FEATURE_FLAGS.DASHBOARD_GROWTH_METRICS)) {
     return (
       <article
         aria-labelledby="growth-goal-title"

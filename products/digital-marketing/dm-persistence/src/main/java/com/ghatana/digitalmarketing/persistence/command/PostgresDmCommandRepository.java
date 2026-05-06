@@ -4,7 +4,7 @@ import com.ghatana.digitalmarketing.application.command.DmCommandRepository;
 import com.ghatana.digitalmarketing.domain.command.DmCommand;
 import com.ghatana.digitalmarketing.domain.command.DmCommandStatus;
 import com.ghatana.digitalmarketing.domain.command.DmCommandType;
-import com.ghatana.digitalmarketing.persistence.DmPersistenceException;
+import com.ghatana.digitalmarketing.persistence.campaign.DmPersistenceException;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

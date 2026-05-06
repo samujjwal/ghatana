@@ -13,15 +13,29 @@ import type { ApprovalRecordResponse } from '@/types/approval';
 
 const BASE_PENDING: ApprovalRecordResponse = {
   requestId: 'req-1',
+  tenantId: 'tenant-1',
+  workspaceId: 'ws-1',
   subjectId: 'c-1',
   requestedBy: 'user-1',
   action: 'campaign-launch',
+  targetType: 'CAMPAIGN_LAUNCH',
+  targetId: 'c-1',
+  description: null,
+  riskLevel: 2,
+  requiredApproverRole: 'brand-manager',
   status: 'PENDING',
+  submittedAt: '2026-05-01T10:00:00Z',
+  submittedBy: 'user-1',
   requestedAt: '2026-05-01T10:00:00Z',
   expiresAt: null,
   decidedAt: null,
+  decidedBy: null,
   reviewerId: null,
   reviewerNotes: null,
+  comment: null,
+  snapshotSummary: null,
+  validationResultId: null,
+  snapshotAt: null,
 };
 
 function makePending(id: string, action = 'campaign-launch'): ApprovalRecordResponse {

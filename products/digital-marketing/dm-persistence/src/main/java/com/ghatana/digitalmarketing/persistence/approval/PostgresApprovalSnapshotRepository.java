@@ -83,7 +83,7 @@ public final class PostgresApprovalSnapshotRepository implements ApprovalSnapsho
                 stmt.setShort(8, (short) snapshot.riskLevel());
                 stmt.setString(9, snapshot.requiredApproverRole());
                 stmt.setTimestamp(10, Timestamp.from(snapshot.snapshotAt()));
-                stmt.setLong(11, snapshot.version());
+                stmt.setLong(11, snapshot.version() + 1);
                 stmt.setLong(12, snapshot.version());
                 int rowsAffected = stmt.executeUpdate();
                 if (rowsAffected == 0) {

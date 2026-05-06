@@ -20,6 +20,7 @@ import {
   Platform,
 } from 'react-native';
 import { atom, useAtom, useSetAtom } from 'jotai';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -189,27 +190,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 8,
-    shadowColor: '#000',
+    shadowColor: flashitMobileTheme.shadow.color,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
   },
   message: {
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     fontSize: 14,
     fontWeight: '500',
   },
   success: {
-    backgroundColor: '#10b981',
+    backgroundColor: flashitMobileTheme.status.success,
   },
   error: {
-    backgroundColor: '#ef4444',
+    backgroundColor: flashitMobileTheme.status.error,
   },
   warning: {
-    backgroundColor: '#f59e0b',
+    backgroundColor: flashitMobileTheme.status.warning,
   },
   info: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: flashitMobileTheme.status.info,
   },
 });

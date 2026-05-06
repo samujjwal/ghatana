@@ -74,7 +74,7 @@ public final class PostgresMarketingStrategyRepository implements MarketingStrat
         "       generated_at, generated_by, approved_at, approved_by " +
         "FROM dmos_marketing_strategies " +
         "WHERE workspace_id = ? " +
-        "ORDER BY generated_at DESC " +
+        "ORDER BY generated_at DESC, strategy_id DESC " +
         "LIMIT 1";
 
     private final DataSource dataSource;
@@ -98,7 +98,7 @@ public final class PostgresMarketingStrategyRepository implements MarketingStrat
                 stmt.setString(3, strategy.getStatus().name());
                 stmt.setString(4, objectMapper.writeValueAsString(strategy.getGoals()));
                 stmt.setString(5, objectMapper.writeValueAsString(strategy.getChannelPlans()));
-                stmt.setInt(6, strategy.getBudgetCap());
+                stmt.setDouble(6, strategy.getBudgetCap());
                 stmt.setString(7, strategy.getRationale());
                 stmt.setString(8, strategy.getAssumptions());
                 stmt.setString(9, strategy.getMeasurementPlan());
@@ -182,7 +182,7 @@ public final class PostgresMarketingStrategyRepository implements MarketingStrat
             .status(StrategyStatus.valueOf(rs.getString("status")))
             .goals(goals)
             .channelPlans(channelPlans)
-            .budgetCap(rs.getInt("budget_cap"))
+            .budgetCap(rs.getDouble("budget_cap"))
             .rationale(rs.getString("rationale"))
             .assumptions(rs.getString("assumptions"))
             .measurementPlan(rs.getString("measurement_plan"))

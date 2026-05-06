@@ -18,7 +18,6 @@ import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.products.finance.bff.FinanceBFF;
-import com.ghatana.products.finance.rules.service.FinanceRulesService;
 import com.ghatana.products.finance.shell.FinanceProductShell;
 import io.activej.promise.Promise;
 import java.util.Set;
@@ -51,9 +50,6 @@ public class FinanceProductModuleIntegrationTest extends EventloopTestBase {
 
     @Mock
     private Executor mockExecutor;
-
-    @Mock
-    private FinanceRulesService mockRulesService;
 
     private FinanceProductModule module;
 

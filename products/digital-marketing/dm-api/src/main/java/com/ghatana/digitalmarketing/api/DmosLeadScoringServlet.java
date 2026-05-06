@@ -14,6 +14,7 @@ import com.ghatana.digitalmarketing.domain.scoring.LeadScore;
 import com.ghatana.digitalmarketing.domain.scoring.ScoreDimension;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -27,6 +28,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * HTTP servlet for lead scoring generation and retrieval.
@@ -65,6 +67,10 @@ public final class DmosLeadScoringServlet {
         this.leadScoringService = Objects.requireNonNull(leadScoringService, "leadScoringService must not be null");
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.httpContextFactory = Objects.requireNonNull(httpContextFactory, "httpContextFactory must not be null");
+    }
+
+    public DmosLeadScoringServlet(LeadScoringService leadScoringService, Eventloop eventloop) {
+        this(leadScoringService, eventloop, new DmosHttpContextFactory(false, null));
     }
 
     /**

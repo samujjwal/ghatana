@@ -31,6 +31,9 @@
       "@ghatana/design-system": [
         "../../../../platform/typescript/design-system/src/index.ts"
       ],
+      "@ghatana/product-shell": [
+        "../../../../platform/typescript/product-shell/dist/index.d.ts"
+      ],
       "@ghatana/design-system/icons": [
         "../../../../platform/typescript/design-system/src/icons/index.tsx"
       ],

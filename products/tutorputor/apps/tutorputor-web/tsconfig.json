@@ -21,6 +21,9 @@
       "@ghatana/design-system": [
         "../../../../platform/typescript/design-system"
       ],
+      "@ghatana/product-shell": [
+        "../../../../platform/typescript/product-shell/dist/index.d.ts"
+      ],
       "@ghatana/charts": [
         "../../../../platform/typescript/charts"
       ],

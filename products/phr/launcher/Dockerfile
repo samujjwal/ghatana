@@ -7,7 +7,11 @@ COPY . .
 
 ENV GRADLE_OPTS="-Xms256m -Xmx512m -Dfile.encoding=UTF-8"
 
-RUN chmod +x gradlew && ./gradlew :products:phr:launcher:check :products:phr:launcher:installDist \
+RUN chmod +x gradlew && ./gradlew \
+	:products:phr:productConformanceCheck \
+	:products:phr:checkApiContractConformance \
+	:products:phr:launcher:check \
+	:products:phr:launcher:installDist \
 	--no-daemon \
 	--no-configuration-cache \
 	--max-workers=2 \

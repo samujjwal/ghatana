@@ -119,6 +119,11 @@ should keep those as thin wrappers and pass the rendered content through the
 shared `PageHeader` component’s `eyebrow` slot rather than rebuilding the full
 heading layout locally.
 
+Audited product web shells must compose `@ghatana/product-shell` directly.
+PHR may keep `AppShell.tsx` only as a thin alias to `PhrProductShell`; DMOS and
+FlashIt web must render route surfaces through `DmosProductShell` and
+`FlashitProductShell` respectively.
+
 ## Canonical package name
 
 `@ghatana/product-shell` — see [LIBRARY_GOVERNANCE.md](../LIBRARY_GOVERNANCE.md) for the authoritative registry.

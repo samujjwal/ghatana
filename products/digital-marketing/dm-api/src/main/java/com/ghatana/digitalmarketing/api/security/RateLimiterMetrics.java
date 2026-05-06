@@ -106,13 +106,7 @@ public final class RateLimiterMetrics {
      * @param clientId the client identifier (IP or principal)
      */
     public void recordAllowed(String tenantId, String endpoint, String clientId) {
-        Tags tags = Tags.of(
-            "tenant", tenantId,
-            "endpoint", endpoint,
-            "client_id", hashClientId(clientId)
-        );
-
-        requestsAllowed.increment(tags);
+        requestsAllowed.increment();
         getTenantMetrics(tenantId).recordAllowed();
 
         LOG.debug("[DMOS-METRICS] Request allowed: tenant={}, endpoint={}, client={}",
@@ -128,15 +122,8 @@ public final class RateLimiterMetrics {
      * @param limitType the type of limit hit (per_minute, per_hour, burst)
      */
     public void recordRejected(String tenantId, String endpoint, String clientId, String limitType) {
-        Tags tags = Tags.of(
-            "tenant", tenantId,
-            "endpoint", endpoint,
-            "client_id", hashClientId(clientId),
-            "limit_type", limitType
-        );
-
-        requestsRejected.increment(tags);
-        rateLimitHits.increment(tags);
+        requestsRejected.increment();
+        rateLimitHits.increment();
         getTenantMetrics(tenantId).recordRejected(limitType);
 
         LOG.warn("[DMOS-METRICS] Request rejected: tenant={}, endpoint={}, client={}, limit_type={}",
@@ -151,13 +138,7 @@ public final class RateLimiterMetrics {
      * @param clientId the client identifier
      */
     public void recordExhausted(String tenantId, String endpoint, String clientId) {
-        Tags tags = Tags.of(
-            "tenant", tenantId,
-            "endpoint", endpoint,
-            "client_id", hashClientId(clientId)
-        );
-
-        rateLimitExhausted.increment(tags);
+        rateLimitExhausted.increment();
         getTenantMetrics(tenantId).recordExhausted();
 
         LOG.error("[DMOS-METRICS] Rate limit exhausted: tenant={}, endpoint={}, client={}",
@@ -172,12 +153,7 @@ public final class RateLimiterMetrics {
      * @param endpoint the endpoint
      */
     public void recordCheckDuration(long durationMs, String tenantId, String endpoint) {
-        Tags tags = Tags.of(
-            "tenant", tenantId,
-            "endpoint", endpoint
-        );
-
-        rateLimitCheckDuration.record(durationMs, tags);
+        rateLimitCheckDuration.record(java.time.Duration.ofMillis(durationMs));
     }
 
     /**

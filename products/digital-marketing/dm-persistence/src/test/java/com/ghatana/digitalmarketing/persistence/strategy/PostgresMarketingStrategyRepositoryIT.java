@@ -52,7 +52,7 @@ class PostgresMarketingStrategyRepositoryIT extends EventloopTestBase {
     static void migrateSchema() {
         Flyway flyway = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-            .locations("classpath:db/migration")
+            .locations("filesystem:src/main/resources/db/migration")
             .load();
         flyway.migrate();
 

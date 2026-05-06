@@ -40,15 +40,29 @@ vi.mock('@/api/approvals', () => ({
 
 const PENDING: ApprovalRecordResponse = {
   requestId: 'req-5',
+  tenantId: 'tenant-1',
+  workspaceId: 'ws-1',
   subjectId: 'c-1',
   requestedBy: 'user-1',
   action: 'campaign-launch',
+  targetType: 'CAMPAIGN_LAUNCH',
+  targetId: 'c-1',
+  description: null,
+  riskLevel: 2,
+  requiredApproverRole: 'brand-manager',
   status: 'PENDING',
+  submittedAt: '2026-01-10T10:00:00Z',
+  submittedBy: 'user-1',
   requestedAt: '2026-01-10T10:00:00Z',
   expiresAt: null,
   decidedAt: null,
+  decidedBy: null,
   reviewerId: null,
   reviewerNotes: null,
+  comment: null,
+  snapshotSummary: null,
+  validationResultId: null,
+  snapshotAt: null,
 };
 
 function buildQueryClient(): QueryClient {

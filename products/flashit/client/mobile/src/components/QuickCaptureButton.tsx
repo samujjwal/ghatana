@@ -6,6 +6,7 @@ import {
   Animated,
   GestureResponderEvent,
 } from 'react-native';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 interface QuickCaptureButtonProps {
   onTap: () => void;
@@ -84,8 +85,8 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#007aff',
-    shadowColor: '#007aff',
+    backgroundColor: flashitMobileTheme.brand.primary,
+    shadowColor: flashitMobileTheme.shadow.color,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -106,14 +107,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 4,
     height: 40,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.text.inverse,
     borderRadius: 2,
   },
   plusHorizontal: {
     position: 'absolute',
     width: 40,
     height: 4,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.text.inverse,
     borderRadius: 2,
   },
 });

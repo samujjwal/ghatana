@@ -71,7 +71,7 @@ class TelemedicineServiceTest extends EventloopTestBase {
                 .startsWith("phr_telemedicine_schedule-");
             assertThat(dataCloud.metadataFor("phr.telemedicine.sessions", stored.id()))
                 .containsKey("correlationId")
-                .containsEntry("traceOperation", "phr_telemedicine_schedule");
+                .containsEntry("traceOperation", "phr_tele-session_create");
         }
 
         @Test

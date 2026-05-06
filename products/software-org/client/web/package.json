@@ -15,6 +15,7 @@
   "dependencies": {
     "@ghatana/api": "workspace:*",
     "@ghatana/design-system": "workspace:*",
+    "@ghatana/product-shell": "workspace:*",
     "@ghatana/realtime": "workspace:*",
     "@tanstack/react-query": "^5.90.20",
     "@types/react-grid-layout": "^1.3.6",

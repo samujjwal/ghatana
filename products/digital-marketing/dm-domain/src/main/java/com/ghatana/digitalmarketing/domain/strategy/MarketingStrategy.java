@@ -27,7 +27,7 @@ public final class MarketingStrategy {
     private final StrategyStatus status;
     private final List<StrategyGoal> goals;
     private final List<CampaignPlan> channelPlans;
-    private final int budgetCap;
+    private final double budgetCap;
     private final String rationale;
     private final String assumptions;
     private final String measurementPlan;
@@ -149,7 +149,7 @@ public final class MarketingStrategy {
         return channelPlans;
     }
 
-    public int getBudgetCap() {
+    public double getBudgetCap() {
         return budgetCap;
     }
 
@@ -211,7 +211,7 @@ public final class MarketingStrategy {
         private StrategyStatus status;
         private List<StrategyGoal> goals = List.of();
         private List<CampaignPlan> channelPlans = List.of();
-        private int budgetCap;
+        private double budgetCap;
         private String rationale;
         private String assumptions;
         private String measurementPlan;
@@ -287,7 +287,7 @@ public final class MarketingStrategy {
          * @param budgetCap non-negative budget cap
          * @return this builder
          */
-        public Builder budgetCap(int budgetCap) {
+        public Builder budgetCap(double budgetCap) {
             this.budgetCap = budgetCap;
             return this;
         }

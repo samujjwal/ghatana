@@ -1,10 +1,10 @@
 package com.ghatana.digitalmarketing.api;
 
-import io.activej.eventloop.Eventloop;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
-import io.activej.test.eventloop.EventloopTestBase;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Base class for DMOS API tests.
@@ -19,17 +19,18 @@ public abstract class DmApiTestBase extends EventloopTestBase {
 
     protected AsyncServlet servlet;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    void setUpServlet() {
         servlet = createTestServlet();
     }
 
     /**
      * Creates the servlet under test.
-     * Subclasses should override this to provide the specific servlet.
+     * Subclasses may override this to provide a specific servlet.
      */
-    protected abstract AsyncServlet createTestServlet();
+    protected AsyncServlet createTestServlet() {
+        return createDefaultTestServlet();
+    }
 
     /**
      * Helper method to await a promise in tests.
@@ -50,7 +51,8 @@ public abstract class DmApiTestBase extends EventloopTestBase {
                 String csrfToken = request.getHeader(io.activej.http.HttpHeaders.of("X-CSRF-Token"));
                 if (csrfToken == null || csrfToken.isEmpty() || csrfToken.equals("invalid-token-12345")) {
                     return Promise.of(HttpResponse.ofCode(403)
-                        .withJson("{\"error\":\"CSRF token required or invalid\"}"));
+                        .withJson("{\"error\":\"CSRF token required or invalid\"}")
+                        .build());
                 }
             }
 
@@ -61,7 +63,8 @@ public abstract class DmApiTestBase extends EventloopTestBase {
                 .withHeader(io.activej.http.HttpHeaders.of("Content-Security-Policy"), "default-src 'self'")
                 .withHeader(io.activej.http.HttpHeaders.of("Referrer-Policy"), "strict-origin-when-cross-origin")
                 .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json; charset=UTF-8")
-                .withJson("{\"status\":\"ok\"}"));
+                .withJson("{\"status\":\"ok\"}")
+                .build());
         };
     }
 }

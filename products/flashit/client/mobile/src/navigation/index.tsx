@@ -8,12 +8,12 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAtomValue } from 'jotai';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { mobileAtoms } from '../state/localAtoms';
 import { ApiProvider } from '../contexts/ApiContext';
 import { flashitMobileTheme } from '../theme/kernelTheme';
-import { getFlashitMobileTabRoutes } from '../routeManifest';
+import { getFlashitMobileTabRoutes, type FlashItMobileScreen } from '../routeManifest';
 
 // Screens
 import LoginScreen from '../screens/LoginScreen';
@@ -78,18 +78,9 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 // Loading component for auth state
 function AuthLoading() {
   return (
-    <View style={{
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: flashitMobileTheme.background.canvas,
-    }}>
+    <View style={styles.authLoadingContainer}>
       <ActivityIndicator size="large" color={flashitMobileTheme.brand.primaryStrong} />
-      <Text style={{
-        marginTop: 16,
-        color: flashitMobileTheme.text.secondary,
-        fontSize: 16,
-      }}>
+      <Text style={styles.authLoadingText}>
         Loading...
       </Text>
     </View>
@@ -98,10 +89,82 @@ function AuthLoading() {
 
 // Main Tab Navigator with accessibility
 function MainTabNavigator() {
-  const tabRoutes = getFlashitMobileTabRoutes();
+  const currentUser = useAtomValue(mobileAtoms.currentUserAtom);
+  const tabRoutes = getFlashitMobileTabRoutes(currentUser);
   const iconByRoute = Object.fromEntries(
     tabRoutes.map((route) => [route.screen, route.iconName ?? 'ellipse']),
   ) as Readonly<Record<string, string>>;
+  const tabScreenRegistry: Readonly<Record<FlashItMobileScreen, {
+    component: React.ComponentType<any>;
+    title: string;
+    tabBarAccessibilityLabel: string;
+  }>> = {
+    Dashboard: {
+      component: DashboardScreen,
+      title: 'Home',
+      tabBarAccessibilityLabel: 'View your dashboard',
+    },
+    Moments: {
+      component: MomentsScreen,
+      title: 'Moments',
+      tabBarAccessibilityLabel: 'View your moments',
+    },
+    Capture: {
+      component: UnifiedCaptureScreen,
+      title: 'Capture',
+      tabBarAccessibilityLabel: 'Capture a new moment',
+    },
+    Spheres: {
+      component: SpheresScreen,
+      title: 'Spheres',
+      tabBarAccessibilityLabel: 'View your spheres',
+    },
+    Settings: {
+      component: SettingsScreen,
+      title: 'Settings',
+      tabBarAccessibilityLabel: 'View settings',
+    },
+    LanguageInsights: {
+      component: LanguageInsightsScreen,
+      title: 'Language Insights',
+      tabBarAccessibilityLabel: 'View language insights',
+    },
+    NotificationSettings: {
+      component: NotificationSettingsScreen,
+      title: 'Notification Settings',
+      tabBarAccessibilityLabel: 'View notification settings',
+    },
+    Search: {
+      component: SearchScreen,
+      title: 'Search',
+      tabBarAccessibilityLabel: 'Search your moments',
+    },
+    Analytics: {
+      component: AnalyticsScreen,
+      title: 'Analytics',
+      tabBarAccessibilityLabel: 'View your analytics',
+    },
+    Billing: {
+      component: BillingScreen,
+      title: 'Subscription',
+      tabBarAccessibilityLabel: 'View subscription and billing',
+    },
+    Collaboration: {
+      component: CollaborationScreen,
+      title: 'Collaboration',
+      tabBarAccessibilityLabel: 'View collaboration settings',
+    },
+    Reflection: {
+      component: ReflectionScreen,
+      title: 'Reflection',
+      tabBarAccessibilityLabel: 'View reflection and insights',
+    },
+    MemoryExpansion: {
+      component: MemoryExpansionScreen,
+      title: 'Memory Expansion',
+      tabBarAccessibilityLabel: 'View memory expansion',
+    },
+  };
 
   return (
     <Tab.Navigator
@@ -136,46 +199,20 @@ function MainTabNavigator() {
         },
       })}
     >
-      <Tab.Screen
-        name="Dashboard"
-        component={DashboardScreen}
-        options={{
-          title: 'Home',
-          tabBarAccessibilityLabel: 'View your dashboard',
-        }}
-      />
-      <Tab.Screen
-        name="Moments"
-        component={MomentsScreen}
-        options={{
-          title: 'Moments',
-          tabBarAccessibilityLabel: 'View your moments',
-        }}
-      />
-      <Tab.Screen
-        name="Capture"
-        component={UnifiedCaptureScreen}
-        options={{
-          title: 'Capture',
-          tabBarAccessibilityLabel: 'Capture a new moment',
-        }}
-      />
-      <Tab.Screen
-        name="Spheres"
-        component={SpheresScreen}
-        options={{
-          title: 'Spheres',
-          tabBarAccessibilityLabel: 'View your spheres',
-        }}
-      />
-      <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{
-          title: 'Settings',
-          tabBarAccessibilityLabel: 'View settings',
-        }}
-      />
+      {tabRoutes.map((route) => {
+        const screenConfig = tabScreenRegistry[route.screen];
+        return (
+          <Tab.Screen
+            key={route.screen}
+            name={route.screen as keyof MainTabParamList}
+            component={screenConfig.component}
+            options={{
+              title: screenConfig.title,
+              tabBarAccessibilityLabel: screenConfig.tabBarAccessibilityLabel,
+            }}
+          />
+        );
+      })}
     </Tab.Navigator>
   );
 }
@@ -336,3 +373,17 @@ export default function Navigation() {
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  authLoadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: flashitMobileTheme.background.canvas,
+  },
+  authLoadingText: {
+    marginTop: 16,
+    color: flashitMobileTheme.text.secondary,
+    fontSize: 16,
+  },
+});

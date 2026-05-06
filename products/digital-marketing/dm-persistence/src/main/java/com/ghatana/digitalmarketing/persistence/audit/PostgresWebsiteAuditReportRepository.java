@@ -64,7 +64,7 @@ public final class PostgresWebsiteAuditReportRepository implements WebsiteAuditR
         "       model_version, audited_at, audited_by " +
         "FROM dmos_website_audit_reports " +
         "WHERE workspace_id = ? " +
-        "ORDER BY audited_at DESC " +
+        "ORDER BY audited_at DESC, report_id DESC " +
         "LIMIT 1";
 
     private final DataSource dataSource;

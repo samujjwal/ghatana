@@ -14,7 +14,9 @@ import com.ghatana.kernel.util.TypedDataSerializer;
 import io.activej.promise.Promise;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -83,10 +85,16 @@ public abstract class PhrServiceBase implements KernelLifecycleAware {
 
         return Promise.ofBlocking(executor, () -> serialize(record, entityType, version))
             .then(data -> {
-                DataWriteRequest request = new DataWriteRequest(datasetId, recordId, data, metadata);
+                Map<String, String> enrichedMetadata = enrichMutationMetadata(
+                    "create",
+                    recordId,
+                    entityType,
+                    metadata
+                );
+                DataWriteRequest request = new DataWriteRequest(datasetId, recordId, data, enrichedMetadata);
                 return dataCloud.writeData(request)
                     .map($ -> record)
-                    .then(result -> audit("CREATE", recordId, entityType + " created", metadata).map($ -> result));
+                    .then(result -> audit("CREATE", recordId, entityType + " created", enrichedMetadata).map($ -> result));
             });
     }
 
@@ -116,10 +124,16 @@ public abstract class PhrServiceBase implements KernelLifecycleAware {
 
         return Promise.ofBlocking(executor, () -> serialize(record, entityType, version))
             .then(data -> {
-                DataWriteRequest request = new DataWriteRequest(datasetId, recordId, data, metadata);
+                Map<String, String> enrichedMetadata = enrichMutationMetadata(
+                    "update",
+                    recordId,
+                    entityType,
+                    metadata
+                );
+                DataWriteRequest request = new DataWriteRequest(datasetId, recordId, data, enrichedMetadata);
                 return dataCloud.writeData(request)
                     .map($ -> record)
-                    .then(result -> audit("UPDATE", recordId, entityType + " updated", metadata).map($ -> result));
+                    .then(result -> audit("UPDATE", recordId, entityType + " updated", enrichedMetadata).map($ -> result));
             });
     }
 
@@ -214,6 +228,60 @@ public abstract class PhrServiceBase implements KernelLifecycleAware {
      */
     protected <T> byte[] serialize(T object, String typeName, int version) {
         return TypedDataSerializer.toBytes(object, typeName, version);
+    }
+
+    private Map<String, String> enrichMutationMetadata(
+            String action,
+            String recordId,
+            String entityType,
+            Map<String, String> metadata) {
+        String normalizedEntityType = normalizeToken(entityType, "record");
+        String normalizedAction = normalizeToken(action, "write");
+        HashMap<String, String> enriched = new HashMap<>(metadata == null ? Map.of() : metadata);
+
+        String operation = "phr_" + normalizedEntityType + "_" + normalizedAction;
+        String correlationId = enriched.getOrDefault("correlationId", PhrTraceContext.newCorrelationId(operation));
+        enriched = new HashMap<>(PhrTraceContext.metadata(correlationId, operation, enriched));
+
+        enriched.putIfAbsent("tenantId", "default");
+        enriched.putIfAbsent("principalId", inferPrincipalId(enriched));
+        enriched.putIfAbsent("idempotencyKey", normalizedEntityType + "-" + normalizedAction + "-" + recordId);
+        enriched.putIfAbsent("auditClassification", normalizedEntityType.toUpperCase(Locale.ROOT) + "_" + normalizedAction.toUpperCase(Locale.ROOT));
+        enriched.putIfAbsent("dataOwnerScope", inferDataOwnerScope(enriched, normalizedEntityType, recordId));
+
+        return Map.copyOf(enriched);
+    }
+
+    private String inferPrincipalId(Map<String, String> metadata) {
+        return firstPresent(metadata, "providerId", "prescriberId", "authorId", "caregiverId", "reviewedBy", "signedBy")
+            .orElse("system");
+    }
+
+    private String inferDataOwnerScope(Map<String, String> metadata, String entityType, String recordId) {
+        return firstPresent(metadata, "patientId", "subjectId", "encounterId", "providerId")
+            .map(value -> entityType + ":" + value)
+            .orElse(entityType + ":" + recordId);
+    }
+
+    private Optional<String> firstPresent(Map<String, String> metadata, String... keys) {
+        for (String key : keys) {
+            String value = metadata.get(key);
+            if (value != null && !value.isBlank()) {
+                return Optional.of(value);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private String normalizeToken(String value, String fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        return value
+            .replaceAll("([a-z0-9])([A-Z])", "$1-$2")
+            .replaceAll("[^A-Za-z0-9]+", "-")
+            .replaceAll("^-+|-+$", "")
+            .toLowerCase(Locale.ROOT);
     }
 
     /**

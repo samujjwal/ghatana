@@ -5,113 +5,106 @@
 
 import { test, expect } from './fixtures';
 
-test.describe('Accessibility @a11y', () => {
-  test('should navigate with keyboard', async ({ authenticatedPage }) => {
-    await authenticatedPage.goto('/');
-    
-    // Tab through elements
-    await authenticatedPage.keyboard.press('Tab');
-    await authenticatedPage.keyboard.press('Tab');
-    
-    // Enter should activate focused element
-    await authenticatedPage.keyboard.press('Enter');
+test.describe('FlashIt accessibility @a11y', () => {
+  test('login form exposes labels and announces errors', async ({ page }) => {
+    await page.route('**/auth/login', async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Invalid credentials', message: 'Invalid email or password' }),
+      });
+    });
+
+    await page.goto('/login');
+    await expect(page.getByLabel('Email')).toBeVisible();
+    await expect(page.getByLabel('Password')).toBeVisible();
+    await page.getByLabel('Email').fill('wrong@email.com');
+    await page.getByLabel('Password').fill('wrongpass');
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveAttribute('aria-live', 'polite');
   });
 
-  test('should have proper ARIA labels', async ({ authenticatedPage }) => {
-    await authenticatedPage.goto('/');
-    
-    // Check for ARIA landmarks
-    await expect(authenticatedPage.locator('nav[aria-label]')).toBeVisible();
-    await expect(authenticatedPage.locator('main')).toBeVisible();
-    
-    // Check buttons have labels
-    const createButton = authenticatedPage.getByTestId('create-moment-button');
-    const ariaLabel = await createButton.getAttribute('aria-label');
-    expect(ariaLabel).toBeTruthy();
+  test('shell exposes skip link, landmarks, and keyboard focus', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem('flashit_token', 'flashit-a11y-token');
+    });
+    await page.route('**/auth/me', async (route) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: {
+            id: 'user-member',
+            email: 'member@flashit.app',
+            displayName: 'Member User',
+            createdAt: '2026-05-05T00:00:00Z',
+            updatedAt: '2026-05-05T00:00:00Z',
+            tier: 'FREE',
+          },
+        }),
+      });
+    });
+
+    await page.goto('/settings');
+    await page.keyboard.press('Tab');
+    await expect(page.getByText('Skip to main content')).toBeFocused();
+    await expect(page.getByRole('navigation')).toBeVisible();
+    await expect(page.getByRole('main')).toBeVisible();
   });
 
-  test('should have sufficient color contrast', async ({ authenticatedPage }) => {
-    await authenticatedPage.goto('/');
-    
-    // This would typically use axe-core for automated testing
-    // For now, visual verification
-    await authenticatedPage.screenshot({ path: 'screenshots/contrast-check.png' });
+  test('premium denial route stays readable and keyboard accessible', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem('flashit_token', 'flashit-denied-token');
+    });
+    await page.route('**/auth/me', async (route) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: {
+            id: 'user-free',
+            email: 'member@flashit.app',
+            displayName: 'Free Member',
+            createdAt: '2026-05-05T00:00:00Z',
+            updatedAt: '2026-05-05T00:00:00Z',
+            tier: 'FREE',
+          },
+        }),
+      });
+    });
+
+    await page.goto('/analytics');
+    await expect(page.getByTestId('flashit-access-denied')).toBeVisible();
+    await expect(page.getByText('Permission denied')).toBeVisible();
+    await page.keyboard.press('Tab');
+    await expect(page.locator(':focus')).toBeVisible();
   });
 
-  test('should support screen reader text', async ({ authenticatedPage }) => {
-    await authenticatedPage.goto('/');
-    
-    // Check for sr-only elements
-    const srOnlyElements = authenticatedPage.locator('.sr-only');
-    const count = await srOnlyElements.count();
-    expect(count).toBeGreaterThan(0);
-  });
+  test('settings keeps sensitive billing and privacy controls labelled', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem('flashit_token', 'flashit-settings-token');
+    });
+    await page.route('**/auth/me', async (route) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: {
+            id: 'user-pro',
+            email: 'premium@flashit.app',
+            displayName: 'Premium User',
+            createdAt: '2026-05-05T00:00:00Z',
+            updatedAt: '2026-05-05T00:00:00Z',
+            tier: 'PRO',
+          },
+        }),
+      });
+    });
 
-  test('should have skip to content link', async ({ authenticatedPage }) => {
-    await authenticatedPage.goto('/');
-    
-    // Tab should focus skip link
-    await authenticatedPage.keyboard.press('Tab');
-    
-    const skipLink = authenticatedPage.getByText(/skip to/i);
-    if (await skipLink.isVisible()) {
-      await expect(skipLink).toBeFocused();
-    }
-  });
-
-  test('should have focus indicators', async ({ authenticatedPage }) => {
-    await authenticatedPage.goto('/');
-    
-    // Tab to button
-    await authenticatedPage.keyboard.press('Tab');
-    await authenticatedPage.keyboard.press('Tab');
-    
-    // Focused element should have visible outline
-    const focused = authenticatedPage.locator(':focus');
-    await expect(focused).toBeVisible();
-  });
-
-  test('should announce dynamic content to screen readers', async ({ authenticatedPage }) => {
-    await authenticatedPage.goto('/');
-    
-    // Create moment (triggers announcement)
-    await authenticatedPage.getByTestId('create-moment-button').click();
-    await authenticatedPage.getByTestId('title-input').fill('Test');
-    await authenticatedPage.getByTestId('save-button').click();
-    
-    // Check for aria-live region
-    const liveRegion = authenticatedPage.locator('[aria-live]');
-    await expect(liveRegion).toBeVisible();
-  });
-
-  test('should have semantic HTML', async ({ authenticatedPage }) => {
-    await authenticatedPage.goto('/');
-    
-    // Check for semantic elements
-    await expect(authenticatedPage.locator('header')).toBeVisible();
-    await expect(authenticatedPage.locator('nav')).toBeVisible();
-    await expect(authenticatedPage.locator('main')).toBeVisible();
-    await expect(authenticatedPage.locator('footer')).toBeVisible();
-  });
-
-  test('should have alt text for images', async ({ authenticatedPage }) => {
-    await authenticatedPage.goto('/');
-    
-    const images = authenticatedPage.locator('img');
-    const count = await images.count();
-    
-    for (let i = 0; i < count; i++) {
-      const img = images.nth(i);
-      const alt = await img.getAttribute('alt');
-      expect(alt).toBeTruthy();
-    }
-  });
-
-  test('should support reduced motion preference', async ({ authenticatedPage }) => {
-    await authenticatedPage.emulateMedia({ reducedMotion: 'reduce' });
-    await authenticatedPage.goto('/');
-    
-    // Animations should be disabled
-    // This would require checking CSS animations
+    await page.goto('/settings');
+    await expect(page.getByRole('button', { name: 'Billing' })).toBeVisible();
+    await page.getByRole('button', { name: 'Billing' }).click();
+    await expect(page.getByText('Subscription')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Upgrade' }).first()).toBeVisible();
+    await page.getByRole('button', { name: 'Privacy' }).click();
+    await expect(page.getByText('Retention period depends on your subscription tier.')).toBeVisible();
   });
 });

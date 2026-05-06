@@ -126,6 +126,6 @@ class DurablePhrNotificationSenderTest extends EventloopTestBase {
             .containsOnly("tele-1");
         assertThat(dataCloud.metadataFor(DurablePhrNotificationSender.OUTBOX_DATASET, entries.getFirst().id()))
             .containsEntry("correlationId", "corr-tele-1")
-            .containsEntry("traceOperation", "phr_telemedicine_schedule");
+            .containsEntry("traceOperation", "phr_phr-notification-outbox-entry_create");
     }
 }

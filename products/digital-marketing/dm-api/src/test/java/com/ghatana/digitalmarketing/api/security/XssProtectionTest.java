@@ -40,10 +40,10 @@ class XssProtectionTest extends DmApiTestBase {
     @DisplayName("P2-022: Should sanitize XSS in request body")
     void shouldSanitizeXssInRequestBody(String xssPayload) {
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/campaigns")
-            .withHeader("X-Tenant-ID", "test-tenant")
-            .withHeader("X-Workspace-ID", "test-workspace")
-            .withHeader("X-CSRF-Token", "valid-token")
-            .withHeader("Content-Type", "application/json")
+            .withHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"), "test-tenant")
+            .withHeader(io.activej.http.HttpHeaders.of("X-Workspace-ID"), "test-workspace")
+            .withHeader(io.activej.http.HttpHeaders.of("X-CSRF-Token"), "valid-token")
+            .withHeader(io.activej.http.HttpHeaders.of("Content-Type"), "application/json")
             .withBody("{\"name\":\"" + xssPayload + "\"}");
 
         Promise<HttpResponse> response = servlet.serve(request);
@@ -53,7 +53,7 @@ class XssProtectionTest extends DmApiTestBase {
         assertThat(result.getCode()).isIn(200, 201, 400, 422);
 
         // If response contains the payload, it must be encoded
-        String responseBody = result.getBody().getString();
+        String responseBody = result.getBody().getString(java.nio.charset.StandardCharsets.UTF_8);
         if (responseBody.contains(xssPayload.replace("<", ""))) {
             // Response should be encoded, not raw
             assertThat(responseBody).doesNotContain("<script>");
@@ -71,8 +71,8 @@ class XssProtectionTest extends DmApiTestBase {
     @DisplayName("P2-022: Should sanitize XSS in query parameters")
     void shouldSanitizeXssInQueryParameters(String xssPayload) {
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/campaigns?search=" + xssPayload)
-            .withHeader("X-Tenant-ID", "test-tenant")
-            .withHeader("X-Workspace-ID", "test-workspace");
+            .withHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"), "test-tenant")
+            .withHeader(io.activej.http.HttpHeaders.of("X-Workspace-ID"), "test-workspace");
 
         Promise<HttpResponse> response = servlet.serve(request);
         HttpResponse result = await(response);
@@ -81,7 +81,7 @@ class XssProtectionTest extends DmApiTestBase {
         assertThat(result.getCode()).isNotEqualTo(500);
 
         // Response should be safe
-        String responseBody = result.getBody().getString();
+        String responseBody = result.getBody().getString(java.nio.charset.StandardCharsets.UTF_8);
         assertThat(responseBody).doesNotContain("<script>");
     }
 
@@ -94,15 +94,15 @@ class XssProtectionTest extends DmApiTestBase {
     @DisplayName("P2-022: Should sanitize XSS in headers")
     void shouldSanitizeXssInHeaders(String xssPayload) {
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/campaigns")
-            .withHeader("X-Tenant-ID", "test-tenant")
-            .withHeader("X-Workspace-ID", "test-workspace")
-            .withHeader("X-Custom-Header", xssPayload);
+            .withHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"), "test-tenant")
+            .withHeader(io.activej.http.HttpHeaders.of("X-Workspace-ID"), "test-workspace")
+            .withHeader(io.activej.http.HttpHeaders.of("X-Custom-Header"), xssPayload);
 
         Promise<HttpResponse> response = servlet.serve(request);
         HttpResponse result = await(response);
 
         // Response should not contain unencoded script tags
-        String responseBody = result.getBody().getString();
+        String responseBody = result.getBody().getString(java.nio.charset.StandardCharsets.UTF_8);
         assertThat(responseBody).doesNotContain("<script>");
     }
 
@@ -110,8 +110,8 @@ class XssProtectionTest extends DmApiTestBase {
     @DisplayName("P2-022: Response should include X-Content-Type-Options header")
     void shouldIncludeXContentTypeOptionsHeader() {
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/campaigns")
-            .withHeader("X-Tenant-ID", "test-tenant")
-            .withHeader("X-Workspace-ID", "test-workspace");
+            .withHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"), "test-tenant")
+            .withHeader(io.activej.http.HttpHeaders.of("X-Workspace-ID"), "test-workspace");
 
         Promise<HttpResponse> response = servlet.serve(request);
         HttpResponse result = await(response);
@@ -124,8 +124,8 @@ class XssProtectionTest extends DmApiTestBase {
     @DisplayName("P2-022: Response should include X-Frame-Options header")
     void shouldIncludeXFrameOptionsHeader() {
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/campaigns")
-            .withHeader("X-Tenant-ID", "test-tenant")
-            .withHeader("X-Workspace-ID", "test-workspace");
+            .withHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"), "test-tenant")
+            .withHeader(io.activej.http.HttpHeaders.of("X-Workspace-ID"), "test-workspace");
 
         Promise<HttpResponse> response = servlet.serve(request);
         HttpResponse result = await(response);
@@ -138,8 +138,8 @@ class XssProtectionTest extends DmApiTestBase {
     @DisplayName("P2-022: Response should include Content-Security-Policy header")
     void shouldIncludeContentSecurityPolicyHeader() {
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/campaigns")
-            .withHeader("X-Tenant-ID", "test-tenant")
-            .withHeader("X-Workspace-ID", "test-workspace");
+            .withHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"), "test-tenant")
+            .withHeader(io.activej.http.HttpHeaders.of("X-Workspace-ID"), "test-workspace");
 
         Promise<HttpResponse> response = servlet.serve(request);
         HttpResponse result = await(response);
@@ -155,8 +155,8 @@ class XssProtectionTest extends DmApiTestBase {
     @DisplayName("P2-022: Response should include Referrer-Policy header")
     void shouldIncludeReferrerPolicyHeader() {
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/campaigns")
-            .withHeader("X-Tenant-ID", "test-tenant")
-            .withHeader("X-Workspace-ID", "test-workspace");
+            .withHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"), "test-tenant")
+            .withHeader(io.activej.http.HttpHeaders.of("X-Workspace-ID"), "test-workspace");
 
         Promise<HttpResponse> response = servlet.serve(request);
         HttpResponse result = await(response);
@@ -169,9 +169,9 @@ class XssProtectionTest extends DmApiTestBase {
     @DisplayName("P2-022: JSON responses should have proper Content-Type")
     void shouldHaveProperContentTypeForJson() {
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/campaigns")
-            .withHeader("X-Tenant-ID", "test-tenant")
-            .withHeader("X-Workspace-ID", "test-workspace")
-            .withHeader("Accept", "application/json");
+            .withHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"), "test-tenant")
+            .withHeader(io.activej.http.HttpHeaders.of("X-Workspace-ID"), "test-workspace")
+            .withHeader(io.activej.http.HttpHeaders.of("Accept"), "application/json");
 
         Promise<HttpResponse> response = servlet.serve(request);
         HttpResponse result = await(response);
@@ -187,17 +187,17 @@ class XssProtectionTest extends DmApiTestBase {
         // This test simulates a scenario where an attacker tries to inject
         // HTML/JS in a field that might be reflected in error messages
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/campaigns")
-            .withHeader("X-Tenant-ID", "<script>alert('xss')</script>")  // XSS in header
-            .withHeader("X-Workspace-ID", "test-workspace")
-            .withHeader("X-CSRF-Token", "valid-token")
-            .withHeader("Content-Type", "application/json")
+            .withHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"), "<script>alert('xss')</script>")  // XSS in header
+            .withHeader(io.activej.http.HttpHeaders.of("X-Workspace-ID"), "test-workspace")
+            .withHeader(io.activej.http.HttpHeaders.of("X-CSRF-Token"), "valid-token")
+            .withHeader(io.activej.http.HttpHeaders.of("Content-Type"), "application/json")
             .withBody("{\"name\":\"Test\"}");
 
         Promise<HttpResponse> response = servlet.serve(request);
         HttpResponse result = await(response);
 
         // Response body should not contain unescaped script tags
-        String responseBody = result.getBody().getString();
+        String responseBody = result.getBody().getString(java.nio.charset.StandardCharsets.UTF_8);
         assertThat(responseBody).doesNotContain("<script>");
     }
 
@@ -207,10 +207,10 @@ class XssProtectionTest extends DmApiTestBase {
         String maliciousPayload = "{\"__proto__\":{\"isAdmin\":true},\"name\":\"Test Campaign\"}";
 
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/campaigns")
-            .withHeader("X-Tenant-ID", "test-tenant")
-            .withHeader("X-Workspace-ID", "test-workspace")
-            .withHeader("X-CSRF-Token", "valid-token")
-            .withHeader("Content-Type", "application/json")
+            .withHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"), "test-tenant")
+            .withHeader(io.activej.http.HttpHeaders.of("X-Workspace-ID"), "test-workspace")
+            .withHeader(io.activej.http.HttpHeaders.of("X-CSRF-Token"), "valid-token")
+            .withHeader(io.activej.http.HttpHeaders.of("Content-Type"), "application/json")
             .withBody(maliciousPayload);
 
         Promise<HttpResponse> response = servlet.serve(request);

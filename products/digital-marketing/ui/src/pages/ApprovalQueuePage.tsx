@@ -59,7 +59,7 @@ export function ApprovalQueuePage(): React.ReactElement {
   const userHasApproverRole = hasApproverRole(roles);
 
   return (
-    <main
+    <section
       data-testid="approval-queue-page"
       className="max-w-6xl mx-auto px-4 py-8"
     >
@@ -127,6 +127,6 @@ export function ApprovalQueuePage(): React.ReactElement {
           approvals={filtered}
         />
       )}
-    </main>
+    </section>
   );
 }

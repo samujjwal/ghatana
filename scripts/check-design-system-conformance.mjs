@@ -50,6 +50,17 @@ for (const file of allowlist.hardcodedStyleExceptions ?? []) {
   }
 }
 
+for (const file of allowlist.hardcodedStyleFiles ?? []) {
+  if (!files.includes(file)) {
+    violations.push(`${file}: listed in frontend-conformance-allowlist.json hardcodedStyleFiles but file was not scanned`);
+    continue;
+  }
+  const content = readFileSync(resolve(repoRoot, file), 'utf8');
+  if (!hardcodedValuePattern.test(content)) {
+    violations.push(`${file}: stale hardcodedStyleFiles entry; remove it from frontend-conformance-allowlist.json`);
+  }
+}
+
 if (violations.length > 0) {
   console.error('Design-system conformance violations:');
   for (const violation of violations) {

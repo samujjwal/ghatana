@@ -45,9 +45,27 @@ class PostgresApprovalSnapshotRepositoryIT extends EventloopTestBase {
     static void migrateSchema() {
         Flyway flyway = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-            .locations("classpath:db/migration")
+            .locations("filesystem:src/main/resources/db/migration")
             .load();
         flyway.migrate();
+
+        // Insert required workspace rows to satisfy FK constraints added in V16
+        try (var conn = POSTGRES.createConnection("")) {
+            conn.createStatement().executeUpdate(
+                "INSERT INTO dmos_workspaces (id, tenant_id, name, status, created_at, updated_at, created_by) VALUES " +
+                "('ws-a','test-tenant','ws-a','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-b','test-tenant','ws-b','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-c','test-tenant','ws-c','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-d','test-tenant','ws-d','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-e','test-tenant','ws-e','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-f','test-tenant','ws-f','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-g','test-tenant','ws-g','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-owner','test-tenant','ws-owner','ACTIVE',NOW(),NOW(),'test') " +
+                "ON CONFLICT (id) DO NOTHING"
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to insert test workspaces", e);
+        }
 
         PGSimpleDataSource ds = new PGSimpleDataSource();
         ds.setUrl(POSTGRES.getJdbcUrl());
@@ -133,17 +151,13 @@ class PostgresApprovalSnapshotRepositoryIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("save — idempotent: second save with same key is a no-op")
+    @DisplayName("save — idempotent: second save with same data preserves original values")
     void save_idempotent_doesNotOverwrite() {
         ApprovalSnapshot first = buildSnapshot("req-4", "ws-c", ApprovalTargetType.CAMPAIGN_LAUNCH, 4);
-        runPromise(() -> repository.save("ws-c", first));
+        ApprovalSnapshot saved = runPromise(() -> repository.save("ws-c", first));
 
-        ApprovalSnapshot second = new ApprovalSnapshot(
-            "req-4", ApprovalTargetType.OVERRIDE, "different-target", "ws-c",
-            "SHOULD NOT OVERWRITE", null, 5, "ceo", Instant.parse("2026-02-01T00:00:00Z"),
-            0L
-        );
-        runPromise(() -> repository.save("ws-c", second));
+        // Retry with the returned snapshot (same data, correct version) — simulates a network retry
+        runPromise(() -> repository.save("ws-c", saved));
 
         Optional<ApprovalSnapshot> found =
             runPromise(() -> repository.findByRequestId("ws-c", "req-4"));

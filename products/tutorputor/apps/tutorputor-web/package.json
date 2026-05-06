@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@ghatana/design-system": "workspace:*",
+    "@ghatana/product-shell": "workspace:*",
     "@ghatana/realtime": "workspace:*",
     "@ghatana/theme": "workspace:*",
     "@ghatana/tokens": "workspace:*",

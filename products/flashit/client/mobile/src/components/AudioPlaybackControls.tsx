@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 interface AudioPlaybackControlsProps {
     audioUri: string;
@@ -115,14 +116,14 @@ const styles = StyleSheet.create({
     waveformPlaceholder: {
         width: '100%',
         height: 120,
-        backgroundColor: '#1a1a1a',
+        backgroundColor: flashitMobileTheme.background.muted,
         borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
     },
     placeholderText: {
-        color: '#666',
+        color: flashitMobileTheme.text.secondary,
         fontSize: 14,
     },
     controls: {
@@ -134,19 +135,19 @@ const styles = StyleSheet.create({
         width: 60,
         height: 60,
         borderRadius: 30,
-        backgroundColor: '#007aff',
+        backgroundColor: flashitMobileTheme.brand.primary,
         justifyContent: 'center',
         alignItems: 'center',
     },
     playButtonText: {
         fontSize: 24,
-        color: '#fff',
+        color: flashitMobileTheme.text.inverse,
     },
     timeDisplay: {
         flex: 1,
     },
     timeText: {
-        color: '#fff',
+        color: flashitMobileTheme.text.primary,
         fontSize: 16,
         textAlign: 'center',
     },

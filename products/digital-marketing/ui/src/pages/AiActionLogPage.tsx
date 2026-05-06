@@ -15,7 +15,7 @@ export function AiActionLogPage(): React.ReactElement {
   }
 
   return (
-    <main data-testid="ai-action-log-page" className="max-w-6xl mx-auto px-4 py-8 space-y-4">
+    <section data-testid="ai-action-log-page" className="max-w-6xl mx-auto px-4 py-8 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">AI Action Log</h1>
         <Link
@@ -80,6 +80,6 @@ export function AiActionLogPage(): React.ReactElement {
           </section>
         </div>
       )}
-    </main>
+    </section>
   );
 }

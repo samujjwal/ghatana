@@ -197,6 +197,25 @@ export function AuthCallbackPage(): React.ReactElement {
     );
   }
 
-  // Should not reach here, but just in case
-  return null;
+  // Should not reach here, but fail closed with a visible recovery path.
+  return (
+    <main
+      data-testid="auth-callback-fallback"
+      className="min-h-screen flex items-center justify-center bg-gray-50"
+    >
+      <div className="bg-white rounded-lg shadow p-8 w-full max-w-sm text-center">
+        <h1 className="text-xl font-bold mb-2">Authentication Pending</h1>
+        <p className="text-gray-600 mb-6">
+          We could not determine the authentication state. Please return to login and try again.
+        </p>
+        <button
+          onClick={() => navigate('/login')}
+          className="w-full bg-blue-600 text-white rounded px-4 py-2 text-sm hover:bg-blue-700"
+          data-testid="auth-callback-fallback-login"
+        >
+          Back to Login
+        </button>
+      </div>
+    </main>
+  );
 }

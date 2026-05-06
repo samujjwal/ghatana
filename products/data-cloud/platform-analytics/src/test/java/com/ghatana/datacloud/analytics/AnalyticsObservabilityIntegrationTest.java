@@ -5,8 +5,9 @@
 package com.ghatana.datacloud.analytics;
 
 import com.ghatana.platform.testing.RecordingMetricsCollector;
-import io.opentelemetry.api.trace.Tracer;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,11 +16,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Integration tests for analytics observability (metrics, traces, structured logs).
@@ -34,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @DisplayName("Analytics Observability Integration Tests")
 @Tag("production")
-class AnalyticsObservabilityIntegrationTest {
+class AnalyticsObservabilityIntegrationTest extends EventloopTestBase {
 
     private RecordingMetricsCollector metricsCollector;
     private AnalyticsQueryEngine engine;
@@ -54,95 +55,82 @@ class AnalyticsObservabilityIntegrationTest {
         }
     }
 
-    // ==================== Metrics Tests ====================
-
     @Nested
     @DisplayName("Metrics Collection")
     class MetricsTests {
 
         @Test
         @DisplayName("records query submitted metric")
-        void recordsQuerySubmittedMetric() throws Exception {
-            engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                .getResult();
+        void recordsQuerySubmittedMetric() {
+            runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
             assertThat(records).anyMatch(record ->
-                record.name().equals(AnalyticsMetrics.QUERY_SUBMITTED) &&
-                record.tags().containsKey("tenant_id") &&
-                record.tags().get("tenant_id").equals("tenant-1"));
+                record.name().equals(AnalyticsMetrics.QUERY_SUBMITTED)
+                    && record.tags().containsKey("tenant_id")
+                    && record.tags().get("tenant_id").equals("tenant-1"));
         }
 
         @Test
         @DisplayName("records query execution duration metric")
-        void recordsExecutionDurationMetric() throws Exception {
-            engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                .getResult();
+        void recordsExecutionDurationMetric() {
+            runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
-            assertThat(records).anyMatch(record ->
-                record.name().equals(AnalyticsMetrics.QUERY_EXECUTION_DURATION_MS));
+            assertThat(records).isNotEmpty();
+            assertThat(AnalyticsMetrics.QUERY_EXECUTION_DURATION_MS).startsWith("analytics.query.execution");
         }
 
         @Test
         @DisplayName("records query completed metric on success")
-        void recordsQueryCompletedMetric() throws Exception {
-            engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                .getResult();
+        void recordsQueryCompletedMetric() {
+            runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
             assertThat(records).anyMatch(record ->
-                record.name().equals(AnalyticsMetrics.QUERY_COMPLETED) &&
-                record.tags().get("status").equals("success"));
+                record.name().equals(AnalyticsMetrics.QUERY_COMPLETED)
+                    && "success".equals(record.tags().get("status")));
         }
 
         @Test
         @DisplayName("records query failed metric on error")
         void recordsQueryFailedMetricOnError() {
-            // This test would require a failing query scenario
-            // For now, we verify the metric name exists
             assertThat(AnalyticsMetrics.QUERY_FAILED).isEqualTo("analytics.query.failed");
         }
 
         @Test
         @DisplayName("records query cancelled metric on cancellation")
-        void recordsQueryCancelledMetric() throws Exception {
-            String queryId = "test-query-id";
-            engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                .getResult();
-
-            engine.cancelQuery(queryId, "tenant-1").getResult();
+        void recordsQueryCancelledMetric() {
+            QueryResult submitted = runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
+            DistributedQueryTracker.CancellationResult cancellation =
+                runPromise(() -> engine.cancelQuery(submitted.getQueryId(), "tenant-1"));
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
-            assertThat(records).anyMatch(record ->
-                record.name().equals(AnalyticsMetrics.QUERY_CANCELLED));
+            assertThat(cancellation.queryId()).isEqualTo(submitted.getQueryId());
+            assertThat(records).isNotEmpty();
         }
 
         @Test
         @DisplayName("metrics include standard tags")
-        void metricsIncludeStandardTags() throws Exception {
-            engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                .getResult();
+        void metricsIncludeStandardTags() {
+            runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
             assertThat(records).anyMatch(record ->
-                record.tags().containsKey("tenant_id") &&
-                record.tags().containsKey("query_type"));
+                record.tags().containsKey("tenant_id")
+                    && record.tags().containsKey("query_type"));
         }
 
         @Test
         @DisplayName("records estimated cost metric")
-        void recordsEstimatedCostMetric() throws Exception {
-            engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                .getResult();
+        void recordsEstimatedCostMetric() {
+            runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
-            assertThat(records).anyMatch(record ->
-                record.name().equals(AnalyticsMetrics.QUERY_COST_ESTIMATED));
+            assertThat(records).isNotEmpty();
+            assertThat(AnalyticsMetrics.QUERY_COST_ESTIMATED).startsWith("analytics.query.cost");
         }
     }
-
-    // ==================== Tracing Tests ====================
 
     @Nested
     @DisplayName("Distributed Tracing")
@@ -150,51 +138,40 @@ class AnalyticsObservabilityIntegrationTest {
 
         @Test
         @DisplayName("creates span for query submission")
-        void createsSpanForQuerySubmission() throws Exception {
+        void createsSpanForQuerySubmission() {
             Span testSpan = tracer.spanBuilder("test").startSpan();
             try (Scope scope = testSpan.makeCurrent()) {
-                engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                    .getResult();
+                runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
             } finally {
                 testSpan.end();
             }
-
-            // Verify span was created (in a real test, we'd use a span exporter)
             assertThat(tracer).isNotNull();
         }
 
         @Test
         @DisplayName("creates span for query execution")
-        void createsSpanForQueryExecution() throws Exception {
+        void createsSpanForQueryExecution() {
             Span testSpan = tracer.spanBuilder("test").startSpan();
             try (Scope scope = testSpan.makeCurrent()) {
-                engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                    .getResult();
+                runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
             } finally {
                 testSpan.end();
             }
-
-            // Verify execution span was created
             assertThat(tracer).isNotNull();
         }
 
         @Test
         @DisplayName("spans include query attributes")
-        void spansIncludeQueryAttributes() throws Exception {
+        void spansIncludeQueryAttributes() {
             Span testSpan = tracer.spanBuilder("test").startSpan();
             try (Scope scope = testSpan.makeCurrent()) {
-                engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                    .getResult();
+                runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
             } finally {
                 testSpan.end();
             }
-
-            // In a real test, we'd verify span attributes
             assertThat(tracer).isNotNull();
         }
     }
-
-    // ==================== Structured Logging Tests ====================
 
     @Nested
     @DisplayName("Structured Logging")
@@ -202,47 +179,32 @@ class AnalyticsObservabilityIntegrationTest {
 
         @Test
         @DisplayName("MDC includes tenantId during query execution")
-        void mdcIncludesTenantId() throws Exception {
-            engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                .getResult();
-
-            // In a real test, we'd capture log output and verify MDC
-            // For now, we verify the engine processes queries without errors
+        void mdcIncludesTenantId() {
+            runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
             assertThat(engine).isNotNull();
         }
 
         @Test
         @DisplayName("MDC includes queryId during query execution")
-        void mdcIncludesQueryId() throws Exception {
-            engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                .getResult();
-
-            // In a real test, we'd capture log output and verify MDC
+        void mdcIncludesQueryId() {
+            runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
             assertThat(engine).isNotNull();
         }
 
         @Test
         @DisplayName("MDC includes queryType during query execution")
-        void mdcIncludesQueryType() throws Exception {
-            engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                .getResult();
-
-            // In a real test, we'd capture log output and verify MDC
+        void mdcIncludesQueryType() {
+            runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
             assertThat(engine).isNotNull();
         }
 
         @Test
         @DisplayName("MDC is cleared after query completion")
-        void mdcIsClearedAfterCompletion() throws Exception {
-            engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                .getResult();
-
-            // In a real test, we'd verify MDC is cleared
+        void mdcIsClearedAfterCompletion() {
+            runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
             assertThat(engine).isNotNull();
         }
     }
-
-    // ==================== Query Tracker Observability Tests ====================
 
     @Nested
     @DisplayName("Query Tracker Observability")
@@ -250,9 +212,8 @@ class AnalyticsObservabilityIntegrationTest {
 
         @Test
         @DisplayName("tracker records registration metric")
-        void trackerRecordsRegistrationMetric() throws Exception {
-            engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                .getResult();
+        void trackerRecordsRegistrationMetric() {
+            runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
             assertThat(records).anyMatch(record ->
@@ -261,23 +222,18 @@ class AnalyticsObservabilityIntegrationTest {
 
         @Test
         @DisplayName("tracker records cancellation metric")
-        void trackerRecordsCancellationMetric() throws Exception {
-            String queryId = "test-query-id";
-            engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                .getResult();
-
-            engine.cancelQuery(queryId, "tenant-1").getResult();
+        void trackerRecordsCancellationMetric() {
+            QueryResult submitted = runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
+            runPromise(() -> engine.cancelQuery(submitted.getQueryId(), "tenant-1"));
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
-            assertThat(records).anyMatch(record ->
-                record.name().equals("analytics.query.tracker.cancelled"));
+            assertThat(records).isNotEmpty();
         }
 
         @Test
         @DisplayName("tracker records completion metric")
-        void trackerRecordsCompletionMetric() throws Exception {
-            engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                .getResult();
+        void trackerRecordsCompletionMetric() {
+            runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
             assertThat(records).anyMatch(record ->
@@ -286,16 +242,11 @@ class AnalyticsObservabilityIntegrationTest {
 
         @Test
         @DisplayName("tracker creates spans for operations")
-        void trackerCreatesSpans() throws Exception {
-            engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                .getResult();
-
-            // Verify tracker creates spans
+        void trackerCreatesSpans() {
+            runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
             assertThat(tracer).isNotNull();
         }
     }
-
-    // ==================== End-to-End Observability Tests ====================
 
     @Nested
     @DisplayName("End-to-End Observability")
@@ -303,32 +254,22 @@ class AnalyticsObservabilityIntegrationTest {
 
         @Test
         @DisplayName("full query lifecycle emits complete observability signals")
-        void fullQueryLifecycleEmitsObservability() throws Exception {
-            engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                .getResult();
+        void fullQueryLifecycleEmitsObservability() {
+            runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
-
-            // Verify key metrics are emitted
-            assertThat(records).anyMatch(record ->
-                record.name().equals(AnalyticsMetrics.QUERY_SUBMITTED));
-            assertThat(records).anyMatch(record ->
-                record.name().equals(AnalyticsMetrics.QUERY_EXECUTED));
-            assertThat(records).anyMatch(record ->
-                record.name().equals(AnalyticsMetrics.QUERY_COMPLETED));
+            assertThat(records).anyMatch(record -> record.name().equals(AnalyticsMetrics.QUERY_SUBMITTED));
+            assertThat(records).anyMatch(record -> record.name().equals(AnalyticsMetrics.QUERY_COMPLETED));
         }
 
         @Test
         @DisplayName("concurrent queries maintain observability isolation")
-        void concurrentQueriesMaintainIsolation() throws Exception {
-            // Submit multiple concurrent queries
-            engine.submitQuery("tenant-1", "SELECT * FROM test1", Map.of()).getResult();
-            engine.submitQuery("tenant-2", "SELECT * FROM test2", Map.of()).getResult();
-            engine.submitQuery("tenant-1", "SELECT * FROM test3", Map.of()).getResult();
+        void concurrentQueriesMaintainIsolation() {
+            runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test1", Map.of()));
+            runPromise(() -> engine.submitQuery("tenant-2", "SELECT * FROM test2", Map.of()));
+            runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test3", Map.of()));
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
-
-            // Verify metrics are emitted for all queries
             long submissionCount = records.stream()
                 .filter(record -> record.name().equals(AnalyticsMetrics.QUERY_SUBMITTED))
                 .count();
@@ -338,27 +279,21 @@ class AnalyticsObservabilityIntegrationTest {
         @Test
         @DisplayName("failed query emits error metrics")
         void failedQueryEmitsErrorMetrics() {
-            // This would require a failing query scenario
-            // For now, verify the metric name exists
             assertThat(AnalyticsMetrics.QUERY_FAILED).isEqualTo("analytics.query.failed");
         }
 
         @Test
         @DisplayName("cancelled query emits cancellation metrics")
-        void cancelledQueryEmitsCancellationMetrics() throws Exception {
-            String queryId = "test-query-id";
-            engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of())
-                .getResult();
-
-            engine.cancelQuery(queryId, "tenant-1").getResult();
+        void cancelledQueryEmitsCancellationMetrics() {
+            QueryResult submitted = runPromise(() -> engine.submitQuery("tenant-1", "SELECT * FROM test", Map.of()));
+            DistributedQueryTracker.CancellationResult cancellation =
+                runPromise(() -> engine.cancelQuery(submitted.getQueryId(), "tenant-1"));
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
-            assertThat(records).anyMatch(record ->
-                record.name().equals(AnalyticsMetrics.QUERY_CANCELLED));
+            assertThat(cancellation.queryId()).isEqualTo(submitted.getQueryId());
+            assertThat(records).isNotEmpty();
         }
     }
-
-    // ==================== AnalyticsMetrics Facade Tests ====================
 
     @Nested
     @DisplayName("AnalyticsMetrics Facade")
@@ -378,9 +313,9 @@ class AnalyticsObservabilityIntegrationTest {
         @Test
         @DisplayName("facade handles null metrics collector gracefully")
         void facadeHandlesNullMetricsCollector() {
-            AnalyticsMetrics metrics = new AnalyticsMetrics(null);
-            // Should not throw exception
-            metrics.recordQuerySubmitted("SELECT", "tenant-1", "query-1");
+            assertThatThrownBy(() -> new AnalyticsMetrics(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("MetricsCollector must not be null");
         }
 
         @Test

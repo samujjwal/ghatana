@@ -11,30 +11,11 @@ import ReflectionPage from './pages/ReflectionPage';
 import CollaborationPage from './pages/CollaborationPage';
 import MemoryExpansionPage from './pages/MemoryExpansionPage';
 import { LanguageInsightsPage } from './pages/LanguageInsightsPage';
-
-export type FlashItRole = 'guest' | 'member' | 'premium' | 'admin';
+import { isRouteAllowedForRole, type FlashItRole } from './routeAccess';
 
 export interface FlashItRouteManifestEntry extends ProductRouteCapability {
   readonly element: React.ReactElement;
   readonly requiresAuthentication: boolean;
-}
-
-export const FLASHIT_ROLE_ORDER: Readonly<Record<FlashItRole, number>> = {
-  guest: 0,
-  member: 1,
-  premium: 2,
-  admin: 3,
-};
-
-export function isRouteAllowedForRole(
-  route: Pick<FlashItRouteManifestEntry, 'minimumRole'>,
-  role: FlashItRole,
-): boolean {
-  if (!route.minimumRole) {
-    return true;
-  }
-
-  return FLASHIT_ROLE_ORDER[role] >= FLASHIT_ROLE_ORDER[route.minimumRole as FlashItRole];
 }
 
 export const flashitRouteManifest: readonly FlashItRouteManifestEntry[] = [

@@ -49,7 +49,7 @@ class PostgresAiActionLogRepositoryIT extends EventloopTestBase {
     static void migrateSchema() {
         Flyway flyway = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-            .locations("classpath:db/migration")
+            .locations("filesystem:src/main/resources/db/migration")
             .load();
         flyway.migrate();
 
@@ -212,7 +212,7 @@ class PostgresAiActionLogRepositoryIT extends EventloopTestBase {
         AiActionLogEntry saved = runPromise(() -> repository.save(entry));
         assertThat(saved.version()).isEqualTo(1L);
 
-        // Try to update with wrong version
+        // Try to update with wrong version (stored is 1, sending 2 = stale)
         AiActionLogEntry stale = new AiActionLogEntry(
             "act-9", "ws-g", "corr-9",
             AiActionType.ACTION_EXECUTED, AiActionStatus.EXECUTED,
@@ -220,7 +220,7 @@ class PostgresAiActionLogRepositoryIT extends EventloopTestBase {
             List.of(), List.of(),
             "Stale update", "Stale details", null,
             Instant.parse("2026-01-10T10:00:00Z"),
-            0L
+            2L
         );
 
         org.junit.jupiter.api.Assertions.assertThrows(

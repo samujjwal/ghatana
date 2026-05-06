@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@ghatana/product-shell": path.resolve(__dirname, "../../../../platform/typescript/product-shell/dist/index.js"),
     },
   },
   test: {

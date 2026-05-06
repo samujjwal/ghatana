@@ -26,9 +26,9 @@ export function FeatureUnavailablePage({
   const { workspaceId } = useAuth();
 
   return (
-    <main
+    <section
       data-testid="feature-unavailable-page"
-      className="min-h-screen flex items-center justify-center bg-gray-50"
+      className="flex min-h-[70vh] items-center justify-center bg-gray-50"
     >
       <div className="bg-white rounded-lg shadow p-8 w-full max-w-md text-center">
         <div className="mb-4">
@@ -76,6 +76,6 @@ export function FeatureUnavailablePage({
           If you believe this is an error, please contact support.
         </p>
       </div>
-    </main>
+    </section>
   );
 }

@@ -51,9 +51,26 @@ class PostgresCampaignRepositoryIT extends EventloopTestBase {
     static void migrateSchema() {
         Flyway flyway = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-            .locations("classpath:db/migration")
+            .locations("filesystem:src/main/resources/db/migration")
             .load();
         flyway.migrate();
+
+        // Insert required workspace rows to satisfy FK constraints added in V16
+        try (var conn = POSTGRES.createConnection("")) {
+            conn.createStatement().executeUpdate(
+                "INSERT INTO dmos_workspaces (id, tenant_id, name, status, created_at, updated_at, created_by) VALUES " +
+                "('ws-alpha','test-tenant','ws-alpha','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-beta','test-tenant','ws-beta','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-gamma','test-tenant','ws-gamma','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-delta','test-tenant','ws-delta','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-one','test-tenant','ws-one','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-two','test-tenant','ws-two','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-ts','test-tenant','ws-ts','ACTIVE',NOW(),NOW(),'test') " +
+                "ON CONFLICT (id) DO NOTHING"
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to insert test workspaces", e);
+        }
 
         PGSimpleDataSource ds = new PGSimpleDataSource();
         ds.setUrl(POSTGRES.getJdbcUrl());

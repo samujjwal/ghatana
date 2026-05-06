@@ -17,6 +17,8 @@ import com.ghatana.digitalmarketing.application.campaign.CampaignPreflightDataPr
 import com.ghatana.digitalmarketing.application.campaign.CampaignService;
 import com.ghatana.digitalmarketing.application.campaign.CampaignServiceImpl;
 import com.ghatana.digitalmarketing.application.command.DmCommandHandlerRegistry;
+import com.ghatana.digitalmarketing.application.command.DmCommandService;
+import com.ghatana.digitalmarketing.application.command.DmCommandServiceImpl;
 import com.ghatana.digitalmarketing.application.connector.DmConnectorRepository;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignApiClient;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignLinkRepository;
@@ -50,6 +52,8 @@ import com.ghatana.digitalmarketing.persistence.budget.PostgresBudgetRecommendat
 import com.ghatana.digitalmarketing.persistence.campaign.PostgresCampaignRepository;
 import com.ghatana.digitalmarketing.persistence.strategy.PostgresMarketingStrategyRepository;
 import com.ghatana.digitalmarketing.persistence.workspace.PostgresWorkspaceRepository;
+import com.ghatana.digitalmarketing.persistence.command.PostgresDmCommandRepository;
+import com.ghatana.digitalmarketing.persistence.governance.PostgresDmKillSwitchService;
 import com.ghatana.kernel.bridge.port.BridgeAuthorizationService;
 import com.ghatana.kernel.bridge.port.BridgeAuditEmitter;
 import com.ghatana.kernel.bridge.port.BridgeHealthIndicator;
@@ -73,6 +77,7 @@ import com.ghatana.plugin.notification.impl.InMemoryNotificationPlugin;
 import com.ghatana.plugin.risk.RiskManagementPlugin;
 import com.ghatana.plugin.risk.impl.StandardRiskManagementPlugin;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.digitalmarketing.application.governance.DmKillSwitchService;
 import io.activej.eventloop.Eventloop;
 import io.activej.launcher.Launcher;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -463,8 +468,117 @@ public final class DmosApiServer extends Launcher {
         CampaignPreflightDataProvider preflightProvider =
             (ctx, campaign) -> io.activej.promise.Promise.of(
                 new CampaignPreflightDataProvider.CampaignPreflightData(true, 1, 1, 0.0, 10000.0));
+
+        DmKillSwitchService killSwitchService;
+        DmCommandService commandService;
+        if (usePostgres()) {
+            DataSource dataSource = get(DataSource.class);
+            Executor executor = get(Executor.class);
+            killSwitchService = new PostgresDmKillSwitchService(dataSource, executor);
+            commandService = new DmCommandServiceImpl(
+                new PostgresDmCommandRepository(dataSource, executor),
+                kernelAdapter
+            );
+        } else {
+            killSwitchService = new DmKillSwitchService() {
+                @Override
+                public io.activej.promise.Promise<Boolean> isKillSwitchActive(String tenantId, String workspaceId, String feature) {
+                    return io.activej.promise.Promise.of(false);
+                }
+
+                @Override
+                public io.activej.promise.Promise<Void> activateKillSwitch(String scope, String scopeId, String feature, String reason, String activatedBy) {
+                    return io.activej.promise.Promise.complete();
+                }
+
+                @Override
+                public io.activej.promise.Promise<Void> deactivateKillSwitch(String scope, String scopeId, String feature, String deactivatedBy) {
+                    return io.activej.promise.Promise.complete();
+                }
+
+                @Override
+                public io.activej.promise.Promise<Void> recordKillSwitchAudit(String tenantId, String workspaceId, String feature, boolean wasBlocked, String correlationId) {
+                    return io.activej.promise.Promise.complete();
+                }
+            };
+            commandService = new DmCommandService() {
+                @Override
+                public io.activej.promise.Promise<com.ghatana.digitalmarketing.domain.command.DmCommand> issue(
+                    com.ghatana.digitalmarketing.contracts.DmOperationContext ctx,
+                    IssueCommandRequest request
+                ) {
+                    return io.activej.promise.Promise.ofException(new IllegalStateException("Command service not configured in non-PostgreSQL mode"));
+                }
+
+                @Override
+                public io.activej.promise.Promise<java.util.Optional<com.ghatana.digitalmarketing.domain.command.DmCommand>> findById(
+                    com.ghatana.digitalmarketing.contracts.DmOperationContext ctx,
+                    String id
+                ) {
+                    return io.activej.promise.Promise.of(java.util.Optional.empty());
+                }
+
+                @Override
+                public io.activej.promise.Promise<java.util.List<com.ghatana.digitalmarketing.domain.command.DmCommand>> listPending(
+                    com.ghatana.digitalmarketing.contracts.DmOperationContext ctx,
+                    int limit
+                ) {
+                    return io.activej.promise.Promise.of(java.util.List.of());
+                }
+
+                @Override
+                public io.activej.promise.Promise<com.ghatana.digitalmarketing.domain.command.DmCommand> markExecuting(
+                    com.ghatana.digitalmarketing.contracts.DmOperationContext ctx,
+                    String commandId
+                ) {
+                    return io.activej.promise.Promise.ofException(new IllegalStateException("Command service not configured in non-PostgreSQL mode"));
+                }
+
+                @Override
+                public io.activej.promise.Promise<com.ghatana.digitalmarketing.domain.command.DmCommand> markSucceeded(
+                    com.ghatana.digitalmarketing.contracts.DmOperationContext ctx,
+                    String commandId
+                ) {
+                    return io.activej.promise.Promise.ofException(new IllegalStateException("Command service not configured in non-PostgreSQL mode"));
+                }
+
+                @Override
+                public io.activej.promise.Promise<com.ghatana.digitalmarketing.domain.command.DmCommand> markFailed(
+                    com.ghatana.digitalmarketing.contracts.DmOperationContext ctx,
+                    String commandId,
+                    String failureReason
+                ) {
+                    return io.activej.promise.Promise.ofException(new IllegalStateException("Command service not configured in non-PostgreSQL mode"));
+                }
+
+                @Override
+                public io.activej.promise.Promise<com.ghatana.digitalmarketing.domain.command.DmCommand> markRolledBack(
+                    com.ghatana.digitalmarketing.contracts.DmOperationContext ctx,
+                    String commandId
+                ) {
+                    return io.activej.promise.Promise.ofException(new IllegalStateException("Command service not configured in non-PostgreSQL mode"));
+                }
+
+                @Override
+                public io.activej.promise.Promise<Long> countByStatus(
+                    com.ghatana.digitalmarketing.contracts.DmOperationContext ctx,
+                    com.ghatana.digitalmarketing.domain.command.DmCommandStatus status
+                ) {
+                    return io.activej.promise.Promise.of(0L);
+                }
+            };
+        }
+
         CampaignService campaignService = new CampaignServiceImpl(
-            kernelAdapter, campaignRepo, compliancePlugin, preflightProvider, DmosMetricsCollector.noop());
+            kernelAdapter,
+            campaignRepo,
+            compliancePlugin,
+            preflightProvider,
+            DmosMetricsCollector.noop(),
+            killSwitchService,
+            commandService,
+            new ObjectMapper()
+        );
         register(CampaignService.class, campaignService);
 
         // Approval Workflow Service

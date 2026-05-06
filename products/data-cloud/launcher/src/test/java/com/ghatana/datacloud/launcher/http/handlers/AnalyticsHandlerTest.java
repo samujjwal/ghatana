@@ -2,6 +2,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
+import com.ghatana.datacloud.analytics.DistributedQueryTracker;
 import com.ghatana.datacloud.analytics.QueryResult;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.bytebuf.ByteBuf;
@@ -326,27 +327,26 @@ class AnalyticsHandlerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("cancel returns 501 — cancellationSupported=true but no engine implementation yet")
-        void cancel_supported_flag_set_still_returns501() {
-            // cancellationSupported=true is reserved for when a distributed query tracker is wired.
-            // Until that implementation exists, both paths return 501.
+        @DisplayName("cancel delegates to engine when cancellationSupported=true")
+        void cancel_supported_flag_set_delegatesToEngine() {
             String traceId = "trace-cancel-002";
-            HttpResponse err501 = mock(HttpResponse.class);
-            when(err501.getCode()).thenReturn(501);
+            HttpResponse ok200 = mock(HttpResponse.class);
+            when(ok200.getCode()).thenReturn(200);
             when(httpSupport.resolveCorrelationId(any())).thenReturn(traceId);
-            when(httpSupport.errorResponse(eq(501), anyString(), eq(traceId))).thenReturn(err501);
+            when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-123");
+            when(analyticsEngine.cancelQuery(eq("q-cancel-supported"), eq("tenant-123")))
+                .thenReturn(Promise.of(DistributedQueryTracker.CancellationResult.cancelled("q-cancel-supported")));
+            when(httpSupport.jsonResponse(anyMap())).thenReturn(ok200);
 
             AnalyticsHandler supported = new AnalyticsHandler(analyticsEngine, httpSupport)
                 .withCancellationSupported(true);
 
             HttpRequest req = mockRequest("");
             when(req.getPathParameter("queryId")).thenReturn("q-cancel-supported");
-            when(req.getHeader(HttpHeaders.of("X-Tenant-Id"))).thenReturn("tenant-123");
-
             HttpResponse response = runPromise(() -> supported.handleAnalyticsCancelQuery(req));
 
-            assertThat(response.getCode()).isEqualTo(501);
-            verifyNoInteractions(analyticsEngine);
+            assertThat(response.getCode()).isEqualTo(200);
+            verify(analyticsEngine).cancelQuery("q-cancel-supported", "tenant-123");
         }
     }
 

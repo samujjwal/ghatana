@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     height: height * 0.7,
   },
   playOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'center',
     alignItems: 'center',
   },

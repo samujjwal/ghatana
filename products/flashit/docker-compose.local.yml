@@ -104,8 +104,8 @@ services:
     ports:
       - "${FLASHIT_PROMETHEUS_PORT:-9090}:9090"
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./monitoring/alerts:/etc/prometheus/alerts
+      - ${PRODUCT_OBSERVABILITY_ROOT:-./monitoring}/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ${PRODUCT_OBSERVABILITY_ROOT:-./monitoring}/alerts:/etc/prometheus/alerts
       - prometheus_data:/prometheus
     networks:
       - flashit-network
@@ -120,8 +120,8 @@ services:
       - "${FLASHIT_GRAFANA_PORT:-3001}:3000"
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ${PRODUCT_OBSERVABILITY_ROOT:-./monitoring}/grafana/dashboards:/var/lib/grafana/dashboards
+      - ${PRODUCT_OBSERVABILITY_ROOT:-./monitoring}/grafana/provisioning:/etc/grafana/provisioning
     depends_on:
       - prometheus
     networks:

@@ -20,6 +20,34 @@ const contracts = [
     ],
   },
   {
+    name: "PHR shared mutation metadata contract",
+    file: "products/phr/src/main/java/com/ghatana/phr/kernel/service/PhrServiceBase.java",
+    required: [
+      "enrichMutationMetadata(",
+      "\"tenantId\"",
+      "\"principalId\"",
+      "\"correlationId\"",
+      "\"idempotencyKey\"",
+      "\"auditClassification\"",
+      "\"dataOwnerScope\"",
+      "PhrTraceContext.metadata(",
+    ],
+  },
+  {
+    name: "Finance shared mutation metadata contract",
+    file: "products/finance/src/main/java/com/ghatana/finance/kernel/service/FinanceServiceBase.java",
+    required: [
+      "enrichMutationMetadata(",
+      "\"tenant_id\"",
+      "\"principal_id\"",
+      "\"correlation_id\"",
+      "\"idempotency_key\"",
+      "\"audit_classification\"",
+      "\"data_owner_scope\"",
+      "FinanceTraceContext.metadata(",
+    ],
+  },
+  {
     name: "PHR appointment write flow",
     file: "products/phr/src/main/java/com/ghatana/phr/kernel/service/AppointmentService.java",
     required: [
@@ -28,6 +56,14 @@ const contracts = [
       "audit(\"APPOINTMENT_CREATE\"",
       "\"patientId\"",
       "\"providerId\"",
+    ],
+  },
+  {
+    name: "PHR patient record flow uses shared base writes",
+    file: "products/phr/src/main/java/com/ghatana/phr/kernel/service/PatientRecordService.java",
+    required: [
+      "createRecord(",
+      "updateRecord(",
     ],
   },
   {
@@ -46,6 +82,14 @@ const contracts = [
     required: [
       "\"correlation_id\"",
       "\"trace_operation\"",
+    ],
+  },
+  {
+    name: "Finance order management flow uses shared base writes",
+    file: "products/finance/src/main/java/com/ghatana/finance/kernel/service/OrderManagementService.java",
+    required: [
+      "createRecord(",
+      "updateRecord(",
     ],
   },
   {

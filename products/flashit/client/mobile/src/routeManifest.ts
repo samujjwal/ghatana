@@ -22,6 +22,40 @@ export interface FlashItMobileRouteManifestEntry extends ProductRouteCapability 
   readonly showInSettings?: boolean;
 }
 
+export type FlashItMobileRole = 'member' | 'premium' | 'admin';
+
+export const FLASHIT_MOBILE_ROLE_ORDER: Readonly<Record<FlashItMobileRole, number>> = {
+  member: 0,
+  premium: 1,
+  admin: 2,
+};
+
+function readStringField(value: unknown, key: string): string | null {
+  if (!value || typeof value !== 'object' || !(key in value)) {
+    return null;
+  }
+
+  const fieldValue = (value as Record<string, unknown>)[key];
+  return typeof fieldValue === 'string' ? fieldValue : null;
+}
+
+export function resolveFlashitMobileRole(currentUser: unknown): FlashItMobileRole {
+  const rawRole = readStringField(currentUser, 'role')?.trim().toLowerCase();
+  if (rawRole === 'admin') {
+    return 'admin';
+  }
+  if (rawRole === 'premium') {
+    return 'premium';
+  }
+
+  const rawTier = readStringField(currentUser, 'tier')?.trim().toLowerCase();
+  if (rawTier === 'premium' || rawTier === 'pro' || rawTier === 'plus') {
+    return 'premium';
+  }
+
+  return 'member';
+}
+
 export const flashitMobileRouteManifest: readonly FlashItMobileRouteManifestEntry[] = [
   {
     screen: 'Dashboard',
@@ -219,10 +253,39 @@ export const flashitMobileRouteManifest: readonly FlashItMobileRouteManifestEntr
   },
 ];
 
-export function getFlashitMobileTabRoutes(): readonly FlashItMobileRouteManifestEntry[] {
-  return flashitMobileRouteManifest.filter((route) => route.showInTabBar);
+export function isFlashitMobileRouteAllowed(
+  route: FlashItMobileRouteManifestEntry,
+  currentUser: unknown,
+): boolean {
+  const currentRole = resolveFlashitMobileRole(currentUser);
+  const minimumRole = route.minimumRole;
+
+  if (!minimumRole) {
+    return true;
+  }
+
+  const requiredLevel = FLASHIT_MOBILE_ROLE_ORDER[minimumRole as FlashItMobileRole];
+  if (typeof requiredLevel !== 'number') {
+    return true;
+  }
+
+  return FLASHIT_MOBILE_ROLE_ORDER[currentRole] >= requiredLevel;
 }
 
-export function getFlashitMobileSettingsRoutes(): readonly FlashItMobileRouteManifestEntry[] {
-  return flashitMobileRouteManifest.filter((route) => route.showInSettings);
+export function getFlashitMobileAccessibleRoutes(
+  currentUser: unknown,
+): readonly FlashItMobileRouteManifestEntry[] {
+  return flashitMobileRouteManifest.filter((route) => isFlashitMobileRouteAllowed(route, currentUser));
+}
+
+export function getFlashitMobileTabRoutes(
+  currentUser: unknown,
+): readonly FlashItMobileRouteManifestEntry[] {
+  return getFlashitMobileAccessibleRoutes(currentUser).filter((route) => route.showInTabBar);
+}
+
+export function getFlashitMobileSettingsRoutes(
+  currentUser: unknown,
+): readonly FlashItMobileRouteManifestEntry[] {
+  return getFlashitMobileAccessibleRoutes(currentUser).filter((route) => route.showInSettings);
 }

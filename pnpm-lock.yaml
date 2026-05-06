@@ -3889,6 +3889,9 @@ importers:
       '@ghatana/design-system':
         specifier: workspace:*
         version: link:../../../../platform/typescript/design-system
+      '@ghatana/product-shell':
+        specifier: workspace:*
+        version: link:../../../../platform/typescript/product-shell
       '@ghatana/realtime':
         specifier: workspace:*
         version: link:../../../../platform/typescript/realtime

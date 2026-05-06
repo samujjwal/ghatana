@@ -4,6 +4,7 @@ import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.SpanKind;
@@ -283,7 +284,7 @@ public final class DmosTelemetry {
     public void addEvent(String name, Map<String, String> attributes) {
         Span currentSpan = Span.current();
         if (currentSpan != null) {
-            Attributes.Builder builder = Attributes.builder();
+            AttributesBuilder builder = Attributes.builder();
             attributes.forEach((k, v) -> builder.put(AttributeKey.stringKey(k), v));
             currentSpan.addEvent(name, builder.build());
         }

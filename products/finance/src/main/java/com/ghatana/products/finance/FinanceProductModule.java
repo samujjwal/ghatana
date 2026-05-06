@@ -16,24 +16,14 @@ import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.products.finance.bff.FinanceBFF;
 import com.ghatana.products.finance.http.FinanceHttpServer;
-import com.ghatana.products.finance.domains.corporateactions.CorporateActionsDomainModule;
-import com.ghatana.products.finance.domains.ems.EmsDomainModule;
-import com.ghatana.products.finance.domains.marketdata.MarketDataDomainModule;
-import com.ghatana.products.finance.domains.oms.OmsDomainModule;
-import com.ghatana.products.finance.domains.pms.PmsDomainModule;
-import com.ghatana.products.finance.domains.posttrade.PostTradeDomainModule;
-import com.ghatana.products.finance.domains.pricing.PricingDomainModule;
-import com.ghatana.products.finance.domains.reconciliation.ReconciliationDomainModule;
-import com.ghatana.products.finance.domains.referencedata.ReferenceDataDomainModule;
-import com.ghatana.products.finance.domains.regulatoryreporting.RegulatoryReportingDomainModule;
-import com.ghatana.products.finance.domains.risk.RiskDomainModule;
-import com.ghatana.products.finance.domains.sanctions.SanctionsDomainModule;
-import com.ghatana.products.finance.domains.surveillance.SurveillanceDomainModule;
-import com.ghatana.products.finance.rules.FinanceRulesDomain;
 import com.ghatana.finance.kernel.FinanceKernelModule;
 import com.ghatana.kernel.config.KernelConfigResolver;
 import com.ghatana.products.finance.shell.FinanceProductShell;
 import io.activej.promise.Promise;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
@@ -55,11 +45,11 @@ import org.slf4j.LoggerFactory;
  *       interact with kernel adapters directly.</li>
  * </ol>
  *
- * <p>{@code FinanceProductModule} acts as the <em>composition root</em>: it instantiates
- * both levels, wires lifecycle delegation (initialize → start → stop → health), and
- * registers the product shell and BFF. It does <b>not</b> create individual service
- * instances — that responsibility belongs to either the kernel module or the respective
- * domain module.</p>
+ * <p>{@code FinanceProductModule} acts as the <em>composition root</em>: it wires both
+ * levels, delegates lifecycle (initialize → start → stop → health), and registers the
+ * product shell and BFF. Domain modules are discovered through
+ * {@link ServiceLoader} so the product root depends on a stable provider contract
+ * instead of compile-linking directly to every domain implementation.</p>
  *
  * <p>Key capabilities:
  * <ul>
@@ -100,20 +90,7 @@ public final class FinanceProductModule implements KernelModule {
     private FinanceHttpServer httpServer;
     private KernelContext context;
 
-    private OmsDomainModule omsModule;
-    private EmsDomainModule emsModule;
-    private PmsDomainModule pmsModule;
-    private RiskDomainModule riskModule;
-    private FinanceRulesDomain rulesModule;
-    private CorporateActionsDomainModule corporateActionsModule;
-    private MarketDataDomainModule marketDataModule;
-    private PostTradeDomainModule postTradeModule;
-    private PricingDomainModule pricingModule;
-    private ReconciliationDomainModule reconciliationModule;
-    private ReferenceDataDomainModule referenceDataModule;
-    private RegulatoryReportingDomainModule regulatoryReportingModule;
-    private SanctionsDomainModule sanctionsModule;
-    private SurveillanceDomainModule surveillanceModule;
+    private List<KernelModule> domainModules = List.of();
 
     @Override
     public String getModuleId() {
@@ -182,21 +159,7 @@ public final class FinanceProductModule implements KernelModule {
         );
         // productShell and bff will be created in start() after transactionService is available
 
-        omsModule = new OmsDomainModule();
-        emsModule = new EmsDomainModule();
-        pmsModule = new PmsDomainModule();
-        riskModule = new RiskDomainModule();
-        rulesModule = new FinanceRulesDomain();
-        corporateActionsModule = new CorporateActionsDomainModule();
-        marketDataModule = new MarketDataDomainModule();
-        postTradeModule = new PostTradeDomainModule();
-        pricingModule = new PricingDomainModule();
-        reconciliationModule = new ReconciliationDomainModule();
-        referenceDataModule = new ReferenceDataDomainModule();
-        regulatoryReportingModule = new RegulatoryReportingDomainModule();
-        sanctionsModule = new SanctionsDomainModule();
-        surveillanceModule = new SurveillanceDomainModule();
-
+        domainModules = discoverDomainModules();
         initializeDomainModules();
 
         context.registerService(FinanceAiRuntimeService.class, aiRuntimeService);
@@ -210,21 +173,9 @@ public final class FinanceProductModule implements KernelModule {
 
     private void initializeDomainModules() {
         log.debug("Initializing all finance domain modules");
-
-        omsModule.initialize(context);
-        emsModule.initialize(context);
-        pmsModule.initialize(context);
-        riskModule.initialize(context);
-        rulesModule.initialize(context);
-        corporateActionsModule.initialize(context);
-        marketDataModule.initialize(context);
-        postTradeModule.initialize(context);
-        pricingModule.initialize(context);
-        reconciliationModule.initialize(context);
-        referenceDataModule.initialize(context);
-        regulatoryReportingModule.initialize(context);
-        sanctionsModule.initialize(context);
-        surveillanceModule.initialize(context);
+        for (KernelModule module : domainModules) {
+            module.initialize(context);
+        }
 
         log.debug("All finance domain modules initialized");
     }
@@ -260,21 +211,9 @@ public final class FinanceProductModule implements KernelModule {
 
     private void startDomainModules() {
         log.debug("Starting all finance domain modules");
-
-        omsModule.start();
-        emsModule.start();
-        pmsModule.start();
-        riskModule.start();
-        rulesModule.start();
-        corporateActionsModule.start();
-        marketDataModule.start();
-        postTradeModule.start();
-        pricingModule.start();
-        reconciliationModule.start();
-        referenceDataModule.start();
-        regulatoryReportingModule.start();
-        sanctionsModule.start();
-        surveillanceModule.start();
+        for (KernelModule module : domainModules) {
+            module.start();
+        }
 
         log.debug("All finance domain modules started");
     }
@@ -308,21 +247,9 @@ public final class FinanceProductModule implements KernelModule {
 
     private void stopDomainModules() {
         log.debug("Stopping all finance domain modules");
-
-        if (surveillanceModule != null) surveillanceModule.stop();
-        if (sanctionsModule != null) sanctionsModule.stop();
-        if (regulatoryReportingModule != null) regulatoryReportingModule.stop();
-        if (referenceDataModule != null) referenceDataModule.stop();
-        if (reconciliationModule != null) reconciliationModule.stop();
-        if (pricingModule != null) pricingModule.stop();
-        if (postTradeModule != null) postTradeModule.stop();
-        if (marketDataModule != null) marketDataModule.stop();
-        if (corporateActionsModule != null) corporateActionsModule.stop();
-        if (rulesModule != null) rulesModule.stop();
-        if (riskModule != null) riskModule.stop();
-        if (pmsModule != null) pmsModule.stop();
-        if (emsModule != null) emsModule.stop();
-        if (omsModule != null) omsModule.stop();
+        for (int i = domainModules.size() - 1; i >= 0; i--) {
+            domainModules.get(i).stop();
+        }
 
         log.debug("All finance domain modules stopped");
     }
@@ -354,22 +281,24 @@ public final class FinanceProductModule implements KernelModule {
 
     private boolean checkDomainModulesHealth() {
         boolean allHealthy = true;
-
-        if (omsModule != null) allHealthy &= omsModule.getHealthStatus().isHealthy();
-        if (emsModule != null) allHealthy &= emsModule.getHealthStatus().isHealthy();
-        if (pmsModule != null) allHealthy &= pmsModule.getHealthStatus().isHealthy();
-        if (riskModule != null) allHealthy &= riskModule.getHealthStatus().isHealthy();
-        if (rulesModule != null) allHealthy &= rulesModule.getHealthStatus().isHealthy();
-        if (corporateActionsModule != null) allHealthy &= corporateActionsModule.getHealthStatus().isHealthy();
-        if (marketDataModule != null) allHealthy &= marketDataModule.getHealthStatus().isHealthy();
-        if (postTradeModule != null) allHealthy &= postTradeModule.getHealthStatus().isHealthy();
-        if (pricingModule != null) allHealthy &= pricingModule.getHealthStatus().isHealthy();
-        if (reconciliationModule != null) allHealthy &= reconciliationModule.getHealthStatus().isHealthy();
-        if (referenceDataModule != null) allHealthy &= referenceDataModule.getHealthStatus().isHealthy();
-        if (regulatoryReportingModule != null) allHealthy &= regulatoryReportingModule.getHealthStatus().isHealthy();
-        if (sanctionsModule != null) allHealthy &= sanctionsModule.getHealthStatus().isHealthy();
-        if (surveillanceModule != null) allHealthy &= surveillanceModule.getHealthStatus().isHealthy();
-
+        for (KernelModule module : domainModules) {
+            allHealthy &= module.getHealthStatus().isHealthy();
+        }
         return allHealthy;
+    }
+
+    private List<KernelModule> discoverDomainModules() {
+        List<KernelModule> discovered = new ArrayList<>();
+        ServiceLoader.load(KernelModule.class)
+            .stream()
+            .map(ServiceLoader.Provider::get)
+            .filter(module -> module.getModuleId().startsWith("finance-"))
+            .forEach(discovered::add);
+        discovered.sort(Comparator.comparing(KernelModule::getModuleId));
+        if (discovered.isEmpty()) {
+            throw new IllegalStateException("No Finance domain modules discovered via ServiceLoader");
+        }
+        log.info("Discovered {} finance domain modules via ServiceLoader", discovered.size());
+        return List.copyOf(discovered);
     }
 }

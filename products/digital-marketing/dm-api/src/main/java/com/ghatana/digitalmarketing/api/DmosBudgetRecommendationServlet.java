@@ -82,6 +82,16 @@ public final class DmosBudgetRecommendationServlet {
         this.httpContextFactory = Objects.requireNonNull(httpContextFactory, "httpContextFactory must not be null");
     }
 
+    public DmosBudgetRecommendationServlet(BudgetRecommendationService budgetService, Eventloop eventloop) {
+        this(
+            budgetService,
+            eventloop,
+            DmosMetricsCollector.noop(),
+            new DmosTelemetry(io.opentelemetry.api.OpenTelemetry.noop()),
+            new DmosHttpContextFactory(false, null)
+        );
+    }
+
     /**
      * Returns the routing servlet for budget recommendation endpoints.
      *
@@ -128,7 +138,7 @@ public final class DmosBudgetRecommendationServlet {
                         );
                     return budgetService.recommendBudget(ctx, command)
                         .map(rec -> {
-                            telemetry.setBudgetId(rec.getId());
+                            telemetry.setBudgetId(rec.getRecommendationId());
                             span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
                             span.end();
                             return jsonResponse(201, BudgetRecommendationResponse.from(rec));

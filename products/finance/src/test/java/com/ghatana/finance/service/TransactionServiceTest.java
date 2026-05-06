@@ -82,6 +82,10 @@ public class TransactionServiceTest {
         assertEquals("APPROVED", result.getStatus());
         assertTrue(result.getMetadata().containsKey("fraud_score"));
         assertTrue(result.getMetadata().containsKey("correlation_id"));
+        assertEquals("tenant-1", result.getMetadata().get("tenant_id"));
+        assertEquals("txn-001", result.getMetadata().get("transaction_id"));
+        assertEquals("txn-001", result.getMetadata().get("idempotency_key"));
+        assertEquals("TRANSACTION_MUTATION", result.getMetadata().get("audit_classification"));
         assertEquals("finance_transaction_approve", result.getMetadata().get("trace_operation"));
     }
 
@@ -95,6 +99,8 @@ public class TransactionServiceTest {
         assertEquals("REJECTED", result.getStatus());
         assertTrue(result.getMessage().contains("Fraud detected"));
         assertTrue(result.getMetadata().containsKey("correlation_id"));
+        assertEquals("txn-002", result.getMetadata().get("transaction_id"));
+        assertEquals("tenant-1", result.getMetadata().get("tenant_id"));
         assertEquals("finance_transaction_reject", result.getMetadata().get("trace_operation"));
     }
 
@@ -108,6 +114,9 @@ public class TransactionServiceTest {
         assertEquals("PENDING_REVIEW", result.getStatus());
         assertTrue(result.getMessage().contains("manual review"));
         assertTrue(result.getMetadata().containsKey("correlation_id"));
+        assertEquals("four-eyes", result.getMetadata().get("approval_required"));
+        assertEquals("tenant-1", result.getMetadata().get("tenant_id"));
+        assertEquals("txn-003", result.getMetadata().get("transaction_id"));
         assertEquals("finance_transaction_manual_review", result.getMetadata().get("trace_operation"));
     }
 
@@ -145,6 +154,8 @@ public class TransactionServiceTest {
         assertEquals("ERROR", result.getStatus());
         assertEquals("finance_transaction_error", result.getMetadata().get("trace_operation"));
         assertTrue(result.getMetadata().containsKey("correlation_id"));
+        assertEquals("tenant-1", result.getMetadata().get("tenant_id"));
+        assertEquals("txn-error-1", result.getMetadata().get("transaction_id"));
     }
 
     @Test

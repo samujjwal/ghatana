@@ -8,9 +8,6 @@ import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -41,7 +38,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @doc.layer product
  * @doc.pattern Observability, Migration, Metrics
  */
-@Service
 public class MigrationAuditService {
 
     private static final Logger LOG = LoggerFactory.getLogger(MigrationAuditService.class);
@@ -99,9 +95,8 @@ public class MigrationAuditService {
     }
 
     /**
-     * P1-050: Records migration execution on application startup.
+     * P1-050: Records migration execution status.
      */
-    @EventListener(ApplicationReadyEvent.class)
     public void recordMigrationStatus() {
         LOG.info("[DMOS-MIGRATION] Recording migration status on startup");
 
@@ -180,7 +175,8 @@ public class MigrationAuditService {
                 String version = migration.getVersion().getVersion();
 
                 // Check if migration should be applied but isn't
-                if (migration.getState().isPending() && !migration.getType().isUndo()) {
+                if (migration.getState() == org.flywaydb.core.api.MigrationState.PENDING
+                    && !migration.getType().isUndo()) {
                     drifts.add(new MigrationDrift(
                         version,
                         migration.getDescription(),

@@ -14,6 +14,10 @@ const workspaceAliases = [
         replacement: path.resolve(__dirname, "../../../../platform/typescript/design-system/src/index.ts"),
     },
     {
+        find: /^@ghatana\/product-shell$/,
+        replacement: path.resolve(__dirname, "../../../../platform/typescript/product-shell/dist/index.js"),
+    },
+    {
         find: /^@ghatana\/design-system\/icons$/,
         replacement: path.resolve(__dirname, "../../../../platform/typescript/design-system/src/icons/index.tsx"),
     },

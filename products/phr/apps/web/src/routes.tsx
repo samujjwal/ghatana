@@ -11,7 +11,7 @@ export function ProtectedPhrRoute({ route }: { route: PhrRouteManifestEntry }): 
 
   if (!isRouteAllowedForRole(route, role)) {
     return (
-      <section className="hero-panel">
+      <section className="hero-panel" role="alert">
         <p className="eyebrow">Permission denied</p>
         <h1>This route is not available for the current persona.</h1>
         <p className="muted">

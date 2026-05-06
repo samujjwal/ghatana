@@ -1,7 +1,7 @@
 package com.ghatana.digitalmarketing.persistence.governance;
 
 import com.ghatana.digitalmarketing.application.governance.DmKillSwitchService;
-import com.ghatana.digitalmarketing.persistence.DmPersistenceException;
+import com.ghatana.digitalmarketing.persistence.campaign.DmPersistenceException;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

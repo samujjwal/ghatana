@@ -1,5 +1,6 @@
 package com.ghatana.finance.kernel.service;
 
+import com.ghatana.finance.service.FinanceTraceContext;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
 import com.ghatana.kernel.adapter.datacloud.DataDeleteRequest;
 import com.ghatana.kernel.adapter.datacloud.DataQueryRequest;
@@ -14,7 +15,9 @@ import com.ghatana.kernel.util.TypedDataSerializer;
 import io.activej.promise.Promise;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -83,10 +86,16 @@ public abstract class FinanceServiceBase implements KernelLifecycleAware {
 
         return Promise.ofBlocking(executor, () -> serialize(record, entityType, version))
             .then(data -> {
-                DataWriteRequest request = new DataWriteRequest(datasetId, recordId, data, metadata);
+                Map<String, String> enrichedMetadata = enrichMutationMetadata(
+                    "create",
+                    recordId,
+                    entityType,
+                    metadata
+                );
+                DataWriteRequest request = new DataWriteRequest(datasetId, recordId, data, enrichedMetadata);
                 return dataCloud.writeData(request)
                     .map($ -> record)
-                    .then(result -> audit("CREATE", recordId, entityType + " created", metadata).map($ -> result));
+                    .then(result -> audit("CREATE", recordId, entityType + " created", enrichedMetadata).map($ -> result));
             });
     }
 
@@ -116,10 +125,16 @@ public abstract class FinanceServiceBase implements KernelLifecycleAware {
 
         return Promise.ofBlocking(executor, () -> serialize(record, entityType, version))
             .then(data -> {
-                DataWriteRequest request = new DataWriteRequest(datasetId, recordId, data, metadata);
+                Map<String, String> enrichedMetadata = enrichMutationMetadata(
+                    "update",
+                    recordId,
+                    entityType,
+                    metadata
+                );
+                DataWriteRequest request = new DataWriteRequest(datasetId, recordId, data, enrichedMetadata);
                 return dataCloud.writeData(request)
                     .map($ -> record)
-                    .then(result -> audit("UPDATE", recordId, entityType + " updated", metadata).map($ -> result));
+                    .then(result -> audit("UPDATE", recordId, entityType + " updated", enrichedMetadata).map($ -> result));
             });
     }
 
@@ -214,6 +229,73 @@ public abstract class FinanceServiceBase implements KernelLifecycleAware {
      */
     protected <T> byte[] serialize(T object, String typeName, int version) {
         return TypedDataSerializer.toBytes(object, typeName, version);
+    }
+
+    private Map<String, String> enrichMutationMetadata(
+            String action,
+            String recordId,
+            String entityType,
+            Map<String, String> metadata) {
+        String normalizedEntityType = normalizeToken(entityType, "record");
+        String normalizedAction = normalizeToken(action, "write");
+        HashMap<String, Object> enriched = new HashMap<>(metadata == null ? Map.of() : metadata);
+
+        String operation = "finance_" + normalizedEntityType + "_" + normalizedAction;
+        String correlationId = Objects.toString(
+            enriched.getOrDefault("correlation_id", FinanceTraceContext.newCorrelationId()),
+            FinanceTraceContext.newCorrelationId()
+        );
+        enriched = new HashMap<>(FinanceTraceContext.metadata(correlationId, operation, enriched));
+
+        enriched.putIfAbsent("tenant_id", "default");
+        enriched.putIfAbsent("principal_id", inferPrincipalId(enriched));
+        enriched.putIfAbsent("idempotency_key", normalizedEntityType + "-" + normalizedAction + "-" + recordId);
+        enriched.putIfAbsent(
+            "audit_classification",
+            normalizedEntityType.toUpperCase(Locale.ROOT) + "_" + normalizedAction.toUpperCase(Locale.ROOT)
+        );
+        enriched.putIfAbsent("data_owner_scope", inferDataOwnerScope(enriched, normalizedEntityType, recordId));
+
+        return enriched.entrySet().stream()
+            .collect(java.util.stream.Collectors.toUnmodifiableMap(
+                Map.Entry::getKey,
+                entry -> Objects.toString(entry.getValue(), "")
+            ));
+    }
+
+    private String inferPrincipalId(Map<String, Object> metadata) {
+        return firstPresent(metadata, "traderId", "accountId", "clientId", "debitAccount", "creditAccount")
+            .orElse("system");
+    }
+
+    private String inferDataOwnerScope(Map<String, Object> metadata, String entityType, String recordId) {
+        return firstPresent(metadata, "accountId", "traderId", "clientId", "debitAccount", "creditAccount")
+            .map(value -> entityType + ":" + value)
+            .orElse(entityType + ":" + recordId);
+    }
+
+    private Optional<String> firstPresent(Map<String, Object> metadata, String... keys) {
+        for (String key : keys) {
+            Object value = metadata.get(key);
+            if (value != null) {
+                String text = Objects.toString(value, "");
+                if (!text.isBlank()) {
+                    return Optional.of(text);
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    private String normalizeToken(String value, String fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        return value
+            .replaceAll("([a-z0-9])([A-Z])", "$1-$2")
+            .replaceAll("[^A-Za-z0-9]+", "-")
+            .replaceAll("^-+|-+$", "")
+            .toLowerCase(Locale.ROOT);
     }
 
     /**

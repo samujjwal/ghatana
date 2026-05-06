@@ -13,6 +13,7 @@ import { LoginPage } from './pages/LoginPage';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import FeatureFlaggedRoute from './components/FeatureFlaggedRoute';
 import { FeatureUnavailablePage } from './pages/FeatureUnavailablePage';
+import { DmosProductShell } from './layout/DmosProductShell';
 import { dmosRouteManifest, isRouteAllowedForRoles, type DmosRouteManifestEntry } from './routeManifest';
 
 const queryClient = new QueryClient({
@@ -33,23 +34,20 @@ function GuardedProductRoute({
   }
 
   if (!isRouteAllowedForRoles(route, roles)) {
-    return (
-      <FeatureUnavailablePage
-        featureName={route.label}
-        reason={`requires the ${route.minimumRole ?? 'viewer'} route entitlement.`}
-      />
-    );
+    return <DmosProductShell><FeatureUnavailablePage featureName={route.label} reason={`requires the ${route.minimumRole ?? 'viewer'} route entitlement.`} /></DmosProductShell>;
   }
 
   if (route.capabilityKey) {
     return (
-      <FeatureFlaggedRoute capabilityKey={route.capabilityKey} featureName={route.label}>
-        {route.element}
-      </FeatureFlaggedRoute>
+      <DmosProductShell>
+        <FeatureFlaggedRoute capabilityKey={route.capabilityKey} featureName={route.label}>
+          {route.element}
+        </FeatureFlaggedRoute>
+      </DmosProductShell>
     );
   }
 
-  return route.element;
+  return <DmosProductShell>{route.element}</DmosProductShell>;
 }
 
 export function App(): React.ReactElement {

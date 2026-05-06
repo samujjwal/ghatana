@@ -248,6 +248,34 @@ function validatePluginOwnership(entry, manifest) {
       );
     }
   }
+
+  if (entry.product === "finance") {
+    validateFinanceDomainDependencyScopes(entry.buildFile, buildText);
+  }
+}
+
+function validateFinanceDomainDependencyScopes(buildFile, buildText) {
+  const compileScopedDomainPattern =
+    /^\s*(?:api|implementation)\(project\(":(products:finance:domains:[^"]+)"\)\)/gm;
+  const runtimeScopedDomainPattern =
+    /^\s*runtimeOnly\(project\(":(products:finance:domains:[^"]+)"\)\)/gm;
+
+  const compileScopedDomains = [...buildText.matchAll(compileScopedDomainPattern)].map((match) => match[1]);
+  const runtimeScopedDomains = [...buildText.matchAll(runtimeScopedDomainPattern)].map((match) => match[1]);
+
+  if (compileScopedDomains.length > 0) {
+    addViolation(
+      buildFile,
+      `finance root must not compile-link domain modules; found compile-scoped dependencies: ${compileScopedDomains.join(", ")}`,
+    );
+  }
+
+  if (runtimeScopedDomains.length === 0) {
+    addViolation(
+      buildFile,
+      "finance root must compose domain modules via runtimeOnly dependencies at the composition boundary",
+    );
+  }
 }
 
 for (const entry of MANIFESTS) {

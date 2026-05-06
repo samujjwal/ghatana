@@ -11,6 +11,7 @@
 
 import React from 'react';
 import { View, StyleSheet, ViewStyle, DimensionValue } from 'react-native';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 interface SkeletonProps {
   width?: DimensionValue;
@@ -148,7 +149,7 @@ export const SkeletonList: React.FC<SkeletonListProps> = ({
 
 const styles = StyleSheet.create({
   skeleton: {
-    backgroundColor: '#e5e5e5',
+    backgroundColor: flashitMobileTheme.border,
     overflow: 'hidden',
   },
   textContainer: {
@@ -158,12 +159,12 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   momentCard: {
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.background.surface,
     borderRadius: 12,
     padding: 16,
     marginHorizontal: 16,
     marginVertical: 8,
-    shadowColor: '#000',
+    shadowColor: flashitMobileTheme.shadow.color,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -191,12 +192,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sphereCard: {
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.background.surface,
     borderRadius: 12,
     padding: 16,
     marginHorizontal: 16,
     marginVertical: 8,
-    shadowColor: '#000',
+    shadowColor: flashitMobileTheme.shadow.color,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,

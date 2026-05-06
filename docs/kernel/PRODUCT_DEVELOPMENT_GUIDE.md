@@ -406,14 +406,30 @@ to generate a Kernel-aligned starter product shell under `products/<id>/`.
 The scaffolder currently generates:
 
 - domain-pack manifest with required ownership fields
-- boundary policy store skeleton and pack contract test
+- Gradle product module skeleton with shared pack-validation wiring
+- boundary policy store, compliance rule pack, plugin bindings, and pack contract test
 - canonical product docs taxonomy
 - local runtime compose override
-- optional web route-manifest shell
+- optional web route-manifest shell and shared-shell placeholder app
+- optional repo registration in `config/product-shape.json`
+- optional UI workspace registration in root `pnpm-workspace.yaml`
+- optional Gradle registration in root `settings.gradle.kts`
+- optional audited CI workflow registration in the coverage, API-contract,
+  accessibility, visual-regression, E2E, and performance-budget workflows
 
-The scaffolder does not yet auto-register the product in `settings.gradle.kts`,
-`pnpm-workspace.yaml`, or CI matrices, so those repo-level integration steps still
-need to be completed manually.
+Recommended flags:
+
+- `--register-product-shape` to add the new product to `config/product-shape.json`
+- `--register-workspace` to add `products/<id>/client/*` to the root pnpm workspace when `--ui` is enabled
+- `--register-gradle-settings` to register `:products:<id>` in `settings.gradle.kts`
+- `--register-ci-matrices` to add the product to the audited cross-product CI
+  workflows, including coverage, API-contract, accessibility, visual
+  regression, smoke E2E, and performance-budget matrices
+
+The scaffolder now covers the common audited workflow set, but it still does not
+auto-register every product-specific runtime override, launcher specialization,
+or deeper product-only delivery variation. Those deeper integration steps still
+need to be completed deliberately once the product’s real delivery shape is known.
 
 ---
 

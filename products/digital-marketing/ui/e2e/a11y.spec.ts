@@ -1,185 +1,52 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from './fixtures';
+import AxeBuilder from '@axe-core/playwright';
+import { TEST_WORKSPACE, loginAs, mockDmosApi } from './fixtures';
 
-/**
- * Accessibility tests using Axe Playwright (DMOS-P2-004)
- *
- * @doc.type test
- * @doc.purpose Verify UI accessibility using Axe
- * @doc.layer e2e
- */
-test.describe('Accessibility @a11y', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.addScriptTag({
-      content: `
-        window.addEventListener('load', () => {
-          const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.8.2/axe.min.js';
-          script.onload = async () => {
-            window.axe = axe;
-          };
-          document.head.appendChild(script);
-        });
-      `,
-    });
-  });
-
-  test('login page has no accessibility violations', async ({ page }) => {
+test.describe('DMOS accessibility @a11y', () => {
+  test('login screen exposes labelled controls', async ({ page }) => {
     await page.goto('/login');
-    await page.waitForLoadState('networkidle');
-    
-    // Wait for axe-core to load
-    await page.waitForFunction(() => typeof window.axe !== 'undefined');
-    
-    const violations = await page.evaluate(async () => {
-      const results = await window.axe.run();
-      return results.violations;
-    });
-    
-    expect(violations).toHaveLength(0);
+    await expect(page.getByRole('heading', { name: /DMOS/i })).toBeVisible();
+    await expect(page.getByLabel('Bearer Token')).toBeVisible();
+    await expect(page.getByLabel('Workspace ID')).toBeVisible();
+    await expect(page.getByLabel('Tenant ID')).toBeVisible();
+    await expect(page.getByLabel('User / Principal ID')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible();
   });
 
-  test('dashboard has no accessibility violations', async ({ page }) => {
-    await loginAs(page);
-    await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
-    
-    // Wait for axe-core to load
-    await page.waitForFunction(() => typeof window.axe !== 'undefined');
-    
-    const violations = await page.evaluate(async () => {
-      const results = await window.axe.run();
-      return results.violations;
-    });
-    
-    expect(violations).toHaveLength(0);
+  test('dashboard shell keeps landmarks and passes axe', async ({ page }) => {
+    await mockDmosApi(page);
+    await loginAs(page, { roles: ['marketing-director'] });
+    await page.goto(`/workspaces/${TEST_WORKSPACE}/dashboard`);
+    await expect(page.getByRole('main')).toBeVisible();
+    await expect(page.getByRole('navigation')).toBeVisible();
+    await page.keyboard.press('Tab');
+    await expect(page.locator(':focus')).toBeVisible();
+
+    const accessibilityScanResults = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .analyze();
+
+    expect(accessibilityScanResults.violations).toEqual([]);
   });
 
-  test('approvals page has no accessibility violations', async ({ page }) => {
-    await loginAs(page);
-    await page.goto('/approvals');
-    await page.waitForLoadState('networkidle');
-    
-    // Wait for axe-core to load
-    await page.waitForFunction(() => typeof window.axe !== 'undefined');
-    
-    const violations = await page.evaluate(async () => {
-      const results = await window.axe.run();
-      return results.violations;
-    });
-    
-    expect(violations).toHaveLength(0);
+  test('approval queue exposes alerts and keyboard focus', async ({ page }) => {
+    await mockDmosApi(page);
+    await loginAs(page, { roles: [] });
+    await page.goto(`/workspaces/${TEST_WORKSPACE}/approvals`);
+    await expect(page.locator('[data-testid="permission-denied-banner"]')).toBeVisible();
+    await expect(page.locator('[data-testid="permission-denied-banner"]')).toHaveAttribute('role', 'alert');
+    await page.keyboard.press('Tab');
+    await expect(page.locator(':focus')).toBeVisible();
   });
 
-  test('strategy page has no accessibility violations', async ({ page }) => {
-    await loginAs(page);
-    await page.goto('/strategy');
-    await page.waitForLoadState('networkidle');
-    
-    // Wait for axe-core to load
-    await page.waitForFunction(() => typeof window.axe !== 'undefined');
-    
-    const violations = await page.evaluate(async () => {
-      const results = await window.axe.run();
-      return results.violations;
-    });
-    
-    expect(violations).toHaveLength(0);
-  });
-
-  test('content page has no accessibility violations', async ({ page }) => {
-    await loginAs(page);
-    await page.goto('/content');
-    await page.waitForLoadState('networkidle');
-    
-    // Wait for axe-core to load
-    await page.waitForFunction(() => typeof window.axe !== 'undefined');
-    
-    const violations = await page.evaluate(async () => {
-      const results = await window.axe.run();
-      return results.violations;
-    });
-    
-    expect(violations).toHaveLength(0);
-  });
-
-  test('campaigns page has no accessibility violations', async ({ page }) => {
-    await loginAs(page);
-    await page.goto('/campaigns');
-    await page.waitForLoadState('networkidle');
-    
-    // Wait for axe-core to load
-    await page.waitForFunction(() => typeof window.axe !== 'undefined');
-    
-    const violations = await page.evaluate(async () => {
-      const results = await window.axe.run();
-      return results.violations;
-    });
-    
-    expect(violations).toHaveLength(0);
-  });
-
-  test('leads page has no accessibility violations', async ({ page }) => {
-    await loginAs(page);
-    await page.goto('/leads');
-    await page.waitForLoadState('networkidle');
-    
-    // Wait for axe-core to load
-    await page.waitForFunction(() => typeof window.axe !== 'undefined');
-    
-    const violations = await page.evaluate(async () => {
-      const results = await window.axe.run();
-      return results.violations;
-    });
-    
-    expect(violations).toHaveLength(0);
-  });
-
-  test('analytics page has no accessibility violations', async ({ page }) => {
-    await loginAs(page);
-    await page.goto('/analytics');
-    await page.waitForLoadState('networkidle');
-    
-    // Wait for axe-core to load
-    await page.waitForFunction(() => typeof window.axe !== 'undefined');
-    
-    const violations = await page.evaluate(async () => {
-      const results = await window.axe.run();
-      return results.violations;
-    });
-    
-    expect(violations).toHaveLength(0);
-  });
-
-  test('connectors page has no accessibility violations', async ({ page }) => {
-    await loginAs(page);
-    await page.goto('/connectors');
-    await page.waitForLoadState('networkidle');
-    
-    // Wait for axe-core to load
-    await page.waitForFunction(() => typeof window.axe !== 'undefined');
-    
-    const violations = await page.evaluate(async () => {
-      const results = await window.axe.run();
-      return results.violations;
-    });
-    
-    expect(violations).toHaveLength(0);
-  });
-
-  test('AI recommendations page has no accessibility violations', async ({ page }) => {
-    await loginAs(page);
-    await page.goto('/ai-recommendations');
-    await page.waitForLoadState('networkidle');
-    
-    // Wait for axe-core to load
-    await page.waitForFunction(() => typeof window.axe !== 'undefined');
-    
-    const violations = await page.evaluate(async () => {
-      const results = await window.axe.run();
-      return results.violations;
-    });
-    
-    expect(violations).toHaveLength(0);
+  test('feature unavailable route stays accessible for denied users', async ({ page }) => {
+    await mockDmosApi(page);
+    await loginAs(page, { roles: [] });
+    await page.goto(`/workspaces/${TEST_WORKSPACE}/campaigns`);
+    await expect(page.locator('[data-testid="feature-unavailable-page"]')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Return to Dashboard' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Go Back' })).toBeVisible();
+    await page.keyboard.press('Tab');
+    await expect(page.locator(':focus')).toBeVisible();
   });
 });

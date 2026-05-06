@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdirSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 function parseArgs(argv) {
@@ -48,6 +48,267 @@ function writeFile(path, content) {
   writeFileSync(path, content, "utf8");
 }
 
+function readText(path) {
+  return readFileSync(path, "utf8");
+}
+
+function writeText(path, content) {
+  writeFileSync(path, content, "utf8");
+}
+
+function insertBeforeMarker({ source, marker, content, fileLabel }) {
+  if (!source.includes(marker)) {
+    throw new Error(`Unable to locate insertion marker ${JSON.stringify(marker)} in ${fileLabel}`);
+  }
+  return source.replace(marker, `${content}${marker}`);
+}
+
+function registerProductShape({
+  root,
+  id,
+  uiEnabled,
+  uiMode,
+}) {
+  const productShapePath = join(root, "config", "product-shape.json");
+  const productShape = JSON.parse(readText(productShapePath));
+
+  if (productShape.products[id]) {
+    throw new Error(`config/product-shape.json already contains an entry for ${id}`);
+  }
+
+  productShape.products[id] = {
+    ui: uiEnabled,
+    uiMode: uiEnabled ? (uiMode === "none" ? "web" : uiMode) : "backend-only",
+    clientPackages: uiEnabled ? [`products/${id}/client/web/package.json`] : [],
+  };
+
+  writeText(productShapePath, `${JSON.stringify(productShape, null, 2)}\n`);
+}
+
+function registerWorkspace({
+  root,
+  id,
+  uiEnabled,
+}) {
+  if (!uiEnabled) {
+    return;
+  }
+
+  const workspacePath = join(root, "pnpm-workspace.yaml");
+  const workspaceSource = readText(workspacePath);
+  const registrationLine = `  - "products/${id}/client/*"`;
+
+  if (workspaceSource.includes(registrationLine)) {
+    throw new Error(`pnpm-workspace.yaml already contains workspace registration for ${id}`);
+  }
+
+  const marker = '  # tutorputor product';
+  if (!workspaceSource.includes(marker)) {
+    throw new Error(`Unable to locate insertion marker ${JSON.stringify(marker)} in pnpm-workspace.yaml`);
+  }
+
+  const updated = workspaceSource.replace(
+    marker,
+    `  # ${id} product\n${registrationLine}\n\n${marker}`,
+  );
+  writeText(workspacePath, updated);
+}
+
+function registerGradleSettings({
+  root,
+  id,
+  name,
+}) {
+  const settingsPath = join(root, "settings.gradle.kts");
+  const settingsSource = readText(settingsPath);
+  const includeLine = `include(":products:${id}")`;
+
+  if (settingsSource.includes(includeLine)) {
+    throw new Error(`settings.gradle.kts already contains Gradle registration for ${id}`);
+  }
+
+  const section = `// =============================================================================
+// Product: ${name}
+// =============================================================================
+${includeLine}
+
+`;
+
+  const marker = `// =============================================================================
+// Shared Services
+// =============================================================================
+`;
+  const updated = insertBeforeMarker({
+    source: settingsSource,
+    marker,
+    content: section,
+    fileLabel: "settings.gradle.kts",
+  });
+  writeText(settingsPath, updated);
+}
+
+function registerCiMatrices({
+  root,
+  id,
+  name,
+  uiEnabled,
+}) {
+  const coverageWorkflowPath = join(root, ".github", "workflows", "product-coverage-gates.yml");
+  const coverageSource = readText(coverageWorkflowPath);
+  const coveragePathLine = `      - 'products/${id}/**'`;
+  const coverageMatrixLine = `          - product: ${name}
+            taskPrefix: ':products:${id}'
+            reportPath: 'products/${id}/**/build/reports/jacoco/test/jacocoTestReport.xml'
+`;
+
+  if (coverageSource.includes(coveragePathLine) || coverageSource.includes(`taskPrefix: ':products:${id}'`)) {
+    throw new Error(`product-coverage-gates.yml already contains CI coverage registration for ${id}`);
+  }
+
+  let updatedCoverage = coverageSource;
+  updatedCoverage = insertBeforeMarker({
+    source: updatedCoverage,
+    marker: `      - '.github/workflows/product-coverage-gates.yml'`,
+    content: `${coveragePathLine}\n`,
+    fileLabel: ".github/workflows/product-coverage-gates.yml",
+  });
+  updatedCoverage = insertBeforeMarker({
+    source: updatedCoverage,
+    marker: `          - product: Security Gateway`,
+    content: coverageMatrixLine,
+    fileLabel: ".github/workflows/product-coverage-gates.yml",
+  });
+  writeText(coverageWorkflowPath, updatedCoverage);
+
+  const contractWorkflowPath = join(root, ".github", "workflows", "api-contract-conformance.yml");
+  const contractSource = readText(contractWorkflowPath);
+  const contractPathLine = `      - 'products/${id}/**'`;
+  const contractMatrixEntry = `          - product: ${name}
+            command: ./gradlew :products:${id}:checkApiContractConformance --no-daemon --stacktrace
+            reportPath: products/${id}/build/reports/tests/test/
+`;
+
+  if (contractSource.includes(contractPathLine) || contractSource.includes(`:products:${id}:checkApiContractConformance`)) {
+    throw new Error(`api-contract-conformance.yml already contains API contract registration for ${id}`);
+  }
+
+  let updatedContract = contractSource;
+  updatedContract = insertBeforeMarker({
+    source: updatedContract,
+    marker: `      - 'platform/java/testing/**'`,
+    content: `${contractPathLine}\n`,
+    fileLabel: ".github/workflows/api-contract-conformance.yml",
+  });
+  updatedContract = insertBeforeMarker({
+    source: updatedContract,
+    marker: `
+    steps:
+`,
+    content: `${contractMatrixEntry}`,
+    fileLabel: ".github/workflows/api-contract-conformance.yml",
+  });
+  writeText(contractWorkflowPath, updatedContract);
+
+  if (!uiEnabled) {
+    return;
+  }
+
+  const visualWorkflowPath = join(root, ".github", "workflows", "visual-regression.yml");
+  const visualSource = readText(visualWorkflowPath);
+  const visualEntry = `          - product: ${id}-web
+            path: products/${id}/client/web
+`;
+  if (!visualSource.includes(`product: ${id}-web`)) {
+    const updatedVisual = insertBeforeMarker({
+      source: visualSource,
+      marker: `          - product: data-cloud-ui`,
+      content: visualEntry,
+      fileLabel: ".github/workflows/visual-regression.yml",
+    });
+    writeText(visualWorkflowPath, updatedVisual);
+  }
+
+  const accessibilityWorkflowPath = join(root, ".github", "workflows", "accessibility.yml");
+  const accessibilitySource = readText(accessibilityWorkflowPath);
+  const accessibilityPathLine = `      - 'products/${id}/client/web/**'`;
+  const accessibilityMatrixEntry = `          - product: ${id}-web
+            package: '@ghatana/${id}-web'
+`;
+  let updatedAccessibility = accessibilitySource;
+  if (!accessibilitySource.includes(accessibilityPathLine)) {
+    updatedAccessibility = insertBeforeMarker({
+      source: updatedAccessibility,
+      marker: `      - '.github/workflows/accessibility.yml'`,
+      content: `${accessibilityPathLine}\n`,
+      fileLabel: ".github/workflows/accessibility.yml",
+    });
+  }
+  if (!updatedAccessibility.includes(`product: ${id}-web`)) {
+    updatedAccessibility = insertBeforeMarker({
+      source: updatedAccessibility,
+      marker: `
+    steps:
+`,
+      content: `${accessibilityMatrixEntry}`,
+      fileLabel: ".github/workflows/accessibility.yml",
+    });
+  }
+  writeText(accessibilityWorkflowPath, updatedAccessibility);
+
+  const e2eWorkflowPath = join(root, ".github", "workflows", "e2e-tests.yml");
+  const e2eSource = readText(e2eWorkflowPath);
+  const e2eEntry = `          - product: ${id}-web
+            path: products/${id}/client/web
+`;
+  if (!e2eSource.includes(`product: ${id}-web`)) {
+    const updatedE2e = insertBeforeMarker({
+      source: e2eSource,
+      marker: `          - product: audio-video-desktop`,
+      content: e2eEntry,
+      fileLabel: ".github/workflows/e2e-tests.yml",
+    });
+    writeText(e2eWorkflowPath, updatedE2e);
+  }
+
+  const performanceWorkflowPath = join(root, ".github", "workflows", "performance-budgets.yml");
+  const performanceSource = readText(performanceWorkflowPath);
+  const performancePathLine = `      - 'products/${id}/client/**'`;
+  const performanceEntry = `          - name: ${id}-web
+            path: products/${id}/client/web
+            url: http://localhost:4176
+            port: 4176
+            budgets:
+              performance: 85
+              accessibility: 95
+              best-practices: 90
+              seo: 85
+              fcp: 2200
+              lcp: 3000
+              tti: 4200
+              cls: 0.1
+`;
+  let updatedPerformance = performanceSource;
+  if (!performanceSource.includes(performancePathLine)) {
+    updatedPerformance = insertBeforeMarker({
+      source: updatedPerformance,
+      marker: `      - 'products/tutorputor/apps/**'`,
+      content: `${performancePathLine}\n`,
+      fileLabel: ".github/workflows/performance-budgets.yml",
+    });
+  }
+  if (!updatedPerformance.includes(`name: ${id}-web`)) {
+    updatedPerformance = insertBeforeMarker({
+      source: updatedPerformance,
+      marker: `
+    steps:
+`,
+      content: `${performanceEntry}`,
+      fileLabel: ".github/workflows/performance-budgets.yml",
+    });
+  }
+  writeText(performanceWorkflowPath, updatedPerformance);
+}
+
 const args = parseArgs(process.argv.slice(2));
 
 if (args.has("help")) {
@@ -57,12 +318,17 @@ if (args.has("help")) {
     --name "Sample Product" \\
     --product-code SAMPLE \\
     --domain sample-domain \\
-    --ui web
+    --ui web \\
+    [--register-product-shape] \\
+    [--register-workspace] \\
+    [--register-gradle-settings] \\
+    [--register-ci-matrices]
 
 Notes:
 - Generates a Kernel-aligned product skeleton under products/<id>.
-- Does not auto-register the product in settings.gradle.kts, pnpm-workspace.yaml, or CI matrices yet.
-- Intended as the foundation for Task 48, not the final fully automated scaffolder.`);
+- Can auto-register the product in config/product-shape.json, pnpm-workspace.yaml,
+  settings.gradle.kts, and the audited cross-product CI workflows.
+- Does not yet mutate every product-specific launcher/runtime specialization automatically.`);
   process.exit(0);
 }
 
@@ -79,6 +345,10 @@ const classPrefix = toPascalCase(id);
 const productScope = `${id}.*`;
 const rulePrefix = `${productCode}-BP-`;
 const uiEnabled = uiMode !== "none";
+const shouldRegisterProductShape = args.has("register-product-shape");
+const shouldRegisterWorkspace = args.has("register-workspace");
+const shouldRegisterGradleSettings = args.has("register-gradle-settings");
+const shouldRegisterCiMatrices = args.has("register-ci-matrices");
 
 if (existsSync(productDir)) {
   throw new Error(`Product directory already exists: ${productDir}`);
@@ -100,6 +370,43 @@ if (uiEnabled) {
 }
 
 dirs.forEach(ensureDir);
+
+writeFile(
+  join(productDir, "build.gradle.kts"),
+  `import com.ghatana.buildlogic.ProductPackValidationExtension
+
+plugins {
+    id("java-module")
+    id("product-pack-validation")
+}
+
+group = "com.ghatana.${packageSegment}"
+version = rootProject.version
+
+dependencies {
+    api(project(":platform-kernel:kernel-core"))
+    implementation(project(":platform-plugins:plugin-compliance"))
+
+    testImplementation(project(":platform-kernel:kernel-testing"))
+    testImplementation(libs.bundles.testing.core)
+}
+
+tasks.register("checkApiContractConformance") {
+    group = "verification"
+    description = "Runs scaffolded API contract conformance checks for ${name}."
+    dependsOn("productConformanceCheck")
+}
+
+configure<ProductPackValidationExtension> {
+    productName.set("${name}")
+    manifestFile.set(layout.projectDirectory.file("domain-pack-manifest.yaml"))
+    policyPackTestPatterns.set(
+        listOf("com.ghatana.${packageSegment}.kernel.${classPrefix}PackContractTest")
+    )
+    complianceClassFileName.set("${classPrefix}ComplianceRulePack.class")
+}
+`
+);
 
 writeFile(
   join(productDir, "domain-pack-manifest.yaml"),
@@ -242,6 +549,60 @@ public final class ${classPrefix}BoundaryPolicyStore implements BoundaryPolicySt
 );
 
 writeFile(
+  join(productDir, "src", "main", "java", "com", "ghatana", packageSegment, "kernel", "policy", `${classPrefix}ComplianceRulePack.java`),
+  `package com.ghatana.${packageSegment}.kernel.policy;
+
+import com.ghatana.plugin.compliance.CompliancePlugin;
+
+import java.util.List;
+
+public final class ${classPrefix}ComplianceRulePack {
+
+    public static final String ${productCode}_CORE_GOVERNANCE = "${productCode}_CORE_GOVERNANCE";
+
+    private ${classPrefix}ComplianceRulePack() {
+    }
+
+    public static List<CompliancePlugin.ComplianceRule> coreGovernanceRules() {
+        return List.of(
+                new CompliancePlugin.ComplianceRule(
+                        "${productCode}-CR-001",
+                        ${productCode}_CORE_GOVERNANCE,
+                        "${name} operations must emit auditable events.",
+                        CompliancePlugin.ComplianceRule.Severity.HIGH,
+                        "$.auditEventEmitted == true"
+                )
+        );
+    }
+}
+`
+);
+
+writeFile(
+  join(productDir, "src", "main", "java", "com", "ghatana", packageSegment, "kernel", "policy", `${classPrefix}PluginBindings.java`),
+  `package com.ghatana.${packageSegment}.kernel.policy;
+
+import com.ghatana.plugin.compliance.CompliancePlugin;
+import io.activej.promise.Promise;
+
+public final class ${classPrefix}PluginBindings {
+
+    private final CompliancePlugin compliancePlugin;
+
+    public ${classPrefix}PluginBindings(CompliancePlugin compliancePlugin) {
+        this.compliancePlugin = compliancePlugin;
+    }
+
+    public Promise<Void> registerAll() {
+        return compliancePlugin.registerRuleSet(
+                ${classPrefix}ComplianceRulePack.${productCode}_CORE_GOVERNANCE,
+                ${classPrefix}ComplianceRulePack.coreGovernanceRules());
+    }
+}
+`
+);
+
+writeFile(
   join(productDir, "src", "test", "java", "com", "ghatana", packageSegment, "kernel", `${classPrefix}PackContractTest.java`),
   `package com.ghatana.${packageSegment}.kernel;
 
@@ -294,6 +655,8 @@ services:
 );
 
 if (uiEnabled) {
+  ensureDir(join(productDir, "client", "web", "e2e"));
+
   writeFile(
     join(productDir, "client", "web", "package.json"),
     JSON.stringify(
@@ -301,19 +664,37 @@ if (uiEnabled) {
         name: `@ghatana/${id}-web`,
         private: true,
         version: "0.1.0",
+        type: "module",
         packageManager: "pnpm@10.33.0",
         scripts: {
-          lint: "echo \"TODO: wire lint\"",
-          "type-check": "echo \"TODO: wire type-check\"",
-          test: "echo \"TODO: wire tests\"",
-          "test:coverage": "echo \"TODO: wire coverage\"",
-          "test:e2e": "echo \"TODO: wire e2e\"",
-          "test:e2e:a11y": "echo \"TODO: wire a11y e2e\"",
-          build: "echo \"TODO: wire build\""
+          lint: "pnpm exec eslint src --ext .ts,.tsx",
+          "type-check": "tsc --noEmit",
+          test: "vitest run",
+          "test:coverage": "vitest run --coverage",
+          "test:e2e": "playwright test --list",
+          "test:e2e:a11y": "playwright test --grep @a11y --list",
+          build: "tsc --noEmit && vite build"
+        },
+        devDependencies: {
+          "@playwright/test": "^1.59.1",
+          "@testing-library/jest-dom": "^6.9.1",
+          "@testing-library/react": "^16.3.2",
+          "@types/node": "^25.6.0",
+          "@types/react": "^19.2.14",
+          "@types/react-dom": "^19.2.3",
+          "@vitejs/plugin-react": "^6.0.1",
+          eslint: "^9.39.2",
+          jsdom: "^29.0.2",
+          typescript: "^6.0.2",
+          vite: "^8.0.8",
+          vitest: "^4.1.4"
         },
         dependencies: {
+          "react": "^19.2.5",
+          "react-dom": "^19.2.5",
           "@ghatana/product-shell": "workspace:*",
-          "react-router-dom": "^7.0.0"
+          "react-router-dom": "^7.14.0",
+          "scheduler": "^0.27.0"
         }
       },
       null,
@@ -323,14 +704,17 @@ if (uiEnabled) {
 
   writeFile(
     join(productDir, "client", "web", "src", "routeManifest.tsx"),
-    `export const routeManifest = [
+    `import type { ProductRouteCapability } from "@ghatana/product-shell";
+
+export const routeManifest: readonly ProductRouteCapability[] = [
   {
-    id: "${id}.home",
     path: "/",
     label: "${name}",
-    roles: ["admin"],
-    persona: "operator",
-    tier: "standard",
+    description: "${name} overview workspace",
+    group: "Core",
+    minimumRole: "admin",
+    personas: ["operator"],
+    tiers: ["standard"],
     actions: ["view"],
     cards: ["overview"],
   },
@@ -340,9 +724,216 @@ if (uiEnabled) {
 
   writeFile(
     join(productDir, "client", "web", "src", "App.tsx"),
-    `export function App() {
-  return <div>${name} product shell placeholder</div>;
+    `import React from "react";
+    import { ProductShell, type ProductShellConfig } from "@ghatana/product-shell";
+    import { routeManifest } from "./routeManifest";
+
+const shellConfig: ProductShellConfig = {
+  productName: "${name}",
+  routes: routeManifest,
+  currentRole: "admin",
+  roleOrder: {
+    viewer: 0,
+    operator: 1,
+    admin: 2,
+  },
+  availableRoles: ["viewer", "operator", "admin"],
+  roleLabels: {
+    viewer: "Viewer",
+    operator: "Operator",
+    admin: "Admin",
+  },
+  roleSelectorDisclosureNote:
+    "This shell reflects route disclosure and must still be backed by server-side authorization.",
+};
+
+export function App() {
+  return (
+    <ProductShell config={shellConfig} mainContentId="${id}-main-content" mainContentTabIndex={-1}>
+      <section aria-labelledby="${id}-overview-title">
+        <h1 id="${id}-overview-title">${name}</h1>
+        <p>Replace this scaffold with product-owned domain workflows.</p>
+      </section>
+    </ProductShell>
+  );
 }
+`
+  );
+
+  writeFile(
+    join(productDir, "client", "web", "src", "main.tsx"),
+    `import React from "react";
+import ReactDOM from "react-dom/client";
+import { App } from "./App";
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+`
+  );
+
+  writeFile(
+    join(productDir, "client", "web", "src", "App.test.tsx"),
+    `import React from "react";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { App } from "./App";
+
+vi.mock("@ghatana/product-shell", () => ({
+  ProductShell: ({ children }: { children?: React.ReactNode }) => (
+    <div data-testid="product-shell">{children}</div>
+  ),
+}));
+
+describe("App", () => {
+  it("renders the scaffolded product shell", () => {
+    render(<App />);
+    expect(screen.getByTestId("product-shell")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "${name}" })).toBeTruthy();
+    expect(screen.getByText("Replace this scaffold with product-owned domain workflows.")).toBeTruthy();
+  });
+});
+`
+  );
+
+  writeFile(
+    join(productDir, "client", "web", "tsconfig.json"),
+    `{
+  "extends": "../../../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "types": ["vite/client", "node", "react", "react-dom", "vitest/globals"],
+    "paths": {
+      "@/*": ["src/*"],
+      "@ghatana/product-shell": ["../../../../platform/typescript/product-shell/src/index.ts"]
+    }
+  },
+  "include": ["src", "vite.config.ts", "vitest.config.ts", "playwright.config.ts"],
+  "exclude": ["dist", "node_modules"]
+}
+`
+  );
+
+  writeFile(
+    join(productDir, "client", "web", "vite.config.ts"),
+    `import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const reactRouterPath = path.dirname(require.resolve("react-router/package.json"));
+const reactRouterDomPath = path.dirname(require.resolve("react-router-dom/package.json"));
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    preserveSymlinks: true,
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+      "@ghatana/product-shell": path.resolve(__dirname, "../../../../platform/typescript/product-shell/src/index.ts"),
+      "react-router": reactRouterPath,
+      "react-router-dom": reactRouterDomPath
+    }
+  }
+});
+`
+  );
+
+  writeFile(
+    join(productDir, "client", "web", "vitest.config.ts"),
+    `import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+import path from "path";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const reactRouterPath = path.dirname(require.resolve("react-router/package.json"));
+const reactRouterDomPath = path.dirname(require.resolve("react-router-dom/package.json"));
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    preserveSymlinks: true,
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+      "@ghatana/product-shell": path.resolve(__dirname, "../../../../platform/typescript/product-shell/src/index.ts"),
+      "react-router": reactRouterPath,
+      "react-router-dom": reactRouterDomPath
+    }
+  },
+  test: {
+    environment: "jsdom",
+    setupFiles: ["./vitest.setup.ts"],
+    include: ["src/**/*.test.{ts,tsx}"],
+  },
+});
+`
+  );
+
+  writeFile(
+    join(productDir, "client", "web", "vitest.setup.ts"),
+    `import "@testing-library/jest-dom/vitest";
+`
+  );
+
+  writeFile(
+    join(productDir, "client", "web", "playwright.config.ts"),
+    `import { defineConfig } from "@playwright/test";
+
+export default defineConfig({
+  testDir: "./e2e",
+});
+`
+  );
+
+  writeFile(
+    join(productDir, "client", "web", "e2e", "visual-regression.spec.ts"),
+    `import { test } from "@playwright/test";
+
+test("@visual scaffolded product shell baseline", async () => {
+  test.skip();
+});
+`
+  );
+
+  writeFile(
+    join(productDir, "client", "web", "e2e", "a11y.spec.ts"),
+    `import { test } from "@playwright/test";
+
+test("@a11y scaffolded product shell accessibility baseline", async () => {
+  test.skip();
+});
+`
+  );
+
+  writeFile(
+    join(productDir, "client", "web", "index.html"),
+    `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${name}</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
 `
   );
 }
@@ -355,25 +946,50 @@ This product was scaffolded with \`scripts/scaffold-product.mjs\`.
 
 ## What was generated
 
+- Gradle product module skeleton and pack-validation wiring
 - domain-pack manifest with Kernel ownership fields
-- boundary policy store skeleton and pack contract test
+- boundary policy store, compliance rule pack, plugin bindings, and pack contract test
 - canonical product docs taxonomy
 - local runtime compose override
-${uiEnabled ? "- web UI shell placeholder and route manifest\n" : ""}\
+${uiEnabled ? "- web UI shell using @ghatana/product-shell and route manifest\n" : ""}\
 
 ## Still required
 
-1. Register the product in \`settings.gradle.kts\` if it has Gradle modules.
-2. Register any UI/client packages in \`pnpm-workspace.yaml\`.
-3. Add CI matrix entries if the product exposes APIs or UI surfaces.
-4. Replace the placeholder rule/resource/action vocabulary with product-owned semantics.
+1. Replace the placeholder rule/resource/action vocabulary with product-owned semantics.
+2. Replace the placeholder UI/build/test commands with product-ready implementations.
+3. Add any product-specific UI workflow or runtime overrides beyond the shared bootstrap.
 `
 );
+
+if (shouldRegisterProductShape) {
+  registerProductShape({ root, id, uiEnabled, uiMode });
+}
+
+if (shouldRegisterWorkspace) {
+  registerWorkspace({ root, id, uiEnabled });
+}
+
+if (shouldRegisterGradleSettings) {
+  registerGradleSettings({ root, id, name });
+}
+
+if (shouldRegisterCiMatrices) {
+  registerCiMatrices({ root, id, name, uiEnabled });
+}
 
 console.log(`Scaffolded ${name} at ${productDir}`);
 console.log("");
 console.log("Next steps:");
 console.log(`- Review ${join("products", id, "domain-pack-manifest.yaml")}`);
-console.log(`- Register Gradle modules in settings.gradle.kts if needed`);
-console.log(`- Register UI packages in pnpm-workspace.yaml if needed`);
-console.log(`- Add CI matrix entries for coverage, API contracts, and UI flows`);
+if (!shouldRegisterProductShape) {
+  console.log(`- Register product shape metadata in config/product-shape.json if needed`);
+}
+if (uiEnabled && !shouldRegisterWorkspace) {
+  console.log(`- Register UI packages in pnpm-workspace.yaml if needed`);
+}
+if (!shouldRegisterGradleSettings) {
+  console.log(`- Register Gradle modules in settings.gradle.kts if needed`);
+}
+if (!shouldRegisterCiMatrices) {
+  console.log(`- Add CI matrix entries for coverage, API contracts, and UI flows`);
+}

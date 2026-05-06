@@ -39,4 +39,14 @@ public interface BudgetRecommendationRepository {
      * @return promise resolving to an optional recommendation
      */
     Promise<Optional<BudgetRecommendation>> findById(String recommendationId);
+
+    /**
+     * Finds a recommendation by its unique identifier, scoped to the given workspace.
+     * Returns empty if the recommendation exists but belongs to a different workspace.
+     *
+     * @param workspaceId      the owning workspace; must not be null
+     * @param recommendationId the recommendation ID; must not be null
+     * @return promise resolving to an optional recommendation
+     */
+    Promise<Optional<BudgetRecommendation>> findById(DmWorkspaceId workspaceId, String recommendationId);
 }

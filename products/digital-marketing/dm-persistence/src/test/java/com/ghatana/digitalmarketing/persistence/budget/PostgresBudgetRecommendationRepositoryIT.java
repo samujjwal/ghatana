@@ -50,7 +50,7 @@ class PostgresBudgetRecommendationRepositoryIT extends EventloopTestBase {
     static void migrateSchema() {
         Flyway flyway = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-            .locations("classpath:db/migration")
+            .locations("filesystem:src/main/resources/db/migration")
             .load();
         flyway.migrate();
 
@@ -144,7 +144,7 @@ class PostgresBudgetRecommendationRepositoryIT extends EventloopTestBase {
         runPromise(() -> repository.save(recommendation));
 
         Optional<BudgetRecommendation> found = runPromise(() ->
-            repository.findById("rec-003"));
+            repository.findById(DmWorkspaceId.of("ws-wrong"), "rec-003"));
 
         assertThat(found).isEmpty();
     }
@@ -221,9 +221,9 @@ class PostgresBudgetRecommendationRepositoryIT extends EventloopTestBase {
         runPromise(() -> repository.save(r2));
 
         Optional<BudgetRecommendation> found1 = runPromise(() ->
-            repository.findById("rec-007"));
+            repository.findById(DmWorkspaceId.of("ws-one"), "rec-007"));
         Optional<BudgetRecommendation> found2 = runPromise(() ->
-            repository.findById("rec-007"));
+            repository.findById(DmWorkspaceId.of("ws-two"), "rec-007"));
 
         assertThat(found1).isPresent();
         assertThat(found2).isPresent();

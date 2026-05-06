@@ -36,6 +36,10 @@ function getHighestRole(roles: readonly string[]): ValidRole {
   }, DEFAULT_AUTHENTICATED_ROLE);
 }
 
+export function getHighestDmosRole(roles: readonly string[]): ValidRole {
+  return getHighestRole(roles);
+}
+
 export function isRouteAllowedForRoles(
   route: Pick<DmosRouteManifestEntry, 'minimumRole'>,
   roles: readonly string[],
@@ -46,6 +50,11 @@ export function isRouteAllowedForRoles(
 
   const currentRole = getHighestRole(roles);
   return DMOS_ROLE_ORDER[currentRole] >= DMOS_ROLE_ORDER[route.minimumRole as ValidRole];
+}
+
+export function resolveDmosRoutePath(path: string, workspaceId: string | null | undefined): string {
+  const resolvedWorkspaceId = workspaceId?.trim() || 'workspace';
+  return path.replaceAll(':workspaceId', resolvedWorkspaceId);
 }
 
 export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [

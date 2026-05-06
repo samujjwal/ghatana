@@ -20,6 +20,8 @@ export interface PageHeaderProps {
   readonly title: string;
   readonly description?: string;
   readonly eyebrow?: React.ReactNode;
+  readonly leading?: React.ReactNode;
+  readonly titleAdornment?: React.ReactNode;
   readonly actions?: React.ReactNode;
   readonly className?: string;
 }
@@ -28,6 +30,8 @@ export function PageHeader({
   title,
   description,
   eyebrow,
+  leading,
+  titleAdornment,
   actions,
   className,
 }: PageHeaderProps): React.ReactElement {
@@ -39,14 +43,23 @@ export function PageHeader({
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-950 dark:text-white">
-            {title}
-          </h1>
-          {description ? (
-            <p className="mt-2 text-base text-gray-600 dark:text-gray-300">
-              {description}
-            </p>
-          ) : null}
+          <div className="flex items-start gap-3">
+            {leading ? <div className="mt-1 flex-shrink-0">{leading}</div> : null}
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="text-3xl font-bold tracking-tight text-gray-950 dark:text-white">
+                  {title}
+                </h1>
+                {titleAdornment}
+              </div>
+              {description ? (
+                <p className="mt-2 text-base text-gray-600 dark:text-gray-300">
+                  {description}
+                </p>
+              ) : null}
+            </div>
+          </div>
         </div>
 
         {actions ? (

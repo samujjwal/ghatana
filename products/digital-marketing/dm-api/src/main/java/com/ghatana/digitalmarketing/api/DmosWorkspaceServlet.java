@@ -10,6 +10,7 @@ import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.workspace.Workspace;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -72,6 +73,10 @@ public final class DmosWorkspaceServlet {
         this.workspaceService = Objects.requireNonNull(workspaceService, "workspaceService must not be null");
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.httpContextFactory = Objects.requireNonNull(httpContextFactory, "httpContextFactory must not be null");
+    }
+
+    public DmosWorkspaceServlet(WorkspaceService workspaceService, Eventloop eventloop) {
+        this(workspaceService, eventloop, new DmosHttpContextFactory(false, null));
     }
 
     /**

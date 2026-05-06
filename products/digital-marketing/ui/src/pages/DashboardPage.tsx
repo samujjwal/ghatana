@@ -46,7 +46,7 @@ export function DashboardPage(): React.ReactElement {
   const setupComplete = approvals.length > 0 || !isLoading;
 
   return (
-    <main
+    <section
       data-testid="dashboard-page"
       className="max-w-6xl mx-auto px-4 py-8"
     >
@@ -144,6 +144,6 @@ export function DashboardPage(): React.ReactElement {
           isError={aiActions.isError}
         />
       </div>
-    </main>
+    </section>
   );
 }

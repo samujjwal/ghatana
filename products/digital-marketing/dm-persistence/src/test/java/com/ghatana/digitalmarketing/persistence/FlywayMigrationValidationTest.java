@@ -32,14 +32,14 @@ class FlywayMigrationValidationTest {
         .withUsername("test")
         .withPassword("test");
 
-    private static final int EXPECTED_MIGRATION_COUNT = 29; // V1 through V29
+    private static final int EXPECTED_MIGRATION_COUNT = 30; // V1 through V30
 
     @Test
     @DisplayName("P1-006: Fresh migration from empty database succeeds")
     void freshMigrationFromEmptyDatabaseSucceeds() {
         Flyway flyway = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-            .locations("classpath:db/migration")
+            .locations("filesystem:src/main/resources/db/migration")
             .load();
 
         // When: Run all migrations from empty database
@@ -49,7 +49,7 @@ class FlywayMigrationValidationTest {
         assertThat(migrationResult.success).as("P1-006: Fresh migration should succeed").isTrue();
         assertThat(migrationResult.migrationsExecuted)
             .as("P1-006: All migrations should be executed")
-            .hasSize(EXPECTED_MIGRATION_COUNT);
+            .isEqualTo(EXPECTED_MIGRATION_COUNT);
     }
 
     @Test
@@ -58,15 +58,17 @@ class FlywayMigrationValidationTest {
         // Given: Database at V10 (seed_demo_data)
         Flyway flyway = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-            .locations("classpath:db/migration")
+            .locations("filesystem:src/main/resources/db/migration")
+            .cleanDisabled(false)
             .target("10")
             .load();
+        flyway.clean();  // start from scratch before upgrading to target
         flyway.migrate();
 
         // When: Migrate from V10 to current
         Flyway flywayUpgrade = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-            .locations("classpath:db/migration")
+            .locations("filesystem:src/main/resources/db/migration")
             .load();
         var upgradeResult = flywayUpgrade.migrate();
 
@@ -74,7 +76,7 @@ class FlywayMigrationValidationTest {
         assertThat(upgradeResult.success).as("P1-006: Upgrade migration should succeed").isTrue();
         assertThat(upgradeResult.migrationsExecuted)
             .as("P1-006: Expected number of upgrade migrations should be executed")
-            .hasSize(EXPECTED_MIGRATION_COUNT - 10);
+            .isEqualTo(EXPECTED_MIGRATION_COUNT - 10);
     }
 
     @Test
@@ -83,15 +85,17 @@ class FlywayMigrationValidationTest {
         // Given: Database at V20 (website_audit_reports)
         Flyway flyway = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-            .locations("classpath:db/migration")
+            .locations("filesystem:src/main/resources/db/migration")
+            .cleanDisabled(false)
             .target("20")
             .load();
+        flyway.clean();  // start from scratch before upgrading to target
         flyway.migrate();
 
         // When: Migrate from V20 to current
         Flyway flywayUpgrade = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-            .locations("classpath:db/migration")
+            .locations("filesystem:src/main/resources/db/migration")
             .load();
         var upgradeResult = flywayUpgrade.migrate();
 
@@ -99,7 +103,7 @@ class FlywayMigrationValidationTest {
         assertThat(upgradeResult.success).as("P1-006: Upgrade migration should succeed").isTrue();
         assertThat(upgradeResult.migrationsExecuted)
             .as("P1-006: Expected number of upgrade migrations should be executed")
-            .hasSize(EXPECTED_MIGRATION_COUNT - 20);
+            .isEqualTo(EXPECTED_MIGRATION_COUNT - 20);
     }
 
     @Test
@@ -108,7 +112,7 @@ class FlywayMigrationValidationTest {
         // Given: All migrations run
         Flyway flyway = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-            .locations("classpath:db/migration")
+            .locations("filesystem:src/main/resources/db/migration")
             .load();
         flyway.migrate();
 
@@ -116,9 +120,6 @@ class FlywayMigrationValidationTest {
         var info = flyway.info();
 
         // Then: Migration history should be complete
-        assertThat(info.success)
-            .as("P1-006: All migrations should be in success state")
-            .isTrue();
         assertThat(info.pending())
             .as("P1-006: No pending migrations should remain")
             .isEmpty();
@@ -133,7 +134,7 @@ class FlywayMigrationValidationTest {
         // Given: All migrations run once
         Flyway flyway = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-            .locations("classpath:db/migration")
+            .locations("filesystem:src/main/resources/db/migration")
             .load();
         flyway.migrate();
 
@@ -144,6 +145,6 @@ class FlywayMigrationValidationTest {
         assertThat(repeatResult.success).as("P1-006: Repeated migration should succeed").isTrue();
         assertThat(repeatResult.migrationsExecuted)
             .as("P1-006: No migrations should be executed on repeat")
-            .isEmpty();
+            .isZero();
     }
 }

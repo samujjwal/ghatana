@@ -29,19 +29,15 @@ export const test = base.extend<Fixtures>({
   authenticatedPage: async ({ page, testUser }, use) => {
     // Login before each test
     await page.goto('/login');
-    await page.getByTestId('email-input').fill(testUser.email);
-    await page.getByTestId('password-input').fill(testUser.password);
-    await page.getByTestId('login-button').click();
-    
-    // Wait for navigation to home
+    await page.getByLabel('Email').fill(testUser.email);
+    await page.getByLabel('Password').fill(testUser.password);
+    await page.getByRole('button', { name: 'Sign in' }).click();
+
+    // Wait for navigation to home shell
     await page.waitForURL('/', { timeout: 5000 });
-    await page.waitForSelector('[data-testid="home-screen"]', { timeout: 5000 });
-    
+    await page.getByRole('heading', { name: 'Dashboard' }).waitFor({ timeout: 5000 });
+
     await use(page);
-    
-    // Logout after test
-    await page.getByTestId('user-menu').click();
-    await page.getByTestId('logout-button').click();
   },
 });
 

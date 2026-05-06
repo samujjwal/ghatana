@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { uploadProgressService, UploadProgress } from '../services/uploadProgressService';
 import { networkMonitor } from '../services/networkMonitor';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 /**
  * Upload Item Card Component
@@ -55,13 +56,13 @@ export const UploadItemCard: React.FC<UploadItemCardProps> = ({
 
   const getStatusColor = (status: UploadProgress['status']): string => {
     switch (status) {
-      case 'queued': return '#888';
-      case 'compressing': return '#9b59b6';
-      case 'uploading': return '#007aff';
-      case 'paused': return '#ff9500';
-      case 'completed': return '#34c759';
-      case 'failed': return '#ff3b30';
-      default: return '#888';
+      case 'queued': return flashitMobileTheme.brand.inactive;
+      case 'compressing': return flashitMobileTheme.status.info;
+      case 'uploading': return flashitMobileTheme.brand.primary;
+      case 'paused': return flashitMobileTheme.status.warning;
+      case 'completed': return flashitMobileTheme.status.success;
+      case 'failed': return flashitMobileTheme.status.error;
+      default: return flashitMobileTheme.brand.inactive;
     }
   };
 
@@ -274,7 +275,7 @@ export const UploadStatsSummary: React.FC<UploadStatsSummaryProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#f9f9f9',
+    backgroundColor: flashitMobileTheme.background.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -293,12 +294,12 @@ const styles = StyleSheet.create({
   fileName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#000',
+    color: flashitMobileTheme.text.primary,
     marginBottom: 2,
   },
   fileSize: {
     fontSize: 12,
-    color: '#666',
+    color: flashitMobileTheme.text.secondary,
   },
   statusBadge: {
     paddingHorizontal: 10,
@@ -308,7 +309,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
   progressContainer: {
     flexDirection: 'row',
@@ -318,7 +319,7 @@ const styles = StyleSheet.create({
   progressBackground: {
     flex: 1,
     height: 6,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: flashitMobileTheme.border,
     borderRadius: 3,
     overflow: 'hidden',
     marginRight: 8,
@@ -330,7 +331,7 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#666',
+    color: flashitMobileTheme.text.secondary,
     minWidth: 40,
     textAlign: 'right',
   },
@@ -340,30 +341,30 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: flashitMobileTheme.border,
   },
   stat: {
     alignItems: 'center',
   },
   statLabel: {
     fontSize: 10,
-    color: '#888',
+    color: flashitMobileTheme.text.secondary,
     marginBottom: 2,
   },
   statValue: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#333',
+    color: flashitMobileTheme.text.primary,
   },
   errorContainer: {
     marginTop: 8,
     padding: 8,
-    backgroundColor: '#ffe5e5',
+    backgroundColor: flashitMobileTheme.background.surface,
     borderRadius: 6,
   },
   errorText: {
     fontSize: 12,
-    color: '#ff3b30',
+    color: flashitMobileTheme.status.error,
   },
   actions: {
     flexDirection: 'row',
@@ -378,18 +379,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pauseButton: {
-    backgroundColor: '#ff9500',
+    backgroundColor: flashitMobileTheme.status.warning,
   },
   retryButton: {
-    backgroundColor: '#007aff',
+    backgroundColor: flashitMobileTheme.brand.primary,
   },
   deleteButton: {
-    backgroundColor: '#ff3b30',
+    backgroundColor: flashitMobileTheme.status.error,
   },
   actionButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
   networkBadge: {
     flexDirection: 'row',
@@ -405,10 +406,10 @@ const styles = StyleSheet.create({
   networkBadgeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
   statsSummary: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: flashitMobileTheme.background.surface,
     padding: 16,
     borderRadius: 12,
   },
@@ -417,20 +418,20 @@ const styles = StyleSheet.create({
   },
   overallProgressBackground: {
     height: 8,
-    backgroundColor: '#ddd',
+    backgroundColor: flashitMobileTheme.border,
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 4,
   },
   overallProgressBar: {
     height: '100%',
-    backgroundColor: '#007aff',
+    backgroundColor: flashitMobileTheme.brand.primary,
     borderRadius: 4,
   },
   overallProgressText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: flashitMobileTheme.text.primary,
     textAlign: 'center',
   },
   summaryStats: {
@@ -443,14 +444,14 @@ const styles = StyleSheet.create({
   summaryStatValue: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#333',
+    color: flashitMobileTheme.text.primary,
   },
   failedValue: {
-    color: '#ff3b30',
+    color: flashitMobileTheme.status.error,
   },
   summaryStatLabel: {
     fontSize: 10,
-    color: '#888',
+    color: flashitMobileTheme.text.secondary,
     marginTop: 2,
   },
 });

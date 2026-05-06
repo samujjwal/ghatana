@@ -107,7 +107,7 @@ public final class IdempotencyMiddleware {
                 LOG.warn("[DMOS-IDEMPOTENCY] Missing X-Idempotency-Key for {} {}",
                     method, request.getRelativePath());
                 return Promise.of(HttpResponse.ofCode(400)
-                    .withJson(MAPPER.writeValueAsBytes(Map.of(
+                    .withJson(MAPPER.writeValueAsString(Map.of(
                         "error", "MISSING_IDEMPOTENCY_KEY",
                         "message", "X-Idempotency-Key header is required for " + method + " operations",
                         "status", 400
@@ -116,13 +116,11 @@ public final class IdempotencyMiddleware {
             }
 
             String tenantId = request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"));
-            if (tenantId == null || tenantId.isBlank()) {
-                tenantId = "default";
-            }
+            final String effectiveTenantId = (tenantId == null || tenantId.isBlank()) ? "default" : tenantId;
 
             String requestFingerprint = computeRequestFingerprint(request);
 
-            return checkIdempotency(idempotencyKey, tenantId, requestFingerprint)
+            return checkIdempotency(idempotencyKey, effectiveTenantId, requestFingerprint)
                 .then(existingResponse -> {
                     if (existingResponse != null) {
                         // P1-021: Return cached response for duplicate request
@@ -132,7 +130,7 @@ public final class IdempotencyMiddleware {
 
                     // Execute the request
                     return delegate.serve(request)
-                        .then(response -> storeResponse(idempotencyKey, tenantId, requestFingerprint, response)
+                        .then(response -> storeResponse(idempotencyKey, effectiveTenantId, requestFingerprint, response)
                             .map(v -> response));
                 });
         };
@@ -234,8 +232,13 @@ public final class IdempotencyMiddleware {
         fp.append(request.getRelativePath()).append("|");
 
         try {
-            byte[] body = request.getBody().getBytes();
-            fp.append(java.util.Arrays.hashCode(body));
+            if (request.getBody() != null) {
+                byte[] body = request.getBody().getString(java.nio.charset.StandardCharsets.UTF_8)
+                    .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                fp.append(java.util.Arrays.hashCode(body));
+            } else {
+                fp.append("no-body");
+            }
         } catch (Exception e) {
             fp.append("no-body");
         }

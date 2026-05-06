@@ -2,6 +2,7 @@ package com.ghatana.digitalmarketing.api.security;
 
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -234,16 +235,15 @@ public final class DistributedRateLimiter {
             String tenantId,
             int maxRequests) {
 
-        return Promise.all(
-            keys.stream()
-                .map(key -> isAllowed(key, tenantId, maxRequests, Duration.ofSeconds(DEFAULT_WINDOW_SIZE_SECONDS))
-                    .map(allowed -> new AbstractMap.SimpleEntry<>(key, allowed)))
-                .toArray(Promise[]::new)
-        ).map(entries -> {
+        List<Promise<Map.Entry<String, Boolean>>> checks = keys.stream()
+            .map(key -> isAllowed(key, tenantId, maxRequests, Duration.ofSeconds(DEFAULT_WINDOW_SIZE_SECONDS))
+                .map(allowed -> (Map.Entry<String, Boolean>) new AbstractMap.SimpleEntry<>(key, allowed)))
+            .toList();
+
+        return Promises.toList(checks).map(entries -> {
             Map<String, Boolean> result = new HashMap<>();
-            for (Object entry : entries) {
-                Map.Entry<String, Boolean> e = (Map.Entry<String, Boolean>) entry;
-                result.put(e.getKey(), e.getValue());
+            for (Map.Entry<String, Boolean> entry : entries) {
+                result.put(entry.getKey(), entry.getValue());
             }
             return result;
         });

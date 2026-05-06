@@ -71,6 +71,42 @@ public final class DmosPublicIntakeServlet {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
     }
 
+    public DmosPublicIntakeServlet(
+            LeadService leadService,
+            SuppressionService suppressionService,
+            Eventloop eventloop) {
+        this(
+            leadService,
+            suppressionService,
+            new IntakeAbuseControlService() {
+                @Override
+                public Promise<IntakeAbuseControlService.AbuseCheckResult> checkAbuse(
+                        DmOperationContext ctx,
+                        String clientIp,
+                        String email,
+                        Map<String, String> formData) {
+                    return Promise.of(IntakeAbuseControlService.AbuseCheckResult.allowed());
+                }
+
+                @Override
+                public Promise<Void> recordSubmission(DmOperationContext ctx, String clientIp, String email) {
+                    return Promise.complete();
+                }
+
+                @Override
+                public boolean validateHoneypot(String honeypotValue) {
+                    return true;
+                }
+
+                @Override
+                public Promise<Boolean> isDuplicateSubmission(DmOperationContext ctx, String email, String formHash) {
+                    return Promise.of(false);
+                }
+            },
+            eventloop
+        );
+    }
+
     public AsyncServlet getServlet() {
         return DmosApiRateLimiter.wrap(
         RoutingServlet.builder(eventloop)
@@ -88,7 +124,7 @@ public final class DmosPublicIntakeServlet {
             int commaIdx = forwarded.indexOf(',');
             return commaIdx > 0 ? forwarded.substring(0, commaIdx).trim() : forwarded.trim();
         }
-        return request.getRemoteAddress();
+        return request.getRemoteAddress() != null ? request.getRemoteAddress().getHostAddress() : "unknown";
     }
 
     private Promise<HttpResponse> handleCaptureLead(HttpRequest request) {
@@ -138,7 +174,7 @@ public final class DmosPublicIntakeServlet {
                                     .then(response -> {
                                         // Record submission for rate limiting
                                         return abuseControlService.recordSubmission(ctx, clientIp, body.email())
-                                            .then(__ -> Promise.of(response));
+                                            .then(ignored -> Promise.of(response));
                                     });
                             });
                     })
@@ -152,7 +188,6 @@ public final class DmosPublicIntakeServlet {
                                 LOG.error("[DMOS] Failed to capture lead", e);
                                 return Promise.of(errorResponse(500, "Internal error"));
                             });
-                    });
             } catch (IllegalArgumentException e) {
                 return Promise.of(errorResponse(400, e.getMessage()));
             } catch (Exception e) {

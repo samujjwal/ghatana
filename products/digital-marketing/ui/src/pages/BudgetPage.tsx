@@ -46,7 +46,7 @@ export function BudgetPage(): React.ReactElement {
   }
 
   return (
-    <main data-testid="budget-page" className="max-w-6xl mx-auto px-4 py-8">
+    <section data-testid="budget-page" className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Budget</h1>
         <span className="text-sm text-gray-500">
@@ -214,6 +214,6 @@ export function BudgetPage(): React.ReactElement {
           No budget recommendation yet. Generate one above.
         </p>
       )}
-    </main>
+    </section>
   );
 }

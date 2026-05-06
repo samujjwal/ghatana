@@ -14,6 +14,7 @@ import com.ghatana.digitalmarketing.domain.audit.WebsiteAuditFinding;
 import com.ghatana.digitalmarketing.domain.audit.WebsiteAuditReport;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -27,6 +28,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * HTTP servlet for website audit generation and retrieval.
@@ -60,6 +62,10 @@ public final class DmosWebsiteAuditServlet {
         this.httpContextFactory = Objects.requireNonNull(httpContextFactory, "httpContextFactory must not be null");
     }
 
+    public DmosWebsiteAuditServlet(WebsiteAuditService auditService, Eventloop eventloop) {
+        this(auditService, eventloop, new DmosHttpContextFactory(false, null));
+    }
+
     /**
      * Returns the routing servlet for website audit endpoints.
      *
@@ -85,8 +91,16 @@ public final class DmosWebsiteAuditServlet {
 
                 return auditService.runAudit(
                     ctx,
-                    new WebsiteAuditService.RunAuditCommand(body.url(), body.depth()))
-                    .map(report -> jsonResponse(200, WebsiteAuditResponse.from(report)))
+                    new WebsiteAuditService.RunWebsiteAuditCommand(
+                        body.websiteUrl(),
+                        body.reachable(),
+                        body.responseTimeMs(),
+                        body.title(),
+                        body.metaDescription(),
+                        body.h1(),
+                        body.trackingTagDetected(),
+                        body.hasLeadForm()))
+                    .map(report -> jsonResponse(200, AuditReportResponse.from(report)))
                     .then(r -> Promise.of(r), e -> mapServiceError("run audit", e));
             } catch (IllegalArgumentException e) {
                 return Promise.of(errorResponse(400, e.getMessage()));
@@ -103,7 +117,7 @@ public final class DmosWebsiteAuditServlet {
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
 
             return auditService.getLatestAudit(ctx)
-                .map(report -> jsonResponse(200, WebsiteAuditResponse.from(report)))
+                .map(report -> jsonResponse(200, AuditReportResponse.from(report)))
                 .then(r -> Promise.of(r), e -> mapServiceError("get audit", e));
         } catch (IllegalArgumentException e) {
             return Promise.of(errorResponse(400, e.getMessage()));

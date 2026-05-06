@@ -78,16 +78,26 @@ const checks = [
     ],
   },
   {
+    name: 'FlashIt route access helpers',
+    file: 'products/flashit/client/web/src/routeAccess.ts',
+    required: ['resolveFlashitRole', 'isRouteAllowedForRole', 'FLASHIT_ROLE_ORDER'],
+  },
+  {
     name: 'FlashIt route consumption',
     file: 'products/flashit/client/web/src/App.tsx',
-    required: ['flashitRouteManifest.map'],
+    required: ['flashitRouteManifest.map', 'isRouteAllowedForRole', 'resolveFlashitRole', 'FlashitAccessDenied'],
     forbidden: ['path="/capture"', 'path="/moments"', 'path="/analytics"'],
   },
   {
     name: 'FlashIt navigation composition',
     file: 'products/flashit/client/web/src/components/Layout.tsx',
-    required: ['getFlashitNavigationRoutes', 'iconRegistry'],
+    required: ['FlashitProductShell'],
     forbidden: ['const navItems = ['],
+  },
+  {
+    name: 'FlashIt shared shell composition',
+    file: 'products/flashit/client/web/src/components/FlashitProductShell.tsx',
+    required: ['ProductShell', 'flashitRouteManifest', '@ghatana/product-shell'],
   },
 ];
 

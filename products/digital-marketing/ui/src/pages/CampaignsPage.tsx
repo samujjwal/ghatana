@@ -95,7 +95,7 @@ export function CampaignsPage(): React.ReactElement {
   return (
     <>
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
-      <main data-testid="campaigns-page" className="max-w-6xl mx-auto px-4 py-8">
+      <section data-testid="campaigns-page" className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Campaigns</h1>
         <span className="text-sm text-gray-500">
@@ -223,7 +223,7 @@ export function CampaignsPage(): React.ReactElement {
           </table>
         </div>
       )}
-      </main>
+      </section>
     </>
   );
 }

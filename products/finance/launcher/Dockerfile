@@ -7,7 +7,11 @@ COPY . .
 
 ENV GRADLE_OPTS="-Xms256m -Xmx512m -Dfile.encoding=UTF-8"
 
-RUN chmod +x gradlew && ./gradlew :products:finance:launcher:check :products:finance:launcher:installDist \
+RUN chmod +x gradlew && ./gradlew \
+	:products:finance:productConformanceCheck \
+	:products:finance:checkApiContractConformance \
+	:products:finance:launcher:check \
+	:products:finance:launcher:installDist \
 	--no-daemon \
 	--no-configuration-cache \
 	--max-workers=2 \

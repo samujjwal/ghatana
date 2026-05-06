@@ -38,6 +38,9 @@ jobs:
       - name: Check shared layout primitive composition
         run: node scripts/check-shared-layout-primitives.mjs
 
+      - name: Check shared product shell adoption
+        run: node scripts/check-shared-product-shells.mjs
+
       - name: Check shared UI state coverage
         run: node scripts/check-shared-ui-state-coverage.mjs
 
@@ -64,6 +67,9 @@ jobs:
 
       - name: Check product workspace registration
         run: node scripts/check-product-workspace-registration.mjs
+
+      - name: Check product scaffolder contract
+        run: node scripts/check-product-scaffolder.mjs
 
       - name: Check security workflow coverage
         run: node scripts/check-security-workflow-coverage.mjs

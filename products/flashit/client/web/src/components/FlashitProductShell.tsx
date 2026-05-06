@@ -5,7 +5,8 @@ import { useAtomValue } from 'jotai';
 import { useNavigate } from 'react-router-dom';
 import { currentUserAtom } from '../store/atoms';
 import { useLogout } from '../hooks/use-api';
-import { flashitRouteManifest, type FlashItRole } from '../routeManifest';
+import { flashitRouteManifest } from '../routeManifest';
+import { resolveFlashitRole } from '../routeAccess';
 
 interface FlashitProductShellProps {
   children: React.ReactNode;
@@ -15,7 +16,7 @@ export function FlashitProductShell({ children }: FlashitProductShellProps): Rea
   const currentUser = useAtomValue(currentUserAtom);
   const logout = useLogout();
   const navigate = useNavigate();
-  const currentRole: FlashItRole = 'member';
+  const currentRole = resolveFlashitRole(currentUser);
 
   const config: ProductShellConfig = {
     productName: 'FlashIt',

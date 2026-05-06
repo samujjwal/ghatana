@@ -11,11 +11,13 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useAtomValue } from 'jotai';
 import { Ionicons } from '@expo/vector-icons';
 import { backgroundUploadService } from '../services/backgroundUploadService';
 import { offlineQueueService } from '../services/offlineQueue';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getFlashitMobileSettingsRoutes } from '../routeManifest';
+import { mobileAtoms } from '../state/localAtoms';
 
 /**
  * Settings Screen
@@ -38,7 +40,8 @@ type UploadQuality = 'high' | 'medium' | 'low';
 
 export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const quickLinks = getFlashitMobileSettingsRoutes();
+  const currentUser = useAtomValue(mobileAtoms.currentUserAtom);
+  const quickLinks = getFlashitMobileSettingsRoutes(currentUser);
   const [backgroundUploadsEnabled, setBackgroundUploadsEnabled] = useState(false);
   const [wifiOnly, setWifiOnly] = useState(false);
   const [autoCompress, setAutoCompress] = useState(true);

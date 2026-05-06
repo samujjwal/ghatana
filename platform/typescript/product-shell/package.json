@@ -12,7 +12,7 @@
     }
   },
   "scripts": {
-    "build": "tsc --noEmit && tsup src/index.ts --format esm --dts",
+    "build": "tsc --noEmit && tsc --project tsconfig.json --emitDeclarationOnly --declarationMap false --noEmit false && tsup src/index.ts --format esm",
     "type-check": "tsc --noEmit",
     "test": "vitest"
   },

@@ -14,6 +14,9 @@ import { AuthProvider } from '@/context/AuthContext';
 import { dmosRouteManifest, isRouteAllowedForRoles } from '@/routeManifest';
 
 vi.mock('@/lib/feature-flags', () => ({
+  FEATURE_FLAGS: {
+    DASHBOARD_GROWTH_METRICS: 'dmos.dashboard_growth_metrics',
+  },
   isFeatureEnabled: () => false,
   featureFlags: {},
 }));

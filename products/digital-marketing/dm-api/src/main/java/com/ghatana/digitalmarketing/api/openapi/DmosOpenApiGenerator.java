@@ -73,7 +73,7 @@ public final class DmosOpenApiGenerator {
                 "type", Map.of("$ref", "#/components/schemas/CampaignType"),
                 "createdBy", Map.of("type", "string", "description", "User who created the campaign"),
                 "createdAt", Map.of("type", "string", "format", "date-time", "description", "Creation timestamp"),
-                "updatedAt", Map.of("type", "string", "format", "date-time", "description": "Last update timestamp")
+                "updatedAt", Map.of("type", "string", "format", "date-time", "description", "Last update timestamp")
             )
         ));
         schemas.put("CreateCampaignRequest", Map.of(

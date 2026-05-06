@@ -254,6 +254,9 @@ public class ConsentEnforcementService {
 
         if (!consent.authorises(req.action(), now)) {
             deniedCounter.increment();
+            if (consent.expiresAt() != null && now.isAfter(consent.expiresAt())) {
+                return AccessDecision.deny(AccessDecision.ReasonCode.GRANT_EXPIRED);
+            }
             // Distinguish expired vs revoked for better UX reporting
             return switch (consent.status()) {
                 case REVOKED -> AccessDecision.deny(AccessDecision.ReasonCode.GRANT_REVOKED);

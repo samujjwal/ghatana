@@ -27,7 +27,7 @@
 | Capability | Canonical Owner | Products must not duplicate |
 |---|---|---|
 | `boundary-policy-validation` | Kernel | Product-local regex/source scanning or class-existence-only checks |
-| `app-shell/layout` | Design system | Product-local shell implementations except thin wrappers |
+| `app-shell/layout` | Design system | Product-local shell implementations except thin wrappers; audited web products must compose `@ghatana/product-shell` |
 | `component-library ownership` | Design system | Direct product imports of overlapping UI systems such as MUI, Chakra, Mantine, Ant Design, or Semantic UI unless explicitly approved |
 | `router/version strategy` | Kernel frontend platform | Mixed router families across products or product web packages depending directly on `react-router` |
 | `compose/docker base image, healthcheck, secret rules, observability wiring` | Infrastructure/tooling | Product-local copies of the base runtime setup |

@@ -82,6 +82,10 @@ public final class DmosAdCopyServlet {
         this.metrics          = Objects.requireNonNull(metrics,          "metrics must not be null");
     }
 
+    public DmosAdCopyServlet(AdCopyGeneratorService generatorService, Eventloop eventloop) {
+        this(generatorService, eventloop, DmosMetricsCollector.noop());
+    }
+
     /**
      * Returns the routing servlet for ad copy endpoints.
      *

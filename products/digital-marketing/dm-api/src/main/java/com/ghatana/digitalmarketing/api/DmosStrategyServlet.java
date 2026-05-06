@@ -74,6 +74,16 @@ public final class DmosStrategyServlet {
         this.httpContextFactory = Objects.requireNonNull(httpContextFactory, "httpContextFactory must not be null");
     }
 
+    public DmosStrategyServlet(StrategyGeneratorService strategyService, Eventloop eventloop) {
+        this(
+            strategyService,
+            eventloop,
+            DmosMetricsCollector.noop(),
+            new DmosTelemetry(io.opentelemetry.api.OpenTelemetry.noop()),
+            new DmosHttpContextFactory(false, null)
+        );
+    }
+
     /**
      * Returns the routing servlet for strategy endpoints.
      *
@@ -120,7 +130,7 @@ public final class DmosStrategyServlet {
 
                     return strategyService.generateStrategy(ctx, command)
                         .map(strategy -> {
-                            telemetry.setStrategyId(strategy.getId());
+                            telemetry.setStrategyId(strategy.getStrategyId());
                             span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
                             span.end();
                             return jsonResponse(200, StrategyResponse.from(strategy));
@@ -305,7 +315,7 @@ public final class DmosStrategyServlet {
         String status,
         List<StrategyGoalDto> goals,
         List<CampaignPlanDto> channelPlans,
-        int budgetCap,
+        double budgetCap,
         String rationale,
         String assumptions,
         String measurementPlan,

@@ -47,7 +47,7 @@ export function ApprovalDetailPage(): React.ReactElement {
   const requireComment = riskLevel >= 4;
 
   return (
-    <main
+    <section
       data-testid="approval-detail-page"
       className="max-w-4xl mx-auto px-4 py-8 space-y-6"
     >
@@ -193,6 +193,6 @@ export function ApprovalDetailPage(): React.ReactElement {
           onSuccess={() => setShowDecide(false)}
         />
       )}
-    </main>
+    </section>
   );
 }

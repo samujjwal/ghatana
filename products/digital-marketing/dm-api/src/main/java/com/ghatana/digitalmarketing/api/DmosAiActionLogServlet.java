@@ -70,6 +70,10 @@ public final class DmosAiActionLogServlet {
         this.httpContextFactory = Objects.requireNonNull(httpContextFactory, "httpContextFactory must not be null");
     }
 
+    public DmosAiActionLogServlet(AiActionLogService service, Eventloop eventloop) {
+        this(service, eventloop, DmosMetricsCollector.noop(), new DmosHttpContextFactory(false, null));
+    }
+
     public AsyncServlet routes() {
         return DmosApiRateLimiter.wrap(
             RoutingServlet.builder(eventloop)

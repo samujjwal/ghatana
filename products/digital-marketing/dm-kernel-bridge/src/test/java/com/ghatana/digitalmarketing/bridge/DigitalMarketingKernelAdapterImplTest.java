@@ -21,6 +21,7 @@ import com.ghatana.plugin.approval.ApprovalStatus;
 import com.ghatana.plugin.approval.HumanApprovalPlugin;
 import com.ghatana.plugin.audit.AuditTrailPlugin;
 import com.ghatana.plugin.consent.ConsentPlugin;
+import com.ghatana.plugin.featureflag.FeatureFlagPlugin;
 import com.ghatana.plugin.notification.NotificationPlugin;
 import com.ghatana.plugin.risk.RiskManagementPlugin;
 import io.activej.promise.Promise;
@@ -50,6 +51,7 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
     private InMemoryAuditTrailPlugin auditTrailPlugin;
     private InMemoryRiskManagementPlugin riskManagementPlugin;
     private InMemoryNotificationPlugin notificationPlugin;
+    private InMemoryFeatureFlagPlugin featureFlagPlugin;
     private DigitalMarketingKernelAdapterImpl adapter;
 
     private static final DmTenantId TENANT = DmTenantId.of("acme-corp");
@@ -69,6 +71,7 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
         auditTrailPlugin = new InMemoryAuditTrailPlugin();
         riskManagementPlugin = new InMemoryRiskManagementPlugin();
         notificationPlugin = new InMemoryNotificationPlugin();
+        featureFlagPlugin = new InMemoryFeatureFlagPlugin();
 
         adapter = new DigitalMarketingKernelAdapterImpl(
             authService,
@@ -78,7 +81,9 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
             approvalPlugin,
             auditTrailPlugin,
             riskManagementPlugin,
-            notificationPlugin
+            notificationPlugin,
+            featureFlagPlugin,
+            false
         );
 
         ctx = DmOperationContext.builder()
@@ -133,6 +138,17 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("verifyConsent fails closed when authorization is denied")
+    void shouldDenyConsentVerificationWhenUnauthorized() {
+        adapter.start();
+        authService.setDecision("consent:contact-1", "verify", false);
+
+        boolean result = runPromise(() -> adapter.verifyConsent(ctx, "contact-1", "marketing-email"));
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
     @DisplayName("requestApproval returns request id from approval plugin")
     void shouldRequestApproval() {
         adapter.start();
@@ -144,6 +160,20 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
         assertThat(requestId).isNotBlank();
         assertThat(approvalPlugin.lastRequest().subjectId()).isEqualTo("campaign-1");
         assertThat(approvalPlugin.lastRequest().requestedBy()).isEqualTo("user-42");
+    }
+
+    @Test
+    @DisplayName("requestApproval rejects unauthorized callers")
+    void shouldRejectUnauthorizedApprovalRequests() {
+        adapter.start();
+        authService.setDecision("approval:campaign-1", "request", false);
+
+        SecurityException exception = org.junit.jupiter.api.Assertions.assertThrows(
+            SecurityException.class,
+            () -> runPromise(() -> adapter.requestApproval(ctx, "LaunchCampaign", "campaign-1", "Launch Q4 campaign"))
+        );
+
+        assertThat(exception.getMessage()).contains("Not authorized to request approval");
     }
 
     @Test
@@ -165,6 +195,20 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("recordAudit rejects unauthorized callers")
+    void shouldRejectUnauthorizedAuditRecording() {
+        adapter.start();
+        authService.setDecision("audit:campaign-1", "record", false);
+
+        SecurityException exception = org.junit.jupiter.api.Assertions.assertThrows(
+            SecurityException.class,
+            () -> runPromise(() -> adapter.recordAudit(ctx, "campaign-1", "launch", Map.of("channel", "email")))
+        );
+
+        assertThat(exception.getMessage()).contains("Not authorized to record audit");
+    }
+
+    @Test
     @DisplayName("evaluateRisk delegates to risk plugin")
     void shouldEvaluateRisk() {
         adapter.start();
@@ -178,6 +222,43 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
         ));
 
         assertThat(score).isEqualTo(0.42d);
+    }
+
+    @Test
+    @DisplayName("evaluateRisk rejects unauthorized callers")
+    void shouldRejectUnauthorizedRiskEvaluation() {
+        adapter.start();
+        authService.setDecision("risk:campaign-1", "evaluate", false);
+
+        SecurityException exception = org.junit.jupiter.api.Assertions.assertThrows(
+            SecurityException.class,
+            () -> runPromise(() -> adapter.evaluateRisk(ctx, "campaign-1", "DM_CAMPAIGN_LAUNCH", Map.of("budget", 1000)))
+        );
+
+        assertThat(exception.getMessage()).contains("Not authorized to evaluate risk");
+    }
+
+    @Test
+    @DisplayName("isFeatureEnabled delegates to feature flag plugin")
+    void shouldDelegateFeatureFlagEvaluation() {
+        adapter.start();
+        featureFlagPlugin.setFlag("dmos.approvals.enabled", "acme-corp", true);
+
+        boolean enabled = runPromise(() -> adapter.isFeatureEnabled(ctx, "dmos.approvals.enabled"));
+
+        assertThat(enabled).isTrue();
+        assertThat(featureFlagPlugin.lastScope()).isEqualTo("acme-corp");
+    }
+
+    @Test
+    @DisplayName("isFeatureEnabled fails closed when unauthorized")
+    void shouldFailClosedForUnauthorizedFeatureFlagChecks() {
+        adapter.start();
+        authService.setDecision("feature-flag:dmos.approvals.enabled", "read", false);
+
+        boolean enabled = runPromise(() -> adapter.isFeatureEnabled(ctx, "dmos.approvals.enabled"));
+
+        assertThat(enabled).isFalse();
     }
 
     @Test
@@ -529,6 +610,45 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
         @Override
         public Promise<Void> stop() {
             return Promise.of(null);
+        }
+    }
+
+    private static final class InMemoryFeatureFlagPlugin implements FeatureFlagPlugin {
+        private final Map<String, Boolean> flags = new java.util.HashMap<>();
+        private String lastScope;
+
+        void setFlag(String flagKey, String scope, boolean enabled) {
+            flags.put(flagKey + "|" + scope, enabled);
+        }
+
+        String lastScope() {
+            return lastScope;
+        }
+
+        @Override
+        public Promise<Boolean> isEnabled(String flagKey, String scope) {
+            lastScope = scope;
+            return Promise.of(flags.getOrDefault(flagKey + "|" + scope, false));
+        }
+
+        @Override
+        public Promise<String> getString(String flagKey, String tenantId, String defaultValue) {
+            return Promise.of(defaultValue);
+        }
+
+        @Override
+        public Promise<Integer> getInt(String flagKey, String tenantId, int defaultValue) {
+            return Promise.of(defaultValue);
+        }
+
+        @Override
+        public Promise<Boolean> getBoolean(String flagKey, String tenantId, boolean defaultValue) {
+            return Promise.of(defaultValue);
+        }
+
+        @Override
+        public Promise<Map<String, Object>> getAllFlags(String tenantId) {
+            return Promise.of(Map.of());
         }
     }
 

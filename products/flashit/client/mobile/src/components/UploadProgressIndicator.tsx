@@ -12,6 +12,7 @@ import { uploadManager } from '../services/uploadManager';
 import { mediaCompressionService } from '../services/mediaCompressionService';
 import { uploadProgressService, UploadProgress } from '../services/uploadProgressService';
 import { UploadItemCard, NetworkBadge, UploadStatsSummary } from './UploadItemCard';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 /**
  * Upload Progress Indicator Component
@@ -97,15 +98,15 @@ export const UploadProgressIndicator: React.FC = () => {
   const getStatusColor = (status: QueuedItem['status']): string => {
     switch (status) {
       case 'pending':
-        return '#888';
+        return flashitMobileTheme.brand.inactive;
       case 'uploading':
-        return '#007aff';
+        return flashitMobileTheme.brand.primary;
       case 'failed':
-        return '#ff3b30';
+        return flashitMobileTheme.status.error;
       case 'completed':
-        return '#34c759';
+        return flashitMobileTheme.status.success;
       default:
-        return '#888';
+        return flashitMobileTheme.brand.inactive;
     }
   };
 
@@ -303,11 +304,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 80,
     right: 20,
-    backgroundColor: '#007aff',
+    backgroundColor: flashitMobileTheme.brand.primary,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 24,
-    shadowColor: '#000',
+    shadowColor: flashitMobileTheme.shadow.color,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -322,13 +323,13 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   indicatorText: {
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     fontSize: 14,
     fontWeight: '600',
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.background.canvas,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -336,7 +337,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
+    borderBottomColor: flashitMobileTheme.border,
   },
   headerRight: {
     flexDirection: 'row',
@@ -349,7 +350,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     fontSize: 16,
-    color: '#007aff',
+    color: flashitMobileTheme.brand.primary,
     fontWeight: '600',
   },
   summaryContainer: {
@@ -361,7 +362,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: flashitMobileTheme.text.primary,
     marginBottom: 12,
     paddingHorizontal: 16,
     marginTop: 8,
@@ -370,7 +371,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     padding: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: flashitMobileTheme.background.surface,
   },
   statItem: {
     alignItems: 'center',
@@ -378,24 +379,24 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#000',
+    color: flashitMobileTheme.text.primary,
   },
   statValueFailed: {
-    color: '#ff3b30',
+    color: flashitMobileTheme.status.error,
   },
   statValueCompleted: {
-    color: '#34c759',
+    color: flashitMobileTheme.status.success,
   },
   statLabel: {
     fontSize: 12,
-    color: '#666',
+    color: flashitMobileTheme.text.secondary,
     marginTop: 4,
   },
   list: {
     padding: 16,
   },
   queueItem: {
-    backgroundColor: '#f9f9f9',
+    backgroundColor: flashitMobileTheme.background.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -414,11 +415,11 @@ const styles = StyleSheet.create({
   itemType: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#000',
+    color: flashitMobileTheme.text.primary,
   },
   itemTime: {
     fontSize: 12,
-    color: '#666',
+    color: flashitMobileTheme.text.secondary,
     marginTop: 2,
   },
   statusBadge: {
@@ -429,7 +430,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
   itemActions: {
     flexDirection: 'row',
@@ -441,35 +442,35 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
-    backgroundColor: '#007aff',
+    backgroundColor: flashitMobileTheme.brand.primary,
     alignItems: 'center',
   },
   retryButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
   deleteButton: {
     flex: 1,
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
-    backgroundColor: '#ff3b30',
+    backgroundColor: flashitMobileTheme.status.error,
     alignItems: 'center',
   },
   deleteButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
   emptyText: {
     textAlign: 'center',
-    color: '#888',
+    color: flashitMobileTheme.text.secondary,
     fontSize: 16,
     marginTop: 40,
   },
   compressionContainer: {
-    backgroundColor: '#e3f2fd',
+    backgroundColor: flashitMobileTheme.background.surface,
     padding: 16,
     marginHorizontal: 16,
     marginTop: 8,
@@ -478,7 +479,7 @@ const styles = StyleSheet.create({
   compressionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1976d2',
+    color: flashitMobileTheme.brand.primaryStrong,
     marginBottom: 12,
   },
   compressionStats: {
@@ -491,11 +492,11 @@ const styles = StyleSheet.create({
   compressionValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1976d2',
+    color: flashitMobileTheme.brand.primaryStrong,
   },
   compressionLabel: {
     fontSize: 12,
-    color: '#1976d2',
+    color: flashitMobileTheme.text.secondary,
     marginTop: 4,
   },
 });

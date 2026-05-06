@@ -29,6 +29,13 @@ export interface ApprovalRecordResponse {
   requestId: string;
   tenantId: string;
   workspaceId: string;
+  action?: string | null;
+  subjectId?: string | null;
+  requestedBy?: string | null;
+  requestedAt?: string | null;
+  expiresAt?: string | null;
+  reviewerId?: string | null;
+  reviewerNotes?: string | null;
   targetType: ApprovalTargetType | null;
   targetId: string | null;
   description: string | null;

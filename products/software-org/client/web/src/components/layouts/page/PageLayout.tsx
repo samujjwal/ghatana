@@ -13,6 +13,7 @@ import React from 'react';
 import { MainLayout } from '@/app/Layout';
 import { PAGE_STYLES } from './theme';
 import clsx from 'clsx';
+import { PageContent as SharedPageContent } from '@ghatana/product-shell';
 
 export interface PageLayoutProps {
     /** Page title displayed in header */
@@ -54,17 +55,18 @@ export function PageLayout({
 }: PageLayoutProps) {
     return (
         <MainLayout title={title} subtitle={subtitle}>
-            <div className={clsx(
-                background || PAGE_STYLES.container,
-                className
-            )}>
-                <div className={clsx(
-                    !fullWidth && PAGE_STYLES.content,
-                    PAGE_STYLES.section
-                )}>
+            <SharedPageContent
+                fullWidth={fullWidth}
+                noPadding
+                className={clsx(
+                    background || PAGE_STYLES.container,
+                    className
+                )}
+            >
+                <div className={clsx(!fullWidth && PAGE_STYLES.content, PAGE_STYLES.section)}>
                     {children}
                 </div>
-            </div>
+            </SharedPageContent>
         </MainLayout>
     );
 }

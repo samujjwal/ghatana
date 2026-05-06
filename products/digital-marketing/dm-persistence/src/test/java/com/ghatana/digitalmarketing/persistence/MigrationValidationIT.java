@@ -2,7 +2,10 @@ package com.ghatana.digitalmarketing.persistence;
 
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -22,6 +25,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  */
 @Testcontainers(disabledWithoutDocker = true)
 @DisplayName("Flyway migrations — validation")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class MigrationValidationIT {
 
     @Container
@@ -31,19 +35,20 @@ class MigrationValidationIT {
             .withUsername("dmos")
             .withPassword("dmos_secret");
 
+    @Order(1)
     @Test
     @DisplayName("all migrations apply cleanly to a fresh database")
     void migrationsApplyCleanly() {
         Flyway flyway = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-            .locations("classpath:db/migration")
+            .locations("filesystem:src/main/resources/db/migration")
             .load();
-
-        // Validate migrations before running
-        flyway.validate();
 
         // Run migrations on fresh database
         var migrateResult = flyway.migrate();
+
+        // Validate that migrations applied cleanly
+        flyway.validate();
 
         // Verify at least the known migrations are applied
         assert migrateResult.migrationsExecuted >= 5 : "Expected at least 5 migrations to be applied";
@@ -54,7 +59,7 @@ class MigrationValidationIT {
     void migrationsAreIdempotent() {
         Flyway flyway = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-            .locations("classpath:db/migration")
+            .locations("filesystem:src/main/resources/db/migration")
             .load();
 
         // First run
@@ -71,7 +76,7 @@ class MigrationValidationIT {
     void schemaVersionMatchesExpected() {
         Flyway flyway = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-            .locations("classpath:db/migration")
+            .locations("filesystem:src/main/resources/db/migration")
             .load();
 
         flyway.migrate();

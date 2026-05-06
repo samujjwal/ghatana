@@ -250,5 +250,17 @@ class BudgetRecommendationServiceImplTest extends EventloopTestBase {
         public Promise<Optional<BudgetRecommendation>> findById(String id) {
             return Promise.of(Optional.ofNullable(store.get(id)));
         }
+
+            @Override
+            public Promise<Optional<BudgetRecommendation>> findById(DmWorkspaceId workspaceId, String id) {
+                BudgetRecommendation recommendation = store.get(id);
+                if (recommendation == null) {
+                    return Promise.of(Optional.empty());
+                }
+                if (!recommendation.getWorkspaceId().equals(workspaceId)) {
+                    return Promise.of(Optional.empty());
+                }
+                return Promise.of(Optional.of(recommendation));
+            }
     }
 }

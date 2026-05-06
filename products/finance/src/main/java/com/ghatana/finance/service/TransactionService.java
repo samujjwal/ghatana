@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -146,14 +147,14 @@ public class TransactionService {
             if (fraudResult.isFraudulent()) {
                 return TransactionResult.rejected(
                     "Fraud detected: " + fraudResult.getRiskLevel(),
-                    FinanceTraceContext.metadata(correlationId, "finance_transaction_reject", Map.of(
+                    outcomeMetadata(transaction, correlationId, "finance_transaction_reject", Map.of(
                         "transaction_id", transaction.getId(),
                         "risk_level", fraudResult.getRiskLevel()
                     ))
                 );
             }
 
-            return TransactionResult.approved(FinanceTraceContext.metadata(correlationId, "finance_transaction_approve", Map.of(
+            return TransactionResult.approved(outcomeMetadata(transaction, correlationId, "finance_transaction_approve", Map.of(
                 "fraud_score", fraudResult.getFraudScore(),
                 "risk_level", fraudResult.getRiskLevel(),
                 "confidence", fraudResult.getConfidence()
@@ -162,20 +163,32 @@ public class TransactionService {
 
         return TransactionResult.error(
             "Fraud detection failed",
-            FinanceTraceContext.metadata(correlationId, "finance_transaction_error", Map.of(
-                "transaction_id", transaction.getId()
-            ))
+            outcomeMetadata(transaction, correlationId, "finance_transaction_error", Map.of())
         );
     }
 
     private TransactionResult queueForReview(Transaction transaction, AgentOrchestrator.AgentRequest request) {
         return TransactionResult.pendingReview(
             "Transaction queued for manual review",
-            FinanceTraceContext.metadata(request.getRequestId(), "finance_transaction_manual_review", Map.of(
+            outcomeMetadata(transaction, request.getRequestId(), "finance_transaction_manual_review", Map.of(
                 "request_id", request.getRequestId(),
-                "transaction_id", transaction.getId()
+                "approval_required", "four-eyes"
             ))
         );
+    }
+
+    private Map<String, Object> outcomeMetadata(
+            Transaction transaction,
+            String correlationId,
+            String operation,
+            Map<String, Object> outcomeMetadata) {
+        HashMap<String, Object> metadata = new HashMap<>(outcomeMetadata);
+        metadata.putIfAbsent("tenant_id", transaction.getTenantId());
+        metadata.putIfAbsent("transaction_id", transaction.getId());
+        metadata.putIfAbsent("idempotency_key", transaction.getId());
+        metadata.putIfAbsent("audit_classification", "TRANSACTION_MUTATION");
+        metadata.putIfAbsent("data_owner_scope", "transaction:" + transaction.getId());
+        return FinanceTraceContext.metadata(correlationId, operation, metadata);
     }
 
     private void enforceRateLimit(String tenantId) {

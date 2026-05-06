@@ -12,6 +12,7 @@ import React from 'react';
 import { Link } from 'react-router';
 import { ArrowLeft, LucideIcon } from 'lucide-react';
 import clsx from 'clsx';
+import { PageHeader as SharedPageHeader } from '@ghatana/product-shell';
 import { COLORS, ICON_BOX_STYLES } from './theme';
 
 export interface PageHeaderProps {
@@ -67,61 +68,48 @@ export function PageHeader({
     badge,
     className,
 }: PageHeaderProps) {
+    const leading = Icon ? (
+        <div className={clsx(ICON_BOX_STYLES.lg, iconBg)}>
+            <Icon className={clsx('h-6 w-6', iconColor)} />
+        </div>
+    ) : undefined;
+
+    const titleAdornment = badge ? (
+        <div className="flex items-center gap-2">
+            {badge}
+        </div>
+    ) : undefined;
+
+    const eyebrow = backLink ? (
+        <Link
+            to={backLink}
+            className={clsx(
+                'inline-flex items-center gap-2 rounded-lg px-2 py-1 -ml-2',
+                COLORS.neutral.bgHover,
+                COLORS.neutral.text
+            )}
+            aria-label={backLabel}
+        >
+            <ArrowLeft className="h-4 w-4" />
+            <span>{backLabel}</span>
+        </Link>
+    ) : undefined;
+
     return (
         <div className={clsx(
             'bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700',
             className
         )}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                <div className="flex items-center justify-between">
-                    {/* Left section: back link + title */}
-                    <div className="flex items-center gap-4">
-                        {backLink && (
-                            <Link
-                                to={backLink}
-                                className={clsx(
-                                    'p-2 -ml-2 rounded-lg',
-                                    COLORS.neutral.bgHover,
-                                    COLORS.neutral.text
-                                )}
-                                aria-label={backLabel}
-                            >
-                                <ArrowLeft className="h-5 w-5" />
-                            </Link>
-                        )}
-
-                        <div className="flex items-center gap-3">
-                            {Icon && (
-                                <div className={clsx(ICON_BOX_STYLES.lg, iconBg)}>
-                                    <Icon className={clsx('h-6 w-6', iconColor)} />
-                                </div>
-                            )}
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <h1 className={clsx(
-                                        'text-2xl font-bold',
-                                        COLORS.neutral.textStrong
-                                    )}>
-                                        {title}
-                                    </h1>
-                                    {badge}
-                                </div>
-                                {subtitle && (
-                                    <p className={clsx('text-sm mt-1', COLORS.neutral.text)}>
-                                        {subtitle}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right section: actions */}
-                    {actions && (
-                        <div className="flex items-center gap-2">
-                            {actions}
-                        </div>
-                    )}
-                </div>
+                <SharedPageHeader
+                    title={title}
+                    description={subtitle}
+                    eyebrow={eyebrow}
+                    leading={leading}
+                    titleAdornment={titleAdornment}
+                    actions={actions}
+                    className="mb-0"
+                />
             </div>
         </div>
     );

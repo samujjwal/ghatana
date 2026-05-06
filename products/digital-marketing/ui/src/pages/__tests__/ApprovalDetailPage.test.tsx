@@ -34,15 +34,29 @@ vi.mock('@/api/approvals', () => ({
 
 const APPROVAL: ApprovalRecordResponse = {
   requestId: 'req-42',
+  tenantId: 'tenant-1',
+  workspaceId: 'ws-1',
   subjectId: 'content-99',
   requestedBy: 'user-1',
   action: 'content-version-review',
+  targetType: 'CONTENT_VERSION',
+  targetId: 'content-99',
+  description: null,
+  riskLevel: 2,
+  requiredApproverRole: 'content-approver',
   status: 'PENDING',
+  submittedAt: '2026-01-05T08:00:00Z',
+  submittedBy: 'user-1',
   requestedAt: '2026-01-05T08:00:00Z',
   expiresAt: null,
   decidedAt: null,
+  decidedBy: null,
   reviewerId: null,
   reviewerNotes: null,
+  comment: null,
+  snapshotSummary: null,
+  validationResultId: null,
+  snapshotAt: null,
 };
 
 const HIGH_RISK_APPROVAL: ApprovalRecordResponse = {

@@ -5,6 +5,12 @@ import { execSync } from 'node:child_process';
 import { resolve } from 'node:path';
 
 const repoRoot = resolve(new URL('..', import.meta.url).pathname);
+const auditedProducts = [
+  'products/phr',
+  'products/finance',
+  'products/digital-marketing',
+  'products/flashit',
+];
 const bridgeFiles = execSync(
   "rg --files products | rg '(KernelAdapterImpl|Bridge.*Impl)\\.java$'",
   { cwd: repoRoot, encoding: 'utf8' }
@@ -12,9 +18,64 @@ const bridgeFiles = execSync(
   .trim()
   .split('\n')
   .filter(Boolean);
+const auditedBridgeFiles = bridgeFiles.filter(file => auditedProducts.some(product => file.startsWith(`${product}/`)));
+const expectedAuditedBridgeTests = new Map([
+  [
+    'products/digital-marketing/dm-kernel-bridge/src/main/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImpl.java',
+    [
+      {
+        file: 'products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImplTest.java',
+        requiredEvidence: [
+          'shouldRejectAuthorizationBeforeStart',
+          'shouldDelegateAuthorization',
+          'shouldDenyConsentVerificationWhenUnauthorized',
+          'shouldRejectUnauthorizedApprovalRequests',
+          'shouldRecordAuditWithContextAttributes',
+          'shouldRejectUnauthorizedAuditRecording',
+          'shouldRejectUnauthorizedRiskEvaluation',
+          'shouldDelegateFeatureFlagEvaluation',
+          'shouldFailClosedForUnauthorizedFeatureFlagChecks',
+          'shouldNotifyUser',
+        ],
+      },
+      {
+        file: 'products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/NotificationRetryAndDlqTest.java',
+        requiredEvidence: [
+          'transientFailuresTriggerRetryWithBackoff',
+          'retryAttemptsPreserveOriginalContext',
+          'retryCountRespectsMaximum',
+        ],
+      },
+    ],
+  ],
+]);
 
 const violations = [];
 const exemptMethodNames = new Set(['start', 'stop', 'started']);
+
+for (const file of auditedBridgeFiles) {
+  if (!expectedAuditedBridgeTests.has(file)) {
+    violations.push(
+      `${file}: audited bridge implementation is missing an explicit compliance-test contract entry`
+    );
+  }
+}
+
+for (const [bridgeFile, testContracts] of expectedAuditedBridgeTests.entries()) {
+  if (!auditedBridgeFiles.includes(bridgeFile)) {
+    violations.push(`${bridgeFile}: expected audited bridge implementation is missing`);
+    continue;
+  }
+
+  for (const { file, requiredEvidence } of testContracts) {
+    const content = readFileSync(resolve(repoRoot, file), 'utf8');
+    for (const token of requiredEvidence) {
+      if (!content.includes(token)) {
+        violations.push(`${file}: missing bridge compliance evidence token '${token}'`);
+      }
+    }
+  }
+}
 
 for (const file of bridgeFiles) {
   const content = readFileSync(resolve(repoRoot, file), 'utf8');

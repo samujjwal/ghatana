@@ -383,7 +383,7 @@ class NotificationRetryAndDlqTest {
         }
         @Override public Promise<Integer> deleteAllForSubject(String subjectId) { return Promise.of(0); }
         @Override public PluginMetadata metadata() {
-            return PluginMetadata.builder().id("consent").name("Consent").type(PluginType.CONSENT).build();
+            return PluginMetadata.builder().id("consent").name("Consent").type(PluginType.CUSTOM).build();
         }
         @Override public PluginState getState() { return PluginState.RUNNING; }
         @Override public Promise<Void> initialize(PluginContext context) { return Promise.of(null); }
@@ -393,31 +393,41 @@ class NotificationRetryAndDlqTest {
 
     private static final class InMemoryApprovalPlugin implements HumanApprovalPlugin {
         @Override
-        public Promise<ApprovalRecord> submitRequest(ApprovalRequest request) {
+        public Promise<ApprovalRecord> requestApproval(ApprovalRequest request) {
             return Promise.of(new ApprovalRecord(
                 request.requestId(), request.subjectId(), request.requestedBy(),
                 request.action(), ApprovalStatus.PENDING,
                 Instant.now(), request.expiresAt(), null, null, null, request.context()
             ));
         }
-        @Override public Promise<ApprovalRecord> approve(String requestId, ApprovalDecision decision) {
-            return Promise.of(new ApprovalRecord(
-                requestId, "", "", "", ApprovalStatus.APPROVED,
-                Instant.now(), null, Instant.now(), "reviewer", decision.notes(), Map.of()
-            ));
-        }
-        @Override public Promise<ApprovalRecord> reject(String requestId, ApprovalDecision decision) {
-            return Promise.of(new ApprovalRecord(
-                requestId, "", "", "", ApprovalStatus.REJECTED,
-                Instant.now(), null, Instant.now(), "reviewer", decision.notes(), Map.of()
-            ));
-        }
-        @Override public Promise<Optional<ApprovalRecord>> findById(String requestId) {
+
+        @Override
+        public Promise<Optional<ApprovalRecord>> getApprovalStatus(String requestId) {
             return Promise.of(Optional.empty());
         }
+
+        @Override
+        public Promise<ApprovalRecord> completeApproval(
+            String requestId,
+            ApprovalDecision decision,
+            String reviewerId,
+            String notes
+        ) {
+            return Promise.of(new ApprovalRecord(
+                requestId,
+                "subject",
+                "requester",
+                "action",
+                decision == ApprovalDecision.APPROVED ? ApprovalStatus.APPROVED : ApprovalStatus.REJECTED,
+                Instant.now(), null, Instant.now(), reviewerId, notes, Map.of()
+            ));
+        }
+
+        @Override public Promise<List<ApprovalRecord>> listPendingForSubject(String subjectId) { return Promise.of(List.of()); }
         @Override public Promise<List<ApprovalRecord>> listPendingForWorkspace(String workspaceId) {
             return Promise.of(List.of());
         }
+        @Override public Promise<Void> cancelApproval(String requestId, String reason) { return Promise.of(null); }
         @Override public PluginMetadata metadata() {
             return PluginMetadata.builder().id("approval").name("Approval").type(PluginType.GOVERNANCE).build();
         }
@@ -428,17 +438,30 @@ class NotificationRetryAndDlqTest {
     }
 
     private static final class InMemoryAuditTrailPlugin implements AuditTrailPlugin {
-        @Override public Promise<Void> record(AuditEntry entry) { return Promise.of(null); }
-        @Override public Promise<List<AuditEntry>> query(String entityId, String entityType,
-                Instant from, Instant to) { return Promise.of(List.of()); }
-        @Override public Promise<VerificationResult> verifyIntegrity(String entityId) {
-            return Promise.of(new VerificationResult(entityId, true, 0, List.of()));
+        @Override
+        public Promise<AuditEntry> logEvent(String entityId, String action, Map<String, Object> details) {
+            return Promise.of(new AuditEntry(
+                "audit-entry-1",
+                entityId,
+                action,
+                Map.copyOf(details),
+                "test-actor",
+                "hash",
+                null,
+                Instant.now()
+            ));
         }
-        @Override public Promise<Void> export(String entityId, ExportFormat format, OutputStream out) {
+
+        @Override public Promise<List<AuditEntry>> getTrail(String entityId) { return Promise.of(List.of()); }
+        @Override public Promise<VerificationResult> verifyIntegrity(String entityId) {
+            return Promise.of(new VerificationResult(entityId, true, 0, List.of(), Instant.now()));
+        }
+        @Override public Promise<Void> exportTrail(String entityId, ExportFormat format, OutputStream out) {
             return Promise.of(null);
         }
+        @Override public Promise<Integer> purgeEntriesOlderThan(long cutoffEpochMs) { return Promise.of(0); }
         @Override public PluginMetadata metadata() {
-            return PluginMetadata.builder().id("audit").name("Audit").type(PluginType.AUDIT).build();
+            return PluginMetadata.builder().id("audit").name("Audit").type(PluginType.CUSTOM).build();
         }
         @Override public PluginState getState() { return PluginState.RUNNING; }
         @Override public Promise<Void> initialize(PluginContext context) { return Promise.of(null); }
@@ -447,10 +470,13 @@ class NotificationRetryAndDlqTest {
     }
 
     private static final class InMemoryRiskManagementPlugin implements RiskManagementPlugin {
-        @Override public Promise<RiskScore> evaluateRisk(String entityId, RiskModelId modelId,
+        @Override public Promise<RiskScore> calculateRisk(String entityId, RiskModelId modelId,
                 Map<String, Object> features) {
             return Promise.of(new RiskScore(entityId, modelId, 0.1,
                 RiskScore.RiskLevel.LOW, Map.of(), Instant.now()));
+        }
+        @Override public Promise<Void> setRiskLimits(String entityId, Map<String, BigDecimal> limits) {
+            return Promise.of(null);
         }
         @Override public Promise<List<RiskAlert>> getActiveAlerts(String entityId) {
             return Promise.of(List.of());
@@ -458,9 +484,8 @@ class NotificationRetryAndDlqTest {
         @Override public Promise<RiskReport> generateReport(String entityId, TimeRange range) {
             return Promise.of(new RiskReport(entityId, range, List.of(), List.of(), Map.of(), Instant.now()));
         }
-        @Override public Promise<Void> acknowledgeAlert(String alertId) { return Promise.of(null); }
         @Override public PluginMetadata metadata() {
-            return PluginMetadata.builder().id("risk").name("Risk").type(PluginType.RISK).build();
+            return PluginMetadata.builder().id("risk").name("Risk").type(PluginType.CUSTOM).build();
         }
         @Override public PluginState getState() { return PluginState.RUNNING; }
         @Override public Promise<Void> initialize(PluginContext context) { return Promise.of(null); }
@@ -484,12 +509,5 @@ class NotificationRetryAndDlqTest {
         @Override public Promise<Map<String, Object>> getAllFlags(String tenantId) {
             return Promise.of(Map.of());
         }
-        @Override public PluginMetadata metadata() {
-            return PluginMetadata.builder().id("feature-flag").name("Feature Flag").type(PluginType.CUSTOM).build();
-        }
-        @Override public PluginState getState() { return PluginState.RUNNING; }
-        @Override public Promise<Void> initialize(PluginContext context) { return Promise.of(null); }
-        @Override public Promise<Void> start() { return Promise.of(null); }
-        @Override public Promise<Void> stop() { return Promise.of(null); }
     }
 }

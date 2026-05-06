@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -45,7 +46,8 @@ class FlywayMigrationValidationTest {
         // When: Flyway migrates from scratch
         Flyway flyway = Flyway.configure()
             .dataSource(dataSource)
-            .locations("classpath:db/migration")
+            .locations("filesystem:src/main/resources/db/migration")
+            .cleanDisabled(false)
             .load();
 
         flyway.clean();
@@ -83,14 +85,11 @@ class FlywayMigrationValidationTest {
         Set<String> expectedTables = Set.of(
             "dmos_campaigns",
             "dmos_ai_action_log",
-            "dmos_approvals",
-            "dmos_strategies",
-            "dmos_budgets",
-            "dmos_contacts",
-            "dmos_leads",
-            "dmos_content",
-            "dmos_audit_log",
-            "dmos_system_config"  // For PII HMAC key (V23)
+            "dmos_system_config",
+            "dmos_approval_snapshots",
+            "dmos_marketing_strategies",
+            "dmos_budget_recommendations",
+            "dmos_workspaces"
         );
 
         try (Connection conn = dataSource.getConnection();
@@ -202,7 +201,8 @@ class FlywayMigrationValidationTest {
         // First migration
         Flyway flyway1 = Flyway.configure()
             .dataSource(dataSource)
-            .locations("classpath:db/migration")
+            .locations("filesystem:src/main/resources/db/migration")
+            .cleanDisabled(false)
             .load();
 
         flyway1.clean();
@@ -261,7 +261,8 @@ class FlywayMigrationValidationTest {
     private void runMigrations(DataSource dataSource) {
         Flyway flyway = Flyway.configure()
             .dataSource(dataSource)
-            .locations("classpath:db/migration")
+            .locations("filesystem:src/main/resources/db/migration")
+            .cleanDisabled(false)
             .load();
         flyway.clean();
         flyway.migrate();

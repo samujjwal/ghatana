@@ -86,6 +86,17 @@ public final class DmosApprovalServlet {
         this(approvalService, eventloop, null, metrics, telemetry, httpContextFactory);
     }
 
+    public DmosApprovalServlet(ApprovalWorkflowService approvalService, Eventloop eventloop) {
+        this(
+            approvalService,
+            eventloop,
+            null,
+            DmosMetricsCollector.noop(),
+            new DmosTelemetry(io.opentelemetry.api.OpenTelemetry.noop()),
+            new DmosHttpContextFactory(false, null)
+        );
+    }
+
     public DmosApprovalServlet(ApprovalWorkflowService approvalService, Eventloop eventloop, IdempotencyService idempotencyService, DmosMetricsCollector metrics, DmosTelemetry telemetry, DmosHttpContextFactory httpContextFactory) {
         this.approvalService   = Objects.requireNonNull(approvalService,   "approvalService must not be null");
         this.eventloop          = Objects.requireNonNull(eventloop,          "eventloop must not be null");
@@ -161,7 +172,8 @@ public final class DmosApprovalServlet {
 
     private Promise<HttpResponse> handleSubmitInternal(HttpRequest request, String workspaceId,
                                                          DmOperationContext ctx, String idempotencyKey) {
-        final DmOperationContext effectiveCtx = ctx != null ? ctx : buildContext(request, workspaceId);
+        final DmOperationContext effectiveCtx =
+            ctx != null ? ctx : httpContextFactory.buildContext(request, workspaceId, true);
         final String effectiveIdempotencyKey = idempotencyKey;
 
         // P1-026: Create span for approval submission

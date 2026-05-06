@@ -99,12 +99,54 @@ for (const [productName, productConfig] of Object.entries(productShape.products)
     if (!/dashboard|app shell|shell/i.test(visualSource)) {
       errors.push(`${productName} visual regression coverage must include a dashboard or shell baseline in ${path.join(clientDir, visualSpec)}`);
     }
+    const requiredVisualStates = [
+      { label: 'permission denied', matcher: /permission denied|feature unavailable|access denied/i },
+      { label: 'loading state', matcher: /loading state|loading\.\.\.|loading/i },
+      { label: 'error state', matcher: /error state|invalid email or password|failed to load|error:/i },
+      { label: 'empty state', matcher: /empty state|no .* found|no data available|no actions recorded/i },
+    ];
+
+    for (const state of requiredVisualStates) {
+      if (!state.matcher.test(visualSource)) {
+        errors.push(
+          `${productName} visual regression coverage must include a ${state.label} baseline in ${path.join(clientDir, visualSpec)}`,
+        );
+      }
+    }
   }
 
   if (a11ySpec) {
     const a11ySource = read(path.join(clientDir, a11ySpec));
     if (!/@a11y/.test(a11ySource)) {
       errors.push(`${productName} accessibility spec must be tagged with @a11y in ${path.join(clientDir, a11ySpec)}`);
+    }
+
+    const requiredA11yChecks = [
+      { label: 'keyboard navigation', matcher: /keyboard\.press\('Tab'\)|keyboard navigation|toBeFocused/i },
+      { label: 'landmark coverage', matcher: /getByRole\('main'\)|getByRole\('navigation'\)|landmarks/i },
+      {
+        label: 'alert or live region coverage',
+        matcher: /role='alert'|role="alert"|getByRole\('alert'\)|toHaveAttribute\('role', 'alert'\)|aria-live/i,
+      },
+    ];
+
+    for (const check of requiredA11yChecks) {
+      if (!check.matcher.test(a11ySource)) {
+        errors.push(`${productName} accessibility coverage must include ${check.label} in ${path.join(clientDir, a11ySpec)}`);
+      }
+    }
+
+    const sensitiveMatchersByProduct = {
+      phr: /Emergency|emergency|Permission denied|current persona/i,
+      'digital-marketing': /approval|FeatureUnavailablePage|Return to Dashboard|permission-denied-banner/i,
+      flashit: /Skip to main content|analytics|Permission denied|Subscription|Privacy/i,
+    };
+
+    const sensitiveMatcher = sensitiveMatchersByProduct[productName] ?? /permission denied|sensitive|emergency|approval/i;
+    if (!sensitiveMatcher.test(a11ySource)) {
+      errors.push(
+        `${productName} accessibility coverage must include a denied or sensitive workflow in ${path.join(clientDir, a11ySpec)}`,
+      );
     }
   }
 
