@@ -153,30 +153,24 @@ public final class GoogleAdsWorkflowExecutor {
      * Validates prerequisites for campaign publishing.
      */
     private Promise<ValidationResult> validatePrerequisites(DmOperationContext ctx, String campaignId) {
-        return campaignService.findById(ctx, campaignId)
-            .then(opt -> opt
-                .map(c -> Promise.of(new ValidationResult(c, ctx)))
-                .orElseGet(() -> Promise.ofException(new WorkflowException("Campaign not found: " + campaignId))));
+        return campaignService.getCampaign(ctx, campaignId)
+            .map(c -> new ValidationResult(c, ctx));
     }
 
     /**
      * Validates prerequisites for campaign update.
      */
     private Promise<ValidationResult> validateUpdatePrerequisites(DmOperationContext ctx, String campaignId) {
-        return campaignService.findById(ctx, campaignId)
-            .then(opt -> opt
-                .map(c -> Promise.of(new ValidationResult(c, ctx)))
-                .orElseGet(() -> Promise.ofException(new WorkflowException("Campaign not found: " + campaignId))));
+        return campaignService.getCampaign(ctx, campaignId)
+            .map(c -> new ValidationResult(c, ctx));
     }
 
     /**
      * Validates prerequisites for campaign pause.
      */
     private Promise<ValidationResult> validatePausePrerequisites(DmOperationContext ctx, String campaignId) {
-        return campaignService.findById(ctx, campaignId)
-            .then(opt -> opt
-                .map(c -> Promise.of(new ValidationResult(c, ctx)))
-                .orElseGet(() -> Promise.ofException(new WorkflowException("Campaign not found: " + campaignId))));
+        return campaignService.getCampaign(ctx, campaignId)
+            .map(c -> new ValidationResult(c, ctx));
     }
 
     /**

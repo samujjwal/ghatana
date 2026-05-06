@@ -3,12 +3,14 @@ package com.ghatana.digitalmarketing.application.googleads;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.digitalmarketing.application.DmosObservability;
 import com.ghatana.digitalmarketing.application.command.DmCommandHandler;
+import com.ghatana.digitalmarketing.application.command.DmCommandHandler;
 import com.ghatana.digitalmarketing.application.command.GoogleAdsCampaignCreateCommandHandler;
 import com.ghatana.digitalmarketing.application.command.GoogleAdsCampaignRollbackCommandHandler;
 import com.ghatana.digitalmarketing.application.event.DmOutboxService;
 import com.ghatana.digitalmarketing.application.killswitch.DmKillSwitchService;
 import com.ghatana.digitalmarketing.application.rollback.DmRollbackActionService;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
+import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
@@ -66,8 +68,8 @@ public final class GoogleAdsOutboxExecutor {
     private final DmKillSwitchService killSwitchService;
     private final DmRollbackActionService rollbackActionService;
     private final DigitalMarketingKernelAdapter kernelAdapter;
-    private final GoogleAdsCampaignCreateCommandHandler createCommandHandler;
-    private final GoogleAdsCampaignRollbackCommandHandler rollbackCommandHandler;
+    private final DmCommandHandler createCommandHandler;
+    private final DmCommandHandler rollbackCommandHandler;
     private final ObjectMapper objectMapper;
     private final DmosObservability observability;
 
@@ -77,8 +79,8 @@ public final class GoogleAdsOutboxExecutor {
             DmKillSwitchService killSwitchService,
             DmRollbackActionService rollbackActionService,
             DigitalMarketingKernelAdapter kernelAdapter,
-            GoogleAdsCampaignCreateCommandHandler createCommandHandler,
-            GoogleAdsCampaignRollbackCommandHandler rollbackCommandHandler,
+            DmCommandHandler createCommandHandler,
+            DmCommandHandler rollbackCommandHandler,
             ObjectMapper objectMapper,
             DmosObservability observability) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
@@ -123,14 +125,18 @@ public final class GoogleAdsOutboxExecutor {
             // Create the domain event for the outbox
             DmEvent<GoogleAdsCommandPayload.CreateCampaign> event = DmEvent.<GoogleAdsCommandPayload.CreateCampaign>builder()
                 .eventId(commandId)
+                .schemaVersion("1.0.0")
                 .tenantId(ctx.getTenantId().getValue())
                 .workspaceId(ctx.getWorkspaceId().getValue())
                 .correlationId(correlationId)
+                .idempotencyKey(commandId)
+                .sourceService("google-ads-outbox-executor")
                 .actor(ctx.getActor().getPrincipalId())
                 .actorType(DmEvent.ActorType.USER)
                 .eventType(DmEventType.COMMAND_CREATED)
                 .payload(payload)
                 .occurredAt(Instant.now())
+                .piiClassification(com.ghatana.digitalmarketing.domain.event.DmPiiClassification.NONE)
                 .build();
 
             // P1-028: Record audit event before enqueuing
@@ -230,6 +236,8 @@ public final class GoogleAdsOutboxExecutor {
         DmOperationContext ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of(command.getTenantId()))
             .workspaceId(DmWorkspaceId.of(command.getWorkspaceId()))
+            .actor(ActorRef.SYSTEM)
+            .correlationId(DmCorrelationId.of(command.getCorrelationId()))
             .build();
 
         // Check global GOOGLE_ADS scope
@@ -281,11 +289,20 @@ public final class GoogleAdsOutboxExecutor {
         DmOperationContext ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of(command.getTenantId()))
             .workspaceId(DmWorkspaceId.of(command.getWorkspaceId()))
+            .actor(ActorRef.SYSTEM)
+            .correlationId(DmCorrelationId.of(command.getCorrelationId()))
             .build();
 
         String rollbackActionType = determineRollbackActionType(command.getCommandType());
-        LOG.info("[DMOS-GOOGLE-ADS] Would schedule rollback for commandId={}, type={}",
-            command.getId(), rollbackActionType);
+        DmRollbackActionService.ScheduleRollbackCommand rollbackCmd =
+            new DmRollbackActionService.ScheduleRollbackCommand(
+                command.getId(),
+                rollbackActionType,
+                command.getId(),
+                command.getCommandType().name()
+            );
+        rollbackActionService.schedule(ctx, rollbackCmd)
+            .whenException(e -> LOG.error("[DMOS-GOOGLE-ADS] Failed to schedule rollback for commandId={}", command.getId(), e));
     }
 
     private String determineRollbackActionType(DmCommandType originalType) {
@@ -312,6 +329,8 @@ public final class GoogleAdsOutboxExecutor {
         DmOperationContext ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of(command.getTenantId()))
             .workspaceId(DmWorkspaceId.of(command.getWorkspaceId()))
+            .actor(ActorRef.SYSTEM)
+            .correlationId(DmCorrelationId.of(command.getCorrelationId()))
             .build();
         return recordAuditEvent(ctx, action, metadata);
     }

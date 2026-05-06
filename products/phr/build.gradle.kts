@@ -39,11 +39,11 @@ dependencies {
     // =================================================================
     // Platform Plugins (NEW: shared product-agnostic plugins)
     // =================================================================
-    api(project(":platform-plugins:plugin-ledger"))
-    api(project(":platform-plugins:plugin-fraud-detection"))
     api(project(":platform-plugins:plugin-compliance"))
     api(project(":platform-plugins:plugin-consent"))
     api(project(":platform-plugins:plugin-audit-trail"))
+    api(project(":platform-plugins:plugin-human-approval"))
+    api(project(":platform-plugins:plugin-ledger"))
 
     // =================================================================
     // Platform Libraries (legacy - will be migrated in future phases)
@@ -148,8 +148,9 @@ configure<ProductPackValidationExtension> {
     requiredManifestFields.set(
         listOf(
             "pack:", "id:", "version:", "capabilities:", "domain:",
-            "kernelCapabilitiesConsumed:", "pluginsConsumed:", "bridgesConsumed:",
-            "domainPacksProvided:", "uiSurfaces:", "runtimeServices:", "dataSensitivity:"
+            "kernelCapabilitiesConsumed:", "policyActions:", "pluginsConsumed:", "bridgesConsumed:",
+            "domainPacksProvided:", "uiSurfaces:", "runtimeServices:", "dataSensitivity:",
+            "policyResources:"
         )
     )
     policyPackTestPatterns.set(

@@ -67,6 +67,7 @@
     "check:router-strategy": "node ./scripts/check-router-strategy.mjs",
     "check:product-package-metadata": "node ./scripts/check-product-package-metadata.mjs",
     "check:flashit-package-manager": "node ./scripts/check-flashit-package-manager.mjs",
+    "scaffold:product": "node ./scripts/scaffold-product.mjs",
     "test:eslint-rules": "node ./eslint-rules/ghatana-architecture-rules.test.js",
     "prepare": "husky"
   },

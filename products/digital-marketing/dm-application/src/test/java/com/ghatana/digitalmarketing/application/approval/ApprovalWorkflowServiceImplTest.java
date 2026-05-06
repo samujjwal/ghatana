@@ -480,7 +480,7 @@ class ApprovalWorkflowServiceImplTest extends EventloopTestBase {
             ApprovalRecord record = new ApprovalRecord(
                 requestId, subjectId, requestedBy,
                 "dmos-approval/test", ApprovalStatus.PENDING,
-                Instant.now(), null, null, null, null);
+                Instant.now(), null, null, null, null, null);
             store.put(requestId, record);
             return record;
         }
@@ -549,6 +549,14 @@ class ApprovalWorkflowServiceImplTest extends EventloopTestBase {
                     pending.add(r);
                 }
             }
+            return Promise.of(pending);
+        }
+
+        @Override
+        public Promise<List<ApprovalRecord>> listPendingForWorkspace(String workspaceId) {
+            List<ApprovalRecord> pending = store.values().stream()
+                .filter(r -> r.status() == ApprovalStatus.PENDING)
+                .toList();
             return Promise.of(pending);
         }
 

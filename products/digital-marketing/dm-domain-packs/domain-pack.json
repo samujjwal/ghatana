@@ -14,6 +14,28 @@
     "approval-workflow",
     "tenant-context"
   ],
+  "policyActions": [
+    "read",
+    "write",
+    "delete",
+    "export",
+    "sync",
+    "launch",
+    "pause",
+    "resume",
+    "increase",
+    "publish",
+    "execute"
+  ],
+  "policyResources": [
+    "workspaces",
+    "contacts",
+    "audiences",
+    "campaigns",
+    "budgets",
+    "content",
+    "connectors"
+  ],
   "pluginsConsumed": [
     "plugin-audit-trail",
     "plugin-compliance",

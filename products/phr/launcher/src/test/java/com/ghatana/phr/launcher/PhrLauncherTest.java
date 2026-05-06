@@ -1,10 +1,16 @@
 package com.ghatana.phr.launcher;
 
+import com.ghatana.kernel.context.DefaultKernelContext;
+import com.ghatana.kernel.policy.BoundaryPolicyLoadContext;
+import com.ghatana.kernel.policy.BoundaryPolicyRule;
+import com.ghatana.kernel.policy.BoundaryPolicyStore;
+import com.ghatana.kernel.policy.InMemoryBoundaryPolicyStore;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.RecordComponent;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,6 +33,13 @@ class PhrLauncherTest {
         Method from = configClass().getDeclaredMethod("from", String[].class);
         from.setAccessible(true);
         return from.invoke(null, (Object) args);
+    }
+
+    /** Invoke the private static factory {@code PhrLauncher.createContext(String)}. */
+    private static DefaultKernelContext createContext(String environment) throws Exception {
+        Method createContext = PhrLauncher.class.getDeclaredMethod("createContext", String.class);
+        createContext.setAccessible(true);
+        return (DefaultKernelContext) createContext.invoke(null, environment);
     }
 
     /** Read a named component from the record. */
@@ -129,5 +142,60 @@ class PhrLauncherTest {
         assertTrue(clazz.isRecord(), "PhrLauncherConfig must be a record");
         RecordComponent[] components = clazz.getRecordComponents();
         assertEquals(3, components.length, "Record must have exactly 3 components");
+    }
+
+    @Test
+    @DisplayName("Should allow InMemoryBoundaryPolicyStore in local environment")
+    void shouldAllowInMemoryBoundaryPolicyStoreInLocalEnvironment() throws Exception {
+        DefaultKernelContext context = createContext("local");
+        context.registerDependency(BoundaryPolicyStore.class, testInMemoryStore());
+
+        assertDoesNotThrow(() -> PhrLauncher.assertRuntimeDependencies(context));
+    }
+
+    @Test
+    @DisplayName("Should reject InMemoryBoundaryPolicyStore in production environment")
+    void shouldRejectInMemoryBoundaryPolicyStoreInProductionEnvironment() throws Exception {
+        DefaultKernelContext context = createContext("production");
+        context.registerDependency(BoundaryPolicyStore.class, testInMemoryStore());
+
+        IllegalStateException exception = assertThrows(
+            IllegalStateException.class,
+            () -> PhrLauncher.assertRuntimeDependencies(context)
+        );
+
+        assertTrue(exception.getMessage().contains("InMemoryBoundaryPolicyStore"));
+        assertTrue(exception.getMessage().contains("products/phr/launcher"));
+    }
+
+    @Test
+    @DisplayName("Should allow product-owned BoundaryPolicyStore in production environment")
+    void shouldAllowProductOwnedBoundaryPolicyStoreInProductionEnvironment() throws Exception {
+        DefaultKernelContext context = createContext("production");
+        context.registerDependency(BoundaryPolicyStore.class, new TestBoundaryPolicyStore());
+
+        assertDoesNotThrow(() -> PhrLauncher.assertRuntimeDependencies(context));
+    }
+
+    private static final class TestBoundaryPolicyStore implements BoundaryPolicyStore {
+
+        @Override
+        public List<BoundaryPolicyRule> loadRules(BoundaryPolicyLoadContext context) {
+            return List.of();
+        }
+    }
+
+    private static InMemoryBoundaryPolicyStore testInMemoryStore() {
+        return new InMemoryBoundaryPolicyStore(List.of(
+            BoundaryPolicyRule.builder()
+                .ruleId("TEST-001")
+                .sourceScopePattern("test.*")
+                .targetScopePattern("test.*")
+                .resourcePattern("resource/**")
+                .actions("read")
+                .effect(BoundaryPolicyRule.Effect.ALLOW)
+                .requiresAudit(false)
+                .build()
+        ));
     }
 }

@@ -44,8 +44,16 @@ if (!webRouteManifest.includes('ProductRouteCapability')) {
 }
 
 const webLayout = readText('products/flashit/client/web/src/components/Layout.tsx');
-if (!webLayout.includes('getFlashitNavigationRoutes')) {
-  errors.push('FlashIt web layout must derive navigation from getFlashitNavigationRoutes');
+const webShell = readText('products/flashit/client/web/src/components/FlashitProductShell.tsx');
+
+if (!webLayout.includes('FlashitProductShell')) {
+  errors.push('FlashIt web layout must compose the shared FlashitProductShell wrapper');
+}
+
+for (const token of ['ProductShell', 'flashitRouteManifest', '@ghatana/product-shell']) {
+  if (!webShell.includes(token)) {
+    errors.push(`FlashIt web shell must include ${token}`);
+  }
 }
 
 const webApiClient = readText('products/flashit/client/web/src/lib/api-client.ts');

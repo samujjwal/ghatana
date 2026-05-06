@@ -55,7 +55,7 @@ class PhrPolicyCompatibilityTest {
     void setUp() {
         // Wire the generic resolver with the PHR store — no kernel changes required.
         PhrBoundaryPolicyStore store = new PhrBoundaryPolicyStore();
-        BoundaryPolicyLoadContext ctx = BoundaryPolicyLoadContext.of("phr-tenant", "region-np");
+        BoundaryPolicyLoadContext ctx = BoundaryPolicyLoadContext.global();
         resolver = new DefaultBoundaryPolicyResolver(store, ctx);
     }
 
@@ -65,7 +65,7 @@ class PhrPolicyCompatibilityTest {
     @DisplayName("PHR policy store loads non-empty well-formed rules into the resolver")
     void storeLoadsNonEmptyRules() {
         PhrBoundaryPolicyStore store = new PhrBoundaryPolicyStore();
-        List<BoundaryPolicyRule> rules = store.loadRules(BoundaryPolicyLoadContext.of("t", "r"));
+        List<BoundaryPolicyRule> rules = store.loadRules(BoundaryPolicyLoadContext.global());
 
         assertThat(rules).isNotEmpty();
         for (BoundaryPolicyRule rule : rules) {
@@ -79,7 +79,7 @@ class PhrPolicyCompatibilityTest {
     @DisplayName("PHR rules have at least one ALLOW rule and exactly one default-deny rule")
     void rulesHaveAllowAndDefaultDeny() {
         PhrBoundaryPolicyStore store = new PhrBoundaryPolicyStore();
-        List<BoundaryPolicyRule> rules = store.loadRules(BoundaryPolicyLoadContext.of("t", "r"));
+        List<BoundaryPolicyRule> rules = store.loadRules(BoundaryPolicyLoadContext.global());
 
         long allowCount = rules.stream().filter(r -> r.getEffect() == Effect.ALLOW).count();
         assertThat(allowCount).as("at least one ALLOW rule must exist").isGreaterThanOrEqualTo(1);

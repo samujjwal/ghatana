@@ -98,6 +98,19 @@ pack:
     - audit-trail
     - approval-workflow
     - tenant-context
+  policyActions:
+    - read
+    - write
+    - delete
+    - export
+    - download
+    - settle
+    - cancel
+  policyResources:
+    - transactions
+    - positions
+    - market-data
+    - risk-data
   pluginsConsumed:
     - plugin-audit-trail
     - plugin-compliance

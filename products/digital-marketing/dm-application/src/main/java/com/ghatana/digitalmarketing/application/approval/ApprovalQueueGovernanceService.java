@@ -65,7 +65,7 @@ public final class ApprovalQueueGovernanceService {
      */
     public Promise<Object> submitToQueue(DmOperationContext ctx, Object request) {
         // NOTE: ApprovalRequest domain class doesn't exist
-        return Promise.ofException(new UnsupportedOperationException("ApprovalRequest not implemented"));
+        return Promise.ofException(new IllegalStateException("ApprovalRequest not implemented"));
     }
 
     /**
@@ -78,7 +78,7 @@ public final class ApprovalQueueGovernanceService {
      */
     public Promise<Optional<Object>> processNextFromQueue(DmOperationContext ctx) {
         // NOTE: ApprovalRequest domain class doesn't exist
-        return Promise.ofException(new UnsupportedOperationException("ApprovalRequest not implemented"));
+        return Promise.ofException(new IllegalStateException("ApprovalRequest not implemented"));
     }
 
     /**
@@ -92,7 +92,7 @@ public final class ApprovalQueueGovernanceService {
             String tenantId,
             Object filters) {
         // NOTE: QueuedApprovalItem and QueueFilters classes don't exist
-        return Promise.ofException(new UnsupportedOperationException("getApprovalQueue not implemented"));
+        return Promise.ofException(new IllegalStateException("getApprovalQueue not implemented"));
     }
 
     /**
@@ -154,7 +154,7 @@ public final class ApprovalQueueGovernanceService {
             List<String> approvalIds,
             String comment) {
         // NOTE: BulkApprovalResult and approvalService don't exist
-        return Promise.ofException(new UnsupportedOperationException("bulkApprove not implemented"));
+        return Promise.ofException(new IllegalStateException("bulkApprove not implemented"));
     }
 
     /**
@@ -172,14 +172,14 @@ public final class ApprovalQueueGovernanceService {
             String delegateToUserId,
             String reason) {
         // NOTE: ctx.getActor() and notificationService don't exist
-        return Promise.ofException(new UnsupportedOperationException("delegateApproval not implemented"));
+        return Promise.ofException(new IllegalStateException("delegateApproval not implemented"));
     }
 
     // Helper methods
 
     private Promise<Object> enqueueRequest(DmOperationContext ctx, Object request) {
         // NOTE: ApprovalRequest class doesn't exist
-        return Promise.ofException(new UnsupportedOperationException("enqueueRequest not implemented"));
+        return Promise.ofException(new IllegalStateException("enqueueRequest not implemented"));
     }
 
     private Promise<Void> storeQueueMetadata(DmOperationContext ctx, String approvalId, Instant slaDeadline) {
@@ -204,17 +204,17 @@ public final class ApprovalQueueGovernanceService {
 
     private Promise<Optional<Object>> fetchNextQueuedItem(DmOperationContext ctx) {
         // NOTE: ApprovalRequest class doesn't exist
-        return Promise.ofException(new UnsupportedOperationException("fetchNextQueuedItem not implemented"));
+        return Promise.ofException(new IllegalStateException("fetchNextQueuedItem not implemented"));
     }
 
     private Promise<SlaInfo> checkSlaStatus(DmOperationContext ctx, String approvalId) {
         // NOTE: SlaInfo class doesn't exist
-        return Promise.ofException(new UnsupportedOperationException("checkSlaStatus not implemented"));
+        return Promise.ofException(new IllegalStateException("checkSlaStatus not implemented"));
     }
 
     private Promise<Void> escalateRequest(DmOperationContext ctx, String approvalId, SlaInfo slaInfo) {
         // NOTE: SlaInfo class and notificationService don't exist
-        return Promise.ofException(new UnsupportedOperationException("escalateRequest not implemented"));
+        return Promise.ofException(new IllegalStateException("escalateRequest not implemented"));
     }
 
     private void notifyApproversOfNewRequest(DmOperationContext ctx, Object request) {

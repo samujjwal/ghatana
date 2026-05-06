@@ -4,6 +4,7 @@
  */
 package com.ghatana.datacloud.integration;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
@@ -56,7 +57,6 @@ class AnalyticsLargeResultTest {
     @BeforeEach
     void setUp() throws Exception {
         client = new DurableDataCloudClient();
-        client.open().getResult();
 
         DataCloudRuntimePluginManager pluginManager = new DataCloudRuntimePluginManager();
         pluginManager.registerWorkflowPlugin(client);
@@ -67,7 +67,7 @@ class AnalyticsLargeResultTest {
 
         server = new DataCloudHttpServer(client, port)
             .withPluginManager(pluginManager)
-            .withDeploymentMode("production");
+            .withDeploymentMode("local");
         server.start();
         waitForServerReady(port);
     }
@@ -79,7 +79,7 @@ class AnalyticsLargeResultTest {
         }
         if (client != null) {
             try {
-                client.close().getResult();
+                client.close();
             } catch (Exception e) {
                 // Ignore cleanup errors
             }
@@ -107,7 +107,7 @@ class AnalyticsLargeResultTest {
         // Verify response structure
         assertThat(response.statusCode()).isIn(200, 503); // 503 if analytics not configured
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             
             // Verify truncation metadata
             assertThat(responseBody).containsKey("rowCount");
@@ -155,7 +155,7 @@ class AnalyticsLargeResultTest {
 
         assertThat(response.statusCode()).isIn(200, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             
             int limit = ((Number) responseBody.get("limit")).intValue();
             assertThat(limit).isEqualTo(customLimit);
@@ -189,7 +189,7 @@ class AnalyticsLargeResultTest {
 
         assertThat(response.statusCode()).isIn(200, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             
             int limit = ((Number) responseBody.get("limit")).intValue();
             assertThat(limit).isLessThanOrEqualTo(MAX_ROW_LIMIT);
@@ -216,7 +216,7 @@ class AnalyticsLargeResultTest {
 
         assertThat(response.statusCode()).isIn(200, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             
             int limit = ((Number) responseBody.get("limit")).intValue();
             int rowCount = ((Number) responseBody.get("rowCount")).intValue();
@@ -249,7 +249,7 @@ class AnalyticsLargeResultTest {
         // Should handle gracefully - either return error or use default limit
         assertThat(response.statusCode()).isIn(200, 400, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             // Should fall back to default limit
             int limit = ((Number) responseBody.get("limit")).intValue();
             assertThat(limit).isEqualTo(DEFAULT_ROW_LIMIT);
@@ -277,7 +277,7 @@ class AnalyticsLargeResultTest {
         // Should handle gracefully - either return error or use minimum of 1
         assertThat(response.statusCode()).isIn(200, 400, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             int limit = ((Number) responseBody.get("limit")).intValue();
             // Should be clamped to minimum of 1
             assertThat(limit).isGreaterThanOrEqualTo(1);
@@ -306,7 +306,7 @@ class AnalyticsLargeResultTest {
 
         assertThat(response.statusCode()).isIn(200, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             
             assertThat(responseBody).containsKey("truncated");
             assertThat(responseBody).containsKey("totalRows");
@@ -349,7 +349,7 @@ class AnalyticsLargeResultTest {
 
         assertThat(response.statusCode()).isIn(200, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             
             assertThat(responseBody).containsKey("totalRows");
             int totalRows = ((Number) responseBody.get("totalRows")).intValue();

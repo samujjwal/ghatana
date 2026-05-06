@@ -1466,6 +1466,9 @@ importers:
       '@ghatana/platform-utils':
         specifier: workspace:*
         version: link:../../../platform/typescript/platform-utils
+      '@ghatana/product-shell':
+        specifier: workspace:*
+        version: link:../../../platform/typescript/product-shell
       '@ghatana/realtime':
         specifier: workspace:*
         version: link:../../../platform/typescript/realtime
@@ -5760,6 +5763,9 @@ importers:
       '@ghatana/platform-utils':
         specifier: workspace:*
         version: link:../../../../platform/typescript/platform-utils
+      '@ghatana/product-shell':
+        specifier: workspace:*
+        version: link:../../../../platform/typescript/product-shell
       '@ghatana/realtime':
         specifier: workspace:*
         version: link:../../../../platform/typescript/realtime

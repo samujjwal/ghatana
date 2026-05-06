@@ -49,6 +49,18 @@ interface ProductShellProps {
    * Additional CSS class applied to the main content area wrapper.
    */
   contentClassName?: string;
+  /**
+   * Optional id applied to the main content element for skip-link support.
+   */
+  mainContentId?: string;
+  /**
+   * Optional tab index applied to the main content element.
+   */
+  mainContentTabIndex?: number;
+  /**
+   * Optional ARIA role override for the main content element.
+   */
+  mainContentRole?: React.AriaRole;
 }
 
 /**
@@ -66,9 +78,27 @@ interface ProductShellProps {
  * }
  * ```
  */
-export function ProductShell({ config, children, contentClassName }: ProductShellProps): React.ReactElement {
+export function ProductShell({
+  config,
+  children,
+  contentClassName,
+  mainContentId,
+  mainContentTabIndex,
+  mainContentRole,
+}: ProductShellProps): React.ReactElement {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mainContentProps: React.ComponentPropsWithoutRef<'main'> = {};
+
+  if (mainContentId) {
+    mainContentProps.id = mainContentId;
+  }
+  if (typeof mainContentTabIndex === 'number') {
+    mainContentProps.tabIndex = mainContentTabIndex;
+  }
+  if (mainContentRole) {
+    mainContentProps.role = mainContentRole;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -98,6 +128,7 @@ export function ProductShell({ config, children, contentClassName }: ProductShel
 
         {/* Content */}
         <main
+          {...mainContentProps}
           className={contentClassName ?? 'pt-16 p-6'}
         >
           {children ?? <Outlet />}

@@ -425,6 +425,22 @@ class DmGoogleAdsCampaignConnectorServiceImplTest extends EventloopTestBase {
             }
             return Promise.of(Optional.of(c));
         }
+
+        @Override
+        public Promise<List<Campaign>> listByWorkspace(DmWorkspaceId workspaceId, int limit, int offset) {
+            return Promise.of(byId.values().stream()
+                .filter(c -> c.getWorkspaceId().equals(workspaceId))
+                .skip(offset)
+                .limit(limit)
+                .toList());
+        }
+
+        @Override
+        public Promise<Long> countByWorkspace(DmWorkspaceId workspaceId) {
+            return Promise.of(byId.values().stream()
+                .filter(c -> c.getWorkspaceId().equals(workspaceId))
+                .count());
+        }
     }
 
     static final class FakeCampaignApiClient implements DmGoogleAdsCampaignApiClient {

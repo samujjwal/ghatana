@@ -14,6 +14,7 @@ dependencies {
     testImplementation(project(":products:data-cloud:spi"))
     testImplementation(project(":platform:java:domain"))
     testImplementation(project(":platform:java:testing"))
+    testImplementation(project(":platform:java:security"))
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)

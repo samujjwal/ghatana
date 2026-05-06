@@ -10,6 +10,8 @@ import com.ghatana.datacloud.spi.provider.InMemoryEventLogStoreProvider;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
 import com.ghatana.platform.domain.eventstore.TenantContext;
+import com.ghatana.platform.types.identity.Offset;
+import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,18 +86,19 @@ public final class DataCloudBackedEventCloud implements EventCloud {
             .build();
 
         TenantContext tenant = TenantContext.of(tenantId);
-        String[] resultHolder = new String[1];
-        resultHolder[0] = eventId.toString();
 
-        eventLogStore.append(tenant, entry)
+        Promise<Offset> promise = eventLogStore.append(tenant, entry)
             .whenResult(offset ->
                 log.debug("[event-cloud] Appended event {} type={} tenant={} offset={}",
-                    eventId, eventType, tenantId, offset))
-            .whenException(e ->
-                log.error("[event-cloud] Append failed event={} type={} tenant={}: {}",
-                    eventId, eventType, tenantId, e.getMessage(), e));
+                    eventId, eventType, tenantId, offset));
 
-        return resultHolder[0];
+        if (promise.isException()) {
+            Throwable ex = promise.getException();
+            log.error("[event-cloud] Append failed event={} type={} tenant={}: {}",
+                eventId, eventType, tenantId, ex.getMessage(), ex);
+            throw new RuntimeException("Failed to append event", ex);
+        }
+        return eventId.toString();
     }
 
     @Override
@@ -108,7 +111,7 @@ public final class DataCloudBackedEventCloud implements EventCloud {
         AtomicBoolean cancelled = new AtomicBoolean(false);
         EventLogStore.Subscription[] delegateHolder = new EventLogStore.Subscription[1];
 
-        eventLogStore.getLatestOffset(tenant)
+        Promise<EventLogStore.Subscription> promise = eventLogStore.getLatestOffset(tenant)
             .then(latestOffset ->
                 eventLogStore.tail(tenant, latestOffset, entry -> {
                     if (!cancelled.get() && eventType.equals(entry.eventType())) {
@@ -120,10 +123,14 @@ public final class DataCloudBackedEventCloud implements EventCloud {
                             data);
                     }
                 }))
-            .whenResult(sub -> delegateHolder[0] = sub)
-            .whenException(e ->
-                log.error("[event-cloud] Subscribe failed type={} tenant={}: {}",
-                    eventType, tenantId, e.getMessage(), e));
+            .whenResult(sub -> delegateHolder[0] = sub);
+
+        if (promise.isException()) {
+            Throwable ex = promise.getException();
+            log.error("[event-cloud] Subscribe failed type={} tenant={}: {}",
+                eventType, tenantId, ex.getMessage(), ex);
+            throw new RuntimeException("Failed to subscribe", ex);
+        }
 
         return new Subscription() {
             @Override

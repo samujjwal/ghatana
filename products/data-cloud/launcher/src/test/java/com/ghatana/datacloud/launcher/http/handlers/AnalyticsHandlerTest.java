@@ -5,6 +5,7 @@ import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
 import com.ghatana.datacloud.analytics.QueryResult;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.bytebuf.ByteBuf;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -340,6 +341,7 @@ class AnalyticsHandlerTest extends EventloopTestBase {
 
             HttpRequest req = mockRequest("");
             when(req.getPathParameter("queryId")).thenReturn("q-cancel-supported");
+            when(req.getHeader(HttpHeaders.of("X-Tenant-Id"))).thenReturn("tenant-123");
 
             HttpResponse response = runPromise(() -> supported.handleAnalyticsCancelQuery(req));
 

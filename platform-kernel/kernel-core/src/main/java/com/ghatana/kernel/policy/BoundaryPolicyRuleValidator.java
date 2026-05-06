@@ -30,7 +30,35 @@ public final class BoundaryPolicyRuleValidator {
      * @throws BoundaryPolicyStore.BoundaryPolicyStoreException if any rule is malformed or conflicts exist
      */
     public static void validate(List<BoundaryPolicyRule> rules) {
+        validate(rules, BoundaryPolicyActionRegistry.canonicalOnly(), BoundaryPolicyResourceRegistry.allowAny());
+    }
+
+    /**
+     * Validates a list of rules against a declared action registry.
+     *
+     * @param rules the rules to validate; must not be null
+     * @param actionRegistry allowed action vocabulary for the owning product pack
+     * @throws BoundaryPolicyStore.BoundaryPolicyStoreException if any rule is malformed or conflicts exist
+     */
+    public static void validate(List<BoundaryPolicyRule> rules, BoundaryPolicyActionRegistry actionRegistry) {
+        validate(rules, actionRegistry, BoundaryPolicyResourceRegistry.allowAny());
+    }
+
+    /**
+     * Validates a list of rules against declared action and resource registries.
+     *
+     * @param rules the rules to validate; must not be null
+     * @param actionRegistry allowed action vocabulary for the owning product pack
+     * @param resourceRegistry allowed resource namespaces for the owning product pack
+     * @throws BoundaryPolicyStore.BoundaryPolicyStoreException if any rule is malformed or conflicts exist
+     */
+    public static void validate(
+            List<BoundaryPolicyRule> rules,
+            BoundaryPolicyActionRegistry actionRegistry,
+            BoundaryPolicyResourceRegistry resourceRegistry) {
         Objects.requireNonNull(rules, "rules cannot be null");
+        Objects.requireNonNull(actionRegistry, "actionRegistry cannot be null");
+        Objects.requireNonNull(resourceRegistry, "resourceRegistry cannot be null");
 
         List<String> violations = new ArrayList<>();
         List<String> seenRuleIds = new ArrayList<>();
@@ -51,9 +79,21 @@ public final class BoundaryPolicyRuleValidator {
             }
             if (rule.getResourcePattern().isBlank()) {
                 violations.add("Rule '" + rule.getRuleId() + "': resourcePattern cannot be blank");
+            } else if (!resourceRegistry.isAllowed(rule.getResourcePattern())) {
+                violations.add(
+                        "Rule '" + rule.getRuleId() + "': resourcePattern '" + rule.getResourcePattern()
+                                + "' is not declared in the product policy resource registry");
             }
             if (rule.getActions().isEmpty()) {
                 violations.add("Rule '" + rule.getRuleId() + "': actions must not be empty");
+            }
+            for (String action : rule.getActions()) {
+                if (!actionRegistry.isAllowed(action)) {
+                    violations.add(
+                        "Rule '" + rule.getRuleId() + "': action '" + action
+                            + "' is not declared in the product policy action registry"
+                    );
+                }
             }
             if (rule.getEffect() == null) {
                 violations.add("Rule '" + rule.getRuleId() + "': effect must not be null");
@@ -79,6 +119,28 @@ public final class BoundaryPolicyRuleValidator {
     public static boolean isValid(List<BoundaryPolicyRule> rules) {
         try {
             validate(rules);
+            return true;
+        } catch (BoundaryPolicyStore.BoundaryPolicyStoreException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Returns true if the rule list is valid for the given action registry, false otherwise.
+     */
+    public static boolean isValid(List<BoundaryPolicyRule> rules, BoundaryPolicyActionRegistry actionRegistry) {
+        return isValid(rules, actionRegistry, BoundaryPolicyResourceRegistry.allowAny());
+    }
+
+    /**
+     * Returns true if the rule list is valid for the given action and resource registries, false otherwise.
+     */
+    public static boolean isValid(
+            List<BoundaryPolicyRule> rules,
+            BoundaryPolicyActionRegistry actionRegistry,
+            BoundaryPolicyResourceRegistry resourceRegistry) {
+        try {
+            validate(rules, actionRegistry, resourceRegistry);
             return true;
         } catch (BoundaryPolicyStore.BoundaryPolicyStoreException e) {
             return false;

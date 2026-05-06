@@ -9,6 +9,7 @@ import com.ghatana.kernel.context.DefaultKernelContext;
 import com.ghatana.kernel.context.KernelTenantContext;
 import com.ghatana.kernel.contracts.ContractRegistry;
 import com.ghatana.kernel.descriptor.KernelCapability;
+import com.ghatana.kernel.policy.BoundaryPolicyRuntimeGuards;
 import com.ghatana.kernel.registry.KernelRegistryImpl;
 import com.ghatana.products.finance.FinanceProductModule;
 import com.ghatana.products.finance.http.FinanceHttpServer;
@@ -63,6 +64,7 @@ public final class FinanceLauncher {
         try {
             DefaultKernelContext context = createContext(config.environment());
             module.initialize(context);
+            assertRuntimeDependencies(context);
             await("finance startup", module.start(), START_TIMEOUT);
 
             // Create and start HTTP server binding with explicit port configuration
@@ -109,6 +111,10 @@ public final class FinanceLauncher {
         context.registerDependency(KernelConfigResolver.class, configResolver);
         context.registerDependency(ContractRegistry.class, new ContractRegistry());
         return context;
+    }
+
+    static void assertRuntimeDependencies(DefaultKernelContext context) {
+        BoundaryPolicyRuntimeGuards.assertStoreAllowed(context, "products/finance/launcher");
     }
 
     private static void registerBaselineCapabilities(KernelRegistryImpl registry) {

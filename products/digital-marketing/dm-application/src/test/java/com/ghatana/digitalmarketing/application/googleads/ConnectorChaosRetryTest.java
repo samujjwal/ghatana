@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -68,9 +69,9 @@ class ConnectorChaosRetryTest extends EventloopTestBase {
         campaignRepository = new InMemoryCampaignRepository();
         commandRepository = new InMemoryCommandRepository();
         chaosApiClient = new ChaosApiClient();
-        commandService = new DmCommandServiceImpl(commandRepository, new AllowingKernelAdapter(true));
+        commandService = new ChaosCommandService(commandRepository, new AllowingKernelAdapter(), chaosApiClient);
 
-        DigitalMarketingKernelAdapter kernelAdapter = new AllowingKernelAdapter(true);
+        DigitalMarketingKernelAdapter kernelAdapter = new AllowingKernelAdapter();
         service = new DmGoogleAdsCampaignConnectorServiceImpl(
             connectorRepository,
             campaignRepository,
@@ -284,6 +285,22 @@ class ConnectorChaosRetryTest extends EventloopTestBase {
             }
             return Promise.of(Optional.of(c));
         }
+
+        @Override
+        public Promise<List<Campaign>> listByWorkspace(DmWorkspaceId workspaceId, int limit, int offset) {
+            return Promise.of(byId.values().stream()
+                .filter(c -> c.getWorkspaceId().equals(workspaceId))
+                .skip(offset)
+                .limit(limit)
+                .toList());
+        }
+
+        @Override
+        public Promise<Long> countByWorkspace(DmWorkspaceId workspaceId) {
+            return Promise.of(byId.values().stream()
+                .filter(c -> c.getWorkspaceId().equals(workspaceId))
+                .count());
+        }
     }
 
     static class InMemoryCommandRepository implements DmCommandRepository {
@@ -357,6 +374,62 @@ class ConnectorChaosRetryTest extends EventloopTestBase {
         }
     }
 
+    static class ChaosCommandService implements DmCommandService {
+        private final DmCommandServiceImpl delegate;
+        private final ChaosApiClient chaosApiClient;
+
+        ChaosCommandService(InMemoryCommandRepository commandRepository, AllowingKernelAdapter kernelAdapter, ChaosApiClient chaosApiClient) {
+            this.delegate = new DmCommandServiceImpl(commandRepository, kernelAdapter);
+            this.chaosApiClient = chaosApiClient;
+        }
+
+        @Override
+        public Promise<com.ghatana.digitalmarketing.domain.command.DmCommand> issue(
+                DmOperationContext ctx, IssueCommandRequest request) {
+            try {
+                chaosApiClient.createSearchCampaign("test-token", null);
+            } catch (RuntimeException e) {
+                return Promise.ofException(e);
+            }
+            return delegate.issue(ctx, request);
+        }
+
+        @Override
+        public Promise<java.util.Optional<com.ghatana.digitalmarketing.domain.command.DmCommand>> findById(DmOperationContext ctx, String id) {
+            return delegate.findById(ctx, id);
+        }
+
+        @Override
+        public Promise<java.util.List<com.ghatana.digitalmarketing.domain.command.DmCommand>> listPending(DmOperationContext ctx, int limit) {
+            return delegate.listPending(ctx, limit);
+        }
+
+        @Override
+        public Promise<com.ghatana.digitalmarketing.domain.command.DmCommand> markExecuting(DmOperationContext ctx, String commandId) {
+            return delegate.markExecuting(ctx, commandId);
+        }
+
+        @Override
+        public Promise<com.ghatana.digitalmarketing.domain.command.DmCommand> markSucceeded(DmOperationContext ctx, String commandId) {
+            return delegate.markSucceeded(ctx, commandId);
+        }
+
+        @Override
+        public Promise<com.ghatana.digitalmarketing.domain.command.DmCommand> markFailed(DmOperationContext ctx, String commandId, String failureReason) {
+            return delegate.markFailed(ctx, commandId, failureReason);
+        }
+
+        @Override
+        public Promise<com.ghatana.digitalmarketing.domain.command.DmCommand> markRolledBack(DmOperationContext ctx, String commandId) {
+            return delegate.markRolledBack(ctx, commandId);
+        }
+
+        @Override
+        public Promise<Long> countByStatus(DmOperationContext ctx, com.ghatana.digitalmarketing.domain.command.DmCommandStatus status) {
+            return delegate.countByStatus(ctx, status);
+        }
+    }
+
     static class ChaosApiClient {
         private FailureMode failureMode = FailureMode.NONE;
         private int failureCount = 0;
@@ -376,7 +449,7 @@ class ConnectorChaosRetryTest extends EventloopTestBase {
             return callCount;
         }
 
-        String createSearchCampaign(String accessToken, DmGoogleAdsCampaignConnectorService.CreateGoogleSearchCampaignRequest request) {
+        String createSearchCampaign(String accessToken, DmGoogleAdsCampaignConnectorService.CreateSearchCampaignRequest request) {
             callCount++;
             attemptCount.incrementAndGet();
 
@@ -384,24 +457,25 @@ class ConnectorChaosRetryTest extends EventloopTestBase {
                 return "google-camp-" + callCount;
             }
 
-            if (attemptCount.get() <= failureCount) {
-                switch (failureMode) {
-                    case TRANSIENT_NETWORK_ERROR:
-                        throw new RuntimeException("Network error: Connection refused");
-                    case TIMEOUT:
-                        throw new RuntimeException("Timeout: Request timed out after 30s");
-                    case RATE_LIMITED:
-                        throw new RuntimeException("Rate limit: Too many requests (429)");
-                    case PERMANENT_ERROR:
-                        throw new RuntimeException("Permanent error: Invalid API key (401)");
-                    case CLIENT_ERROR:
-                        throw new RuntimeException("Client error: Bad request (400)");
-                    default:
-                        throw new RuntimeException("Unknown error");
-                }
+            // For TRANSIENT errors with failureCount, only fail the first N attempts
+            if (failureMode == FailureMode.TRANSIENT_NETWORK_ERROR && failureCount > 0 && attemptCount.get() > failureCount) {
+                return "google-camp-" + callCount;
             }
 
-            return "google-camp-" + callCount;
+            switch (failureMode) {
+                case TRANSIENT_NETWORK_ERROR:
+                    throw new RuntimeException("Network error: Connection refused");
+                case TIMEOUT:
+                    throw new RuntimeException("Timeout: Request timed out after 30s");
+                case RATE_LIMITED:
+                    throw new RuntimeException("Rate limit: Too many requests (429)");
+                case PERMANENT_ERROR:
+                    throw new RuntimeException("Permanent error: Invalid API key (401)");
+                case CLIENT_ERROR:
+                    throw new RuntimeException("Client error: Bad request (400)");
+                default:
+                    throw new RuntimeException("Unknown error");
+            }
         }
     }
 

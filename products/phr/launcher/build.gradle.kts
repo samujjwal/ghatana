@@ -34,3 +34,10 @@ tasks.withType<Tar> {
 tasks.withType<Zip> {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
+
+tasks.named("check") {
+    dependsOn(
+        ":products:phr:productConformanceCheck",
+        ":products:phr:checkApiContractConformance",
+    )
+}

@@ -5,6 +5,8 @@
 package com.ghatana.finance.kernel.policy;
 
 import com.ghatana.kernel.policy.BoundaryPolicyLoadContext;
+import com.ghatana.kernel.policy.BoundaryPolicyActionRegistry;
+import com.ghatana.kernel.policy.BoundaryPolicyResourceRegistry;
 import com.ghatana.kernel.policy.BoundaryPolicyRule;
 import com.ghatana.kernel.policy.BoundaryPolicyStore;
 import com.ghatana.kernel.policy.ProductBoundaryPolicyPackValidator;
@@ -50,6 +52,12 @@ public final class FinanceBoundaryPolicyStore implements BoundaryPolicyStore {
                     .targetScopePrefix("finance.")
                     .requiredMetadataKeys(Set.of("packVersion", "ruleCategory"))
                     .build();
+    private static final BoundaryPolicyActionRegistry ACTION_REGISTRY =
+            BoundaryPolicyActionRegistry.ofDeclaredActions(
+                    Set.of("read", "write", "delete", "export", "download", "settle", "cancel"));
+    private static final BoundaryPolicyResourceRegistry RESOURCE_REGISTRY =
+            BoundaryPolicyResourceRegistry.ofDeclaredResources(
+                    Set.of("transactions", "positions", "market-data", "risk-data"));
 
     /**
      * Immutable list of Finance boundary rules, evaluated in declaration order.
@@ -156,6 +164,10 @@ public final class FinanceBoundaryPolicyStore implements BoundaryPolicyStore {
                             + "Only tenantId=default and region=GLOBAL are allowed; failing closed for "
                             + context);
         }
-        return ProductBoundaryPolicyPackValidator.validate(FINANCE_RULES, VALIDATION_PROFILE);
+        return ProductBoundaryPolicyPackValidator.validate(
+                FINANCE_RULES,
+                VALIDATION_PROFILE,
+                ACTION_REGISTRY,
+                RESOURCE_REGISTRY);
     }
 }

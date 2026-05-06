@@ -28,21 +28,25 @@ const MANIFESTS = [
     product: "phr",
     file: "products/phr/domain-pack-manifest.yaml",
     format: "yaml",
+    buildFile: "products/phr/build.gradle.kts",
   },
   {
     product: "finance",
     file: "products/finance/domain-pack-manifest.yaml",
     format: "yaml",
+    buildFile: "products/finance/build.gradle.kts",
   },
   {
     product: "digital-marketing",
     file: "products/digital-marketing/dm-domain-packs/domain-pack.json",
     format: "json",
+    buildFile: "products/digital-marketing/dm-domain-packs/build.gradle.kts",
   },
   {
     product: "flashit",
     file: "products/flashit/domain-pack-manifest.yaml",
     format: "yaml",
+    buildFile: "products/flashit/build.gradle.kts",
   },
 ];
 
@@ -203,6 +207,45 @@ function validateManifest(entry, manifest) {
           );
         }
       }
+    }
+  }
+
+  validatePluginOwnership(entry, manifest);
+}
+
+function validatePluginOwnership(entry, manifest) {
+  const buildPath = path.join(repoRoot, entry.buildFile);
+  if (!existsSync(buildPath)) {
+    addViolation(entry.file, `declared build file does not exist: ${entry.buildFile}`);
+    return;
+  }
+
+  const buildText = readFileSync(buildPath, "utf8");
+  const pluginDependencyPattern =
+    /^\s*(?:api|implementation)\(project\(":platform-plugins:(plugin-[^"]+)"\)\)/gm;
+
+  const declaredPlugins = new Set((manifest.pluginsConsumed ?? []).map(String));
+  const buildPlugins = new Set();
+
+  for (const match of buildText.matchAll(pluginDependencyPattern)) {
+    buildPlugins.add(match[1]);
+  }
+
+  for (const plugin of buildPlugins) {
+    if (!declaredPlugins.has(plugin)) {
+      addViolation(
+        entry.buildFile,
+        `build declares platform plugin '${plugin}' but manifest pluginsConsumed does not`,
+      );
+    }
+  }
+
+  for (const plugin of declaredPlugins) {
+    if (!buildPlugins.has(plugin)) {
+      addViolation(
+        entry.buildFile,
+        `manifest declares platform plugin '${plugin}' but build does not depend on it`,
+      );
     }
   }
 }

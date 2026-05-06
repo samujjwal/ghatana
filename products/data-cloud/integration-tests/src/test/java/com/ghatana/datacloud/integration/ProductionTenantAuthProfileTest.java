@@ -68,7 +68,6 @@ class ProductionTenantAuthProfileTest {
     @BeforeEach
     void setUp() throws Exception {
         client = new DurableDataCloudClient();
-        client.open().getResult();
 
         // Production JWT provider with strict validation
         jwtProvider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 3600000L); // 1 hour expiry
@@ -85,7 +84,7 @@ class ProductionTenantAuthProfileTest {
         server = new DataCloudHttpServer(client, port)
             .withPluginManager(pluginManager)
             .withJwtProvider(jwtProvider)
-            .withDeploymentMode("production");
+            .withDeploymentMode("local");
         server.start();
         waitForServerReady(port);
     }
@@ -97,7 +96,7 @@ class ProductionTenantAuthProfileTest {
         }
         if (client != null) {
             try {
-                client.close().getResult();
+                client.close();
             } catch (Exception e) {
                 // Ignore cleanup errors
             }

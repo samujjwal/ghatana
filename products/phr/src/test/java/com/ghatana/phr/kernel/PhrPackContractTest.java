@@ -5,11 +5,15 @@
 package com.ghatana.phr.kernel;
 
 import com.ghatana.kernel.policy.BoundaryPolicyLoadContext;
+import com.ghatana.kernel.policy.BoundaryPolicyActionRegistry;
 import com.ghatana.kernel.policy.BoundaryPolicyStore;
+import com.ghatana.kernel.policy.BoundaryPolicyResourceRegistry;
 import com.ghatana.kernel.policy.BoundaryPolicyRule;
 import com.ghatana.kernel.policy.BoundaryPolicyRule.Effect;
 import com.ghatana.kernel.policy.ProductBoundaryPolicyPackValidator;
 import com.ghatana.kernel.policy.ProductBoundaryPolicyValidationProfile;
+import com.ghatana.kernel.testing.DeclaredPolicyActionsReader;
+import com.ghatana.kernel.testing.DeclaredPolicyResourcesReader;
 import com.ghatana.plugin.compliance.CompliancePlugin;
 import com.ghatana.phr.kernel.policy.PhrBoundaryPolicyStore;
 import com.ghatana.phr.kernel.policy.PhrComplianceRulePack;
@@ -19,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Set;
+import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -53,6 +58,14 @@ class PhrPackContractTest {
                     .targetScopePrefix("phr.")
                     .requiredMetadataKeys(Set.of("packVersion", "ruleCategory"))
                     .build();
+    private static final BoundaryPolicyActionRegistry ACTION_REGISTRY =
+            BoundaryPolicyActionRegistry.ofDeclaredActions(
+                    DeclaredPolicyActionsReader.read(manifestPath())
+            );
+    private static final BoundaryPolicyResourceRegistry RESOURCE_REGISTRY =
+            BoundaryPolicyResourceRegistry.ofDeclaredResources(
+                    DeclaredPolicyResourcesReader.read(manifestPath())
+            );
 
     // -------------------------------------------------------------------------
     // BoundaryPolicyStore contract
@@ -76,7 +89,11 @@ class PhrPackContractTest {
         @DisplayName("all rules have non-blank ruleId and non-empty actions")
         void allRulesWellFormed() {
             List<BoundaryPolicyRule> rules = store.loadRules(anyContext);
-            ProductBoundaryPolicyPackValidator.validate(rules, VALIDATION_PROFILE);
+            ProductBoundaryPolicyPackValidator.validate(
+                    rules,
+                    VALIDATION_PROFILE,
+                    ACTION_REGISTRY,
+                    RESOURCE_REGISTRY);
             for (BoundaryPolicyRule rule : rules) {
                 assertThat(rule.getRuleId())
                         .as("ruleId must not be blank")
@@ -248,5 +265,10 @@ class PhrPackContractTest {
                     .as("PHR store must not extend a kernel implementation class")
                     .isEqualTo("java.lang.Object");
         }
+    }
+
+    private static Path manifestPath() {
+        String projectDir = System.getProperty("ghatana.projectDir", ".");
+        return Path.of(projectDir, "domain-pack-manifest.yaml");
     }
 }

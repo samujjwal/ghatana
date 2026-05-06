@@ -12,6 +12,13 @@ pack:
     - audit-trail
     - human-approval
     - observability
+  policyActions:
+    - read
+    - write
+    - delete
+    - export
+  policyResources:
+    - moments
   pluginsConsumed:
     - plugin-audit-trail
     - plugin-compliance

@@ -5,6 +5,8 @@
 package com.ghatana.phr.kernel.policy;
 
 import com.ghatana.kernel.policy.BoundaryPolicyLoadContext;
+import com.ghatana.kernel.policy.BoundaryPolicyActionRegistry;
+import com.ghatana.kernel.policy.BoundaryPolicyResourceRegistry;
 import com.ghatana.kernel.policy.BoundaryPolicyRule;
 import com.ghatana.kernel.policy.BoundaryPolicyStore;
 import com.ghatana.kernel.policy.ProductBoundaryPolicyPackValidator;
@@ -50,6 +52,12 @@ public final class PhrBoundaryPolicyStore implements BoundaryPolicyStore {
                     .targetScopePrefix("phr.")
                     .requiredMetadataKeys(Set.of("packVersion", "ruleCategory"))
                     .build();
+    private static final BoundaryPolicyActionRegistry ACTION_REGISTRY =
+            BoundaryPolicyActionRegistry.ofDeclaredActions(
+                    Set.of("read", "write", "delete", "export", "download"));
+    private static final BoundaryPolicyResourceRegistry RESOURCE_REGISTRY =
+            BoundaryPolicyResourceRegistry.ofDeclaredResources(
+                    Set.of("subject-records", "interop", "clinical-documents"));
 
     /**
      * Immutable list of all PHR boundary rules, evaluated in declaration order.
@@ -139,6 +147,10 @@ public final class PhrBoundaryPolicyStore implements BoundaryPolicyStore {
                             + "Only tenantId=default and region=GLOBAL are allowed; failing closed for "
                             + context);
         }
-        return ProductBoundaryPolicyPackValidator.validate(PHR_RULES, VALIDATION_PROFILE);
+        return ProductBoundaryPolicyPackValidator.validate(
+                PHR_RULES,
+                VALIDATION_PROFILE,
+                ACTION_REGISTRY,
+                RESOURCE_REGISTRY);
     }
 }

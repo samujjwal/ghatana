@@ -1,6 +1,8 @@
 package com.ghatana.flashit.kernel.policy;
 
 import com.ghatana.kernel.policy.BoundaryPolicyLoadContext;
+import com.ghatana.kernel.policy.BoundaryPolicyActionRegistry;
+import com.ghatana.kernel.policy.BoundaryPolicyResourceRegistry;
 import com.ghatana.kernel.policy.BoundaryPolicyRule;
 import com.ghatana.kernel.policy.BoundaryPolicyStore;
 import com.ghatana.kernel.policy.ProductBoundaryPolicyPackValidator;
@@ -27,6 +29,11 @@ public final class FlashItBoundaryPolicyStore implements BoundaryPolicyStore {
                     .targetScopePrefix("flashit.")
                     .requiredMetadataKeys(Set.of("packVersion", "ruleCategory"))
                     .build();
+    private static final BoundaryPolicyActionRegistry ACTION_REGISTRY =
+            BoundaryPolicyActionRegistry.ofDeclaredActions(
+                    Set.of("read", "write", "delete", "export"));
+    private static final BoundaryPolicyResourceRegistry RESOURCE_REGISTRY =
+            BoundaryPolicyResourceRegistry.ofDeclaredResources(Set.of("moments"));
 
     private static final List<BoundaryPolicyRule> RULES = List.of(
             BoundaryPolicyRule.builder()
@@ -75,6 +82,10 @@ public final class FlashItBoundaryPolicyStore implements BoundaryPolicyStore {
                             + "Only tenantId=default and region=GLOBAL are allowed; failing closed for "
                             + context);
         }
-        return ProductBoundaryPolicyPackValidator.validate(RULES, VALIDATION_PROFILE);
+        return ProductBoundaryPolicyPackValidator.validate(
+                RULES,
+                VALIDATION_PROFILE,
+                ACTION_REGISTRY,
+                RESOURCE_REGISTRY);
     }
 }

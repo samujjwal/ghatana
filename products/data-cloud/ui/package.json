@@ -27,6 +27,7 @@
     "@ghatana/canvas": "workspace:*",
     "@ghatana/design-system": "workspace:*",
     "@ghatana/domain-components": "workspace:*",
+    "@ghatana/product-shell": "workspace:*",
     "@ghatana/platform-utils": "workspace:*",
     "@ghatana/realtime": "workspace:*",
     "@ghatana/theme": "workspace:*",

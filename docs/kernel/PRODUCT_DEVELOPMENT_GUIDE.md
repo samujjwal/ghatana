@@ -229,7 +229,10 @@ Digital Marketing, and FlashIt.
 
 `InMemoryBoundaryPolicyStore` is limited to kernel tests, examples, and local-only
 bootstrap scenarios. Product main sources and launchers must not wire it into
-runtime composition. CI enforces this via `check:inmemory-policy-store-usage`.
+runtime composition. CI enforces this via `check:inmemory-policy-store-usage`,
+and audited launchers should call `BoundaryPolicyRuntimeGuards.assertStoreAllowed(...)`
+after module initialization and before accepting traffic so production-like
+environments fail closed if an in-memory store is ever wired by mistake.
 
 ### 5.4 Route Entitlement Contract
 
@@ -393,7 +396,24 @@ Bridge integration tests must cover:
 - [ ] `*PackContractTest` written and passing
 - [ ] No kernel implementation classes extended directly
 - [ ] Pack classes use only kernel public interfaces (`BoundaryPolicyStore`, `BoundaryPolicyRule`, etc.)
-- [ ] Manifest declares `kernelCapabilitiesConsumed`, `pluginsConsumed`, `bridgesConsumed`, `domainPacksProvided`, `uiSurfaces`, `runtimeServices`, and `dataSensitivity`
+- [ ] Manifest declares `kernelCapabilitiesConsumed`, `policyActions`, `policyResources`, `pluginsConsumed`, `bridgesConsumed`, `domainPacksProvided`, `uiSurfaces`, `runtimeServices`, and `dataSensitivity`
+
+### Product scaffolder foundation
+
+Use `pnpm scaffold:product -- --id sample-product --name "Sample Product" --product-code SAMPLE --domain sample-domain --ui web`
+to generate a Kernel-aligned starter product shell under `products/<id>/`.
+
+The scaffolder currently generates:
+
+- domain-pack manifest with required ownership fields
+- boundary policy store skeleton and pack contract test
+- canonical product docs taxonomy
+- local runtime compose override
+- optional web route-manifest shell
+
+The scaffolder does not yet auto-register the product in `settings.gradle.kts`,
+`pnpm-workspace.yaml`, or CI matrices, so those repo-level integration steps still
+need to be completed manually.
 
 ---
 

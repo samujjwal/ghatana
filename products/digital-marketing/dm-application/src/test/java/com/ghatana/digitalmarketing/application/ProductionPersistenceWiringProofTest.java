@@ -190,6 +190,10 @@ class ProductionPersistenceWiringProofTest {
         }
 
         if (!Files.exists(module)) {
+            module = Paths.get("../../..").resolve(modulePath);
+        }
+
+        if (!Files.exists(module)) {
             return false;
         }
 

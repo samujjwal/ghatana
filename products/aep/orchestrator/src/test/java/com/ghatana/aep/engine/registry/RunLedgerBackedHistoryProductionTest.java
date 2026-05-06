@@ -26,6 +26,9 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
  * AEP Run History Durable Restart Tests with Real Provider
  *
@@ -67,12 +70,15 @@ class RunLedgerBackedHistoryProductionTest {
                 "  execution_id VARCHAR(36) PRIMARY KEY," +
                 "  agent_id VARCHAR(255) NOT NULL," +
                 "  status VARCHAR(50) NOT NULL," +
-                "  input_payload JSON," +
-                "  output_payload JSON," +
+                "  input_payload VARCHAR," +
+                "  output_payload VARCHAR," +
                 "  duration_ms BIGINT," +
-                "  executed_at TIMESTAMP WITH TIME ZONE NOT NULL," +
-                "  INDEX idx_agent_id (agent_id)" +
+                "  executed_at TIMESTAMP WITH TIME ZONE NOT NULL" +
                 ")"
+            );
+            // Create index separately for H2 compatibility
+            conn.createStatement().execute(
+                "CREATE INDEX IF NOT EXISTS idx_agent_id ON agent_execution_history(agent_id)"
             );
         }
     }
@@ -434,17 +440,23 @@ class RunLedgerBackedHistoryProductionTest {
             stmt.close();
         }
         
-        // Retrieve and verify JSON preserved
+        // Retrieve and verify JSON preserved (compare parsed JSON)
+        ObjectMapper objectMapper = new ObjectMapper();
         try (Connection conn = dataSource.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement(
                 "SELECT input_payload, output_payload FROM agent_execution_history WHERE execution_id = ?"
             );
             stmt.setString(1, executionId);
             ResultSet rs = stmt.executeQuery();
-            
+
             assertThat(rs.next()).isTrue();
-            assertThat(rs.getString("input_payload")).isEqualTo(inputPayload);
-            assertThat(rs.getString("output_payload")).isEqualTo(outputPayload);
+            // Compare parsed JSON to handle any whitespace differences
+            JsonNode actualInput = objectMapper.readTree(rs.getString("input_payload"));
+            JsonNode expectedInput = objectMapper.readTree(inputPayload);
+            JsonNode actualOutput = objectMapper.readTree(rs.getString("output_payload"));
+            JsonNode expectedOutput = objectMapper.readTree(outputPayload);
+            assertThat(actualInput).isEqualTo(expectedInput);
+            assertThat(actualOutput).isEqualTo(expectedOutput);
             rs.close();
             stmt.close();
         }

@@ -70,6 +70,33 @@ public final class BoundaryPolicyRuleParser {
     }
 
     /**
+     * Builds and validates the rule list against a declared action registry.
+     *
+     * @param actionRegistry allowed action vocabulary for the owning product pack
+     * @return immutable, validated list of rules
+     * @throws BoundaryPolicyStore.BoundaryPolicyStoreException if validation fails
+     */
+    public List<BoundaryPolicyRule> buildAndValidate(BoundaryPolicyActionRegistry actionRegistry) {
+        return buildAndValidate(actionRegistry, BoundaryPolicyResourceRegistry.allowAny());
+    }
+
+    /**
+     * Builds and validates the rule list against declared action and resource registries.
+     *
+     * @param actionRegistry allowed action vocabulary for the owning product pack
+     * @param resourceRegistry allowed resource namespaces for the owning product pack
+     * @return immutable, validated list of rules
+     * @throws BoundaryPolicyStore.BoundaryPolicyStoreException if validation fails
+     */
+    public List<BoundaryPolicyRule> buildAndValidate(
+            BoundaryPolicyActionRegistry actionRegistry,
+            BoundaryPolicyResourceRegistry resourceRegistry) {
+        List<BoundaryPolicyRule> result = Collections.unmodifiableList(new ArrayList<>(rules));
+        BoundaryPolicyRuleValidator.validate(result, actionRegistry, resourceRegistry);
+        return result;
+    }
+
+    /**
      * Builds the rule list without validation. Use only in tests or when the caller
      * performs validation separately.
      */

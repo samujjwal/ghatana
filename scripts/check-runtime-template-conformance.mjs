@@ -23,6 +23,24 @@ const checks = [
     forbidden: ['-x test'],
   },
   {
+    file: 'products/phr/launcher/build.gradle.kts',
+    required: [
+      'tasks.named("check")',
+      ':products:phr:productConformanceCheck',
+      ':products:phr:checkApiContractConformance',
+    ],
+    forbidden: [],
+  },
+  {
+    file: 'products/finance/launcher/build.gradle.kts',
+    required: [
+      'tasks.named("check")',
+      ':products:finance:productConformanceCheck',
+      ':products:finance:checkApiContractConformance',
+    ],
+    forbidden: [],
+  },
+  {
     file: 'products/flashit/docker-compose.local.yml',
     required: [
       'Shared template source: config/docker/templates/product-runtime.compose.yaml',

@@ -8,6 +8,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 const productsRoot = path.join(repoRoot, "products");
 const violations = [];
+const launcherGuards = [
+  {
+    file: "products/phr/launcher/src/main/java/com/ghatana/phr/launcher/PhrLauncher.java",
+    pattern: "BoundaryPolicyRuntimeGuards.assertStoreAllowed(context, \"products/phr/launcher\")",
+  },
+  {
+    file: "products/finance/launcher/src/main/java/com/ghatana/products/finance/launcher/FinanceLauncher.java",
+    pattern: "BoundaryPolicyRuntimeGuards.assertStoreAllowed(context, \"products/finance/launcher\")",
+  },
+];
 const targetExtensions = new Set([".java", ".kt"]);
 
 function walk(dir) {
@@ -41,12 +51,20 @@ function walk(dir) {
 
 walk(productsRoot);
 
+for (const launcherGuard of launcherGuards) {
+  const absolutePath = path.join(repoRoot, launcherGuard.file);
+  const content = readFileSync(absolutePath, "utf8");
+  if (!content.includes(launcherGuard.pattern)) {
+    violations.push(`${launcherGuard.file} (missing runtime guard: ${launcherGuard.pattern})`);
+  }
+}
+
 if (violations.length > 0) {
-  console.error("❌ InMemoryBoundaryPolicyStore is limited to kernel tests/dev scaffolding and must not appear in product main sources:\n");
+  console.error("❌ InMemoryBoundaryPolicyStore is limited to kernel tests/dev scaffolding and must not appear in product main sources or unguarded launchers:\n");
   for (const violation of violations) {
     console.error(`- ${violation}`);
   }
   process.exit(1);
 }
 
-console.log("✅ No product main sources reference InMemoryBoundaryPolicyStore.");
+console.log("✅ No product main sources reference InMemoryBoundaryPolicyStore, and audited launchers enforce runtime guards.");

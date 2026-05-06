@@ -111,7 +111,8 @@ class GovernanceControllerTest extends EventloopTestBase {
                     "userId", "admin-user",
                     "mfaCode", "123456",
                     "reason", "incident-response",
-                    "incidentId", "INC-99"
+                    "incidentId", "INC-99",
+                    "role", "admin"
                 ))));
 
             assertThat(resp.getCode()).isEqualTo(200);
@@ -120,7 +121,7 @@ class GovernanceControllerTest extends EventloopTestBase {
             assertThat(body.get("auditId")).isEqualTo("audit-001");
 
             verify(stepUpGate).verify("admin-user", "tenant-mfa", "123456");
-            verify(auditChain).recordActivation("tenant-mfa", "admin-user", "incident-response", "INC-99", null);
+            verify(auditChain).recordActivation("tenant-mfa", "admin-user", "incident-response", "INC-99", "admin");
         }
 
         @Test
@@ -128,7 +129,7 @@ class GovernanceControllerTest extends EventloopTestBase {
         void invalidMfaReturnsForbiddenAndAudits() throws Exception {
             when(stepUpGate.verify("admin-user", "tenant-mfa", "999999"))
                 .thenReturn(Promise.of(false));
-            when(auditChain.recordFailedStepUp("tenant-mfa", "admin-user", "kill-switch activation denied"))
+            when(auditChain.recordFailedStepUp("tenant-mfa", "admin-user", "kill-switch activation denied: MFA failed"))
                 .thenReturn(Promise.of("audit-fail-001"));
 
             HttpResponse resp = runPromise(() -> controller.handleActivateKillSwitch(
@@ -137,7 +138,8 @@ class GovernanceControllerTest extends EventloopTestBase {
                     "userId", "admin-user",
                     "mfaCode", "999999",
                     "reason", "attempted",
-                    "incidentId", "INC-100"
+                    "incidentId", "INC-100",
+                    "role", "admin"
                 ))));
 
             assertThat(resp.getCode()).isEqualTo(403);
@@ -145,7 +147,7 @@ class GovernanceControllerTest extends EventloopTestBase {
             assertThat(bodyStr).contains("MFA verification failed");
 
             verify(stepUpGate).verify("admin-user", "tenant-mfa", "999999");
-            verify(auditChain).recordFailedStepUp("tenant-mfa", "admin-user", "kill-switch activation denied");
+            verify(auditChain).recordFailedStepUp("tenant-mfa", "admin-user", "kill-switch activation denied: MFA failed");
         }
 
         @Test
@@ -178,7 +180,8 @@ class GovernanceControllerTest extends EventloopTestBase {
                     "tenantId", "tenant-no-gate",
                     "userId", "operator",
                     "reason", "maintenance",
-                    "incidentId", "MNT-1"
+                    "incidentId", "MNT-1",
+                    "role", "admin"
                 ))));
 
             assertThat(resp.getCode()).isEqualTo(200);
@@ -224,7 +227,8 @@ class GovernanceControllerTest extends EventloopTestBase {
                     "userId", "admin",
                     "mfaCode", "111111",
                     "reason", "test",
-                    "incidentId", "INC-D"
+                    "incidentId", "INC-D",
+                    "role", "admin"
                 ))));
 
             // Deactivate
@@ -232,14 +236,16 @@ class GovernanceControllerTest extends EventloopTestBase {
                 postRequest(Map.of(
                     "tenantId", "tenant-deact",
                     "userId", "admin",
-                    "reason", "resolved"
+                    "mfaCode", "222222",
+                    "reason", "resolved",
+                    "role", "admin"
                 ))));
 
             assertThat(deactResp.getCode()).isEqualTo(200);
             Map<?, ?> body = parseBody(deactResp);
             assertThat(body.get("deactivated")).isEqualTo(true);
 
-            verify(auditChain).recordDeactivation("tenant-deact", "admin", "resolved", null);
+            verify(auditChain).recordDeactivation("tenant-deact", "admin", "resolved", "admin");
         }
     }
 

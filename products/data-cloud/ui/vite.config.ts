@@ -11,6 +11,7 @@ const workspaceAliases = {
   '@ghatana/theme': path.resolve(__dirname, '../../../platform/typescript/theme/src/index.ts'),
   '@ghatana/tokens': path.resolve(__dirname, '../../../platform/typescript/tokens/src/index.ts'),
   '@ghatana/platform-utils': path.resolve(__dirname, '../../../platform/typescript/platform-utils/src/index.ts'),
+  '@ghatana/product-shell': path.resolve(__dirname, '../../../platform/typescript/product-shell/src/index.ts'),
   '@ghatana/realtime': path.resolve(__dirname, '../../../platform/typescript/realtime/src/index.ts'),
   '@ghatana/domain-components': path.resolve(__dirname, '../../../platform/typescript/domain-components/src/index.ts'),
   '@ghatana/domain-components/security': path.resolve(__dirname, '../../../platform/typescript/domain-components/src/security/index.ts'),

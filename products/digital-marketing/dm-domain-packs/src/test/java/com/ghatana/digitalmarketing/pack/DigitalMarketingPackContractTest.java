@@ -1,10 +1,14 @@
 package com.ghatana.digitalmarketing.pack;
 
 import com.ghatana.kernel.policy.BoundaryPolicyLoadContext;
+import com.ghatana.kernel.policy.BoundaryPolicyActionRegistry;
+import com.ghatana.kernel.policy.BoundaryPolicyResourceRegistry;
 import com.ghatana.kernel.policy.BoundaryPolicyRule;
 import com.ghatana.kernel.policy.BoundaryPolicyStore;
 import com.ghatana.kernel.policy.ProductBoundaryPolicyPackValidator;
 import com.ghatana.kernel.policy.ProductBoundaryPolicyValidationProfile;
+import com.ghatana.kernel.testing.DeclaredPolicyActionsReader;
+import com.ghatana.kernel.testing.DeclaredPolicyResourcesReader;
 import com.ghatana.platform.plugin.PluginContext;
 import com.ghatana.platform.plugin.PluginMetadata;
 import com.ghatana.platform.plugin.PluginState;
@@ -43,6 +47,14 @@ class DigitalMarketingPackContractTest extends EventloopTestBase {
             .targetScopePrefix("digital-marketing.")
             .requiredMetadataKeys(Set.of("packVersion", "ruleCategory"))
             .build();
+    private static final BoundaryPolicyActionRegistry ACTION_REGISTRY =
+        BoundaryPolicyActionRegistry.ofDeclaredActions(
+            DeclaredPolicyActionsReader.read(Path.of("domain-pack.json"))
+        );
+    private static final BoundaryPolicyResourceRegistry RESOURCE_REGISTRY =
+        BoundaryPolicyResourceRegistry.ofDeclaredResources(
+            DeclaredPolicyResourcesReader.read(Path.of("domain-pack.json"))
+        );
 
     @Test
     @DisplayName("domain-pack manifest declares DM product code, prefix, and canonical classes")
@@ -95,7 +107,11 @@ class DigitalMarketingPackContractTest extends EventloopTestBase {
         DigitalMarketingBoundaryPolicyStore store = new DigitalMarketingBoundaryPolicyStore();
         List<BoundaryPolicyRule> rules = store.loadRules(BoundaryPolicyLoadContext.global());
 
-        ProductBoundaryPolicyPackValidator.validate(rules, VALIDATION_PROFILE);
+        ProductBoundaryPolicyPackValidator.validate(
+            rules,
+            VALIDATION_PROFILE,
+            ACTION_REGISTRY,
+            RESOURCE_REGISTRY);
 
         assertThat(rules).allSatisfy(rule -> assertThat(rule.getMetadata())
             .containsKeys("packVersion", "ruleCategory"));

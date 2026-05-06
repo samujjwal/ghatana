@@ -18,7 +18,26 @@ public final class ProductBoundaryPolicyPackValidator {
     public static List<BoundaryPolicyRule> validate(
             List<BoundaryPolicyRule> rules,
             ProductBoundaryPolicyValidationProfile profile) {
-        BoundaryPolicyRuleValidator.validate(rules);
+        return validate(
+                rules,
+                profile,
+                BoundaryPolicyActionRegistry.canonicalOnly(),
+                BoundaryPolicyResourceRegistry.empty());
+    }
+
+    public static List<BoundaryPolicyRule> validate(
+            List<BoundaryPolicyRule> rules,
+            ProductBoundaryPolicyValidationProfile profile,
+            BoundaryPolicyActionRegistry actionRegistry) {
+        return validate(rules, profile, actionRegistry, BoundaryPolicyResourceRegistry.empty());
+    }
+
+    public static List<BoundaryPolicyRule> validate(
+            List<BoundaryPolicyRule> rules,
+            ProductBoundaryPolicyValidationProfile profile,
+            BoundaryPolicyActionRegistry actionRegistry,
+            BoundaryPolicyResourceRegistry resourceRegistry) {
+        BoundaryPolicyRuleValidator.validate(rules, actionRegistry, resourceRegistry);
 
         List<String> violations = new ArrayList<>();
         BoundaryPolicyRule defaultDenyRule = null;

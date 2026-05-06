@@ -79,11 +79,22 @@ pack:
     - audit-trail
     - consent-enforcement
     - tenant-context
+  policyActions:
+    - read
+    - write
+    - delete
+    - export
+    - download
+  policyResources:
+    - subject-records
+    - interop
+    - clinical-documents
   pluginsConsumed:
     - plugin-audit-trail
     - plugin-compliance
     - plugin-consent
     - plugin-human-approval
+    - plugin-ledger
   bridgesConsumed:
     - data-cloud-kernel-bridge
   domainPacksProvided:

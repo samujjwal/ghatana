@@ -24,6 +24,10 @@ AEP and Data Cloud both independently implement:
 |---|---|
 | `ProductShell` | Root layout wrapper — sidebar + header + content area |
 | `PageHeader` | Shared page-level title, description, and action layout primitive |
+| `PageContent` | Shared page body wrapper with optional sidebars |
+| `PageSection` | Shared titled section wrapper |
+| `ContextPanel` | Shared right-rail or assistive panel wrapper |
+| `SuggestionCard` | Shared action suggestion card wrapper |
 | `CapabilitySidebar` | Registry-driven collapsible sidebar |
 | `ProductHeader` | Top header with search, notifications, and role/mode selector |
 | `RouteCapabilityNav` | Navigation links generated from route registry entries |

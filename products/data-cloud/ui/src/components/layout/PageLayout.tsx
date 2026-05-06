@@ -13,6 +13,13 @@
 import React from 'react';
 import { ChevronRight, Sparkles } from 'lucide-react';
 import { ConfidenceBadge } from '@ghatana/design-system';
+import {
+  PageHeader as SharedPageHeader,
+  PageContent as SharedPageContent,
+  PageSection as SharedPageSection,
+  ContextPanel as SharedContextPanel,
+  SuggestionCard as SharedSuggestionCard,
+} from '@ghatana/product-shell';
 import { cn, bgStyles, borderStyles, textStyles } from '../../lib/theme';
 
 // =============================================================================
@@ -42,54 +49,39 @@ export function PageHeader({
   breadcrumbs,
   className,
 }: PageHeaderProps): React.ReactElement {
-  return (
-    <div className={cn('border-b', bgStyles.surface, borderStyles.divider, className)}>
-      <div className="px-6 py-4">
-        {/* Breadcrumbs */}
-        {breadcrumbs && breadcrumbs.length > 0 && (
-          <nav className="flex items-center gap-1 mb-2 text-sm">
-            {breadcrumbs.map((crumb, index) => (
-              <React.Fragment key={crumb.label}>
-                {index > 0 && (
-                  <ChevronRight className="h-4 w-4 text-gray-400" />
-                )}
-                {crumb.href ? (
-                  <a
-                    href={crumb.href}
-                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  >
-                    {crumb.label}
-                  </a>
-                ) : (
-                  <span className="text-gray-900 dark:text-white font-medium">
-                    {crumb.label}
-                  </span>
-                )}
-              </React.Fragment>
-            ))}
-          </nav>
-        )}
+  const eyebrow = breadcrumbs && breadcrumbs.length > 0 ? (
+    <nav className="mb-2 flex items-center gap-1 text-sm">
+      {breadcrumbs.map((crumb, index) => (
+        <React.Fragment key={crumb.label}>
+          {index > 0 && (
+            <ChevronRight className="h-4 w-4 text-gray-400" />
+          )}
+          {crumb.href ? (
+            <a
+              href={crumb.href}
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              {crumb.label}
+            </a>
+          ) : (
+            <span className="font-medium text-gray-900 dark:text-white">
+              {crumb.label}
+            </span>
+          )}
+        </React.Fragment>
+      ))}
+    </nav>
+  ) : undefined;
 
-        {/* Header content */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {icon && (
-              <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
-                {icon}
-              </div>
-            )}
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className={textStyles.h1}>{title}</h1>
-              </div>
-              {subtitle && (
-                <p className={cn(textStyles.muted, 'mt-1')}>{subtitle}</p>
-              )}
-            </div>
-          </div>
-          {actions && <div className="flex items-center gap-2">{actions}</div>}
-        </div>
-      </div>
+  return (
+    <div className={cn('border-b px-6 py-4', bgStyles.surface, borderStyles.divider, className)}>
+      <SharedPageHeader
+        title={title}
+        description={subtitle}
+        eyebrow={eyebrow}
+        actions={actions}
+        className="mb-0"
+      />
     </div>
   );
 }
@@ -122,40 +114,15 @@ export function PageContent({
   className,
 }: PageContentProps): React.ReactElement {
   return (
-    <div className={cn('flex flex-1 min-h-0', className)}>
-      {/* Left Sidebar */}
-      {sidebar && (
-        <aside className={cn(
-          'w-64 flex-shrink-0 border-r overflow-y-auto',
-          bgStyles.surface,
-          borderStyles.divider
-        )}>
-          {sidebar}
-        </aside>
-      )}
-
-      {/* Main Content */}
-      <main
-        className={cn(
-          'flex-1 overflow-y-auto',
-          !noPadding && 'p-6',
-          !fullWidth && 'max-w-7xl mx-auto'
-        )}
-      >
-        {children}
-      </main>
-
-      {/* Context Sidebar */}
-      {contextSidebar && (
-        <aside className={cn(
-          'w-80 flex-shrink-0 border-l overflow-y-auto',
-          bgStyles.surfaceSecondary,
-          borderStyles.divider
-        )}>
-          {contextSidebar}
-        </aside>
-      )}
-    </div>
+    <SharedPageContent
+      sidebar={sidebar}
+      contextSidebar={contextSidebar}
+      fullWidth={fullWidth}
+      noPadding={noPadding}
+      className={className}
+    >
+      {children}
+    </SharedPageContent>
   );
 }
 
@@ -181,19 +148,9 @@ export function PageSection({
   className,
 }: PageSectionProps): React.ReactElement {
   return (
-    <section className={cn('mb-8', className)}>
-      {(title || actions) && (
-        <div className="flex items-center justify-between mb-4">
-          {title && (
-            <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              {title}
-            </h2>
-          )}
-          {actions}
-        </div>
-      )}
+    <SharedPageSection title={title} actions={actions} className={className}>
       {children}
-    </section>
+    </SharedPageSection>
   );
 }
 
@@ -216,15 +173,12 @@ export function ContextPanel({
   className,
 }: ContextPanelProps): React.ReactElement {
   return (
-    <div className={cn('p-4', className)}>
+    <SharedContextPanel title={title} className={className}>
       <div className="flex items-center gap-2 mb-4">
         <Sparkles className="h-4 w-4 text-purple-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-          {title}
-        </h3>
       </div>
       {children}
-    </div>
+    </SharedContextPanel>
   );
 }
 
@@ -259,39 +213,19 @@ export function SuggestionCard({
   className,
 }: SuggestionCardProps): React.ReactElement {
   return (
-    <div
-      className={cn(
-        'p-3 rounded-lg',
-        'bg-white/80 dark:bg-gray-800/80',
-        'border border-purple-100 dark:border-purple-900/30',
-        className
-      )}
-    >
-      <div className="flex items-start gap-3">
-        <div className="p-1.5 bg-purple-100 dark:bg-purple-900/50 rounded">
-          {icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              {title}
-            </p>
-            {confidence !== undefined && (
-              <ConfidenceBadge confidence={confidence} size="sm" showPercentage />
-            )}
-          </div>
-          <p className="text-xs text-gray-500 mt-0.5">{description}</p>
-          {onAction && (
-            <button
-              onClick={onAction}
-              className="mt-2 text-xs text-purple-600 dark:text-purple-400 hover:underline"
-            >
-              {actionLabel} →
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    <SharedSuggestionCard
+      icon={icon}
+      title={title}
+      description={description}
+      actionLabel={actionLabel}
+      onAction={onAction}
+      confidence={
+        confidence !== undefined ? (
+          <ConfidenceBadge confidence={confidence} size="sm" showPercentage />
+        ) : undefined
+      }
+      className={cn('border-purple-100 dark:border-purple-900/30', className)}
+    />
   );
 }
 

@@ -4,6 +4,7 @@
  */
 package com.ghatana.datacloud.integration;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
@@ -60,7 +61,6 @@ class DataCloudCRUDJourneyE2ETest {
     @BeforeEach
     void setUp() throws Exception {
         client = new DurableDataCloudClient();
-        client.open().getResult();
 
         DataCloudRuntimePluginManager pluginManager = new DataCloudRuntimePluginManager();
         pluginManager.registerWorkflowPlugin(client);
@@ -71,7 +71,7 @@ class DataCloudCRUDJourneyE2ETest {
 
         server = new DataCloudHttpServer(client, port)
             .withPluginManager(pluginManager)
-            .withDeploymentMode("production");
+            .withDeploymentMode("local");
         server.start();
         waitForServerReady(port);
     }
@@ -83,7 +83,7 @@ class DataCloudCRUDJourneyE2ETest {
         }
         if (client != null) {
             try {
-                client.close().getResult();
+                client.close();
             } catch (Exception e) {
                 // Ignore cleanup errors
             }
@@ -110,7 +110,7 @@ class DataCloudCRUDJourneyE2ETest {
 
         assertThat(response.statusCode()).isIn(200, 201, 503);
         if (response.statusCode() == 200 || response.statusCode() == 201) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("id");
             assertThat(responseBody).containsKey("name");
             assertThat(responseBody.get("name")).isEqualTo(collectionName);
@@ -139,7 +139,7 @@ class DataCloudCRUDJourneyE2ETest {
 
         String collectionId = null;
         if (createResponse.statusCode() == 200 || createResponse.statusCode() == 201) {
-            Map<String, Object> createBody = mapper.readValue(createResponse.body(), Map.class);
+            Map<String, Object> createBody = mapper.readValue(createResponse.body(), new TypeReference<Map<String, Object>>() {});
             collectionId = (String) createBody.get("id");
         }
 
@@ -155,7 +155,7 @@ class DataCloudCRUDJourneyE2ETest {
 
             assertThat(readResponse.statusCode()).isIn(200, 503);
             if (readResponse.statusCode() == 200) {
-                Map<String, Object> readBody = mapper.readValue(readResponse.body(), Map.class);
+                Map<String, Object> readBody = mapper.readValue(readResponse.body(), new TypeReference<Map<String, Object>>() {});
                 assertThat(readBody).containsKey("id");
                 assertThat(readBody).containsKey("name");
                 assertThat(readBody.get("id")).isEqualTo(collectionId);
@@ -184,7 +184,7 @@ class DataCloudCRUDJourneyE2ETest {
 
         String collectionId = null;
         if (createResponse.statusCode() == 200 || createResponse.statusCode() == 201) {
-            Map<String, Object> createBody = mapper.readValue(createResponse.body(), Map.class);
+            Map<String, Object> createBody = mapper.readValue(createResponse.body(), new TypeReference<Map<String, Object>>() {});
             collectionId = (String) createBody.get("id");
         }
 
@@ -205,7 +205,7 @@ class DataCloudCRUDJourneyE2ETest {
 
             assertThat(updateResponse.statusCode()).isIn(200, 503);
             if (updateResponse.statusCode() == 200) {
-                Map<String, Object> updateBody = mapper.readValue(updateResponse.body(), Map.class);
+                Map<String, Object> updateBody = mapper.readValue(updateResponse.body(), new TypeReference<Map<String, Object>>() {});
                 assertThat(updateBody).containsKey("description");
                 assertThat(updateBody.get("description")).isEqualTo("Updated description");
             }
@@ -233,7 +233,7 @@ class DataCloudCRUDJourneyE2ETest {
 
         String collectionId = null;
         if (createResponse.statusCode() == 200 || createResponse.statusCode() == 201) {
-            Map<String, Object> createBody = mapper.readValue(createResponse.body(), Map.class);
+            Map<String, Object> createBody = mapper.readValue(createResponse.body(), new TypeReference<Map<String, Object>>() {});
             collectionId = (String) createBody.get("id");
         }
 
@@ -283,7 +283,7 @@ class DataCloudCRUDJourneyE2ETest {
 
         assertThat(response.statusCode()).isIn(200, 201, 503);
         if (response.statusCode() == 200 || response.statusCode() == 201) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("id");
             assertThat(responseBody.get("id")).isEqualTo(entityId);
             createdEntityId = entityId;
@@ -323,7 +323,7 @@ class DataCloudCRUDJourneyE2ETest {
 
         assertThat(readResponse.statusCode()).isIn(200, 503);
         if (readResponse.statusCode() == 200) {
-            Map<String, Object> readBody = mapper.readValue(readResponse.body(), Map.class);
+            Map<String, Object> readBody = mapper.readValue(readResponse.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(readBody).containsKey("id");
             assertThat(readBody).containsKey("name");
             assertThat(readBody.get("id")).isEqualTo(entityId);
@@ -369,7 +369,7 @@ class DataCloudCRUDJourneyE2ETest {
 
         assertThat(updateResponse.statusCode()).isIn(200, 503);
         if (updateResponse.statusCode() == 200) {
-            Map<String, Object> updateBody = mapper.readValue(updateResponse.body(), Map.class);
+            Map<String, Object> updateBody = mapper.readValue(updateResponse.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(updateBody).containsKey("name");
             assertThat(updateBody).containsKey("value");
             assertThat(updateBody.get("name")).isEqualTo("Updated Entity Name");
@@ -455,8 +455,9 @@ class DataCloudCRUDJourneyE2ETest {
 
         assertThat(listResponse.statusCode()).isIn(200, 503);
         if (listResponse.statusCode() == 200) {
-            Map<String, Object> listBody = mapper.readValue(listResponse.body(), Map.class);
+            Map<String, Object> listBody = mapper.readValue(listResponse.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(listBody).containsKey("entities");
+            @SuppressWarnings("unchecked")
             List<Map<String, Object>> entities = (List<Map<String, Object>>) listBody.get("entities");
             assertThat(entities).isNotNull();
         }
@@ -494,8 +495,9 @@ class DataCloudCRUDJourneyE2ETest {
 
         assertThat(searchResponse.statusCode()).isIn(200, 503);
         if (searchResponse.statusCode() == 200) {
-            Map<String, Object> searchBody = mapper.readValue(searchResponse.body(), Map.class);
+            Map<String, Object> searchBody = mapper.readValue(searchResponse.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(searchBody).containsKey("entities");
+            @SuppressWarnings("unchecked")
             List<Map<String, Object>> entities = (List<Map<String, Object>>) searchBody.get("entities");
             assertThat(entities).isNotNull();
         }

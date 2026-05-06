@@ -4,6 +4,7 @@
  */
 package com.ghatana.datacloud.integration;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
@@ -59,7 +60,6 @@ class EntityEventContextMemoryPrivacyTest {
     @BeforeEach
     void setUp() throws Exception {
         client = new DurableDataCloudClient();
-        client.open().getResult();
 
         DataCloudRuntimePluginManager pluginManager = new DataCloudRuntimePluginManager();
         pluginManager.registerWorkflowPlugin(client);
@@ -70,7 +70,7 @@ class EntityEventContextMemoryPrivacyTest {
 
         server = new DataCloudHttpServer(client, port)
             .withPluginManager(pluginManager)
-            .withDeploymentMode("production");
+            .withDeploymentMode("local");
         server.start();
         waitForServerReady(port);
     }
@@ -82,7 +82,7 @@ class EntityEventContextMemoryPrivacyTest {
         }
         if (client != null) {
             try {
-                client.close().getResult();
+                client.close();
             } catch (Exception e) {
                 // Ignore cleanup errors
             }
@@ -123,7 +123,7 @@ class EntityEventContextMemoryPrivacyTest {
 
         assertThat(readResponse.statusCode()).isIn(200, 503);
         if (readResponse.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(readResponse.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(readResponse.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("id");
             // Verify PII fields are masked or not returned
             if (responseBody.containsKey("email")) {
@@ -147,8 +147,9 @@ class EntityEventContextMemoryPrivacyTest {
         // Should return 403 for unauthorized access to sensitive events
         assertThat(response.statusCode()).isIn(200, 403, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("events");
+            @SuppressWarnings("unchecked")
             List<Map<String, Object>> events = (List<Map<String, Object>>) responseBody.get("events");
             // Verify no sensitive events are returned to viewer role
             boolean hasSensitiveEvents = events.stream()
@@ -204,9 +205,10 @@ class EntityEventContextMemoryPrivacyTest {
 
         assertThat(response.statusCode()).isIn(200, 403, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("memory");
             // Verify memory data is properly scoped or empty without access grant
+            @SuppressWarnings("unchecked")
             List<Map<String, Object>> memory = (List<Map<String, Object>>) responseBody.get("memory");
             assertThat(memory).isNotNull();
         }
@@ -225,7 +227,7 @@ class EntityEventContextMemoryPrivacyTest {
 
         assertThat(response.statusCode()).isIn(200, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("globalFields");
             assertThat(responseBody).containsKey("tenantFields");
             assertThat(responseBody).containsKey("effectiveCount");
@@ -266,8 +268,9 @@ class EntityEventContextMemoryPrivacyTest {
 
         assertThat(auditResponse.statusCode()).isIn(200, 503);
         if (auditResponse.statusCode() == 200) {
-            Map<String, Object> auditBody = mapper.readValue(auditResponse.body(), Map.class);
+            Map<String, Object> auditBody = mapper.readValue(auditResponse.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(auditBody).containsKey("logs");
+            @SuppressWarnings("unchecked")
             List<Map<String, Object>> logs = (List<Map<String, Object>>) auditBody.get("logs");
             // Verify at least one log entry exists
             assertThat(logs).isNotEmpty();
@@ -315,7 +318,7 @@ class EntityEventContextMemoryPrivacyTest {
 
         assertThat(response.statusCode()).isIn(200, 404, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("tier");
             assertThat(responseBody).containsKey("retentionDays");
             assertThat(responseBody).containsKey("expiresAt");
@@ -391,7 +394,7 @@ class EntityEventContextMemoryPrivacyTest {
 
         assertThat(readResponse.statusCode()).isIn(200, 503);
         if (readResponse.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(readResponse.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(readResponse.body(), new TypeReference<Map<String, Object>>() {});
             // Admin should be able to see all fields
             assertThat(responseBody).containsKey("email");
         }

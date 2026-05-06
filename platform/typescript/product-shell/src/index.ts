@@ -24,6 +24,19 @@ export type {
 // Root shell
 export { ProductShell } from './components/ProductShell';
 export { PageHeader } from './components/PageHeader';
+export {
+  PageContent,
+  PageSection,
+  ContextPanel,
+  SuggestionCard,
+} from './components/PageLayout';
+
+export type {
+  PageContentProps,
+  PageSectionProps,
+  ContextPanelProps,
+  SuggestionCardProps,
+} from './components/PageLayout';
 
 // Sub-components (composable individually)
 export { CapabilitySidebar } from './components/CapabilitySidebar';

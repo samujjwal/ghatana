@@ -65,7 +65,6 @@
     "products/flashit/client/mobile/src/screens/NotificationSettingsScreen.tsx"
   ],
   "localLayoutPrimitiveFiles": [
-    "products/data-cloud/ui/src/components/layout/PageLayout.tsx",
     "products/data-cloud/ui/src/components/layout/AppShell.tsx",
     "products/phr/apps/web/src/layout/AppShell.tsx",
     "products/yappc/frontend/libs/yappc-ui/src/components/layout/AppShell.tsx",

@@ -53,12 +53,19 @@ public final class CostController {
         Instant from = parseInstant(request.getQueryParameter("from"), to.minus(Duration.ofHours(24)));
         double dailyBudgetUsd = parseDouble(request.getQueryParameter("dailyBudgetUsd"), 25.0);
         double monthlyBudgetUsd = parseDouble(request.getQueryParameter("monthlyBudgetUsd"), 750.0);
+        String correlationId = request.getQueryParameter("correlationId");
 
         return summarizeCost(tenantId, from, to, dailyBudgetUsd, monthlyBudgetUsd)
-                .map(summary -> HttpHelper.jsonResponse(Map.of(
-                        "summary", summary,
-                        "estimated", "estimated".equals(summary.dataSource()),
-                        "timestamp", Instant.now().toString())));
+                .map(summary -> {
+                    Map<String, Object> response = new LinkedHashMap<>();
+                    response.put("summary", summary);
+                    response.put("estimated", "estimated".equals(summary.dataSource()));
+                    response.put("timestamp", Instant.now().toString());
+                    if (correlationId != null) {
+                        response.put("correlationId", correlationId);
+                    }
+                    return HttpHelper.jsonResponse(response);
+                });
     }
 
     private Promise<CostSummary> summarizeCost(
@@ -287,7 +294,9 @@ public final class CostController {
                         round(item.costUsd),
                         totalCostUsd <= 0.0 ? 0.0 : round((item.costUsd / totalCostUsd) * 100.0),
                         item.runCount,
-                        item.lastSeenAt != null ? item.lastSeenAt.toString() : null))
+                        item.lastSeenAt != null ? item.lastSeenAt.toString() : null,
+                        item.id,
+                        item.name))
                 .toList();
     }
 
@@ -499,7 +508,9 @@ public final class CostController {
             double costUsd,
             double sharePercent,
             int runCount,
-            @Nullable String lastSeenAt) {
+            @Nullable String lastSeenAt,
+            String pipelineId,
+            String pipelineName) {
     }
 
     /**

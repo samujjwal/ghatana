@@ -545,14 +545,11 @@ public class AnalyticsHandler {
                     return Promise.of(http.errorResponse(404, result.message()));
                 }
             })
-            .mapEx((result, exception) -> {
-                if (exception != null) {
-                    log.error("[DC-9] cancel query error queryId={} tenantId={} traceId={}",
-                        queryId, tenantId, traceId, exception);
-                    return http.errorResponse(500, "Internal error during query cancellation");
-                }
-                return result;
-            });
+            .whenException(exception -> {
+                log.error("[DC-9] cancel query error queryId={} tenantId={} traceId={}",
+                    queryId, tenantId, traceId, exception);
+            })
+            .then(result -> Promise.of(result), exception -> Promise.of(http.errorResponse(500, "Internal error during query cancellation")));
     }
 
     private ReportExecutionCapability reportExecutor() {

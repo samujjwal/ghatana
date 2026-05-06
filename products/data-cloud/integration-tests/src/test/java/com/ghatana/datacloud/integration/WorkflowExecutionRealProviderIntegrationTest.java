@@ -4,6 +4,7 @@
  */
 package com.ghatana.datacloud.integration;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
@@ -71,24 +72,23 @@ class WorkflowExecutionRealProviderIntegrationTest {
     void setUp() throws Exception {
         // DC-P1-003: Use durable DataCloudClient with H2 file-backed storage for real persistence
         client = new InMemoryDataCloudClient();
-        client.open().getResult();
-        
+
         // Initialize plugin manager with real workflow plugin
         pluginManager = new DataCloudRuntimePluginManager();
         pluginManager.registerWorkflowPlugin(client);
         pluginManager.registerBuiltInPlugins();
-        
+
         // Start server with real plugin
         port = findFreePort();
         httpClient = HttpClient.newBuilder().build();
-        
+
         server = new DataCloudHttpServer(client, port)
             .withPluginManager(pluginManager)
             .withDeploymentMode("local");
         server.start();
         waitForServerReady(port);
         waitForWorkflowCapability();
-        
+
         // Create a test pipeline
         createTestPipeline();
     }
@@ -99,11 +99,11 @@ class WorkflowExecutionRealProviderIntegrationTest {
             server.stop();
         }
         if (pluginManager != null) {
-            pluginManager.shutdown();
+            pluginManager.close();
         }
         if (client != null) {
             try {
-                client.close().getResult();
+                client.close();
             } catch (Exception e) {
                 System.out.println("Error closing durable client: " + e.getMessage());
             }
@@ -120,7 +120,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
         );
         
         assertThat(executeResp.statusCode()).isEqualTo(200);
-        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), Map.class);
+        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), new TypeReference<Map<String, Object>>() {});
         String executionId = (String) executeBody.get("executionId");
         assertThat(executionId).isNotNull();
         
@@ -129,7 +129,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
         HttpResponse<String> getResp = get("/api/v1/pipelines/" + PIPELINE_ID + "/executions/" + executionId);
         
         assertThat(getResp.statusCode()).isEqualTo(200);
-        Map<String, Object> getBody = mapper.readValue(getResp.body(), Map.class);
+        Map<String, Object> getBody = mapper.readValue(getResp.body(), new TypeReference<Map<String, Object>>() {});
         assertThat(getBody.get("id")).isEqualTo(executionId);
         assertThat(getBody.get("status")).isEqualTo("COMPLETED");
         assertThat(getBody.get("tenantId")).isEqualTo(TENANT_ID);
@@ -145,7 +145,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
             Map.of("testParam", "testValue")
         );
         
-        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), Map.class);
+        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), new TypeReference<Map<String, Object>>() {});
         String executionId = (String) executeBody.get("executionId");
         
         // Retrieve logs from real storage
@@ -153,7 +153,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
         HttpResponse<String> logsResp = get("/api/v1/pipelines/" + PIPELINE_ID + "/executions/" + executionId + "/logs");
         
         assertThat(logsResp.statusCode()).isEqualTo(200);
-        Map<String, Object> logsBody = mapper.readValue(logsResp.body(), Map.class);
+        Map<String, Object> logsBody = mapper.readValue(logsResp.body(), new TypeReference<Map<String, Object>>() {});
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> logs = (List<Map<String, Object>>) logsBody.get("logs");
         assertThat(logs).isNotEmpty();
@@ -174,7 +174,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
             Map.of("testParam", "testValue")
         );
         
-        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), Map.class);
+        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), new TypeReference<Map<String, Object>>() {});
         String executionId = (String) executeBody.get("executionId");
         
         // Create checkpoint
@@ -184,14 +184,14 @@ class WorkflowExecutionRealProviderIntegrationTest {
         );
         
         assertThat(checkpointResp.statusCode()).isEqualTo(200);
-        Map<String, Object> checkpointBody = mapper.readValue(checkpointResp.body(), Map.class);
+        Map<String, Object> checkpointBody = mapper.readValue(checkpointResp.body(), new TypeReference<Map<String, Object>>() {});
         String checkpointId = (String) checkpointBody.get("checkpointId");
         assertThat(checkpointId).isNotNull();
         
         // Verify checkpoint exists before restart
         HttpResponse<String> listResp = get("/api/v1/executions/" + executionId + "/checkpoints");
         assertThat(listResp.statusCode()).isEqualTo(200);
-        Map<String, Object> listBody = mapper.readValue(listResp.body(), Map.class);
+        Map<String, Object> listBody = mapper.readValue(listResp.body(), new TypeReference<Map<String, Object>>() {});
         assertThat(((Number) listBody.get("count")).intValue()).isGreaterThan(0);
         
         // Restart server
@@ -209,7 +209,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
         // Verify checkpoint survives restart
         HttpResponse<String> listAfterRestartResp = get("/api/v1/executions/" + executionId + "/checkpoints");
         assertThat(listAfterRestartResp.statusCode()).isEqualTo(200);
-        Map<String, Object> listAfterRestartBody = mapper.readValue(listAfterRestartResp.body(), Map.class);
+        Map<String, Object> listAfterRestartBody = mapper.readValue(listAfterRestartResp.body(), new TypeReference<Map<String, Object>>() {});
         assertThat(((Number) listAfterRestartBody.get("count")).intValue()).isGreaterThan(0);
         
         @SuppressWarnings("unchecked")
@@ -226,7 +226,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
             Map.of("testParam", "testValue")
         );
         
-        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), Map.class);
+        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), new TypeReference<Map<String, Object>>() {});
         String executionId = (String) executeBody.get("executionId");
         String originalStartedAt = (String) executeBody.get("startedAt");
         
@@ -247,7 +247,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
         // Verify snapshot survives restart
         HttpResponse<String> getResp = get("/api/v1/pipelines/" + PIPELINE_ID + "/executions/" + executionId);
         assertThat(getResp.statusCode()).isEqualTo(200);
-        Map<String, Object> getBody = mapper.readValue(getResp.body(), Map.class);
+        Map<String, Object> getBody = mapper.readValue(getResp.body(), new TypeReference<Map<String, Object>>() {});
         assertThat(getBody.get("id")).isEqualTo(executionId);
         assertThat(getBody.get("startedAt")).isEqualTo(originalStartedAt);
         assertThat(getBody.get("status")).isEqualTo("COMPLETED");
@@ -262,14 +262,14 @@ class WorkflowExecutionRealProviderIntegrationTest {
             Map.of("testParam", "testValue")
         );
         
-        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), Map.class);
+        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), new TypeReference<Map<String, Object>>() {});
         String executionId = (String) executeBody.get("executionId");
         
         Thread.sleep(100);
         
         // Get logs before restart
         HttpResponse<String> logsBeforeResp = get("/api/v1/pipelines/" + PIPELINE_ID + "/executions/" + executionId + "/logs");
-        Map<String, Object> logsBeforeBody = mapper.readValue(logsBeforeResp.body(), Map.class);
+        Map<String, Object> logsBeforeBody = mapper.readValue(logsBeforeResp.body(), new TypeReference<Map<String, Object>>() {});
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> logsBefore = (List<Map<String, Object>>) logsBeforeBody.get("logs");
         int logCountBefore = logsBefore.size();
@@ -287,7 +287,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
         
         // Verify logs survive restart
         HttpResponse<String> logsAfterResp = get("/api/v1/pipelines/" + PIPELINE_ID + "/executions/" + executionId + "/logs");
-        Map<String, Object> logsAfterBody = mapper.readValue(logsAfterResp.body(), Map.class);
+        Map<String, Object> logsAfterBody = mapper.readValue(logsAfterResp.body(), new TypeReference<Map<String, Object>>() {});
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> logsAfter = (List<Map<String, Object>>) logsAfterBody.get("logs");
         assertThat(logsAfter.size()).isEqualTo(logCountBefore);
@@ -302,7 +302,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
             Map.of("testParam", "testValue")
         );
         
-        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), Map.class);
+        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), new TypeReference<Map<String, Object>>() {});
         String originalExecutionId = (String) executeBody.get("executionId");
         
         Thread.sleep(100);
@@ -311,7 +311,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
         HttpResponse<String> retryResp = postEmpty("/api/v1/executions/" + originalExecutionId + "/retry");
         
         assertThat(retryResp.statusCode()).isEqualTo(200);
-        Map<String, Object> retryBody = mapper.readValue(retryResp.body(), Map.class);
+        Map<String, Object> retryBody = mapper.readValue(retryResp.body(), new TypeReference<Map<String, Object>>() {});
         String newExecutionId = (String) retryBody.get("executionId");
         assertThat(newExecutionId).isNotNull();
         assertThat(newExecutionId).isNotEqualTo(originalExecutionId);
@@ -319,7 +319,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
         // Verify both snapshots exist
         Thread.sleep(100);
         HttpResponse<String> listResp = get("/api/v1/pipelines/" + PIPELINE_ID + "/executions");
-        Map<String, Object> listBody = mapper.readValue(listResp.body(), Map.class);
+        Map<String, Object> listBody = mapper.readValue(listResp.body(), new TypeReference<Map<String, Object>>() {});
         assertThat(((Number) listBody.get("count")).intValue()).isGreaterThanOrEqualTo(2);
     }
 
@@ -332,7 +332,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
             Map.of("testParam", "testValue")
         );
         
-        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), Map.class);
+        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), new TypeReference<Map<String, Object>>() {});
         String executionId = (String) executeBody.get("executionId");
         
         Thread.sleep(100);
@@ -341,13 +341,13 @@ class WorkflowExecutionRealProviderIntegrationTest {
         HttpResponse<String> cancelResp = postEmpty("/api/v1/executions/" + executionId + "/cancel");
         
         assertThat(cancelResp.statusCode()).isEqualTo(200);
-        Map<String, Object> cancelBody = mapper.readValue(cancelResp.body(), Map.class);
+        Map<String, Object> cancelBody = mapper.readValue(cancelResp.body(), new TypeReference<Map<String, Object>>() {});
         assertThat(cancelBody.get("status")).isIn("COMPLETED", "CANCELLED");
         
         // Verify persisted snapshot status matches cancel response status.
         Thread.sleep(100);
         HttpResponse<String> getResp = get("/api/v1/pipelines/" + PIPELINE_ID + "/executions/" + executionId);
-        Map<String, Object> getBody = mapper.readValue(getResp.body(), Map.class);
+        Map<String, Object> getBody = mapper.readValue(getResp.body(), new TypeReference<Map<String, Object>>() {});
         assertThat(getBody.get("status")).isEqualTo(cancelBody.get("status"));
     }
 
@@ -360,7 +360,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
             Map.of("testParam", "testValue", "enableRollback", "true")
         );
         
-        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), Map.class);
+        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), new TypeReference<Map<String, Object>>() {});
         String executionId = (String) executeBody.get("executionId");
         
         Thread.sleep(100);
@@ -369,7 +369,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
         HttpResponse<String> rollbackResp = postEmpty("/api/v1/executions/" + executionId + "/rollback");
         
         assertThat(rollbackResp.statusCode()).isEqualTo(200);
-        Map<String, Object> rollbackBody = mapper.readValue(rollbackResp.body(), Map.class);
+        Map<String, Object> rollbackBody = mapper.readValue(rollbackResp.body(), new TypeReference<Map<String, Object>>() {});
         String rollbackExecutionId = (String) rollbackBody.get("executionId");
         assertThat(rollbackExecutionId).isNotNull();
         assertThat(rollbackExecutionId).isNotEqualTo(executionId);
@@ -377,7 +377,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
         // Verify rollback execution snapshot persisted
         Thread.sleep(100);
         HttpResponse<String> rollbackGetResp = get("/api/v1/pipelines/" + PIPELINE_ID + "/executions/" + rollbackExecutionId);
-        Map<String, Object> rollbackGetBody = mapper.readValue(rollbackGetResp.body(), Map.class);
+        Map<String, Object> rollbackGetBody = mapper.readValue(rollbackGetResp.body(), new TypeReference<Map<String, Object>>() {});
         assertThat(rollbackGetBody.get("id")).isEqualTo(rollbackExecutionId);
         assertThat(rollbackGetBody.get("status")).isIn("COMPLETED", "ROLLED_BACK");
     }
@@ -391,7 +391,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
             Map.of("testParam", "testValue", "shouldFail", "true")
         );
         
-        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), Map.class);
+        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), new TypeReference<Map<String, Object>>() {});
         String executionId = (String) executeBody.get("executionId");
         
         // Wait for failure to be persisted
@@ -399,7 +399,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
         
         // Verify failure state persisted
         HttpResponse<String> getResp = get("/api/v1/pipelines/" + PIPELINE_ID + "/executions/" + executionId);
-        Map<String, Object> getBody = mapper.readValue(getResp.body(), Map.class);
+        Map<String, Object> getBody = mapper.readValue(getResp.body(), new TypeReference<Map<String, Object>>() {});
         assertThat(getBody.get("status")).isEqualTo("FAILED");
         assertThat(getBody.get("error")).isNotNull();
     }
@@ -413,7 +413,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
             Map.of("testParam", "testValue")
         );
         
-        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), Map.class);
+        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), new TypeReference<Map<String, Object>>() {});
         String executionId = (String) executeBody.get("executionId");
         
         Thread.sleep(100);
@@ -422,7 +422,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
         HttpResponse<String> auditResp = get("/api/v1/audit/events?entityId=" + executionId);
         
         assertThat(auditResp.statusCode()).isEqualTo(200);
-        Map<String, Object> auditBody = mapper.readValue(auditResp.body(), Map.class);
+        Map<String, Object> auditBody = mapper.readValue(auditResp.body(), new TypeReference<Map<String, Object>>() {});
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> events = (List<Map<String, Object>>) auditBody.get("events");
         assertThat(events).isNotEmpty();
@@ -530,7 +530,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
         );
         assertThat(executeResp.statusCode()).isEqualTo(200);
         
-        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), Map.class);
+        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), new TypeReference<Map<String, Object>>() {});
         String executionId = (String) executeBody.get("executionId");
         assertThat(executionId).isNotNull();
 
@@ -538,7 +538,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
         HttpResponse<String> statusResp = get("/api/v1/workflow-executions/" + executionId);
         assertThat(statusResp.statusCode()).isEqualTo(200);
         
-        Map<String, Object> statusBody = mapper.readValue(statusResp.body(), Map.class);
+        Map<String, Object> statusBody = mapper.readValue(statusResp.body(), new TypeReference<Map<String, Object>>() {});
         assertThat(statusBody.get("status")).isIn("RUNNING", "COMPLETED");
 
         // Stop server
@@ -556,7 +556,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
         HttpResponse<String> statusAfterRestart = get("/api/v1/workflow-executions/" + executionId);
         assertThat(statusAfterRestart.statusCode()).isEqualTo(200);
         
-        Map<String, Object> statusAfterRestartBody = mapper.readValue(statusAfterRestart.body(), Map.class);
+        Map<String, Object> statusAfterRestartBody = mapper.readValue(statusAfterRestart.body(), new TypeReference<Map<String, Object>>() {});
         assertThat(statusAfterRestartBody.get("executionId")).isEqualTo(executionId);
         assertThat(statusAfterRestartBody.get("pipelineId")).isEqualTo(PIPELINE_ID);
     }
@@ -571,7 +571,7 @@ class WorkflowExecutionRealProviderIntegrationTest {
         );
         assertThat(executeResp.statusCode()).isEqualTo(200);
         
-        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), Map.class);
+        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), new TypeReference<Map<String, Object>>() {});
         String executionId = (String) executeBody.get("executionId");
 
         // Wait for checkpoint to be created
@@ -581,7 +581,8 @@ class WorkflowExecutionRealProviderIntegrationTest {
         HttpResponse<String> checkpointResp = get("/api/v1/workflow-executions/" + executionId + "/checkpoints");
         assertThat(checkpointResp.statusCode()).isEqualTo(200);
         
-        Map<String, Object> checkpointBody = mapper.readValue(checkpointResp.body(), Map.class);
+        Map<String, Object> checkpointBody = mapper.readValue(checkpointResp.body(), new TypeReference<Map<String, Object>>() {});
+        @SuppressWarnings("unchecked")
         List<Map<String, Object>> checkpoints = (List<Map<String, Object>>) checkpointBody.get("checkpoints");
         int checkpointCountBefore = checkpoints != null ? checkpoints.size() : 0;
 
@@ -597,7 +598,8 @@ class WorkflowExecutionRealProviderIntegrationTest {
         HttpResponse<String> checkpointAfterRestart = get("/api/v1/workflow-executions/" + executionId + "/checkpoints");
         assertThat(checkpointAfterRestart.statusCode()).isEqualTo(200);
         
-        Map<String, Object> checkpointAfterBody = mapper.readValue(checkpointAfterRestart.body(), Map.class);
+        Map<String, Object> checkpointAfterBody = mapper.readValue(checkpointAfterRestart.body(), new TypeReference<Map<String, Object>>() {});
+        @SuppressWarnings("unchecked")
         List<Map<String, Object>> checkpointsAfter = (List<Map<String, Object>>) checkpointAfterBody.get("checkpoints");
         int checkpointCountAfter = checkpointsAfter != null ? checkpointsAfter.size() : 0;
         

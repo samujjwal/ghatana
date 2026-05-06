@@ -1366,10 +1366,10 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
                 // Token must be stored as hash, never as plaintext
                 String tokenHash = (String) event.getDetail("confirmationTokenHash");
                 String expectedHash = sha256Hex(confirmationToken);
-                return tokenHash != null
-                    && !confirmationToken.equals(tokenHash)
-                    && expectedHash != null
-                    && expectedHash.equals(tokenHash);
+                if (tokenHash == null || expectedHash == null) {
+                    return false;
+                }
+                return !tokenHash.equals(confirmationToken) && expectedHash.equals(tokenHash);
             }));
         }
     }

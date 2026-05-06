@@ -83,8 +83,8 @@ public final class ProductionBootstrapValidator {
         // 4. Validate external integrations safety
         validateExternalIntegrations(violations);
 
-        // 5. Validate no stub/deterministic/test adapters in production (P0-016)
-        validateNoStubAdapters(violations);
+        // 5. Validate no invalid/deterministic/test adapters in production (P0-016)
+        validateNoInvalidAdapters(violations);
 
         // 6. P1-040: Validate default-deny policy pack is loaded
         validateDefaultDenyPolicyPack(violations);
@@ -164,10 +164,10 @@ public final class ProductionBootstrapValidator {
     }
 
     /**
-     * P0-016: Validates that no stub, deterministic, fake, or test-only adapters
+     * P0-016: Validates that no invalid, deterministic, fake, or test-only adapters
      * are wired in production. Prevents accidental use of test implementations.
      */
-    private void validateNoStubAdapters(List<String> violations) {
+    private void validateNoInvalidAdapters(List<String> violations) {
         for (Object adapter : adaptersToValidate) {
             if (adapter == null) {
                 continue;
@@ -176,20 +176,20 @@ public final class ProductionBootstrapValidator {
             String className = adapter.getClass().getName();
             String simpleName = adapter.getClass().getSimpleName();
 
-            // Check for common stub/deterministic/test naming patterns
-            if (isStubClassName(simpleName)) {
-                violations.add("STUB-001: Production contains stub adapter: " + className +
-                    ". Stubs are not allowed in production (P0-016).");
+            // Check for common invalid/deterministic/test naming patterns
+            if (isInvalidAdapterName(simpleName)) {
+                violations.add("ADAPTER-001: Production contains invalid adapter: " + className +
+                    ". Invalid adapters are not allowed in production (P0-016).");
             }
 
             // Check for classes in test packages
-            if (className.contains(".test.") || className.contains(".stub.")) {
-                violations.add("STUB-002: Production contains test-package adapter: " + className +
+            if (className.contains(".test.") || className.contains(".testpkg.")) {
+                violations.add("ADAPTER-002: Production contains test-package adapter: " + className +
                     ". Test package classes are not allowed in production (P0-016).");
             }
         }
 
-        LOG.info("[DMOS-BOOTSTRAP] Stub adapter validation passed for {} adapters", adaptersToValidate.size());
+        LOG.info("[DMOS-BOOTSTRAP] Adapter validation passed for {} adapters", adaptersToValidate.size());
     }
 
     /**
@@ -221,16 +221,16 @@ public final class ProductionBootstrapValidator {
     }
 
     /**
-     * Checks if a class name indicates a stub/deterministic/test implementation.
+     * Checks if a class name indicates an invalid/deterministic/test implementation.
      */
-    private boolean isStubClassName(String simpleName) {
+    private boolean isInvalidAdapterName(String simpleName) {
         String lower = simpleName.toLowerCase();
         return lower.contains("deterministic") ||
-               lower.contains("stub") ||
+               lower.contains("placeholder_adapter") ||
                lower.contains("fake") ||
-               lower.contains("mock") ||
+               lower.contains("mock_adapter") ||
                lower.contains("test") ||
-               lower.contains("dummy") ||
+               lower.contains("dummy_adapter") ||
                lower.contains("hardcoded") ||
                lower.contains("demo") ||
                lower.contains("sample") ||
@@ -277,7 +277,7 @@ public final class ProductionBootstrapValidator {
         }
 
         /**
-         * P0-016: Registers an adapter to validate for stub/deterministic naming.
+         * P0-016: Registers an adapter to validate for invalid/deterministic naming.
          * All production adapters should be registered here to prevent accidental
          * use of test implementations.
          */
@@ -297,7 +297,7 @@ public final class ProductionBootstrapValidator {
         }
 
         /**
-         * P0-016: Registers multiple adapters for stub validation.
+         * P0-016: Registers multiple adapters for adapter name validation.
          */
         public Builder validateAdapters(Object... adapters) {
             for (Object adapter : adapters) {

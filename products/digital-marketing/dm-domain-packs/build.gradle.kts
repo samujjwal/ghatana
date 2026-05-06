@@ -45,12 +45,14 @@ configure<ProductPackValidationExtension> {
             "\"boundaryPolicyStoreClass\"",
             "\"pluginBindingsClass\"",
             "\"kernelCapabilitiesConsumed\"",
+            "\"policyActions\"",
             "\"pluginsConsumed\"",
             "\"bridgesConsumed\"",
             "\"domainPacksProvided\"",
             "\"uiSurfaces\"",
             "\"runtimeServices\"",
             "\"dataSensitivity\"",
+            "\"policyResources\"",
             "\"complianceRuleSets\""
         )
     )

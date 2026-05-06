@@ -38,6 +38,8 @@
 Every product manifest or domain-pack manifest must declare:
 
 - `kernelCapabilitiesConsumed`
+- `policyActions`
+- `policyResources`
 - `pluginsConsumed`
 - `bridgesConsumed`
 - `domainPacksProvided`

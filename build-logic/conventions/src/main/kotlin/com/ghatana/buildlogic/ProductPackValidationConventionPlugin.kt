@@ -36,12 +36,14 @@ class ProductPackValidationConventionPlugin : Plugin<Project> {
                 "version:",
                 "domain:",
                 "kernelCapabilitiesConsumed:",
+                "policyActions:",
                 "pluginsConsumed:",
                 "bridgesConsumed:",
                 "domainPacksProvided:",
                 "uiSurfaces:",
                 "runtimeServices:",
-                "dataSensitivity:"
+                "dataSensitivity:",
+                "policyResources:"
             )
         )
         extension.policyPackTestPatterns.convention(emptyList())

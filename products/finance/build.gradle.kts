@@ -18,7 +18,6 @@ dependencies {
     api(project(":platform-plugins:plugin-ledger"))
     api(project(":platform-plugins:plugin-fraud-detection"))
     api(project(":platform-plugins:plugin-compliance"))
-    api(project(":platform-plugins:plugin-consent"))
     api(project(":platform-plugins:plugin-risk-management"))
     api(project(":platform-plugins:plugin-audit-trail"))
     api(project(":platform:java:core"))
@@ -39,7 +38,6 @@ dependencies {
     implementation(project(":products:finance:domains:ems"))
     implementation(project(":products:finance:domains:pms"))
     implementation(project(":products:finance:domains:risk"))
-    implementation(project(":products:finance:domains:compliance"))
     implementation(project(":products:finance:domains:rules"))
     implementation(project(":products:finance:domains:corporate-actions"))
     implementation(project(":products:finance:domains:market-data"))
@@ -83,8 +81,9 @@ configure<ProductPackValidationExtension> {
     requiredManifestFields.set(
         listOf(
             "pack:", "id:", "version:", "capabilities:", "domain:",
-            "kernelCapabilitiesConsumed:", "pluginsConsumed:", "bridgesConsumed:",
-            "domainPacksProvided:", "uiSurfaces:", "runtimeServices:", "dataSensitivity:"
+            "kernelCapabilitiesConsumed:", "policyActions:", "pluginsConsumed:", "bridgesConsumed:",
+            "domainPacksProvided:", "uiSurfaces:", "runtimeServices:", "dataSensitivity:",
+            "policyResources:"
         )
     )
     policyPackTestPatterns.set(

@@ -42,6 +42,10 @@ const workspaceAliases = {
     __dirname,
     "../../../platform/typescript/platform-utils/src/index.ts",
   ),
+  "@ghatana/product-shell": path.resolve(
+    __dirname,
+    "../../../platform/typescript/product-shell/src/index.ts",
+  ),
   "@ghatana/canvas": path.resolve(
     __dirname,
     "../../../platform/typescript/canvas",

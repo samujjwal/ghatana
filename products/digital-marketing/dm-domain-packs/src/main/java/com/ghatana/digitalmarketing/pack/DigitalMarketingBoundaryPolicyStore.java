@@ -1,6 +1,8 @@
 package com.ghatana.digitalmarketing.pack;
 
 import com.ghatana.kernel.policy.BoundaryPolicyLoadContext;
+import com.ghatana.kernel.policy.BoundaryPolicyActionRegistry;
+import com.ghatana.kernel.policy.BoundaryPolicyResourceRegistry;
 import com.ghatana.kernel.policy.BoundaryPolicyRule;
 import com.ghatana.kernel.policy.BoundaryPolicyRule.Effect;
 import com.ghatana.kernel.policy.BoundaryPolicyStore;
@@ -49,6 +51,28 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
             .targetScopePrefix("digital-marketing.")
             .requiredMetadataKeys(Set.of("packVersion", "ruleCategory"))
             .build();
+    private static final BoundaryPolicyActionRegistry ACTION_REGISTRY =
+        BoundaryPolicyActionRegistry.ofDeclaredActions(Set.of(
+            "read",
+            "write",
+            "delete",
+            "export",
+            "sync",
+            "launch",
+            "pause",
+            "resume",
+            "increase",
+            "publish",
+            "execute"));
+    private static final BoundaryPolicyResourceRegistry RESOURCE_REGISTRY =
+        BoundaryPolicyResourceRegistry.ofDeclaredResources(Set.of(
+            "workspaces",
+            "contacts",
+            "audiences",
+            "campaigns",
+            "budgets",
+            "content",
+            "connectors"));
 
     /** Source scope pattern used on all DMOS rules — matches any caller within the dm scope. */
     private static final String DM_SOURCE_SCOPE = "digital-marketing.*";
@@ -77,7 +101,11 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
                     + "Only tenantId=default and region=GLOBAL are allowed; failing closed for "
                     + context);
         }
-        return ProductBoundaryPolicyPackValidator.validate(RULES, VALIDATION_PROFILE);
+        return ProductBoundaryPolicyPackValidator.validate(
+            RULES,
+            VALIDATION_PROFILE,
+            ACTION_REGISTRY,
+            RESOURCE_REGISTRY);
     }
 
     // -----------------------------------------------------------------------

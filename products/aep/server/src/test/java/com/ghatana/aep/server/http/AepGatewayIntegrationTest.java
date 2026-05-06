@@ -47,7 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern IntegrationTest
  */
 @DisplayName("AEP Gateway Integration Tests")
-@Tag("production")
+@Tag("integration")
 class AepGatewayIntegrationTest {
 
     private AepEngine engine;

@@ -4,6 +4,7 @@
  */
 package com.ghatana.datacloud.integration;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
@@ -57,7 +58,6 @@ class DataCloudOnboardingE2ETest {
     @BeforeEach
     void setUp() throws Exception {
         client = new DurableDataCloudClient();
-        client.open().getResult();
 
         DataCloudRuntimePluginManager pluginManager = new DataCloudRuntimePluginManager();
         pluginManager.registerWorkflowPlugin(client);
@@ -68,7 +68,7 @@ class DataCloudOnboardingE2ETest {
 
         server = new DataCloudHttpServer(client, port)
             .withPluginManager(pluginManager)
-            .withDeploymentMode("production");
+            .withDeploymentMode("local");
         server.start();
         waitForServerReady(port);
     }
@@ -80,7 +80,7 @@ class DataCloudOnboardingE2ETest {
         }
         if (client != null) {
             try {
-                client.close().getResult();
+                client.close();
             } catch (Exception e) {
                 // Ignore cleanup errors
             }
@@ -98,7 +98,7 @@ class DataCloudOnboardingE2ETest {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         assertThat(response.statusCode()).isEqualTo(200);
-        Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+        Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
         assertThat(responseBody).containsKey("status");
         assertThat(responseBody.get("status")).isEqualTo("UP");
     }
@@ -114,7 +114,7 @@ class DataCloudOnboardingE2ETest {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         assertThat(response.statusCode()).isEqualTo(200);
-        Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+        Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
         assertThat(responseBody).containsKey("status");
         assertThat(responseBody.get("status")).isEqualTo("READY");
     }
@@ -132,7 +132,7 @@ class DataCloudOnboardingE2ETest {
 
         assertThat(response.statusCode()).isIn(200, 503); // 503 if capabilities not configured
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("capabilities");
             assertThat(responseBody).containsKey("version");
         }
@@ -158,7 +158,7 @@ class DataCloudOnboardingE2ETest {
 
         assertThat(response.statusCode()).isIn(200, 201, 503); // 503 if collections not configured
         if (response.statusCode() == 200 || response.statusCode() == 201) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("id");
             assertThat(responseBody).containsKey("name");
             assertThat(responseBody.get("name")).isEqualTo(collectionName);
@@ -178,8 +178,9 @@ class DataCloudOnboardingE2ETest {
 
         assertThat(response.statusCode()).isIn(200, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("collections");
+            @SuppressWarnings("unchecked")
             List<Map<String, Object>> collections = (List<Map<String, Object>>) responseBody.get("collections");
             assertThat(collections).isNotNull();
         }
@@ -206,7 +207,7 @@ class DataCloudOnboardingE2ETest {
 
         assertThat(response.statusCode()).isIn(200, 201, 503);
         if (response.statusCode() == 200 || response.statusCode() == 201) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("id");
             assertThat(responseBody.get("id")).isEqualTo("entity-1");
         }
@@ -231,7 +232,7 @@ class DataCloudOnboardingE2ETest {
 
         assertThat(response.statusCode()).isIn(200, 503); // 503 if analytics not configured
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("rows");
             assertThat(responseBody).containsKey("rowCount");
             assertThat(responseBody).containsKey("executionTimeMs");
@@ -251,7 +252,7 @@ class DataCloudOnboardingE2ETest {
 
         assertThat(response.statusCode()).isIn(200, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("complianceStatus");
             assertThat(responseBody).containsKey("collectionsTotal");
             assertThat(responseBody).containsKey("generatedAt");
@@ -271,8 +272,9 @@ class DataCloudOnboardingE2ETest {
 
         assertThat(response.statusCode()).isIn(200, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("logs");
+            @SuppressWarnings("unchecked")
             List<Map<String, Object>> logs = (List<Map<String, Object>>) responseBody.get("logs");
             assertThat(logs).isNotNull();
         }
@@ -291,8 +293,9 @@ class DataCloudOnboardingE2ETest {
 
         assertThat(response.statusCode()).isIn(200, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("workflows");
+            @SuppressWarnings("unchecked")
             List<Map<String, Object>> workflows = (List<Map<String, Object>>) responseBody.get("workflows");
             assertThat(workflows).isNotNull();
         }
@@ -329,8 +332,9 @@ class DataCloudOnboardingE2ETest {
         // Should return empty list or 403/404, not tenant A's data
         assertThat(response.statusCode()).isIn(200, 403, 404, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("collections");
+            @SuppressWarnings("unchecked")
             List<Map<String, Object>> collections = (List<Map<String, Object>>) responseBody.get("collections");
             // Should not contain the collection from tenant A
             boolean hasTenantACollection = collections.stream()

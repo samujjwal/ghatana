@@ -4,6 +4,7 @@
  */
 package com.ghatana.datacloud.integration;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
@@ -58,7 +59,6 @@ class GovernancePurgeRedactionAuditTest {
     @BeforeEach
     void setUp() throws Exception {
         client = new DurableDataCloudClient();
-        client.open().getResult();
 
         DataCloudRuntimePluginManager pluginManager = new DataCloudRuntimePluginManager();
         pluginManager.registerWorkflowPlugin(client);
@@ -69,7 +69,7 @@ class GovernancePurgeRedactionAuditTest {
 
         server = new DataCloudHttpServer(client, port)
             .withPluginManager(pluginManager)
-            .withDeploymentMode("production");
+            .withDeploymentMode("local");
         server.start();
         waitForServerReady(port);
     }
@@ -81,7 +81,7 @@ class GovernancePurgeRedactionAuditTest {
         }
         if (client != null) {
             try {
-                client.close().getResult();
+                client.close();
             } catch (Exception e) {
                 // Ignore cleanup errors
             }
@@ -110,7 +110,7 @@ class GovernancePurgeRedactionAuditTest {
 
         assertThat(response.statusCode()).isIn(200, 503); // 503 if governance not configured
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("collection");
             assertThat(responseBody).containsKey("tier");
             assertThat(responseBody).containsKey("status");
@@ -141,7 +141,7 @@ class GovernancePurgeRedactionAuditTest {
 
         assertThat(response.statusCode()).isIn(200, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("collection");
             assertThat(responseBody).containsKey("entityId");
             assertThat(responseBody).containsKey("status");
@@ -169,7 +169,7 @@ class GovernancePurgeRedactionAuditTest {
 
         assertThat(response.statusCode()).isIn(200, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("dryRun");
             assertThat(responseBody).containsKey("status");
             assertThat(responseBody).containsKey("confirmationToken");
@@ -231,8 +231,9 @@ class GovernancePurgeRedactionAuditTest {
 
         assertThat(auditResponse.statusCode()).isIn(200, 503);
         if (auditResponse.statusCode() == 200) {
-            Map<String, Object> auditBody = mapper.readValue(auditResponse.body(), Map.class);
+            Map<String, Object> auditBody = mapper.readValue(auditResponse.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(auditBody).containsKey("logs");
+            @SuppressWarnings("unchecked")
             List<Map<String, Object>> logs = (List<Map<String, Object>>) auditBody.get("logs");
             // Verify at least one log entry exists
             assertThat(logs).isNotEmpty();
@@ -259,7 +260,7 @@ class GovernancePurgeRedactionAuditTest {
         assertThat(response.statusCode()).isIn(200, 403, 404, 503);
         if (response.statusCode() == 200) {
             // If governance is configured, verify the data is tenant-scoped
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("collection");
         }
     }
@@ -295,7 +296,7 @@ class GovernancePurgeRedactionAuditTest {
 
         assertThat(response.statusCode()).isIn(200, 404, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("collection");
             assertThat(responseBody).containsKey("tier");
             assertThat(responseBody).containsKey("retentionDays");
@@ -316,7 +317,7 @@ class GovernancePurgeRedactionAuditTest {
 
         assertThat(response.statusCode()).isIn(200, 503);
         if (response.statusCode() == 200) {
-            Map<String, Object> responseBody = mapper.readValue(response.body(), Map.class);
+            Map<String, Object> responseBody = mapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             assertThat(responseBody).containsKey("complianceStatus");
             assertThat(responseBody).containsKey("collectionsTotal");
             assertThat(responseBody).containsKey("collectionsClassified");

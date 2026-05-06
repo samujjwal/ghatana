@@ -23,6 +23,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -91,15 +92,15 @@ class CampaignServiceImplTest extends EventloopTestBase {
         );
 
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(null, repository, compliancePlugin, preflightProvider, DmosMetricsCollector.noop()));
+            .isThrownBy(() -> new CampaignServiceImpl(null, repository, compliancePlugin, preflightProvider, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, null, compliancePlugin, preflightProvider, DmosMetricsCollector.noop()));
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, null, compliancePlugin, preflightProvider, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, null, preflightProvider, DmosMetricsCollector.noop()));
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, null, preflightProvider, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, null, DmosMetricsCollector.noop()));
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, null, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, preflightProvider, null))
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, preflightProvider, null, killSwitchService, commandService, objectMapper))
             .withMessageContaining("metrics");
     }
 
@@ -312,6 +313,26 @@ class CampaignServiceImplTest extends EventloopTestBase {
         public Promise<Optional<Campaign>> findById(DmWorkspaceId workspaceId, String campaignId) {
             return Promise.of(Optional.ofNullable(store.get(workspaceId.getValue() + ":" + campaignId)));
         }
+
+        @Override
+        public Promise<List<Campaign>> listByWorkspace(DmWorkspaceId workspaceId, int limit, int offset) {
+            List<Campaign> results = store.entrySet().stream()
+                .filter(e -> e.getKey().startsWith(workspaceId.getValue() + ":"))
+                .map(Map.Entry::getValue)
+                .sorted(Comparator.comparing(Campaign::getCreatedAt).reversed())
+                .skip(offset)
+                .limit(limit)
+                .toList();
+            return Promise.of(results);
+        }
+
+        @Override
+        public Promise<Long> countByWorkspace(DmWorkspaceId workspaceId) {
+            long count = store.keySet().stream()
+                .filter(k -> k.startsWith(workspaceId.getValue() + ":"))
+                .count();
+            return Promise.of(count);
+        }
     }
 
     private static final class RecordingKernelAdapter implements DigitalMarketingKernelAdapter {
@@ -456,8 +477,9 @@ class CampaignServiceImplTest extends EventloopTestBase {
 
         @Override
         public Promise<Boolean> isKillSwitchActive(String tenantId, String workspaceId, String feature) {
-            String key = tenantId + ":" + workspaceId + ":" + feature;
-            return Promise.of(activeSwitches.contains(key));
+            String tenantWorkspaceKey = tenantId + ":" + workspaceId + ":" + feature;
+            String tenantOnlyKey = tenantId + ":" + feature;
+            return Promise.of(activeSwitches.contains(tenantWorkspaceKey) || activeSwitches.contains(tenantOnlyKey));
         }
 
         @Override

@@ -82,8 +82,11 @@ public record AgentExecutionGrant(
     /**
      * Returns true if the given action class is permitted by this grant.
      */
-    public boolean permitsAction(@NotNull String actionClass) {
-        return allowedActionClasses.contains(actionClass);
+    public boolean permitsAction(String actionClass) {
+        if (actionClass == null) {
+            return false;
+        }
+        return allowedActionClasses.contains("*") || allowedActionClasses.contains(actionClass);
     }
 
     /**
