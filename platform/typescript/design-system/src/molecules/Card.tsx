@@ -36,6 +36,7 @@ export interface CardHeaderProps extends Omit<React.HTMLAttributes<HTMLDivElemen
   subheader?: React.ReactNode;
   action?: React.ReactNode;
   avatar?: React.ReactNode;
+  titleLevel?: 1 | 2 | 3 | 4 | 5 | 6;
 }
 
 export interface CardContentProps extends BoxProps { }
@@ -284,7 +285,9 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>((props, ref) => 
 Card.displayName = 'Card';
 
 // CardHeader component (exported for consumer composition)
-export const CardHeader: React.FC<CardHeaderProps> = ({ title, subheader, action, avatar, className, style, ...rest }) => {
+export const CardHeader: React.FC<CardHeaderProps> = ({ title, subheader, action, avatar, titleLevel = 2, className, style, ...rest }) => {
+  const TitleElement = `h${titleLevel}` as keyof React.JSX.IntrinsicElements;
+
   return (
     <div
       className={cn('gh-card__header', className)}
@@ -293,7 +296,14 @@ export const CardHeader: React.FC<CardHeaderProps> = ({ title, subheader, action
     >
       <div style={{ flex: '1 1 auto' }}>
         {avatar ? <div style={{ display: 'inline-flex', marginRight: '8px' }}>{avatar}</div> : null}
-        {title ? <div className="gh-card__title" style={{ fontSize: fontSize.lg, fontWeight: fontWeight.semibold }}>{title}</div> : null}
+        {title ? (
+          <TitleElement
+            className="gh-card__title"
+            style={{ margin: 0, fontSize: fontSize.lg, fontWeight: fontWeight.semibold }}
+          >
+            {title}
+          </TitleElement>
+        ) : null}
         {subheader ? <div className="gh-card__subtitle" style={{ fontSize: fontSize.sm }}>{subheader}</div> : null}
       </div>
       {action ? <div className="gh-card__actions" style={{ display: 'inline-flex', gap: '8px' }}>{action}</div> : null}

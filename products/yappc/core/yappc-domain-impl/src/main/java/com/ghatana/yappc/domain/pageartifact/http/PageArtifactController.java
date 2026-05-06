@@ -46,7 +46,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.Optional;
 import java.util.List;
-import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -81,22 +80,18 @@ public final class PageArtifactController {
 
     /**
      * Creates a new PageArtifactController.
+     * <p>
+     * The supplied {@code repository} must also implement
+     * {@link PageArtifactAtomicMutationRepository} so that save and audit events
+     * commit together; non-atomic paths are not supported.
      *
-     * @param repository The page artifact repository
-     * @param objectMapper JSON object mapper
-     * @param authorizationService Authorization service for permission checks
-     * @param metrics Metrics collector for observability
+     * @param repository               Page artifact repository (must also implement PageArtifactAtomicMutationRepository)
+     * @param auditRepository          Audit trail repository
+     * @param objectMapper             JSON object mapper
+     * @param authorizationService     Authorization service for permission checks
+     * @param metrics                  Metrics collector for observability
+     * @param resourceScopeAuthorizer  DB-backed workspace/project scope authorizer
      */
-    public PageArtifactController(
-            @NotNull PageArtifactRepository repository,
-            @NotNull PageArtifactAuditRepository auditRepository,
-            @NotNull ObjectMapper objectMapper,
-            @NotNull SyncAuthorizationService authorizationService,
-            @NotNull MetricsCollector metrics
-    ) {
-        this(repository, auditRepository, objectMapper, authorizationService, metrics, PageArtifactResourceScopeAuthorizer.allowAll());
-    }
-
     public PageArtifactController(
             @NotNull PageArtifactRepository repository,
             @NotNull PageArtifactAuditRepository auditRepository,
@@ -105,6 +100,12 @@ public final class PageArtifactController {
             @NotNull MetricsCollector metrics,
             @NotNull PageArtifactResourceScopeAuthorizer resourceScopeAuthorizer
     ) {
+        if (!(repository instanceof PageArtifactAtomicMutationRepository)) {
+            throw new IllegalArgumentException(
+                "PageArtifactController requires a PageArtifactAtomicMutationRepository implementation. "
+                + "Non-atomic save paths are not supported: " + repository.getClass().getName()
+            );
+        }
         this.repository = repository;
         this.auditRepository = auditRepository;
         this.objectMapper = objectMapper;
@@ -151,11 +152,6 @@ public final class PageArtifactController {
         if (projectId == null || projectId.isBlank()) {
             return Promise.of(badRequest("Missing required X-Project-ID header"));
         }
-        try {
-            enforceResourceScope(request, workspaceId, projectId);
-        } catch (AccessDeniedException e) {
-            return Promise.of(forbidden(e.getMessage()));
-        }
 
         // Extract artifactId from path
         Optional<String> artifactIdOpt = extractArtifactId(request.getPath());
@@ -166,7 +162,7 @@ public final class PageArtifactController {
 
         return authorizeResourceScope(userId, tenantId, workspaceId, projectId, artifactId, PageArtifactPermission.EDIT)
             .then(() -> repository.load(tenantId, workspaceId, projectId, artifactId))
-            .then(existingDocument -> request.loadBody().then(loadedBody -> {
+            .then($ -> request.loadBody().then(loadedBody -> {
             try {
                 byte[] body = loadedBody.asArray();
                 PageArtifactDocument document = objectMapper.readValue(body, PageArtifactDocument.class);
@@ -184,7 +180,6 @@ public final class PageArtifactController {
                     LOG.warn("Document validation failed for artifact {}: {}", artifactId, validation.getSummary());
                     metrics.incrementCounter("yappc.page_artifact.validation_failed",
                             "tenant_id", tenantId,
-                            "artifact_id", artifactId,
                             "error_count", String.valueOf(validation.errors().size()));
                     recordAuditEvent(
                         "validation-failed",
@@ -203,7 +198,6 @@ public final class PageArtifactController {
                     LOG.info("Document validation warnings for artifact {}: {}", artifactId, String.join(", ", validation.warnings()));
                     metrics.incrementCounter("yappc.page_artifact.validation_warnings",
                             "tenant_id", tenantId,
-                            "artifact_id", artifactId,
                             "warning_count", String.valueOf(validation.warnings().size()));
                 }
 
@@ -219,63 +213,35 @@ public final class PageArtifactController {
                 String auditActor = userId == null || userId.isBlank() ? "system" : userId;
                 String auditSummary = "Document persisted";
 
-                Promise<PageArtifactDocument> savePromise;
-                if (repository instanceof PageArtifactAtomicMutationRepository atomicRepository) {
-                    savePromise = atomicRepository.saveWithAudit(
-                        tenantId,
-                        workspaceId,
-                        projectId,
-                        document,
-                        "saved",
-                        auditActor,
-                        auditSummary
-                    );
-                } else {
-                    savePromise = repository.save(tenantId, workspaceId, projectId, document);
-                }
+                // Always use the atomic path — constructor guarantees PageArtifactAtomicMutationRepository
+                PageArtifactAtomicMutationRepository atomicRepository =
+                    (PageArtifactAtomicMutationRepository) repository;
+                Promise<PageArtifactDocument> savePromise = atomicRepository.saveWithAudit(
+                    tenantId,
+                    workspaceId,
+                    projectId,
+                    document,
+                    "saved",
+                    auditActor,
+                    auditSummary
+                );
 
                 return savePromise
                         .then(persistedDocument -> {
                             metrics.incrementCounter("yappc.page_artifact.saved",
                                     "tenant_id", tenantId,
-                                    "artifact_id", artifactId,
                                     "sync_status", persistedDocument.syncStatus(),
                                     "trust_level", persistedDocument.trustLevel());
-                            HttpResponse response = ResponseBuilder.ok()
+                            LOG.info("Saved page artifact: tenant={} workspace={} project={} artifactId={} version={}",
+                                    tenantId, workspaceId, projectId, artifactId, persistedDocument.documentId());
+                            return Promise.of(ResponseBuilder.ok()
                                 .header("ETag", persistedDocument.documentId())
                                 .json(Map.of(
                                         "artifactId", artifactId,
                                         "documentId", persistedDocument.documentId(),
                                         "syncStatus", persistedDocument.syncStatus()
                                 ))
-                                .build();
-                            if (repository instanceof PageArtifactAtomicMutationRepository) {
-                                return Promise.of(response);
-                            }
-                            return recordAuditEvent(
-                                    "saved",
-                                    tenantId,
-                                    workspaceId,
-                                    projectId,
-                                    artifactId,
-                                    userId,
-                                    "Document persisted with version " + persistedDocument.documentId()
-                        ).then(
-                            $ -> Promise.of(response),
-                            auditEx -> rollbackPersistedDocument(
-                                tenantId,
-                                workspaceId,
-                                projectId,
-                                artifactId,
-                                existingDocument,
-                                persistedDocument
-                            ).map($ -> ResponseBuilder.internalServerError()
-                                .json(Map.of(
-                                    "error", "Internal Server Error",
-                                    "message", "Failed to persist audit trail for page artifact mutation"
-                                ))
-                                .build())
-                        );
+                                .build());
                         })
                     .then(
                         response -> Promise.of(response),
@@ -284,9 +250,7 @@ public final class PageArtifactController {
                             PageArtifactConflictException conflict = (PageArtifactConflictException) ex;
                             LOG.warn("Conflict saving artifact {}: remote version={}", artifactId, conflict.remoteVersion());
                             metrics.incrementCounter("yappc.page_artifact.conflict",
-                                    "tenant_id", tenantId,
-                                    "artifact_id", artifactId,
-                                    "remote_version", conflict.remoteVersion());
+                                    "tenant_id", tenantId);
                                 recordAuditEvent(
                                     "conflict",
                                     tenantId,
@@ -307,7 +271,7 @@ public final class PageArtifactController {
                             }
                             LOG.error("Failed to save page artifact", ex);
                             metrics.recordError("yappc.page_artifact.save_failed", toException(ex),
-                                    Map.of("tenant_id", tenantId, "artifact_id", artifactId));
+                                    Map.of("tenant_id", tenantId));
                             return Promise.of(ResponseBuilder.internalServerError()
                                 .json(Map.of(
                                     "error", "Internal Server Error",
@@ -367,11 +331,6 @@ public final class PageArtifactController {
         if (projectId == null || projectId.isBlank()) {
             return Promise.of(badRequest("Missing required X-Project-ID header"));
         }
-        try {
-            enforceResourceScope(request, workspaceId, projectId);
-        } catch (AccessDeniedException e) {
-            return Promise.of(forbidden(e.getMessage()));
-        }
 
         // Extract artifactId from path
         Optional<String> artifactIdOpt = extractArtifactId(request.getPath());
@@ -388,8 +347,7 @@ public final class PageArtifactController {
                 .then(document -> {
                     if (document == null) {
                         metrics.incrementCounter("yappc.page_artifact.not_found",
-                                "tenant_id", tenantId,
-                                "artifact_id", artifactId);
+                                "tenant_id", tenantId);
                         return Promise.of(ResponseBuilder.notFound()
                                 .json(Map.of(
                                         "error", "Not Found",
@@ -400,7 +358,6 @@ public final class PageArtifactController {
 
                     metrics.incrementCounter("yappc.page_artifact.loaded",
                             "tenant_id", tenantId,
-                            "artifact_id", artifactId,
                             "sync_status", document.syncStatus(),
                             "trust_level", document.trustLevel());
                     HttpResponse response = ResponseBuilder.ok()
@@ -425,7 +382,7 @@ public final class PageArtifactController {
                         }
                         LOG.error("Failed to load page artifact", ex);
                         metrics.recordError("yappc.page_artifact.load_failed", toException(ex),
-                                Map.of("tenant_id", tenantId, "artifact_id", artifactId, "error", ex.getMessage()));
+                                Map.of("tenant_id", tenantId));
                         return Promise.of(ResponseBuilder.internalServerError()
                                 .json(Map.of(
                                         "error", "Internal Server Error",
@@ -496,34 +453,6 @@ public final class PageArtifactController {
                 : new RuntimeException(throwable);
     }
 
-    private void enforceResourceScope(
-            @NotNull HttpRequest request,
-            @NotNull String workspaceId,
-            @NotNull String projectId
-    ) {
-        enforceScopeHeader(request.getHeader(HttpHeaders.of("X-Authorized-Workspace-IDs")), workspaceId, "workspace");
-        enforceScopeHeader(request.getHeader(HttpHeaders.of("X-Authorized-Project-IDs")), projectId, "project");
-    }
-
-    private void enforceScopeHeader(@Nullable String allowedValuesHeader, @NotNull String requestedId, @NotNull String resourceType) {
-        if (allowedValuesHeader == null || allowedValuesHeader.isBlank()) {
-            throw new AccessDeniedException(
-                "Missing authorized " + resourceType + " scope header"
-            );
-        }
-
-        boolean allowed = Arrays.stream(allowedValuesHeader.split(","))
-                .map(String::trim)
-                .filter(value -> !value.isEmpty())
-                .anyMatch(requestedId::equals);
-
-        if (!allowed) {
-            throw new AccessDeniedException(
-                    "User is not authorized for requested " + resourceType + ": " + requestedId
-            );
-        }
-    }
-
     private Promise<Void> authorizeResourceScope(
             @Nullable String userId,
             @NotNull String tenantId,
@@ -569,49 +498,8 @@ public final class PageArtifactController {
                     metrics.recordError("yappc.page_artifact.audit_write_failed", toException(ex),
                         Map.of(
                             "tenant_id", tenantId,
-                            "workspace_id", workspaceId,
-                            "project_id", projectId,
-                            "artifact_id", artifactId,
                             "action", action
                         ));
                 });
     }
-
-                private Promise<Void> rollbackPersistedDocument(
-                    @NotNull String tenantId,
-                    @NotNull String workspaceId,
-                    @NotNull String projectId,
-                    @NotNull String artifactId,
-                    @Nullable PageArtifactDocument priorDocument,
-                    @NotNull PageArtifactDocument persistedDocument
-                ) {
-                LOG.error(
-                    "Audit write failed after mutation. Rolling back page artifact state: tenant={} workspace={} project={} artifact={} persistedVersion={}",
-                    tenantId,
-                    workspaceId,
-                    projectId,
-                    artifactId,
-                    persistedDocument.documentId()
-                );
-
-                Promise<Void> rollbackPromise;
-                if (priorDocument == null) {
-                    rollbackPromise = repository.delete(tenantId, workspaceId, projectId, artifactId);
-                } else {
-                    rollbackPromise = repository.delete(tenantId, workspaceId, projectId, artifactId)
-                        .then(() -> repository.save(tenantId, workspaceId, projectId, priorDocument))
-                        .map($ -> null);
-                }
-
-                return rollbackPromise.whenException(ex -> {
-                    LOG.error("Rollback failed for page artifact mutation after audit failure", ex);
-                    metrics.recordError("yappc.page_artifact.rollback_failed", toException(ex),
-                        Map.of(
-                            "tenant_id", tenantId,
-                            "workspace_id", workspaceId,
-                            "project_id", projectId,
-                            "artifact_id", artifactId
-                        ));
-                });
-                }
 }

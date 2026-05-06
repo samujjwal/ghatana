@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 export const MultimediaTest: React.FC = () => {
     const navigation = useNavigation();
@@ -86,7 +87,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
-        backgroundColor: '#fff',
+        backgroundColor: flashitMobileTheme.background.surface,
     },
     title: {
         fontSize: 24,
@@ -98,19 +99,19 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     button: {
-        backgroundColor: '#007aff',
+        backgroundColor: flashitMobileTheme.brand.primary,
         padding: 15,
         borderRadius: 8,
         marginBottom: 10,
     },
     buttonText: {
-        color: '#fff',
+        color: flashitMobileTheme.text.inverse,
         fontSize: 16,
         textAlign: 'center',
     },
     resultsContainer: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: flashitMobileTheme.background.canvas,
         padding: 15,
         borderRadius: 8,
     },

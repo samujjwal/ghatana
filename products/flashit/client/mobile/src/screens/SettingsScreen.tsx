@@ -18,6 +18,7 @@ import { offlineQueueService } from '../services/offlineQueue';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getFlashitMobileSettingsRoutes } from '../routeManifest';
 import { mobileAtoms } from '../state/localAtoms';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 /**
  * Settings Screen
@@ -348,11 +349,11 @@ export function SettingsScreen() {
             <Ionicons
               name={(iconName ?? 'ellipse-outline') as keyof typeof Ionicons.glyphMap}
               size={22}
-              color="#333"
+              color={flashitMobileTheme.text.primary}
               style={styles.navIcon}
             />
             <Text style={styles.navLabel}>{label}</Text>
-            <Ionicons name="chevron-forward-outline" size={20} color="#999" />
+            <Ionicons name="chevron-forward-outline" size={20} color={flashitMobileTheme.brand.inactive} />
           </TouchableOpacity>
         ))}
       </View>
@@ -379,16 +380,16 @@ export function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: flashitMobileTheme.background.canvas,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.background.surface,
   },
   section: {
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.background.surface,
     marginTop: 20,
     padding: 20,
   },
@@ -396,7 +397,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 15,
-    color: '#333',
+    color: flashitMobileTheme.text.primary,
   },
   settingRow: {
     flexDirection: 'row',
@@ -412,21 +413,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 4,
-    color: '#000',
+    color: flashitMobileTheme.text.primary,
   },
   settingDescription: {
     fontSize: 14,
-    color: '#666',
+    color: flashitMobileTheme.text.secondary,
   },
   infoBox: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: flashitMobileTheme.background.muted,
     padding: 10,
     borderRadius: 8,
     marginTop: 10,
   },
   infoText: {
     fontSize: 13,
-    color: '#666',
+    color: flashitMobileTheme.text.secondary,
   },
   qualityButtons: {
     flexDirection: 'row',
@@ -437,22 +438,22 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 12,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: flashitMobileTheme.background.muted,
     alignItems: 'center',
   },
   qualityButtonActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: flashitMobileTheme.brand.primary,
   },
   qualityButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#666',
+    color: flashitMobileTheme.text.secondary,
   },
   qualityButtonTextActive: {
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
   statsBox: {
-    backgroundColor: '#f9f9f9',
+    backgroundColor: flashitMobileTheme.background.canvas,
     padding: 15,
     borderRadius: 8,
     marginBottom: 15,
@@ -460,29 +461,29 @@ const styles = StyleSheet.create({
   statsText: {
     fontSize: 14,
     marginBottom: 5,
-    color: '#333',
+    color: flashitMobileTheme.text.primary,
   },
   actionButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: flashitMobileTheme.brand.primary,
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 10,
   },
   actionButtonText: {
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     fontSize: 16,
     fontWeight: '600',
   },
   actionButtonDanger: {
-    backgroundColor: '#FF3B30',
+    backgroundColor: flashitMobileTheme.status.error,
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 10,
   },
   actionButtonTextDanger: {
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -491,7 +492,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: flashitMobileTheme.border,
   },
   navIcon: {
     marginRight: 12,
@@ -499,6 +500,6 @@ const styles = StyleSheet.create({
   navLabel: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: flashitMobileTheme.text.primary,
   },
 });

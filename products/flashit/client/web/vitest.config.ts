@@ -8,7 +8,6 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@ghatana/product-shell': path.resolve(__dirname, '../../../../platform/typescript/product-shell/src/index.ts'),
-      '@ghatana/flashit-shared': path.resolve(__dirname, '../../libs/ts/shared/src/index.ts'),
       '@flashit/shared': path.resolve(__dirname, '../../libs/ts/shared/src/index.ts'),
     },
   },

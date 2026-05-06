@@ -74,14 +74,37 @@ export const AI_ACTION = {
   completedAt: '2026-01-10T09:00:05Z',
 };
 
+export const ENABLED_CAPABILITIES = {
+  workspaceId: TEST_WORKSPACE,
+  capabilities: [
+    { key: 'dmos.campaigns', enabled: true },
+    { key: 'dmos.strategy', enabled: true },
+    { key: 'dmos.budget', enabled: true },
+    { key: 'dmos.approvals', enabled: true },
+    { key: 'dmos.ai_actions', enabled: true },
+  ],
+  lastUpdated: '2026-01-10T09:00:00Z',
+};
+
 /**
  * Mock all DMOS API routes needed for E2E tests.
  * Call this in beforeEach for tests that need authenticated state.
  */
 export async function mockDmosApi(page: Page): Promise<void> {
+  // Workspace capabilities
+  await page.route(
+    `**/v1/workspaces/${TEST_WORKSPACE}/capabilities`,
+    (route) => route.fulfill({ json: ENABLED_CAPABILITIES }),
+  );
+
   // Approval list
   await page.route(
-    `**/v1/workspaces/${TEST_WORKSPACE}/approvals/pending/${TEST_TENANT}`,
+    `**/v1/workspaces/${TEST_WORKSPACE}/approvals/pending/**`,
+    (route) => route.fulfill({ json: { items: [APPROVAL_PENDING, APPROVAL_APPROVED] } }),
+  );
+
+  await page.route(
+    `**/v1/workspaces/${TEST_WORKSPACE}/approvals/pending`,
     (route) => route.fulfill({ json: { items: [APPROVAL_PENDING, APPROVAL_APPROVED] } }),
   );
 
@@ -139,8 +162,8 @@ export async function loginAs(
   await page.goto('/login');
   await page.evaluate(
     ({ sessionId, roles }) => {
-      window.localStorage.setItem('dmos_session_id', sessionId);
-      window.localStorage.setItem('dmos_roles', JSON.stringify(roles));
+      window.sessionStorage.setItem('dmos_session_id', sessionId);
+      window.sessionStorage.setItem('dmos_roles', JSON.stringify(roles));
     },
     { sessionId, roles },
   );
@@ -149,4 +172,17 @@ export async function loginAs(
   await page.fill('[data-testid="login-tenant-id"]', tenantId);
   await page.fill('[data-testid="login-principal-id"]', principalId);
   await page.click('[data-testid="login-submit"]');
+}
+
+/**
+ * Navigate inside the already-authenticated SPA without a full document reload.
+ *
+ * DMOS intentionally keeps bearer tokens in runtime memory only; using page.goto()
+ * after login would reload the app and correctly drop that token.
+ */
+export async function navigateInApp(page: Page, path: string): Promise<void> {
+  await page.evaluate((targetPath) => {
+    window.history.pushState(null, '', targetPath);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  }, path);
 }

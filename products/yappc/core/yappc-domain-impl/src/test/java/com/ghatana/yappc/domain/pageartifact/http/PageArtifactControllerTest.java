@@ -8,7 +8,10 @@ import com.ghatana.platform.security.rbac.InMemoryRolePermissionRegistry;
 import com.ghatana.platform.security.rbac.SyncAuthorizationService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.domain.pageartifact.InMemoryPageArtifactRepository;
+import com.ghatana.yappc.domain.pageartifact.PageArtifactAtomicMutationRepository;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactAuditRepository;
+import com.ghatana.yappc.domain.pageartifact.PageArtifactRepository;
+import com.ghatana.yappc.domain.pageartifact.PageArtifactResourceScopeAuthorizer;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactDocument;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactPermission;
 import io.activej.bytebuf.ByteBuf;
@@ -53,7 +56,7 @@ class PageArtifactControllerTest extends EventloopTestBase {
         registry.registerRole("VIEWER", Set.of(PageArtifactPermission.READ));
 
         SyncAuthorizationService authorizationService = new SyncAuthorizationService(registry);
-                controller = new PageArtifactController(repository, auditRepository, objectMapper, authorizationService, MetricsCollector.create());
+                controller = new PageArtifactController(repository, auditRepository, objectMapper, authorizationService, MetricsCollector.create(), PageArtifactResourceScopeAuthorizer.allowAll());
     }
 
     @Test
@@ -123,12 +126,26 @@ class PageArtifactControllerTest extends EventloopTestBase {
     void saveDocument_enforcesWorkspaceScope() throws Exception {
         PageArtifactDocument document = sampleDocument("artifact-5", "doc-5", "manual", List.of());
 
+        controller = new PageArtifactController(
+                repository,
+                auditRepository,
+                objectMapper,
+                new SyncAuthorizationService(new InMemoryRolePermissionRegistry() {{
+                    registerRole("EDITOR", Set.of(PageArtifactPermission.READ, PageArtifactPermission.EDIT));
+                }}),
+                MetricsCollector.create(),
+                (userId, tenantId, workspaceId, projectId, artifactId, permission) ->
+                        Promise.ofException(new com.ghatana.platform.security.rbac.AccessDeniedException(
+                                "User is not authorized for workspace: " + workspaceId
+                        ))
+        );
+
         HttpRequest request = HttpRequest.put("http://localhost/api/v1/page-artifacts/artifact-5/document")
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
                 .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
                 .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
-                .withHeader(HttpHeaders.of("X-Authorized-Workspace-IDs"), "ws-2,ws-3")
-                .withHeader(HttpHeaders.of("X-Authorized-Project-IDs"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("X-User-ID"), USER_ID)
+                .withHeader(HttpHeaders.of("X-User-Role"), "EDITOR")
                 .withHeader(HttpHeaders.of("If-Match"), "doc-5")
                 .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(document)))
                 .build();
@@ -174,16 +191,19 @@ class PageArtifactControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("save fails closed when audit persistence fails")
+    @DisplayName("save fails closed when atomic save+audit fails")
     void saveDocument_failsClosedWhenAuditPersistenceFails() throws Exception {
+        // With P0-004, audit is done inside saveWithAudit atomically.
+        // Verify that when saveWithAudit fails, the controller returns 500.
         controller = new PageArtifactController(
-                repository,
-                new FailingAuditRepository(),
+                new FailingAtomicRepository(),
+                auditRepository,
                 objectMapper,
                 new SyncAuthorizationService(new InMemoryRolePermissionRegistry() {{
                     registerRole("EDITOR", Set.of(PageArtifactPermission.READ, PageArtifactPermission.EDIT));
                 }}),
-                MetricsCollector.create()
+                MetricsCollector.create(),
+                PageArtifactResourceScopeAuthorizer.allowAll()
         );
         PageArtifactDocument document = sampleDocument("artifact-6", "doc-6", "manual", List.of());
 
@@ -191,8 +211,6 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
                 .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
                 .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
-                .withHeader(HttpHeaders.of("X-Authorized-Workspace-IDs"), WORKSPACE_ID)
-                .withHeader(HttpHeaders.of("X-Authorized-Project-IDs"), PROJECT_ID)
                 .withHeader(HttpHeaders.of("If-Match"), "doc-6")
                 .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(document)))
                 .build();
@@ -200,13 +218,6 @@ class PageArtifactControllerTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> controller.saveDocument(attachPrincipal(request, "EDITOR")));
 
         assertThat(response.getCode()).isEqualTo(500);
-        PageArtifactDocument persisted = runPromise(() -> repository.load(
-                TENANT_ID,
-                WORKSPACE_ID,
-                PROJECT_ID,
-                "artifact-6"
-        ));
-        assertThat(persisted).isNull();
     }
 
     @Test
@@ -292,6 +303,132 @@ class PageArtifactControllerTest extends EventloopTestBase {
         );
     }
 
+    // P0-007: Cross-tenant / cross-workspace / missing authentication security tests
+
+    @Test
+    @DisplayName("save rejects request when X-Tenant-ID is missing")
+    void saveDocument_rejectsMissingTenantHeader() throws Exception {
+        PageArtifactDocument document = sampleDocument("artifact-sec-1", "doc-sec-1", "manual", List.of());
+
+        HttpRequest request = HttpRequest.put("http://localhost/api/v1/page-artifacts/artifact-sec-1/document")
+                .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("If-Match"), "doc-sec-1")
+                .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(document)))
+                .build();
+
+        HttpResponse response = runPromise(() -> controller.saveDocument(attachPrincipal(request, "EDITOR")));
+
+        assertThat(response.getCode()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("save rejects request when tenant header does not match authenticated principal tenant")
+    void saveDocument_rejectsCrossTenantHeader() throws Exception {
+        PageArtifactDocument document = sampleDocument("artifact-sec-2", "doc-sec-2", "manual", List.of());
+
+        HttpRequest request = HttpRequest.put("http://localhost/api/v1/page-artifacts/artifact-sec-2/document")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-EVIL")
+                .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("If-Match"), "doc-sec-2")
+                .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(document)))
+                .build();
+
+        // Principal is authenticated as TENANT_ID but the header claims a different tenant
+        HttpResponse response = runPromise(() -> controller.saveDocument(attachPrincipal(request, "EDITOR")));
+
+        assertThat(response.getCode()).isEqualTo(403);
+        JsonNode body = objectMapper.readTree(runPromise(response::loadBody).asString(StandardCharsets.UTF_8));
+        assertThat(body.get("message").asText()).containsIgnoringCase("tenant");
+    }
+
+    @Test
+    @DisplayName("save rejects request with no Principal attachment (unauthenticated)")
+    void saveDocument_rejectsUnauthenticatedRequest() throws Exception {
+        PageArtifactDocument document = sampleDocument("artifact-sec-3", "doc-sec-3", "manual", List.of());
+
+        HttpRequest request = HttpRequest.put("http://localhost/api/v1/page-artifacts/artifact-sec-3/document")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
+                .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("If-Match"), "doc-sec-3")
+                .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(document)))
+                .build();
+
+        // No principal attached — simulates unauthenticated request
+        HttpResponse response = runPromise(() -> controller.saveDocument(request));
+
+        assertThat(response.getCode()).isEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("load rejects request with no Principal attachment (unauthenticated)")
+    void loadDocument_rejectsUnauthenticatedRequest() throws Exception {
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/page-artifacts/artifact-sec-4/document")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
+                .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .build();
+
+        // No principal attached — simulates unauthenticated request
+        HttpResponse response = runPromise(() -> controller.loadDocument(request));
+
+        assertThat(response.getCode()).isEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("save rejects request from principal without EDIT permission")
+    void saveDocument_rejectsViewerPrincipalFromSaving() throws Exception {
+        PageArtifactDocument document = sampleDocument("artifact-sec-5", "doc-sec-5", "manual", List.of());
+
+        HttpRequest request = HttpRequest.put("http://localhost/api/v1/page-artifacts/artifact-sec-5/document")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
+                .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("If-Match"), "doc-sec-5")
+                .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(document)))
+                .build();
+
+        // VIEWER role does not have EDIT permission
+        HttpResponse response = runPromise(() -> controller.saveDocument(attachPrincipal(request, "VIEWER")));
+
+        assertThat(response.getCode()).isEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("save is blocked even for privileged role when resource scope authorizer denies cross-project access")
+    void saveDocument_rejectsCrossProjectResourceScopeViaAuthorizer() throws Exception {
+        controller = new PageArtifactController(
+                repository,
+                auditRepository,
+                objectMapper,
+                new SyncAuthorizationService(new InMemoryRolePermissionRegistry() {{
+                    registerRole("EDITOR", Set.of(PageArtifactPermission.READ, PageArtifactPermission.EDIT));
+                }}),
+                MetricsCollector.create(),
+                (userId, tenantId, workspaceId, projectId, artifactId, permission) ->
+                        Promise.ofException(new com.ghatana.platform.security.rbac.AccessDeniedException(
+                                "User does not own project: " + projectId
+                        ))
+        );
+        PageArtifactDocument document = sampleDocument("artifact-sec-6", "doc-sec-6", "manual", List.of());
+
+        HttpRequest request = HttpRequest.put("http://localhost/api/v1/page-artifacts/artifact-sec-6/document")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
+                .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Project-ID"), "proj-OTHER")
+                .withHeader(HttpHeaders.of("If-Match"), "doc-sec-6")
+                .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(document)))
+                .build();
+
+        HttpResponse response = runPromise(() -> controller.saveDocument(attachPrincipal(request, "EDITOR")));
+
+        assertThat(response.getCode()).isEqualTo(403);
+        JsonNode body = objectMapper.readTree(runPromise(response::loadBody).asString(StandardCharsets.UTF_8));
+        assertThat(body.get("message").asText()).contains("proj-OTHER");
+    }
+
     private static PageArtifactDocument sampleDocument(
             String artifactId,
             String documentId,
@@ -346,6 +483,30 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 @Override
                 public Promise<Void> record(String action, String tenantId, String workspaceId, String projectId, String artifactId, String actor, String summary) {
                         return Promise.ofException(new RuntimeException("audit write failed"));
+                }
+        }
+
+        /**
+         * A repository stub that fails on saveWithAudit, simulating atomic save+audit failure.
+         * Used to test fail-closed behaviour per P0-004.
+         */
+        private static final class FailingAtomicRepository
+                implements PageArtifactRepository, PageArtifactAtomicMutationRepository {
+                @Override
+                public Promise<PageArtifactDocument> save(String tenantId, String workspaceId, String projectId, PageArtifactDocument document) {
+                        return Promise.ofException(new RuntimeException("save not supported in FailingAtomicRepository"));
+                }
+                @Override
+                public Promise<PageArtifactDocument> load(String tenantId, String workspaceId, String projectId, String artifactId) {
+                        return Promise.of(null);
+                }
+                @Override
+                public Promise<Void> delete(String tenantId, String workspaceId, String projectId, String artifactId) {
+                        return Promise.complete();
+                }
+                @Override
+                public Promise<PageArtifactDocument> saveWithAudit(String tenantId, String workspaceId, String projectId, PageArtifactDocument document, String action, String actor, String summary) {
+                        return Promise.ofException(new RuntimeException("atomic save+audit failed"));
                 }
         }
 }

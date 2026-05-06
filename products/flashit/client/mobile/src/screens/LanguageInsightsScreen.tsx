@@ -16,6 +16,7 @@ import { LineChart, BarChart } from 'react-native-chart-kit';
 import { useQuery } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import { mobileAtoms } from '../state/localAtoms';
+import { flashitMobileColors, flashitMobileAlpha } from '@/styles/designTokens';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -111,12 +112,12 @@ export default function LanguageInsightsScreen() {
                     datasets: [
                         {
                             data: metrics.map(m => m.wordCount),
-                            color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
+                            color: (opacity = 1) => flashitMobileAlpha.blue(opacity),
                             strokeWidth: 2,
                         },
                         {
                             data: metrics.map(m => m.uniqueWords),
-                            color: (opacity = 1) => `rgba(34, 197, 94, ${opacity})`,
+                            color: (opacity = 1) => flashitMobileAlpha.green(opacity),
                             strokeWidth: 2,
                         },
                     ],
@@ -127,7 +128,7 @@ export default function LanguageInsightsScreen() {
                     datasets: [
                         {
                             data: metrics.map(m => m.sentimentScore * 100),
-                            color: (opacity = 1) => `rgba(251, 146, 60, ${opacity})`,
+                            color: (opacity = 1) => flashitMobileAlpha.orange(opacity),
                             strokeWidth: 2,
                         },
                     ],
@@ -139,7 +140,7 @@ export default function LanguageInsightsScreen() {
                     datasets: [
                         {
                             data: Object.values(latestMetrics.topicDistribution).map(v => v * 100),
-                            color: (opacity = 1) => `rgba(147, 51, 234, ${opacity})`,
+                            color: (opacity = 1) => flashitMobileAlpha.purple(opacity),
                         },
                     ],
                 };
@@ -198,12 +199,12 @@ export default function LanguageInsightsScreen() {
                             yAxisLabel=""
                             yAxisSuffix=""
                             chartConfig={{
-                                backgroundColor: '#ffffff',
-                                backgroundGradientFrom: '#ffffff',
-                                backgroundGradientTo: '#ffffff',
+                                backgroundColor: flashitMobileColors.whiteAlt,
+                                backgroundGradientFrom: flashitMobileColors.whiteAlt,
+                                backgroundGradientTo: flashitMobileColors.whiteAlt,
                                 decimalPlaces: 0,
-                                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                                labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                                color: (opacity = 1) => flashitMobileAlpha.black(opacity),
+                                labelColor: (opacity = 1) => flashitMobileAlpha.black(opacity),
                                 style: {
                                     borderRadius: 16,
                                 },
@@ -216,12 +217,12 @@ export default function LanguageInsightsScreen() {
                             width={screenWidth - 40}
                             height={220}
                             chartConfig={{
-                                backgroundColor: '#ffffff',
-                                backgroundGradientFrom: '#ffffff',
-                                backgroundGradientTo: '#ffffff',
+                                backgroundColor: flashitMobileColors.whiteAlt,
+                                backgroundGradientFrom: flashitMobileColors.whiteAlt,
+                                backgroundGradientTo: flashitMobileColors.whiteAlt,
                                 decimalPlaces: 0,
-                                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                                labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                                color: (opacity = 1) => flashitMobileAlpha.black(opacity),
+                                labelColor: (opacity = 1) => flashitMobileAlpha.black(opacity),
                                 style: {
                                     borderRadius: 16,
                                 },
@@ -297,24 +298,24 @@ export default function LanguageInsightsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8fafc',
+        backgroundColor: flashitMobileColors.slate50,
         padding: 20,
     },
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#1e293b',
+        color: flashitMobileColors.slate800,
         marginBottom: 20,
     },
     loadingText: {
         fontSize: 16,
-        color: '#64748b',
+        color: flashitMobileColors.slate500,
         textAlign: 'center',
         marginTop: 50,
     },
     metricSelector: {
         flexDirection: 'row',
-        backgroundColor: '#e2e8f0',
+        backgroundColor: flashitMobileColors.slate200,
         borderRadius: 12,
         padding: 4,
         marginBottom: 20,
@@ -327,22 +328,22 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     metricButtonActive: {
-        backgroundColor: '#3b82f6',
+        backgroundColor: flashitMobileColors.blue500,
     },
     metricButtonText: {
         fontSize: 14,
         fontWeight: '500',
-        color: '#64748b',
+        color: flashitMobileColors.slate500,
     },
     metricButtonTextActive: {
-        color: '#ffffff',
+        color: flashitMobileColors.whiteAlt,
     },
     chartContainer: {
-        backgroundColor: '#ffffff',
+        backgroundColor: flashitMobileColors.whiteAlt,
         borderRadius: 16,
         padding: 20,
         marginBottom: 20,
-        shadowColor: '#000',
+        shadowColor: flashitMobileColors.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
@@ -351,7 +352,7 @@ const styles = StyleSheet.create({
     chartTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#1e293b',
+        color: flashitMobileColors.slate800,
         marginBottom: 15,
     },
     chart: {
@@ -363,15 +364,15 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 20,
         fontWeight: '600',
-        color: '#1e293b',
+        color: flashitMobileColors.slate800,
         marginBottom: 15,
     },
     insightCard: {
-        backgroundColor: '#ffffff',
+        backgroundColor: flashitMobileColors.whiteAlt,
         borderRadius: 12,
         padding: 16,
         marginBottom: 12,
-        shadowColor: '#000',
+        shadowColor: flashitMobileColors.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
@@ -386,7 +387,7 @@ const styles = StyleSheet.create({
     insightTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#1e293b',
+        color: flashitMobileColors.slate800,
         flex: 1,
     },
     impactBadge: {
@@ -395,13 +396,13 @@ const styles = StyleSheet.create({
         borderRadius: 6,
     },
     impactHigh: {
-        backgroundColor: '#fef2f2',
+        backgroundColor: flashitMobileColors.red50,
     },
     impactMedium: {
-        backgroundColor: '#fefce8',
+        backgroundColor: flashitMobileColors.yellow50,
     },
     impactLow: {
-        backgroundColor: '#f0f9ff',
+        backgroundColor: flashitMobileColors.sky50,
     },
     impactText: {
         fontSize: 12,
@@ -410,12 +411,12 @@ const styles = StyleSheet.create({
     },
     insightDescription: {
         fontSize: 14,
-        color: '#64748b',
+        color: flashitMobileColors.slate500,
         marginBottom: 8,
     },
     insightDate: {
         fontSize: 12,
-        color: '#94a3b8',
+        color: flashitMobileColors.slate400,
     },
     statsContainer: {
         marginBottom: 20,
@@ -426,13 +427,13 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     statCard: {
-        backgroundColor: '#ffffff',
+        backgroundColor: flashitMobileColors.whiteAlt,
         borderRadius: 12,
         padding: 16,
         flex: 1,
         minWidth: '45%',
         alignItems: 'center',
-        shadowColor: '#000',
+        shadowColor: flashitMobileColors.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
@@ -441,12 +442,12 @@ const styles = StyleSheet.create({
     statValue: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#3b82f6',
+        color: flashitMobileColors.blue500,
         marginBottom: 4,
     },
     statLabel: {
         fontSize: 12,
-        color: '#64748b',
+        color: flashitMobileColors.slate500,
         textAlign: 'center',
     },
 });

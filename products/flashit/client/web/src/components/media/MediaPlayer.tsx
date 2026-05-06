@@ -87,9 +87,11 @@ export function AudioPlayer({
                    const newTime = (clickX / rect.width) * state.duration;
                    controls.seek(newTime);
                  }}>
-              <div
-                className="bg-blue-500 h-2 rounded-full transition-all duration-100"
-                style={{ width: `${progress}%` }}
+              <progress
+                className="h-2 w-full overflow-hidden rounded-full bg-gray-200 [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-gray-200 [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-blue-500 [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-blue-500"
+                max={100}
+                value={progress}
+                aria-label="Playback progress"
               />
             </div>
           </div>
@@ -204,9 +206,11 @@ export function VideoPlayer({
                    const newTime = (clickX / rect.width) * state.duration;
                    controls.seek(newTime);
                  }}>
-              <div
-                className="bg-white h-1 rounded-full transition-all duration-100"
-                style={{ width: `${progress}%` }}
+              <progress
+                className="h-1 w-full overflow-hidden rounded-full bg-gray-600 [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-gray-600 [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-white [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-white"
+                max={100}
+                value={progress}
+                aria-label="Video playback progress"
               />
             </div>
           </div>

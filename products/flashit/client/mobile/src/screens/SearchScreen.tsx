@@ -24,6 +24,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from '../contexts/ApiContext';
 import { SearchResultItem } from '@flashit/shared';
 import { formatDistanceToNow } from 'date-fns';
+import { flashitMobileColors } from '@/styles/designTokens';
 
 interface SearchResult {
   id: string;
@@ -103,7 +104,7 @@ export default function SearchScreen() {
       </Text>
       {item.sphereName && (
         <View style={styles.sphereBadge}>
-          <Ionicons name="grid-outline" size={12} color="#6366f1" />
+          <Ionicons name="grid-outline" size={12} color={flashitMobileColors.indigo500} />
           <Text style={styles.sphereText}>{item.sphereName}</Text>
         </View>
       )}
@@ -133,13 +134,13 @@ export default function SearchScreen() {
     <View style={styles.container}>
       {/* Search Bar */}
       <View style={styles.searchBar}>
-        <Ionicons name="search" size={20} color="#94a3b8" style={styles.searchIcon} />
+        <Ionicons name="search" size={20} color={flashitMobileColors.slate400} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           value={query}
           onChangeText={setQuery}
           placeholder="Search your moments..."
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor={flashitMobileColors.slate400}
           returnKeyType="search"
           onSubmitEditing={handleSearch}
           accessibilityLabel="Search input"
@@ -150,7 +151,7 @@ export default function SearchScreen() {
             onPress={() => { setQuery(''); setSubmittedQuery(''); }}
             accessibilityLabel="Clear search"
           >
-            <Ionicons name="close-circle" size={20} color="#94a3b8" />
+            <Ionicons name="close-circle" size={20} color={flashitMobileColors.slate400} />
           </TouchableOpacity>
         )}
       </View>
@@ -165,12 +166,12 @@ export default function SearchScreen() {
       {/* Results */}
       {(isLoading || isFetching) ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#0ea5e9" />
+          <ActivityIndicator size="large" color={flashitMobileColors.sky500} />
           <Text style={styles.loadingText}>Searching...</Text>
         </View>
       ) : submittedQuery && results.length === 0 ? (
         <View style={styles.centered}>
-          <Ionicons name="search-outline" size={48} color="#cbd5e1" />
+          <Ionicons name="search-outline" size={48} color={flashitMobileColors.slate300} />
           <Text style={styles.emptyTitle}>No results found</Text>
           <Text style={styles.emptySubtitle}>
             Try different keywords or switch search type
@@ -178,7 +179,7 @@ export default function SearchScreen() {
         </View>
       ) : !submittedQuery ? (
         <View style={styles.centered}>
-          <Ionicons name="sparkles-outline" size={48} color="#cbd5e1" />
+          <Ionicons name="sparkles-outline" size={48} color={flashitMobileColors.slate300} />
           <Text style={styles.emptyTitle}>Search your moments</Text>
           <Text style={styles.emptySubtitle}>
             Use AI-powered search to find moments by meaning, not just keywords
@@ -205,18 +206,18 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: flashitMobileColors.slate50,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: flashitMobileColors.whiteAlt,
     margin: 16,
     marginBottom: 8,
     paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileColors.slate200,
     height: 48,
   },
   searchIcon: {
@@ -225,7 +226,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#1e293b',
+    color: flashitMobileColors.slate800,
   },
   chipRow: {
     flexDirection: 'row',
@@ -237,21 +238,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: flashitMobileColors.slate100,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileColors.slate200,
   },
   chipActive: {
-    backgroundColor: '#0ea5e9',
-    borderColor: '#0ea5e9',
+    backgroundColor: flashitMobileColors.sky500,
+    borderColor: flashitMobileColors.sky500,
   },
   chipText: {
     fontSize: 13,
-    color: '#64748b',
+    color: flashitMobileColors.slate500,
     fontWeight: '500',
   },
   chipTextActive: {
-    color: '#ffffff',
+    color: flashitMobileColors.whiteAlt,
   },
   centered: {
     flex: 1,
@@ -261,25 +262,25 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    color: '#64748b',
+    color: flashitMobileColors.slate500,
     fontSize: 14,
   },
   emptyTitle: {
     marginTop: 16,
     fontSize: 18,
     fontWeight: '600',
-    color: '#334155',
+    color: flashitMobileColors.slate700,
   },
   emptySubtitle: {
     marginTop: 8,
     fontSize: 14,
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
     textAlign: 'center',
     lineHeight: 20,
   },
   resultsCount: {
     fontSize: 13,
-    color: '#64748b',
+    color: flashitMobileColors.slate500,
     marginBottom: 8,
   },
   resultsList: {
@@ -287,13 +288,13 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   resultCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: flashitMobileColors.whiteAlt,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    shadowColor: '#000',
+    borderColor: flashitMobileColors.slate200,
+    shadowColor: flashitMobileColors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
@@ -301,7 +302,7 @@ const styles = StyleSheet.create({
   },
   resultContent: {
     fontSize: 15,
-    color: '#1e293b',
+    color: flashitMobileColors.slate800,
     lineHeight: 22,
     marginBottom: 8,
   },
@@ -313,7 +314,7 @@ const styles = StyleSheet.create({
   },
   sphereText: {
     fontSize: 12,
-    color: '#6366f1',
+    color: flashitMobileColors.indigo500,
     fontWeight: '500',
   },
   resultMeta: {
@@ -327,25 +328,25 @@ const styles = StyleSheet.create({
   },
   tag: {
     fontSize: 12,
-    color: '#0ea5e9',
+    color: flashitMobileColors.sky500,
     fontWeight: '500',
   },
   resultDate: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
   },
   scoreBadge: {
     position: 'absolute',
     top: 12,
     right: 12,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: flashitMobileColors.green50,
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
   scoreText: {
     fontSize: 11,
-    color: '#16a34a',
+    color: flashitMobileColors.green600,
     fontWeight: '600',
   },
 });

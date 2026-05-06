@@ -54,6 +54,49 @@ interface ActivityStats {
   collaborations: number;
 }
 
+const ACTIVITY_TONE_BY_TYPE: Readonly<Record<ActivityType, { icon: string; badge: string }>> = {
+  moment_created: {
+    icon: 'bg-emerald-100 text-emerald-700',
+    badge: 'bg-emerald-100 text-emerald-700',
+  },
+  moment_updated: {
+    icon: 'bg-sky-100 text-sky-700',
+    badge: 'bg-sky-100 text-sky-700',
+  },
+  moment_deleted: {
+    icon: 'bg-rose-100 text-rose-700',
+    badge: 'bg-rose-100 text-rose-700',
+  },
+  moment_shared: {
+    icon: 'bg-indigo-100 text-indigo-700',
+    badge: 'bg-indigo-100 text-indigo-700',
+  },
+  tag_added: {
+    icon: 'bg-violet-100 text-violet-700',
+    badge: 'bg-violet-100 text-violet-700',
+  },
+  template_used: {
+    icon: 'bg-amber-100 text-amber-800',
+    badge: 'bg-amber-100 text-amber-800',
+  },
+  search_performed: {
+    icon: 'bg-cyan-100 text-cyan-700',
+    badge: 'bg-cyan-100 text-cyan-700',
+  },
+  summary_generated: {
+    icon: 'bg-fuchsia-100 text-fuchsia-700',
+    badge: 'bg-fuchsia-100 text-fuchsia-700',
+  },
+  collaboration_started: {
+    icon: 'bg-blue-100 text-blue-700',
+    badge: 'bg-blue-100 text-blue-700',
+  },
+  comment_added: {
+    icon: 'bg-slate-100 text-slate-700',
+    badge: 'bg-slate-100 text-slate-700',
+  },
+};
+
 // ============================================================================
 // API Functions
 // ============================================================================
@@ -253,52 +296,51 @@ export default function ActivityFeed({ userId, showStats = true }: ActivityFeedP
 
               {/* Activities */}
               <div className="space-y-4">
-                {group.activities.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="flex gap-4 p-4 bg-white border rounded-lg hover:shadow-md transition-shadow"
-                  >
-                    {/* Icon */}
-                    <div
-                      className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-2xl"
-                      style={{ backgroundColor: `${activity.color}20` }}
-                    >
-                      {activity.icon}
-                    </div>
+                {group.activities.map((activity) => {
+                  const activityTone = ACTIVITY_TONE_BY_TYPE[activity.type];
 
-                    {/* Content */}
-                    <div className="flex-1">
-                      <div className="text-gray-900">{activity.description}</div>
-                      <div className="text-sm text-gray-500 mt-1">
-                        {formatTime(activity.timestamp)}
+                  return (
+                    <div
+                      key={activity.id}
+                      className="flex gap-4 p-4 bg-white border rounded-lg hover:shadow-md transition-shadow"
+                    >
+                      {/* Icon */}
+                      <div
+                        className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-2xl ${activityTone.icon}`}
+                      >
+                        {activity.icon}
                       </div>
-                      {/* Metadata Preview */}
-                      {Object.keys(activity.metadata).length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {Object.entries(activity.metadata).map(([key, value]) => (
-                            <span
-                              key={key}
-                              className="inline-block px-2 py-1 text-xs bg-gray-100 rounded"
-                            >
-                              {key}: {String(value)}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
 
-                    {/* Type Badge */}
-                    <div
-                      className="flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium"
-                      style={{
-                        backgroundColor: `${activity.color}20`,
-                        color: activity.color,
-                      }}
-                    >
-                      {activity.type.replace(/_/g, ' ')}
+                      {/* Content */}
+                      <div className="flex-1">
+                        <div className="text-gray-900">{activity.description}</div>
+                        <div className="text-sm text-gray-500 mt-1">
+                          {formatTime(activity.timestamp)}
+                        </div>
+                        {/* Metadata Preview */}
+                        {Object.keys(activity.metadata).length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {Object.entries(activity.metadata).map(([key, value]) => (
+                              <span
+                                key={key}
+                                className="inline-block px-2 py-1 text-xs bg-gray-100 rounded"
+                              >
+                                {key}: {String(value)}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Type Badge */}
+                      <div
+                        className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium ${activityTone.badge}`}
+                      >
+                        {activity.type.replace(/_/g, ' ')}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))

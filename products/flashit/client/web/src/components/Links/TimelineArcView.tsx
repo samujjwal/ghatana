@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react';
 import { useLinkTimeline, useLinkGraph, useLinkStats } from '../../hooks/use-api';
 import { format, parseISO, differenceInDays, startOfMonth, endOfMonth, eachDayOfInterval, subMonths } from 'date-fns';
 import { Calendar, GitBranch, TrendingUp, Loader2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
+import { flashitWebColors } from '@/styles/designTokens';
 
 export interface TimelineArcViewProps {
   sphereId: string;
@@ -29,15 +30,15 @@ interface TimelineArc {
 
 // Link type colors for arcs
 const ARC_COLORS: Record<string, string> = {
-  related: '#6B7280',
-  follows: '#3B82F6',
-  precedes: '#8B5CF6',
-  references: '#10B981',
-  causes: '#EF4444',
-  similar: '#F59E0B',
-  contradicts: '#F97316',
-  elaborates: '#6366F1',
-  summarizes: '#14B8A6',
+  related: flashitWebColors.slate500,
+  follows: flashitWebColors.blue500,
+  precedes: flashitWebColors.purple500,
+  references: flashitWebColors.green500,
+  causes: flashitWebColors.red500,
+  similar: flashitWebColors.yellow500,
+  contradicts: flashitWebColors.orange500,
+  elaborates: flashitWebColors.indigo500,
+  summarizes: flashitWebColors.teal500,
 };
 
 export default function TimelineArcView({ sphereId, onMomentClick }: TimelineArcViewProps) {
@@ -221,8 +222,8 @@ export default function TimelineArcView({ sphereId, onMomentClick }: TimelineArc
                   : 'opacity-40'
               }`}
               style={{
-                backgroundColor: `${ARC_COLORS[type] || '#6B7280'}20`,
-                color: ARC_COLORS[type] || '#6B7280',
+                backgroundColor: `${ARC_COLORS[type] || flashitWebColors.slate500}20`,
+                color: ARC_COLORS[type] || flashitWebColors.slate500,
               }}
             >
               {type}
@@ -350,7 +351,7 @@ export default function TimelineArcView({ sphereId, onMomentClick }: TimelineArc
                       <div
                         key={arc.id}
                         className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2"
-                        style={{ borderColor: ARC_COLORS[arc.linkType] || '#6B7280' }}
+                        style={{ borderColor: ARC_COLORS[arc.linkType] || flashitWebColors.slate500 }}
                       >
                         <button
                           onClick={() => onMomentClick?.(sourceNode.id)}
@@ -361,8 +362,8 @@ export default function TimelineArcView({ sphereId, onMomentClick }: TimelineArc
                         <span
                           className="rounded-full px-2 py-0.5 text-xs"
                           style={{
-                            backgroundColor: `${ARC_COLORS[arc.linkType] || '#6B7280'}20`,
-                            color: ARC_COLORS[arc.linkType] || '#6B7280',
+                            backgroundColor: `${ARC_COLORS[arc.linkType] || flashitWebColors.slate500}20`,
+                            color: ARC_COLORS[arc.linkType] || flashitWebColors.slate500,
                           }}
                         >
                           {arc.linkType}

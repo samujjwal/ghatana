@@ -27,6 +27,7 @@ import privacyRoutes from "./routes/privacy";
 import momentLinkRoutes from "./routes/moment-links";
 import memoryExpansionRoutes from "./routes/memory-expansion";
 import healthRoutes from "./routes/health";
+import entitlementRoutes from "./routes/entitlements";
 import adoptionRoutes from "./routes/adoption";
 import { registerBillingRoutes } from "./routes/billing";
 import { registerReflectionRoutes } from "./routes/reflection";
@@ -146,6 +147,7 @@ export const buildServer = () => {
   app.register(momentLinkRoutes, { prefix: "/api/moments" });
   app.register(memoryExpansionRoutes, { prefix: "/api/memory-expansion" });
   app.register(healthRoutes, { prefix: "/api/health" });
+  app.register(entitlementRoutes, { prefix: "/api/entitlements" });
   app.register(adoptionRoutes, { prefix: "/api/adoption" });
   // Billing routes define absolute paths under /api/billing/* already
   app.register(registerBillingRoutes);
@@ -191,10 +193,13 @@ export const buildServer = () => {
       });
     }
 
-    // Default error
-    reply.code(error.statusCode || 500).send({
+    // Default error. Internal messages are redacted for 5xx responses.
+    const statusCode = error.statusCode || 500;
+    reply.code(statusCode).send({
       error: error.name || "Internal Server Error",
-      message: error.message || "An unexpected error occurred",
+      message: statusCode >= 500
+        ? "An unexpected error occurred"
+        : error.message || "An unexpected error occurred",
     });
   });
 

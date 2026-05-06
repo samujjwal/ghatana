@@ -16,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import { CameraPreview } from '../components/CameraPreview';
 import { ImageEditor } from '../components/ImageEditor';
 import { optimizeImage } from '../utils/imageOptimization';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 // Import MediaType for ImagePicker
 import { MediaType } from 'expo-image-picker';
@@ -299,7 +300,7 @@ export const ImageCaptureScreen: React.FC = () => {
               accessibilityState={{ disabled: isProcessing, busy: isProcessing }}
             >
               {isProcessing ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={flashitMobileTheme.text.inverse} />
               ) : (
                 <Text style={[styles.previewButtonText, styles.saveButtonText]}>
                   Save & Use
@@ -325,7 +326,7 @@ export const ImageCaptureScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: flashitMobileTheme.shadow.color,
   },
   header: {
     flexDirection: 'row',
@@ -342,13 +343,13 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     width: 60,
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     fontSize: 16,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
   permissionContainer: {
     flex: 1,
@@ -359,12 +360,12 @@ const styles = StyleSheet.create({
   permissionTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     marginBottom: 16,
   },
   permissionText: {
     fontSize: 16,
-    color: '#888',
+    color: flashitMobileTheme.text.secondary,
     textAlign: 'center',
     marginBottom: 32,
   },
@@ -372,12 +373,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 12,
-    backgroundColor: '#007aff',
+    backgroundColor: flashitMobileTheme.brand.primary,
   },
   permissionButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
   previewContainer: {
     flex: 1,
@@ -391,25 +392,25 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     padding: 20,
     paddingBottom: Platform.OS === 'ios' ? 40 : 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: flashitMobileTheme.text.primary,
   },
   previewButton: {
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,
-    backgroundColor: '#333',
+    backgroundColor: flashitMobileTheme.text.primary,
     minWidth: 100,
     alignItems: 'center',
   },
   previewButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
   saveButton: {
-    backgroundColor: '#007aff',
+    backgroundColor: flashitMobileTheme.brand.primary,
   },
   saveButtonText: {
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
 });

@@ -526,14 +526,13 @@ export function VideoRecorder({
 
       {/* Camera mode */}
       {showCameraMode && !state.videoUrl && !showPermissionRequest && (
-        <div className="relative bg-black rounded-lg overflow-hidden" style={{ minHeight: '400px' }}>
+        <div className="relative min-h-[400px] overflow-hidden rounded-lg bg-black">
           <video
             ref={videoRef}
             autoPlay
             playsInline
             muted
-            className="w-full aspect-video object-cover"
-            style={{ minHeight: '400px', display: 'block' }}
+            className="block min-h-[400px] w-full aspect-video object-cover"
           />
 
           <RecordingIndicator

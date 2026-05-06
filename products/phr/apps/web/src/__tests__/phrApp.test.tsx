@@ -129,10 +129,10 @@ describe('PHR web app', () => {
     });
   });
 
-  it('renders a FHIR record detail fallback', () => {
+  it('renders a FHIR record detail fallback for unknown records', () => {
     render(
       <ThemeProvider>
-        <MemoryRouter initialEntries={['/records/record-lab-001']}>
+        <MemoryRouter initialEntries={['/records/record-missing-001']}>
           <Routes>
             <Route path="/records/:recordId" element={<RecordDetailPage />} />
           </Routes>

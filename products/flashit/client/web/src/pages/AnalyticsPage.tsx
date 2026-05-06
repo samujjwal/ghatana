@@ -231,12 +231,12 @@ export default function AnalyticsPage() {
                     </div>
                     {conn.strength != null && (
                       <div className="flex items-center gap-2">
-                        <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-primary-500 rounded-full"
-                            style={{ width: `${conn.strength * 100}%` }}
-                          ></div>
-                        </div>
+                        <progress
+                          className="h-2 w-20 overflow-hidden rounded-full bg-gray-200 [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-gray-200 [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-primary-500 [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-primary-500"
+                          max={100}
+                          value={conn.strength * 100}
+                          aria-label="Connection strength"
+                        />
                         <span className="text-xs text-gray-500">{(conn.strength * 100).toFixed(0)}%</span>
                       </div>
                     )}

@@ -19,7 +19,7 @@ export default defineConfig({
     ['junit', { outputFile: 'test-results/junit.xml' }],
   ],
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:2901',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -58,8 +58,8 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'pnpm dev',
-    url: 'http://localhost:3000',
+    command: 'pnpm dev --host 127.0.0.1 --port 2901',
+    url: 'http://127.0.0.1:2901',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },

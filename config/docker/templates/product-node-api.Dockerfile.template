@@ -1,0 +1,48 @@
+# Kernel-owned Node API runtime template.
+#
+# Product overrides:
+# - PRODUCT_WORKDIR: application working directory inside the image.
+# - PRODUCT_PORT: service listen port exposed by the runtime image.
+# - PRODUCT_HEALTH_PATH: HTTP health path used by the standard healthcheck.
+# - PRODUCT_RUN_COMMAND: final runtime command.
+
+FROM node:18-alpine AS deps
+WORKDIR ${PRODUCT_WORKDIR:-/app}
+
+COPY package.json pnpm-lock.yaml ./
+COPY prisma ./prisma/
+
+RUN npm install -g pnpm@10.33.0
+RUN pnpm install --frozen-lockfile
+RUN pnpm exec prisma generate
+
+FROM node:18-alpine AS builder
+WORKDIR ${PRODUCT_WORKDIR:-/app}
+
+COPY --from=deps ${PRODUCT_WORKDIR:-/app}/node_modules ./node_modules
+COPY . .
+
+RUN npm install -g pnpm@10.33.0
+RUN pnpm build
+
+FROM node:18-alpine AS runner
+WORKDIR ${PRODUCT_WORKDIR:-/app}
+
+ENV NODE_ENV=production
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 product
+
+COPY --from=builder --chown=product:nodejs ${PRODUCT_WORKDIR:-/app}/dist ./dist
+COPY --from=builder --chown=product:nodejs ${PRODUCT_WORKDIR:-/app}/node_modules ./node_modules
+COPY --from=builder --chown=product:nodejs ${PRODUCT_WORKDIR:-/app}/package.json ./package.json
+COPY --from=builder --chown=product:nodejs ${PRODUCT_WORKDIR:-/app}/prisma ./prisma
+
+USER product
+
+EXPOSE ${PRODUCT_PORT}
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:${PRODUCT_PORT}${PRODUCT_HEALTH_PATH}', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+CMD ${PRODUCT_RUN_COMMAND}

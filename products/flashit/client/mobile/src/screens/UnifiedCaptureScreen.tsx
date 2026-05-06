@@ -10,6 +10,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { CaptureModeSelector } from '../components/CaptureModeSelector';
 import { QuickCaptureButton } from '../components/QuickCaptureButton';
+import { flashitMobileColors } from '@/styles/designTokens';
 
 export type CaptureMode = 'text' | 'voice' | 'image' | 'video';
 
@@ -125,7 +126,7 @@ export const UnifiedCaptureScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileColors.white,
   },
   header: {
     flexDirection: 'row',
@@ -135,17 +136,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
+    borderBottomColor: flashitMobileColors.neutral200,
   },
   headerButton: {
     width: 60,
-    color: '#007aff',
+    color: flashitMobileColors.iosBlue,
     fontSize: 16,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
+    color: flashitMobileColors.black,
   },
   content: {
     flex: 1,
@@ -159,18 +160,18 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
+    color: flashitMobileColors.black,
     marginBottom: 16,
   },
   hintContainer: {
-    backgroundColor: '#f0f8ff',
+    backgroundColor: flashitMobileColors.sky50,
     padding: 16,
     borderRadius: 12,
     marginBottom: 24,
   },
   hintText: {
     fontSize: 14,
-    color: '#007aff',
+    color: flashitMobileColors.iosBlue,
     textAlign: 'center',
   },
   quickCaptureContainer: {
@@ -179,7 +180,7 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     fontSize: 14,
-    color: '#888',
+    color: flashitMobileColors.slate500,
     textAlign: 'center',
     padding: 32,
   },

@@ -22,6 +22,8 @@ class ArchitectureChecker {
   constructor() {
     this.violations = [];
     this.warnings = [];
+    this.allowlist = this.loadAllowlist();
+    this.allowlistHits = new Set();
     this.stats = {
       packagesChecked: 0,
       importsChecked: 0,
@@ -35,6 +37,21 @@ class ArchitectureChecker {
     this.stats.violations++;
     console.error(`❌ [${type}] ${message}`);
     if (file) console.error(`   File: ${file}`);
+  }
+
+  addPolicyViolation(type, message, file, details = {}) {
+    const exception = this.findAllowlistException(type, file, details);
+    if (exception) {
+      this.allowlistHits.add(exception.__key);
+      this.addWarning(
+        `ALLOWLISTED_${type}`,
+        `${message} (temporary exception: ${exception.reason}; owner: ${exception.owner}; remove by: ${exception.targetRemovalDate})`,
+        file
+      );
+      return;
+    }
+
+    this.addViolation(type, message, file, details);
   }
 
   addWarning(type, message, file) {
@@ -56,6 +73,7 @@ class ArchitectureChecker {
       await this.checkDeprecatedPackages();
       await this.checkDuplicatePackageNames();
       await this.checkLicensePolicy();
+      this.checkAllowlistFreshness();
 
       const duration = ((Date.now() - startTime) / 1000).toFixed(2);
 
@@ -85,10 +103,11 @@ class ArchitectureChecker {
       // Check deprecated naming patterns
       if (pkgName.startsWith('@ghatana/yappc-')) {
         const newName = pkgName.replace('@ghatana/yappc-', '@yappc/');
-        this.addViolation(
+        this.addPolicyViolation(
           'DEPRECATED_NAMING',
           `Package uses deprecated naming: ${pkgName} → ${newName}`,
-          pkgPath
+          pkgPath,
+          { packageName: pkgName, replacement: newName }
         );
       }
 
@@ -174,7 +193,7 @@ class ArchitectureChecker {
         const baseDep = dep.split('/')[0];
         if (banned.includes(baseDep)) {
           const policy = POLICY.bannedLibraries[baseDep];
-          this.addViolation(
+          this.addPolicyViolation(
             'BANNED_LIBRARY',
             `Banned library ${dep}: ${policy.reason} (use ${policy.alternative})`,
             pkgPath,
@@ -185,6 +204,59 @@ class ArchitectureChecker {
     }
 
     console.log(`   Checked for ${banned.length} banned libraries\n`);
+  }
+
+  loadAllowlist() {
+    const allowlistPath = path.join(process.cwd(), 'config/architecture-compliance-allowlist.json');
+    if (!fs.existsSync(allowlistPath)) {
+      return [];
+    }
+
+    const parsed = JSON.parse(fs.readFileSync(allowlistPath, 'utf-8'));
+    return (parsed.exceptions || []).map((entry, index) => ({
+      ...entry,
+      __key: `${entry.type}:${entry.file}:${entry.packageName || entry.dependency || index}`,
+    }));
+  }
+
+  findAllowlistException(type, file, details) {
+    const relativeFile = path.relative(process.cwd(), path.resolve(file)).replace(/\\/g, '/');
+
+    return this.allowlist.find((entry) => {
+      if (entry.type !== type || entry.file !== relativeFile) {
+        return false;
+      }
+
+      if (entry.packageName && entry.packageName !== details.packageName) {
+        return false;
+      }
+
+      if (entry.dependency && entry.dependency !== details.banned) {
+        return false;
+      }
+
+      return true;
+    });
+  }
+
+  checkAllowlistFreshness() {
+    for (const entry of this.allowlist) {
+      if (!entry.reason || !entry.owner || !entry.targetRemovalDate) {
+        this.addViolation(
+          'INVALID_ALLOWLIST_ENTRY',
+          `Architecture allowlist entry must declare reason, owner, and targetRemovalDate: ${entry.__key}`,
+          'config/architecture-compliance-allowlist.json'
+        );
+      }
+
+      if (!this.allowlistHits.has(entry.__key)) {
+        this.addViolation(
+          'STALE_ALLOWLIST_ENTRY',
+          `Architecture allowlist entry no longer matches an active violation: ${entry.__key}`,
+          'config/architecture-compliance-allowlist.json'
+        );
+      }
+    }
   }
 
   async checkGradleDependencyDirection() {

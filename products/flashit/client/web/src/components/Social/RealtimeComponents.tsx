@@ -10,6 +10,7 @@
 
 import React, { useMemo } from 'react';
 import { PresenceData, TypingIndicator as TypingIndicatorType } from '../../hooks/useRealtime';
+import { flashitWebColors } from '@/styles/designTokens';
 
 /**
  * Avatar with presence status indicator
@@ -292,7 +293,7 @@ export function ConnectionStatus({
 export function UserCursor({
   user,
   position,
-  color = '#3B82F6',
+  color = flashitWebColors.blue500,
 }: {
   user: PresenceData;
   position: { x: number; y: number };

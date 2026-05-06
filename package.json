@@ -51,6 +51,8 @@
     "check:bridge-compliance": "node ./scripts/check-bridge-compliance.mjs",
     "check:data-access-contract": "node ./scripts/check-data-access-contract.mjs",
     "check:observability-conformance": "node ./scripts/check-observability-conformance.mjs",
+    "check:finance-transaction-workflow-proof": "node ./scripts/check-finance-transaction-workflow-proof.mjs",
+    "check:dmos-boundary-workflow-coverage": "node ./scripts/check-dmos-boundary-workflow-coverage.mjs",
     "check:inmemory-policy-store-usage": "node ./scripts/check-inmemory-policy-store-usage.mjs",
     "check:secret-default-credentials": "node ./scripts/check-secret-default-credentials.mjs",
     "check:route-entitlement-contracts": "node ./scripts/check-route-entitlement-contracts.mjs",

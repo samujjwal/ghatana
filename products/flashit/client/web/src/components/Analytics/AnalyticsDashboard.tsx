@@ -9,6 +9,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { flashitWebColors } from '@/styles/designTokens';
 import {
   LineChart,
   Line,
@@ -67,14 +68,14 @@ interface DashboardData {
 
 // Color schemes
 const COLORS = {
-  primary: '#3B82F6',
-  success: '#10B981',
-  warning: '#F59E0B',
-  danger: '#EF4444',
-  purple: '#8B5CF6',
-  pink: '#EC4899',
-  teal: '#14B8A6',
-  orange: '#F97316',
+  primary: flashitWebColors.blue500,
+  success: flashitWebColors.green500,
+  warning: flashitWebColors.yellow500,
+  danger: flashitWebColors.red500,
+  purple: flashitWebColors.purple500,
+  pink: flashitWebColors.pink500,
+  teal: flashitWebColors.teal500,
+  orange: flashitWebColors.orange500,
 };
 
 const CHART_COLORS = [COLORS.primary, COLORS.success, COLORS.warning, COLORS.purple, COLORS.pink, COLORS.teal];
@@ -397,7 +398,7 @@ function SphereActivityChart({ sphereData }: { sphereData: DashboardData['sphere
             labelLine={false}
             label={({ name, momentCount }) => `${name}: ${momentCount}`}
             outerRadius={100}
-            fill="#8884d8"
+            fill={flashitWebColors.chartPurple}
             dataKey="momentCount"
           >
             {sphereData.map((entry, index) => (

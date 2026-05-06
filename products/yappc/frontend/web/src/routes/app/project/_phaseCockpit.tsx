@@ -9,6 +9,7 @@ import { PhasePrimaryActionCard } from '../../../components/phase/PhasePrimaryAc
 import { PhaseSuggestedNextStep } from '../../../components/phase/PhaseSuggestedNextStep';
 import {
   formatTimestamp,
+  resolvePhaseIcon,
   usePhaseCockpitData,
 } from '../../../services/phase';
 import type {
@@ -18,6 +19,18 @@ import { PhaseStatusPanels } from './PhaseStatusPanels';
 import { PhaseEmbeddedSurface } from './PhaseEmbeddedSurface';
 
 
+/** Human-readable label for the advanced detail panel, per phase. */
+const PHASE_DETAIL_LABELS: Record<MountedPhase, string> = {
+  intent: 'Intent exploration reference',
+  shape: 'Shape configuration reference',
+  validate: 'Validation reference',
+  generate: 'Generation reference',
+  run: 'Run configuration reference',
+  observe: 'Observation signals reference',
+  learn: 'Retrospective reference',
+  evolve: 'Evolution planning reference',
+};
+
 function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
@@ -25,6 +38,13 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
 
   const scrollToSupportingSurface = useCallback(() => {
     document.getElementById(`${phase}-supporting-surface`)?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }, [phase]);
+
+  const scrollToBlockerPanel = useCallback(() => {
+    document.getElementById(`${phase}-blocker-panel`)?.scrollIntoView({
       behavior: 'smooth',
       block: 'start',
     });
@@ -93,7 +113,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     >
       <div className="mb-4">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fg-muted">
-          Existing route details
+          {PHASE_DETAIL_LABELS[phase]}
         </p>
         <h2 className="mt-2 text-lg font-semibold text-fg">{config.supportingTitle}</h2>
         <p className="mt-1 text-sm text-fg-muted">
@@ -108,6 +128,8 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     </div>
   );
 
+  const isCtaDisabled = (phase === 'validate' || phase === 'generate') && blockers.length > 0;
+
   return (
     <div className="p-6 space-y-6">
       <PhaseCockpitLayout
@@ -120,18 +142,22 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
             description={config.primaryDescription}
             actionLabel={config.primaryLabel}
             onAction={handlePrimaryAction}
-            secondaryActionLabel={config.secondaryLabel}
-            onSecondaryAction={handleSecondaryAction}
-            icon={config.icon}
-            disabled={phase === 'validate' || phase === 'generate' ? blockers.length > 0 : false}
-            disabledReason={blockers.length > 0 ? blockers[0]?.description : undefined}
+            secondaryActionLabel={isCtaDisabled ? 'View blockers' : config.secondaryLabel}
+            onSecondaryAction={isCtaDisabled ? scrollToBlockerPanel : handleSecondaryAction}
+            icon={resolvePhaseIcon(config.icon)}
+            disabled={isCtaDisabled}
+            disabledReason={
+              isCtaDisabled
+                ? `${blockers.length} blocker${blockers.length > 1 ? 's' : ''} must be resolved before continuing. Scroll down to review and resolve them.`
+                : undefined
+            }
             testId={`${phase}-primary-action-card`}
             actionTestId={config.primaryTestId}
             secondaryActionTestId={config.secondaryTestId}
             actionAriaLabel={`${config.name} primary action`}
           />
         )}
-        blockers={<PhaseBlockerPanel blockers={blockers} />}
+        blockers={<div id={`${phase}-blocker-panel`}><PhaseBlockerPanel blockers={blockers} /></div>}
         evidence={<PhaseEvidencePanel evidence={evidence} />}
         suggestedAutomation={<PhaseSuggestedNextStep steps={suggestions} />}
         governanceTrace={<PhaseGovernanceTrace records={governance} />}

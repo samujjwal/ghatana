@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from './fixtures';
+import { loginAs, mockDmosApi, navigateInApp, TEST_WORKSPACE } from './fixtures';
 
 /**
  * Screen reader label checks (DMOS-P2-004)
@@ -10,11 +10,13 @@ import { loginAs } from './fixtures';
  */
 test.describe('Screen Reader Labels @a11y', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAs(page);
+    await mockDmosApi(page);
+    await loginAs(page, { roles: ['marketing-director'] });
   });
 
   test('dashboard has proper ARIA labels', async ({ page }) => {
-    await page.goto('/dashboard');
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await navigateInApp(page, `/workspaces/${TEST_WORKSPACE}/dashboard`);
 
     // Check for landmark regions
     const main = page.locator('main');
@@ -25,31 +27,23 @@ test.describe('Screen Reader Labels @a11y', () => {
   });
 
   test('form inputs have associated labels', async ({ page }) => {
-    await page.goto('/intake');
+    await navigateInApp(page, `/workspaces/${TEST_WORKSPACE}/strategy`);
 
     // Check that inputs have labels
-    const serviceAreaInput = page.locator('input[name="serviceArea"]');
+    const serviceAreaInput = page.locator('[data-testid="strategy-service-area-input"]');
     await expect(serviceAreaInput).toBeVisible();
 
-    const hasLabel = await serviceAreaInput.evaluate((el) => {
-      const id = el.getAttribute('id');
-      if (id) {
-        const label = document.querySelector(`label[for="${id}"]`);
-        return label !== null;
-      }
-      return el.getAttribute('aria-label') !== null || el.getAttribute('aria-labelledby') !== null;
-    });
-
-    expect(hasLabel).toBe(true);
+    await expect(page.getByLabel('Service Area')).toBeVisible();
   });
 
   test('buttons have accessible names', async ({ page }) => {
-    await page.goto('/approvals');
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await navigateInApp(page, `/workspaces/${TEST_WORKSPACE}/approvals`);
 
-    const approveButton = page.locator('[data-testid="approve-button"]');
-    await expect(approveButton).toBeVisible();
+    const reviewLink = page.locator('[data-testid="review-link-req-e2e-1"]');
+    await expect(reviewLink).toBeVisible();
 
-    const hasAccessibleName = await approveButton.evaluate((el) => {
+    const hasAccessibleName = await reviewLink.evaluate((el) => {
       return el.textContent?.trim().length > 0 || el.getAttribute('aria-label') !== null || el.getAttribute('aria-labelledby') !== null;
     });
 
@@ -57,7 +51,8 @@ test.describe('Screen Reader Labels @a11y', () => {
   });
 
   test('tables have proper headers', async ({ page }) => {
-    await page.goto('/approvals');
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await navigateInApp(page, `/workspaces/${TEST_WORKSPACE}/approvals`);
 
     const table = page.locator('table');
     await expect(table).toBeVisible();
@@ -71,7 +66,7 @@ test.describe('Screen Reader Labels @a11y', () => {
   });
 
   test('images have alt text', async ({ page }) => {
-    await page.goto('/dashboard');
+    await navigateInApp(page, `/workspaces/${TEST_WORKSPACE}/dashboard`);
 
     const images = page.locator('img');
     const count = await images.count();

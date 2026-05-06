@@ -1,4 +1,5 @@
-# Multi-stage build for Flashit Web App
+# Shared template source: config/docker/templates/product-node-web.Dockerfile.template
+# Product overrides: PRODUCT_NGINX_CONF=nginx.conf PRODUCT_HEALTH_PATH=/health.html
 
 # Stage 1: Builder
 FROM node:18-alpine AS builder

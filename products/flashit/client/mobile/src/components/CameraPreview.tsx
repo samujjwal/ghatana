@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { CameraView, Camera, CameraType } from 'expo-camera';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 interface CameraPreviewProps {
   cameraRef: React.RefObject<any>;
@@ -70,7 +71,7 @@ export const CameraPreview: React.FC<CameraPreviewProps> = ({
           disabled={isProcessing}
         >
           {isProcessing ? (
-            <ActivityIndicator color="#fff" size="large" />
+            <ActivityIndicator color={flashitMobileTheme.text.inverse} size="large" />
           ) : (
             <View style={styles.captureButtonInner} />
           )}
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: flashitMobileTheme.border,
     left: '33.33%',
   },
   gridLineHorizontal: {
@@ -121,7 +122,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: flashitMobileTheme.border,
     top: '33.33%',
   },
   controls: {
@@ -130,13 +131,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 30,
     paddingHorizontal: 20,
-    backgroundColor: '#000',
+    backgroundColor: flashitMobileTheme.shadow.color,
   },
   galleryButton: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#333',
+    backgroundColor: flashitMobileTheme.text.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -147,11 +148,11 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.text.inverse,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 5,
-    borderColor: '#333',
+    borderColor: flashitMobileTheme.text.primary,
   },
   captureButtonDisabled: {
     opacity: 0.5,
@@ -160,13 +161,13 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 35,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.text.inverse,
   },
   flipButton: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#333',
+    backgroundColor: flashitMobileTheme.text.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },

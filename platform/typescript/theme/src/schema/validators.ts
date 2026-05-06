@@ -11,7 +11,7 @@
  * - Performance: Efficient validation with caching
  */
 
-import { z, type ZodError } from 'zod';
+import { z } from 'zod';
 import {
   tokenSchema,
   tokenCollectionSchema,

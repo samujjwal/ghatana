@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   product-runtime:
     build:
@@ -18,10 +16,13 @@ services:
   observability-prometheus:
     image: prom/prometheus:latest
     volumes:
-      - ${PRODUCT_OBSERVABILITY_ROOT}/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ${PRODUCT_OBSERVABILITY_ROOT}/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ${PRODUCT_OBSERVABILITY_ROOT}/prometheus/rules:/etc/prometheus/rules:ro
+      - ${PRODUCT_OBSERVABILITY_OVERLAY_ROOT}/alerts:/etc/prometheus/rules/product-overlays:ro
 
   observability-grafana:
     image: grafana/grafana:latest
     volumes:
-      - ${PRODUCT_OBSERVABILITY_ROOT}/grafana/dashboards:/var/lib/grafana/dashboards
-      - ${PRODUCT_OBSERVABILITY_ROOT}/grafana/provisioning:/etc/grafana/provisioning
+      - ${PRODUCT_OBSERVABILITY_ROOT}/grafana/dashboards:/etc/grafana/dashboards:ro
+      - ${PRODUCT_OBSERVABILITY_ROOT}/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ${PRODUCT_OBSERVABILITY_OVERLAY_ROOT}/grafana/dashboards:/etc/grafana/dashboards/products/${PRODUCT_SLUG}:ro

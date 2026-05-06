@@ -25,6 +25,7 @@ import {
   notificationService,
   NotificationPreferences,
 } from '../services/notificationService';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 /**
  * Time picker modal (simplified - use a proper time picker in production).
@@ -68,9 +69,12 @@ const SettingsRow: React.FC<{
         value={value}
         onValueChange={onValueChange}
         disabled={disabled}
-        trackColor={{ false: '#767577', true: '#818CF8' }}
-        thumbColor={value ? '#6366F1' : '#f4f3f4'}
-        ios_backgroundColor="#3e3e3e"
+        trackColor={{
+          false: flashitMobileTheme.text.secondary,
+          true: flashitMobileTheme.brand.primaryStrong,
+        }}
+        thumbColor={value ? flashitMobileTheme.brand.primary : flashitMobileTheme.background.surface}
+        ios_backgroundColor={flashitMobileTheme.shadow.color}
       />
     </View>
   );
@@ -201,8 +205,11 @@ const NotificationSettingsScreen: React.FC = () => {
                 handleDisableNotifications();
               }
             }}
-            trackColor={{ false: '#767577', true: '#818CF8' }}
-            thumbColor={notificationsEnabled ? '#6366F1' : '#f4f3f4'}
+            trackColor={{
+              false: flashitMobileTheme.text.secondary,
+              true: flashitMobileTheme.brand.primaryStrong,
+            }}
+            thumbColor={notificationsEnabled ? flashitMobileTheme.brand.primary : flashitMobileTheme.background.surface}
           />
         </View>
 
@@ -303,7 +310,7 @@ const NotificationSettingsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: flashitMobileTheme.background.canvas,
   },
   scrollView: {
     flex: 1,
@@ -318,17 +325,17 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#6B7280',
+    color: flashitMobileTheme.text.secondary,
   },
   masterToggle: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: flashitMobileTheme.background.surface,
     padding: 16,
     marginBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: flashitMobileTheme.border,
   },
   masterToggleContent: {
     flex: 1,
@@ -337,15 +344,15 @@ const styles = StyleSheet.create({
   masterToggleTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#111827',
+    color: flashitMobileTheme.text.primary,
     marginBottom: 4,
   },
   masterToggleDescription: {
     fontSize: 14,
-    color: '#6B7280',
+    color: flashitMobileTheme.text.secondary,
   },
   warningBanner: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: flashitMobileTheme.background.accentSurface,
     padding: 12,
     marginHorizontal: 16,
     marginVertical: 8,
@@ -353,7 +360,7 @@ const styles = StyleSheet.create({
   },
   warningText: {
     fontSize: 14,
-    color: '#92400E',
+    color: flashitMobileTheme.status.warning,
     textAlign: 'center',
   },
   sectionHeader: {
@@ -364,7 +371,7 @@ const styles = StyleSheet.create({
   sectionHeaderText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#6B7280',
+    color: flashitMobileTheme.text.secondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -372,11 +379,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: flashitMobileTheme.background.surface,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: flashitMobileTheme.border,
   },
   rowDisabled: {
     opacity: 0.5,
@@ -388,21 +395,21 @@ const styles = StyleSheet.create({
   rowTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#111827',
+    color: flashitMobileTheme.text.primary,
     marginBottom: 2,
   },
   rowDescription: {
     fontSize: 13,
-    color: '#6B7280',
+    color: flashitMobileTheme.text.secondary,
   },
   textDisabled: {
-    color: '#9CA3AF',
+    color: flashitMobileTheme.brand.inactive,
   },
   quietHoursContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: flashitMobileTheme.background.surface,
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: flashitMobileTheme.border,
   },
   timePickerRow: {
     flexDirection: 'row',
@@ -412,16 +419,16 @@ const styles = StyleSheet.create({
   },
   timePickerLabel: {
     fontSize: 15,
-    color: '#374151',
+    color: flashitMobileTheme.text.primary,
   },
   timePickerValue: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#6366F1',
+    color: flashitMobileTheme.brand.primary,
   },
   quietHoursNote: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: flashitMobileTheme.brand.inactive,
     marginTop: 8,
     textAlign: 'center',
   },
@@ -431,7 +438,7 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 13,
-    color: '#9CA3AF',
+    color: flashitMobileTheme.brand.inactive,
     textAlign: 'center',
   },
 });

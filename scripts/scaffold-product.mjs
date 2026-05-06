@@ -667,6 +667,7 @@ if (uiEnabled) {
         type: "module",
         packageManager: "pnpm@10.33.0",
         scripts: {
+          dev: "vite",
           lint: "pnpm exec eslint src --ext .ts,.tsx",
           "type-check": "tsc --noEmit",
           test: "vitest run",
@@ -835,19 +836,31 @@ import path from "path";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const reactRouterPath = path.dirname(require.resolve("react-router/package.json"));
+const reactPath = path.dirname(require.resolve("react/package.json"));
+const reactDomPath = path.dirname(require.resolve("react-dom/package.json"));
+const schedulerPath = path.dirname(require.resolve("scheduler/package.json"));
 const reactRouterDomPath = path.dirname(require.resolve("react-router-dom/package.json"));
+const reactRouterPath = path.dirname(
+  require.resolve("react-router/package.json", { paths: [reactRouterDomPath] })
+);
+const reactRouterEntryPath = path.join(reactRouterPath, "dist/development/index.mjs");
+const reactRouterDomEntryPath = path.join(reactRouterPath, "dist/development/dom-export.mjs");
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
     preserveSymlinks: true,
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "@ghatana/product-shell": path.resolve(__dirname, "../../../../platform/typescript/product-shell/src/index.ts"),
-      "react-router": reactRouterPath,
-      "react-router-dom": reactRouterDomPath
-    }
+    dedupe: ["react", "react-dom", "react-router", "react-router-dom", "scheduler"],
+    alias: [
+      { find: "@", replacement: path.resolve(__dirname, "./src") },
+      { find: "@ghatana/product-shell", replacement: path.resolve(__dirname, "../../../../platform/typescript/product-shell/src/index.ts") },
+      { find: /^react$/, replacement: reactPath },
+      { find: /^react-dom$/, replacement: reactDomPath },
+      { find: /^scheduler$/, replacement: schedulerPath },
+      { find: /^react-router\\/dom$/, replacement: reactRouterDomEntryPath },
+      { find: /^react-router$/, replacement: reactRouterEntryPath },
+      { find: /^react-router-dom$/, replacement: reactRouterDomPath }
+    ]
   }
 });
 `
@@ -861,19 +874,31 @@ import path from "path";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const reactRouterPath = path.dirname(require.resolve("react-router/package.json"));
+const reactPath = path.dirname(require.resolve("react/package.json"));
+const reactDomPath = path.dirname(require.resolve("react-dom/package.json"));
+const schedulerPath = path.dirname(require.resolve("scheduler/package.json"));
 const reactRouterDomPath = path.dirname(require.resolve("react-router-dom/package.json"));
+const reactRouterPath = path.dirname(
+  require.resolve("react-router/package.json", { paths: [reactRouterDomPath] })
+);
+const reactRouterEntryPath = path.join(reactRouterPath, "dist/development/index.mjs");
+const reactRouterDomEntryPath = path.join(reactRouterPath, "dist/development/dom-export.mjs");
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
     preserveSymlinks: true,
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "@ghatana/product-shell": path.resolve(__dirname, "../../../../platform/typescript/product-shell/src/index.ts"),
-      "react-router": reactRouterPath,
-      "react-router-dom": reactRouterDomPath
-    }
+    dedupe: ["react", "react-dom", "react-router", "react-router-dom", "scheduler"],
+    alias: [
+      { find: "@", replacement: path.resolve(__dirname, "./src") },
+      { find: "@ghatana/product-shell", replacement: path.resolve(__dirname, "../../../../platform/typescript/product-shell/src/index.ts") },
+      { find: /^react$/, replacement: reactPath },
+      { find: /^react-dom$/, replacement: reactDomPath },
+      { find: /^scheduler$/, replacement: schedulerPath },
+      { find: /^react-router\\/dom$/, replacement: reactRouterDomEntryPath },
+      { find: /^react-router$/, replacement: reactRouterEntryPath },
+      { find: /^react-router-dom$/, replacement: reactRouterDomPath }
+    ]
   },
   test: {
     environment: "jsdom",

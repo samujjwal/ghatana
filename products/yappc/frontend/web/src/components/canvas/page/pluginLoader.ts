@@ -15,6 +15,8 @@ import {
   createDefaultPluginRuntimePolicy,
   createPluginRuntimeEnvironment,
   createTrustedPluginRuntimePolicy,
+  enforceNetworkPolicy,
+  validatePluginRuntimePolicy,
   type PluginRuntimeEnvironment,
   type PluginRuntimePolicy,
 } from '../../../services/plugins/PluginRuntimePolicy';
@@ -75,12 +77,43 @@ const CURRENT_BUILDER_VERSION = '1.0.0';
 // ---------------------------------------------------------------------------
 
 /**
+ * Module-level execution context — holds the active PluginRuntimeEnvironment
+ * during an executeWithRuntimeGuard call. Renderers that need policy-constrained
+ * access (e.g. fetch, storage, browser APIs) should call
+ * getCurrentPluginRuntimeEnvironment() instead of using browser globals directly.
+ */
+let _activePluginEnvironment: PluginRuntimeEnvironment | null = null;
+
+/**
+ * Returns the PluginRuntimeEnvironment that is active during the current
+ * executeWithRuntimeGuard call, or null when called outside a guarded
+ * execution context.
+ *
+ * Plugin renderers should use this to access policy-constrained network and
+ * storage APIs instead of calling globalThis.fetch / localStorage directly.
+ *
+ * @doc.type function
+ * @doc.purpose Access active plugin runtime environment from renderer code
+ * @doc.layer product
+ * @doc.pattern Security Guard
+ */
+export function getCurrentPluginRuntimeEnvironment(): PluginRuntimeEnvironment | null {
+  return _activePluginEnvironment;
+}
+
+/**
  * Secure plugin loader for component packages.
  */
 export class ComponentPluginLoader {
   private readonly loadedPackages = new Map<string, ComponentPackageManifest>();
   private readonly allowedPackages = new Set<string>();
   private readonly runtimeEnvironments = new Map<string, PluginRuntimeEnvironment>();
+  /**
+   * Maps renderer contract names back to the package that registered them.
+   * Used by executeWithRuntimeGuard to identify which environment governs a
+   * renderer without requiring the caller to know the package name.
+   */
+  private readonly contractPackageMap = new Map<string, string>();
 
   /**
    * Validates a component package manifest.
@@ -171,6 +204,7 @@ export class ComponentPluginLoader {
 
     manifest.renderers.forEach((renderer) => {
       rendererManifestRegistry.register(renderer);
+      this.contractPackageMap.set(renderer.contractName, manifest.packageName);
     });
 
     // Track loaded package
@@ -191,6 +225,7 @@ export class ComponentPluginLoader {
 
     manifest.renderers.forEach((renderer) => {
       rendererManifestRegistry.unregister(renderer.contractName);
+      this.contractPackageMap.delete(renderer.contractName);
     });
 
     // Remove from loaded packages
@@ -226,8 +261,88 @@ export class ComponentPluginLoader {
     return Array.from(this.loadedPackages.values());
   }
 
+  /**
+   * Returns the package name that registered the given renderer contract, or
+   * null if the contract was not loaded through this loader.
+   *
+   * @doc.type method
+   * @doc.purpose Map renderer contracts to their owning package
+   * @doc.layer product
+   */
+  getPackageForContract(contractName: string): string | null {
+    return this.contractPackageMap.get(contractName) ?? null;
+  }
+
   getRuntimeEnvironment(packageName: string): PluginRuntimeEnvironment | null {
     return this.runtimeEnvironments.get(packageName) ?? null;
+  }
+
+  /**
+   * Executes a plugin renderer (or any plugin callback) inside an active
+   * runtime policy guard.
+   *
+   * Enforcement contract:
+   * 1. **Fail-closed** — throws immediately if the package has no registered
+   *    environment, i.e. it was never loaded through this loader.
+   * 2. **Policy re-validation** — the policy is validated before every call.
+   * 3. **Network interception** — globalThis.fetch is temporarily replaced with
+   *    a wrapper that applies the package's NetworkPolicy, blocking requests to
+   *    domains not on the allow-list during the synchronous render path.
+   * 4. **Context propagation** — the active environment is exposed via
+   *    getCurrentPluginRuntimeEnvironment() so renderers can use the
+   *    policy-constrained storage and browser API wrappers.
+   *
+   * @param packageName - The package whose policy governs this execution.
+   * @param fn - The renderer or callback to execute under the guard.
+   * @returns The return value of fn.
+   *
+   * @doc.type method
+   * @doc.purpose Enforce plugin runtime policy at execution boundaries
+   * @doc.layer product
+   * @doc.pattern Security Guard
+   */
+  executeWithRuntimeGuard<T>(packageName: string, fn: (env: PluginRuntimeEnvironment) => T): T {
+    const env = this.runtimeEnvironments.get(packageName);
+    if (!env) {
+      throw new Error(
+        `Plugin execution rejected: package '${packageName}' has no registered runtime environment. ` +
+          `Load the package through ComponentPluginLoader before rendering its components.`,
+      );
+    }
+
+    const validation = validatePluginRuntimePolicy(env.policy);
+    if (!validation.valid) {
+      throw new Error(
+        `Plugin execution rejected: invalid policy for package '${packageName}'. ` +
+          validation.errors.join('; '),
+      );
+    }
+
+    // Intercept globalThis.fetch so any synchronous-path network request made
+    // during the renderer's execution is subject to the package's NetworkPolicy.
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.href
+            : (input as Request).url;
+      const decision = enforceNetworkPolicy(url, env.policy.network);
+      if (!decision.allowed) {
+        return Promise.reject(new Error(`Plugin network request blocked: ${decision.reason}`));
+      }
+      return originalFetch(input, init);
+    };
+
+    const previous = _activePluginEnvironment;
+    _activePluginEnvironment = env;
+    try {
+      return fn(env);
+    } finally {
+      _activePluginEnvironment = previous;
+      globalThis.fetch = originalFetch;
+    }
   }
 
   // -------------------------------------------------------------------------

@@ -8,3 +8,9 @@
 
 export { PageBuilderCommands } from './PageBuilderCommands';
 export type { Command, CommandType, CommandResult } from './PageBuilderCommands';
+export { persistResidualIslandReview } from './ResidualIslandReviewService';
+export type {
+  ResidualIslandDecision,
+  ResidualIslandReviewRequest,
+  ResidualIslandReviewResponse,
+} from './ResidualIslandReviewService';

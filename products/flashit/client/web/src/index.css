@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
+@source "../../../../platform/typescript/product-shell/src";
 
 @layer base {
   body {

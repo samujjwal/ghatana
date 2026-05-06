@@ -1,0 +1,119 @@
+{
+  "$schema": "https://ghatana.io/schemas/architecture-compliance-allowlist.json",
+  "version": "1.0.0",
+  "description": "Temporary, exact-match exceptions for legacy architecture-compliance debt. New package naming or banned-library violations must not be added without an owner, reason, and removal date.",
+  "exceptions": [
+    {
+      "type": "DEPRECATED_NAMING",
+      "file": "products/yappc/frontend/package.json",
+      "packageName": "@ghatana/yappc-frontend",
+      "reason": "Legacy YAPPC workspace root package; active migration to @yappc/* needs coordinated workspace/package-filter updates.",
+      "owner": "yappc-platform",
+      "targetRemovalDate": "2026-06-30"
+    },
+    {
+      "type": "DEPRECATED_NAMING",
+      "file": "products/yappc/frontend/libs/ide/package.json",
+      "packageName": "@ghatana/yappc-ide",
+      "reason": "Deprecated IDE package still published internally while consumers migrate to canvas-owned replacements.",
+      "owner": "yappc-platform",
+      "targetRemovalDate": "2026-06-30"
+    },
+    {
+      "type": "DEPRECATED_NAMING",
+      "file": "products/yappc/frontend/apps/api/package.json",
+      "packageName": "@ghatana/yappc-api-app",
+      "reason": "Legacy YAPPC app package name; rename requires coordinated filter/script updates.",
+      "owner": "yappc-platform",
+      "targetRemovalDate": "2026-06-30"
+    },
+    {
+      "type": "DEPRECATED_NAMING",
+      "file": "products/yappc/frontend/web/package.json",
+      "packageName": "@ghatana/yappc-web-app",
+      "reason": "Legacy YAPPC web package name; rename requires coordinated filter/script updates.",
+      "owner": "yappc-platform",
+      "targetRemovalDate": "2026-06-30"
+    },
+    {
+      "type": "DEPRECATED_NAMING",
+      "file": "products/yappc/frontend/docs-site/package.json",
+      "packageName": "@ghatana/yappc-docs",
+      "reason": "Legacy YAPPC docs package name; rename requires coordinated docs-site deployment updates.",
+      "owner": "yappc-platform",
+      "targetRemovalDate": "2026-06-30"
+    },
+    {
+      "type": "DEPRECATED_NAMING",
+      "file": "products/yappc/frontend/packages/eslint-config-custom/package.json",
+      "packageName": "@ghatana/yappc-eslint-config-custom",
+      "reason": "Legacy local ESLint config name; rename requires coordinated consumer config updates.",
+      "owner": "yappc-platform",
+      "targetRemovalDate": "2026-06-30"
+    },
+    {
+      "type": "DEPRECATED_NAMING",
+      "file": "products/yappc/frontend/packages/tsconfig/package.json",
+      "packageName": "@ghatana/yappc-tsconfig",
+      "reason": "Legacy shared tsconfig package name; rename requires coordinated extends references.",
+      "owner": "yappc-platform",
+      "targetRemovalDate": "2026-06-30"
+    },
+    {
+      "type": "DEPRECATED_NAMING",
+      "file": "products/yappc/frontend/packages/vite-plugin-live-edit/package.json",
+      "packageName": "@ghatana/yappc-vite-plugin-live-edit",
+      "reason": "Legacy Vite plugin package name; rename requires coordinated plugin imports and docs.",
+      "owner": "yappc-platform",
+      "targetRemovalDate": "2026-06-30"
+    },
+    {
+      "type": "BANNED_LIBRARY",
+      "file": "products/yappc/frontend/web/package.json",
+      "dependency": "axios",
+      "reason": "Legacy YAPPC HTTP clients still use Axios interceptors; migration must move to fetch/@ghatana/http-client with retry/error parity.",
+      "owner": "yappc-platform",
+      "targetRemovalDate": "2026-06-30"
+    },
+    {
+      "type": "BANNED_LIBRARY",
+      "file": "products/dcmaar/apps/agent-react-native/package.json",
+      "dependency": "axios",
+      "reason": "Legacy React Native Guardian API client uses Axios; migration must preserve auth/header/error semantics.",
+      "owner": "dcmaar-platform",
+      "targetRemovalDate": "2026-06-30"
+    },
+    {
+      "type": "BANNED_LIBRARY",
+      "file": "products/dcmaar/apps/child-mobile/package.json",
+      "dependency": "axios",
+      "reason": "Legacy mobile package carries Axios while shared mobile API client migrates.",
+      "owner": "dcmaar-platform",
+      "targetRemovalDate": "2026-06-30"
+    },
+    {
+      "type": "BANNED_LIBRARY",
+      "file": "products/dcmaar/apps/parent-mobile/package.json",
+      "dependency": "axios",
+      "reason": "Legacy mobile package carries Axios while shared mobile API client migrates.",
+      "owner": "dcmaar-platform",
+      "targetRemovalDate": "2026-06-30"
+    },
+    {
+      "type": "BANNED_LIBRARY",
+      "file": "products/dcmaar/libs/typescript/mobile-shared/package.json",
+      "dependency": "axios",
+      "reason": "Shared mobile API client still uses Axios interceptors; migration must preserve AsyncStorage auth behavior.",
+      "owner": "dcmaar-platform",
+      "targetRemovalDate": "2026-06-30"
+    },
+    {
+      "type": "BANNED_LIBRARY",
+      "file": "products/tutorputor/apps/content-explorer/package.json",
+      "dependency": "axios",
+      "reason": "Legacy content explorer dependency declaration; remove after verifying no transitive local API-client usage remains.",
+      "owner": "tutorputor-platform",
+      "targetRemovalDate": "2026-06-30"
+    }
+  ]
+}

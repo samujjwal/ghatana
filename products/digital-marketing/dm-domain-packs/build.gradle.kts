@@ -60,7 +60,8 @@ configure<ProductPackValidationExtension> {
         listOf(
             "com.ghatana.digitalmarketing.pack.DigitalMarketingPackContractTest",
             "com.ghatana.digitalmarketing.pack.DigitalMarketingBoundaryPolicyStoreTest",
-            "com.ghatana.digitalmarketing.pack.DigitalMarketingKernelBoundaryContractTest"
+            "com.ghatana.digitalmarketing.pack.DigitalMarketingKernelBoundaryContractTest",
+            "com.ghatana.digitalmarketing.pack.DigitalMarketingBoundaryWorkflowCoverageTest"
         )
     )
     complianceSourceFile.set(

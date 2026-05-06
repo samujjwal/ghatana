@@ -10,6 +10,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useCollaborativeEdit, Collaborator } from '../hooks/useCollaborativeEdit';
+import { flashitWebColors, flashitWebAlpha } from '@/styles/designTokens';
 
 // ============================================================================
 // Types & Interfaces
@@ -290,7 +291,7 @@ export function CollaborativeEditor({
           height: 100%;
           background: white;
           border-radius: 8px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 2px 4px ${flashitWebAlpha.shadow};
           overflow: hidden;
         }
 
@@ -299,8 +300,8 @@ export function CollaborativeEditor({
           justify-content: space-between;
           align-items: center;
           padding: 0.75rem 1rem;
-          background: #f9fafb;
-          border-bottom: 1px solid #e5e7eb;
+          background: ${flashitWebColors.slate50};
+          border-bottom: 1px solid ${flashitWebColors.slate200};
         }
 
         .status-left,
@@ -316,16 +317,16 @@ export function CollaborativeEditor({
         }
 
         .connection-status.connected {
-          color: #10b981;
+          color: ${flashitWebColors.green500};
         }
 
         .connection-status.disconnected {
-          color: #ef4444;
+          color: ${flashitWebColors.red500};
         }
 
         .syncing-status {
           font-size: 0.875rem;
-          color: #6b7280;
+          color: ${flashitWebColors.slate500};
           font-style: italic;
         }
 
@@ -345,7 +346,7 @@ export function CollaborativeEditor({
           font-size: 0.875rem;
           font-weight: 600;
           border: 2px solid white;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 1px 3px ${flashitWebAlpha.elevatedShadow};
         }
 
         .editor-container {
@@ -364,15 +365,15 @@ export function CollaborativeEditor({
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
           font-size: 1rem;
           line-height: 1.5;
-          color: #1f2937;
+          color: ${flashitWebColors.slate800};
         }
 
         .editor-textarea::placeholder {
-          color: #9ca3af;
+          color: ${flashitWebColors.slate400};
         }
 
         .editor-textarea:read-only {
-          background: #f9fafb;
+          background: ${flashitWebColors.slate50};
           cursor: not-allowed;
         }
 

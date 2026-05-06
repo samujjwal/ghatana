@@ -66,7 +66,7 @@ export class FlashitApiClient {
       headers,
     });
 
-    if (response.status === 401 && this.onUnauthorized) {
+    if (response.status === 401 && this.onUnauthorized && endpoint !== "/auth/login") {
       this.onUnauthorized();
       throw new Error("Unauthorized");
     }

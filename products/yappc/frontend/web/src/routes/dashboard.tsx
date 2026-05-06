@@ -27,6 +27,13 @@ import { RouteErrorBoundary } from '../components/route/ErrorBoundary';
 import { GuestLandingView } from '../components/dashboard/GuestLandingView';
 import { EmptyStateView } from '../components/dashboard/EmptyStateView';
 import { DashboardSkeleton } from '../components/dashboard/DashboardSkeleton';
+import { NextActionDashboard } from '../components/dashboard/NextActionDashboard';
+
+// Services
+import ActionRegistry from '../services/ActionRegistry';
+import type { ActionDefinition } from '../services/ActionRegistry';
+import { calculateNextBestActions } from '../services/auto/NextBestActionService';
+import type { NextAction } from '../components/dashboard/NextActionDashboard';
 
 /**
  * Home Dashboard Component
@@ -50,6 +57,77 @@ export default function Component() {
         () => [...allProjects].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)).slice(0, 3),
         [allProjects]
     );
+
+    // -----------------------------------------------------------------------
+    // Next-best-action derivation (P2-003)
+    // Derives ranked actions from the most recent project's lifecyclePhase and
+    // AI-computed aiNextActions without requiring WorkflowContextProvider.
+    // The top action is also registered in ActionRegistry so it surfaces
+    // consistently in the CommandPalette (Cmd+K).
+    // -----------------------------------------------------------------------
+    const mostRecentProject = recentProjects[0];
+
+    const dashboardNextActions = useMemo<readonly NextAction[]>(() => {
+        if (!mostRecentProject) {
+            return [];
+        }
+
+        // Prefer AI-computed next actions already stored on the project;
+        // fall back to phase-based calculation when none are available.
+        const actionTitles: string[] =
+            mostRecentProject.aiNextActions.length > 0
+                ? mostRecentProject.aiNextActions.slice(0, 3)
+                : calculateNextBestActions({
+                      phase: mostRecentProject.lifecyclePhase,
+                      state: {},
+                      blockers: [],
+                      role: 'member',
+                      permissions: [],
+                      activity: [],
+                      capabilities: [],
+                  }).actions.slice(0, 3).map((a) => a.title);
+
+        return actionTitles.map((title, index): NextAction => ({
+            id: `dashboard-next-action-${index}`,
+            title,
+            description: `${title} · ${mostRecentProject.name}`,
+            priority: index === 0 ? 'primary' : index === 1 ? 'secondary' : 'tertiary',
+            action: () => {
+                navigate(`/p/${mostRecentProject.id}`);
+            },
+        }));
+    }, [mostRecentProject, navigate]);
+
+    // Register the top dashboard action in ActionRegistry so it appears in
+    // the CommandPalette under the 'ai' category at maximum priority.
+    useEffect(() => {
+        if (dashboardNextActions.length === 0 || !mostRecentProject) {
+            return;
+        }
+
+        const top = dashboardNextActions[0];
+        if (!top) {
+            return;
+        }
+
+        const entry: ActionDefinition = {
+            id: 'next-best-action-top',
+            label: top.title,
+            description: top.description,
+            icon: 'TrendingUp',
+            category: 'ai',
+            priority: 9999,
+            context: {},
+            handler: () => {
+                top.action();
+            },
+        };
+
+        ActionRegistry.register(entry);
+        return () => {
+            ActionRegistry.unregister('next-best-action-top');
+        };
+    }, [dashboardNextActions, mostRecentProject]);
 
     // Control header visibility based on auth state
     useEffect(() => {
@@ -207,11 +285,19 @@ export default function Component() {
                     </div>
                 </div>
 
+                {dashboardNextActions.length > 0 && dashboardNextActions[0] != null && (
+                    <section aria-label="Recommended next action">
+                        <NextActionDashboard
+                            primaryAction={dashboardNextActions[0]}
+                            secondaryAction={dashboardNextActions[1]}
+                        />
+                    </section>
+                )}
+
                 <section className="rounded-2xl border border-divider bg-bg-paper p-6 shadow-sm">
                     <div className="flex items-center justify-between gap-4">
                         <div>
-                            <h2 className="text-xl font-semibold text-text-primary">Recent Projects</h2>
-                            <p className="mt-1 text-sm text-text-secondary">
+                            <h2 className="text-xl font-semibold text-text-primary">Recent Projects</h2>                            <p className="mt-1 text-sm text-text-secondary">
                                 Jump directly back into the latest project cockpits.
                             </p>
                         </div>

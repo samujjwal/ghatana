@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Animated } from 'react-native';
 import { CaptureMode } from '../screens/UnifiedCaptureScreen';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 interface CaptureModeSelectionProps {
   selectedMode: CaptureMode;
@@ -54,7 +55,7 @@ export const CaptureModeSelector: React.FC<CaptureModeSelectionProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: flashitMobileTheme.background.muted,
     borderRadius: 16,
     padding: 8,
   },
@@ -66,8 +67,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   modeButtonSelected: {
-    backgroundColor: '#fff',
-    shadowColor: '#000',
+    backgroundColor: flashitMobileTheme.background.surface,
+    shadowColor: flashitMobileTheme.shadow.color,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -80,9 +81,9 @@ const styles = StyleSheet.create({
   modeLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#666',
+    color: flashitMobileTheme.text.secondary,
   },
   modeLabelSelected: {
-    color: '#007aff',
+    color: flashitMobileTheme.brand.primary,
   },
 });

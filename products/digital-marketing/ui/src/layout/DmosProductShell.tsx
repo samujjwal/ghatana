@@ -23,7 +23,7 @@ export function DmosProductShell({ children }: DmosProductShellProps): React.Rea
 
   const config: ProductShellConfig = {
     productName: 'DMOS',
-    logo: <span className="text-lg font-semibold tracking-tight text-sky-200">DM</span>,
+    logo: <span className="text-lg font-semibold tracking-tight text-sky-700">DM</span>,
     currentRole,
     roleOrder: DMOS_ROLE_ORDER,
     roleLabels: {

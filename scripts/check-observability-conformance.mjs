@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
+const flowManifestFile = "config/observability/product-observability-flows.json";
 
 const contracts = [
   {
@@ -17,6 +18,36 @@ const contracts = [
       "metricsPlugin",
       "monitoring",
       "tenant-isolation",
+    ],
+  },
+  {
+    name: "Kernel-owned FlashIt scrape config",
+    file: "monitoring/prometheus/prometheus.yml",
+    required: [
+      "job_name: 'flashit-gateway'",
+      "job_name: 'flashit-agent'",
+      "job_name: 'flashit-redis'",
+      "job_name: 'flashit-postgres'",
+      "product: 'flashit'",
+    ],
+  },
+  {
+    name: "Kernel-owned product dashboard overlay provisioning",
+    file: "monitoring/grafana/provisioning/dashboards-products.yaml",
+    required: [
+      "Product Observability Overlays",
+      "/etc/grafana/dashboards/products",
+      "foldersFromFilesStructure: true",
+    ],
+  },
+  {
+    name: "FlashIt observability overlay compose mounts",
+    file: "products/flashit/docker-compose.local.yml",
+    required: [
+      "${PRODUCT_OBSERVABILITY_ROOT:-../../monitoring}/prometheus/prometheus.yml",
+      "${PRODUCT_OBSERVABILITY_ROOT:-../../monitoring}/grafana/provisioning",
+      "${FLASHIT_OBSERVABILITY_OVERLAY_ROOT:-./monitoring}/alerts/flashit-rules.yml",
+      "${FLASHIT_OBSERVABILITY_OVERLAY_ROOT:-./monitoring}/grafana/dashboards",
     ],
   },
   {
@@ -88,6 +119,87 @@ const contracts = [
 
 const violations = [];
 
+const forbiddenProductStackFiles = [
+  "products/flashit/monitoring/prometheus.yml",
+  "products/flashit/monitoring/grafana/provisioning/datasources/prometheus.yml",
+  "products/flashit/monitoring/grafana/provisioning/dashboards/dashboards.yml",
+];
+
+function validateFlowManifest() {
+  const manifestPath = path.join(repoRoot, flowManifestFile);
+  if (!existsSync(manifestPath)) {
+    violations.push(`Missing observability flow manifest ${flowManifestFile}`);
+    return;
+  }
+
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  const requiredFacets = manifest.requiredFacets ?? [];
+  const flows = manifest.flows ?? [];
+  const requiredProducts = ["phr", "finance", "digital-marketing", "flashit"];
+  const coveredProducts = new Set();
+  let bridgeFlowCount = 0;
+
+  if (!Array.isArray(requiredFacets) || requiredFacets.length === 0) {
+    violations.push(`${flowManifestFile}: requiredFacets must list observability facets`);
+  }
+
+  if (!Array.isArray(flows) || flows.length === 0) {
+    violations.push(`${flowManifestFile}: flows must be a non-empty array`);
+    return;
+  }
+
+  for (const flow of flows) {
+    const flowName = `${flow.product ?? "unknown"}:${flow.flow ?? "unknown"}`;
+    if (!flow.product || !flow.flow || !flow.kind) {
+      violations.push(`${flowManifestFile}: ${flowName} must declare product, flow, and kind`);
+      continue;
+    }
+
+    coveredProducts.add(flow.product);
+    if (flow.kind === "bridge") {
+      bridgeFlowCount += 1;
+    }
+
+    const facets = new Set(flow.facets ?? []);
+    const missingFacets = requiredFacets.filter((facet) => !facets.has(facet));
+    if (missingFacets.length > 0) {
+      violations.push(`${flowManifestFile}: ${flowName} is missing facets ${missingFacets.join(", ")}`);
+    }
+
+    if (!Array.isArray(flow.evidence) || flow.evidence.length === 0) {
+      violations.push(`${flowManifestFile}: ${flowName} must declare evidence files`);
+      continue;
+    }
+
+    for (const evidence of flow.evidence) {
+      const evidenceFile = evidence.file;
+      const evidencePath = path.join(repoRoot, evidenceFile ?? "");
+      if (!evidenceFile || !existsSync(evidencePath)) {
+        violations.push(`${flowManifestFile}: ${flowName} references missing evidence file ${evidenceFile}`);
+        continue;
+      }
+
+      const content = readFileSync(evidencePath, "utf8");
+      const missingTokens = (evidence.tokens ?? []).filter((token) => !content.includes(token));
+      if (missingTokens.length > 0) {
+        violations.push(
+          `${flowManifestFile}: ${flowName} evidence ${evidenceFile} missing tokens ${missingTokens.join(", ")}`,
+        );
+      }
+    }
+  }
+
+  for (const product of requiredProducts) {
+    if (!coveredProducts.has(product)) {
+      violations.push(`${flowManifestFile}: missing observability flow coverage for ${product}`);
+    }
+  }
+
+  if (bridgeFlowCount === 0) {
+    violations.push(`${flowManifestFile}: at least one bridge flow must be covered`);
+  }
+}
+
 for (const contract of contracts) {
   const filePath = path.join(repoRoot, contract.file);
   if (!existsSync(filePath)) {
@@ -103,6 +215,16 @@ for (const contract of contracts) {
     );
   }
 }
+
+for (const file of forbiddenProductStackFiles) {
+  if (existsSync(path.join(repoRoot, file))) {
+    violations.push(
+      `FlashIt observability must not own stack config file ${file}; keep only product dashboards and alert overlays under products/flashit/monitoring`,
+    );
+  }
+}
+
+validateFlowManifest();
 
 if (violations.length > 0) {
   console.error(`❌ Observability conformance check failed with ${violations.length} violation(s):\n`);

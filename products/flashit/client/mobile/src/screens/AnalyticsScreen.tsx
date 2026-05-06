@@ -21,6 +21,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useApi } from '../contexts/ApiContext';
+import { flashitMobileColors } from '@/styles/designTokens';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -49,7 +50,7 @@ interface SphereBreakdown {
   color: string;
 }
 
-const SPHERE_COLORS = ['#0ea5e9', '#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'];
+const SPHERE_COLORS = [flashitMobileColors.sky500, flashitMobileColors.indigo500, flashitMobileColors.yellow500, flashitMobileColors.green500, flashitMobileColors.red500, flashitMobileColors.purple500];
 
 export default function AnalyticsScreen() {
   const { apiClient } = useApi();
@@ -136,7 +137,7 @@ export default function AnalyticsScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#0ea5e9" />
+        <ActivityIndicator size="large" color={flashitMobileColors.sky500} />
         <Text style={styles.loadingText}>Loading analytics...</Text>
       </View>
     );
@@ -150,7 +151,7 @@ export default function AnalyticsScreen() {
       accessibilityRole="tab"
       accessibilityState={{ selected: activeTab === tab }}
     >
-      <Ionicons name={icon} size={16} color={activeTab === tab ? '#0ea5e9' : '#94a3b8'} />
+      <Ionicons name={icon} size={16} color={activeTab === tab ? flashitMobileColors.sky500 : flashitMobileColors.slate400} />
       <Text style={[styles.tabLabel, activeTab === tab && styles.tabLabelActive]}>{label}</Text>
     </TouchableOpacity>
   );
@@ -169,16 +170,16 @@ export default function AnalyticsScreen() {
       {activeTab === 'overview' && (
         <View style={styles.section}>
           <View style={styles.statsGrid}>
-            <StatCard label="Total Moments" value={overview.totalMoments.toString()} icon="document-text-outline" color="#0ea5e9" />
-            <StatCard label="This Week" value={overview.momentsThisWeek.toString()} icon="calendar-outline" color="#6366f1" />
-            <StatCard label="This Month" value={overview.momentsThisMonth.toString()} icon="trending-up-outline" color="#10b981" />
-            <StatCard label="Daily Avg" value={overview.avgMomentsPerDay.toString()} icon="speedometer-outline" color="#f59e0b" />
-            <StatCard label="Streak" value={`${overview.streakDays}d`} icon="flame-outline" color="#ef4444" />
-            <StatCard label="Spheres" value={overview.totalSpheres.toString()} icon="grid-outline" color="#8b5cf6" />
+            <StatCard label="Total Moments" value={overview.totalMoments.toString()} icon="document-text-outline" color={flashitMobileColors.sky500} />
+            <StatCard label="This Week" value={overview.momentsThisWeek.toString()} icon="calendar-outline" color={flashitMobileColors.indigo500} />
+            <StatCard label="This Month" value={overview.momentsThisMonth.toString()} icon="trending-up-outline" color={flashitMobileColors.green500} />
+            <StatCard label="Daily Avg" value={overview.avgMomentsPerDay.toString()} icon="speedometer-outline" color={flashitMobileColors.yellow500} />
+            <StatCard label="Streak" value={`${overview.streakDays}d`} icon="flame-outline" color={flashitMobileColors.red500} />
+            <StatCard label="Spheres" value={overview.totalSpheres.toString()} icon="grid-outline" color={flashitMobileColors.purple500} />
           </View>
           {overview.topSphereName && (
             <View style={styles.infoCard}>
-              <Ionicons name="trophy-outline" size={20} color="#f59e0b" />
+              <Ionicons name="trophy-outline" size={20} color={flashitMobileColors.yellow500} />
               <Text style={styles.infoText}>
                 Most active sphere: <Text style={styles.infoBold}>{overview.topSphereName}</Text>
               </Text>
@@ -191,7 +192,7 @@ export default function AnalyticsScreen() {
       {activeTab === 'language' && (
         <View style={styles.section}>
           <View style={styles.infoCard}>
-            <Ionicons name="information-circle-outline" size={20} color="#0ea5e9" />
+            <Ionicons name="information-circle-outline" size={20} color={flashitMobileColors.sky500} />
             <Text style={styles.infoText}>
               Language analytics are available on the Language Insights screen for detailed vocabulary
               and sentiment analysis.
@@ -292,7 +293,7 @@ function computeStreak(moments: Array<{ capturedAt: string }>): number {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: flashitMobileColors.slate50,
   },
   centered: {
     flex: 1,
@@ -301,7 +302,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    color: '#64748b',
+    color: flashitMobileColors.slate500,
     fontSize: 14,
   },
   tabRow: {
@@ -319,18 +320,18 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: flashitMobileColors.slate100,
   },
   tabActive: {
-    backgroundColor: '#e0f2fe',
+    backgroundColor: flashitMobileColors.sky100,
   },
   tabLabel: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
   },
   tabLabelActive: {
-    color: '#0ea5e9',
+    color: flashitMobileColors.sky500,
     fontWeight: '600',
   },
   section: {
@@ -339,7 +340,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1e293b',
+    color: flashitMobileColors.slate800,
     marginBottom: 16,
   },
   statsGrid: {
@@ -349,28 +350,28 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: (screenWidth - 56) / 3,
-    backgroundColor: '#ffffff',
+    backgroundColor: flashitMobileColors.whiteAlt,
     borderRadius: 12,
     padding: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileColors.slate200,
   },
   statValue: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#1e293b',
+    color: flashitMobileColors.slate800,
     marginTop: 8,
   },
   statLabel: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
     marginTop: 4,
     textAlign: 'center',
   },
   infoCard: {
     flexDirection: 'row',
-    backgroundColor: '#f0f9ff',
+    backgroundColor: flashitMobileColors.sky50,
     borderRadius: 12,
     padding: 14,
     gap: 10,
@@ -380,22 +381,22 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 14,
-    color: '#334155',
+    color: flashitMobileColors.slate700,
     lineHeight: 20,
   },
   infoBold: {
     fontWeight: '700',
-    color: '#0ea5e9',
+    color: flashitMobileColors.sky500,
   },
   linkButton: {
     marginTop: 12,
     padding: 14,
-    backgroundColor: '#0ea5e9',
+    backgroundColor: flashitMobileColors.sky500,
     borderRadius: 10,
     alignItems: 'center',
   },
   linkButtonText: {
-    color: '#ffffff',
+    color: flashitMobileColors.whiteAlt,
     fontWeight: '600',
     fontSize: 15,
   },
@@ -404,11 +405,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'flex-end',
     height: 160,
-    backgroundColor: '#ffffff',
+    backgroundColor: flashitMobileColors.whiteAlt,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileColors.slate200,
   },
   barColumn: {
     alignItems: 'center',
@@ -416,18 +417,18 @@ const styles = StyleSheet.create({
   },
   barCount: {
     fontSize: 11,
-    color: '#64748b',
+    color: flashitMobileColors.slate500,
     marginBottom: 4,
     fontWeight: '600',
   },
   bar: {
     width: 28,
-    backgroundColor: '#0ea5e9',
+    backgroundColor: flashitMobileColors.sky500,
     borderRadius: 4,
   },
   barLabel: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
     marginTop: 6,
   },
   sphereRow: {
@@ -443,14 +444,14 @@ const styles = StyleSheet.create({
   },
   sphereName: {
     fontSize: 14,
-    color: '#334155',
+    color: flashitMobileColors.slate700,
     fontWeight: '500',
     width: 80,
   },
   sphereBarContainer: {
     flex: 1,
     height: 8,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: flashitMobileColors.slate100,
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -460,20 +461,20 @@ const styles = StyleSheet.create({
   },
   sphereCount: {
     fontSize: 13,
-    color: '#334155',
+    color: flashitMobileColors.slate700,
     fontWeight: '600',
     width: 30,
     textAlign: 'right',
   },
   spherePct: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
     width: 36,
     textAlign: 'right',
   },
   emptyText: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
     textAlign: 'center',
     marginTop: 24,
   },

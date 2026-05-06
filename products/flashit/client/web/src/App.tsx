@@ -3,7 +3,7 @@
  * Handles routing and authentication flow
  */
 
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { useAtomValue } from 'jotai';
 import { isAuthenticatedAtom } from './store/atoms';
 import { useCurrentUser } from './hooks/use-api';
@@ -50,6 +50,12 @@ function FlashitAccessDenied({
         <p className="mt-4 text-sm text-slate-600">
           Minimum role: <strong>{route.minimumRole ?? 'member'}</strong>
         </p>
+        <Link
+          to="/"
+          className="mt-6 inline-flex rounded-lg bg-amber-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-700 focus:ring-offset-2"
+        >
+          Return to dashboard
+        </Link>
       </section>
     </FlashitProductShell>
   );

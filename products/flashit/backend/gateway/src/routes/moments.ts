@@ -27,6 +27,11 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import { JwtPayload } from "../lib/auth";
 import { Logger } from "../lib/logger";
+import {
+  FlashItDataAccessContextError,
+  buildFlashItDataAccessContext,
+} from "../lib/data-access-context";
+import type { FlashItDataAccessContext } from "../lib/data-access-context";
 import { getClassificationService } from "../services/java-agents/classification-service.js";
 import { VectorEmbeddingService } from "../services/embeddings/vector-service.js";
 
@@ -158,6 +163,23 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
       });
     }
 
+    let dataAccessContext: FlashItDataAccessContext;
+    try {
+      dataAccessContext = buildFlashItDataAccessContext(request, {
+        auditClassification: "PERSONAL_MEMORY_WRITE",
+        dataOwnerScope: `sphere:${sphereId}`,
+        requireIdempotencyKey: true,
+      });
+    } catch (error) {
+      if (error instanceof FlashItDataAccessContextError) {
+        return reply.code(400).send({
+          error: "Missing data access context",
+          message: error.message,
+        });
+      }
+      throw error;
+    }
+
     // Create Moment
     const moment = await prisma.moment.create({
       data: {
@@ -173,7 +195,10 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
         importance: body.signals?.importance,
         entities: body.signals?.entities ?? [],
         capturedAt: body.capturedAt ? new Date(body.capturedAt) : new Date(),
-        metadata: body.metadata as any,
+        metadata: {
+          ...(body.metadata ?? {}),
+          dataAccessContext,
+        } as any,
       },
       include: {
         sphere: {
@@ -197,6 +222,7 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
         action: "CREATE",
         resourceType: "MOMENT",
         resourceId: moment.id,
+        details: dataAccessContext,
         ipAddress: request.ip,
         userAgent: request.headers["user-agent"],
       },
@@ -211,6 +237,7 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
       hasTranscript: !!moment.contentTranscript,
       emotionsCount: moment.emotions.length,
       tagsCount: moment.tags.length,
+      dataAccessContext,
     });
 
     // Trigger vector embedding for semantic search
@@ -385,6 +412,11 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
       });
     }
 
+    const dataAccessContext = buildFlashItDataAccessContext(request, {
+      auditClassification: "PERSONAL_MEMORY_READ",
+      dataOwnerScope: `sphere:${moment.sphereId}`,
+    });
+
     // Audit log
     await prisma.auditEvent.create({
       data: {
@@ -396,6 +428,7 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
         action: "VIEW",
         resourceType: "MOMENT",
         resourceId: moment.id,
+        details: dataAccessContext,
       },
     });
 
@@ -416,6 +449,10 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
   }, async (request, reply) => {
     const userId = getUserIdFromRequest(request);
     const query = searchMomentsSchema.parse(request.query);
+    const dataAccessContext = buildFlashItDataAccessContext(request, {
+      auditClassification: "SEARCH_ACTIVITY_READ",
+      dataOwnerScope: `principal:${userId}`,
+    });
 
     // Get accessible Spheres
     const userSpheres = await prisma.sphereAccess.findMany({
@@ -513,6 +550,7 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
       moments: resultMoments,
       nextCursor,
       totalCount,
+      dataAccessContext,
     });
   });
 
@@ -562,10 +600,32 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
       });
     }
 
+    let dataAccessContext: FlashItDataAccessContext;
+    try {
+      dataAccessContext = buildFlashItDataAccessContext(request, {
+        auditClassification: "PERSONAL_MEMORY_WRITE",
+        dataOwnerScope: `sphere:${moment.sphereId}`,
+        requireIdempotencyKey: true,
+      });
+    } catch (error) {
+      if (error instanceof FlashItDataAccessContextError) {
+        return reply.code(400).send({
+          error: "Missing data access context",
+          message: error.message,
+        });
+      }
+      throw error;
+    }
+
     // Soft delete
     await prisma.moment.update({
       where: { id },
-      data: { deletedAt: new Date() },
+      data: {
+        deletedAt: new Date(),
+        metadata: {
+          dataAccessContext,
+        } as any,
+      },
     });
 
     // Audit log
@@ -579,10 +639,10 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
         action: "DELETE",
         resourceType: "MOMENT",
         resourceId: id,
+        details: dataAccessContext,
       },
     });
 
     return reply.code(204).send();
   });
 };
-

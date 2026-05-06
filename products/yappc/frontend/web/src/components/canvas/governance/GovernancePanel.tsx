@@ -12,6 +12,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, InteractiveList as List, ListItem, ListItemIcon as ListItemAvatar, ListItemText, Avatar, Chip, Button, IconButton, Stack, Divider, Surface as Paper, LinearProgress, Snackbar } from '@ghatana/design-system';
 import { Users as Group, Shield as Security, Rocket as RocketLaunch, MoreVertical as MoreVert, Plus as Add, Globe as Public, CloudCheck as CloudDone, AlertCircle as ErrorOutline, Download as FileDownload, FileText as Description } from 'lucide-react';
+import { useGovernanceExport } from '../../../hooks/useGovernanceExport';
 
 export interface ProjectMember {
     id: string;
@@ -28,16 +29,28 @@ export interface DeploymentStatus {
     lastUpdated: Date;
 }
 
+export interface GovernancePanelProps {
+    /** Page artifact ID for which the audit export is fetched. */
+    artifactId?: string | null;
+}
+
 /**
  * GovernancePanel Component
  */
-export const GovernancePanel: React.FC = () => {
+export const GovernancePanel: React.FC<GovernancePanelProps> = ({ artifactId }) => {
     const [isExporting, setIsExporting] = useState(false);
     // P2-7: Fix Native Alert - use proper notification state instead of native alert
     const [notification, setNotification] = useState<{ open: boolean; message: string }>({
         open: false,
         message: '',
     });
+
+    const {
+        exportAudit,
+        isExporting: isAuditExporting,
+        exportError: auditExportError,
+        clearError: clearAuditError,
+    } = useGovernanceExport(artifactId);
 
     const [members] = useState<ProjectMember[]>([
         { id: '1', name: 'Alice Chen', role: 'Architect', status: 'online' },
@@ -55,13 +68,22 @@ export const GovernancePanel: React.FC = () => {
         // Simulate export process
         setTimeout(() => {
             setIsExporting(false);
-            console.log(`Exported project in ${format} format`);
             // P2-7: Use proper notification instead of native alert
             setNotification({
                 open: true,
                 message: `Project specification exported as ${format.toUpperCase()}. Check your downloads.`,
             });
         }, 1500);
+    };
+
+    const handleAuditExport = async (format: 'json' | 'csv'): Promise<void> => {
+        await exportAudit(format);
+        if (!auditExportError) {
+            setNotification({
+                open: true,
+                message: `Audit trail exported as ${format.toUpperCase()}. Check your downloads.`,
+            });
+        }
     };
 
     const handleCloseNotification = () => {
@@ -157,6 +179,71 @@ export const GovernancePanel: React.FC = () => {
                                 Generating specification documents...
                             </Typography>
                         </Box>
+                    )}
+                </Paper>
+            </Box>
+
+            {/* Audit Export Section */}
+            <Box className="mb-8" data-testid="audit-export-section">
+                <Typography className="mb-4 block text-xs uppercase tracking-wider" color="text.secondary" fontWeight="800">
+                    Artifact Audit Export
+                </Typography>
+                <Paper variant="outlined" className="p-4 rounded-lg">
+                    <Typography className="mb-4 text-[0.8125rem]" color="text.secondary">
+                        Export the full change trace for this page artifact for compliance review.
+                    </Typography>
+                    <Stack direction="row" spacing={1}>
+                        <Button
+                            variant="outlined"
+                            size="sm"
+                            startIcon={<FileDownload />}
+                            onClick={() => void handleAuditExport('json')}
+                            disabled={isAuditExporting || !artifactId}
+                            data-testid="audit-export-json-button"
+                            className="flex-1 text-xs rounded-md"
+                        >
+                            Export JSON
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            size="sm"
+                            startIcon={<Description />}
+                            onClick={() => void handleAuditExport('csv')}
+                            disabled={isAuditExporting || !artifactId}
+                            data-testid="audit-export-csv-button"
+                            className="flex-1 text-xs rounded-md"
+                        >
+                            Export CSV
+                        </Button>
+                    </Stack>
+                    {isAuditExporting && (
+                        <Box className="mt-4">
+                            <LinearProgress className="rounded h-[2px]" />
+                            <Typography className="mt-2 block text-center text-xs text-fg-muted" color="text.secondary">
+                                Fetching audit records...
+                            </Typography>
+                        </Box>
+                    )}
+                    {auditExportError && (
+                        <Box className="mt-3">
+                            <Typography className="text-xs text-error-color" color="error">
+                                {auditExportError}
+                            </Typography>
+                            <Button
+                                size="sm"
+                                variant="text"
+                                onClick={clearAuditError}
+                                className="mt-1 text-xs p-0"
+                                data-testid="audit-export-clear-error"
+                            >
+                                Dismiss
+                            </Button>
+                        </Box>
+                    )}
+                    {!artifactId && (
+                        <Typography className="mt-2 text-xs text-fg-muted" color="text.secondary">
+                            No artifact selected.
+                        </Typography>
                     )}
                 </Paper>
             </Box>

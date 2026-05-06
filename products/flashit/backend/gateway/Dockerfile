@@ -1,4 +1,5 @@
-# Multi-stage build for Flashit Web API
+# Shared template source: config/docker/templates/product-node-api.Dockerfile.template
+# Product overrides: PRODUCT_PORT=3001 PRODUCT_HEALTH_PATH=/health PRODUCT_RUN_COMMAND=["node", "dist/server.js"]
 
 # Stage 1: Dependencies
 FROM node:18-alpine AS deps

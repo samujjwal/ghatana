@@ -3093,9 +3093,6 @@ importers:
       undici:
         specifier: ^8.0.2
         version: 8.0.2
-      uuid:
-        specifier: npm:nanoid@5
-        version: nanoid@5.1.7
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -3286,9 +3283,6 @@ importers:
       react-native-web:
         specifier: ^0.21.2
         version: 0.21.2(encoding@0.1.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      uuid:
-        specifier: npm:nanoid@5
-        version: nanoid@5.1.7
     devDependencies:
       '@babel/core':
         specifier: ^7.29.0
@@ -3326,9 +3320,15 @@ importers:
       '@ghatana/product-shell':
         specifier: workspace:*
         version: link:../../../../platform/typescript/product-shell
+      '@ghatana/theme':
+        specifier: workspace:*
+        version: link:../../../../platform/typescript/theme
       '@ghatana/tokens':
         specifier: workspace:*
         version: link:../../../../platform/typescript/tokens
+      '@tanstack/query-core':
+        specifier: ^5.90.21
+        version: 5.99.2
       '@tanstack/react-query':
         specifier: ^5.90.20
         version: 5.90.21(react@19.2.4)
@@ -3350,6 +3350,9 @@ importers:
       react-router-dom:
         specifier: ^7.14.0
         version: 7.14.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      scheduler:
+        specifier: ^0.27.0
+        version: 0.27.0
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -3497,6 +3500,9 @@ importers:
       react-router-dom:
         specifier: ^7.14.0
         version: 7.14.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      scheduler:
+        specifier: ^0.27.0
+        version: 0.27.0
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -4564,6 +4570,9 @@ importers:
         specifier: ^13.6.30
         version: 13.6.30
     devDependencies:
+      '@axe-core/playwright':
+        specifier: ^4.11.1
+        version: 4.11.1(playwright-core@1.59.1)
       '@commitlint/config-conventional':
         specifier: ^20.5.0
         version: 20.5.0

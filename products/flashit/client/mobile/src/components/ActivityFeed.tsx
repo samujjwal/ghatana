@@ -19,6 +19,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 // ============================================================================
 // Types
@@ -62,6 +63,22 @@ interface ActivityStats {
   summariesGenerated: number;
   collaborations: number;
 }
+
+const getActivityTone = (type: ActivityType) => {
+  switch (type) {
+    case 'moment_created':
+      return { icon: styles.toneSuccess, badge: styles.toneSuccess, text: styles.toneSuccessText };
+    case 'moment_updated':
+    case 'search_performed':
+      return { icon: styles.toneInfo, badge: styles.toneInfo, text: styles.toneInfoText };
+    case 'moment_deleted':
+      return { icon: styles.toneError, badge: styles.toneError, text: styles.toneErrorText };
+    case 'template_used':
+      return { icon: styles.toneWarning, badge: styles.toneWarning, text: styles.toneWarningText };
+    default:
+      return { icon: styles.toneNeutral, badge: styles.toneNeutral, text: styles.toneNeutralText };
+  }
+};
 
 // ============================================================================
 // API Functions
@@ -172,7 +189,7 @@ export default function ActivityFeed({
   if (loadingActivities || loadingStats) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color={flashitMobileTheme.brand.primary} />
       </View>
     );
   }
@@ -309,48 +326,40 @@ export default function ActivityFeed({
               </View>
 
               {/* Activities */}
-              {group.activities.map((activity) => (
-                <TouchableOpacity
-                  key={activity.id}
-                  style={styles.activityCard}
-                  onPress={() => onActivityPress?.(activity)}
-                  activeOpacity={0.7}
-                >
-                  {/* Icon */}
-                  <View
-                    style={[
-                      styles.activityIcon,
-                      { backgroundColor: `${activity.color}30` },
-                    ]}
-                  >
-                    <Text style={styles.activityIconText}>{activity.icon}</Text>
-                  </View>
+              {group.activities.map((activity) => {
+                const activityTone = getActivityTone(activity.type);
 
-                  {/* Content */}
-                  <View style={styles.activityContent}>
-                    <Text style={styles.activityDescription}>
-                      {activity.description}
-                    </Text>
-                    <Text style={styles.activityTime}>
-                      {formatTime(activity.timestamp)}
-                    </Text>
-                  </View>
-
-                  {/* Type Badge */}
-                  <View
-                    style={[
-                      styles.activityBadge,
-                      { backgroundColor: `${activity.color}20` },
-                    ]}
+                return (
+                  <TouchableOpacity
+                    key={activity.id}
+                    style={styles.activityCard}
+                    onPress={() => onActivityPress?.(activity)}
+                    activeOpacity={0.7}
                   >
-                    <Text
-                      style={[styles.activityBadgeText, { color: activity.color }]}
-                    >
-                      {activity.type.split('_')[0]}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
+                    {/* Icon */}
+                    <View style={[styles.activityIcon, activityTone.icon]}>
+                      <Text style={styles.activityIconText}>{activity.icon}</Text>
+                    </View>
+
+                    {/* Content */}
+                    <View style={styles.activityContent}>
+                      <Text style={styles.activityDescription}>
+                        {activity.description}
+                      </Text>
+                      <Text style={styles.activityTime}>
+                        {formatTime(activity.timestamp)}
+                      </Text>
+                    </View>
+
+                    {/* Type Badge */}
+                    <View style={[styles.activityBadge, activityTone.badge]}>
+                      <Text style={[styles.activityBadgeText, activityTone.text]}>
+                        {activity.type.split('_')[0]}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           ))
         )}
@@ -366,7 +375,7 @@ export default function ActivityFeed({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: flashitMobileTheme.background.canvas,
   },
   centered: {
     flex: 1,
@@ -387,16 +396,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statGreen: {
-    backgroundColor: '#d1fae5',
+    backgroundColor: flashitMobileTheme.background.surface,
+    borderColor: flashitMobileTheme.status.success,
+    borderWidth: 1,
   },
   statBlue: {
-    backgroundColor: '#dbeafe',
+    backgroundColor: flashitMobileTheme.background.surface,
+    borderColor: flashitMobileTheme.status.info,
+    borderWidth: 1,
   },
   statPurple: {
-    backgroundColor: '#ede9fe',
+    backgroundColor: flashitMobileTheme.background.surface,
+    borderColor: flashitMobileTheme.brand.primary,
+    borderWidth: 1,
   },
   statOrange: {
-    backgroundColor: '#fed7aa',
+    backgroundColor: flashitMobileTheme.background.surface,
+    borderColor: flashitMobileTheme.status.warning,
+    borderWidth: 1,
   },
   statNumber: {
     fontSize: 24,
@@ -405,7 +422,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 12,
-    color: '#6b7280',
+    color: flashitMobileTheme.text.secondary,
   },
   filtersContainer: {
     maxHeight: 50,
@@ -419,17 +436,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: flashitMobileTheme.background.muted,
   },
   filterTabActive: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: flashitMobileTheme.brand.primary,
   },
   filterText: {
     fontSize: 14,
-    color: '#374151',
+    color: flashitMobileTheme.text.primary,
   },
   filterTextActive: {
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     fontWeight: '600',
   },
   timelineContainer: {
@@ -446,7 +463,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    color: '#9ca3af',
+    color: flashitMobileTheme.text.secondary,
   },
   groupContainer: {
     marginBottom: 32,
@@ -464,21 +481,21 @@ const styles = StyleSheet.create({
   dateLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: flashitMobileTheme.border,
   },
   dateCount: {
     fontSize: 14,
-    color: '#6b7280',
+    color: flashitMobileTheme.text.secondary,
     marginLeft: 12,
   },
   activityCard: {
     flexDirection: 'row',
     padding: 16,
     marginBottom: 12,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.background.surface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: flashitMobileTheme.border,
   },
   activityIcon: {
     width: 48,
@@ -496,12 +513,12 @@ const styles = StyleSheet.create({
   },
   activityDescription: {
     fontSize: 15,
-    color: '#111827',
+    color: flashitMobileTheme.text.primary,
     marginBottom: 4,
   },
   activityTime: {
     fontSize: 13,
-    color: '#6b7280',
+    color: flashitMobileTheme.text.secondary,
   },
   activityBadge: {
     paddingHorizontal: 8,
@@ -513,5 +530,45 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     textTransform: 'capitalize',
+  },
+  toneSuccess: {
+    backgroundColor: flashitMobileTheme.background.accentSurface,
+    borderColor: flashitMobileTheme.status.success,
+    borderWidth: 1,
+  },
+  toneSuccessText: {
+    color: flashitMobileTheme.status.success,
+  },
+  toneInfo: {
+    backgroundColor: flashitMobileTheme.background.accentSurface,
+    borderColor: flashitMobileTheme.status.info,
+    borderWidth: 1,
+  },
+  toneInfoText: {
+    color: flashitMobileTheme.status.info,
+  },
+  toneError: {
+    backgroundColor: flashitMobileTheme.background.accentSurface,
+    borderColor: flashitMobileTheme.status.error,
+    borderWidth: 1,
+  },
+  toneErrorText: {
+    color: flashitMobileTheme.status.error,
+  },
+  toneWarning: {
+    backgroundColor: flashitMobileTheme.background.accentSurface,
+    borderColor: flashitMobileTheme.status.warning,
+    borderWidth: 1,
+  },
+  toneWarningText: {
+    color: flashitMobileTheme.status.warning,
+  },
+  toneNeutral: {
+    backgroundColor: flashitMobileTheme.background.accentSurface,
+    borderColor: flashitMobileTheme.border,
+    borderWidth: 1,
+  },
+  toneNeutralText: {
+    color: flashitMobileTheme.text.secondary,
   },
 });

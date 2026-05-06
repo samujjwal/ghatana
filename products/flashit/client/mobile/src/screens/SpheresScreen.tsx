@@ -26,6 +26,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { RootStackParamList } from '../navigation';
 import { useApi } from '../contexts/ApiContext';
 import { Sphere, SphereType, SphereVisibility } from '@flashit/shared';
+import { flashitMobileColors } from '@/styles/designTokens';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Spheres'>;
 
@@ -211,7 +212,7 @@ export default function SpheresScreen({ navigation }: Props) {
   if (isLoading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0ea5e9" />
+        <ActivityIndicator size="large" color={flashitMobileColors.sky500} />
       </View>
     );
   }
@@ -243,7 +244,7 @@ export default function SpheresScreen({ navigation }: Props) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#0ea5e9"
+            tintColor={flashitMobileColors.sky500}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -389,7 +390,7 @@ export default function SpheresScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: flashitMobileColors.slate50,
   },
   loadingContainer: {
     flex: 1,
@@ -401,17 +402,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileColors.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: flashitMobileColors.slate200,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1e293b',
+    color: flashitMobileColors.slate800,
   },
   createButton: {
-    backgroundColor: '#0ea5e9',
+    backgroundColor: flashitMobileColors.sky500,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
@@ -419,18 +420,18 @@ const styles = StyleSheet.create({
   createButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileColors.white,
   },
   listContent: {
     padding: 16,
     paddingBottom: 32,
   },
   sphereCard: {
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileColors.white,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: flashitMobileColors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
@@ -445,10 +446,10 @@ const styles = StyleSheet.create({
   sphereName: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1e293b',
+    color: flashitMobileColors.slate800,
   },
   roleBadge: {
-    backgroundColor: '#e0f2fe',
+    backgroundColor: flashitMobileColors.sky100,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 6,
@@ -456,11 +457,11 @@ const styles = StyleSheet.create({
   roleBadgeText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#0284c7',
+    color: flashitMobileColors.sky600,
   },
   sphereDescription: {
     fontSize: 14,
-    color: '#64748b',
+    color: flashitMobileColors.slate500,
     marginBottom: 12,
   },
   sphereInfo: {
@@ -471,16 +472,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 6,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: flashitMobileColors.slate100,
   },
   infoLabel: {
     fontSize: 13,
-    color: '#64748b',
+    color: flashitMobileColors.slate500,
   },
   infoValue: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#334155',
+    color: flashitMobileColors.slate700,
   },
   sphereFooter: {
     flexDirection: 'row',
@@ -496,11 +497,11 @@ const styles = StyleSheet.create({
   momentCountNumber: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#0ea5e9',
+    color: flashitMobileColors.sky500,
   },
   momentCountLabel: {
     fontSize: 13,
-    color: '#64748b',
+    color: flashitMobileColors.slate500,
   },
   deleteButton: {
     paddingHorizontal: 16,
@@ -508,7 +509,7 @@ const styles = StyleSheet.create({
   },
   deleteButtonText: {
     fontSize: 13,
-    color: '#ef4444',
+    color: flashitMobileColors.red500,
     fontWeight: '500',
   },
   emptyContainer: {
@@ -518,40 +519,40 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#475569',
+    color: flashitMobileColors.slate600,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
   },
   // Modal styles
   modalContainer: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: flashitMobileColors.slate50,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileColors.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: flashitMobileColors.slate200,
   },
   modalCancel: {
     fontSize: 16,
-    color: '#64748b',
+    color: flashitMobileColors.slate500,
   },
   modalTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#1e293b',
+    color: flashitMobileColors.slate800,
   },
   modalSave: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#0ea5e9',
+    color: flashitMobileColors.sky500,
   },
   modalSaveDisabled: {
     opacity: 0.5,
@@ -565,16 +566,16 @@ const styles = StyleSheet.create({
   formLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: flashitMobileColors.slate700,
     marginBottom: 8,
   },
   formInput: {
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileColors.white,
     borderRadius: 10,
     padding: 14,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileColors.slate200,
   },
   formTextArea: {
     minHeight: 80,
@@ -589,18 +590,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 8,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: flashitMobileColors.slate100,
   },
   optionChipSelected: {
-    backgroundColor: '#0ea5e9',
+    backgroundColor: flashitMobileColors.sky500,
   },
   optionChipText: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#475569',
+    color: flashitMobileColors.slate600,
   },
   optionChipTextSelected: {
-    color: '#fff',
+    color: flashitMobileColors.white,
   },
 });
 

@@ -24,6 +24,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApi } from '../contexts/ApiContext';
+import { flashitMobileColors } from '@/styles/designTokens';
 
 type CollabTab = 'shared' | 'invitations' | 'activity';
 
@@ -138,7 +139,7 @@ export default function CollaborationScreen() {
   const renderSharedSphere = (item: SharedSphere) => (
     <TouchableOpacity key={item.id} style={styles.card}>
       <View style={styles.cardHeader}>
-        <Ionicons name="grid" size={20} color="#6366f1" />
+        <Ionicons name="grid" size={20} color={flashitMobileColors.indigo500} />
         <View style={styles.cardInfo}>
           <Text style={styles.cardTitle}>{item.name}</Text>
           <Text style={styles.cardSubtitle}>
@@ -155,7 +156,7 @@ export default function CollaborationScreen() {
   const renderInvitation = (item: Invitation) => (
     <View key={item.id} style={styles.card}>
       <View style={styles.cardHeader}>
-        <Ionicons name="mail-outline" size={20} color="#f59e0b" />
+        <Ionicons name="mail-outline" size={20} color={flashitMobileColors.yellow500} />
         <View style={styles.cardInfo}>
           <Text style={styles.cardTitle}>{item.sphereName}</Text>
           <Text style={styles.cardSubtitle}>
@@ -166,11 +167,11 @@ export default function CollaborationScreen() {
       {item.status === 'PENDING' && (
         <View style={styles.inviteActions}>
           <TouchableOpacity style={styles.acceptBtn} accessibilityLabel="Accept invitation">
-            <Ionicons name="checkmark" size={16} color="#ffffff" />
+            <Ionicons name="checkmark" size={16} color={flashitMobileColors.whiteAlt} />
             <Text style={styles.acceptText}>Accept</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.declineBtn} accessibilityLabel="Decline invitation">
-            <Ionicons name="close" size={16} color="#ef4444" />
+            <Ionicons name="close" size={16} color={flashitMobileColors.red500} />
             <Text style={styles.declineText}>Decline</Text>
           </TouchableOpacity>
         </View>
@@ -183,7 +184,7 @@ export default function CollaborationScreen() {
       <Ionicons
         name={getActivityIcon(item.type)}
         size={18}
-        color="#64748b"
+        color={flashitMobileColors.slate500}
         style={styles.activityIcon}
       />
       <View style={styles.activityContent}>
@@ -216,7 +217,7 @@ export default function CollaborationScreen() {
 
       {isLoading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#0ea5e9" />
+          <ActivityIndicator size="large" color={flashitMobileColors.sky500} />
         </View>
       ) : (
         <>
@@ -230,7 +231,7 @@ export default function CollaborationScreen() {
                   <TextInput
                     style={styles.inviteInput}
                     placeholder="Email address"
-                    placeholderTextColor="#94a3b8"
+                    placeholderTextColor={flashitMobileColors.slate400}
                     value={inviteEmail}
                     onChangeText={setInviteEmail}
                     keyboardType="email-address"
@@ -238,14 +239,14 @@ export default function CollaborationScreen() {
                     accessibilityLabel="Collaborator email"
                   />
                   <TouchableOpacity style={styles.inviteButton} onPress={handleInvite}>
-                    <Ionicons name="send" size={18} color="#ffffff" />
+                    <Ionicons name="send" size={18} color={flashitMobileColors.whiteAlt} />
                   </TouchableOpacity>
                 </View>
               </View>
 
               {(sharedSpheres || []).length === 0 ? (
                 <View style={styles.emptyState}>
-                  <Ionicons name="people-outline" size={48} color="#cbd5e1" />
+                  <Ionicons name="people-outline" size={48} color={flashitMobileColors.slate300} />
                   <Text style={styles.emptyTitle}>No shared spheres</Text>
                   <Text style={styles.emptySubtitle}>
                     Share a sphere to collaborate with others
@@ -262,7 +263,7 @@ export default function CollaborationScreen() {
             <View style={styles.section}>
               {(invitations || []).length === 0 ? (
                 <View style={styles.emptyState}>
-                  <Ionicons name="mail-outline" size={48} color="#cbd5e1" />
+                  <Ionicons name="mail-outline" size={48} color={flashitMobileColors.slate300} />
                   <Text style={styles.emptyTitle}>No invitations</Text>
                   <Text style={styles.emptySubtitle}>
                     Invitations to collaborate will appear here
@@ -279,7 +280,7 @@ export default function CollaborationScreen() {
             <View style={styles.section}>
               {(activity || []).length === 0 ? (
                 <View style={styles.emptyState}>
-                  <Ionicons name="pulse-outline" size={48} color="#cbd5e1" />
+                  <Ionicons name="pulse-outline" size={48} color={flashitMobileColors.slate300} />
                   <Text style={styles.emptyTitle}>No activity yet</Text>
                   <Text style={styles.emptySubtitle}>
                     Collaborative activity will show up here
@@ -298,10 +299,10 @@ export default function CollaborationScreen() {
 
 function getRoleColor(role: string): string {
   switch (role) {
-    case 'OWNER': return '#6366f1';
-    case 'EDITOR': return '#0ea5e9';
-    case 'VIEWER': return '#94a3b8';
-    default: return '#94a3b8';
+    case 'OWNER': return flashitMobileColors.indigo500;
+    case 'EDITOR': return flashitMobileColors.sky500;
+    case 'VIEWER': return flashitMobileColors.slate400;
+    default: return flashitMobileColors.slate400;
   }
 }
 
@@ -318,7 +319,7 @@ function getActivityIcon(type: string): keyof typeof Ionicons.glyphMap {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: flashitMobileColors.slate50,
   },
   centered: {
     flex: 1,
@@ -336,40 +337,40 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     borderRadius: 8,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: flashitMobileColors.slate100,
     alignItems: 'center',
   },
   tabActive: {
-    backgroundColor: '#e0f2fe',
+    backgroundColor: flashitMobileColors.sky100,
   },
   tabText: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
   },
   tabTextActive: {
-    color: '#0ea5e9',
+    color: flashitMobileColors.sky500,
     fontWeight: '600',
   },
   badge: {
-    color: '#0ea5e9',
+    color: flashitMobileColors.sky500,
     fontWeight: '700',
   },
   section: {
     padding: 16,
   },
   inviteSection: {
-    backgroundColor: '#ffffff',
+    backgroundColor: flashitMobileColors.whiteAlt,
     borderRadius: 12,
     padding: 14,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileColors.slate200,
   },
   inviteLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#334155',
+    color: flashitMobileColors.slate700,
     marginBottom: 8,
   },
   inviteRow: {
@@ -379,27 +380,27 @@ const styles = StyleSheet.create({
   inviteInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileColors.slate200,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 14,
-    color: '#1e293b',
+    color: flashitMobileColors.slate800,
   },
   inviteButton: {
-    backgroundColor: '#0ea5e9',
+    backgroundColor: flashitMobileColors.sky500,
     borderRadius: 8,
     width: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: flashitMobileColors.whiteAlt,
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileColors.slate200,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -412,11 +413,11 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1e293b',
+    color: flashitMobileColors.slate800,
   },
   cardSubtitle: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
     marginTop: 2,
   },
   roleBadge: {
@@ -426,7 +427,7 @@ const styles = StyleSheet.create({
   },
   roleText: {
     fontSize: 11,
-    color: '#ffffff',
+    color: flashitMobileColors.whiteAlt,
     fontWeight: '600',
   },
   inviteActions: {
@@ -438,13 +439,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#10b981',
+    backgroundColor: flashitMobileColors.green500,
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
   acceptText: {
-    color: '#ffffff',
+    color: flashitMobileColors.whiteAlt,
     fontWeight: '600',
     fontSize: 13,
   },
@@ -453,13 +454,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     borderWidth: 1,
-    borderColor: '#fecaca',
+    borderColor: flashitMobileColors.red200,
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
   declineText: {
-    color: '#ef4444',
+    color: flashitMobileColors.red500,
     fontWeight: '600',
     fontSize: 13,
   },
@@ -467,7 +468,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: flashitMobileColors.slate100,
   },
   activityIcon: {
     marginRight: 10,
@@ -478,16 +479,16 @@ const styles = StyleSheet.create({
   },
   activityText: {
     fontSize: 14,
-    color: '#334155',
+    color: flashitMobileColors.slate700,
     lineHeight: 20,
   },
   activityBold: {
     fontWeight: '600',
-    color: '#1e293b',
+    color: flashitMobileColors.slate800,
   },
   activityTime: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
     marginTop: 4,
   },
   emptyState: {
@@ -497,12 +498,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#334155',
+    color: flashitMobileColors.slate700,
     marginTop: 16,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
     marginTop: 8,
     textAlign: 'center',
   },

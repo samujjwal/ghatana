@@ -13,6 +13,7 @@
 import React from 'react';
 import type { ComponentInstance } from '@ghatana/ui-builder';
 import type { ReactNode } from 'react';
+import type { PluginRuntimeEnvironment } from '../../../services/plugins/PluginRuntimePolicy';
 import { assessComponentSafety } from '../../../security/UnsafeComponentHandler';
 
 // ---------------------------------------------------------------------------
@@ -33,6 +34,13 @@ export interface SlotBag {
 export interface RenderContext {
   readonly mode: 'canvas' | 'preview';
   readonly selectedNodeId?: string | null;
+  /**
+   * Active plugin runtime environment for sandboxed package renderers.
+   * Present only when rendering a component loaded through ComponentPluginLoader.
+   * Plugin renderers should use env.fetch / env.useStorage / env.useBrowserAPI
+   * instead of browser globals to stay within their declared policy.
+   */
+  readonly pluginEnvironment?: PluginRuntimeEnvironment;
 }
 
 /**

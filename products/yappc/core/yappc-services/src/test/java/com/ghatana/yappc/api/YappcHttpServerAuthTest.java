@@ -1,7 +1,13 @@
 package com.ghatana.yappc.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.governance.security.Principal;
+import com.ghatana.platform.observability.NoopMetricsCollector;
+import com.ghatana.platform.security.rbac.RolePermissionRegistry;
+import com.ghatana.platform.security.rbac.SyncAuthorizationService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.yappc.domain.pageartifact.InMemoryPageArtifactRepository;
+import com.ghatana.yappc.domain.pageartifact.PageArtifactResourceScopeAuthorizer;
 import com.ghatana.yappc.domain.pageartifact.http.PageArtifactController;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
@@ -15,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,7 +57,17 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
             new InMemoryEvolveApiController(),
             lifecycleController,
             new InMemoryArtifactGraphController(),
-            new PageArtifactController(null, null, null, null, null),
+            new PageArtifactController(
+                new InMemoryPageArtifactRepository(),
+                (action, tenantId, workspaceId, projectId, artifactId, actor, summary) -> Promise.complete(),
+                new ObjectMapper(),
+                new SyncAuthorizationService(new RolePermissionRegistry() {
+                    @Override public Set<String> getPermissions(String role) { return Set.of(); }
+                    @Override public void registerRole(String role, Set<String> permissions) {}
+                }),
+                new NoopMetricsCollector(),
+                PageArtifactResourceScopeAuthorizer.allowAll()
+            ),
             new PreviewSessionApiController(new com.fasterxml.jackson.databind.ObjectMapper(), "test-preview-secret")
         );
     }

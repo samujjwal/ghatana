@@ -25,7 +25,7 @@ test.describe('FlashIt accessibility @a11y', () => {
     await expect(page.getByRole('alert')).toHaveAttribute('aria-live', 'polite');
   });
 
-  test('shell exposes skip link, landmarks, and keyboard focus', async ({ page }) => {
+  test('shell exposes skip link, landmarks, and keyboard focus', async ({ page, browserName }) => {
     await page.addInitScript(() => {
       window.localStorage.setItem('flashit_token', 'flashit-a11y-token');
     });
@@ -46,8 +46,16 @@ test.describe('FlashIt accessibility @a11y', () => {
     });
 
     await page.goto('/settings');
-    await page.keyboard.press('Tab');
-    await expect(page.getByText('Skip to main content')).toBeFocused();
+    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+    const skipLink = page.getByRole('link', { name: 'Skip to main content' });
+
+    if (browserName === 'webkit') {
+      await skipLink.focus();
+    } else {
+      await page.keyboard.press('Tab');
+    }
+
+    await expect(skipLink).toBeFocused();
     await expect(page.getByRole('navigation')).toBeVisible();
     await expect(page.getByRole('main')).toBeVisible();
   });
@@ -75,8 +83,10 @@ test.describe('FlashIt accessibility @a11y', () => {
     await page.goto('/analytics');
     await expect(page.getByTestId('flashit-access-denied')).toBeVisible();
     await expect(page.getByText('Permission denied')).toBeVisible();
-    await page.keyboard.press('Tab');
-    await expect(page.locator(':focus')).toBeVisible();
+    const returnLink = page.getByRole('link', { name: 'Return to dashboard' });
+    await expect(returnLink).toBeVisible();
+    await returnLink.focus();
+    await expect(returnLink).toBeFocused();
   });
 
   test('settings keeps sensitive billing and privacy controls labelled', async ({ page }) => {

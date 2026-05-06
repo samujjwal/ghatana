@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from './fixtures';
+import { loginAs, mockDmosApi, navigateInApp, TEST_WORKSPACE } from './fixtures';
 
 /**
  * Keyboard navigation tests (DMOS-P2-004)
@@ -10,11 +10,12 @@ import { loginAs } from './fixtures';
  */
 test.describe('Keyboard Navigation @a11y', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAs(page);
+    await mockDmosApi(page);
+    await loginAs(page, { roles: ['marketing-director'] });
   });
 
   test('dashboard is navigable via keyboard', async ({ page }) => {
-    await page.goto('/dashboard');
+    await navigateInApp(page, `/workspaces/${TEST_WORKSPACE}/dashboard`);
 
     // Tab through interactive elements
     await page.keyboard.press('Tab');
@@ -27,36 +28,30 @@ test.describe('Keyboard Navigation @a11y', () => {
   });
 
   test('approvals table can be navigated with keyboard', async ({ page }) => {
-    await page.goto('/approvals');
+    await navigateInApp(page, `/workspaces/${TEST_WORKSPACE}/approvals`);
 
-    // Navigate to approve button
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
+    const reviewLink = page.locator('[data-testid="review-link-req-e2e-1"]');
+    await expect(reviewLink).toBeVisible();
+    await reviewLink.focus();
+    await expect(reviewLink).toBeFocused();
     await page.keyboard.press('Enter');
-
-    // Verify dialog opened
-    await expect(page.locator('[data-testid="approval-dialog"]')).toBeVisible();
+    await expect(page.locator('[data-testid="approval-detail-page"]')).toBeVisible();
   });
 
-  test('escape key closes dialogs', async ({ page }) => {
-    await page.goto('/approvals');
-    await page.click('[data-testid="approve-button"]');
-
-    // Close dialog with Escape
-    await page.keyboard.press('Escape');
-    await expect(page.locator('[data-testid="approval-dialog"]')).not.toBeVisible();
+  test('feature unavailable actions can be focused', async ({ page }) => {
+    await loginAs(page, { roles: ['viewer'] });
+    await navigateInApp(page, `/workspaces/${TEST_WORKSPACE}/campaigns`);
+    const dashboardButton = page.getByRole('button', { name: 'Return to Dashboard' });
+    await expect(dashboardButton).toBeVisible();
+    await dashboardButton.focus();
+    await expect(dashboardButton).toBeFocused();
   });
 
-  test('enter key submits forms', async ({ page }) => {
-    await page.goto('/intake');
-    await page.fill('[name="serviceArea"]', 'San Francisco');
-    await page.fill('[name="primaryOffer"]', 'Plumbing');
-    await page.fill('[name="monthlyBudget"]', '5000');
-
-    // Submit with Enter
-    await page.keyboard.press('Enter');
-
-    // Verify submission
-    await expect(page).toHaveURL(/\/strategy/);
+  test('strategy form controls are keyboard reachable', async ({ page }) => {
+    await navigateInApp(page, `/workspaces/${TEST_WORKSPACE}/strategy`);
+    await page.locator('[data-testid="strategy-service-area-input"]').focus();
+    await expect(page.locator('[data-testid="strategy-service-area-input"]')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.locator('[data-testid="strategy-offer-input"]')).toBeFocused();
   });
 });

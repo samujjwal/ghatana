@@ -54,3 +54,62 @@ export type { LearnCockpitProps } from './LearnCockpit';
 
 export { EvolveCockpit } from './EvolveCockpit';
 export type { EvolveCockpitProps } from './EvolveCockpit';
+
+// Phase-native detail panels
+export { ValidateApprovalPanel } from './ValidateApprovalPanel';
+export type {
+  ValidateApprovalPanelProps,
+  ApprovalDecision,
+  ApprovalReviewer,
+  ApprovalGate,
+} from './ValidateApprovalPanel';
+
+export { GeneratePackagePanel } from './GeneratePackagePanel';
+export type {
+  GeneratePackagePanelProps,
+  GenerationStatus,
+  OutputFile,
+  ResidualIsland,
+} from './GeneratePackagePanel';
+
+export { RunReadinessPanel } from './RunReadinessPanel';
+export type {
+  RunReadinessPanelProps,
+  DeploymentMode,
+  GateStatus,
+  CapabilityGate,
+  DeploymentStep,
+} from './RunReadinessPanel';
+
+export { ObserveSignalsPanel } from './ObserveSignalsPanel';
+export type {
+  ObserveSignalsPanelProps,
+  HealthStatus,
+  MetricTrend,
+  SignalMetric,
+  IncidentSeverity,
+  IncidentStatus,
+  Incident,
+  TraceLink,
+} from './ObserveSignalsPanel';
+
+export { LearnRetrospectivePanel } from './LearnRetrospectivePanel';
+export type {
+  LearnRetrospectivePanelProps,
+  LessonCategory,
+  LessonImpact,
+  Lesson,
+  ReusablePattern,
+  NewLessonDraft,
+} from './LearnRetrospectivePanel';
+
+export { EvolveRoadmapPanel } from './EvolveRoadmapPanel';
+export type {
+  EvolveRoadmapPanelProps,
+  RoadmapPhase,
+  RoadmapItemStatus,
+  RoadmapItemPriority,
+  RoadmapItem,
+  BacklogCategory,
+  BacklogItem,
+} from './EvolveRoadmapPanel';

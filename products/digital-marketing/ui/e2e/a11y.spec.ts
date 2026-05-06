@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { TEST_WORKSPACE, loginAs, mockDmosApi } from './fixtures';
+import { TEST_WORKSPACE, loginAs, mockDmosApi, navigateInApp } from './fixtures';
 
 test.describe('DMOS accessibility @a11y', () => {
   test('login screen exposes labelled controls', async ({ page }) => {
@@ -14,9 +14,10 @@ test.describe('DMOS accessibility @a11y', () => {
   });
 
   test('dashboard shell keeps landmarks and passes axe', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
     await mockDmosApi(page);
     await loginAs(page, { roles: ['marketing-director'] });
-    await page.goto(`/workspaces/${TEST_WORKSPACE}/dashboard`);
+    await navigateInApp(page, `/workspaces/${TEST_WORKSPACE}/dashboard`);
     await expect(page.getByRole('main')).toBeVisible();
     await expect(page.getByRole('navigation')).toBeVisible();
     await page.keyboard.press('Tab');
@@ -32,7 +33,7 @@ test.describe('DMOS accessibility @a11y', () => {
   test('approval queue exposes alerts and keyboard focus', async ({ page }) => {
     await mockDmosApi(page);
     await loginAs(page, { roles: [] });
-    await page.goto(`/workspaces/${TEST_WORKSPACE}/approvals`);
+    await navigateInApp(page, `/workspaces/${TEST_WORKSPACE}/approvals`);
     await expect(page.locator('[data-testid="permission-denied-banner"]')).toBeVisible();
     await expect(page.locator('[data-testid="permission-denied-banner"]')).toHaveAttribute('role', 'alert');
     await page.keyboard.press('Tab');
@@ -42,7 +43,7 @@ test.describe('DMOS accessibility @a11y', () => {
   test('feature unavailable route stays accessible for denied users', async ({ page }) => {
     await mockDmosApi(page);
     await loginAs(page, { roles: [] });
-    await page.goto(`/workspaces/${TEST_WORKSPACE}/campaigns`);
+    await navigateInApp(page, `/workspaces/${TEST_WORKSPACE}/campaigns`);
     await expect(page.locator('[data-testid="feature-unavailable-page"]')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Return to Dashboard' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Go Back' })).toBeVisible();

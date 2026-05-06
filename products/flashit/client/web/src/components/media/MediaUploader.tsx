@@ -158,9 +158,11 @@ function MediaPreview({
             <span>{Math.round(uploadProgress)}%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${uploadProgress}%` }}
+            <progress
+              className="h-2 w-full overflow-hidden rounded-full bg-gray-200 [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-gray-200 [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-blue-500 [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-blue-500"
+              max={100}
+              value={uploadProgress}
+              aria-label="Upload progress"
             />
           </div>
         </div>

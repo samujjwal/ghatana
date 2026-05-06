@@ -643,6 +643,7 @@ public final class DmosApiServer extends Launcher {
 
         WorkspaceService workspaceService = get(WorkspaceService.class);
         register(DmosWorkspaceServlet.class, new DmosWorkspaceServlet(workspaceService, eventloop, httpContextFactory));
+        register(DmosRouteEntitlementServlet.class, new DmosRouteEntitlementServlet(eventloop));
 
         CampaignService campaignService = get(CampaignService.class);
         register(DmosCampaignServlet.class, new DmosCampaignServlet(campaignService, eventloop, metrics, telemetry, httpContextFactory));

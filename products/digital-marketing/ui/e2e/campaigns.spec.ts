@@ -75,7 +75,7 @@ test.describe('Campaigns Page', () => {
     await page.click('[data-testid="confirm-launch-btn"]');
 
     // Verify status changes to LAUNCHED
-    await expect(campaignRow.locator('[data-testid="campaign-status"]'])).toContainText('LAUNCHED', {
+    await expect(campaignRow.locator('[data-testid="campaign-status"]')).toContainText('LAUNCHED', {
       timeout: 5000
     });
   });
@@ -93,14 +93,14 @@ test.describe('Campaigns Page', () => {
     });
     await campaignRow.locator('[data-testid="launch-campaign-btn"]').click();
     await page.click('[data-testid="confirm-launch-btn"]');
-    await expect(campaignRow.locator('[data-testid="campaign-status"]'])).toContainText('LAUNCHED');
+    await expect(campaignRow.locator('[data-testid="campaign-status"]')).toContainText('LAUNCHED');
 
     // Pause the campaign
     await campaignRow.locator('[data-testid="pause-campaign-btn"]').click();
     await page.click('[data-testid="confirm-pause-btn"]');
 
     // Verify status changes to PAUSED
-    await expect(campaignRow.locator('[data-testid="campaign-status"]'])).toContainText('PAUSED', {
+    await expect(campaignRow.locator('[data-testid="campaign-status"]')).toContainText('PAUSED', {
       timeout: 5000
     });
   });

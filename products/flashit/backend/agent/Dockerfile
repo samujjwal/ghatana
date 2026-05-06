@@ -1,3 +1,6 @@
+# Shared template source: config/docker/templates/product-java-service.Dockerfile.template
+# Product overrides: PRODUCT_GRADLE_PROJECT_ROOT=products/flashit/backend/agent PRODUCT_MAIN_CLASS=com.ghatana.flashit.agent.FlashItAgentApplication PRODUCT_PORT=8090 PRODUCT_HEALTH_PATH=/health
+#
 # ============================================================================
 # FlashIt Java Agent Service – Multi-stage Docker build
 #
@@ -31,9 +34,10 @@ COPY products/flashit/backend/agent/src/ /build/src/
 RUN mkdir -p /build/../../../.. 2>/dev/null || true && \
     ln -sf /build/gradle /gradle
 
-# Make gradlew executable and build (skip tests in Docker)
+# Make gradlew executable and build with the same test-before-package convention
+# used by shared product runtime images.
 RUN chmod +x gradlew && \
-    ./gradlew clean build -x test --no-daemon && \
+    ./gradlew clean build --no-daemon && \
     mkdir -p /build/dist/lib && \
     cp build/libs/*.jar /build/dist/ && \
     cp -r build/libs/dependencies/* /build/dist/lib/ 2>/dev/null || true
@@ -50,6 +54,10 @@ COPY --from=builder /build/dist/lib/ /app/lib/
 
 # Create a launch script
 RUN echo '#!/bin/sh' > /app/run.sh && \
+    echo 'if [ "${FLASHIT_AI_DISABLED:-false}" != "true" ] && [ -z "${OPENAI_API_KEY:-}" ]; then' >> /app/run.sh && \
+    echo '  echo "OPENAI_API_KEY must be set for FlashIt AI mode, or set FLASHIT_AI_DISABLED=true."' >> /app/run.sh && \
+    echo '  exit 1' >> /app/run.sh && \
+    echo 'fi' >> /app/run.sh && \
     echo 'exec java \' >> /app/run.sh && \
     echo '  -XX:+UseZGC \' >> /app/run.sh && \
     echo '  -XX:MaxRAMPercentage=75 \' >> /app/run.sh && \

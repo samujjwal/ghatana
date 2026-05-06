@@ -53,7 +53,6 @@
     "stripe": "^22.0.1",
     "ua-parser-js": "^2.0.9",
     "undici": "^8.0.2",
-    "uuid": "^13.0.0",
     "zod": "^4.3.6",
     "zod-to-json-schema": "^3.25.2"
   },

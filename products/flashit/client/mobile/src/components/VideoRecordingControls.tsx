@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 interface VideoRecordingControlsProps {
   isRecording: boolean;
@@ -64,7 +65,7 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
     paddingHorizontal: 20,
     alignItems: 'center',
-    backgroundColor: '#000',
+    backgroundColor: flashitMobileTheme.shadow.color,
   },
   recordButton: {
     width: 80,
@@ -74,21 +75,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   recordButtonActive: {
-    backgroundColor: '#ff3b30',
+    backgroundColor: flashitMobileTheme.status.error,
   },
   recordButtonStop: {
-    backgroundColor: '#ff3b30',
+    backgroundColor: flashitMobileTheme.status.error,
   },
   recordButtonInner: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#ff3b30',
+    backgroundColor: flashitMobileTheme.status.error,
   },
   stopButtonInner: {
     width: 30,
     height: 30,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.text.inverse,
     borderRadius: 4,
   },
   recordingControls: {
@@ -100,12 +101,12 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#333',
+    backgroundColor: flashitMobileTheme.text.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   controlButtonText: {
     fontSize: 24,
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
 });

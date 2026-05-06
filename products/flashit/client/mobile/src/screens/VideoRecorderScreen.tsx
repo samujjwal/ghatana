@@ -12,6 +12,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { useNavigation } from '@react-navigation/native';
 import { VideoRecordingControls } from '../components/VideoRecordingControls';
 import { VideoPreview } from '../components/VideoPreview';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 const MAX_RECORDING_DURATION_MS = 2 * 60 * 1000; // 2 minutes
 
@@ -343,7 +344,7 @@ export const VideoRecorderScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: flashitMobileTheme.shadow.color,
   },
   header: {
     flexDirection: 'row',
@@ -359,14 +360,14 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   headerButton: {
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     fontSize: 16,
     fontWeight: '600',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
   camera: {
     flex: 1,
@@ -377,7 +378,7 @@ const styles = StyleSheet.create({
     left: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 59, 48, 0.9)',
+    backgroundColor: flashitMobileTheme.status.error,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
@@ -386,11 +387,11 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.text.inverse,
     marginRight: 6,
   },
   recordingText: {
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     fontSize: 14,
     fontWeight: '700',
   },
@@ -403,17 +404,17 @@ const styles = StyleSheet.create({
   timerText: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#fff',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    color: flashitMobileTheme.text.inverse,
+    textShadowColor: flashitMobileTheme.shadow.color,
     textShadowOffset: { width: -1, height: 1 },
     textShadowRadius: 10,
     fontVariant: ['tabular-nums'],
   },
   remainingText: {
     fontSize: 12,
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     marginTop: 4,
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowColor: flashitMobileTheme.shadow.color,
     textShadowOffset: { width: -1, height: 1 },
     textShadowRadius: 10,
   },
@@ -426,12 +427,12 @@ const styles = StyleSheet.create({
   permissionTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     marginBottom: 16,
   },
   permissionText: {
     fontSize: 16,
-    color: '#888',
+    color: flashitMobileTheme.text.secondary,
     textAlign: 'center',
     marginBottom: 32,
   },
@@ -439,11 +440,11 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 12,
-    backgroundColor: '#007aff',
+    backgroundColor: flashitMobileTheme.brand.primary,
   },
   permissionButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
 });

@@ -36,7 +36,8 @@ import java.util.Locale;
  *   <li>BuilderDocument structure and required fields</li>
  *   <li>Design-system contracts compliance</li>
  *   <li>Trust policy enforcement</li>
- *   <li>Data classification validity</li>
+ *   <li>Data classification validity and propagation</li>
+ *   <li>Data binding consent policy (required for INTERNAL+ classification)</li>
  *   <li>Residual island thresholds</li>
  *   <li>Executable payload safety</li>
  * </ul>
@@ -87,6 +88,22 @@ public final class PageArtifactValidator {
      * A node must not claim a classification lower than its containing document.
      */
     private static final Map<String, Integer> DATA_CLASSIFICATION_LEVEL;
+
+    /**
+     * Minimum classification level at which a data binding must declare a consentPolicy.
+     * INTERNAL (level 2) and above require explicit consent policy.
+     */
+    private static final int CONSENT_POLICY_REQUIRED_LEVEL = 2;
+
+    /** Recognized consent policy identifiers. */
+    private static final Set<String> ALLOWED_CONSENT_POLICIES = Set.of(
+            "EXPLICIT_CONSENT",
+            "LEGITIMATE_INTEREST",
+            "CONTRACT_NECESSITY",
+            "LEGAL_OBLIGATION",
+            "VITAL_INTEREST",
+            "PUBLIC_TASK"
+    );
 
     static {
         DATA_CLASSIFICATION_LEVEL = new HashMap<>();
@@ -531,6 +548,45 @@ public final class PageArtifactValidator {
         if (!(path instanceof String pathValue) || pathValue.isBlank()) {
             errors.add("BuilderDocument node '" + nodeId + "' contract '" + contractName
                     + "' prop '" + propName + "' missing required field 'path'");
+        }
+
+        // P1-009/P1-010: Validate binding-level data classification consistency and consent policy.
+        Object bindingClassification = bindingMap.get("classification");
+        if (bindingClassification instanceof String bindingClass && !bindingClass.isBlank()) {
+            String normalizedBindingClass = bindingClass.toUpperCase(Locale.ROOT);
+            if (!DATA_CLASSIFICATION_LEVEL.containsKey(normalizedBindingClass)) {
+                errors.add("BuilderDocument node '" + nodeId + "' contract '" + contractName
+                        + "' prop '" + propName + "' has unrecognized data binding classification '"
+                        + bindingClass + "'");
+            } else {
+                int bindingLevel = DATA_CLASSIFICATION_LEVEL.get(normalizedBindingClass);
+                if (bindingLevel >= CONSENT_POLICY_REQUIRED_LEVEL) {
+                    validateBindingConsentPolicy(nodeId, contractName, propName, bindingMap, normalizedBindingClass, errors);
+                }
+            }
+        }
+    }
+
+    private static void validateBindingConsentPolicy(
+            @NotNull String nodeId,
+            @NotNull String contractName,
+            @NotNull String propName,
+            @NotNull Map<?, ?> bindingMap,
+            @NotNull String normalizedClassification,
+            @NotNull List<String> errors
+    ) {
+        Object consentPolicy = bindingMap.get("consentPolicy");
+        if (!(consentPolicy instanceof String policyValue) || policyValue.isBlank()) {
+            errors.add("BuilderDocument node '" + nodeId + "' contract '" + contractName
+                    + "' prop '" + propName + "' data binding with classification '"
+                    + normalizedClassification + "' must declare a 'consentPolicy'");
+            return;
+        }
+        String normalizedPolicy = policyValue.toUpperCase(Locale.ROOT);
+        if (!ALLOWED_CONSENT_POLICIES.contains(normalizedPolicy)) {
+            errors.add("BuilderDocument node '" + nodeId + "' contract '" + contractName
+                    + "' prop '" + propName + "' has unrecognized consentPolicy '"
+                    + policyValue + "'");
         }
     }
 

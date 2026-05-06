@@ -20,6 +20,13 @@ if (!composeText.includes('OPENAI_API_KEY')) {
   process.exit(1);
 }
 
+if (composeText.includes('OPENAI_API_KEY: ${OPENAI_API_KEY:?')) {
+  console.error(
+    'FlashIt compose validation failed: OPENAI_API_KEY interpolation must not break FLASHIT_AI_DISABLED=true compose config.'
+  );
+  process.exit(1);
+}
+
 for (const requiredSecret of [
   'FLASHIT_POSTGRES_PASSWORD',
   'FLASHIT_POSTGRES_TEST_PASSWORD',

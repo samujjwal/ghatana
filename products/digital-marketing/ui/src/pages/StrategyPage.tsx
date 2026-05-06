@@ -113,6 +113,8 @@ export function StrategyPage(): React.ReactElement {
           <label className="flex flex-col gap-1 text-sm">
             Service Area
             <input
+              id="strategy-service-area"
+              name="serviceArea"
               data-testid="strategy-service-area-input"
               type="text"
               value={serviceArea}
@@ -125,6 +127,8 @@ export function StrategyPage(): React.ReactElement {
           <label className="flex flex-col gap-1 text-sm">
             Primary Offer
             <input
+              id="strategy-primary-offer"
+              name="primaryOffer"
               data-testid="strategy-offer-input"
               type="text"
               value={primaryOffer}
@@ -137,6 +141,8 @@ export function StrategyPage(): React.ReactElement {
           <label className="flex flex-col gap-1 text-sm">
             Monthly Budget
             <input
+              id="strategy-monthly-budget"
+              name="monthlyBudget"
               data-testid="strategy-budget-input"
               type="number"
               min="0"

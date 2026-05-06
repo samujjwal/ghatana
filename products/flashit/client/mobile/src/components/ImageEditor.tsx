@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import { manipulateAsync, FlipType, SaveFormat } from 'expo-image-manipulator';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 const { width, height } = Dimensions.get('window');
 
@@ -133,7 +134,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
       <View style={styles.imageContainer}>
         {isProcessing && (
           <View style={styles.processingOverlay}>
-            <ActivityIndicator size="large" color="#007aff" />
+            <ActivityIndicator size="large" color={flashitMobileTheme.brand.primary} />
             <Text style={styles.processingText}>Processing...</Text>
           </View>
         )}
@@ -210,7 +211,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: flashitMobileTheme.shadow.color,
   },
   imageContainer: {
     flex: 1,
@@ -224,23 +225,23 @@ const styles = StyleSheet.create({
   },
   processingOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: flashitMobileTheme.text.primary,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
   },
   processingText: {
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     marginTop: 12,
     fontSize: 16,
   },
   toolsContainer: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: flashitMobileTheme.text.primary,
     paddingVertical: 20,
     paddingHorizontal: 16,
   },
   toolsTitle: {
-    color: '#888',
+    color: flashitMobileTheme.text.secondary,
     fontSize: 14,
     marginBottom: 12,
     textTransform: 'uppercase',
@@ -258,41 +259,41 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   toolText: {
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     fontSize: 12,
   },
   actions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 20,
-    backgroundColor: '#000',
+    backgroundColor: flashitMobileTheme.shadow.color,
   },
   cancelButton: {
     flex: 1,
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,
-    backgroundColor: '#333',
+    backgroundColor: flashitMobileTheme.text.primary,
     marginRight: 10,
     alignItems: 'center',
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
   doneButton: {
     flex: 1,
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,
-    backgroundColor: '#007aff',
+    backgroundColor: flashitMobileTheme.brand.primary,
     marginLeft: 10,
     alignItems: 'center',
   },
   doneButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
 });

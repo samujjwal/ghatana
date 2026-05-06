@@ -29,7 +29,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@ghatana/product-shell": ["../../../../platform/typescript/product-shell/src/index.ts"],
-      "@ghatana/flashit-shared": ["../../libs/ts/shared/src/index.ts"]
+      "@ghatana/theme": ["../../../../platform/typescript/theme/src/index.ts"],
+      "@flashit/shared": ["../../libs/ts/shared/src/index.ts"]
     }
   },
   "typeAcquisition": {

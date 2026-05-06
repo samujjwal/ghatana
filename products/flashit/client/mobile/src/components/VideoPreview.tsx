@@ -7,6 +7,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 const { width, height } = Dimensions.get('window');
 
@@ -142,7 +143,7 @@ const styles = StyleSheet.create({
   },
   videoContainer: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: flashitMobileTheme.shadow.color,
     justifyContent: 'center',
     position: 'relative',
   },
@@ -159,13 +160,13 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: flashitMobileTheme.text.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   playButtonText: {
     fontSize: 36,
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     marginLeft: 8,
   },
   progressContainer: {
@@ -174,23 +175,23 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: flashitMobileTheme.text.primary,
   },
   progressBackground: {
     height: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: flashitMobileTheme.border,
     borderRadius: 2,
     overflow: 'hidden',
     marginBottom: 8,
   },
   progressBar: {
     height: '100%',
-    backgroundColor: '#007aff',
+    backgroundColor: flashitMobileTheme.brand.primary,
     borderRadius: 2,
   },
   timeText: {
     fontSize: 12,
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
   },
@@ -198,34 +199,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     padding: 20,
-    backgroundColor: '#000',
+    backgroundColor: flashitMobileTheme.shadow.color,
   },
   deleteButton: {
     flex: 1,
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,
-    backgroundColor: '#333',
+    backgroundColor: flashitMobileTheme.text.primary,
     marginRight: 10,
     alignItems: 'center',
   },
   deleteButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#ff3b30',
+    color: flashitMobileTheme.status.error,
   },
   saveButton: {
     flex: 1,
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,
-    backgroundColor: '#007aff',
+    backgroundColor: flashitMobileTheme.brand.primary,
     marginLeft: 10,
     alignItems: 'center',
   },
   saveButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
 });

@@ -1072,8 +1072,15 @@ async function tryImportFromServer(options: ImportSourceOptions): Promise<Import
       },
       body: JSON.stringify(payload),
     });
-  } catch {
-    return null;
+  } catch (networkError) {
+    // P1-011: Server import was selected for this source (shouldUseServerImport returned true).
+    // A network failure must not silently fall through to browser-local handlers, as those
+    // lack the auth and tenant context available on the server side.
+    throw new Error(
+      `Server import request failed due to a network error: ${
+        networkError instanceof Error ? networkError.message : String(networkError)
+      }`,
+    );
   }
 
   if (response.status === 404 || response.status === 501) {

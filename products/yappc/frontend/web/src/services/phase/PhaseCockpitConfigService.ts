@@ -1,4 +1,10 @@
-import type { PhaseConfig, MountedPhase } from './types';
+import type {
+  PhaseConfig,
+  MountedPhase,
+  PhaseIconId,
+  PhaseCockpitContext,
+  PhaseFeatureFlag,
+} from './types';
 
 const PHASE_CONFIG: Record<MountedPhase, PhaseConfig> = {
   intent: {
@@ -10,7 +16,7 @@ const PHASE_CONFIG: Record<MountedPhase, PhaseConfig> = {
     primaryTestId: 'define-requirements',
     secondaryLabel: 'Review Evidence',
     secondaryTestId: 'review-evidence',
-    icon: '🎯',
+    icon: 'target' satisfies PhaseIconId,
     supportingTitle: 'Project overview',
     actionFeedback: 'Project details below are ready for goal and evidence review.',
   },
@@ -23,7 +29,7 @@ const PHASE_CONFIG: Record<MountedPhase, PhaseConfig> = {
     primaryTestId: 'add-components',
     secondaryLabel: 'Review Requirements',
     secondaryTestId: 'review-requirements',
-    icon: '🎨',
+    icon: 'layers' satisfies PhaseIconId,
     supportingTitle: 'Canvas and page builder',
     actionFeedback: 'Builder details below are ready for component and layout work.',
   },
@@ -36,7 +42,7 @@ const PHASE_CONFIG: Record<MountedPhase, PhaseConfig> = {
     primaryTestId: 'approve-changes',
     secondaryLabel: 'Request Changes',
     secondaryTestId: 'request-changes',
-    icon: '✓',
+    icon: 'check-circle' satisfies PhaseIconId,
     supportingTitle: 'Validation and lifecycle review',
     actionFeedback: 'Validation details below reflect the latest gate summary for this phase.',
   },
@@ -49,7 +55,7 @@ const PHASE_CONFIG: Record<MountedPhase, PhaseConfig> = {
     primaryTestId: 'generate-code',
     secondaryLabel: 'Preview Codegen Plan',
     secondaryTestId: 'view-codegen-preview',
-    icon: '⚙️',
+    icon: 'code-2' satisfies PhaseIconId,
     supportingTitle: 'Implementation context',
     actionFeedback: 'Implementation details below are ready for code generation review.',
   },
@@ -62,7 +68,7 @@ const PHASE_CONFIG: Record<MountedPhase, PhaseConfig> = {
     primaryTestId: 'check-readiness',
     secondaryLabel: 'View Run Plan',
     secondaryTestId: 'view-run-plan',
-    icon: '🚀',
+    icon: 'play-circle' satisfies PhaseIconId,
     supportingTitle: 'Deployment and run plan',
     actionFeedback: 'Run readiness and deployment planning are available below.',
   },
@@ -75,7 +81,7 @@ const PHASE_CONFIG: Record<MountedPhase, PhaseConfig> = {
     primaryTestId: 'view-metrics',
     secondaryLabel: 'View Project Preview',
     secondaryTestId: 'view-project-preview',
-    icon: '👁️',
+    icon: 'eye' satisfies PhaseIconId,
     supportingTitle: 'Preview and observation',
     actionFeedback: 'Preview and operational signals are ready for review below.',
   },
@@ -88,7 +94,7 @@ const PHASE_CONFIG: Record<MountedPhase, PhaseConfig> = {
     primaryTestId: 'capture-learnings',
     secondaryLabel: 'View Retrospective',
     secondaryTestId: 'view-retrospective',
-    icon: '💡',
+    icon: 'lightbulb' satisfies PhaseIconId,
     supportingTitle: 'Retrospective and insights',
     actionFeedback: 'Retrospective details below are ready for learnings capture.',
   },
@@ -101,7 +107,7 @@ const PHASE_CONFIG: Record<MountedPhase, PhaseConfig> = {
     primaryTestId: 'plan-next-cycle',
     secondaryLabel: 'Review Backlog',
     secondaryTestId: 'view-roadmap',
-    icon: '🔄',
+    icon: 'arrow-up-right' satisfies PhaseIconId,
     supportingTitle: 'Roadmap and backlog',
     actionFeedback: 'Roadmap and backlog details are ready for next-cycle planning.',
   },
@@ -113,4 +119,98 @@ export function getPhaseCockpitConfig(phase: MountedPhase): PhaseConfig {
 
 export function getAllPhaseCockpitConfig(): Record<MountedPhase, PhaseConfig> {
   return PHASE_CONFIG;
+}
+
+// ─── Adaptive config ──────────────────────────────────────────────────────────
+
+/**
+ * Per-phase flag requirements. If the flag is listed and NOT in enabledFlags,
+ * the primary action is locked for that phase.
+ */
+const PHASE_REQUIRED_FLAG: Partial<Record<MountedPhase, PhaseFeatureFlag>> = {
+  generate: 'phase.generate.enabled',
+  run: 'phase.run.preview.enabled',
+  observe: 'phase.observe.enabled',
+  learn: 'phase.learn.patterns.enabled',
+  evolve: 'phase.evolve.enabled',
+};
+
+/**
+ * Minimum tier required to access each phase's primary action.
+ * Phases not listed here are available on all tiers.
+ */
+const PHASE_MIN_TIER: Partial<Record<MountedPhase, 'starter' | 'pro' | 'enterprise'>> = {
+  run: 'starter',
+  observe: 'starter',
+  learn: 'pro',
+  evolve: 'pro',
+};
+
+const TIER_RANK: Record<string, number> = {
+  free: 0,
+  starter: 1,
+  pro: 2,
+  enterprise: 3,
+};
+
+/** Roles that may trigger the primary action CTA. */
+const PRIMARY_ACTION_ROLES = new Set(['owner', 'approver', 'contributor']);
+
+/**
+ * Returns an adapted PhaseConfig based on runtime context (role, tier, flags,
+ * project state). The static base config is never mutated.
+ *
+ * Rules applied in order of precedence:
+ * 1. Role check — viewer/guest may not trigger primary actions.
+ * 2. Tier check — lower-tier tenants are locked out of advanced phases.
+ * 3. Feature flag check — disabled flags lock the primary action.
+ * 4. Blocker check — unresolved blockers lock the primary action.
+ * 5. Gate check — failing gates lock the primary action for Validate/Generate.
+ */
+export function getAdaptivePhaseCockpitConfig(
+  phase: MountedPhase,
+  context: PhaseCockpitContext,
+): PhaseConfig {
+  const base = PHASE_CONFIG[phase];
+
+  const lock = (reason: string): PhaseConfig => ({
+    ...base,
+    primaryLocked: true,
+    primaryLockedReason: reason,
+  });
+
+  // 1. Role check
+  if (!PRIMARY_ACTION_ROLES.has(context.role)) {
+    return lock('You have view-only access to this project.');
+  }
+
+  // 2. Tier check
+  const minTier = PHASE_MIN_TIER[phase];
+  if (minTier !== undefined && (TIER_RANK[context.tier] ?? 0) < (TIER_RANK[minTier] ?? 0)) {
+    return lock(`This action requires the ${minTier} plan or higher.`);
+  }
+
+  // 3. Feature flag check
+  const requiredFlag = PHASE_REQUIRED_FLAG[phase];
+  if (requiredFlag !== undefined && !context.enabledFlags.has(requiredFlag)) {
+    return lock('This feature is not enabled for your workspace.');
+  }
+
+  // 4. Blocker check — blockers lock validate, generate, run primary actions
+  const blockerGatedPhases: ReadonlySet<MountedPhase> = new Set([
+    'validate',
+    'generate',
+    'run',
+  ]);
+  if (context.hasBlockers && blockerGatedPhases.has(phase)) {
+    return lock('Resolve all blockers before proceeding.');
+  }
+
+  // 5. Gate check — validate and generate require gates to pass
+  const gateGatedPhases: ReadonlySet<MountedPhase> = new Set(['validate', 'generate']);
+  if (!context.gatesPassed && gateGatedPhases.has(phase)) {
+    return lock('All required gates must pass before this action is available.');
+  }
+
+  return base;
 }

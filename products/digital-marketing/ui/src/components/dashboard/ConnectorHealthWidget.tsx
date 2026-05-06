@@ -34,7 +34,7 @@ export function ConnectorHealthWidget({
         data-testid="connector-health-widget"
         className="bg-white border border-gray-200 rounded-lg p-4"
       >
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Connector Health</h2>
+        <h2 className="text-sm font-semibold text-gray-900 mb-3">Connector Health</h2>
         <div className="animate-pulse h-20 bg-gray-100 rounded" />
       </div>
     );
@@ -46,7 +46,7 @@ export function ConnectorHealthWidget({
         data-testid="connector-health-widget"
         className="bg-white border border-gray-200 rounded-lg p-4"
       >
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Connector Health</h2>
+        <h2 className="text-sm font-semibold text-gray-900 mb-3">Connector Health</h2>
         <div className="text-sm text-red-600">Failed to load connector status</div>
       </div>
     );
@@ -55,15 +55,15 @@ export function ConnectorHealthWidget({
   const getStatusColor = (status: ConnectorHealth['status']) => {
     switch (status) {
       case 'healthy':
-        return 'text-green-600';
+        return 'text-green-800';
       case 'degraded':
         return 'text-yellow-600';
       case 'unhealthy':
         return 'text-red-600';
       case 'not_configured':
-        return 'text-gray-400';
+        return 'text-gray-700';
       default:
-        return 'text-gray-600';
+        return 'text-gray-800';
     }
   };
 
@@ -87,10 +87,10 @@ export function ConnectorHealthWidget({
       data-testid="connector-health-widget"
       className="bg-white border border-gray-200 rounded-lg p-4"
     >
-      <h2 className="text-sm font-semibold text-gray-700 mb-3">Connector Health</h2>
+      <h2 className="text-sm font-semibold text-gray-900 mb-3">Connector Health</h2>
       <div className="space-y-2">
         {connectors.length === 0 ? (
-          <p className="text-xs text-gray-500">No connectors configured</p>
+          <p className="text-xs text-gray-700">No connectors configured</p>
         ) : (
           connectors.map((connector) => (
             <div key={connector.name} className="flex justify-between items-center">
@@ -98,7 +98,7 @@ export function ConnectorHealthWidget({
                 <div
                   className={`w-2 h-2 rounded-full ${getStatusDot(connector.status)}`}
                 />
-                <span className="text-xs text-gray-700">{connector.name}</span>
+                <span className="text-xs text-gray-900">{connector.name}</span>
               </div>
               <span
                 className={`text-xs font-medium ${getStatusColor(connector.status)}`}

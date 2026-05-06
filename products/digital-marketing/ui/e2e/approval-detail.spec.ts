@@ -9,6 +9,7 @@ import {
   TEST_PRINCIPAL,
   APPROVAL_PENDING,
   APPROVAL_SNAPSHOT,
+  navigateInApp,
 } from './fixtures';
 
 const DETAIL_URL = `/workspaces/${TEST_WORKSPACE}/approvals/${APPROVAL_PENDING.requestId}`;
@@ -17,7 +18,7 @@ test.describe('approval detail', () => {
   test.beforeEach(async ({ page }) => {
     await mockDmosApi(page);
     await loginAs(page);
-    await page.goto(DETAIL_URL);
+    await navigateInApp(page, DETAIL_URL);
     await expect(page.locator('[data-testid="approval-detail-page"]')).toBeVisible();
   });
 
@@ -45,7 +46,7 @@ test.describe('approval detail', () => {
     // Login with marketing-director role (matches requiredApproverRole)
     await page.goto('/login');
     await loginAs(page, { roles: ['marketing-director'] });
-    await page.goto(DETAIL_URL);
+    await navigateInApp(page, DETAIL_URL);
     await expect(page.locator('[data-testid="open-decide-dialog"]')).toBeVisible();
     await expect(page.locator('[data-testid="approval-permission-denied"]')).not.toBeVisible();
   });
@@ -53,7 +54,7 @@ test.describe('approval detail', () => {
   test('approves approval and shows success', async ({ page }) => {
     await page.goto('/login');
     await loginAs(page, { roles: ['marketing-director'] });
-    await page.goto(DETAIL_URL);
+    await navigateInApp(page, DETAIL_URL);
     await page.click('[data-testid="open-decide-dialog"]');
     await page.locator('[data-testid="decision-approve"]').click();
     await page.fill('[data-testid="decision-comment"]', 'Approved for Q3 strategy');
@@ -65,7 +66,7 @@ test.describe('approval detail', () => {
   test('rejects approval and shows success', async ({ page }) => {
     await page.goto('/login');
     await loginAs(page, { roles: ['marketing-director'] });
-    await page.goto(DETAIL_URL);
+    await navigateInApp(page, DETAIL_URL);
     await page.click('[data-testid="open-decide-dialog"]');
     await page.locator('[data-testid="decision-reject"]').click();
     await page.fill('[data-testid="decision-comment"]', 'Needs more detail on budget');
@@ -81,7 +82,7 @@ test.describe('approval detail', () => {
       `**/v1/workspaces/${TEST_WORKSPACE}/approvals/${APPROVAL_PENDING.requestId}`,
       (route) => route.fulfill({ json: { ...APPROVAL_PENDING, riskLevel: 5 } }),
     );
-    await page.goto(DETAIL_URL);
+    await navigateInApp(page, DETAIL_URL);
     await page.click('[data-testid="open-decide-dialog"]');
     await page.locator('[data-testid="decision-approve"]').click();
     await page.click('[data-testid="decision-submit"]');
@@ -89,18 +90,19 @@ test.describe('approval detail', () => {
   });
 
   test('shows error state when API returns error @a11y', async ({ page }) => {
+    const errorDetailUrl = `/workspaces/${TEST_WORKSPACE}/approvals/req-e2e-error`;
     await page.route(
-      `**/v1/workspaces/${TEST_WORKSPACE}/approvals/${APPROVAL_PENDING.requestId}`,
+      `**/v1/workspaces/${TEST_WORKSPACE}/approvals/req-e2e-error`,
       (route) => route.fulfill({ status: 500, body: 'Internal Server Error' }),
     );
-    await page.goto(DETAIL_URL);
+    await navigateInApp(page, errorDetailUrl);
     await expect(page.locator('[data-testid="approval-detail-error"]')).toBeVisible();
   });
 
   test('shows 403 error when unauthorized decision attempt', async ({ page }) => {
     await page.goto('/login');
     await loginAs(page, { roles: ['marketing-director'] });
-    await page.goto(DETAIL_URL);
+    await navigateInApp(page, DETAIL_URL);
     await page.click('[data-testid="open-decide-dialog"]');
     // Mock 403 response from backend
     await page.route(

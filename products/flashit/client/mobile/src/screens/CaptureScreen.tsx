@@ -28,6 +28,7 @@ import { RootStackParamList } from '../navigation';
 import { useApi } from '../contexts/ApiContext';
 import { mobileAtoms } from '../state/localAtoms';
 import { EMOTION_OPTIONS, TAG_SUGGESTIONS } from '@flashit/shared';
+import { flashitMobileColors } from '@/styles/designTokens';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -126,7 +127,7 @@ export default function CaptureScreen({ navigation }: Props) {
   if (spheresLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0ea5e9" />
+        <ActivityIndicator size="large" color={flashitMobileColors.sky500} />
       </View>
     );
   }
@@ -358,7 +359,7 @@ export default function CaptureScreen({ navigation }: Props) {
             accessibilityState={{ disabled: createMoment.isPending || !selectedSphereId, busy: createMoment.isPending }}
           >
             {createMoment.isPending ? (
-              <ActivityIndicator color="#fff" size="small" />
+              <ActivityIndicator color={flashitMobileColors.white} size="small" />
             ) : (
               <Text style={styles.submitButtonText}>Capture Moment</Text>
             )}
@@ -372,7 +373,7 @@ export default function CaptureScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: flashitMobileColors.slate50,
   },
   loadingContainer: {
     flex: 1,
@@ -389,7 +390,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1e293b',
+    color: flashitMobileColors.slate800,
     marginBottom: 12,
   },
   sphereList: {
@@ -400,39 +401,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileColors.white,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileColors.slate200,
   },
   sphereChipSelected: {
-    backgroundColor: '#0ea5e9',
-    borderColor: '#0ea5e9',
+    backgroundColor: flashitMobileColors.sky500,
+    borderColor: flashitMobileColors.sky500,
   },
   sphereChipText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#475569',
+    color: flashitMobileColors.slate600,
   },
   sphereChipTextSelected: {
-    color: '#fff',
+    color: flashitMobileColors.white,
   },
   sphereInfo: {
     fontSize: 12,
-    color: '#64748b',
+    color: flashitMobileColors.slate500,
     marginTop: 8,
   },
   textInput: {
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileColors.white,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
     minHeight: 150,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileColors.slate200,
   },
   charCount: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
     marginTop: 8,
     textAlign: 'right',
   },
@@ -445,36 +446,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: flashitMobileColors.slate100,
   },
   emotionChipSelected: {
-    backgroundColor: '#0ea5e9',
+    backgroundColor: flashitMobileColors.sky500,
   },
   emotionChipText: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#475569',
+    color: flashitMobileColors.slate600,
   },
   emotionChipTextSelected: {
-    color: '#fff',
+    color: flashitMobileColors.white,
   },
   tagChip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: flashitMobileColors.slate100,
   },
   tagChipSelected: {
-    backgroundColor: '#e0f2fe',
+    backgroundColor: flashitMobileColors.sky100,
     borderWidth: 1,
-    borderColor: '#0ea5e9',
+    borderColor: flashitMobileColors.sky500,
   },
   tagChipText: {
     fontSize: 13,
-    color: '#475569',
+    color: flashitMobileColors.slate600,
   },
   tagChipTextSelected: {
-    color: '#0284c7',
+    color: flashitMobileColors.sky600,
     fontWeight: '500',
   },
   customTagRow: {
@@ -484,15 +485,15 @@ const styles = StyleSheet.create({
   },
   customTagInput: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileColors.white,
     borderRadius: 8,
     padding: 12,
     fontSize: 14,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileColors.slate200,
   },
   addTagButton: {
-    backgroundColor: '#e2e8f0',
+    backgroundColor: flashitMobileColors.slate200,
     borderRadius: 8,
     paddingHorizontal: 16,
     justifyContent: 'center',
@@ -500,14 +501,14 @@ const styles = StyleSheet.create({
   addTagButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#475569',
+    color: flashitMobileColors.slate600,
   },
   selectedTagsContainer: {
     marginTop: 12,
   },
   selectedTagsLabel: {
     fontSize: 12,
-    color: '#64748b',
+    color: flashitMobileColors.slate500,
     marginBottom: 6,
   },
   selectedTagsList: {
@@ -516,14 +517,14 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   selectedTag: {
-    backgroundColor: '#0ea5e9',
+    backgroundColor: flashitMobileColors.sky500,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 4,
   },
   selectedTagText: {
     fontSize: 12,
-    color: '#fff',
+    color: flashitMobileColors.white,
     fontWeight: '500',
   },
   importanceContainer: {
@@ -535,19 +536,19 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     borderRadius: 8,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: flashitMobileColors.slate100,
     alignItems: 'center',
   },
   importanceButtonSelected: {
-    backgroundColor: '#0ea5e9',
+    backgroundColor: flashitMobileColors.sky500,
   },
   importanceButtonText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#475569',
+    color: flashitMobileColors.slate600,
   },
   importanceButtonTextSelected: {
-    color: '#fff',
+    color: flashitMobileColors.white,
   },
   importanceLabels: {
     flexDirection: 'row',
@@ -556,7 +557,7 @@ const styles = StyleSheet.create({
   },
   importanceLabelText: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -565,21 +566,21 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileColors.white,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileColors.slate200,
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#64748b',
+    color: flashitMobileColors.slate500,
   },
   submitButton: {
     flex: 2,
-    backgroundColor: '#0ea5e9',
+    backgroundColor: flashitMobileColors.sky500,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -590,7 +591,7 @@ const styles = StyleSheet.create({
   submitButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileColors.white,
   },
 });
 

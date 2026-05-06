@@ -12,6 +12,7 @@ import React, { Component, ReactNode, ErrorInfo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import * as Updates from 'expo-updates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 // ============================================================================
 // Types & Interfaces
@@ -271,23 +272,23 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: flashitMobileTheme.background.canvas,
   },
   header: {
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.background.surface,
     padding: 24,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: flashitMobileTheme.border,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#d32f2f',
+    color: flashitMobileTheme.status.error,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: flashitMobileTheme.text.secondary,
     lineHeight: 24,
   },
   errorDetails: {
@@ -295,7 +296,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   errorSection: {
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.background.surface,
     padding: 16,
     borderRadius: 8,
     marginBottom: 12,
@@ -303,57 +304,57 @@ const styles = StyleSheet.create({
   errorLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: flashitMobileTheme.text.primary,
     marginBottom: 8,
   },
   errorText: {
     fontSize: 12,
-    color: '#666',
+    color: flashitMobileTheme.text.secondary,
     fontFamily: 'monospace',
     lineHeight: 18,
   },
   actions: {
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.background.surface,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: flashitMobileTheme.border,
   },
   primaryButton: {
-    backgroundColor: '#2196f3',
+    backgroundColor: flashitMobileTheme.brand.primary,
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 12,
   },
   primaryButtonText: {
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     fontSize: 16,
     fontWeight: '600',
   },
   secondaryButton: {
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.background.surface,
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#2196f3',
+    borderColor: flashitMobileTheme.brand.primary,
     marginBottom: 12,
   },
   secondaryButtonText: {
-    color: '#2196f3',
+    color: flashitMobileTheme.brand.primary,
     fontSize: 16,
     fontWeight: '600',
   },
   dangerButton: {
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.background.surface,
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#d32f2f',
+    borderColor: flashitMobileTheme.status.error,
   },
   dangerButtonText: {
-    color: '#d32f2f',
+    color: flashitMobileTheme.status.error,
     fontSize: 16,
     fontWeight: '600',
   },

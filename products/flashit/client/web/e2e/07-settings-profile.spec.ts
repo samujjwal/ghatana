@@ -3,7 +3,7 @@
  * Tests user settings and profile management
  */
 
-import { test, expect } from './fixtures';
+import { test, expect, uploadFile } from './fixtures';
 
 test.describe('Settings & Profile', () => {
   test('should view settings page', async ({ authenticatedPage }) => {
@@ -22,7 +22,7 @@ test.describe('Settings & Profile', () => {
     await expect(authenticatedPage.getByText(/profile updated/i)).toBeVisible();
   });
 
-  test('should update profile picture', async ({ authenticatedPage, uploadFile }) => {
+  test('should update profile picture', async ({ authenticatedPage }) => {
     await authenticatedPage.goto('/settings/profile');
     
     await uploadFile(authenticatedPage, '[data-testid="avatar-upload"]', 'e2e/fixtures/avatar.jpg');

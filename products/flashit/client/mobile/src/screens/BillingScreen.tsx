@@ -23,6 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import { mobileAtoms } from '../state/localAtoms';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 interface TierInfo {
   name: string;
@@ -42,25 +43,25 @@ const TIERS: Record<string, TierInfo> = {
   FREE: {
     name: 'Free',
     icon: 'leaf-outline',
-    color: '#64748b',
+    color: flashitMobileTheme.text.secondary,
     features: ['5 Spheres', '100 moments/month', 'Basic search', 'Text capture'],
   },
   PERSONAL: {
     name: 'Personal',
     icon: 'person-outline',
-    color: '#0ea5e9',
+    color: flashitMobileTheme.brand.primary,
     features: ['20 Spheres', '1,000 moments/month', 'AI search', 'All capture modes', 'Language insights'],
   },
   PRO: {
     name: 'Pro',
     icon: 'rocket-outline',
-    color: '#6366f1',
+    color: flashitMobileTheme.brand.primaryStrong,
     features: ['Unlimited Spheres', 'Unlimited moments', 'Advanced AI', 'All capture modes', 'Reflection & analytics', 'Memory expansion'],
   },
   TEAMS: {
     name: 'Teams',
     icon: 'people-outline',
-    color: '#f59e0b',
+    color: flashitMobileTheme.status.warning,
     features: ['Everything in Pro', 'Collaboration', 'API keys', 'SSO/SAML (Coming Soon)', 'Priority support', 'Admin dashboard'],
   },
 };
@@ -108,7 +109,7 @@ export default function BillingScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#0ea5e9" />
+        <ActivityIndicator size="large" color={flashitMobileTheme.brand.primary} />
       </View>
     );
   }
@@ -172,7 +173,7 @@ export default function BillingScreen() {
             accessibilityRole="button"
             accessibilityLabel="Upgrade subscription"
           >
-            <Ionicons name="arrow-up-circle-outline" size={20} color="#ffffff" />
+            <Ionicons name="arrow-up-circle-outline" size={20} color={flashitMobileTheme.text.inverse} />
             <Text style={styles.upgradeButtonText}>Upgrade Plan</Text>
           </TouchableOpacity>
         )}
@@ -226,17 +227,17 @@ function computeUsage(tier: string): UsageInfo[] {
 }
 
 function getUsageColor(used: number, limit: number): string {
-  if (limit === -1) return '#10b981';
+  if (limit === -1) return flashitMobileTheme.status.success;
   const pct = used / limit;
-  if (pct >= 0.9) return '#ef4444';
-  if (pct >= 0.7) return '#f59e0b';
-  return '#0ea5e9';
+  if (pct >= 0.9) return flashitMobileTheme.status.error;
+  if (pct >= 0.7) return flashitMobileTheme.status.warning;
+  return flashitMobileTheme.brand.primary;
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: flashitMobileTheme.background.canvas,
     padding: 16,
   },
   centered: {
@@ -245,7 +246,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   planCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: flashitMobileTheme.background.surface,
     borderRadius: 16,
     padding: 20,
     borderWidth: 2,
@@ -262,7 +263,7 @@ const styles = StyleSheet.create({
   },
   planLabel: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: flashitMobileTheme.brand.inactive,
     fontWeight: '500',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -273,7 +274,7 @@ const styles = StyleSheet.create({
   },
   periodText: {
     fontSize: 13,
-    color: '#64748b',
+    color: flashitMobileTheme.text.secondary,
     marginBottom: 12,
   },
   featuresContainer: {
@@ -287,21 +288,21 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 14,
-    color: '#334155',
+    color: flashitMobileTheme.text.primary,
   },
   sectionTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#1e293b',
+    color: flashitMobileTheme.text.primary,
     marginBottom: 12,
   },
   usageCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: flashitMobileTheme.background.surface,
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileTheme.border,
   },
   usageHeader: {
     flexDirection: 'row',
@@ -310,17 +311,17 @@ const styles = StyleSheet.create({
   },
   usageLabel: {
     fontSize: 14,
-    color: '#334155',
+    color: flashitMobileTheme.text.primary,
     fontWeight: '500',
   },
   usageValue: {
     fontSize: 13,
-    color: '#64748b',
+    color: flashitMobileTheme.text.secondary,
     fontWeight: '600',
   },
   usageBarBg: {
     height: 6,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: flashitMobileTheme.background.muted,
     borderRadius: 3,
     overflow: 'hidden',
   },
@@ -334,7 +335,7 @@ const styles = StyleSheet.create({
   },
   upgradeButton: {
     flexDirection: 'row',
-    backgroundColor: '#0ea5e9',
+    backgroundColor: flashitMobileTheme.brand.primary,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -342,7 +343,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   upgradeButtonText: {
-    color: '#ffffff',
+    color: flashitMobileTheme.text.inverse,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -351,20 +352,20 @@ const styles = StyleSheet.create({
     padding: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileTheme.border,
   },
   manageButtonText: {
-    color: '#64748b',
+    color: flashitMobileTheme.text.secondary,
     fontSize: 15,
     fontWeight: '600',
   },
   comparePlanCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: flashitMobileTheme.background.surface,
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileTheme.border,
   },
   comparePlanHeader: {
     flexDirection: 'row',
@@ -381,6 +382,6 @@ const styles = StyleSheet.create({
   },
   compareFeatureText: {
     fontSize: 13,
-    color: '#64748b',
+    color: flashitMobileTheme.text.secondary,
   },
 });

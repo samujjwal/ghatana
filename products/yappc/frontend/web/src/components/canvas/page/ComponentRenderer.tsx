@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { getContractByName } from './registry';
 import { rendererManifestRegistry, type SlotBag, type RenderContext } from './rendererManifest';
 import { registerBuiltInRenderers } from './builtInRenderers';
+import { componentPluginLoader } from './pluginLoader';
 
 import type { BuilderDocument, ComponentInstance, NodeId } from '@ghatana/ui-builder';
 
@@ -70,6 +71,15 @@ function renderInstance(
 ): React.ReactNode {
   const manifest = rendererManifestRegistry.get(instance.contractName);
   if (manifest) {
+    // If this renderer belongs to a plugin package, execute it inside the
+    // runtime guard so network/storage policies are enforced and the
+    // PluginRuntimeEnvironment is accessible via context.pluginEnvironment.
+    const packageName = componentPluginLoader.getPackageForContract(instance.contractName);
+    if (packageName !== null) {
+      return componentPluginLoader.executeWithRuntimeGuard(packageName, (env) =>
+        manifest.render(instance, slots, { ...context, pluginEnvironment: env }),
+      );
+    }
     return manifest.render(instance, slots, context);
   }
 

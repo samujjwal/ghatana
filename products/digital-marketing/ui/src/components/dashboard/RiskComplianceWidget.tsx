@@ -32,7 +32,7 @@ export const RiskComplianceWidget: React.FC<RiskComplianceWidgetProps> = ({
     >
       <h2
         id="risk-compliance-title"
-        className="text-sm font-semibold text-gray-700"
+        className="text-sm font-semibold text-gray-900"
       >
         Risk & Compliance
       </h2>
@@ -40,7 +40,7 @@ export const RiskComplianceWidget: React.FC<RiskComplianceWidgetProps> = ({
       {isLoading && (
         <p
           data-testid="risk-compliance-loading"
-          className="text-xs text-gray-400 mt-2"
+          className="text-xs text-gray-700 mt-2"
         >
           Loading…
         </p>
@@ -58,7 +58,7 @@ export const RiskComplianceWidget: React.FC<RiskComplianceWidgetProps> = ({
       {!isLoading && !isError && !hasComplianceAlert && (
         <p
           data-testid="risk-compliance-ok"
-          className="text-xs text-green-600 mt-2"
+          className="text-xs text-green-800 mt-2"
         >
           No active violations
         </p>
@@ -83,13 +83,13 @@ export const RiskComplianceWidget: React.FC<RiskComplianceWidgetProps> = ({
                 className="text-xs border border-red-200 rounded px-2 py-1 bg-red-50 text-red-700"
               >
                 <span className="font-mono">{item.action}</span>
-                <span className="ml-1 text-gray-600 truncate block max-w-xs">
+                <span className="ml-1 text-gray-800 truncate block max-w-xs">
                   {item.subjectId}
                 </span>
               </li>
             ))}
             {pendingItems.length > 3 && (
-              <li className="text-xs text-gray-400">
+              <li className="text-xs text-gray-700">
                 +{pendingItems.length - 3} more
               </li>
             )}
@@ -99,4 +99,3 @@ export const RiskComplianceWidget: React.FC<RiskComplianceWidgetProps> = ({
     </article>
   );
 };
-

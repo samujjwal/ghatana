@@ -9,6 +9,7 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
+import { flashitWebColors, flashitWebAlpha } from '@/styles/designTokens';
 
 // ============================================================================
 // Types & Interfaces
@@ -266,19 +267,19 @@ export function ErrorRecovery({
         .error-title {
           font-size: 1.75rem;
           font-weight: 600;
-          color: #1f2937;
+          color: ${flashitWebColors.slate800};
           margin: 0 0 0.75rem 0;
         }
 
         .error-description {
           font-size: 1.05rem;
-          color: #6b7280;
+          color: ${flashitWebColors.slate500};
           line-height: 1.6;
           margin: 0 0 2rem 0;
         }
 
         .error-details {
-          background: #f9fafb;
+          background: ${flashitWebColors.slate50};
           border-radius: 8px;
           padding: 1rem;
           margin-bottom: 2rem;
@@ -288,7 +289,7 @@ export function ErrorRecovery({
         .error-message {
           font-family: 'Courier New', monospace;
           font-size: 0.9rem;
-          color: #dc2626;
+          color: ${flashitWebColors.red600};
           margin: 0 0 0.5rem 0;
         }
 
@@ -299,7 +300,7 @@ export function ErrorRecovery({
         .error-stack-toggle {
           background: none;
           border: none;
-          color: #6366f1;
+          color: ${flashitWebColors.indigo500};
           cursor: pointer;
           font-size: 0.875rem;
           padding: 0;
@@ -307,8 +308,8 @@ export function ErrorRecovery({
         }
 
         .error-stack {
-          background: #1f2937;
-          color: #e5e7eb;
+          background: ${flashitWebColors.slate800};
+          color: ${flashitWebColors.slate200};
           padding: 1rem;
           border-radius: 4px;
           overflow-x: auto;
@@ -339,14 +340,14 @@ export function ErrorRecovery({
         }
 
         .btn-primary {
-          background: #6366f1;
+          background: ${flashitWebColors.indigo500};
           color: white;
         }
 
         .btn-primary:hover:not(:disabled) {
-          background: #4f46e5;
+          background: ${flashitWebColors.indigo600};
           transform: translateY(-1px);
-          box-shadow: 0 4px 6px rgba(99, 102, 241, 0.3);
+          box-shadow: 0 4px 6px ${flashitWebAlpha.indigoShadow};
         }
 
         .btn-primary:disabled {
@@ -356,23 +357,23 @@ export function ErrorRecovery({
 
         .btn-secondary {
           background: white;
-          color: #6366f1;
-          border: 2px solid #6366f1;
+          color: ${flashitWebColors.indigo500};
+          border: 2px solid ${flashitWebColors.indigo500};
         }
 
         .btn-secondary:hover {
-          background: #f5f7ff;
+          background: ${flashitWebColors.indigo50};
         }
 
         .btn-tertiary {
           background: transparent;
-          color: #6b7280;
-          border: 1px solid #d1d5db;
+          color: ${flashitWebColors.slate500};
+          border: 1px solid ${flashitWebColors.slate300};
         }
 
         .btn-tertiary:hover:not(:disabled) {
-          background: #f9fafb;
-          border-color: #9ca3af;
+          background: ${flashitWebColors.slate50};
+          border-color: ${flashitWebColors.slate400};
         }
 
         .btn-tertiary:disabled {
@@ -384,7 +385,7 @@ export function ErrorRecovery({
           display: inline-block;
           width: 1rem;
           height: 1rem;
-          border: 2px solid rgba(255, 255, 255, 0.3);
+          border: 2px solid ${flashitWebAlpha.inverseBorder};
           border-top-color: white;
           border-radius: 50%;
           animation: spin 0.6s linear infinite;
@@ -395,8 +396,8 @@ export function ErrorRecovery({
         }
 
         .error-suggestions {
-          background: #eff6ff;
-          border: 1px solid #dbeafe;
+          background: ${flashitWebColors.blue50};
+          border: 1px solid ${flashitWebColors.blue100};
           border-radius: 8px;
           padding: 1rem;
           text-align: left;
@@ -405,14 +406,14 @@ export function ErrorRecovery({
         .error-suggestions h4 {
           font-size: 0.95rem;
           font-weight: 600;
-          color: #1e40af;
+          color: ${flashitWebColors.blue700};
           margin: 0 0 0.75rem 0;
         }
 
         .error-suggestions ul {
           margin: 0;
           padding-left: 1.25rem;
-          color: #3b82f6;
+          color: ${flashitWebColors.blue500};
         }
 
         .error-suggestions li {
@@ -422,7 +423,7 @@ export function ErrorRecovery({
 
         .auth-link {
           display: inline-block;
-          color: #6366f1;
+          color: ${flashitWebColors.indigo500};
           text-decoration: none;
           font-weight: 500;
           font-size: 1.05rem;

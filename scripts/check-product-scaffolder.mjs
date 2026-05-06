@@ -176,6 +176,7 @@ try {
   }
 
   const requiredScripts = {
+    dev: 'vite',
     lint: 'pnpm exec eslint src --ext .ts,.tsx',
     'type-check': 'tsc --noEmit',
     test: 'vitest run',

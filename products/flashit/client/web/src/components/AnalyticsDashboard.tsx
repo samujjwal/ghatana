@@ -10,6 +10,7 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { flashitWebColors } from '@/styles/designTokens';
 import {
   LineChart,
   Line,
@@ -77,7 +78,7 @@ interface AnalyticsDashboardProps {
   userId: string;
 }
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+const COLORS = [flashitWebColors.blue500, flashitWebColors.green500, flashitWebColors.yellow500, flashitWebColors.red500, flashitWebColors.purple500, flashitWebColors.pink500];
 
 export default function AnalyticsDashboard({ userId }: AnalyticsDashboardProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
@@ -196,7 +197,7 @@ export default function AnalyticsDashboard({ userId }: AnalyticsDashboardProps) 
                 labelFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
               />
               <Legend />
-              <Line type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2} name="Moments" />
+              <Line type="monotone" dataKey="count" stroke={flashitWebColors.blue500} strokeWidth={2} name="Moments" />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -212,7 +213,7 @@ export default function AnalyticsDashboard({ userId }: AnalyticsDashboardProps) 
                 <XAxis dataKey="hour" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="count" fill="#10b981" />
+                <Bar dataKey="count" fill={flashitWebColors.green500} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -226,7 +227,7 @@ export default function AnalyticsDashboard({ userId }: AnalyticsDashboardProps) 
                 <XAxis dataKey="day" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="count" fill="#f59e0b" />
+                <Bar dataKey="count" fill={flashitWebColors.yellow500} />
               </BarChart>
             </ResponsiveContainer>
           </div>

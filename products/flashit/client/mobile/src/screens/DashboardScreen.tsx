@@ -19,6 +19,7 @@ import { RootStackParamList } from '../navigation';
 import { useApi } from '../contexts/ApiContext';
 import { mobileAtoms } from '../state/localAtoms';
 import { formatDistanceToNow } from 'date-fns';
+import { flashitMobileColors, flashitMobileShadows } from '@/styles/designTokens';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Dashboard'>;
 
@@ -48,7 +49,7 @@ export default function DashboardScreen({ navigation }: Props) {
       >
         <ActivityIndicator
           size="large"
-          color="#0ea5e9"
+          color={flashitMobileColors.sky500}
           accessibilityLabel="Loading, please wait"
         />
       </View>
@@ -205,7 +206,7 @@ export default function DashboardScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: flashitMobileColors.slate50,
   },
   loadingContainer: {
     flex: 1,
@@ -218,7 +219,7 @@ const styles = StyleSheet.create({
   welcome: {
     fontSize: 24,
     fontWeight: '600',
-    color: '#1e293b',
+    color: flashitMobileColors.slate800,
     marginBottom: 20,
   },
   statsContainer: {
@@ -228,55 +229,55 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileColors.white,
     borderRadius: 12,
     padding: 20,
     alignItems: 'center',
-    boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
+    boxShadow: flashitMobileShadows.soft,
     elevation: 2,
   },
   statNumber: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#0ea5e9',
+    color: flashitMobileColors.sky500,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 14,
-    color: '#64748b',
+    color: flashitMobileColors.slate500,
   },
   actionsContainer: {
     gap: 12,
     marginBottom: 24,
   },
   actionButton: {
-    backgroundColor: '#0ea5e9',
+    backgroundColor: flashitMobileColors.sky500,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
   },
   actionButtonSecondary: {
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileColors.white,
     borderWidth: 2,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileColors.slate200,
   },
   actionButtonTertiary: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: flashitMobileColors.yellow100,
     borderWidth: 2,
-    borderColor: '#f59e0b',
+    borderColor: flashitMobileColors.yellow500,
   },
   actionButtonText: {
-    color: '#fff',
+    color: flashitMobileColors.white,
     fontSize: 16,
     fontWeight: '600',
   },
   actionButtonTextSecondary: {
-    color: '#0ea5e9',
+    color: flashitMobileColors.sky500,
     fontSize: 16,
     fontWeight: '600',
   },
   actionButtonTextTertiary: {
-    color: '#92400e',
+    color: flashitMobileColors.yellow700,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -292,23 +293,23 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1e293b',
+    color: flashitMobileColors.slate800,
   },
   sectionLink: {
     fontSize: 14,
-    color: '#0ea5e9',
+    color: flashitMobileColors.sky500,
     fontWeight: '500',
   },
   momentsList: {
     gap: 12,
   },
   momentCard: {
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileColors.white,
     borderRadius: 12,
     padding: 16,
     borderLeftWidth: 4,
-    borderLeftColor: '#0ea5e9',
-    boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
+    borderLeftColor: flashitMobileColors.sky500,
+    boxShadow: flashitMobileShadows.soft,
     elevation: 2,
   },
   momentHeader: {
@@ -320,19 +321,19 @@ const styles = StyleSheet.create({
   momentSphere: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#0ea5e9',
-    backgroundColor: '#e0f2fe',
+    color: flashitMobileColors.sky500,
+    backgroundColor: flashitMobileColors.sky100,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
   },
   momentTime: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
   },
   momentText: {
     fontSize: 14,
-    color: '#475569',
+    color: flashitMobileColors.slate600,
     lineHeight: 20,
   },
   emotionTags: {
@@ -343,26 +344,26 @@ const styles = StyleSheet.create({
   },
   emotionTag: {
     fontSize: 11,
-    color: '#7c3aed',
-    backgroundColor: '#f3e8ff',
+    color: flashitMobileColors.purple500,
+    backgroundColor: flashitMobileColors.purple50,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
   },
   emptyState: {
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileColors.white,
     borderRadius: 12,
     padding: 32,
     alignItems: 'center',
   },
   emptyStateText: {
     fontSize: 16,
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
     marginBottom: 8,
   },
   emptyStateLink: {
     fontSize: 14,
-    color: '#0ea5e9',
+    color: flashitMobileColors.sky500,
     fontWeight: '500',
   },
 });

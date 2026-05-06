@@ -21,6 +21,7 @@ import { RootStackParamList } from '../navigation';
 import { useApi } from '../contexts/ApiContext';
 import { useSetAtom } from 'jotai';
 import { mobileAtoms } from '../state/localAtoms';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
@@ -93,6 +94,7 @@ export default function RegisterScreen({ navigation }: Props) {
             <TextInput
               style={styles.input}
               placeholder="Display Name (Optional)"
+              placeholderTextColor={flashitMobileTheme.text.secondary}
               value={displayName}
               onChangeText={setDisplayName}
               editable={!loading}
@@ -105,6 +107,7 @@ export default function RegisterScreen({ navigation }: Props) {
             <TextInput
               style={styles.input}
               placeholder="Email"
+              placeholderTextColor={flashitMobileTheme.text.secondary}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -119,6 +122,7 @@ export default function RegisterScreen({ navigation }: Props) {
             <TextInput
               style={styles.input}
               placeholder="Password (min. 8 characters)"
+              placeholderTextColor={flashitMobileTheme.text.secondary}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -141,7 +145,7 @@ export default function RegisterScreen({ navigation }: Props) {
             >
               {loading ? (
                 <ActivityIndicator
-                  color="#fff"
+                  color={flashitMobileTheme.text.inverse}
                   accessibilityLabel="Creating account, please wait"
                 />
               ) : (
@@ -172,7 +176,7 @@ export default function RegisterScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f9ff',
+    backgroundColor: flashitMobileTheme.background.canvas,
   },
   scrollContent: {
     flexGrow: 1,
@@ -185,13 +189,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: '#0ea5e9',
+    color: flashitMobileTheme.brand.primary,
     textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#64748b',
+    color: flashitMobileTheme.text.secondary,
     textAlign: 'center',
     marginBottom: 40,
   },
@@ -199,15 +203,16 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.background.surface,
     borderRadius: 8,
     padding: 16,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileTheme.border,
+    color: flashitMobileTheme.text.primary,
   },
   button: {
-    backgroundColor: '#0ea5e9',
+    backgroundColor: flashitMobileTheme.brand.primary,
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',
@@ -217,19 +222,18 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   buttonText: {
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     fontSize: 16,
     fontWeight: '600',
   },
   linkText: {
     textAlign: 'center',
-    color: '#64748b',
+    color: flashitMobileTheme.text.secondary,
     fontSize: 14,
     marginTop: 8,
   },
   linkBold: {
-    color: '#0ea5e9',
+    color: flashitMobileTheme.brand.primary,
     fontWeight: '600',
   },
 });
-

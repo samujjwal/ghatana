@@ -9,6 +9,7 @@
  */
 
 import React, { Component, ReactNode, ErrorInfo } from 'react';
+import { flashitWebColors, flashitWebAlpha, flashitWebGradients } from '@/styles/designTokens';
 
 // ============================================================================
 // Types & Interfaces
@@ -276,7 +277,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               display: flex;
               align-items: center;
               justify-content: center;
-              background-color: #f5f5f5;
+              background-color: ${flashitWebColors.neutral100};
               padding: 2rem;
             }
             .error-container {
@@ -284,11 +285,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               width: 100%;
               background: white;
               border-radius: 12px;
-              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+              box-shadow: 0 4px 6px ${flashitWebAlpha.shadow};
               overflow: hidden;
             }
             .error-header {
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              background: ${flashitWebGradients.errorHeader};
               color: white;
               padding: 3rem 2rem;
               text-align: center;
@@ -307,18 +308,18 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               padding: 2rem;
             }
             .error-card {
-              background: #f9fafb;
+              background: ${flashitWebColors.slate50};
               border-radius: 8px;
               padding: 1.5rem;
-              border: 1px solid #e5e7eb;
+              border: 1px solid ${flashitWebColors.slate200};
             }
             .error-card h3 {
               margin: 0 0 1rem 0;
-              color: #1f2937;
+              color: ${flashitWebColors.slate800};
               font-size: 1.25rem;
             }
             .error-text {
-              color: #6b7280;
+              color: ${flashitWebColors.slate500};
               margin: 0 0 1rem 0;
               font-family: 'Courier New', monospace;
               font-size: 0.95rem;
@@ -328,13 +329,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             }
             .error-stack summary {
               cursor: pointer;
-              color: #6366f1;
+              color: ${flashitWebColors.indigo500};
               font-weight: 500;
               margin-bottom: 0.5rem;
             }
             .error-stack pre {
-              background: #1f2937;
-              color: #e5e7eb;
+              background: ${flashitWebColors.slate800};
+              color: ${flashitWebColors.slate200};
               padding: 1rem;
               border-radius: 6px;
               overflow-x: auto;
@@ -343,7 +344,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             }
             .error-actions {
               padding: 2rem;
-              border-top: 1px solid #e5e7eb;
+              border-top: 1px solid ${flashitWebColors.slate200};
               display: flex;
               gap: 1rem;
               justify-content: center;
@@ -358,36 +359,36 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               border: none;
             }
             .btn-primary {
-              background: #6366f1;
+              background: ${flashitWebColors.indigo500};
               color: white;
             }
             .btn-primary:hover {
-              background: #4f46e5;
+              background: ${flashitWebColors.indigo600};
               transform: translateY(-1px);
-              box-shadow: 0 4px 6px rgba(99, 102, 241, 0.3);
+              box-shadow: 0 4px 6px ${flashitWebAlpha.indigoShadow};
             }
             .btn-secondary {
               background: white;
-              color: #6366f1;
-              border: 2px solid #6366f1;
+              color: ${flashitWebColors.indigo500};
+              border: 2px solid ${flashitWebColors.indigo500};
             }
             .btn-secondary:hover {
-              background: #f5f7ff;
+              background: ${flashitWebColors.indigo50};
             }
 
             .error-section {
               padding: 2rem;
-              background: #fef2f2;
+              background: ${flashitWebColors.red50};
               border-radius: 8px;
-              border: 1px solid #fecaca;
+              border: 1px solid ${flashitWebColors.red200};
               margin: 1rem 0;
             }
             .error-content h3 {
-              color: #dc2626;
+              color: ${flashitWebColors.red600};
               margin: 0 0 0.5rem 0;
             }
             .error-content p {
-              color: #991b1b;
+              color: ${flashitWebColors.red700};
               margin: 0 0 1rem 0;
             }
 
@@ -396,9 +397,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               align-items: center;
               gap: 1rem;
               padding: 1rem;
-              background: #fef2f2;
+              background: ${flashitWebColors.red50};
               border-radius: 6px;
-              border: 1px solid #fecaca;
+              border: 1px solid ${flashitWebColors.red200};
             }
             .error-icon {
               font-size: 2rem;
@@ -408,11 +409,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             }
             .error-message p {
               margin: 0 0 0.5rem 0;
-              color: #991b1b;
+              color: ${flashitWebColors.red700};
               font-size: 0.95rem;
             }
             .error-retry-btn {
-              background: #dc2626;
+              background: ${flashitWebColors.red600};
               color: white;
               border: none;
               padding: 0.5rem 1rem;
@@ -421,7 +422,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               font-size: 0.875rem;
             }
             .error-retry-btn:hover {
-              background: #b91c1c;
+              background: ${flashitWebColors.red700};
             }
           `}</style>
         </div>

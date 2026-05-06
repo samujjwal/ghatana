@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Dimensions } from 'react-native';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 const { width } = Dimensions.get('window');
 const BAR_WIDTH = 4;
@@ -87,9 +88,9 @@ export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({
   };
 
   const getBarColor = (level: number): string => {
-    if (level > 80) return '#ff3b30'; // Red for high levels
-    if (level > 50) return '#ff9500'; // Orange for medium levels
-    return '#34c759'; // Green for low levels
+    if (level > 80) return flashitMobileTheme.status.error;
+    if (level > 50) return flashitMobileTheme.status.warning;
+    return flashitMobileTheme.status.success;
   };
 
   return (
@@ -119,7 +120,7 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#ff3b30',
+    backgroundColor: flashitMobileTheme.status.error,
     marginBottom: 20,
   },
   waveformContainer: {
@@ -132,6 +133,6 @@ const styles = StyleSheet.create({
   bar: {
     width: BAR_WIDTH,
     borderRadius: BAR_WIDTH / 2,
-    backgroundColor: '#34c759',
+    backgroundColor: flashitMobileTheme.status.success,
   },
 });

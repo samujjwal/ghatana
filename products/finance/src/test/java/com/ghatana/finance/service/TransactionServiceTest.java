@@ -121,6 +121,35 @@ public class TransactionServiceTest {
     }
 
     @Test
+    public void testProcessTransaction_FourEyesReview_ShouldAuditBeforeAgentExecutionSideEffect() {
+        CountingOrchestrator countingOrchestrator = new CountingOrchestrator();
+        ReviewRequiredAutonomyManager reviewRequiredAutonomyManager = new ReviewRequiredAutonomyManager();
+        countingOrchestrator.registerAgent(new StubFraudAgent());
+
+        TransactionService reviewRequiredService = createService(
+            countingOrchestrator,
+            reviewRequiredAutonomyManager,
+            Clock.systemUTC(),
+            10,
+            Duration.ofHours(24)
+        );
+
+        TransactionResult result = reviewRequiredService.processTransaction(
+            createTransaction("txn-four-eyes", 125000.0, "USD", "NEW_YORK")
+        );
+
+        assertEquals("PENDING_REVIEW", result.getStatus());
+        assertEquals("four-eyes", result.getMetadata().get("approval_required"));
+        assertEquals("TRANSACTION_MUTATION", result.getMetadata().get("audit_classification"));
+        assertEquals("tenant-1", result.getMetadata().get("tenant_id"));
+        assertEquals("txn-four-eyes", result.getMetadata().get("transaction_id"));
+        assertEquals("txn-four-eyes", result.getMetadata().get("idempotency_key"));
+        assertEquals("finance_transaction_manual_review", result.getMetadata().get("trace_operation"));
+        assertEquals(0, countingOrchestrator.executions.get());
+        assertTrue(reviewRequiredAutonomyManager.hasNoRecordedDecisions());
+    }
+
+    @Test
     public void testProcessTransaction_MediumRisk_ShouldApproveWithWarning() {
         Transaction transaction = createTransaction("txn-004", 15000.0, "EUR", "LONDON");
 
@@ -385,7 +414,7 @@ public class TransactionServiceTest {
         }
     }
 
-    private static final class RecordingAutonomyManager implements AutonomyManager {
+    private static class RecordingAutonomyManager implements AutonomyManager {
         private final List<AutonomyManager.AutonomousDecision> recordedDecisions = new ArrayList<>();
 
         @Override
@@ -420,6 +449,17 @@ public class TransactionServiceTest {
 
         @Override
         public void rejectDecision(String decisionId, String rejector, String reason) {
+        }
+
+        protected boolean hasNoRecordedDecisions() {
+            return recordedDecisions.isEmpty();
+        }
+    }
+
+    private static final class ReviewRequiredAutonomyManager extends RecordingAutonomyManager {
+        @Override
+        public boolean requiresHumanReview(AgentOrchestrator.AgentRequest request, AgentOrchestrator.KernelAgent agent) {
+            return true;
         }
     }
 

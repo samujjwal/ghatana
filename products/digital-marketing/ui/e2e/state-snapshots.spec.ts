@@ -8,7 +8,7 @@ import { loginAs } from './fixtures';
  * @doc.purpose Verify UI states for loading, error, and empty scenarios
  * @doc.layer e2e
  */
-test.describe('State Snapshots @a11y', () => {
+test.describe('State Snapshots @visual', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page);
   });

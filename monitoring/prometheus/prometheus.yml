@@ -164,3 +164,68 @@ scrape_configs:
           tech: 'java'
     metrics_path: '/metrics'
     scrape_interval: 15s
+
+  # FlashIt gateway and clients use the shared Kernel observability stack.
+  # Product-owned alert rules and dashboards are mounted as overlays by the
+  # FlashIt compose file; stack ownership stays under monitoring/.
+  - job_name: 'flashit-api'
+    static_configs:
+      - targets: ['host.docker.internal:8000']
+        labels:
+          service: 'flashit-api'
+          product: 'flashit'
+          layer: 'api'
+          tech: 'nodejs'
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'flashit-web'
+    static_configs:
+      - targets: ['host.docker.internal:3000']
+        labels:
+          service: 'flashit-web'
+          product: 'flashit'
+          layer: 'web'
+          tech: 'typescript'
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'flashit-gateway'
+    static_configs:
+      - targets: ['host.docker.internal:2900']
+        labels:
+          service: 'flashit-gateway'
+          product: 'flashit'
+          layer: 'gateway'
+          tech: 'nodejs'
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'flashit-agent'
+    static_configs:
+      - targets: ['host.docker.internal:8090']
+        labels:
+          service: 'flashit-agent'
+          product: 'flashit'
+          layer: 'agent'
+          tech: 'java'
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'flashit-redis'
+    static_configs:
+      - targets: ['redis:6379']
+        labels:
+          service: 'flashit-redis'
+          product: 'flashit'
+          layer: 'cache'
+          tech: 'redis'
+
+  - job_name: 'flashit-postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+        labels:
+          service: 'flashit-postgres'
+          product: 'flashit'
+          layer: 'database'
+          tech: 'postgres'

@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @doc.layer product
  * @doc.pattern Repository Implementation
  */
-public final class InMemoryPageArtifactRepository implements PageArtifactRepository {
+public final class InMemoryPageArtifactRepository implements PageArtifactRepository, PageArtifactAtomicMutationRepository {
 
     private static final Logger LOG = LoggerFactory.getLogger(InMemoryPageArtifactRepository.class);
 
@@ -149,5 +149,25 @@ public final class InMemoryPageArtifactRepository implements PageArtifactReposit
 
     private String nextDocumentId(String currentDocumentId) {
         return currentDocumentId + "@rev-" + UUID.randomUUID();
+    }
+
+    /**
+     * Atomic save + audit for in-memory use (test/dev only).
+     * <p>
+     * The in-memory store has no real transaction boundary, so audit logging is skipped.
+     * Production code must use {@code DbPageArtifactRepository} which persists both in one DB transaction.
+     */
+    @Override
+    public Promise<PageArtifactDocument> saveWithAudit(
+            @NotNull String tenantId,
+            @NotNull String workspaceId,
+            @NotNull String projectId,
+            @NotNull PageArtifactDocument document,
+            @NotNull String action,
+            @NotNull String actor,
+            @NotNull String summary
+    ) {
+        LOG.debug("saveWithAudit (in-memory): action={}, actor={}, artifactId={}", action, actor, document.artifactId());
+        return save(tenantId, workspaceId, projectId, document);
     }
 }

@@ -586,6 +586,233 @@ class PageArtifactValidatorTest {
         assertThat(result.errors()).noneMatch(error -> error.contains("under-declare sensitivity"));
     }
 
+    // P1-009/P1-010: Consent policy and data-classification enforcement on data bindings
+
+    @Test
+    @DisplayName("data binding with INTERNAL classification and no consentPolicy fails validation")
+    void validate_dataBindingInternalClassificationMissingConsentPolicyFails() {
+        PageArtifactDocument document = sampleDocument(
+                "manual",
+                Map.of(
+                        "rootNodes", List.of("root"),
+                        "nodes", Map.of(
+                                "root", Map.of(
+                                        "contractName", "Text",
+                                        "props", Map.of(
+                                                "text", "PII Display",
+                                                "dataBinding", Map.of(
+                                                        "source", "user-profile",
+                                                        "path", "email",
+                                                        "classification", "INTERNAL"
+                                                )
+                                        ),
+                                        "slots", Map.of()
+                                )
+                        )
+                ),
+                List.of()
+        );
+
+        PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anyMatch(error -> error.contains("must declare a 'consentPolicy'"));
+    }
+
+    @Test
+    @DisplayName("data binding with CONFIDENTIAL classification and no consentPolicy fails validation")
+    void validate_dataBindingConfidentialClassificationMissingConsentPolicyFails() {
+        PageArtifactDocument document = sampleDocument(
+                "manual",
+                Map.of(
+                        "rootNodes", List.of("root"),
+                        "nodes", Map.of(
+                                "root", Map.of(
+                                        "contractName", "Text",
+                                        "props", Map.of(
+                                                "text", "Medical Summary",
+                                                "dataBinding", Map.of(
+                                                        "source", "health-records",
+                                                        "path", "diagnosis",
+                                                        "classification", "CONFIDENTIAL"
+                                                )
+                                        ),
+                                        "slots", Map.of()
+                                )
+                        )
+                ),
+                List.of()
+        );
+
+        PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anyMatch(error -> error.contains("must declare a 'consentPolicy'"));
+    }
+
+    @Test
+    @DisplayName("data binding with CONFIDENTIAL classification and valid consentPolicy passes")
+    void validate_dataBindingConfidentialWithValidConsentPolicyPasses() {
+        PageArtifactDocument document = sampleDocument(
+                "manual",
+                Map.of(
+                        "rootNodes", List.of("root"),
+                        "nodes", Map.of(
+                                "root", Map.of(
+                                        "contractName", "Text",
+                                        "props", Map.of(
+                                                "text", "Medical Summary",
+                                                "dataBinding", Map.of(
+                                                        "source", "health-records",
+                                                        "path", "diagnosis",
+                                                        "classification", "CONFIDENTIAL",
+                                                        "consentPolicy", "EXPLICIT_CONSENT"
+                                                )
+                                        ),
+                                        "slots", Map.of()
+                                )
+                        )
+                ),
+                List.of()
+        );
+
+        PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
+
+        assertThat(result.errors()).noneMatch(error -> error.contains("consentPolicy"));
+    }
+
+    @Test
+    @DisplayName("data binding with PUBLIC classification does not require consentPolicy")
+    void validate_dataBindingPublicClassificationNoConsentPolicyNeeded() {
+        PageArtifactDocument document = sampleDocument(
+                "manual",
+                Map.of(
+                        "rootNodes", List.of("root"),
+                        "nodes", Map.of(
+                                "root", Map.of(
+                                        "contractName", "Text",
+                                        "props", Map.of(
+                                                "text", "Product Name",
+                                                "dataBinding", Map.of(
+                                                        "source", "catalog",
+                                                        "path", "name",
+                                                        "classification", "PUBLIC"
+                                                )
+                                        ),
+                                        "slots", Map.of()
+                                )
+                        )
+                ),
+                List.of()
+        );
+
+        PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
+
+        assertThat(result.errors()).noneMatch(error -> error.contains("consentPolicy"));
+    }
+
+    @Test
+    @DisplayName("data binding with unrecognized classification fails validation")
+    void validate_dataBindingUnrecognizedClassificationFails() {
+        PageArtifactDocument document = sampleDocument(
+                "manual",
+                Map.of(
+                        "rootNodes", List.of("root"),
+                        "nodes", Map.of(
+                                "root", Map.of(
+                                        "contractName", "Text",
+                                        "props", Map.of(
+                                                "text", "Data",
+                                                "dataBinding", Map.of(
+                                                        "source", "ds",
+                                                        "path", "field",
+                                                        "classification", "SUPER_SECRET"
+                                                )
+                                        ),
+                                        "slots", Map.of()
+                                )
+                        )
+                ),
+                List.of()
+        );
+
+        PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anyMatch(error -> error.contains("unrecognized data binding classification"));
+    }
+
+    @Test
+    @DisplayName("data binding with RESTRICTED classification and unrecognized consentPolicy fails validation")
+    void validate_dataBindingRestrictedWithInvalidConsentPolicyFails() {
+        PageArtifactDocument document = sampleDocument(
+                "manual",
+                Map.of(
+                        "rootNodes", List.of("root"),
+                        "nodes", Map.of(
+                                "root", Map.of(
+                                        "contractName", "Text",
+                                        "props", Map.of(
+                                                "text", "Restricted Data",
+                                                "dataBinding", Map.of(
+                                                        "source", "finance",
+                                                        "path", "account",
+                                                        "classification", "RESTRICTED",
+                                                        "consentPolicy", "JUST_TRUST_ME"
+                                                )
+                                        ),
+                                        "slots", Map.of()
+                                )
+                        )
+                ),
+                List.of()
+        );
+
+        PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anyMatch(error -> error.contains("unrecognized consentPolicy"));
+    }
+
+    @Test
+    @DisplayName("data binding list with a CONFIDENTIAL entry missing consentPolicy fails validation")
+    void validate_dataBindingListMissingConsentPolicyFails() {
+        PageArtifactDocument document = sampleDocument(
+                "manual",
+                Map.of(
+                        "rootNodes", List.of("root"),
+                        "nodes", Map.of(
+                                "root", Map.of(
+                                        "contractName", "Text",
+                                        "props", Map.of(
+                                                "text", "Data",
+                                                "dataBindings", List.of(
+                                                        Map.of(
+                                                                "source", "public-data",
+                                                                "path", "title",
+                                                                "classification", "PUBLIC"
+                                                        ),
+                                                        Map.of(
+                                                                "source", "private-data",
+                                                                "path", "ssn",
+                                                                "classification", "CONFIDENTIAL"
+                                                                // consentPolicy missing
+                                                        )
+                                                )
+                                        ),
+                                        "slots", Map.of()
+                                )
+                        )
+                ),
+                List.of()
+        );
+
+        PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anyMatch(error -> error.contains("must declare a 'consentPolicy'"));
+    }
+
     private static PageArtifactDocument sampleDocument(
             String source,
             Map<String, Object> builderDocument,

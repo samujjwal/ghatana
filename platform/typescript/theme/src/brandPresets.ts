@@ -2,7 +2,6 @@ import { z } from 'zod';
 import type { ThemeMode } from './types';
 import type { DeepPartial, ThemeTokens, ThemeLayer } from './theme';
 import { baseThemeTokens } from './theme';
-import { palette } from '@ghatana/tokens';
 
 export interface BrandPreset {
   id: string;

@@ -44,6 +44,24 @@ const checks = [
     required: ['phrRouteManifest'],
   },
   {
+    name: 'PHR backend route entitlement API',
+    file: 'products/phr/src/main/java/com/ghatana/phr/api/PhrHttpServer.java',
+    required: [
+      '/route-entitlements',
+      'handleRouteEntitlements',
+      '"product", "phr"',
+      '"principalId"',
+      '"tenantId"',
+      '"role"',
+      '"persona"',
+      '"tier"',
+      '"routes"',
+      '"actions"',
+      '"cards"',
+      'phrRoutesFor',
+    ],
+  },
+  {
     name: 'DMOS route manifest',
     file: 'products/digital-marketing/ui/src/routeManifest.tsx',
     required: [
@@ -62,6 +80,29 @@ const checks = [
     file: 'products/digital-marketing/ui/src/App.tsx',
     required: ['dmosRouteManifest', 'GuardedProductRoute', 'FeatureUnavailablePage'],
     forbidden: ['path="/workspaces/:workspaceId/dashboard"', 'path="/workspaces/:workspaceId/approvals"'],
+  },
+  {
+    name: 'DMOS backend route entitlement API',
+    file: 'products/digital-marketing/dm-api/src/main/java/com/ghatana/digitalmarketing/api/DmosRouteEntitlementServlet.java',
+    required: [
+      '/v1/route-entitlements',
+      'handleRouteEntitlements',
+      '"product", "digital-marketing"',
+      '"principalId"',
+      '"tenantId"',
+      '"role"',
+      '"persona"',
+      '"tier"',
+      '"routes"',
+      '"actions"',
+      '"cards"',
+      'routesFor',
+    ],
+  },
+  {
+    name: 'DMOS backend route entitlement registration',
+    file: 'products/digital-marketing/dm-api/src/main/java/com/ghatana/digitalmarketing/api/DmosApiServer.java',
+    required: ['DmosRouteEntitlementServlet', 'new DmosRouteEntitlementServlet(eventloop)'],
   },
   {
     name: 'FlashIt route manifest',
@@ -98,6 +139,28 @@ const checks = [
     name: 'FlashIt shared shell composition',
     file: 'products/flashit/client/web/src/components/FlashitProductShell.tsx',
     required: ['ProductShell', 'flashitRouteManifest', '@ghatana/product-shell'],
+  },
+  {
+    name: 'FlashIt backend route entitlement API',
+    file: 'products/flashit/backend/gateway/src/routes/entitlements.ts',
+    required: [
+      '/route-entitlements',
+      'ProductRouteEntitlement-shaped',
+      "product: 'flashit'",
+      'principalId',
+      'tenantId',
+      'role',
+      'persona',
+      'tier',
+      'routes: allowedRoutes',
+      'actions: allowedRoutes.flatMap',
+      'cards: allowedRoutes.flatMap',
+    ],
+  },
+  {
+    name: 'FlashIt backend route entitlement registration',
+    file: 'products/flashit/backend/gateway/src/server.ts',
+    required: ['entitlementRoutes', 'prefix: "/api/entitlements"'],
   },
 ];
 

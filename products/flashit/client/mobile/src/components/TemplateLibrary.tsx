@@ -20,6 +20,7 @@ import {
   Platform,
 } from 'react-native';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 // ============================================================================
 // Types
@@ -415,7 +416,7 @@ export default function TemplateLibrary({ onTemplateSelect, onTemplateUse, onBac
 
         {isLoading ? (
           <View style={styles.centered}>
-            <ActivityIndicator size="large" color="#3b82f6" />
+            <ActivityIndicator size="large" color={flashitMobileTheme.brand.primary} />
           </View>
         ) : (
           <ScrollView style={styles.content}>
@@ -492,7 +493,7 @@ export default function TemplateLibrary({ onTemplateSelect, onTemplateUse, onBac
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.background.surface,
   },
   header: {
     flexDirection: 'row',
@@ -500,7 +501,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: flashitMobileTheme.border,
   },
   headerTitle: {
     fontSize: 20,
@@ -511,7 +512,7 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: 16,
-    color: '#3b82f6',
+    color: flashitMobileTheme.brand.primary,
   },
   content: {
     flex: 1,
@@ -526,10 +527,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 16,
     marginBottom: 12,
-    backgroundColor: '#f9fafb',
+    backgroundColor: flashitMobileTheme.background.muted,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: flashitMobileTheme.border,
   },
   categoryIcon: {
     fontSize: 36,
@@ -545,16 +546,16 @@ const styles = StyleSheet.create({
   },
   categoryDesc: {
     fontSize: 14,
-    color: '#6b7280',
+    color: flashitMobileTheme.text.secondary,
   },
   templateCard: {
     flexDirection: 'row',
     padding: 16,
     marginBottom: 12,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.background.surface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: flashitMobileTheme.border,
   },
   templateIcon: {
     fontSize: 32,
@@ -570,12 +571,12 @@ const styles = StyleSheet.create({
   },
   templateDesc: {
     fontSize: 14,
-    color: '#6b7280',
+    color: flashitMobileTheme.text.secondary,
     marginBottom: 4,
   },
   templateUsage: {
     fontSize: 12,
-    color: '#9ca3af',
+    color: flashitMobileTheme.brand.inactive,
   },
   formHeader: {
     alignItems: 'center',
@@ -587,7 +588,7 @@ const styles = StyleSheet.create({
   },
   formDesc: {
     fontSize: 16,
-    color: '#6b7280',
+    color: flashitMobileTheme.text.secondary,
     textAlign: 'center',
   },
   fieldContainer: {
@@ -599,18 +600,18 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   required: {
-    color: '#ef4444',
+    color: flashitMobileTheme.status.error,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: flashitMobileTheme.border,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
   },
   textArea: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: flashitMobileTheme.border,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
@@ -618,10 +619,10 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   inputError: {
-    borderColor: '#ef4444',
+    borderColor: flashitMobileTheme.status.error,
   },
   errorText: {
-    color: '#ef4444',
+    color: flashitMobileTheme.status.error,
     fontSize: 14,
     marginTop: 4,
   },
@@ -634,19 +635,19 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 8,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: flashitMobileTheme.background.muted,
     justifyContent: 'center',
     alignItems: 'center',
   },
   ratingButtonActive: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: flashitMobileTheme.brand.primary,
   },
   ratingText: {
     fontSize: 16,
-    color: '#374151',
+    color: flashitMobileTheme.text.primary,
   },
   ratingTextActive: {
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
   emotionContainer: {
     flexDirection: 'row',
@@ -657,12 +658,12 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 12,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: flashitMobileTheme.background.muted,
     justifyContent: 'center',
     alignItems: 'center',
   },
   emotionButtonActive: {
-    backgroundColor: '#dbeafe',
+    backgroundColor: flashitMobileTheme.background.accentSurface,
   },
   emotionText: {
     fontSize: 32,
@@ -677,10 +678,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonPrimary: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: flashitMobileTheme.brand.primary,
   },
   buttonText: {
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     fontSize: 16,
     fontWeight: '600',
   },

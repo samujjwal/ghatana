@@ -367,9 +367,41 @@ export function applyUserEdit(
   return generateCodegenPreview(preview.originalCode, lines.join('\n'));
 }
 
+/**
+ * Merge-with-fail-closed: throws if unresolved merge conflicts exist and no resolution
+ * strategy has been specified.
+ *
+ * Use this instead of {@link mergeCode} when the caller must not silently accept broken
+ * output. Callers that explicitly pass `preferSystem`, `preferUser`, or `markConflicts`
+ * in the options object behave identically to `mergeCode`.
+ *
+ * @throws {Error} When the preview contains merge conflicts and no resolution strategy is set.
+ */
+export function safeMerge(
+  originalCode: string,
+  generatedCode: string,
+  options: MergeOptions = {},
+): { mergedCode: string; conflicts: MergeConflict[] } {
+  const hasResolutionStrategy =
+    options.preferSystem === true || options.preferUser === true || options.markConflicts === true;
+
+  if (!hasResolutionStrategy) {
+    const preview = generateCodegenPreview(originalCode, generatedCode);
+    if (preview.conflicts.length > 0) {
+      throw new Error(
+        `safeMerge aborted: ${preview.conflicts.length} unresolved merge conflict(s) detected. ` +
+          'Provide a resolution strategy via MergeOptions (preferSystem, preferUser, or markConflicts).',
+      );
+    }
+  }
+
+  return mergeCode(originalCode, generatedCode, options);
+}
+
 export default {
   generateCodegenPreview,
   mergeCode,
+  safeMerge,
   getOwnershipRegion,
   isLineEditable,
   applyUserEdit,

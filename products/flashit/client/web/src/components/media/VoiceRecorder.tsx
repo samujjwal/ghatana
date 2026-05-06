@@ -34,22 +34,29 @@ function WaveformVisualizer({
   
   return (
     <div className="flex items-center justify-center h-20 gap-0.5 px-4">
-      {bars.map((level, index) => (
-        <div
-          key={index}
-          className={`w-1 rounded-full transition-all duration-75 ${
-            isRecording && !isPaused
-              ? 'bg-red-500'
-              : isPaused
-              ? 'bg-yellow-500'
-              : 'bg-gray-300'
-          }`}
-          style={{
-            height: `${Math.max(4, Math.min(80, level * 80))}px`,
-            opacity: isRecording || isPaused ? 1 : 0.5,
-          }}
-        />
-      ))}
+      <svg className="h-20 w-full" viewBox="0 0 200 80" role="img" aria-label="Recording waveform">
+        {bars.map((level, index) => {
+          const height = Math.max(4, Math.min(80, level * 80));
+          return (
+            <rect
+              key={index}
+              x={index * 4}
+              y={(80 - height) / 2}
+              width={2}
+              height={height}
+              rx={1}
+              className={`transition-all duration-75 ${
+                isRecording && !isPaused
+                  ? 'fill-red-500'
+                  : isPaused
+                  ? 'fill-yellow-500'
+                  : 'fill-gray-300'
+              }`}
+              opacity={isRecording || isPaused ? 1 : 0.5}
+            />
+          );
+        })}
+      </svg>
     </div>
   );
 }
@@ -225,12 +232,12 @@ function AudioPreview({
         </button>
 
         <div className="flex-1">
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-blue-500 h-2 rounded-full transition-all duration-100"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
+          <progress
+            className="h-2 w-full overflow-hidden rounded-full bg-gray-200 [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-gray-200 [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-blue-500 [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-blue-500"
+            max={100}
+            value={progress}
+            aria-label="Audio playback progress"
+          />
           <div className="flex justify-between text-xs text-gray-500 mt-1">
             <span>{formatDuration(currentTime)}</span>
             <span>{formatDuration(duration)}</span>

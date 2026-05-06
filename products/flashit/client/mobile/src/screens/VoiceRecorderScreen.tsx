@@ -19,6 +19,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { useNavigation } from '@react-navigation/native';
 import { WaveformVisualizer } from '../components/WaveformVisualizer';
 import { AudioPlaybackControls } from '../components/AudioPlaybackControls';
+import { flashitMobileTheme } from '../theme/kernelTheme';
 
 const MAX_RECORDING_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -392,7 +393,7 @@ export const VoiceRecorderScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: flashitMobileTheme.shadow.color,
   },
   header: {
     flexDirection: 'row',
@@ -408,7 +409,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
   timerContainer: {
     alignItems: 'center',
@@ -417,17 +418,17 @@ const styles = StyleSheet.create({
   timerText: {
     fontSize: 48,
     fontWeight: '700',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     fontVariant: ['tabular-nums'],
   },
   remainingText: {
     fontSize: 14,
-    color: '#888',
+    color: flashitMobileTheme.text.secondary,
     marginTop: 8,
   },
   statusText: {
     fontSize: 16,
-    color: '#ff9500',
+    color: flashitMobileTheme.status.warning,
     marginTop: 8,
     fontWeight: '600',
   },
@@ -443,7 +444,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
+    color: flashitMobileTheme.text.secondary,
   },
   controlsContainer: {
     paddingVertical: 40,
@@ -458,21 +459,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   recordButtonActive: {
-    backgroundColor: '#ff3b30',
+    backgroundColor: flashitMobileTheme.status.error,
   },
   recordButtonStop: {
-    backgroundColor: '#ff3b30',
+    backgroundColor: flashitMobileTheme.status.error,
   },
   recordButtonInner: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#ff3b30',
+    backgroundColor: flashitMobileTheme.status.error,
   },
   stopButtonInner: {
     width: 30,
     height: 30,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileTheme.text.inverse,
     borderRadius: 4,
   },
   recordingControls: {
@@ -484,13 +485,13 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#333',
+    backgroundColor: flashitMobileTheme.text.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   controlButtonText: {
     fontSize: 24,
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
   finishedControls: {
     flexDirection: 'row',
@@ -500,23 +501,23 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 12,
-    backgroundColor: '#333',
+    backgroundColor: flashitMobileTheme.text.primary,
   },
   deleteButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#ff3b30',
+    color: flashitMobileTheme.status.error,
   },
   saveButton: {
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 12,
-    backgroundColor: '#007aff',
+    backgroundColor: flashitMobileTheme.brand.primary,
   },
   saveButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
   footer: {
     paddingBottom: 20,
@@ -524,7 +525,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
-    color: '#666',
+    color: flashitMobileTheme.text.secondary,
   },
   permissionContainer: {
     flex: 1,
@@ -535,12 +536,12 @@ const styles = StyleSheet.create({
   permissionTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
     marginBottom: 16,
   },
   permissionText: {
     fontSize: 16,
-    color: '#888',
+    color: flashitMobileTheme.text.secondary,
     textAlign: 'center',
     marginBottom: 32,
   },
@@ -548,11 +549,11 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 12,
-    backgroundColor: '#007aff',
+    backgroundColor: flashitMobileTheme.brand.primary,
   },
   permissionButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: flashitMobileTheme.text.inverse,
   },
 });

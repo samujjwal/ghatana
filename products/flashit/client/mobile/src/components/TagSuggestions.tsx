@@ -20,6 +20,7 @@
  */
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { flashitMobileColors, flashitMobileShadows } from '@/styles/designTokens';
 import {
   View,
   Text,
@@ -342,7 +343,7 @@ export function TagSuggestions({
           ))}
 
           {isLoading && (
-            <ActivityIndicator size="small" color="#6366f1" style={styles.loader} />
+            <ActivityIndicator size="small" color={flashitMobileColors.indigo500} style={styles.loader} />
           )}
         </ScrollView>
       </View>
@@ -378,7 +379,7 @@ export function TagSuggestions({
           <View style={styles.sectionTitleRow}>
             <Text style={styles.sectionTitle}>✨ AI Suggestions</Text>
             {isLoading && (
-              <ActivityIndicator size="small" color="#6366f1" style={styles.loader} />
+              <ActivityIndicator size="small" color={flashitMobileColors.indigo500} style={styles.loader} />
             )}
           </View>
           {suggestions.length > 0 && (
@@ -453,7 +454,7 @@ export function TagSuggestions({
           value={customTag}
           onChangeText={setCustomTag}
           placeholder="Add custom tag..."
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={flashitMobileColors.slate400}
           returnKeyType="done"
           onSubmitEditing={handleAddCustomTag}
         />
@@ -483,9 +484,9 @@ export function TagSuggestions({
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileColors.white,
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: flashitMobileColors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -515,7 +516,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: flashitMobileColors.slate700,
     marginBottom: 8,
   },
   tagsContainer: {
@@ -530,7 +531,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    color: '#9ca3af',
+    color: flashitMobileColors.slate400,
   },
   loader: {
     marginLeft: 8,
@@ -540,8 +541,8 @@ const styles = StyleSheet.create({
   appliedTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#e0e7ff',
-    borderColor: '#c7d2fe',
+    backgroundColor: flashitMobileColors.indigo100,
+    borderColor: flashitMobileColors.indigo200,
     borderWidth: 1,
     borderRadius: 20,
     paddingHorizontal: 12,
@@ -549,31 +550,31 @@ const styles = StyleSheet.create({
   },
   appliedTagText: {
     fontSize: 14,
-    color: '#4338ca',
+    color: flashitMobileColors.indigo700,
     fontWeight: '500',
   },
   removeIcon: {
     marginLeft: 6,
     fontSize: 16,
-    color: '#6366f1',
+    color: flashitMobileColors.indigo500,
     fontWeight: 'bold',
   },
   appliedTagCompact: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#e0e7ff',
+    backgroundColor: flashitMobileColors.indigo100,
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
   appliedTagTextCompact: {
     fontSize: 12,
-    color: '#4338ca',
+    color: flashitMobileColors.indigo700,
   },
   removeIconCompact: {
     marginLeft: 4,
     fontSize: 14,
-    color: '#6366f1',
+    color: flashitMobileColors.indigo500,
   },
 
   // Suggestion Tags
@@ -592,50 +593,50 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   suggestionTagCompact: {
-    backgroundColor: '#f3f4f6',
+    backgroundColor: flashitMobileColors.slate100,
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: '#d1d5db',
+    borderColor: flashitMobileColors.slate300,
   },
   suggestionTagTextCompact: {
     fontSize: 12,
-    color: '#6b7280',
+    color: flashitMobileColors.slate500,
   },
   rejectButton: {
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderLeftWidth: 1,
-    borderLeftColor: 'rgba(0,0,0,0.1)',
+    borderLeftColor: flashitMobileShadows.divider,
   },
   rejectIcon: {
     fontSize: 16,
-    color: '#9ca3af',
+    color: flashitMobileColors.slate400,
     fontWeight: 'bold',
   },
 
   // Confidence Styles
   highConfidence: {
-    backgroundColor: '#dcfce7',
-    borderColor: '#86efac',
+    backgroundColor: flashitMobileColors.green100,
+    borderColor: flashitMobileColors.green300,
   },
   mediumConfidence: {
-    backgroundColor: '#dbeafe',
-    borderColor: '#93c5fd',
+    backgroundColor: flashitMobileColors.blue100,
+    borderColor: flashitMobileColors.blue200,
   },
   lowConfidence: {
-    backgroundColor: '#f3f4f6',
-    borderColor: '#d1d5db',
+    backgroundColor: flashitMobileColors.slate100,
+    borderColor: flashitMobileColors.slate300,
   },
 
   // Entities
   entityTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fef3c7',
-    borderColor: '#fcd34d',
+    backgroundColor: flashitMobileColors.yellow100,
+    borderColor: flashitMobileColors.yellow300,
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 8,
@@ -647,7 +648,7 @@ const styles = StyleSheet.create({
   },
   entityText: {
     fontSize: 13,
-    color: '#92400e',
+    color: flashitMobileColors.yellow700,
   },
 
   // Error
@@ -658,12 +659,12 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 13,
-    color: '#dc2626',
+    color: flashitMobileColors.red600,
     flex: 1,
   },
   retryText: {
     fontSize: 13,
-    color: '#6366f1',
+    color: flashitMobileColors.indigo500,
     fontWeight: '500',
     textDecorationLine: 'underline',
   },
@@ -671,7 +672,7 @@ const styles = StyleSheet.create({
   // Accept All
   acceptAllText: {
     fontSize: 13,
-    color: '#6366f1',
+    color: flashitMobileColors.indigo500,
     fontWeight: '600',
   },
 
@@ -685,15 +686,15 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: flashitMobileColors.slate200,
     borderRadius: 8,
     paddingHorizontal: 12,
     fontSize: 14,
-    color: '#1f2937',
-    backgroundColor: '#fff',
+    color: flashitMobileColors.slate800,
+    backgroundColor: flashitMobileColors.white,
   },
   addButton: {
-    backgroundColor: '#6366f1',
+    backgroundColor: flashitMobileColors.indigo500,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 8,
@@ -702,14 +703,14 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   addButtonText: {
-    color: '#fff',
+    color: flashitMobileColors.white,
     fontSize: 14,
     fontWeight: '600',
   },
   refreshButton: {
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: '#eef2ff',
+    backgroundColor: flashitMobileColors.indigo50,
     borderRadius: 8,
   },
   refreshIcon: {

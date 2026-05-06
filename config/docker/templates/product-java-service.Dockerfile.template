@@ -1,0 +1,51 @@
+# Kernel-owned Java service runtime template.
+#
+# Product overrides:
+# - PRODUCT_GRADLE_PROJECT_ROOT: Gradle project copied into /build.
+# - PRODUCT_MAIN_CLASS: main class invoked by the runtime launch script.
+# - PRODUCT_PORT: service listen port exposed by the runtime image.
+# - PRODUCT_HEALTH_PATH: HTTP health path used by the standard healthcheck.
+
+FROM eclipse-temurin:21-jdk-alpine AS builder
+
+WORKDIR /build
+
+COPY gradlew /build/gradlew
+COPY gradle/wrapper /build/gradle/wrapper
+COPY gradle/libs.versions.toml /build/gradle/libs.versions.toml
+COPY ${PRODUCT_GRADLE_PROJECT_ROOT}/settings.gradle.kts /build/settings.gradle.kts
+COPY ${PRODUCT_GRADLE_PROJECT_ROOT}/build.gradle.kts /build/build.gradle.kts
+COPY ${PRODUCT_GRADLE_PROJECT_ROOT}/src/ /build/src/
+
+RUN chmod +x gradlew && \
+    ./gradlew clean build --no-daemon && \
+    mkdir -p /build/dist/lib && \
+    cp build/libs/*.jar /build/dist/ && \
+    cp -r build/libs/dependencies/* /build/dist/lib/ 2>/dev/null || true
+
+FROM eclipse-temurin:21-jre-alpine
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+
+COPY --from=builder /build/dist/*.jar /app/
+COPY --from=builder /build/dist/lib/ /app/lib/
+
+RUN echo '#!/bin/sh' > /app/run.sh && \
+    echo 'exec java \' >> /app/run.sh && \
+    echo '  -XX:+UseZGC \' >> /app/run.sh && \
+    echo '  -XX:MaxRAMPercentage=75 \' >> /app/run.sh && \
+    echo '  -Djava.security.egd=file:/dev/./urandom \' >> /app/run.sh && \
+    echo '  -cp "/app/*:/app/lib/*" \' >> /app/run.sh && \
+    echo '  ${PRODUCT_MAIN_CLASS}' >> /app/run.sh && \
+    chmod +x /app/run.sh
+
+EXPOSE ${PRODUCT_PORT}
+
+USER appuser
+
+HEALTHCHECK --interval=15s --timeout=10s --start-period=30s --retries=3 \
+  CMD wget --spider -q http://localhost:${PRODUCT_PORT}${PRODUCT_HEALTH_PATH:-/health} || exit 1
+
+ENTRYPOINT ["/app/run.sh"]

@@ -20,7 +20,7 @@ export function FlashitProductShell({ children }: FlashitProductShellProps): Rea
 
   const config: ProductShellConfig = {
     productName: 'FlashIt',
-    logo: <span className="text-lg font-semibold tracking-tight text-sky-200">FI</span>,
+    logo: <span className="text-lg font-semibold tracking-tight text-sky-700">FI</span>,
     currentRole,
     roleOrder: {
       guest: 0,

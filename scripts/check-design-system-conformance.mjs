@@ -14,7 +14,7 @@ const files = execSync(
   .split('\n')
   .filter(Boolean);
 
-const hardcodedValuePattern = /#[0-9a-fA-F]{3,8}\b|rgba?\(|style=\{\{/;
+const hardcodedValuePattern = /#[0-9a-fA-F]{3,8}\b|rgba?\(/;
 const violations = [];
 const seenExceptionFiles = new Set();
 

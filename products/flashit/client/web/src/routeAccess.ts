@@ -1,6 +1,9 @@
 export type FlashItRole = 'guest' | 'member' | 'premium' | 'admin';
 
 export interface FlashItAccessProfile {
+  readonly id?: string;
+  readonly email?: string;
+  readonly displayName?: string | null;
   readonly tier?: string | null;
   readonly role?: string | null;
   readonly isAdmin?: boolean | null;

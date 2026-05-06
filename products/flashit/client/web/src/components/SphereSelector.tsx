@@ -23,24 +23,24 @@ export default function SphereSelector() {
 
   return (
     <div className="space-y-2">
-      <select
-        value={selectedSphereId || ''}
-        onChange={(e) => setSelectedSphereId(e.target.value)}
-        className="input appearance-none pr-10"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-          backgroundPosition: 'right 0.5rem center',
-          backgroundRepeat: 'no-repeat',
-          backgroundSize: '1.5em 1.5em',
-        }}
-      >
-        <option value="">Select a Sphere...</option>
-        {spheresData?.map((sphere) => (
-          <option key={sphere.id} value={sphere.id}>
-            {sphere.name} ({sphere.type}) - {sphere.momentCount} moments
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <select
+          value={selectedSphereId || ''}
+          onChange={(e) => setSelectedSphereId(e.target.value)}
+          className="input appearance-none pr-10"
+        >
+          <option value="">Select a Sphere...</option>
+          {spheresData?.map((sphere) => (
+            <option key={sphere.id} value={sphere.id}>
+              {sphere.name} ({sphere.type}) - {sphere.momentCount} moments
+            </option>
+          ))}
+        </select>
+        <ChevronDown
+          aria-hidden="true"
+          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+        />
+      </div>
 
       {selectedSphere && (
         <div className="text-sm text-gray-600">
@@ -67,4 +67,3 @@ export default function SphereSelector() {
     </div>
   );
 }
-

@@ -2,13 +2,13 @@
  * E2E: AI Action Log page user journeys.
  */
 import { test, expect } from '@playwright/test';
-import { loginAs, mockDmosApi, TEST_WORKSPACE, AI_ACTION } from './fixtures';
+import { loginAs, mockDmosApi, navigateInApp, TEST_WORKSPACE, AI_ACTION } from './fixtures';
 
 test.describe('AI action log', () => {
   test.beforeEach(async ({ page }) => {
     await mockDmosApi(page);
     await loginAs(page);
-    await page.goto(`/workspaces/${TEST_WORKSPACE}/ai-actions`);
+    await navigateInApp(page, `/workspaces/${TEST_WORKSPACE}/ai-actions`);
     await expect(page.locator('[data-testid="ai-action-log-page"]')).toBeVisible();
   });
 
@@ -27,7 +27,7 @@ test.describe('AI action log', () => {
       `**/v1/workspaces/${TEST_WORKSPACE}/ai-actions`,
       (route) => route.fulfill({ json: { items: [] } }),
     );
-    await page.goto(`/workspaces/${TEST_WORKSPACE}/ai-actions`);
+    await navigateInApp(page, `/workspaces/${TEST_WORKSPACE}/ai-actions`);
     await expect(page.locator('[data-testid="ai-action-log-page-empty"]')).toBeVisible();
   });
 
@@ -36,7 +36,7 @@ test.describe('AI action log', () => {
       `**/v1/workspaces/${TEST_WORKSPACE}/ai-actions`,
       (route) => route.fulfill({ status: 500, body: 'Server Error' }),
     );
-    await page.goto(`/workspaces/${TEST_WORKSPACE}/ai-actions`);
+    await navigateInApp(page, `/workspaces/${TEST_WORKSPACE}/ai-actions`);
     await expect(page.locator('[data-testid="ai-action-log-page-error"]')).toBeVisible();
   });
 });

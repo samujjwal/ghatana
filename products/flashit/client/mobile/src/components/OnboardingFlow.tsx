@@ -26,6 +26,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation';
 import { useToastNotifications } from '../components/Toast';
 import { useHaptics } from '../services/haptics';
+import { flashitMobileColors } from '@/styles/designTokens';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -49,12 +50,12 @@ const sphereExamples: Array<{
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
 }> = [
-    { name: 'Personal', icon: 'person', color: '#007aff' },
-    { name: 'Work', icon: 'briefcase', color: '#34c759' },
-    { name: 'Health', icon: 'heart', color: '#ff3b30' },
-    { name: 'Learning', icon: 'book', color: '#ff9500' },
-    { name: 'Social', icon: 'people', color: '#5856d6' },
-    { name: 'Creative', icon: 'color-palette', color: '#ff2d55' },
+    { name: 'Personal', icon: 'person', color: flashitMobileColors.iosBlue },
+    { name: 'Work', icon: 'briefcase', color: flashitMobileColors.iosGreen },
+    { name: 'Health', icon: 'heart', color: flashitMobileColors.iosRed },
+    { name: 'Learning', icon: 'book', color: flashitMobileColors.iosOrange },
+    { name: 'Social', icon: 'people', color: flashitMobileColors.iosPurple },
+    { name: 'Creative', icon: 'color-palette', color: flashitMobileColors.iosPink },
   ];
 
 interface OnboardingFlowProps {
@@ -85,22 +86,22 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       content: (
         <View style={styles.welcomeContent}>
           <View style={styles.iconContainer}>
-            <Ionicons name="sparkles" size={80} color="#007aff" />
+            <Ionicons name="sparkles" size={80} color={flashitMobileColors.iosBlue} />
           </View>
           <Text style={styles.welcomeText}>
             Capture your thoughts, moments, and ideas across multiple formats
           </Text>
           <View style={styles.featureList}>
             <View style={styles.featureItem}>
-              <Ionicons name="text" size={24} color="#34c759" />
+              <Ionicons name="text" size={24} color={flashitMobileColors.iosGreen} />
               <Text style={styles.featureText}>Text notes</Text>
             </View>
             <View style={styles.featureItem}>
-              <Ionicons name="mic" size={24} color="#ff9500" />
+              <Ionicons name="mic" size={24} color={flashitMobileColors.iosOrange} />
               <Text style={styles.featureText}>Voice recordings</Text>
             </View>
             <View style={styles.featureItem}>
-              <Ionicons name="camera" size={24} color="#ff3b30" />
+              <Ionicons name="camera" size={24} color={flashitMobileColors.iosRed} />
               <Text style={styles.featureText}>Photos & videos</Text>
             </View>
           </View>
@@ -158,7 +159,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             accessibilityLabel="Capture your first moment"
             accessibilityHint="Opens the capture screen to create your first moment"
           >
-            <Ionicons name="add" size={32} color="#fff" />
+            <Ionicons name="add" size={32} color={flashitMobileColors.white} />
             <Text style={styles.captureButtonText}>Capture Moment</Text>
           </TouchableOpacity>
           <Text style={styles.captureNote}>
@@ -180,21 +181,21 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           </Text>
           <View style={styles.aiFeatures}>
             <View style={styles.aiFeature}>
-              <Ionicons name="bulb-outline" size={24} color="#007aff" />
+              <Ionicons name="bulb-outline" size={24} color={flashitMobileColors.iosBlue} />
               <View style={styles.aiFeatureText}>
                 <Text style={styles.aiFeatureTitle}>Smart Classification</Text>
                 <Text style={styles.aiFeatureDesc}>Automatically organizes moments</Text>
               </View>
             </View>
             <View style={styles.aiFeature}>
-              <Ionicons name="search" size={24} color="#34c759" />
+              <Ionicons name="search" size={24} color={flashitMobileColors.iosGreen} />
               <View style={styles.aiFeatureText}>
                 <Text style={styles.aiFeatureTitle}>Semantic Search</Text>
                 <Text style={styles.aiFeatureDesc}>Find moments by meaning</Text>
               </View>
             </View>
             <View style={styles.aiFeature}>
-              <Ionicons name="trending-up" size={24} color="#ff9500" />
+              <Ionicons name="trending-up" size={24} color={flashitMobileColors.iosOrange} />
               <View style={styles.aiFeatureText}>
                 <Text style={styles.aiFeatureTitle}>Pattern Recognition</Text>
                 <Text style={styles.aiFeatureDesc}>Discover trends in your life</Text>
@@ -213,7 +214,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       content: (
         <View style={styles.readyContent}>
           <View style={styles.successIcon}>
-            <Ionicons name="checkmark-circle" size={80} color="#34c759" />
+            <Ionicons name="checkmark-circle" size={80} color={flashitMobileColors.iosGreen} />
           </View>
           <Text style={styles.readyTitle}>Welcome to Flashit!</Text>
           <Text style={styles.readyDescription}>
@@ -329,7 +330,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <Ionicons
                 name={currentStep.icon}
                 size={48}
-                color="#007aff"
+                color={flashitMobileColors.iosBlue}
               />
             </View>
             <Text style={styles.stepTitle}>{currentStep.title}</Text>
@@ -351,7 +352,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Previous step"
           >
-            <Ionicons name="chevron-back" size={20} color="#007aff" />
+            <Ionicons name="chevron-back" size={20} color={flashitMobileColors.iosBlue} />
             <Text style={styles.backButtonText}>Back</Text>
           </TouchableOpacity>
         )}
@@ -365,7 +366,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             accessibilityLabel={currentStep.action.label}
           >
             <Text style={styles.primaryButtonText}>{currentStep.action.label}</Text>
-            <Ionicons name="arrow-forward" size={20} color="#fff" />
+            <Ionicons name="arrow-forward" size={20} color={flashitMobileColors.white} />
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
@@ -376,7 +377,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             accessibilityLabel="Next step"
           >
             <Text style={styles.primaryButtonText}>Next</Text>
-            <Ionicons name="arrow-forward" size={20} color="#fff" />
+            <Ionicons name="arrow-forward" size={20} color={flashitMobileColors.white} />
           </TouchableOpacity>
         )}
       </View>
@@ -387,7 +388,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: flashitMobileColors.neutral50,
   },
   header: {
     paddingHorizontal: 20,
@@ -399,17 +400,17 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 4,
-    backgroundColor: '#e5e5e5',
+    backgroundColor: flashitMobileColors.neutral200,
     borderRadius: 2,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#007aff',
+    backgroundColor: flashitMobileColors.iosBlue,
   },
   progressText: {
     fontSize: 12,
-    color: '#8e8e93',
+    color: flashitMobileColors.iosGray,
     marginTop: 8,
     textAlign: 'center',
   },
@@ -420,7 +421,7 @@ const styles = StyleSheet.create({
   },
   skipButtonText: {
     fontSize: 16,
-    color: '#8e8e93',
+    color: flashitMobileColors.iosGray,
     fontWeight: '500',
   },
   content: {
@@ -438,7 +439,7 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: '#f0f8ff',
+    backgroundColor: flashitMobileColors.sky50,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
@@ -446,13 +447,13 @@ const styles = StyleSheet.create({
   stepTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1d1d1f',
+    color: flashitMobileColors.iosText,
     textAlign: 'center',
     marginBottom: 8,
   },
   stepDescription: {
     fontSize: 16,
-    color: '#8e8e93',
+    color: flashitMobileColors.iosGray,
     textAlign: 'center',
     lineHeight: 24,
   },
@@ -464,7 +465,7 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: 18,
-    color: '#1d1d1f',
+    color: flashitMobileColors.iosText,
     textAlign: 'center',
     lineHeight: 26,
     marginBottom: 32,
@@ -476,10 +477,10 @@ const styles = StyleSheet.create({
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileColors.white,
     padding: 16,
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: flashitMobileColors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -487,7 +488,7 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 16,
-    color: '#1d1d1f',
+    color: flashitMobileColors.iosText,
     marginLeft: 12,
     fontWeight: '500',
   },
@@ -503,11 +504,11 @@ const styles = StyleSheet.create({
   },
   sphereCard: {
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileColors.white,
     padding: 16,
     borderRadius: 12,
     width: screenWidth * 0.25,
-    shadowColor: '#000',
+    shadowColor: flashitMobileColors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -515,13 +516,13 @@ const styles = StyleSheet.create({
   },
   sphereName: {
     fontSize: 12,
-    color: '#1d1d1f',
+    color: flashitMobileColors.iosText,
     marginTop: 8,
     fontWeight: '500',
   },
   aiNote: {
     fontSize: 14,
-    color: '#8e8e93',
+    color: flashitMobileColors.iosGray,
     textAlign: 'center',
     fontStyle: 'italic',
   },
@@ -531,26 +532,26 @@ const styles = StyleSheet.create({
   captureButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#007aff',
+    backgroundColor: flashitMobileColors.iosBlue,
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 28,
     marginVertical: 24,
-    shadowColor: '#007aff',
+    shadowColor: flashitMobileColors.iosBlue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
   },
   captureButtonText: {
-    color: '#fff',
+    color: flashitMobileColors.white,
     fontSize: 18,
     fontWeight: '600',
     marginLeft: 8,
   },
   captureNote: {
     fontSize: 14,
-    color: '#8e8e93',
+    color: flashitMobileColors.iosGray,
     textAlign: 'center',
   },
   aiContent: {
@@ -563,10 +564,10 @@ const styles = StyleSheet.create({
   aiFeature: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileColors.white,
     padding: 16,
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: flashitMobileColors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -579,12 +580,12 @@ const styles = StyleSheet.create({
   aiFeatureTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1d1d1f',
+    color: flashitMobileColors.iosText,
     marginBottom: 4,
   },
   aiFeatureDesc: {
     fontSize: 14,
-    color: '#8e8e93',
+    color: flashitMobileColors.iosGray,
   },
   readyContent: {
     alignItems: 'center',
@@ -595,22 +596,22 @@ const styles = StyleSheet.create({
   readyTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1d1d1f',
+    color: flashitMobileColors.iosText,
     marginBottom: 16,
   },
   readyDescription: {
     fontSize: 16,
-    color: '#8e8e93',
+    color: flashitMobileColors.iosGray,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 32,
   },
   readyTips: {
-    backgroundColor: '#fff',
+    backgroundColor: flashitMobileColors.white,
     padding: 20,
     borderRadius: 12,
     width: '100%',
-    shadowColor: '#000',
+    shadowColor: flashitMobileColors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -619,12 +620,12 @@ const styles = StyleSheet.create({
   readyTipsTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1d1d1f',
+    color: flashitMobileColors.iosText,
     marginBottom: 12,
   },
   readyTip: {
     fontSize: 14,
-    color: '#8e8e93',
+    color: flashitMobileColors.iosGray,
     marginBottom: 4,
   },
   footer: {
@@ -634,7 +635,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 32,
     paddingTop: 16,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: flashitMobileColors.neutral50,
   },
   backButton: {
     flexDirection: 'row',
@@ -644,25 +645,25 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 16,
-    color: '#007aff',
+    color: flashitMobileColors.iosBlue,
     marginLeft: 4,
     fontWeight: '500',
   },
   primaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#007aff',
+    backgroundColor: flashitMobileColors.iosBlue,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 24,
-    shadowColor: '#007aff',
+    shadowColor: flashitMobileColors.iosBlue,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
   },
   primaryButtonText: {
-    color: '#fff',
+    color: flashitMobileColors.white,
     fontSize: 16,
     fontWeight: '600',
     marginRight: 8,

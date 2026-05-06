@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -31,6 +32,7 @@ import java.util.Objects;
  *   POST   /fhir/:resourceType                          — Create a FHIR R4 resource
  *   GET    /fhir/:resourceType/:id                      — Read a FHIR R4 resource by ID
  *   GET    /fhir/:resourceType                          — Search FHIR R4 resources
+ *   GET    /route-entitlements                          — Route/content entitlement payload
  *   GET    /health                                      — Liveness probe
  *   GET    /ready                                       — Readiness probe
  * </pre>
@@ -119,6 +121,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
             .with(HttpMethod.POST, "/fhir/:resourceType", this::handleCreateFhirResource)
             .with(HttpMethod.GET, "/fhir/:resourceType/:id", this::handleGetFhirResource)
             .with(HttpMethod.GET, "/fhir/:resourceType", this::handleSearchFhirResources)
+            .with(HttpMethod.GET, "/route-entitlements", this::handleRouteEntitlements)
             .with(HttpMethod.GET, "/health", this::handleHealth)
             .with(HttpMethod.GET, "/ready", this::handleReady);
         
@@ -162,6 +165,29 @@ public final class PhrHttpServer implements KernelLifecycleAware {
                         .build());
     }
 
+    private Promise<HttpResponse> handleRouteEntitlements(HttpRequest request) {
+        String role = headerOrDefault(request, "X-Role", "patient");
+        Map<String, Object> entitlement = Map.of(
+            "product", "phr",
+            "principalId", headerOrDefault(request, "X-Principal-ID", "anonymous"),
+            "tenantId", headerOrDefault(request, "X-Tenant-ID", "default"),
+            "role", role,
+            "persona", headerOrDefault(request, "X-Persona", "patient"),
+            "tier", headerOrDefault(request, "X-Tier", "core"),
+            "routes", phrRoutesFor(role),
+            "actions", List.of(
+                entitledAction("view-patient-summary", "View patient summary", "/dashboard"),
+                entitledAction("view-records", "View records", "/records"),
+                entitledAction("manage-consent", "Manage consent", "/consents")
+            ),
+            "cards", List.of(
+                entitledCard("patient-summary", "Patient summary", "/dashboard"),
+                entitledCard("active-consent-grants", "Active consent grants", "/consents")
+            )
+        );
+        return jsonResponse(200, entitlement);
+    }
+
     // -------------------------------------------------------------------------
     // Operational handlers
     // -------------------------------------------------------------------------
@@ -198,5 +224,69 @@ public final class PhrHttpServer implements KernelLifecycleAware {
                 .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_JSON)
                 .withJson(json)
                 .build());
+    }
+
+    private static String headerOrDefault(HttpRequest request, String name, String defaultValue) {
+        String value = request.getHeader(HttpHeaders.of(name));
+        return value == null || value.isBlank() ? defaultValue : value.trim();
+    }
+
+    private static List<Map<String, Object>> phrRoutesFor(String role) {
+        List<Map<String, Object>> patientRoutes = List.of(
+            route("/dashboard", "Dashboard", "patient", List.of("view-patient-summary"), List.of("patient-summary")),
+            route("/records", "Records", "patient", List.of("view-records"), List.of("record-highlights")),
+            route("/consents", "Consents", "patient", List.of("manage-consent"), List.of("active-consent-grants")),
+            route("/appointments", "Appointments", "patient", List.of("schedule-visit"), List.of("upcoming-appointments")),
+            route("/settings", "Settings", "patient", List.of("manage-profile-settings"), List.of("profile-controls"))
+        );
+        if ("clinician".equals(role) || "admin".equals(role)) {
+            return List.of(
+                patientRoutes.get(0),
+                patientRoutes.get(1),
+                patientRoutes.get(2),
+                patientRoutes.get(3),
+                route("/labs", "Labs", "caregiver", List.of("review-lab-results"), List.of("recent-lab-results")),
+                route("/medications", "Medications", "caregiver", List.of("review-medications"), List.of("medication-adherence")),
+                route("/emergency", "Emergency", "clinician", List.of("break-glass-review"), List.of("override-audit-timeline")),
+                patientRoutes.get(4)
+            );
+        }
+        if ("caregiver".equals(role)) {
+            return List.of(
+                patientRoutes.get(0),
+                patientRoutes.get(1),
+                patientRoutes.get(2),
+                patientRoutes.get(3),
+                route("/labs", "Labs", "caregiver", List.of("review-lab-results"), List.of("recent-lab-results")),
+                route("/medications", "Medications", "caregiver", List.of("review-medications"), List.of("medication-adherence")),
+                patientRoutes.get(4)
+            );
+        }
+        return patientRoutes;
+    }
+
+    private static Map<String, Object> route(
+            String path,
+            String label,
+            String minimumRole,
+            List<String> actions,
+            List<String> cards) {
+        return Map.of(
+            "path", path,
+            "label", label,
+            "minimumRole", minimumRole,
+            "personas", List.of("patient", "caregiver", "clinician", "admin"),
+            "tiers", List.of("core"),
+            "actions", actions,
+            "cards", cards
+        );
+    }
+
+    private static Map<String, Object> entitledAction(String id, String label, String routePath) {
+        return Map.of("id", id, "label", label, "routePath", routePath);
+    }
+
+    private static Map<String, Object> entitledCard(String id, String title, String routePath) {
+        return Map.of("id", id, "title", title, "routePath", routePath, "surface", "dashboard");
     }
 }

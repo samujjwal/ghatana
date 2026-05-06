@@ -24,6 +24,7 @@ import { useAtomValue } from 'jotai';
 import { useApi } from '../contexts/ApiContext';
 import { mobileAtoms } from '../state/localAtoms';
 import { formatDistanceToNow } from 'date-fns';
+import { flashitMobileColors } from '@/styles/designTokens';
 
 type ReflectionTab = 'insights' | 'patterns' | 'connections' | 'weekly' | 'monthly';
 
@@ -132,7 +133,7 @@ export default function ReflectionScreen() {
       accessibilityRole="tab"
       accessibilityState={{ selected: activeTab === tab }}
     >
-      <Ionicons name={icon} size={14} color={activeTab === tab ? '#6366f1' : '#94a3b8'} />
+      <Ionicons name={icon} size={14} color={activeTab === tab ? flashitMobileColors.indigo500 : flashitMobileColors.slate400} />
       <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{label}</Text>
     </TouchableOpacity>
   );
@@ -159,7 +160,7 @@ export default function ReflectionScreen() {
 
       {isLoading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#6366f1" />
+          <ActivityIndicator size="large" color={flashitMobileColors.indigo500} />
           <Text style={styles.loadingText}>Analyzing your moments...</Text>
         </View>
       ) : (
@@ -213,7 +214,7 @@ export default function ReflectionScreen() {
                         <Ionicons
                           name={pattern.trend === 'up' ? 'trending-up' : pattern.trend === 'down' ? 'trending-down' : 'remove-outline'}
                           size={14}
-                          color={pattern.trend === 'up' ? '#10b981' : pattern.trend === 'down' ? '#ef4444' : '#64748b'}
+                          color={pattern.trend === 'up' ? flashitMobileColors.green500 : pattern.trend === 'down' ? flashitMobileColors.red500 : flashitMobileColors.slate500}
                         />
                       </View>
                     </View>
@@ -240,7 +241,7 @@ export default function ReflectionScreen() {
                     <View style={styles.connectionNodes}>
                       <Text style={styles.connectionNode}>{conn.sourceTitle}</Text>
                       <View style={styles.connectionLine}>
-                        <Ionicons name="arrow-forward" size={14} color="#94a3b8" />
+                        <Ionicons name="arrow-forward" size={14} color={flashitMobileColors.slate400} />
                       </View>
                       <Text style={styles.connectionNode}>{conn.targetTitle}</Text>
                     </View>
@@ -292,7 +293,7 @@ export default function ReflectionScreen() {
 function EmptyState({ icon, title, subtitle }: { icon: keyof typeof Ionicons.glyphMap; title: string; subtitle: string }) {
   return (
     <View style={styles.emptyState}>
-      <Ionicons name={icon} size={48} color="#cbd5e1" />
+      <Ionicons name={icon} size={48} color={flashitMobileColors.slate300} />
       <Text style={styles.emptyTitle}>{title}</Text>
       <Text style={styles.emptySubtitle}>{subtitle}</Text>
     </View>
@@ -310,7 +311,7 @@ function ReflectionCard({ reflection }: { reflection: PeriodicReflection }) {
           <Text style={styles.reflectionLabel}>Highlights</Text>
           {reflection.highlights.map((h, idx) => (
             <View key={idx} style={styles.highlightRow}>
-              <Ionicons name="star" size={14} color="#f59e0b" />
+              <Ionicons name="star" size={14} color={flashitMobileColors.yellow500} />
               <Text style={styles.highlightText}>{h}</Text>
             </View>
           ))}
@@ -332,7 +333,7 @@ function ReflectionCard({ reflection }: { reflection: PeriodicReflection }) {
 
       <View style={styles.sentimentRow}>
         <Text style={styles.sentimentLabel}>Overall Sentiment</Text>
-        <Text style={[styles.sentimentValue, { color: reflection.sentiment >= 0 ? '#10b981' : '#ef4444' }]}>
+        <Text style={[styles.sentimentValue, { color: reflection.sentiment >= 0 ? flashitMobileColors.green500 : flashitMobileColors.red500 }]}>
           {reflection.sentiment >= 0 ? '+' : ''}{(reflection.sentiment * 100).toFixed(0)}%
         </Text>
       </View>
@@ -342,18 +343,18 @@ function ReflectionCard({ reflection }: { reflection: PeriodicReflection }) {
 
 function getInsightColor(type: string): string {
   switch (type) {
-    case 'vocabulary_growth': return '#10b981';
-    case 'sentiment_shift': return '#f59e0b';
-    case 'topic_evolution': return '#6366f1';
-    case 'expression_change': return '#0ea5e9';
-    default: return '#94a3b8';
+    case 'vocabulary_growth': return flashitMobileColors.green500;
+    case 'sentiment_shift': return flashitMobileColors.yellow500;
+    case 'topic_evolution': return flashitMobileColors.indigo500;
+    case 'expression_change': return flashitMobileColors.sky500;
+    default: return flashitMobileColors.slate400;
   }
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: flashitMobileColors.slate50,
   },
   centered: {
     flex: 1,
@@ -363,7 +364,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    color: '#64748b',
+    color: flashitMobileColors.slate500,
     fontSize: 14,
   },
   tabScroll: {
@@ -383,30 +384,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: flashitMobileColors.slate100,
   },
   tabActive: {
-    backgroundColor: '#ede9fe',
+    backgroundColor: flashitMobileColors.purple100,
   },
   tabText: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
   },
   tabTextActive: {
-    color: '#6366f1',
+    color: flashitMobileColors.indigo500,
     fontWeight: '600',
   },
   content: {
     padding: 16,
   },
   insightCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: flashitMobileColors.whiteAlt,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileColors.slate200,
   },
   insightHeader: {
     flexDirection: 'row',
@@ -421,38 +422,38 @@ const styles = StyleSheet.create({
   },
   insightBadgeText: {
     fontSize: 11,
-    color: '#ffffff',
+    color: flashitMobileColors.whiteAlt,
     fontWeight: '600',
     textTransform: 'capitalize',
   },
   confidenceText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
     fontWeight: '600',
   },
   insightTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1e293b',
+    color: flashitMobileColors.slate800,
     marginBottom: 4,
   },
   insightDesc: {
     fontSize: 14,
-    color: '#64748b',
+    color: flashitMobileColors.slate500,
     lineHeight: 20,
     marginBottom: 8,
   },
   insightDate: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
   },
   patternCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: flashitMobileColors.whiteAlt,
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileColors.slate200,
   },
   patternHeader: {
     flexDirection: 'row',
@@ -462,34 +463,34 @@ const styles = StyleSheet.create({
   patternName: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1e293b',
+    color: flashitMobileColors.slate800,
   },
   trendBadge: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#f8fafc',
+    backgroundColor: flashitMobileColors.slate50,
     alignItems: 'center',
     justifyContent: 'center',
   },
   patternDesc: {
     fontSize: 13,
-    color: '#64748b',
+    color: flashitMobileColors.slate500,
     marginTop: 6,
     lineHeight: 18,
   },
   patternFreq: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
     marginTop: 8,
   },
   connectionCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: flashitMobileColors.whiteAlt,
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileColors.slate200,
   },
   connectionNodes: {
     flexDirection: 'row',
@@ -501,8 +502,8 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     fontWeight: '500',
-    color: '#1e293b',
-    backgroundColor: '#f1f5f9',
+    color: flashitMobileColors.slate800,
+    backgroundColor: flashitMobileColors.slate100,
     padding: 8,
     borderRadius: 6,
     textAlign: 'center',
@@ -513,31 +514,31 @@ const styles = StyleSheet.create({
   },
   connectionRel: {
     fontSize: 12,
-    color: '#6366f1',
+    color: flashitMobileColors.indigo500,
     fontWeight: '500',
     marginBottom: 8,
   },
   strengthBar: {
     height: 4,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: flashitMobileColors.slate100,
     borderRadius: 2,
     overflow: 'hidden',
   },
   strengthFill: {
     height: '100%',
-    backgroundColor: '#6366f1',
+    backgroundColor: flashitMobileColors.indigo500,
     borderRadius: 2,
   },
   reflectionCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: flashitMobileColors.whiteAlt,
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: flashitMobileColors.slate200,
   },
   reflectionPeriod: {
     fontSize: 13,
-    color: '#6366f1',
+    color: flashitMobileColors.indigo500,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -545,7 +546,7 @@ const styles = StyleSheet.create({
   },
   reflectionSummary: {
     fontSize: 15,
-    color: '#334155',
+    color: flashitMobileColors.slate700,
     lineHeight: 22,
     marginBottom: 16,
   },
@@ -555,7 +556,7 @@ const styles = StyleSheet.create({
   reflectionLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#1e293b',
+    color: flashitMobileColors.slate800,
     marginBottom: 8,
   },
   highlightRow: {
@@ -567,7 +568,7 @@ const styles = StyleSheet.create({
   highlightText: {
     flex: 1,
     fontSize: 14,
-    color: '#334155',
+    color: flashitMobileColors.slate700,
   },
   themesRow: {
     flexDirection: 'row',
@@ -575,14 +576,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   themeBadge: {
-    backgroundColor: '#ede9fe',
+    backgroundColor: flashitMobileColors.purple100,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
   themeText: {
     fontSize: 12,
-    color: '#6366f1',
+    color: flashitMobileColors.indigo500,
     fontWeight: '500',
   },
   sentimentRow: {
@@ -591,11 +592,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
+    borderTopColor: flashitMobileColors.slate100,
   },
   sentimentLabel: {
     fontSize: 13,
-    color: '#64748b',
+    color: flashitMobileColors.slate500,
   },
   sentimentValue: {
     fontSize: 16,
@@ -608,12 +609,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#334155',
+    color: flashitMobileColors.slate700,
     marginTop: 16,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: flashitMobileColors.slate400,
     marginTop: 8,
     textAlign: 'center',
     paddingHorizontal: 24,

@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Shared template source: config/docker/templates/product-runtime.compose.yaml
 
 services:
@@ -104,8 +102,9 @@ services:
     ports:
       - "${FLASHIT_PROMETHEUS_PORT:-9090}:9090"
     volumes:
-      - ${PRODUCT_OBSERVABILITY_ROOT:-./monitoring}/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ${PRODUCT_OBSERVABILITY_ROOT:-./monitoring}/alerts:/etc/prometheus/alerts
+      - ${PRODUCT_OBSERVABILITY_ROOT:-../../monitoring}/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ${PRODUCT_OBSERVABILITY_ROOT:-../../monitoring}/prometheus/rules:/etc/prometheus/rules:ro
+      - ${FLASHIT_OBSERVABILITY_OVERLAY_ROOT:-./monitoring}/alerts/flashit-rules.yml:/etc/prometheus/rules/flashit-rules.yml:ro
       - prometheus_data:/prometheus
     networks:
       - flashit-network
@@ -120,8 +119,9 @@ services:
       - "${FLASHIT_GRAFANA_PORT:-3001}:3000"
     volumes:
       - grafana_data:/var/lib/grafana
-      - ${PRODUCT_OBSERVABILITY_ROOT:-./monitoring}/grafana/dashboards:/var/lib/grafana/dashboards
-      - ${PRODUCT_OBSERVABILITY_ROOT:-./monitoring}/grafana/provisioning:/etc/grafana/provisioning
+      - ${PRODUCT_OBSERVABILITY_ROOT:-../../monitoring}/grafana/dashboards:/etc/grafana/dashboards:ro
+      - ${PRODUCT_OBSERVABILITY_ROOT:-../../monitoring}/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ${FLASHIT_OBSERVABILITY_OVERLAY_ROOT:-./monitoring}/grafana/dashboards:/etc/grafana/dashboards/products/flashit:ro
     depends_on:
       - prometheus
     networks:
@@ -136,7 +136,7 @@ services:
     container_name: flashit-java-agent-dev
     environment:
       FLASHIT_AI_DISABLED: ${FLASHIT_AI_DISABLED:-false}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:?OPENAI_API_KEY must be set for FlashIt AI mode}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
       OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       WHISPER_MODEL: ${WHISPER_MODEL:-whisper-1}

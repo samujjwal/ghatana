@@ -76,6 +76,24 @@ function base64URLEncode(buffer: Uint8Array): string {
     .replace(/=/g, '');
 }
 
+function readDevRoles(): string[] {
+  if (isProduction && !isDevMode) {
+    return [];
+  }
+
+  const rawRoles = sessionStorage.getItem('dmos_roles');
+  if (!rawRoles) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(rawRoles);
+    return Array.isArray(parsed) ? parsed.filter((role): role is string => typeof role === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
 export function LoginPage(): React.ReactElement {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -114,7 +132,7 @@ export function LoginPage(): React.ReactElement {
       return;
     }
     const sessionId = crypto.randomUUID();
-    login(token.trim(), workspaceId.trim(), tenantId.trim(), principalId.trim(), sessionId);
+    login(token.trim(), workspaceId.trim(), tenantId.trim(), principalId.trim(), sessionId, readDevRoles());
     void navigate(`/workspaces/${workspaceId.trim()}/dashboard`);
   }
 

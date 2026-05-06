@@ -19,6 +19,7 @@ export type {
 export {
   generateCodegenPreview,
   mergeCode,
+  safeMerge,
   getOwnershipRegion,
   isLineEditable,
   applyUserEdit,

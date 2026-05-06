@@ -1,6 +1,8 @@
 package com.ghatana.digitalmarketing.contracts;
 
 import com.ghatana.kernel.bridge.port.BridgeContext;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -89,6 +91,36 @@ public final class DmOperationContext {
         }
 
         return builder.build();
+    }
+
+    /**
+     * Builds canonical data-access metadata for DMOS service and repository calls.
+     *
+     * <p>All read and mutation paths should propagate this metadata alongside
+     * persistence operations so tenant, principal, trace, audit, and ownership
+     * scopes remain visible outside HTTP/bridge adapters.</p>
+     *
+     * @param auditClassification product-owned audit classification for the data access
+     * @param dataOwnerScope tenant/workspace/person/object scope that owns the data
+     * @return immutable metadata values using the cross-product data-access contract keys
+     */
+    public Map<String, String> toDataAccessMetadata(
+        String auditClassification,
+        String dataOwnerScope
+    ) {
+        Objects.requireNonNull(auditClassification, "auditClassification is required");
+        Objects.requireNonNull(dataOwnerScope, "dataOwnerScope is required");
+
+        Map<String, String> metadata = new LinkedHashMap<>();
+        metadata.put("tenantId", tenantId.getValue());
+        metadata.put("principalId", actor.getPrincipalId());
+        metadata.put("correlationId", correlationId.getValue());
+        if (idempotencyKey != null) {
+            metadata.put("idempotencyKey", idempotencyKey.getValue());
+        }
+        metadata.put("auditClassification", auditClassification);
+        metadata.put("dataOwnerScope", dataOwnerScope);
+        return Map.copyOf(metadata);
     }
 
     /**

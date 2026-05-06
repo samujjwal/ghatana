@@ -137,6 +137,50 @@ class DmOperationContextTest {
     }
 
     @Test
+    @DisplayName("toDataAccessMetadata() maps tenant, principal, trace, audit, owner, and write idempotency")
+    void shouldCreateCanonicalDataAccessMetadata() {
+        DmIdempotencyKey key = DmIdempotencyKey.of("idem-key-1");
+        DmOperationContext ctx = DmOperationContext.builder()
+            .tenantId(TENANT)
+            .workspaceId(WORKSPACE)
+            .actor(ACTOR)
+            .correlationId(CORR)
+            .idempotencyKey(key)
+            .build();
+
+        var metadata = ctx.toDataAccessMetadata("CAMPAIGN_MUTATION", "workspace:ws-001");
+
+        assertThat(metadata)
+            .containsEntry("tenantId", TENANT.getValue())
+            .containsEntry("principalId", ACTOR.getPrincipalId())
+            .containsEntry("correlationId", CORR.getValue())
+            .containsEntry("idempotencyKey", key.getValue())
+            .containsEntry("auditClassification", "CAMPAIGN_MUTATION")
+            .containsEntry("dataOwnerScope", "workspace:ws-001");
+    }
+
+    @Test
+    @DisplayName("toDataAccessMetadata() omits idempotency only for read metadata")
+    void shouldCreateReadDataAccessMetadataWithoutIdempotency() {
+        DmOperationContext ctx = DmOperationContext.builder()
+            .tenantId(TENANT)
+            .workspaceId(WORKSPACE)
+            .actor(ACTOR)
+            .correlationId(CORR)
+            .build();
+
+        var metadata = ctx.toDataAccessMetadata("DASHBOARD_READ", "workspace:ws-001");
+
+        assertThat(metadata)
+            .containsEntry("tenantId", TENANT.getValue())
+            .containsEntry("principalId", ACTOR.getPrincipalId())
+            .containsEntry("correlationId", CORR.getValue())
+            .containsEntry("auditClassification", "DASHBOARD_READ")
+            .containsEntry("dataOwnerScope", "workspace:ws-001")
+            .doesNotContainKey("idempotencyKey");
+    }
+
+    @Test
     @DisplayName("withIdempotencyKey() returns new context with key; original unchanged")
     void shouldReturnNewContextWithKey() {
         DmOperationContext original = DmOperationContext.builder()
