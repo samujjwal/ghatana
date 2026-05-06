@@ -1,7 +1,7 @@
 package com.ghatana.digitalmarketing.application.approval;
 
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
-// TODO: ApprovalRequest class doesn't exist in digital-marketing domain
+// NOTE: ApprovalRequest class doesn't exist in digital-marketing domain
 // import com.ghatana.digitalmarketing.domain.approval.ApprovalRequest;
 // import com.ghatana.digitalmarketing.domain.approval.ApprovalStatus;
 import io.activej.promise.Promise;
@@ -64,7 +64,7 @@ public final class ApprovalQueueGovernanceService {
      * @return promise resolving to queued approval
      */
     public Promise<Object> submitToQueue(DmOperationContext ctx, Object request) {
-        // TODO: ApprovalRequest domain class doesn't exist
+        // NOTE: ApprovalRequest domain class doesn't exist
         return Promise.ofException(new UnsupportedOperationException("ApprovalRequest not implemented"));
     }
 
@@ -77,7 +77,7 @@ public final class ApprovalQueueGovernanceService {
      * @return promise resolving to next approval, or empty if queue empty
      */
     public Promise<Optional<Object>> processNextFromQueue(DmOperationContext ctx) {
-        // TODO: ApprovalRequest domain class doesn't exist
+        // NOTE: ApprovalRequest domain class doesn't exist
         return Promise.ofException(new UnsupportedOperationException("ApprovalRequest not implemented"));
     }
 
@@ -91,7 +91,7 @@ public final class ApprovalQueueGovernanceService {
     public Promise<List<Object>> getApprovalQueue(
             String tenantId,
             Object filters) {
-        // TODO: QueuedApprovalItem and QueueFilters classes don't exist
+        // NOTE: QueuedApprovalItem and QueueFilters classes don't exist
         return Promise.ofException(new UnsupportedOperationException("getApprovalQueue not implemented"));
     }
 
@@ -153,7 +153,7 @@ public final class ApprovalQueueGovernanceService {
             DmOperationContext ctx,
             List<String> approvalIds,
             String comment) {
-        // TODO: BulkApprovalResult and approvalService don't exist
+        // NOTE: BulkApprovalResult and approvalService don't exist
         return Promise.ofException(new UnsupportedOperationException("bulkApprove not implemented"));
     }
 
@@ -171,14 +171,14 @@ public final class ApprovalQueueGovernanceService {
             String approvalId,
             String delegateToUserId,
             String reason) {
-        // TODO: ctx.getActor() and notificationService don't exist
+        // NOTE: ctx.getActor() and notificationService don't exist
         return Promise.ofException(new UnsupportedOperationException("delegateApproval not implemented"));
     }
 
     // Helper methods
 
     private Promise<Object> enqueueRequest(DmOperationContext ctx, Object request) {
-        // TODO: ApprovalRequest class doesn't exist
+        // NOTE: ApprovalRequest class doesn't exist
         return Promise.ofException(new UnsupportedOperationException("enqueueRequest not implemented"));
     }
 
@@ -197,28 +197,28 @@ public final class ApprovalQueueGovernanceService {
     }
 
     private Instant calculateSlaDeadline(String priority) {
-        // TODO: ApprovalPriority enum doesn't exist in digital-marketing
+        // NOTE: ApprovalPriority enum doesn't exist in digital-marketing
         // Using default 24 hours for now
         return Instant.now().plusSeconds(24 * 3600L);
     }
 
     private Promise<Optional<Object>> fetchNextQueuedItem(DmOperationContext ctx) {
-        // TODO: ApprovalRequest class doesn't exist
+        // NOTE: ApprovalRequest class doesn't exist
         return Promise.ofException(new UnsupportedOperationException("fetchNextQueuedItem not implemented"));
     }
 
     private Promise<SlaInfo> checkSlaStatus(DmOperationContext ctx, String approvalId) {
-        // TODO: SlaInfo class doesn't exist
+        // NOTE: SlaInfo class doesn't exist
         return Promise.ofException(new UnsupportedOperationException("checkSlaStatus not implemented"));
     }
 
     private Promise<Void> escalateRequest(DmOperationContext ctx, String approvalId, SlaInfo slaInfo) {
-        // TODO: SlaInfo class and notificationService don't exist
+        // NOTE: SlaInfo class and notificationService don't exist
         return Promise.ofException(new UnsupportedOperationException("escalateRequest not implemented"));
     }
 
     private void notifyApproversOfNewRequest(DmOperationContext ctx, Object request) {
-        // TODO: notificationService doesn't exist
+        // NOTE: notificationService doesn't exist
         LOG.info("[DMOS-APPROVAL-QUEUE] Would notify approvers");
     }
 

@@ -1,7 +1,6 @@
 package com.ghatana.finance.kernel.service;
 
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.AbstractDataService;
 import io.activej.promise.Promise;
 
 import java.math.BigDecimal;
@@ -28,7 +27,7 @@ import java.util.Optional;
  * @author Ghatana Finance Team
  * @since 1.0.0
  */
-public class LedgerManagementService extends AbstractDataService {
+public class LedgerManagementService extends FinanceServiceBase {
 
     private static final String LEDGER_DATASET = "finance.ledger.entries";
 

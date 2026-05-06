@@ -22,7 +22,7 @@ echo ""
 # Ensure node_modules exists
 if [ ! -d "node_modules" ]; then
   echo "Installing dependencies..."
-  npm install
+  pnpm --dir .. install --frozen-lockfile
 fi
 
 # Delete old generated client
@@ -31,7 +31,7 @@ rm -rf generated/prisma 2>/dev/null || true
 
 echo ""
 echo "Generating Prisma client from prisma/schema.prisma..."
-npx prisma generate --schema prisma/schema.prisma
+pnpm exec prisma generate --schema prisma/schema.prisma
 
 echo ""
 echo "Verifying generation..."
@@ -44,4 +44,4 @@ else
 fi
 
 echo ""
-echo "Ready to start with: npm run dev"
+echo "Ready to start with: pnpm run dev"

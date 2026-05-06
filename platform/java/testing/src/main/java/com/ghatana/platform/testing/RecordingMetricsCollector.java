@@ -72,6 +72,14 @@ public class RecordingMetricsCollector implements MetricsCollector {
         return new ArrayList<>(gauges.getOrDefault(name, List.of()));
     }
 
+    public List<MetricRecord> getRecords() {
+        List<MetricRecord> all = new ArrayList<>();
+        timers.values().forEach(all::addAll);
+        counters.values().forEach(all::addAll);
+        gauges.values().forEach(all::addAll);
+        return all;
+    }
+
     public void clear() {
         timers.clear();
         counters.clear();

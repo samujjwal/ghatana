@@ -5,7 +5,7 @@
  * Collects default Node.js metrics + custom Flashit counters.
  *
  * Requires `prom-client` to be installed:
- *   npm install prom-client
+ *   pnpm add prom-client
  *
  * @doc.type plugin
  * @doc.purpose Expose Prometheus-compatible metrics

@@ -8,7 +8,7 @@ import { loginAs } from './fixtures';
  * @doc.purpose Verify visual consistency with screenshots
  * @doc.layer e2e
  */
-test.describe('Visual Regression @a11y', () => {
+test.describe('Visual Regression @visual', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page);
   });

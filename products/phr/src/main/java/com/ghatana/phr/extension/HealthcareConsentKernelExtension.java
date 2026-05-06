@@ -3,7 +3,7 @@ package com.ghatana.phr.extension;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
-import com.ghatana.kernel.extension.AbstractKernelExtension;
+import com.ghatana.kernel.extension.KernelExtension;
 import com.ghatana.kernel.module.KernelModule;
 import io.activej.promise.Promise;
 
@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Healthcare consent management extension with Nepal Directive 2081 compliance.
@@ -27,12 +28,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-public class HealthcareConsentKernelExtension extends AbstractKernelExtension {
+public class HealthcareConsentKernelExtension implements KernelExtension {
 
     private static final String EXTENSION_ID = "healthcare-consent-nepal-2081";
     private static final String VERSION = "1.0.0";
 
     private final ConcurrentHashMap<String, ConsentRecord> consentRegistry = new ConcurrentHashMap<>();
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final AtomicBoolean started = new AtomicBoolean(false);
+    private volatile KernelContext context;
 
     @Override
     public String getExtensionId() {
@@ -81,8 +85,22 @@ public class HealthcareConsentKernelExtension extends AbstractKernelExtension {
     }
 
     @Override
-    protected void onInitialize(KernelContext context) {
+    public void onModuleInitialized(KernelContext context) {
+        if (!initialized.compareAndSet(false, true)) {
+            return;
+        }
+        this.context = context;
         registerEventHandlers();
+    }
+
+    @Override
+    public void onModuleStarted(KernelContext context) {
+        started.set(true);
+    }
+
+    @Override
+    public void onModuleStopped(KernelContext context) {
+        started.set(false);
     }
 
     @Override
@@ -94,6 +112,21 @@ public class HealthcareConsentKernelExtension extends AbstractKernelExtension {
     @Override
     public int getPriority() {
         return 100; // High priority for consent management
+    }
+
+    // Helper methods for lifecycle and context management
+    protected final KernelContext getContext() {
+        return context;
+    }
+
+    protected final boolean isStarted() {
+        return started.get();
+    }
+
+    protected final void requireStarted() {
+        if (!started.get()) {
+            throw new IllegalStateException("Extension not started: " + getExtensionId());
+        }
     }
 
     // ==================== Consent Management API ====================

@@ -16,14 +16,37 @@ const files = execSync(
 
 const hardcodedValuePattern = /#[0-9a-fA-F]{3,8}\b|rgba?\(|style=\{\{/;
 const violations = [];
+const seenExceptionFiles = new Set();
 
 for (const file of files) {
   if (allowlist.hardcodedStyleFiles.includes(file)) {
     continue;
   }
   const content = readFileSync(resolve(repoRoot, file), 'utf8');
-  if (hardcodedValuePattern.test(content)) {
+  const hasHardcodedValue = hardcodedValuePattern.test(content);
+  if (allowlist.hardcodedStyleExceptions?.includes(file)) {
+    if (hasHardcodedValue) {
+      seenExceptionFiles.add(file);
+    } else {
+      violations.push(`${file}: remove this file from frontend-conformance-allowlist.json hardcodedStyleExceptions; no hardcoded style values remain`);
+    }
+    continue;
+  }
+  if (hasHardcodedValue) {
     violations.push(`${file}: hardcoded style value detected; prefer tokens or shared primitives`);
+  }
+}
+
+for (const file of allowlist.hardcodedStyleExceptions ?? []) {
+  if (!files.includes(file)) {
+    violations.push(`${file}: listed in frontend-conformance-allowlist.json hardcodedStyleExceptions but file was not scanned`);
+    continue;
+  }
+  if (!seenExceptionFiles.has(file)) {
+    const content = readFileSync(resolve(repoRoot, file), 'utf8');
+    if (!hardcodedValuePattern.test(content)) {
+      violations.push(`${file}: stale hardcodedStyleExceptions entry; remove it from frontend-conformance-allowlist.json`);
+    }
   }
 }
 

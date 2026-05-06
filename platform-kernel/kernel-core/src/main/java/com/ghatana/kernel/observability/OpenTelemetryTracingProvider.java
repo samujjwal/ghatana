@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * OpenTelemetry implementation of TracingPort.
  *
  * @doc.type class
- * @doc.purpose OpenTelemetry tracing provider implementation (DMOS-P1-7)
+ * @doc.purpose OpenTelemetry tracing provider implementation
  * @doc.layer core
  * @doc.pattern Adapter
  * @author Ghatana Kernel Team

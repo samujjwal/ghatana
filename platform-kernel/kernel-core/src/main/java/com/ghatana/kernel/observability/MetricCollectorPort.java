@@ -9,7 +9,7 @@ import java.util.Map;
  * by various backends (Prometheus, OpenTelemetry, Micrometer, etc.).</p>
  *
  * @doc.type interface
- * @doc.purpose Kernel port for metric collection (DMOS-P1-7)
+ * @doc.purpose Kernel port for metric collection
  * @doc.layer core
  * @doc.pattern Port
  * @author Ghatana Kernel Team

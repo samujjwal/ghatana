@@ -36,7 +36,7 @@ try {
   }
 
   console.log("✅ All checks passed!");
-  console.log("\nReady to start: npm run dev");
+  console.log("\nReady to start: pnpm run dev");
 
 } catch (error) {
   console.error("❌ Test failed:");

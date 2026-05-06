@@ -23,9 +23,12 @@ jobs:
             fail-fast: false
             matrix:
                 product:
-                    - { name: flashit, path: products/flashit/backend/gateway, pm: pnpm }
-                    - { name: dcmaar, path: products/dcmaar, pm: pnpm }
-                    - { name: yappc, path: products/yappc, pm: pnpm }
+                    - { name: phr-web, workspaceDir: ., auditCommand: "pnpm --filter @ghatana/phr-web audit --audit-level=moderate --json > npm-audit.json || true" }
+                    - { name: dmos-ui, workspaceDir: ., auditCommand: "pnpm --filter @dmos/ui audit --audit-level=moderate --json > npm-audit.json || true" }
+                    - { name: flashit-web, workspaceDir: ., auditCommand: "pnpm --filter @flashit/web audit --audit-level=moderate --json > npm-audit.json || true" }
+                    - { name: flashit-gateway, workspaceDir: products/flashit, auditCommand: "pnpm --filter @flashit/web-api audit --audit-level=moderate --json > npm-audit.json || true" }
+                    - { name: dcmaar, workspaceDir: products/dcmaar, auditCommand: "pnpm audit --audit-level=moderate --json > npm-audit.json || true" }
+                    - { name: yappc, workspaceDir: products/yappc, auditCommand: "pnpm audit --audit-level=moderate --json > npm-audit.json || true" }
 
         steps:
             - name: Checkout code
@@ -35,30 +38,18 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: "20"
+                  cache: "pnpm"
 
             - name: Install pnpm
-              if: matrix.product.pm == 'pnpm'
-              run: corepack enable && corepack prepare pnpm@10.33.0 --activate
-
-            - name: Install dependencies (npm)
-              if: matrix.product.pm == 'npm'
-              run: npm ci
-              working-directory: ${{ matrix.product.path }}
-
-            - name: Install dependencies (pnpm)
-              if: matrix.product.pm == 'pnpm'
-              run: pnpm install --no-frozen-lockfile
-              working-directory: ${{ matrix.product.path }}
-
-            - name: Run npm audit
-              if: matrix.product.pm == 'npm'
-              run: npm audit --audit-level=moderate --json > npm-audit.json || true
-              working-directory: ${{ matrix.product.path }}
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 10.33.0
 
             - name: Run pnpm audit
-              if: matrix.product.pm == 'pnpm'
-              run: pnpm audit --audit-level=moderate --json > npm-audit.json || true
-              working-directory: ${{ matrix.product.path }}
+              run: |
+                  pnpm install --frozen-lockfile
+                  ${{ matrix.product.auditCommand }}
+              working-directory: ${{ matrix.product.workspaceDir }}
 
     default-credential-scan:
         name: Secret and Default Credential Policy Scan
@@ -276,14 +267,17 @@ jobs:
               with:
                   node-version: "20"
 
+            - name: Install pnpm
+              run: corepack enable && corepack prepare pnpm@10.33.0 --activate
+
             - name: Install dependencies
-              run: npm ci
-              working-directory: products/flashit/apps/web-api
+              run: pnpm install --frozen-lockfile
+              working-directory: products/flashit
 
             - name: Check licenses
               run: |
-                  npx license-checker --summary --production --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;CC0-1.0;Unlicense'
-              working-directory: products/flashit/apps/web-api
+                  pnpm --dir backend/gateway dlx license-checker --summary --production --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;CC0-1.0;Unlicense'
+              working-directory: products/flashit
 
     security-headers:
         name: Security Headers Check
@@ -299,21 +293,21 @@ jobs:
                   echo "Verifying security headers are configured..."
 
                   # Check for security middleware
-                  if grep -r "Content-Security-Policy" products/flashit/apps/web-api/src; then
+                  if grep -r "Content-Security-Policy" products/flashit/backend/gateway/src; then
                     echo "✅ CSP header configured"
                   else
                     echo "❌ CSP header not found"
                     exit 1
                   fi
 
-                  if grep -r "X-Frame-Options" products/flashit/apps/web-api/src; then
+                  if grep -r "X-Frame-Options" products/flashit/backend/gateway/src; then
                     echo "✅ X-Frame-Options configured"
                   else
                     echo "❌ X-Frame-Options not found"
                     exit 1
                   fi
 
-                  if grep -r "X-Content-Type-Options" products/flashit/apps/web-api/src; then
+                  if grep -r "X-Content-Type-Options" products/flashit/backend/gateway/src; then
                     echo "✅ X-Content-Type-Options configured"
                   else
                     echo "❌ X-Content-Type-Options not found"

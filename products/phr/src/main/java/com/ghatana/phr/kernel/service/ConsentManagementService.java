@@ -3,7 +3,7 @@ package com.ghatana.phr.kernel.service;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.AbstractDataService;
+
 import com.ghatana.platform.cache.DistributedCachePort;
 import com.ghatana.platform.cache.InMemoryCacheAdapter;
 import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
@@ -42,7 +42,7 @@ import java.util.Set;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class ConsentManagementService extends AbstractDataService implements ConsentService {
+public class ConsentManagementService extends PhrServiceBase implements ConsentService {
 
     private static final String CONSENT_DATASET = "phr.consent.grants";
     private static final String EMERGENCY_DATASET = "phr.emergency.access";

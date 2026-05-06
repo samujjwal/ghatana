@@ -3,7 +3,7 @@ package com.ghatana.finance.extension;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
-import com.ghatana.kernel.extension.AbstractKernelExtension;
+import com.ghatana.kernel.extension.KernelExtension;
 import com.ghatana.kernel.module.KernelModule;
 import io.activej.promise.Promise;
 
@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Compliance engine extension for SOX, PCI-DSS, and financial regulations.
@@ -25,13 +26,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-public class ComplianceKernelExtension extends AbstractKernelExtension {
+public class ComplianceKernelExtension implements KernelExtension {
 
     private static final String EXTENSION_ID = "compliance-engine-finance";
     private static final String VERSION = "1.0.0";
 
     private final ConcurrentHashMap<String, ComplianceRule> rules = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AuditEntry> auditLog = new ConcurrentHashMap<>();
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final AtomicBoolean started = new AtomicBoolean(false);
+    private volatile KernelContext context;
 
     @Override
     public String getExtensionId() {
@@ -79,8 +83,22 @@ public class ComplianceKernelExtension extends AbstractKernelExtension {
     }
 
     @Override
-    protected void onInitialize(KernelContext context) {
+    public void onModuleInitialized(KernelContext context) {
+        if (!initialized.compareAndSet(false, true)) {
+            return;
+        }
+        this.context = context;
         initializeComplianceRules();
+    }
+
+    @Override
+    public void onModuleStarted(KernelContext context) {
+        started.set(true);
+    }
+
+    @Override
+    public void onModuleStopped(KernelContext context) {
+        started.set(false);
     }
 
     @Override
@@ -92,6 +110,20 @@ public class ComplianceKernelExtension extends AbstractKernelExtension {
     @Override
     public int getPriority() {
         return 250; // Critical priority for compliance
+    }
+
+    protected final KernelContext getContext() {
+        return context;
+    }
+
+    protected final boolean isStarted() {
+        return started.get();
+    }
+
+    protected final void requireStarted() {
+        if (!started.get()) {
+            throw new IllegalStateException("Extension not started: " + getExtensionId());
+        }
     }
 
     // ==================== Compliance API ====================

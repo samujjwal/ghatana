@@ -240,7 +240,7 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
     private static BoundaryPolicyRule defaultDeny() {
         return BoundaryPolicyRule.builder()
             .ruleId("DM-BP-999")
-            .sourceScopePattern(DM_SOURCE_SCOPE)
+            .sourceScopePattern("**")
             .targetScopePattern(DM_TARGET_SCOPE)
             .resourcePattern("**")
             .actions(Set.of("*"))

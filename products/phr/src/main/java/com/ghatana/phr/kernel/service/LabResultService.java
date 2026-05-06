@@ -1,7 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.AbstractDataService;
+
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -26,7 +26,7 @@ import java.util.Optional;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class LabResultService extends AbstractDataService {
+public class LabResultService extends PhrServiceBase {
 
     private static final String RESULT_DATASET = "phr.lab.results";
     private static final String PANEL_DATASET = "phr.lab.panels";

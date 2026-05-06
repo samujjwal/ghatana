@@ -4,17 +4,13 @@
 
 set -e
 
-echo "Installing dependencies for web-api..."
+echo "Installing dependencies for FlashIt gateway..."
 echo "This may take a few minutes on first run..."
 
-# Use npm ci if lock file exists, otherwise use npm install
-if [ -f "package-lock.json" ]; then
-    echo "Using npm ci (from package-lock.json)..."
-    timeout 300 npm ci --prefer-offline || exit 1
-else
-    echo "Using npm install..."
-    timeout 300 npm install --prefer-offline --no-audit || exit 1
-fi
+# Install through the product-local pnpm workspace so gateway dependencies,
+# workspace links, and the canonical lockfile stay in sync.
+echo "Using pnpm workspace install..."
+timeout 300 pnpm --dir .. install --frozen-lockfile || exit 1
 
 # Verify critical packages
 if [ ! -d "node_modules/@fastify/multipart" ]; then

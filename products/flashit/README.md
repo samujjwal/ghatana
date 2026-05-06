@@ -149,7 +149,7 @@ docker compose -f docker-compose.local.yml up java-agent --build
 
 ```bash
 cd client/web
-pnpm install && pnpm dev
+pnpm dev
 # http://localhost:3000
 ```
 
@@ -157,7 +157,7 @@ pnpm install && pnpm dev
 
 ```bash
 cd client/mobile
-pnpm install && npx expo start
+pnpm start
 ```
 
 ## API Overview

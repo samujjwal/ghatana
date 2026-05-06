@@ -11,6 +11,8 @@
 
 // Core types
 export type {
+  ProductEntitledAction,
+  ProductEntitledCard,
   ProductRouteCapability,
   ProductRouteEntitlement,
   ProductShellConfig,
@@ -21,6 +23,7 @@ export type {
 
 // Root shell
 export { ProductShell } from './components/ProductShell';
+export { PageHeader } from './components/PageHeader';
 
 // Sub-components (composable individually)
 export { CapabilitySidebar } from './components/CapabilitySidebar';

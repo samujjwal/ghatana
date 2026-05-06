@@ -211,18 +211,18 @@ public final class DmosAuditService {
             action, ctx.getActor().getPrincipalId(), ctx.getTenantId().getValue(),
             ctx.getWorkspaceId().getValue(), entityType, entityId, correlationId);
 
-        Map<String, Object> auditData = Map.of(
-            "auditId", auditId,
-            "action", action.name(),
-            "actor", ctx.getActor().getPrincipalId(),
-            "actorType", "USER", // TODO: getPrincipalType() doesn't exist, hardcoding for now
-            "tenantId", ctx.getTenantId().getValue(),
-            "workspaceId", ctx.getWorkspaceId().getValue(),
-            "entityType", entityType,
-            "entityId", entityId,
-            "correlationId", correlationId,
-            "timestamp", Instant.now().toString(),
-            "metadata", metadata
+        Map<String, Object> auditData = Map.ofEntries(
+            Map.entry("auditId", auditId),
+            Map.entry("action", action.name()),
+            Map.entry("actor", ctx.getActor().getPrincipalId()),
+            Map.entry("actorType", (Object) "USER"),
+            Map.entry("tenantId", ctx.getTenantId().getValue()),
+            Map.entry("workspaceId", ctx.getWorkspaceId().getValue()),
+            Map.entry("entityType", entityType),
+            Map.entry("entityId", entityId),
+            Map.entry("correlationId", correlationId),
+            Map.entry("timestamp", Instant.now().toString()),
+            Map.entry("metadata", metadata)
         );
 
         return kernelAdapter.recordAudit(ctx, entityType, action.name().toLowerCase(), auditData)

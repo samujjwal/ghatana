@@ -1,7 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.AbstractDataService;
+
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import java.time.Instant;
@@ -15,7 +15,7 @@ import java.util.Objects;
  * @doc.layer product
  * @doc.pattern Service
  */
-public final class PhrNotificationOutboxDispatcher extends AbstractDataService {
+public final class PhrNotificationOutboxDispatcher extends PhrServiceBase {
 
     private final PhrNotificationDeliveryChannels deliveryChannels;
 

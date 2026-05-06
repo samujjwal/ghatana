@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import { fetchDashboardData } from '../api/phrApi';
 import type { PatientRecordSummary } from '../types';
 

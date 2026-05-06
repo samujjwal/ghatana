@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * OpenTelemetry implementation of MetricCollectorPort.
  *
  * @doc.type class
- * @doc.purpose OpenTelemetry metrics collector implementation (DMOS-P1-7)
+ * @doc.purpose OpenTelemetry metrics collector implementation
  * @doc.layer core
  * @doc.pattern Adapter
  * @author Ghatana Kernel Team

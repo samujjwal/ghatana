@@ -1,7 +1,7 @@
 import React from 'react';
 import { ErrorBoundary } from '@ghatana/design-system';
 import { ThemeProvider } from '@ghatana/theme';
-import { RouterProvider } from 'react-router';
+import { RouterProvider } from 'react-router-dom';
 import { PhrAccessProvider } from './auth/PhrAccessContext';
 import { router } from './routes';
 

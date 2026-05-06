@@ -36,9 +36,8 @@ export NODE_ENV=development
 echo "   ✅ DATABASE_URL set"
 echo ""
 
-# Step 4: Clear npm cache
-echo "4. Clearing npm/pnpm cache..."
-npm cache clean --force 2>/dev/null || true
+# Step 4: Clear pnpm cache
+echo "4. Clearing pnpm cache..."
 pnpm store prune 2>/dev/null || true
 echo "   ✅ Cache cleared"
 echo ""
@@ -46,13 +45,13 @@ echo ""
 # Step 5: Reinstall node_modules
 echo "5. Reinstalling dependencies..."
 rm -rf node_modules
-pnpm install
+pnpm --dir .. install --frozen-lockfile
 echo "   ✅ Dependencies installed"
 echo ""
 
 # Step 6: Generate Prisma client
 echo "6. Generating Prisma client..."
-npx prisma generate --schema prisma/schema.prisma
+pnpm exec prisma generate --schema prisma/schema.prisma
 
 echo ""
 echo "=============================="

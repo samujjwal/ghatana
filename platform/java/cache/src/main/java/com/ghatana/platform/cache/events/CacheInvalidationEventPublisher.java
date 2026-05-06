@@ -40,7 +40,7 @@ import java.util.UUID;
  * Thread-safe: Uses async/promise-based approach.
  */
 public final class CacheInvalidationEventPublisher {
-    private static final Logger log = LoggerFactory.getLogger(CacheInvalidationEventPublisher.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CacheInvalidationEventPublisher.class);
 
     private final AsyncMessageBus messageBus;
     private final String serviceSource;
@@ -87,14 +87,14 @@ public final class CacheInvalidationEventPublisher {
 
         return messageBus.publish("cache-invalidation-events", event)
             .whenResult(unused -> {
-                log.info("Published cache invalidation event",
+                LOG.info("Published cache invalidation event",
                     "eventId", event.eventId,
                     "operationType", event.operationType,
                     "cacheKey", event.cacheKey,
                     "correlationId", event.correlationId);
             })
             .whenException(exception -> {
-                log.warn("Failed to publish cache invalidation event", exception,
+                LOG.warn("Failed to publish cache invalidation event", exception,
                     "cacheKey", cacheKey,
                     "correlationId", correlationId,
                     "error", exception.getMessage());
@@ -126,7 +126,7 @@ public final class CacheInvalidationEventPublisher {
 
         return messageBus.publish("cache-invalidation-events", event)
             .whenResult(unused -> {
-                log.info("Published pattern cache invalidation event",
+                LOG.info("Published pattern cache invalidation event",
                     "eventId", event.eventId,
                     "operationType", event.operationType,
                     "pattern", event.cacheKey,
@@ -134,7 +134,7 @@ public final class CacheInvalidationEventPublisher {
                     "correlationId", event.correlationId);
             })
             .whenException(exception -> {
-                log.warn("Failed to publish pattern invalidation event", exception,
+                LOG.warn("Failed to publish pattern invalidation event", exception,
                     "pattern", pattern,
                     "keyCount", keyCount,
                     "error", exception.getMessage());
@@ -165,7 +165,7 @@ public final class CacheInvalidationEventPublisher {
 
         return messageBus.publish("cache-invalidation-events", event)
             .whenResult(unused -> {
-                log.info("Published bulk cache invalidation event",
+                LOG.info("Published bulk cache invalidation event",
                     "eventId", event.eventId,
                     "operationType", event.operationType,
                     "bulkOperationKey", event.cacheKey,
@@ -173,7 +173,7 @@ public final class CacheInvalidationEventPublisher {
                     "correlationId", event.correlationId);
             })
             .whenException(exception -> {
-                log.warn("Failed to publish bulk invalidation event", exception,
+                LOG.warn("Failed to publish bulk invalidation event", exception,
                     "bulkOperationKey", bulkOperationKey,
                     "keyCount", keyCount,
                     "error", exception.getMessage());
@@ -302,7 +302,7 @@ interface AsyncMessageBus {
  * Thread-safe: Uses async/promise-based approach.
  */
 class CacheInvalidationEventSubscriber {
-    private static final Logger log = LoggerFactory.getLogger(CacheInvalidationEventSubscriber.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CacheInvalidationEventSubscriber.class);
 
     private final AsyncMessageBus messageBus;
     private final CacheBackend cacheBackend;
@@ -315,7 +315,7 @@ class CacheInvalidationEventSubscriber {
      * @param cacheBackend the cache backend to apply invalidations to
      * @param serviceSource name of this service (to avoid re-processing own events)
      */
-    public CacheInvalidationEventSubscriber(
+    CacheInvalidationEventSubscriber(
             AsyncMessageBus messageBus,
             CacheBackend cacheBackend,
             String serviceSource
@@ -358,7 +358,7 @@ class CacheInvalidationEventSubscriber {
             switch (event.operationType) {
                 case SINGLE_KEY_DELETE:
                     cacheBackend.deleteKey(event.cacheKey);
-                    log.info("Applied single key invalidation from event",
+                    LOG.info("Applied single key invalidation from event",
                         "eventId", event.eventId,
                         "cacheKey", event.cacheKey,
                         "source", event.source);
@@ -366,7 +366,7 @@ class CacheInvalidationEventSubscriber {
 
                 case PATTERN_DELETE:
                     int patternDeleteCount = cacheBackend.deletePattern(event.cacheKey);
-                    log.info("Applied pattern invalidation from event",
+                    LOG.info("Applied pattern invalidation from event",
                         "eventId", event.eventId,
                         "pattern", event.cacheKey,
                         "source", event.source,
@@ -375,15 +375,17 @@ class CacheInvalidationEventSubscriber {
 
                 case BULK_DELETE:
                     int bulkDeleteCount = cacheBackend.deletePattern(event.cacheKey);
-                    log.info("Applied bulk invalidation from event",
+                    LOG.info("Applied bulk invalidation from event",
                         "eventId", event.eventId,
                         "bulkOperationKey", event.cacheKey,
                         "source", event.source,
                         "deleted", bulkDeleteCount);
-                    break;
-            }
+                    break;                default:
+                    LOG.warn("Unknown cache invalidation operation type",
+                        "eventId", event.eventId,
+                        "operationType", event.operationType);            }
         } catch (Exception e) {
-            log.warn("Failed to apply cache invalidation event", e,
+            LOG.warn("Failed to apply cache invalidation event", e,
                 "eventId", event.eventId,
                 "operationType", event.operationType,
                 "error", e.getMessage());

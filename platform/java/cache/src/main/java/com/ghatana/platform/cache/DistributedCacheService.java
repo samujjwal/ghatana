@@ -1,7 +1,6 @@
 package com.ghatana.platform.cache;
 
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -14,7 +13,7 @@ import org.slf4j.MDC;
  */
 public class DistributedCacheService {
 
-    private static final Logger log = LoggerFactory.getLogger(DistributedCacheService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DistributedCacheService.class);
 
     // Redis client would be injected in production
     private final CacheBackend backend;
@@ -34,16 +33,16 @@ public class DistributedCacheService {
             String value = backend.getValue(finalKey);
 
             if (value != null) {
-                log.debug("Cache hit for key: {}", key);
+                LOG.debug("Cache hit for key: {}", key);
                 MDC.put("cacheHit", "true");
                 return Optional.of(deserialize(value, valueType));
             }
 
-            log.debug("Cache miss for key: {}", key);
+            LOG.debug("Cache miss for key: {}", key);
             MDC.put("cacheMiss", "true");
             return Optional.empty();
         } catch (Exception e) {
-            log.error("Cache retrieval error for key: {}", key, e);
+            LOG.error("Cache retrieval error for key: {}", key, e);
             return Optional.empty();
         }
     }
@@ -57,10 +56,10 @@ public class DistributedCacheService {
             String serialized = serialize(value);
             backend.setValue(finalKey, serialized, ttlSeconds);
 
-            log.debug("Cached key: {} with TTL: {}s", key, ttlSeconds);
+            LOG.debug("Cached key: {} with TTL: {}s", key, ttlSeconds);
             MDC.put("cachePut", "true");
         } catch (Exception e) {
-            log.error("Cache write error for key: {}", key, e);
+            LOG.error("Cache write error for key: {}", key, e);
             // Non-critical - log and continue
         }
     }
@@ -73,10 +72,10 @@ public class DistributedCacheService {
             String finalKey = buildTenantKey(key);
             backend.deleteKey(finalKey);
 
-            log.debug("Invalidated cache key: {}", key);
+            LOG.debug("Invalidated cache key: {}", key);
             MDC.put("cacheInvalidate", "true");
         } catch (Exception e) {
-            log.error("Cache invalidation error for key: {}", key, e);
+            LOG.error("Cache invalidation error for key: {}", key, e);
         }
     }
 
@@ -88,10 +87,10 @@ public class DistributedCacheService {
             String finalPattern = buildTenantKey(pattern);
             int invalidatedCount = backend.deletePattern(finalPattern);
 
-            log.info("Invalidated {} cache keys matching pattern: {}", invalidatedCount, pattern);
+            LOG.info("Invalidated {} cache keys matching pattern: {}", invalidatedCount, pattern);
             MDC.put("invalidatedCount", String.valueOf(invalidatedCount));
         } catch (Exception e) {
-            log.error("Cache pattern invalidation error for pattern: {}", pattern, e);
+            LOG.error("Cache pattern invalidation error for pattern: {}", pattern, e);
         }
     }
 
@@ -113,7 +112,7 @@ public class DistributedCacheService {
             }
             return value;
         } catch (Exception e) {
-            log.error("Cache loader error for key: {}", key, e);
+            LOG.error("Cache loader error for key: {}", key, e);
             throw new CacheException("Failed to load value for key: " + key, e);
         }
     }
@@ -129,7 +128,7 @@ public class DistributedCacheService {
 
             return new CacheStatistics(totalKeys, cacheSize);
         } catch (Exception e) {
-            log.error("Error retrieving cache statistics", e);
+            LOG.error("Error retrieving cache statistics", e);
             return new CacheStatistics(0, 0);
         }
     }

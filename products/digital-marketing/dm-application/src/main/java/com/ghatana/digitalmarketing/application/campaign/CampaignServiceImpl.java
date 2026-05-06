@@ -272,7 +272,7 @@ public final class CampaignServiceImpl implements CampaignService {
                 }
                 return repository.listByWorkspace(ctx.getWorkspaceId(), limit, offset);
             })
-            .then(campaigns -> {
+            .map(campaigns -> {
                 LOG.info("[DMOS] Listed {} campaigns for tenant={}, workspace={}",
                     campaigns.size(), ctx.getTenantId().getValue(), ctx.getWorkspaceId().getValue());
                 return campaigns;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 
 export function LoginPage(): React.ReactElement {
   return (

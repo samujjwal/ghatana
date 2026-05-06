@@ -40,6 +40,8 @@ export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
     minimumRole: 'patient',
     personas: ['patient', 'caregiver', 'clinician', 'admin'],
     tiers: ['core'],
+    actions: ['view-patient-summary'],
+    cards: ['patient-summary', 'care-plan', 'emergency-readiness'],
     element: <DashboardPage />,
   },
   {
@@ -50,6 +52,8 @@ export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
     minimumRole: 'patient',
     personas: ['patient', 'caregiver', 'clinician', 'admin'],
     tiers: ['core'],
+    actions: ['view-records'],
+    cards: ['record-highlights', 'interop-status'],
     element: <RecordsPage />,
   },
   {
@@ -60,6 +64,8 @@ export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
     minimumRole: 'patient',
     personas: ['patient', 'caregiver', 'clinician', 'admin'],
     tiers: ['core'],
+    actions: ['manage-consent'],
+    cards: ['active-consent-grants', 'expiring-consents'],
     element: <ConsentPage />,
   },
   {
@@ -70,6 +76,8 @@ export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
     minimumRole: 'patient',
     personas: ['patient', 'caregiver', 'clinician', 'admin'],
     tiers: ['core'],
+    actions: ['schedule-visit'],
+    cards: ['upcoming-appointments'],
     element: <AppointmentsPage />,
   },
   {
@@ -80,6 +88,8 @@ export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
     minimumRole: 'caregiver',
     personas: ['caregiver', 'clinician', 'admin'],
     tiers: ['clinical'],
+    actions: ['review-lab-results'],
+    cards: ['recent-lab-results'],
     element: <LabsPage />,
   },
   {
@@ -90,6 +100,8 @@ export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
     minimumRole: 'caregiver',
     personas: ['caregiver', 'clinician', 'admin'],
     tiers: ['clinical'],
+    actions: ['review-medications'],
+    cards: ['medication-adherence'],
     element: <MedicationsPage />,
   },
   {
@@ -101,6 +113,8 @@ export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
     personas: ['clinician', 'admin'],
     tiers: ['emergency'],
     emergencyAction: true,
+    actions: ['break-glass-review'],
+    cards: ['override-audit-timeline'],
     element: <EmergencyAccessPage />,
   },
   {
@@ -111,6 +125,8 @@ export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
     minimumRole: 'patient',
     personas: ['patient', 'caregiver', 'clinician', 'admin'],
     tiers: ['core'],
+    actions: ['manage-profile-settings'],
+    cards: ['profile-controls', 'integration-status'],
     element: <SettingsPage />,
   },
 ];

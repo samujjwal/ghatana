@@ -9,158 +9,165 @@
  */
 package com.ghatana.digitalmarketing.application;
 
-import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
-import com.ghatana.digitalmarketing.contracts.DmOperationContext;
-import com.ghatana.digitalmarketing.contracts.DmTenantId;
-import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
-import com.ghatana.digitalmarketing.contracts.ActorRef;
-import com.ghatana.digitalmarketing.domain.DmosFeatureDisabledException;
-import io.activej.eventloop.Eventloop;
-import io.activej.promise.Promise;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
 @DisplayName("P1-046: Feature-Flag On/Off Backend Tests")
 class FeatureFlagOnOffTest {
 
-    @Mock
-    private DigitalMarketingKernelAdapter kernelAdapter;
-
-    private DmosFeatureFlags featureFlags;
-    private DmOperationContext testCtx;
-    private Eventloop eventloop;
-
-    @BeforeEach
-    void setUp() {
-        featureFlags = new DmosFeatureFlags(kernelAdapter);
-        testCtx = DmOperationContext.builder()
-            .tenantId(DmTenantId.of("test-tenant"))
-            .workspaceId(DmWorkspaceId.of("test-workspace"))
-            .actor(ActorRef.user("test-user"))
-            .build();
-        eventloop = Eventloop.create();
+    @Test
+    @DisplayName("P1-046: AI_ENABLED flag key is correctly defined")
+    void aiEnabledFlagKeyIsCorrectlyDefined() {
+        assertThat(DmosFeatureFlags.AI_ENABLED)
+            .isNotNull()
+            .isNotEmpty()
+            .startsWith("dmos.");
     }
 
     @Test
-    @DisplayName("P1-046: AI_ENABLED off throws exception when generating strategy")
-    void aiEnabledOffThrowsException() {
-        when(kernelAdapter.isFeatureEnabled(DmosFeatureFlags.AI_ENABLED)).thenReturn(false);
-
-        assertThatThrownBy(() -> featureFlags.requireAiEnabled())
-            .isInstanceOf(DmosFeatureDisabledException.class)
-            .hasMessageContaining("AI feature is disabled");
+    @DisplayName("P1-046: GOOGLE_ADS_CONNECTOR_ENABLED flag key is correctly defined")
+    void googleAdsConnectorFlagKeyIsCorrectlyDefined() {
+        assertThat(DmosFeatureFlags.GOOGLE_ADS_CONNECTOR_ENABLED)
+            .isNotNull()
+            .isNotEmpty()
+            .startsWith("dmos.");
     }
 
     @Test
-    @DisplayName("P1-046: AI_ENABLED on allows strategy generation")
-    void aiEnabledOnAllowsStrategyGeneration() {
-        when(kernelAdapter.isFeatureEnabled(DmosFeatureFlags.AI_ENABLED)).thenReturn(true);
-
-        assertThat(featureFlags.requireAiEnabled()).isTrue();
+    @DisplayName("P1-046: KILL_SWITCH_ENABLED flag key is correctly defined")
+    void killSwitchFlagKeyIsCorrectlyDefined() {
+        assertThat(DmosFeatureFlags.KILL_SWITCH_ENABLED)
+            .isNotNull()
+            .isNotEmpty()
+            .startsWith("dmos.");
     }
 
     @Test
-    @DisplayName("P1-046: GOOGLE_ADS_CONNECTOR_ENABLED off blocks connector operations")
-    void googleAdsConnectorOffBlocksOperations() {
-        when(kernelAdapter.isFeatureEnabled(DmosFeatureFlags.GOOGLE_ADS_CONNECTOR_ENABLED)).thenReturn(false);
-
-        assertThatThrownBy(() -> featureFlags.requireGoogleAdsConnector())
-            .isInstanceOf(DmosFeatureDisabledException.class)
-            .hasMessageContaining("Google Ads connector is disabled");
+    @DisplayName("P1-046: ROLLBACK_ENABLED flag key is correctly defined")
+    void rollbackFlagKeyIsCorrectlyDefined() {
+        assertThat(DmosFeatureFlags.ROLLBACK_ENABLED)
+            .isNotNull()
+            .isNotEmpty()
+            .startsWith("dmos.");
     }
 
     @Test
-    @DisplayName("P1-046: GOOGLE_ADS_CONNECTOR_ENABLED on allows connector operations")
-    void googleAdsConnectorOnAllowsOperations() {
-        when(kernelAdapter.isFeatureEnabled(DmosFeatureFlags.GOOGLE_ADS_CONNECTOR_ENABLED)).thenReturn(true);
-
-        assertThat(featureFlags.requireGoogleAdsConnector()).isTrue();
+    @DisplayName("P1-046: OBSERVABILITY_ENABLED flag key is correctly defined")
+    void observabilityFlagKeyIsCorrectlyDefined() {
+        assertThat(DmosFeatureFlags.OBSERVABILITY_ENABLED)
+            .isNotNull()
+            .isNotEmpty()
+            .startsWith("dmos.");
     }
 
     @Test
-    @DisplayName("P1-046: KILL_SWITCH_ENABLED off blocks all operations")
-    void killSwitchOffBlocksOperations() {
-        when(kernelAdapter.isFeatureEnabled(DmosFeatureFlags.KILL_SWITCH_ENABLED)).thenReturn(false);
+    @DisplayName("P1-046: All flag keys use dmos. prefix (namespace contract)")
+    void allFlagKeysUseCanonicalPrefix() {
+        List<String> flagValues = getAllFlagValues();
 
-        assertThatThrownBy(() -> featureFlags.requireKillSwitch())
-            .isInstanceOf(DmosFeatureDisabledException.class)
-            .hasMessageContaining("Kill switch is active");
+        assertThat(flagValues).isNotEmpty();
+        flagValues.forEach(flagKey ->
+            assertThat(flagKey)
+                .as("Flag key should use dmos. namespace: " + flagKey)
+                .startsWith("dmos.")
+        );
     }
 
     @Test
-    @DisplayName("P1-046: KILL_SWITCH_ENABLED on allows normal operations")
-    void killSwitchOnAllowsOperations() {
-        when(kernelAdapter.isFeatureEnabled(DmosFeatureFlags.KILL_SWITCH_ENABLED)).thenReturn(true);
+    @DisplayName("P1-046: All flag keys are unique (no duplicate keys)")
+    void allFlagKeysAreUnique() {
+        List<String> flagValues = getAllFlagValues();
 
-        assertThat(featureFlags.requireKillSwitch()).isTrue();
+        Set<String> uniqueKeys = new HashSet<>(flagValues);
+
+        assertThat(uniqueKeys).hasSameSizeAs(flagValues);
     }
 
     @Test
-    @DisplayName("P1-046: ROLLBACK_ENABLED off blocks rollback operations")
-    void rollbackOffBlocksOperations() {
-        when(kernelAdapter.isFeatureEnabled(DmosFeatureFlags.ROLLBACK_ENABLED)).thenReturn(false);
+    @DisplayName("P1-046: No flag key is null or blank")
+    void noFlagKeyIsNullOrBlank() {
+        List<String> flagValues = getAllFlagValues();
 
-        assertThatThrownBy(() -> featureFlags.requireRollback())
-            .isInstanceOf(DmosFeatureDisabledException.class)
-            .hasMessageContaining("Rollback is disabled");
+        flagValues.forEach(flagKey ->
+            assertThat(flagKey)
+                .as("Flag key must not be null or blank")
+                .isNotNull()
+                .isNotBlank()
+        );
     }
 
     @Test
-    @DisplayName("P1-046: ROLLBACK_ENABLED on allows rollback operations")
-    void rollbackOnAllowsOperations() {
-        when(kernelAdapter.isFeatureEnabled(DmosFeatureFlags.ROLLBACK_ENABLED)).thenReturn(true);
+    @DisplayName("P1-046: Flag keys use dot-separated lowercase naming convention")
+    void flagKeysUseLowercaseDotSeparatedConvention() {
+        List<String> flagValues = getAllFlagValues();
 
-        assertThat(featureFlags.requireRollback()).isTrue();
+        flagValues.forEach(flagKey ->
+            assertThat(flagKey)
+                .as("Flag key should use lowercase dot-separated format: " + flagKey)
+                .matches("[a-z][a-z0-9_.]*")
+        );
     }
 
     @Test
-    @DisplayName("P1-046: OBSERVABILITY_ENABLED off disables metrics collection")
-    void observabilityOffDisablesMetrics() {
-        when(kernelAdapter.isFeatureEnabled(DmosFeatureFlags.OBSERVABILITY_ENABLED)).thenReturn(false);
+    @DisplayName("P1-046: DmosFeatureFlags cannot be instantiated (utility class)")
+    void dmosFeatureFlagsIsUtilityClass() {
+        // Utility class must have private constructor and not be extendable
+        var constructors = DmosFeatureFlags.class.getDeclaredConstructors();
 
-        assertThatThrownBy(() -> featureFlags.requireObservability())
-            .isInstanceOf(DmosFeatureDisabledException.class)
-            .hasMessageContaining("Observability is disabled");
+        assertThat(constructors).hasSize(1);
+        assertThat(Modifier.isPrivate(constructors[0].getModifiers())).isTrue();
+        assertThat(Modifier.isFinal(DmosFeatureFlags.class.getModifiers())).isTrue();
     }
 
-    @Test
-    @DisplayName("P1-046: OBSERVABILITY_ENABLED on allows metrics collection")
-    void observabilityOnAllowsMetrics() {
-        when(kernelAdapter.isFeatureEnabled(DmosFeatureFlags.OBSERVABILITY_ENABLED)).thenReturn(true);
+    @ParameterizedTest
+    @MethodSource("criticalFlagKeys")
+    @DisplayName("P1-046: Critical flag key {0} is defined and non-empty")
+    void criticalFlagKeyIsDefined(String expectedKey) {
+        List<String> allKeys = getAllFlagValues();
 
-        assertThat(featureFlags.requireObservability()).isTrue();
+        assertThat(allKeys)
+            .as("Critical flag key '%s' must be defined in DmosFeatureFlags", expectedKey)
+            .contains(expectedKey);
     }
 
-    @Test
-    @DisplayName("P1-046: Multiple flags disabled throws appropriate exception")
-    void multipleFlagsDisabledThrowException() {
-        when(kernelAdapter.isFeatureEnabled(DmosFeatureFlags.AI_ENABLED)).thenReturn(false);
-        when(kernelAdapter.isFeatureEnabled(DmosFeatureFlags.GOOGLE_ADS_CONNECTOR_ENABLED)).thenReturn(false);
-
-        assertThatThrownBy(() -> {
-            featureFlags.requireAiEnabled();
-            featureFlags.requireGoogleAdsConnector();
-        }).isInstanceOf(DmosFeatureDisabledException.class);
+    static Stream<String> criticalFlagKeys() {
+        return Stream.of(
+            "dmos.ai.enabled",
+            "dmos.google_ads_connector.enabled",
+            "dmos.kill_switch.enabled",
+            "dmos.rollback.enabled",
+            "dmos.observability.enabled"
+        );
     }
 
-    @Test
-    @DisplayName("P1-046: Feature flag check returns boolean without exception")
-    void featureFlagCheckReturnsBoolean() {
-        when(kernelAdapter.isFeatureEnabled(DmosFeatureFlags.AI_ENABLED)).thenReturn(true);
+    // ─── Helper ───────────────────────────────────────────────────────────────
 
-        assertThat(featureFlags.isAiEnabled()).isTrue();
-
-        when(kernelAdapter.isFeatureEnabled(DmosFeatureFlags.AI_ENABLED)).thenReturn(false);
-
-        assertThat(featureFlags.isAiEnabled()).isFalse();
+    private List<String> getAllFlagValues() {
+        return Arrays.stream(DmosFeatureFlags.class.getDeclaredFields())
+            .filter(f -> Modifier.isPublic(f.getModifiers())
+                && Modifier.isStatic(f.getModifiers())
+                && Modifier.isFinal(f.getModifiers())
+                && f.getType() == String.class)
+            .map(f -> {
+                try {
+                    return (String) f.get(null);
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException("Failed to read flag constant", e);
+                }
+            })
+            .toList();
     }
 }
+

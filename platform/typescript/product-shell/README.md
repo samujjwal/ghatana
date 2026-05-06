@@ -23,6 +23,7 @@ AEP and Data Cloud both independently implement:
 | Component | Description |
 |---|---|
 | `ProductShell` | Root layout wrapper — sidebar + header + content area |
+| `PageHeader` | Shared page-level title, description, and action layout primitive |
 | `CapabilitySidebar` | Registry-driven collapsible sidebar |
 | `ProductHeader` | Top header with search, notifications, and role/mode selector |
 | `RouteCapabilityNav` | Navigation links generated from route registry entries |
@@ -40,6 +41,7 @@ import {
   ProductShell,
   type ProductShellConfig,
   type ProductRouteCapability,
+  type ProductRouteEntitlement,
 } from '@ghatana/product-shell';
 
 const routes: ProductRouteCapability[] = [
@@ -63,6 +65,36 @@ function App() {
 }
 ```
 
+## Backend Entitlement Contract
+
+Products may source shell disclosure state from a backend entitlement payload instead
+of hardcoding route visibility. The canonical contract is `ProductRouteEntitlement`
+and includes:
+
+- `product`, `principalId`, `tenantId`, `role`, `persona`, `tier`, `correlationId`
+- `routes` as `ProductRouteCapability[]`
+- `actions` for allowed route or card actions
+- `cards` for allowed dashboard/detail/sidebar content surfaces
+
+```ts
+const entitlement: ProductRouteEntitlement = {
+  product: 'phr',
+  principalId: 'principal-123',
+  tenantId: 'tenant-nepal-01',
+  role: 'patient',
+  persona: 'patient',
+  tier: 'core',
+  correlationId: 'trace-abc',
+  routes,
+  actions: [
+    { id: 'request-emergency-review', label: 'Request emergency review', routePath: '/emergency' },
+  ],
+  cards: [
+    { id: 'care-plan', title: 'Care plan', routePath: '/dashboard', surface: 'dashboard' },
+  ],
+};
+```
+
 ## Product-specific configuration
 
 Both products supply a `ProductShellConfig` with:
@@ -77,6 +109,11 @@ Both products supply a `ProductShellConfig` with:
 - `onRoleChange` — callback when the user selects a different role/mode
 - `onSearch` — callback to open the global search overlay
 - `logo` — product logo ReactNode
+
+Products that still need router-specific back links or breadcrumb rendering
+should keep those as thin wrappers and pass the rendered content through the
+shared `PageHeader` component’s `eyebrow` slot rather than rebuilding the full
+heading layout locally.
 
 ## Canonical package name
 

@@ -9,7 +9,7 @@ import java.util.Map;
  * by various backends (OpenTelemetry, Jaeger, Zipkin, etc.).</p>
  *
  * @doc.type interface
- * @doc.purpose Kernel port for distributed tracing (DMOS-P1-7)
+ * @doc.purpose Kernel port for distributed tracing
  * @doc.layer core
  * @doc.pattern Port
  * @author Ghatana Kernel Team

@@ -1,7 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.AbstractDataService;
+
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import java.time.Instant;
@@ -17,7 +17,7 @@ import java.util.Set;
  * @doc.layer product
  * @doc.pattern Adapter
  */
-public final class DurablePhrNotificationSender extends AbstractDataService implements PhrNotificationSender {
+public final class DurablePhrNotificationSender extends PhrServiceBase implements PhrNotificationSender {
 
     static final String OUTBOX_DATASET = "phr.notifications.outbox";
 

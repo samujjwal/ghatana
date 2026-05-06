@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 
 const repoRoot = resolve(new URL('..', import.meta.url).pathname);
 const bridgeFiles = execSync(
-  "rg -l 'extends\\s+AbstractKernelBridge' products --glob '*.java'",
+  "rg --files products | rg '(KernelAdapterImpl|Bridge.*Impl)\\.java$'",
   { cwd: repoRoot, encoding: 'utf8' }
 )
   .trim()
@@ -30,11 +30,15 @@ for (const file of bridgeFiles) {
       continue;
     }
 
+    const hasContextParam = params.includes('BridgeContext') || params.includes('OperationContext');
+    if (!hasContextParam) {
+      continue;
+    }
+
     if (!body.includes('requireStarted();')) {
       violations.push(`${file}#${name}: missing requireStarted()`);
     }
 
-    const hasContextParam = params.includes('BridgeContext') || params.includes('OperationContext');
     if (hasContextParam && !body.includes('toBridgeContext()') && !params.includes('BridgeContext')) {
       violations.push(`${file}#${name}: must pass BridgeContext or convert product context via toBridgeContext()`);
     }

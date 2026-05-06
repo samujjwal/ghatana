@@ -7,7 +7,7 @@ import com.ghatana.kernel.adapter.datacloud.DataReadRequest;
 import com.ghatana.kernel.adapter.datacloud.DataWriteRequest;
 import com.ghatana.kernel.adapter.datacloud.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.AbstractDataService;
+
 import com.ghatana.platform.security.ratelimit.RateLimiter;
 import io.activej.promise.Promise;
 import java.time.Duration;
@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class AppointmentService extends AbstractDataService {
+public class AppointmentService extends PhrServiceBase {
 
     private static final String APPOINTMENT_DATASET = "phr.appointments";
     private static final String SLOT_DATASET = "phr.appointment.slots";

@@ -1,8 +1,8 @@
 package com.ghatana.digitalmarketing.bridge;
 
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
-import com.ghatana.kernel.bridge.AbstractKernelBridge;
 import com.ghatana.kernel.bridge.port.BridgeAuditEmitter;
+import com.ghatana.kernel.bridge.port.BridgeAuditEmitter.BridgeAuditEvent;
 import com.ghatana.kernel.bridge.port.BridgeAuthorizationService;
 import com.ghatana.kernel.bridge.port.BridgeContext;
 import com.ghatana.kernel.bridge.port.BridgeHealthIndicator;
@@ -20,16 +20,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 
 /**
  * Production implementation of {@link DigitalMarketingKernelAdapter}.
  *
- * <p>Extends {@link AbstractKernelBridge} to inherit lifecycle management,
- * authorization checking, audit emission, health reporting, and retry semantics
- * provided by the kernel bridge base class.</p>
+ * <p>This adapter composes kernel bridge ports directly so the product depends
+ * only on stable kernel bridge interfaces rather than kernel implementation
+ * classes.</p>
  *
  * <h3>Dependency injection</h3>
  * <p>All dependencies are constructor-injected. No field injection is used.</p>
@@ -43,13 +46,17 @@ import java.util.UUID;
  * @doc.layer product
  * @doc.pattern Bridge, Adapter
  */
-public final class DigitalMarketingKernelAdapterImpl
-        extends AbstractKernelBridge
-        implements DigitalMarketingKernelAdapter {
+public final class DigitalMarketingKernelAdapterImpl implements DigitalMarketingKernelAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(DigitalMarketingKernelAdapterImpl.class);
     private static final String BRIDGE_ID = "digital-marketing-bridge";
+    private static final int MAX_NOTIFICATION_RETRIES = 3;
+    private static final Pattern SENSITIVE_KEY_PATTERN =
+        Pattern.compile("(?i)(password|secret|token|apikey|api_key|credential)=[^\\s,}]+");
 
+    private final BridgeAuthorizationService authService;
+    private final BridgeAuditEmitter auditEmitter;
+    private final BridgeHealthIndicator healthIndicator;
     private final ConsentPlugin consentPlugin;
     private final HumanApprovalPlugin approvalPlugin;
     private final AuditTrailPlugin auditTrailPlugin;
@@ -57,6 +64,7 @@ public final class DigitalMarketingKernelAdapterImpl
     private final NotificationPlugin notificationPlugin;
     private final FeatureFlagPlugin featureFlagPlugin;
     private final boolean productionMode;
+    private final AtomicBoolean started = new AtomicBoolean(false);
 
     /**
      * Constructs the adapter with all required kernel ports and platform plugins.
@@ -83,7 +91,9 @@ public final class DigitalMarketingKernelAdapterImpl
             NotificationPlugin notificationPlugin,
             FeatureFlagPlugin featureFlagPlugin,
             boolean productionMode) {
-        super(BRIDGE_ID, authService, auditEmitter, healthIndicator);
+        this.authService = Objects.requireNonNull(authService, "authService must not be null");
+        this.auditEmitter = Objects.requireNonNull(auditEmitter, "auditEmitter must not be null");
+        this.healthIndicator = Objects.requireNonNull(healthIndicator, "healthIndicator must not be null");
         this.consentPlugin    = Objects.requireNonNull(consentPlugin,    "consentPlugin must not be null");
         this.approvalPlugin   = Objects.requireNonNull(approvalPlugin,   "approvalPlugin must not be null");
         this.auditTrailPlugin = Objects.requireNonNull(auditTrailPlugin, "auditTrailPlugin must not be null");
@@ -102,19 +112,43 @@ public final class DigitalMarketingKernelAdapterImpl
         this.productionMode = productionMode;
     }
 
+    public DigitalMarketingKernelAdapterImpl(
+            BridgeAuthorizationService authService,
+            BridgeAuditEmitter auditEmitter,
+            BridgeHealthIndicator healthIndicator,
+            ConsentPlugin consentPlugin,
+            HumanApprovalPlugin approvalPlugin,
+            AuditTrailPlugin auditTrailPlugin,
+            RiskManagementPlugin riskManagementPlugin,
+            NotificationPlugin notificationPlugin) {
+        this(
+            authService,
+            auditEmitter,
+            healthIndicator,
+            consentPlugin,
+            approvalPlugin,
+            auditTrailPlugin,
+            riskManagementPlugin,
+            notificationPlugin,
+            new NoOpFeatureFlagPlugin(),
+            false
+        );
+    }
+
     // -----------------------------------------------------------------------
     // Lifecycle
     // -----------------------------------------------------------------------
 
     @Override
     public void start() {
-        markStarted();
+        started.set(true);
+        healthIndicator.reportHealthy(BRIDGE_ID);
         LOG.info("[{}] Digital Marketing Kernel Adapter started", BRIDGE_ID);
     }
 
     @Override
     public void stop() {
-        markStopped();
+        started.set(false);
         LOG.info("[{}] Digital Marketing Kernel Adapter stopped", BRIDGE_ID);
     }
 
@@ -124,7 +158,7 @@ public final class DigitalMarketingKernelAdapterImpl
      * @return {@code true} if operational
      */
     public boolean started() {
-        return isStarted();
+        return started.get();
     }
 
     // -----------------------------------------------------------------------
@@ -404,7 +438,13 @@ public final class DigitalMarketingKernelAdapterImpl
                 enrichedAttributes.put("correlationId", context.getCorrelationId().getValue());
                 enrichedAttributes.put("actor", context.getActor().getPrincipalId());
 
-                return notificationPlugin.dispatch(recipientId, template, enrichedAttributes)
+                return dispatchNotificationWithRetry(
+                        bridgeContext,
+                        recipientId,
+                        template,
+                        enrichedAttributes,
+                        0
+                    )
                     .then((notificationId, exception) -> {
                         if (exception != null) {
                             if (productionMode) {
@@ -448,11 +488,129 @@ public final class DigitalMarketingKernelAdapterImpl
     private Map<String, Object> buildAuditAttributes(DmOperationContext context,
                                                        Map<String, Object> callerAttributes) {
         // Start with a mutable copy of caller attributes, then overlay required context fields
-        java.util.HashMap<String, Object> merged = new java.util.HashMap<>(callerAttributes);
+        HashMap<String, Object> merged = new HashMap<>(callerAttributes);
         merged.put("tenantId",      context.getTenantId().getValue());
         merged.put("workspaceId",   context.getWorkspaceId().getValue());
         merged.put("correlationId", context.getCorrelationId().getValue());
         merged.put("actor",         context.getActor().getPrincipalId());
         return Map.copyOf(merged);
+    }
+
+    private void requireStarted() {
+        if (!started.get()) {
+            throw new IllegalStateException("Bridge '" + BRIDGE_ID + "' is not started");
+        }
+    }
+
+    private Promise<Boolean> checkAuthorized(BridgeContext context, String resource, String action) {
+        return authService.isAuthorized(context, resource, action)
+            .whenResult(allowed -> {
+                BridgeAuditEvent event = allowed
+                    ? BridgeAuditEvent.allowed(BRIDGE_ID, context, resource, action)
+                    : BridgeAuditEvent.denied(BRIDGE_ID, context, resource, action);
+                auditEmitter.emit(event);
+                if (!allowed) {
+                    LOG.warn(
+                        "[{}] Authorization denied: resource={}, action={}, tenant={}, principal={}",
+                        BRIDGE_ID,
+                        resource,
+                        action,
+                        context.getTenantId(),
+                        context.getPrincipalId()
+                    );
+                }
+            });
+    }
+
+    private Promise<String> dispatchNotificationWithRetry(
+            BridgeContext bridgeContext,
+            String recipientId,
+            String template,
+            Map<String, String> attributes,
+            int attempt) {
+        return notificationPlugin.dispatch(recipientId, template, attributes)
+            .then((notificationId, exception) -> {
+                if (exception == null) {
+                    healthIndicator.reportHealthy(BRIDGE_ID);
+                    auditEmitter.emit(BridgeAuditEvent.allowed(
+                        BRIDGE_ID,
+                        bridgeContext,
+                        "notification:" + recipientId,
+                        "dispatch"
+                    ));
+                    return Promise.of(notificationId);
+                }
+
+                if (attempt < MAX_NOTIFICATION_RETRIES) {
+                    healthIndicator.reportDegraded(
+                        BRIDGE_ID,
+                        "notification dispatch transient failure: " + exception.getMessage()
+                    );
+                    LOG.warn(
+                        "[{}] Notification dispatch failed (attempt {}/{}), retrying: recipientId={}, template={}, tenant={}, metadata={}, error={}",
+                        BRIDGE_ID,
+                        attempt + 1,
+                        MAX_NOTIFICATION_RETRIES,
+                        recipientId,
+                        template,
+                        bridgeContext.getTenantId(),
+                        redact(attributes.toString()),
+                        exception.getMessage()
+                    );
+                    return dispatchNotificationWithRetry(
+                        bridgeContext,
+                        recipientId,
+                        template,
+                        attributes,
+                        attempt + 1
+                    );
+                }
+
+                healthIndicator.reportUnhealthy(
+                    BRIDGE_ID,
+                    "notification dispatch exhausted retries: " + exception.getMessage()
+                );
+                auditEmitter.emit(BridgeAuditEvent.error(
+                    BRIDGE_ID,
+                    bridgeContext,
+                    "notification:" + recipientId,
+                    "dispatch"
+                ));
+                return Promise.ofException(exception);
+            });
+    }
+
+    private String redact(String metadata) {
+        if (metadata == null) {
+            return "<null>";
+        }
+        return SENSITIVE_KEY_PATTERN.matcher(metadata).replaceAll("$1=***REDACTED***");
+    }
+
+    private static final class NoOpFeatureFlagPlugin implements FeatureFlagPlugin {
+        @Override
+        public Promise<Boolean> isEnabled(String flagKey, String scope) {
+            return Promise.of(Boolean.FALSE);
+        }
+
+        @Override
+        public Promise<String> getString(String flagKey, String tenantId, String defaultValue) {
+            return Promise.of(defaultValue);
+        }
+
+        @Override
+        public Promise<Integer> getInt(String flagKey, String tenantId, int defaultValue) {
+            return Promise.of(defaultValue);
+        }
+
+        @Override
+        public Promise<Boolean> getBoolean(String flagKey, String tenantId, boolean defaultValue) {
+            return Promise.of(defaultValue);
+        }
+
+        @Override
+        public Promise<Map<String, Object>> getAllFlags(String tenantId) {
+            return Promise.of(Map.of());
+        }
     }
 }

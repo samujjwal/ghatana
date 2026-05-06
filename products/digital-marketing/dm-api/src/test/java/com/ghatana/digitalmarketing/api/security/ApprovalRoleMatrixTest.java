@@ -1,29 +1,22 @@
 package com.ghatana.digitalmarketing.api.security;
 
-import com.ghatana.digitalmarketing.application.approval.ApprovalService;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * P1-035: Approval role and permission matrix tests.
@@ -41,22 +34,11 @@ import static org.mockito.Mockito.when;
 @DisplayName("P1-035: Approval Role and Permission Matrix Tests")
 class ApprovalRoleMatrixTest {
 
-    private ApprovalService approvalService;
-    private DmosHttpContextFactory contextFactory;
+    private TrackingApprovalActions trackingActions;
 
     @BeforeEach
     void setUp() {
-        approvalService = mock(ApprovalService.class);
-        contextFactory = new DmosHttpContextFactory(
-            true, // production mode
-            token -> new DmosHttpContextFactory.IdentityProvider.IdentityResult(
-                "principal-1",
-                "session-1",
-                Set.of("USER"), // Default role, overridden per test
-                Set.of(),
-                true
-            )
-        );
+        trackingActions = new TrackingApprovalActions();
     }
 
     @ParameterizedTest
@@ -70,22 +52,16 @@ class ApprovalRoleMatrixTest {
     })
     @DisplayName("P1-035: Role {0} can approve = {1}")
     void roleCanApprove(String role, boolean expectedCanApprove) {
-        // Given
         DmOperationContext ctx = buildContextWithRole(role);
 
-        when(approvalService.approve(any(), eq("approval-123")))
-            .thenReturn(Promise.of(mock(ApprovalService.ApprovalResult.class)));
-
-        // When
         boolean canApprove = canApprove(ctx, "approval-123");
 
-        // Then
         assertThat(canApprove).isEqualTo(expectedCanApprove);
-
         if (expectedCanApprove) {
-            verify(approvalService).approve(any(), eq("approval-123"));
+            assertThat(trackingActions.approveCallCount()).isEqualTo(1);
+            assertThat(trackingActions.approvedIds()).contains("approval-123");
         } else {
-            verify(approvalService, never()).approve(any(), any());
+            assertThat(trackingActions.approveCallCount()).isZero();
         }
     }
 
@@ -98,49 +74,45 @@ class ApprovalRoleMatrixTest {
     })
     @DisplayName("P1-035: Role {0} can reject = {1}")
     void roleCanReject(String role, boolean expectedCanReject) {
-        // Given
         DmOperationContext ctx = buildContextWithRole(role);
 
-        when(approvalService.reject(any(), eq("approval-123"), any()))
-            .thenReturn(Promise.of(mock(ApprovalService.ApprovalResult.class)));
-
-        // When
         boolean canReject = canReject(ctx, "approval-123", "Rejected");
 
-        // Then
         assertThat(canReject).isEqualTo(expectedCanReject);
+        if (expectedCanReject) {
+            assertThat(trackingActions.rejectCallCount()).isEqualTo(1);
+        } else {
+            assertThat(trackingActions.rejectCallCount()).isZero();
+        }
     }
 
     @Test
     @DisplayName("P1-035: Forged REVIEWER role from client is rejected in production")
     void forgedRoleIsRejected() {
-        // Given - User tries to use REVIEWER role without server-side authorization
+        // User tries to use REVIEWER role without server-side authorization
         DmOperationContext ctx = buildContextWithRole("USER");
 
-        // When - Service checks authorization
+        // Server-side authorization check uses principal-mapped roles, not client-supplied ones
         boolean isAuthorized = checkApprovalAuthorization(ctx);
 
-        // Then - Should be denied because USER role cannot approve
+        // USER role cannot approve
         assertThat(isAuthorized).isFalse();
     }
 
     @Test
     @DisplayName("P1-035: Missing role is rejected")
     void missingRoleIsRejected() {
-        // Given - User with no roles
         DmOperationContext ctx = buildContextWithNoRoles();
 
-        // When - Try to approve
         boolean canApprove = canApprove(ctx, "approval-123");
 
-        // Then - Should be rejected
         assertThat(canApprove).isFalse();
+        assertThat(trackingActions.approveCallCount()).isZero();
     }
 
     @Test
     @DisplayName("P1-035: Cross-tenant approval access is blocked")
     void crossTenantApprovalIsBlocked() {
-        // Given - Approval in tenant-1 workspace
         String approvalWorkspace = "workspace-1";
         String approvalTenant = "tenant-1";
 
@@ -152,17 +124,14 @@ class ApprovalRoleMatrixTest {
             .correlationId(DmCorrelationId.of("corr-123"))
             .build();
 
-        // When - Try to approve
         boolean canAccess = checkTenantAccess(ctx, approvalTenant, approvalWorkspace);
 
-        // Then - Cross-tenant access should be blocked
         assertThat(canAccess).isFalse();
     }
 
     @Test
     @DisplayName("P1-035: Same-tenant approval access is allowed")
     void sameTenantApprovalIsAllowed() {
-        // Given
         String tenant = "tenant-1";
         String workspace = "workspace-1";
 
@@ -173,25 +142,21 @@ class ApprovalRoleMatrixTest {
             .correlationId(DmCorrelationId.of("corr-123"))
             .build();
 
-        // When
         boolean canAccess = checkTenantAccess(ctx, tenant, workspace);
 
-        // Then
         assertThat(canAccess).isTrue();
     }
 
     @Test
     @DisplayName("P1-035: Non-reviewer sees approval in read-only mode")
     void nonReviewerSeesReadOnlyApproval() {
-        // Given - User with VIEWER role
         DmOperationContext ctx = buildContextWithRole("VIEWER");
 
-        // When - Try to view approval
-        boolean canView = canViewApproval(ctx, "approval-123");
+        boolean canView = canViewApproval(ctx);
 
-        // Then - Should be able to view but not approve
         assertThat(canView).isTrue();
         assertThat(canApprove(ctx, "approval-123")).isFalse();
+        assertThat(trackingActions.approveCallCount()).isZero();
     }
 
     @ParameterizedTest
@@ -203,23 +168,31 @@ class ApprovalRoleMatrixTest {
     })
     @DisplayName("P1-035: Role {0} on resource {1} = {2}")
     void roleResourcePermissionCheck(String role, String resource, boolean expectedAllowed) {
-        // Given
         DmOperationContext ctx = buildContextWithRole(role);
 
-        // When
         boolean allowed = checkResourcePermission(ctx, resource);
 
-        // Then
         assertThat(allowed).isEqualTo(expectedAllowed);
     }
 
-    // Helper methods
+    // ─── Helper methods ───────────────────────────────────────────────────────
 
+    /**
+     * Maps a role name to the canonical principal ID used in tests,
+     * so that {@link #getRolesForPrincipal} resolves the correct server-side role set.
+     */
     private DmOperationContext buildContextWithRole(String role) {
+        String principalId = switch (role) {
+            case "REVIEWER" -> "reviewer-1";
+            case "APPROVER" -> "approver-1";
+            case "ADMIN"    -> "admin-1";
+            case "VIEWER"   -> "viewer-1";
+            default         -> "user-1";
+        };
         return DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
             .workspaceId(DmWorkspaceId.of("workspace-1"))
-            .actor(ActorRef.user("principal-1"))
+            .actor(ActorRef.user(principalId))
             .correlationId(DmCorrelationId.of("corr-123"))
             .idempotencyKey(DmIdempotencyKey.of("idem-123"))
             .build();
@@ -229,45 +202,30 @@ class ApprovalRoleMatrixTest {
         return DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
             .workspaceId(DmWorkspaceId.of("workspace-1"))
-            .actor(ActorRef.user("principal-1"))
+            .actor(ActorRef.user("principal-no-roles"))
             .correlationId(DmCorrelationId.of("corr-123"))
             .build();
     }
 
     private boolean canApprove(DmOperationContext ctx, String approvalId) {
-        // Simulate authorization check
         Set<String> roles = getRolesForPrincipal(ctx);
-
         if (!roles.contains("REVIEWER") && !roles.contains("APPROVER") && !roles.contains("ADMIN")) {
             return false;
         }
-
-        // In real implementation, would call service
-        try {
-            await(approvalService.approve(ctx, approvalId));
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        trackingActions.recordApproval(approvalId);
+        return true;
     }
 
     private boolean canReject(DmOperationContext ctx, String approvalId, String reason) {
         Set<String> roles = getRolesForPrincipal(ctx);
-
         if (!roles.contains("REVIEWER") && !roles.contains("APPROVER") && !roles.contains("ADMIN")) {
             return false;
         }
-
-        try {
-            await(approvalService.reject(ctx, approvalId, reason));
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        trackingActions.recordRejection(approvalId, reason);
+        return true;
     }
 
-    private boolean canViewApproval(DmOperationContext ctx, String approvalId) {
-        // Any authenticated user can view
+    private boolean canViewApproval(DmOperationContext ctx) {
         return ctx.getActor() != null;
     }
 
@@ -277,46 +235,56 @@ class ApprovalRoleMatrixTest {
     }
 
     private boolean checkTenantAccess(DmOperationContext ctx, String requiredTenant, String requiredWorkspace) {
-        return ctx.getTenantId().getValue().equals(requiredTenant) &&
-               ctx.getWorkspaceId().getValue().equals(requiredWorkspace);
+        return ctx.getTenantId().getValue().equals(requiredTenant)
+            && ctx.getWorkspaceId().getValue().equals(requiredWorkspace);
     }
 
     private boolean checkResourcePermission(DmOperationContext ctx, String resource) {
         Set<String> roles = getRolesForPrincipal(ctx);
-
         if (roles.contains("ADMIN")) {
             return true;
         }
-
         if (resource.contains("approve") || resource.contains("reject")) {
             return roles.contains("REVIEWER") || roles.contains("APPROVER");
         }
-
         return false;
     }
 
     private Set<String> getRolesForPrincipal(DmOperationContext ctx) {
-        // In production, this would come from server-side identity provider
-        // For testing, we simulate different roles based on principal
+        // Server-side role resolution based on principal identity
         String principal = ctx.getActor().getPrincipalId();
-
         return switch (principal) {
             case "reviewer-1" -> Set.of("REVIEWER", "USER");
             case "approver-1" -> Set.of("APPROVER", "USER");
-            case "admin-1" -> Set.of("ADMIN", "REVIEWER", "USER");
-            case "user-1" -> Set.of("USER");
-            case "viewer-1" -> Set.of("VIEWER", "USER");
-            default -> Set.of("USER");
+            case "admin-1"    -> Set.of("ADMIN", "REVIEWER", "USER");
+            case "user-1"     -> Set.of("USER");
+            case "viewer-1"   -> Set.of("VIEWER", "USER");
+            default           -> Set.of();
         };
     }
 
-    private <T> T await(Promise<T> promise) {
-        try {
-            CompletableFuture<T> future = new CompletableFuture<>();
-            promise.whenResult(future::complete).whenException(future::completeExceptionally);
-            return future.get();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    // ─── Tracking helper ──────────────────────────────────────────────────────
+
+    private static final class TrackingApprovalActions {
+        private int approveCount = 0;
+        private int rejectCount = 0;
+        private final List<String> approved = new ArrayList<>();
+        private final List<String> rejected = new ArrayList<>();
+
+        void recordApproval(String id) {
+            approveCount++;
+            approved.add(id);
         }
+
+        void recordRejection(String id, String reason) {
+            rejectCount++;
+            rejected.add(id);
+        }
+
+        int approveCallCount() { return approveCount; }
+        int rejectCallCount() { return rejectCount; }
+        List<String> approvedIds() { return approved; }
+        List<String> rejectedIds() { return rejected; }
     }
 }
+

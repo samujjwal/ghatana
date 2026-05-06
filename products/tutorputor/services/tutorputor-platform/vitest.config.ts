@@ -36,7 +36,7 @@ export default defineConfig({
         find: "@ghatana/platform-utils",
         replacement: path.resolve(
           __dirname,
-          "../../../../platform/typescript/foundation/platform-utils/src/index.ts",
+          "../../../../platform/typescript/platform-utils/src/index.ts",
         ),
       },
       {

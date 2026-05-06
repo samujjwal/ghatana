@@ -17,6 +17,7 @@ import com.ghatana.digitalmarketing.domain.command.DmCommand;
 import com.ghatana.digitalmarketing.domain.command.DmCommandStatus;
 import com.ghatana.digitalmarketing.domain.command.DmCommandType;
 import com.ghatana.digitalmarketing.domain.event.DmEvent;
+import com.ghatana.digitalmarketing.domain.event.DmEventType;
 import com.ghatana.digitalmarketing.domain.googleads.GoogleAdsCommandPayload;
 import com.ghatana.digitalmarketing.domain.killswitch.DmKillSwitch;
 import io.activej.eventloop.Eventloop;
@@ -126,8 +127,8 @@ public final class GoogleAdsOutboxExecutor {
                 .workspaceId(ctx.getWorkspaceId().getValue())
                 .correlationId(correlationId)
                 .actor(ctx.getActor().getPrincipalId())
-                .actorType(com.ghatana.digitalmarketing.domain.event.ActorType.USER)
-                .eventType(DmEventType.GOOGLE_ADS_CAMPAIGN_CREATE)
+                .actorType(DmEvent.ActorType.USER)
+                .eventType(DmEventType.COMMAND_CREATED)
                 .payload(payload)
                 .occurredAt(Instant.now())
                 .build();
@@ -282,14 +283,12 @@ public final class GoogleAdsOutboxExecutor {
             .workspaceId(DmWorkspaceId.of(command.getWorkspaceId()))
             .build();
 
-        // TODO: getTargetEntityId() and getTargetEntityType() don't exist on DmCommand
         String rollbackActionType = determineRollbackActionType(command.getCommandType());
         LOG.info("[DMOS-GOOGLE-ADS] Would schedule rollback for commandId={}, type={}",
             command.getId(), rollbackActionType);
     }
 
     private String determineRollbackActionType(DmCommandType originalType) {
-        // TODO: GOOGLE_ADS_CAMPAIGN_UPDATE doesn't exist in DmCommandType enum
         return switch (originalType) {
             case GOOGLE_ADS_CAMPAIGN_CREATE -> "GOOGLE_ADS_CAMPAIGN_DELETE";
             case CAMPAIGN_UPDATE -> "GOOGLE_ADS_CAMPAIGN_REVERT";
@@ -298,7 +297,6 @@ public final class GoogleAdsOutboxExecutor {
     }
 
     private boolean isRollbackable(DmCommand command) {
-        // TODO: GOOGLE_ADS_CAMPAIGN_UPDATE doesn't exist in DmCommandType enum
         return command.getCommandType() == DmCommandType.GOOGLE_ADS_CAMPAIGN_CREATE ||
                command.getCommandType() == DmCommandType.CAMPAIGN_UPDATE;
     }

@@ -14,7 +14,7 @@ if [ -z "${DATABASE_URL:-}" ]; then
 fi
 
 echo "Step 3: Running prisma generate..."
-npx prisma generate --schema=prisma/schema.prisma
+pnpm exec prisma generate --schema=prisma/schema.prisma
 
 echo "Step 4: Verifying schema in generated client..."
 if grep -q 'provider = "postgresql"' node_modules/.prisma/client/schema.prisma; then
