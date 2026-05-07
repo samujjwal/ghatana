@@ -66,7 +66,7 @@ jobs:
 
       - name: Verify generated types
         run: |
-          if [ ! -d "products/digital-marketing/ui/src/types/api-generated.ts" ]; then
+          if [ ! -f "products/digital-marketing/ui/src/types/api-generated.ts" ]; then
             echo "::error::Generated API types not found"
             exit 1
           fi

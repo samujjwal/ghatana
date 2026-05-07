@@ -111,7 +111,7 @@ export function CanvasAIOverlay({
             <div className="flex items-center gap-2">
               <AIIcon className="w-5 h-5 text-info-color dark:text-info-color" />
               <Typography className="font-bold text-sm">
-                AI Assistant
+                Guided Assistant
               </Typography>
             </div>
             <div className="flex items-center gap-1">

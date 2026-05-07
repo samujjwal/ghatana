@@ -73,3 +73,60 @@ export async function pauseCampaign(
     { method: 'POST', idempotencyKey },
   );
 }
+
+/**
+ * P2-003: Complete an active campaign (LAUNCHED → COMPLETED).
+ */
+export async function completeCampaign(
+  workspaceId: string,
+  campaignId: string,
+  idempotencyKey?: string,
+): Promise<Campaign> {
+  return apiRequest<Campaign>(
+    `${base(workspaceId)}/${encodeURIComponent(campaignId)}/complete`,
+    { method: 'POST', idempotencyKey },
+  );
+}
+
+/**
+ * P2-003: Archive a completed campaign (COMPLETED → ARCHIVED).
+ */
+export async function archiveCampaign(
+  workspaceId: string,
+  campaignId: string,
+  idempotencyKey?: string,
+): Promise<Campaign> {
+  return apiRequest<Campaign>(
+    `${base(workspaceId)}/${encodeURIComponent(campaignId)}/archive`,
+    { method: 'POST', idempotencyKey },
+  );
+}
+
+/**
+ * P2-003: Rollback an active campaign to DRAFT (feature-flagged).
+ */
+export async function rollbackCampaign(
+  workspaceId: string,
+  campaignId: string,
+  idempotencyKey?: string,
+): Promise<Campaign> {
+  return apiRequest<Campaign>(
+    `${base(workspaceId)}/${encodeURIComponent(campaignId)}/rollback`,
+    { method: 'POST', idempotencyKey },
+  );
+}
+
+/**
+ * P2-003: Duplicate a campaign as a new DRAFT with the given name.
+ */
+export async function duplicateCampaign(
+  workspaceId: string,
+  campaignId: string,
+  newName: string,
+  idempotencyKey?: string,
+): Promise<Campaign> {
+  return apiRequest<Campaign>(
+    `${base(workspaceId)}/${encodeURIComponent(campaignId)}/duplicate`,
+    { method: 'POST', body: { name: newName }, idempotencyKey },
+  );
+}

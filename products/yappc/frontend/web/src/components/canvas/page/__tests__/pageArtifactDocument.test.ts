@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  appendPageArtifactOperationRecord,
   createAIChangeRecord,
   AIActionLineageTracker,
   createPageArtifactDocument,
@@ -130,5 +131,57 @@ describe('createPageArtifactDocument', () => {
       source: 'decompiled',
     });
     expect(doc.source).toBe('decompiled');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Page artifact operation log
+// ---------------------------------------------------------------------------
+
+describe('appendPageArtifactOperationRecord', () => {
+  it('adds artifact-scoped operation records for canvas/page-builder changes', () => {
+    const doc = createPageArtifactDocument({ artifactId: 'art-ops', name: 'Ops Page', createdBy: 'dev' });
+
+    const updated = appendPageArtifactOperationRecord(doc, {
+      operation: 'document-update',
+      status: 'pending',
+      actor: 'user-1',
+      summary: 'Updated the page document',
+      phase: 'shape',
+      metadata: {
+        valid: true,
+        warningCount: 0,
+      },
+      createdAt: '2026-05-06T10:00:00.000Z',
+    });
+
+    expect(updated.operationLog).toHaveLength(1);
+    expect(updated.operationLog?.[0]).toMatchObject({
+      id: 'art-ops:document-update:2026-05-06T10:00:00.000Z',
+      artifactId: 'art-ops',
+      documentId: doc.documentId,
+      operation: 'document-update',
+      status: 'pending',
+      actor: 'user-1',
+      phase: 'shape',
+    });
+  });
+
+  it('keeps the operation log bounded to the latest 100 records', () => {
+    const doc = createPageArtifactDocument({ artifactId: 'art-bounded', name: 'Bounded Page', createdBy: 'dev' });
+    const withOperations = Array.from({ length: 105 }).reduce(
+      (current, _entry, index) =>
+        appendPageArtifactOperationRecord(current, {
+          operation: 'persist-success',
+          status: 'succeeded',
+          actor: 'sync',
+          summary: `Persisted ${index}`,
+          createdAt: `2026-05-06T10:${String(index).padStart(2, '0')}:00.000Z`,
+        }),
+      doc,
+    );
+
+    expect(withOperations.operationLog).toHaveLength(100);
+    expect(withOperations.operationLog?.[0]?.summary).toBe('Persisted 5');
   });
 });

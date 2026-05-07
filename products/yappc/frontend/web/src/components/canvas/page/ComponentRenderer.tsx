@@ -13,6 +13,16 @@ registerBuiltInRenderers();
 
 const DND_COMPONENT_MIME = 'application/x-page-component';
 const DND_NODE_MIME = 'application/x-page-node';
+const PAGE_RENDERER_TOKENS = {
+  selectionBorder: 'var(--color-primary-600, var(--accent, #2563eb))',
+  dropActiveBackground: 'var(--color-primary-100, var(--accent-soft, #dbeafe))',
+  dropIdleBorder: 'var(--color-border-subtle, var(--border-subtle, #cbd5e1))',
+  dropIdleBackground: 'var(--color-surface-muted, var(--surface-subtle, #f1f5f9))',
+  textMuted: 'var(--color-text-muted, var(--text-muted, #334155))',
+  dangerBorder: 'var(--color-destructive-border, #ef4444)',
+  dangerBackground: 'var(--color-destructive-bg, #fef2f2)',
+  dangerText: 'var(--color-destructive, #991b1b)',
+} as const;
 
 type DropPlacement = 'before' | 'after' | 'slot';
 
@@ -27,6 +37,13 @@ export interface DropRequest {
   readonly slotName?: string;
 }
 
+export type KeyboardMoveDirection = 'previous' | 'next' | 'out';
+
+export interface KeyboardMoveRequest {
+  readonly nodeId: NodeId;
+  readonly direction: KeyboardMoveDirection;
+}
+
 export function getRegisteredRenderContractNames(): ReadonlySet<string> {
   return rendererManifestRegistry.getRegisteredContractNames();
 }
@@ -35,10 +52,12 @@ export interface ComponentRendererProps {
   readonly document: BuilderDocument;
   readonly nodeId: NodeId;
   readonly selectedNodeId?: string | null;
+  readonly hoveredNodeId?: string | null;
   readonly onSelect?: (nodeId: string) => void;
   readonly onNodeClick?: (nodeId: string, coordinates: { readonly x: number; readonly y: number }) => void;
   readonly onNodeHover?: (nodeId: string | null) => void;
   readonly onDropRequest?: (request: DropRequest) => void;
+  readonly onKeyboardMoveRequest?: (request: KeyboardMoveRequest) => void;
 }
 
 function readDropSource(event: React.DragEvent<HTMLElement>): DropSource | null {
@@ -55,9 +74,13 @@ function readDropSource(event: React.DragEvent<HTMLElement>): DropSource | null 
   return null;
 }
 
-function getSelectionStyle(isSelected: boolean): React.CSSProperties {
+function getSelectionStyle(isSelected: boolean, isHovered: boolean): React.CSSProperties {
   return {
-    outline: isSelected ? '2px solid var(--accent, #2563eb)' : '1px solid transparent',
+    outline: isSelected
+      ? `2px solid ${PAGE_RENDERER_TOKENS.selectionBorder}`
+      : isHovered
+        ? `2px dashed ${PAGE_RENDERER_TOKENS.selectionBorder}`
+        : '1px solid transparent',
     outlineOffset: '2px',
     cursor: 'pointer',
     borderRadius: 8,
@@ -90,7 +113,15 @@ function renderInstance(
   }
 
   return (
-    <div style={{ padding: 16, border: '2px dashed #ef4444', borderRadius: 8 }}>
+    <div
+      style={{
+        padding: 16,
+        border: `2px dashed ${PAGE_RENDERER_TOKENS.dangerBorder}`,
+        borderRadius: 8,
+        backgroundColor: PAGE_RENDERER_TOKENS.dangerBackground,
+        color: PAGE_RENDERER_TOKENS.dangerText,
+      }}
+    >
       Unknown component contract: {instance.contractName}
     </div>
   );
@@ -100,10 +131,12 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
   document,
   nodeId,
   selectedNodeId,
+  hoveredNodeId,
   onSelect,
   onNodeClick,
   onNodeHover,
   onDropRequest,
+  onKeyboardMoveRequest,
 }) => {
   const instance = document.nodes.get(nodeId);
   const [activeDropZone, setActiveDropZone] = useState<string | null>(null);
@@ -157,16 +190,19 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
         document={document}
         nodeId={childId}
         selectedNodeId={selectedNodeId}
+        hoveredNodeId={hoveredNodeId}
         onSelect={onSelect}
         onNodeClick={onNodeClick}
         onNodeHover={onNodeHover}
         onDropRequest={onDropRequest}
+        onKeyboardMoveRequest={onKeyboardMoveRequest}
       />
     ));
   };
 
   const slotDefault = renderSlot(instance.slots.default);
   const slotActions = renderSlot(instance.slots.actions);
+  const isHovered = hoveredNodeId === nodeId && !isSelected;
 
   return (
     <Box className="relative" data-builder-node-id={nodeId}>
@@ -174,7 +210,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
         data-testid={`${testId}-drop-before`}
         className="h-2 rounded"
         style={{
-          backgroundColor: activeDropZone === 'before' ? 'rgba(25,118,210,0.18)' : 'transparent',
+          backgroundColor: activeDropZone === 'before' ? PAGE_RENDERER_TOKENS.dropActiveBackground : 'transparent',
         }}
         onDragOver={(event) => {
           event.preventDefault();
@@ -185,9 +221,13 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
       />
 
       <div
-        style={getSelectionStyle(isSelected)}
+        style={getSelectionStyle(isSelected, isHovered)}
         data-testid={testId}
+        data-preview-hovered={isHovered ? 'true' : undefined}
         draggable
+        tabIndex={0}
+        role="treeitem"
+        aria-label={`${instance.contractName} component. Use Alt+ArrowUp or Alt+ArrowDown to reorder, Alt+ArrowLeft to move out of a container.`}
         onDragStart={(event) => {
           event.dataTransfer.setData(DND_NODE_MIME, nodeId);
           event.dataTransfer.effectAllowed = 'move';
@@ -199,6 +239,22 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
         }}
         onMouseEnter={() => onNodeHover?.(nodeId)}
         onMouseLeave={() => onNodeHover?.(null)}
+        onKeyDown={(event) => {
+          if (!event.altKey || !onKeyboardMoveRequest) {
+            return;
+          }
+
+          if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            onKeyboardMoveRequest({ nodeId, direction: 'previous' });
+          } else if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            onKeyboardMoveRequest({ nodeId, direction: 'next' });
+          } else if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            onKeyboardMoveRequest({ nodeId, direction: 'out' });
+          }
+        }}
       >
         {renderInstance(instance, { default: slotDefault, actions: slotActions }, { mode: 'canvas', selectedNodeId })}
 
@@ -222,7 +278,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
         data-testid={`${testId}-drop-after`}
         className="h-2 rounded"
         style={{
-          backgroundColor: activeDropZone === 'after' ? 'rgba(25,118,210,0.18)' : 'transparent',
+          backgroundColor: activeDropZone === 'after' ? PAGE_RENDERER_TOKENS.dropActiveBackground : 'transparent',
         }}
         onDragOver={(event) => {
           event.preventDefault();
@@ -238,9 +294,9 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
 interface StackedSlotTargetsProps {
   readonly slotNames: readonly string[];
   readonly activeDropZone: string | null;
-  readonly onDragOver: (event: React.DragEvent<HTMLDivElement>, slotName: string) => void;
+  readonly onDragOver: (event: React.DragEvent<HTMLElement>, slotName: string) => void;
   readonly onDragLeave: (slotName: string) => void;
-  readonly onDrop: (event: React.DragEvent<HTMLDivElement>, slotName: string) => void;
+  readonly onDrop: (event: React.DragEvent<HTMLElement>, slotName: string) => void;
 }
 
 const StackedSlotTargets: React.FC<StackedSlotTargetsProps> = ({
@@ -266,10 +322,10 @@ const StackedSlotTargets: React.FC<StackedSlotTargetsProps> = ({
             data-testid={`slot-drop-${slotName}`}
             className="rounded border border-dashed px-2 py-1"
             style={{
-              borderColor: isActive ? 'var(--accent, #2563eb)' : 'var(--border-subtle, #cbd5e1)',
-              backgroundColor: isActive ? 'var(--accent-soft, #dbeafe)' : 'var(--surface-subtle, #f1f5f9)',
+              borderColor: isActive ? PAGE_RENDERER_TOKENS.selectionBorder : PAGE_RENDERER_TOKENS.dropIdleBorder,
+              backgroundColor: isActive ? PAGE_RENDERER_TOKENS.dropActiveBackground : PAGE_RENDERER_TOKENS.dropIdleBackground,
               fontSize: '0.75rem',
-              color: 'var(--text-muted, #334155)',
+              color: PAGE_RENDERER_TOKENS.textMuted,
             }}
             onDragOver={(event) => onDragOver(event, slotName)}
             onDragLeave={() => onDragLeave(slotName)}

@@ -24,20 +24,24 @@
 
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Handle, Position, NodeResizer, type Node, type NodeProps } from '@xyflow/react';
-import { Box, Button, IconButton, Typography } from '@ghatana/design-system';
+import { Box, Button, IconButton, TextArea, Typography } from '@ghatana/design-system';
 import { Maximize2 as ExpandIcon, Minimize2 as CollapseIcon, Layout as PageIcon } from 'lucide-react';
-import { useSetAtom } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { useParams } from 'react-router';
 import { usePhaseContext } from '@/context';
 import { getPhaseCanvasConfig } from '@/services/canvas/phase-config/PhaseCanvasConfig';
+import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
+import { currentUserAtom } from '@/stores/user.store';
 
 import { PageDesigner } from '@/components/canvas/page/PageDesigner';
 import { LivePreviewPanel } from '@/components/studio/LivePreviewPanel';
 import { AddNodeCommand, executeCommandAtom, UpdateNodeDataCommand } from '../workspace/canvasCommands';
 import {
   appendAIChangeRecord,
+  appendPageArtifactOperationRecord,
   getBuilderDocument,
   getSerializedNodeCount,
+  updateAIChangeRecordReviewState,
   updatePageArtifactDocument,
   type PageArtifactAIChangeRecord,
   type PageArtifactDocument,
@@ -93,8 +97,12 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
 }) => {
   const executeCommand = useSetAtom(executeCommandAtom);
   const { projectId } = useParams<{ projectId: string }>();
+  const currentUser = useAtomValue(currentUserAtom);
+  const currentWorkspaceId = useAtomValue(currentWorkspaceIdAtom);
   const [isExpanded, setIsExpanded] = useState<boolean>(data.expanded ?? false);
   const [previewSelectedNodeId, setPreviewSelectedNodeId] = useState<string | null>(null);
+  const [previewHoveredNodeId, setPreviewHoveredNodeId] = useState<string | null>(null);
+  const [overwriteReason, setOverwriteReason] = useState<string>('');
   const { currentPhase } = usePhaseContext();
   const phaseConfig = useMemo(
     () => (currentPhase ? getPhaseCanvasConfig(currentPhase) : undefined),
@@ -106,13 +114,44 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
   const pagePersistenceAdapter = useMemo(
     () =>
       new ResilientPageArtifactPersistenceAdapter(
-        new HttpPageArtifactPersistenceAdapter(),
+        new HttpPageArtifactPersistenceAdapter({
+          scopeProvider: () => {
+            if (!currentUser?.tenantId || !currentWorkspaceId || !projectId) {
+              return null;
+            }
+
+            return {
+              tenantId: currentUser.tenantId,
+              workspaceId: currentWorkspaceId,
+              projectId,
+            };
+          },
+        }),
         new LocalStoragePageArtifactPersistenceAdapter('@ghatana/yappc:page-builder:'),
       ),
-    [],
+    [currentUser?.tenantId, currentWorkspaceId, projectId],
   );
 
   const nodeCount = getSerializedNodeCount(data.pageDocument);
+  const operationActor = currentUser?.id ?? 'page-designer';
+  const appendOperation = useCallback(
+    (
+      pageDocument: PageArtifactDocument,
+      operation: Parameters<typeof appendPageArtifactOperationRecord>[1]['operation'],
+      status: Parameters<typeof appendPageArtifactOperationRecord>[1]['status'],
+      summary: string,
+      metadata?: Parameters<typeof appendPageArtifactOperationRecord>[1]['metadata'],
+    ): PageArtifactDocument =>
+      appendPageArtifactOperationRecord(pageDocument, {
+        operation,
+        status,
+        actor: operationActor,
+        summary,
+        phase: currentPhase ?? undefined,
+        metadata,
+      }),
+    [currentPhase, operationActor],
+  );
 
   useEffect(() => {
     latestPageDocumentRef.current = data.pageDocument;
@@ -156,10 +195,15 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
               id,
               { pageDocument: latest } as Record<string, unknown>,
               {
-                pageDocument: {
-                  ...latest,
-                  syncStatus: 'synced',
-                },
+                pageDocument: appendOperation(
+                  {
+                    ...latest,
+                    syncStatus: 'synced',
+                  },
+                  'persist-success',
+                  'succeeded',
+                  'Persisted page document to the scoped artifact store.',
+                ),
               } as Record<string, unknown>,
               'Persist page document',
             ),
@@ -172,19 +216,29 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
           }
 
           // For conflict errors, mark as error so the user sees it and can reload.
-          const nextStatus = isConflictError(err) ? 'error' : 'offline';
+          const conflict = isConflictError(err);
+          const nextStatus = conflict ? 'error' : 'offline';
+          const errorMessage = err instanceof Error ? err.message : 'Unknown persistence error';
 
           executeCommand(
             new UpdateNodeDataCommand(
               id,
               { pageDocument: latest } as Record<string, unknown>,
               {
-                pageDocument: {
-                  ...latest,
-                  syncStatus: nextStatus,
-                },
+                pageDocument: appendOperation(
+                  {
+                    ...latest,
+                    syncStatus: nextStatus,
+                  },
+                  conflict ? 'persist-conflict' : 'persist-offline',
+                  conflict ? 'requires-review' : 'failed',
+                  conflict
+                    ? 'Detected a newer remote page document version during persistence.'
+                    : 'Page document could not be persisted to the server and remains local/offline.',
+                  { errorMessage },
+                ),
               } as Record<string, unknown>,
-              isConflictError(err)
+              conflict
                 ? 'Persist page document (conflict — remote version newer)'
                 : 'Persist page document (offline fallback)',
             ),
@@ -198,7 +252,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
         saveTimerRef.current = null;
       }
     };
-  }, [data.pageDocument, executeCommand, id, pagePersistenceAdapter]);
+  }, [appendOperation, data.pageDocument, executeCommand, id, pagePersistenceAdapter]);
 
   const handleToggleExpand = useCallback(
     (e: React.MouseEvent) => {
@@ -227,7 +281,17 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
             validationSummary: data.validationSummary,
           } as Record<string, unknown>,
           {
-            pageDocument,
+              pageDocument: appendOperation(
+                pageDocument,
+                'document-update',
+                validation.valid ? 'pending' : 'requires-review',
+                'Updated page builder document from in-canvas editor.',
+                {
+                  valid: validation.valid,
+                  errorCount: validation.errors.length,
+                  warningCount: validation.warnings.length,
+                },
+              ),
             validationSummary: {
               valid: validation.valid,
               errorCount: validation.errors.length,
@@ -238,7 +302,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
         ),
       );
     },
-    [data.pageDocument, data.validationSummary, executeCommand, id],
+    [appendOperation, data.pageDocument, data.validationSummary, executeCommand, id],
   );
 
   const handleImportArtifacts = useCallback(
@@ -260,7 +324,13 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
           position: { x: nextX, y: nextY },
           data: {
             label: importedDocument?.name ?? `Imported ${index + 2}`,
-            pageDocument: artifact,
+            pageDocument: appendOperation(
+              artifact,
+              'import-page',
+              'succeeded',
+              'Created an additional page designer node from imported multi-page artifact.',
+              { sourceIndex: index + 2 },
+            ),
             expanded: false,
             validationSummary: artifact.validationSummary,
           },
@@ -278,7 +348,16 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
         return;
       }
 
-      const updatedPageDocument = appendAIChangeRecord(data.pageDocument, record);
+      const updatedPageDocument = appendOperation(
+        appendAIChangeRecord(data.pageDocument, record),
+        'governance-record',
+        record.lineage.reviewState === 'pending' ? 'requires-review' : 'succeeded',
+        'Recorded page builder governance lineage for an assisted document change.',
+        {
+          confidence: record.lineage.confidence,
+          affectedNodeCount: record.lineage.affectedNodeIds.length,
+        },
+      );
       executeCommand(
         new UpdateNodeDataCommand(
           id,
@@ -288,7 +367,39 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
         ),
       );
     },
-    [data.pageDocument, executeCommand, id],
+    [appendOperation, data.pageDocument, executeCommand, id],
+  );
+
+  const handleAIReviewDecision = useCallback(
+    (actionId: string, decision: 'accepted' | 'rejected') => {
+      if (!data.pageDocument) {
+        return;
+      }
+
+      const updatedPageDocument = appendOperation(
+        {
+          ...updateAIChangeRecordReviewState(data.pageDocument, actionId, decision),
+          syncStatus: 'dirty',
+        },
+        'governance-record',
+        decision === 'accepted' ? 'succeeded' : 'requires-review',
+        `Recorded ${decision} review decision for automation change.`,
+        {
+          actionId,
+          decision,
+        },
+      );
+
+      executeCommand(
+        new UpdateNodeDataCommand(
+          id,
+          { pageDocument: data.pageDocument } as Record<string, unknown>,
+          { pageDocument: updatedPageDocument } as Record<string, unknown>,
+          'Record automation review decision',
+        ),
+      );
+    },
+    [appendOperation, data.pageDocument, executeCommand, id],
   );
 
   const handleReloadFromServer = useCallback(async () => {
@@ -306,18 +417,28 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
         id,
         { pageDocument: data.pageDocument } as Record<string, unknown>,
         {
-          pageDocument: {
-            ...loaded,
-            syncStatus: 'synced',
-          },
+            pageDocument: appendOperation(
+              {
+                ...loaded,
+                syncStatus: 'synced',
+              },
+              'reload-remote',
+              'succeeded',
+              'Reloaded the remote page document to resolve local conflict state.',
+            ),
         } as Record<string, unknown>,
         'Reload page document from server',
       ),
     );
-  }, [data.pageDocument, executeCommand, id, pagePersistenceAdapter]);
+  }, [appendOperation, data.pageDocument, executeCommand, id, pagePersistenceAdapter]);
 
-  const handleForceSave = useCallback(async () => {
+  const handleOverwriteRemote = useCallback(async () => {
     if (!data.pageDocument) {
+      return;
+    }
+
+    const auditReason = overwriteReason.trim();
+    if (auditReason.length < 8) {
       return;
     }
 
@@ -333,15 +454,22 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
         id,
         { pageDocument: data.pageDocument } as Record<string, unknown>,
         {
-          pageDocument: {
-            ...forceDocument,
-            syncStatus: 'synced',
-          },
+          pageDocument: appendOperation(
+            {
+              ...forceDocument,
+              syncStatus: 'synced',
+            },
+            'overwrite-remote',
+            'requires-review',
+            'Overwrote remote page document after an explicit conflict action.',
+            { auditReason },
+          ),
         } as Record<string, unknown>,
-        'Force save page document',
+        'Overwrite remote page document with audit reason',
       ),
     );
-  }, [data.pageDocument, executeCommand, id, pagePersistenceAdapter]);
+    setOverwriteReason('');
+  }, [appendOperation, data.pageDocument, executeCommand, id, overwriteReason, pagePersistenceAdapter]);
 
   const borderColor = selected ? 'var(--color-primary-500, #6366f1)' : 'var(--color-border, #d1d5db)';
 
@@ -446,26 +574,56 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
             <Box className="min-w-0 flex-1 overflow-hidden">
               {data.pageDocument?.syncStatus === 'error' ? (
                 <Box className="m-3 rounded-lg border border-destructive-border bg-destructive-bg p-3">
-                  <Typography variant="caption" style={{ display: 'block', marginBottom: 8 }}>
-                    Save conflict detected. The remote version is newer.
-                  </Typography>
-                  <Box className="flex gap-2">
-                    <Button variant="outline" size="small" onClick={() => void handleReloadFromServer()}>
-                      Reload
-                    </Button>
-                    <Button variant="solid" size="small" onClick={() => void handleForceSave()}>
-                      Force Save
-                    </Button>
-                  </Box>
+                    <Typography variant="caption" style={{ display: 'block', marginBottom: 8 }}>
+                      Save conflict detected. The remote version is newer. Reload the remote version, or provide an audit reason before overwriting it.
+                    </Typography>
+                    <TextArea
+                      value={overwriteReason}
+                      onChange={(event) => setOverwriteReason(event.target.value)}
+                      rows={2}
+                      aria-label="Overwrite audit reason"
+                      placeholder="Why is overwriting the remote version safe?"
+                      data-testid="page-conflict-overwrite-reason"
+                      className="mb-2 w-full text-xs"
+                    />
+                    <Box className="flex gap-2">
+                      <Button variant="outline" size="small" onClick={() => void handleReloadFromServer()}>
+                        Reload remote
+                      </Button>
+                      <Button
+                        variant="solid"
+                        size="small"
+                        onClick={() => void handleOverwriteRemote()}
+                        disabled={overwriteReason.trim().length < 8}
+                      >
+                        Overwrite with reason
+                      </Button>
+                    </Box>
                 </Box>
               ) : null}
               <PageDesigner
                 initialComponents={builderDocument}
-                 externalSelectedNodeId={previewSelectedNodeId}
+                projectId={projectId}
+                externalSelectedNodeId={previewSelectedNodeId}
+                externalHoveredNodeId={previewHoveredNodeId}
                 onImportArtifacts={handleImportArtifacts}
                 onAIChangeRecord={handleAIChangeRecord}
+                onAIReviewDecision={handleAIReviewDecision}
                 onSelectionChange={setPreviewSelectedNodeId}
+                onHoverChange={setPreviewHoveredNodeId}
                 phaseConfig={phaseConfig}
+                auditContext={
+                  currentUser?.id && currentUser.tenantId && currentWorkspaceId && projectId
+                    ? {
+                        userId: currentUser.id,
+                        tenantId: currentUser.tenantId,
+                        workspaceId: currentWorkspaceId,
+                        projectId,
+                        artifactId: data.pageDocument?.artifactId,
+                        phase: currentPhase ?? undefined,
+                      }
+                    : undefined
+                }
                 onDocumentChange={(document, validation) => {
                   if (!data.pageDocument) {
                     return;
@@ -497,6 +655,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
                 validation={data.validationSummary}
                 selectedNodeId={previewSelectedNodeId}
                 onElementClick={setPreviewSelectedNodeId}
+                onElementHover={setPreviewHoveredNodeId}
               />
             </Box>
           </Box>

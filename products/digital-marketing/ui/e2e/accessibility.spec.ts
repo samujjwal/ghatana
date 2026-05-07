@@ -66,6 +66,28 @@ test.describe('P2-004: Accessibility Tests', () => {
     expect(accessibilityScanResults.violations).toEqual([]);
   });
 
+  test('P2-002: Budget page should be accessible (WCAG 2A/2AA)', async ({ page }) => {
+    await page.goto(`/workspaces/${TEST_WORKSPACE}/budget`);
+    await page.waitForSelector('[data-testid="budget-page"]', { timeout: 5000 });
+
+    const accessibilityScanResults = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .analyze();
+
+    expect(accessibilityScanResults.violations).toEqual([]);
+  });
+
+  test('P2-002: AI actions page should be accessible (WCAG 2A/2AA)', async ({ page }) => {
+    await page.goto(`/workspaces/${TEST_WORKSPACE}/ai-actions`);
+    await page.waitForSelector('[data-testid="ai-actions-page"]', { timeout: 5000 });
+
+    const accessibilityScanResults = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .analyze();
+
+    expect(accessibilityScanResults.violations).toEqual([]);
+  });
+
   test('P2-004: All buttons should have accessible names', async ({ page }) => {
     await page.goto(`/workspaces/${TEST_WORKSPACE}/campaigns`);
 

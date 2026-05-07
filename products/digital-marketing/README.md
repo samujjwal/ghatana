@@ -148,7 +148,7 @@ Standard error codes: `400` bad request / missing header, `403` not authorised, 
 | UI (E2E) | ⚠️ Partial | Playwright config and core E2E tests exist; CI wiring pending |
 | Persistence | ✅ Ready | PostgreSQL adapters implemented in dm-persistence with full migration support |
 | Google Ads connector | ⚠️ Partial | HTTP adapters complete; event-loop blocking mitigation and command/workflow wiring pending |
-| Observability (OTel) | ⚠️ Partial | Structured log-based metrics exist; OpenTelemetry traces/metrics not yet wired |
+| Observability (OTel) | ✅ Complete | OTLP gRPC exporter wired in production/staging (`OTEL_EXPORTER_OTLP_ENDPOINT` or `OTEL_COLLECTOR_ENDPOINT`); correlation IDs propagated UI → API span attributes; `DmosTelemetry` instruments all HTTP, command, and connector flows |
 | Privacy/security | ⚠️ Partial | Rate limiting, tenant isolation, header enforcement in place; PII model and token hardening pending |
 | Approval workflow | ✅ Ready | Full UI + API + plugin integration; snapshot, decide, audit trail |
 | AI action transparency | ✅ Ready | AI action log persisted and surfaced in UI |

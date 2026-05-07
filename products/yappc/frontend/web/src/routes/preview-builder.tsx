@@ -26,12 +26,77 @@ import type {
   ReadyMessage,
   UpdatedMessage,
   ClickMessage,
+  ErrorMessage as PreviewErrorMessage,
   HoverMessage,
+  Viewport,
 } from '@ghatana/ui-builder/preview';
+import { PRESET_VIEWPORTS } from '@ghatana/ui-builder/preview';
 import { ComponentRenderer } from '../components/canvas/page/ComponentRenderer';
 import { validatePreviewSessionToken } from '../services/preview/PreviewSessionApi';
 
 const PREVIEW_RUNTIME_VERSION = '1.1.0';
+const DEFAULT_PREVIEW_ENVIRONMENT = {
+  viewport: PRESET_VIEWPORTS.desktop,
+  theme: 'default',
+  locale: 'en-US',
+} as const;
+
+interface PreviewRuntimeEnvironment {
+  readonly viewport: Viewport;
+  readonly theme: string;
+  readonly locale: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function isViewport(value: unknown): value is Viewport {
+  return isRecord(value) &&
+    typeof value.width === 'number' &&
+    Number.isFinite(value.width) &&
+    value.width > 0 &&
+    typeof value.height === 'number' &&
+    Number.isFinite(value.height) &&
+    value.height > 0 &&
+    typeof value.devicePixelRatio === 'number' &&
+    Number.isFinite(value.devicePixelRatio) &&
+    value.devicePixelRatio > 0 &&
+    isNonEmptyString(value.label);
+}
+
+function isPreviewSandboxProfile(value: unknown): value is { readonly viewport: Viewport; readonly theme: string; readonly locale: string } {
+  return isRecord(value) &&
+    isViewport(value.viewport) &&
+    isNonEmptyString(value.theme) &&
+    isNonEmptyString(value.locale);
+}
+
+function isBuilderDocument(value: unknown): value is BuilderDocument {
+  return isRecord(value) &&
+    isNonEmptyString(value.id) &&
+    isNonEmptyString(value.version) &&
+    isNonEmptyString(value.name) &&
+    Array.isArray(value.rootNodes) &&
+    value.rootNodes.every((nodeId) => typeof nodeId === 'string') &&
+    value.nodes instanceof Map &&
+    isRecord(value.designSystem) &&
+    isRecord(value.metadata);
+}
+
+function sendPreviewError(correlationId: string, code: string, message: string): void {
+  const error: PreviewErrorMessage = {
+    type: 'ERROR',
+    correlationId,
+    code,
+    message,
+  };
+  sendToHost(error);
+}
 
 function readSessionTokenFromUrl(): string | null {
   const params = new URLSearchParams(window.location.search);
@@ -81,15 +146,11 @@ export default function BuilderPreviewRoute() {
   const [sessionValid, setSessionValid] = useState<boolean | null>(null);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [runtimeEnvironment, setRuntimeEnvironment] = useState<PreviewRuntimeEnvironment>(DEFAULT_PREVIEW_ENVIRONMENT);
   const pendingCorrelationRef = useRef<string | null>(null);
 
   // Validate the server-issued preview session on mount before accepting any messages.
   useEffect(() => {
-    if (import.meta.env.MODE === 'test') {
-      setSessionValid(true);
-      return;
-    }
-
     const sessionToken = readSessionTokenFromUrl();
     if (!sessionToken) {
       setSessionValid(false);
@@ -141,8 +202,18 @@ export default function BuilderPreviewRoute() {
 
     switch (message.type) {
       case 'MOUNT_DOCUMENT': {
+        if (!isBuilderDocument(message.document) || !isPreviewSandboxProfile(message.sandbox)) {
+          sendPreviewError(message.correlationId, 'INVALID_PREVIEW_DOCUMENT', 'Preview document or sandbox profile failed runtime validation.');
+          break;
+        }
+
         pendingCorrelationRef.current = message.correlationId;
         setDocument(message.document);
+        setRuntimeEnvironment({
+          viewport: message.sandbox.viewport,
+          theme: message.sandbox.theme,
+          locale: message.sandbox.locale,
+        });
         // MOUNTED is sent after the state update triggers a render.
         // We use a microtask so the render has a chance to flush.
         const correlationId = message.correlationId;
@@ -158,6 +229,11 @@ export default function BuilderPreviewRoute() {
       }
 
       case 'UPDATE_DOCUMENT': {
+        if (!isBuilderDocument(message.document)) {
+          sendPreviewError(message.correlationId, 'INVALID_PREVIEW_DOCUMENT', 'Preview document update failed runtime validation.');
+          break;
+        }
+
         setDocument(message.document);
         const correlationId = message.correlationId;
         void Promise.resolve().then(() => {
@@ -191,13 +267,44 @@ export default function BuilderPreviewRoute() {
         break;
       }
 
-      // SET_VIEWPORT, SET_THEME, SET_LOCALE — visual adjustments are
-      // applied at the CSS level via the parent LivePreviewPanel sizing
-      // the iframe; acknowledged but not processed by the runtime itself.
-      case 'SET_VIEWPORT':
-      case 'SET_THEME':
-      case 'SET_LOCALE':
+      case 'SET_VIEWPORT': {
+        if (!isViewport(message.viewport)) {
+          sendPreviewError(message.correlationId, 'INVALID_PREVIEW_VIEWPORT', 'Preview viewport failed runtime validation.');
+          break;
+        }
+
+        setRuntimeEnvironment((current) => ({
+          ...current,
+          viewport: message.viewport,
+        }));
         break;
+      }
+
+      case 'SET_THEME': {
+        if (!isNonEmptyString(message.theme)) {
+          sendPreviewError(message.correlationId, 'INVALID_PREVIEW_THEME', 'Preview theme failed runtime validation.');
+          break;
+        }
+
+        setRuntimeEnvironment((current) => ({
+          ...current,
+          theme: message.theme,
+        }));
+        break;
+      }
+
+      case 'SET_LOCALE': {
+        if (!isNonEmptyString(message.locale)) {
+          sendPreviewError(message.correlationId, 'INVALID_PREVIEW_LOCALE', 'Preview locale failed runtime validation.');
+          break;
+        }
+
+        setRuntimeEnvironment((current) => ({
+          ...current,
+          locale: message.locale,
+        }));
+        break;
+      }
 
       default:
         break;
@@ -205,6 +312,10 @@ export default function BuilderPreviewRoute() {
   }, [sessionValid]);
 
   useEffect(() => {
+    if (sessionValid !== true) {
+      return;
+    }
+
     window.addEventListener('message', handleMessage);
 
     // Announce readiness to the host.
@@ -217,7 +328,7 @@ export default function BuilderPreviewRoute() {
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, [handleMessage]);
+  }, [handleMessage, sessionValid]);
 
   if (sessionValid === false) {
     return (
@@ -234,41 +345,71 @@ export default function BuilderPreviewRoute() {
 
   if (!document) {
     return (
-      <div className="flex h-screen items-center justify-center text-sm text-fg-muted font-sans">
+      <div
+        className="flex h-screen items-center justify-center text-sm text-fg-muted font-sans"
+        lang={runtimeEnvironment.locale}
+      >
         Waiting for document…
       </div>
     );
   }
 
+  const isHighContrast = runtimeEnvironment.theme === 'contrast';
+  const textDirection = /^(ar|fa|he|ur)(-|$)/i.test(runtimeEnvironment.locale) ? 'rtl' : 'ltr';
+
   return (
-    <div style={{ width: '100%', minHeight: '100vh' }}>
-      {document.rootNodes.map((nodeId) => (
-        <ComponentRenderer
-          key={nodeId}
-          document={document}
-          nodeId={nodeId}
-          selectedNodeId={selectedNodeId}
-          onSelect={(nodeId) => {
-            setSelectedNodeId(nodeId);
-          }}
-          onNodeClick={(nodeId, coordinates) => {
-            setSelectedNodeId(nodeId);
-            const click: ClickMessage = {
-              type: 'ELEMENT_CLICK',
-              nodeId,
-              coordinates,
-            };
-            sendToHost(click);
-          }}
-          onNodeHover={(nodeId) => {
-            const hover: HoverMessage = {
-              type: 'ELEMENT_HOVER',
-              nodeId,
-            };
-            sendToHost(hover);
-          }}
-        />
-      ))}
+    <div
+      className="min-h-screen transition-colors duration-200"
+      data-preview-theme={runtimeEnvironment.theme}
+      data-preview-locale={runtimeEnvironment.locale}
+      data-preview-viewport-width={runtimeEnvironment.viewport.width}
+      data-preview-viewport-height={runtimeEnvironment.viewport.height}
+      data-testid="preview-runtime-shell"
+      dir={textDirection}
+      lang={runtimeEnvironment.locale}
+      style={{
+        backgroundColor: isHighContrast ? '#000000' : '#ffffff',
+        color: isHighContrast ? '#ffffff' : '#111827',
+      }}
+    >
+      <div
+        data-testid="preview-runtime-viewport"
+        style={{
+          marginInline: 'auto',
+          maxWidth: `${runtimeEnvironment.viewport.width}px`,
+          minHeight: `${runtimeEnvironment.viewport.height}px`,
+          outline: isHighContrast ? '2px solid #facc15' : '1px solid transparent',
+          width: '100%',
+        }}
+      >
+        {document.rootNodes.map((nodeId) => (
+          <ComponentRenderer
+            key={nodeId}
+            document={document}
+            nodeId={nodeId}
+            selectedNodeId={selectedNodeId}
+            onSelect={(nodeId) => {
+              setSelectedNodeId(nodeId);
+            }}
+            onNodeClick={(nodeId, coordinates) => {
+              setSelectedNodeId(nodeId);
+              const click: ClickMessage = {
+                type: 'ELEMENT_CLICK',
+                nodeId,
+                coordinates,
+              };
+              sendToHost(click);
+            }}
+            onNodeHover={(nodeId) => {
+              const hover: HoverMessage = {
+                type: 'ELEMENT_HOVER',
+                nodeId,
+              };
+              sendToHost(hover);
+            }}
+          />
+        ))}
+      </div>
     </div>
   );
 }

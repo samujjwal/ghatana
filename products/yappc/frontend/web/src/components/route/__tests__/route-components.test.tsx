@@ -8,6 +8,7 @@ import { LoadingSpinner, RouteLoadingSpinner } from '../LoadingSpinner';
 import { HydrateFallback } from '../HydrateFallback';
 import { PlaceholderRoute } from '../PlaceholderRoute';
 import { ApiUnavailableFallback } from '../ApiUnavailableFallback';
+import { LazyFeatureUnavailable } from '../LazyFeatureUnavailable';
 
 // ─── LoadingSpinner ───────────────────────────────────────────────────────────
 
@@ -145,5 +146,24 @@ describe('ApiUnavailableFallback', () => {
     // Should not crash
     const { container } = render(<ApiUnavailableFallback />);
     expect(container.firstChild).toBeTruthy();
+  });
+});
+
+// ─── LazyFeatureUnavailable ──────────────────────────────────────────────────
+
+describe('LazyFeatureUnavailable', () => {
+  it('renders an explicit unavailable state for feature-gated lazy surfaces', () => {
+    render(
+      <LazyFeatureUnavailable
+        title="Guided assistant unavailable"
+        description="This workspace has not enabled the guided canvas assistant yet."
+        testId="feature-unavailable"
+      />,
+    );
+
+    expect(screen.getByTestId('feature-unavailable')).toBeTruthy();
+    expect(screen.getByRole('status')).toBeTruthy();
+    expect(screen.getByText('Guided assistant unavailable')).toBeTruthy();
+    expect(screen.getByText('This workspace has not enabled the guided canvas assistant yet.')).toBeTruthy();
   });
 });

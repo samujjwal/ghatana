@@ -2,6 +2,7 @@ import {
   deserializeDocument,
   insertNode,
   type BuilderDocument,
+  type NodeId,
   type RoundTripFidelity,
   type SerializedDocument,
 } from '@ghatana/ui-builder';
@@ -11,6 +12,7 @@ import {
   createEmptyBuilderDocument,
   createPageArtifactDocument,
   type PageArtifactDocument,
+  type PageArtifactGraphSnapshot,
 } from './pageArtifactDocument';
 
 export interface ImportedSourceArtifactInput {
@@ -26,11 +28,23 @@ export interface ImportedSourceArtifactInput {
    */
   readonly extractedComponents?: ReadonlyArray<{
     readonly name: string;
+    readonly isDefaultExport?: boolean;
     readonly jsxUsage: readonly string[];
     readonly props: ReadonlyArray<{ readonly name: string; readonly type: string; readonly required: boolean; readonly defaultValue?: unknown }>;
     readonly slots: ReadonlyArray<{ readonly name: string; readonly multiple: boolean; readonly required: boolean }>;
+    readonly hooksUsed?: readonly string[];
+    readonly accessibility?: unknown;
+    readonly sourceLocation?: {
+      readonly filePath: string;
+      readonly startLine: number;
+      readonly startColumn: number;
+      readonly endLine: number;
+      readonly endColumn: number;
+    };
   }>;
 }
+
+type ImportedExtractedComponent = NonNullable<ImportedSourceArtifactInput['extractedComponents']>[number];
 
 interface SemanticPageLike {
   readonly id?: string;
@@ -121,6 +135,16 @@ export function compileSemanticModelToPageArtifacts(
       }),
       roundTripFidelity: toRoundTripFidelity(page),
       residualIslandIds,
+      artifactGraph: buildSemanticModelGraphSnapshot({
+        artifactId,
+        projectId: model.id ?? 'semantic-model',
+        source: model.id ?? 'semantic-model',
+        importedAt: new Date().toISOString(),
+        pageName: page.name ?? document.name,
+        residualIslandIds,
+        createdBy,
+        confidence: typeof page.confidence === 'number' ? page.confidence : 0.9,
+      }),
     } satisfies PageArtifactDocument;
   });
 }
@@ -172,9 +196,168 @@ export function compileImportedSourceToPageArtifacts(
         errorCount: 0,
         warningCount: 0,
       },
+      artifactGraph: buildImportedSourceGraphSnapshot({
+        artifactId,
+        projectId: imported.projectId,
+        sourceType: imported.sourceType,
+        source: imported.source,
+        importedAt: imported.importedAt,
+        createdBy,
+        componentName: normalizedName,
+        extractedComponents: imported.extractedComponents ?? [],
+      }),
       updatedAt: imported.importedAt,
     },
   ];
+}
+
+function buildImportedSourceGraphSnapshot(params: {
+  readonly artifactId: string;
+  readonly projectId: string;
+  readonly sourceType: ImportedSourceArtifactInput['sourceType'];
+  readonly source: string;
+  readonly importedAt: string;
+  readonly createdBy: string;
+  readonly componentName: string;
+  readonly extractedComponents: readonly ImportedExtractedComponent[];
+}): PageArtifactGraphSnapshot {
+  const sourceNodeId = `${params.artifactId}:source`;
+  const pageNodeId = `${params.artifactId}:page`;
+  const componentNodes = params.extractedComponents.map((component) => ({
+    id: `${params.artifactId}:component:${component.name}`,
+    kind: 'component' as const,
+    label: component.name,
+    sourceLocation: component.sourceLocation,
+    metadata: {
+      defaultExport: component.isDefaultExport ?? false,
+      propCount: component.props.length,
+      slotCount: component.slots.length,
+      hookCount: component.hooksUsed?.length ?? 0,
+      jsxUsageCount: component.jsxUsage.length,
+      hasAccessibilityMetadata: component.accessibility != null,
+    },
+  }));
+
+  const uniqueReferences = new Set<string>();
+  params.extractedComponents.forEach((component) => {
+    component.jsxUsage.forEach((usage) => uniqueReferences.add(usage));
+  });
+
+  const referenceNodes = [...uniqueReferences]
+    .filter((usage) => !params.extractedComponents.some((component) => component.name === usage))
+    .map((usage) => ({
+      id: `${params.artifactId}:component-ref:${usage}`,
+      kind: 'component' as const,
+      label: usage,
+      metadata: {
+        inferredFromJsxUsage: true,
+      },
+    }));
+
+  const nodes: PageArtifactGraphSnapshot['nodes'] = [
+    {
+      id: sourceNodeId,
+      kind: 'source',
+      label: params.source,
+      metadata: {
+        sourceType: params.sourceType,
+      },
+    },
+    {
+      id: pageNodeId,
+      kind: 'page',
+      label: params.componentName,
+    },
+    ...componentNodes,
+    ...referenceNodes,
+  ];
+
+  const edges: PageArtifactGraphSnapshot['edges'] = [
+    {
+      id: `${params.artifactId}:page-derived-from-source`,
+      from: pageNodeId,
+      to: sourceNodeId,
+      kind: 'derived-from',
+    },
+    ...componentNodes.map((node) => ({
+      id: `${params.artifactId}:page-contains:${node.label}`,
+      from: pageNodeId,
+      to: node.id,
+      kind: 'contains' as const,
+    })),
+    ...referenceNodes.map((node) => ({
+      id: `${params.artifactId}:page-references:${node.label}`,
+      from: pageNodeId,
+      to: node.id,
+      kind: 'references' as const,
+    })),
+  ];
+
+  const confidence = params.extractedComponents.length > 0
+    ? Math.min(0.95, 0.7 + params.extractedComponents.length * 0.05)
+    : 0.55;
+
+  return {
+    graphId: `${params.artifactId}:graph`,
+    projectId: params.projectId,
+    sourceType: params.sourceType,
+    source: params.source,
+    importedAt: params.importedAt,
+    nodes,
+    edges,
+    provenance: {
+      createdBy: params.createdBy,
+      compiler: 'yappc-artifact-compiler',
+      confidence,
+      residualIslandIds: [],
+    },
+  };
+}
+
+function buildSemanticModelGraphSnapshot(params: {
+  readonly artifactId: string;
+  readonly projectId: string;
+  readonly source: string;
+  readonly importedAt: string;
+  readonly pageName: string;
+  readonly residualIslandIds: readonly string[];
+  readonly createdBy: string;
+  readonly confidence: number;
+}): PageArtifactGraphSnapshot {
+  const pageNodeId = `${params.artifactId}:page`;
+  const residualNodes = params.residualIslandIds.map((residualId) => ({
+    id: `${params.artifactId}:residual:${residualId}`,
+    kind: 'residual' as const,
+    label: residualId,
+  }));
+
+  return {
+    graphId: `${params.artifactId}:graph`,
+    projectId: params.projectId,
+    sourceType: 'semantic-model',
+    source: params.source,
+    importedAt: params.importedAt,
+    nodes: [
+      {
+        id: pageNodeId,
+        kind: 'page',
+        label: params.pageName,
+      },
+      ...residualNodes,
+    ],
+    edges: residualNodes.map((node) => ({
+      id: `${params.artifactId}:page-residual:${node.label}`,
+      from: node.id,
+      to: pageNodeId,
+      kind: 'residual-of' as const,
+    })),
+    provenance: {
+      createdBy: params.createdBy,
+      compiler: 'yappc-artifact-compiler',
+      confidence: params.confidence,
+      residualIslandIds: params.residualIslandIds,
+    },
+  };
 }
 
 /**
@@ -217,7 +400,7 @@ function buildDocumentFromExtractedComponents(
   // Determine slot names from the extracted slot schema
   const slotNames = rootExtracted.slots.map((s) => s.name);
   const primarySlot = slotNames[0] ?? 'children';
-  const emptySlots: Record<string, string[]> = {};
+  const emptySlots: Record<string, readonly NodeId[]> = {};
   for (const slotName of slotNames) {
     emptySlots[slotName] = [];
   }
@@ -236,7 +419,10 @@ function buildDocumentFromExtractedComponents(
       bindings: [],
       metadata: {
         name: rootExtracted.name,
-        layout: {},
+        layout: {
+          resizable: true,
+          positionable: true,
+        },
       },
     },
   );
@@ -263,7 +449,10 @@ function buildDocumentFromExtractedComponents(
         bindings: [],
         metadata: {
           name: jsxName,
-          layout: {},
+          layout: {
+            resizable: true,
+            positionable: true,
+          },
         },
       },
       rootNodeId,

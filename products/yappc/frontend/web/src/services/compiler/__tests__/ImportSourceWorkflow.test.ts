@@ -208,7 +208,7 @@ describe('ImportSourceWorkflow', () => {
     expect(await readFile(zipPath)).toBeTruthy();
   });
 
-  it('rejects local file imports unless trusted local access is explicitly enabled', async () => {
+  it('does not read local files in browser import mode without backend orchestration', async () => {
     const projectDir = await createTempProject();
     const componentPath = join(projectDir, 'Banner.tsx');
     await writeFile(componentPath, 'export function Banner() { return <div />; }\n');
@@ -222,7 +222,7 @@ describe('ImportSourceWorkflow', () => {
     expect(result.success).toBe(false);
     expect(result.errors).toEqual(
       expect.arrayContaining([
-        expect.stringContaining('Local source access requires an explicit trusted loader or allowLocalFileAccess'),
+        expect.stringContaining('Server import request failed'),
       ]),
     );
   });
@@ -273,6 +273,89 @@ describe('ImportSourceWorkflow', () => {
       expect(result.success).toBe(true);
       expect(result.componentId).toBe('proj-1/ServerImportedCard');
       expect(result.files[0]?.path).toBe('ServerImportedCard.tsx');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('sends tenant, workspace, and project scope for governed server imports', async () => {
+    const originalFetch = globalThis.fetch;
+    const calls: Array<{ input: RequestInfo | URL; init?: RequestInit }> = [];
+    const serverResponse = {
+      success: true,
+      componentId: 'proj-1/GovernedImport',
+      files: [],
+      warnings: [],
+      errors: [],
+      metadata: {
+        sourceType: 'tsx',
+        source: 'https://example.com/GovernedImport.tsx',
+        importedAt: new Date().toISOString(),
+        componentName: 'GovernedImport',
+        dependencies: [],
+        fileCount: 0,
+        totalSize: 0,
+      },
+    };
+
+    globalThis.fetch = async (input, init) => {
+      calls.push({ input, init });
+      return new Response(JSON.stringify(serverResponse), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    };
+
+    try {
+      const result = await importFromSource({
+        sourceType: 'tsx',
+        source: 'https://example.com/GovernedImport.tsx',
+        projectId: 'proj-1',
+        options: {
+          requireServerImport: true,
+          tenantId: 'tenant-1',
+          workspaceId: 'workspace-1',
+        },
+      });
+
+      expect(result.success).toBe(true);
+      expect(calls[0]?.input).toBe('/api/v1/yappc/artifact/import-source');
+      expect(calls[0]?.init).toMatchObject({
+        method: 'POST',
+        credentials: 'same-origin',
+      });
+      expect(calls[0]?.init?.headers).toMatchObject({
+        'X-Tenant-ID': 'tenant-1',
+        'X-Workspace-ID': 'workspace-1',
+        'X-Project-ID': 'proj-1',
+      });
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('does not fall back to local browser import when governed server import is unavailable', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ message: 'Not implemented' }), {
+        status: 501,
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+    try {
+      const result = await importFromSource({
+        sourceType: 'tsx',
+        source: 'https://example.com/MissingBackend.tsx',
+        projectId: 'proj-1',
+        options: {
+          requireServerImport: true,
+          tenantId: 'tenant-1',
+          workspaceId: 'workspace-1',
+        },
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.errors[0]).toContain('Server import request failed');
     } finally {
       globalThis.fetch = originalFetch;
     }

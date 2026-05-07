@@ -73,7 +73,7 @@ public final class IntakeAbuseControlServiceImpl implements IntakeAbuseControlSe
                     k -> new RateLimitTracker(config)
                 );
                 if (emailTracker.isRateLimited()) {
-                    LOG.warn("[P1-038] Rate limited for email: {}", email);
+                    LOG.warn("[P1-038] Rate limited for email: {}", redactEmail(email));
                     return AbuseCheckResult.blocked(
                         "Rate limit exceeded",
                         "RATE_LIMITED",
@@ -148,7 +148,7 @@ public final class IntakeAbuseControlServiceImpl implements IntakeAbuseControlSe
             Instant cutoff = Instant.now().minus(Duration.ofMinutes(config.duplicateWindowMinutes()));
 
             if (lastSubmission != null && lastSubmission.isAfter(cutoff)) {
-                LOG.warn("[P1-038] Duplicate submission detected for email: {}", email);
+                LOG.warn("[P1-038] Duplicate submission detected for email: {}", redactEmail(email));
                 return true;
             }
 
@@ -184,6 +184,23 @@ public final class IntakeAbuseControlServiceImpl implements IntakeAbuseControlSe
         }
 
         return false;
+    }
+
+    /**
+     * Redacts a raw email address for safe logging (P1-015 PII hardening).
+     *
+     * <p>Returns the first character of the local part, followed by asterisks and the domain.
+     * Example: {@code j***@example.com}. Never logs the full address in plaintext.</p>
+     */
+    private static String redactEmail(String email) {
+        if (email == null) {
+            return "<null>";
+        }
+        int atIdx = email.indexOf('@');
+        if (atIdx <= 0) {
+            return "***";
+        }
+        return email.charAt(0) + "***" + email.substring(atIdx);
     }
 
     /**

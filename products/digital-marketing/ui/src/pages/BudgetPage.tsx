@@ -8,37 +8,76 @@
 import React, { useState, useCallback } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/useToast';
+import { ToastContainer } from '@/components/Toast';
+import { ApprovalDialog } from '@/components/ApprovalDialog';
+import { AIProvenancePanel } from '@/components/AIProvenancePanel';
+import { ApiError } from '@/lib/http-client';
 import {
   useBudgetRecommendation,
   useGenerateBudget,
   useSubmitBudgetApproval,
   useApproveBudget,
 } from '@/hooks/useBudget';
+import { useStrategy } from '@/hooks/useStrategy';
+import {
+  Button,
+  TextField,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+} from '@ghatana/design-system';
 
 export function BudgetPage(): React.ReactElement {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { isAuthenticated } = useAuth();
+  const { toasts, showSuccess, showError, dismissToast } = useToast();
+  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [strategyId, setStrategyId] = useState('');
   const [totalMonthlyCap, setTotalMonthlyCap] = useState('');
   const [changeThreshold, setChangeThreshold] = useState('10');
 
+  const handleMutationError = useCallback((err: unknown, context: string) => {
+    const apiErr = err instanceof ApiError ? err : null;
+    showError(
+      apiErr ? `${context}: ${apiErr.getUserMessage()}` : `${context}: An unexpected error occurred.`,
+      apiErr?.correlationId ?? undefined,
+    );
+  }, [showError]);
+
   const { recommendation, isLoading, isError, error, refetch } = useBudgetRecommendation(workspaceId ?? null);
-  const { generate, isPending: isGenerating } = useGenerateBudget(workspaceId ?? null);
-  const { submit, isPending: isSubmitting } = useSubmitBudgetApproval(workspaceId ?? null);
-  const { approve, isPending: isApproving } = useApproveBudget(workspaceId ?? null);
+  const { strategy: approvedStrategy } = useStrategy(workspaceId ?? null);
+  const approvedStrategyId = approvedStrategy?.status === 'APPROVED' ? approvedStrategy.strategyId : null;
+  const { generate, isPending: isGenerating } = useGenerateBudget(workspaceId ?? null, {
+    onError: (err) => handleMutationError(err, 'Budget generation failed'),
+  });
+  const { submit, isPending: isSubmitting } = useSubmitBudgetApproval(workspaceId ?? null, {
+    onError: (err) => handleMutationError(err, 'Failed to submit for approval'),
+  });
+  const { approve, isPending: isApproving } = useApproveBudget(workspaceId ?? null, {
+    onError: (err) => handleMutationError(err, 'Approval failed'),
+  });
 
   const handleGenerate = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       const cap = parseFloat(totalMonthlyCap);
       const threshold = parseFloat(changeThreshold);
-      if (!strategyId.trim() || Number.isNaN(cap) || cap < 0 || Number.isNaN(threshold) || !workspaceId) return;
-      await generate({ strategyId: strategyId.trim(), totalMonthlyCap: cap, changeThreshold: threshold });
-      setStrategyId('');
-      setTotalMonthlyCap('');
-      setChangeThreshold('10');
+      const effectiveStrategyId = approvedStrategyId ?? strategyId.trim();
+      if (!effectiveStrategyId || Number.isNaN(cap) || cap < 0 || Number.isNaN(threshold) || !workspaceId) return;
+      try {
+        await generate({ strategyId: effectiveStrategyId, totalMonthlyCap: cap, changeThreshold: threshold });
+        showSuccess('Budget recommendation generated successfully');
+        setStrategyId('');
+        setTotalMonthlyCap('');
+        setChangeThreshold('10');
+      } catch {
+        // Error is surfaced through the onError callback registered in useGenerateBudget
+      }
     },
-    [generate, strategyId, totalMonthlyCap, changeThreshold, workspaceId],
+    [generate, approvedStrategyId, strategyId, totalMonthlyCap, changeThreshold, workspaceId, showSuccess],
   );
 
   if (!isAuthenticated) {
@@ -57,55 +96,62 @@ export function BudgetPage(): React.ReactElement {
       <section className="mb-8 p-4 border rounded bg-white">
         <h2 className="text-lg font-semibold mb-3">Generate Budget Recommendation</h2>
         <form onSubmit={handleGenerate} className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-sm flex-1 min-w-[200px]">
-            Strategy ID
-            <input
-              data-testid="budget-strategy-id-input"
-              type="text"
-              value={strategyId}
-              onChange={(e) => setStrategyId(e.target.value)}
-              className="border rounded px-2 py-1"
-              placeholder="strategy-123"
-              required
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Monthly Cap
-            <input
-              data-testid="budget-cap-input"
-              type="number"
-              min="0"
-              step="0.01"
-              value={totalMonthlyCap}
-              onChange={(e) => setTotalMonthlyCap(e.target.value)}
-              className="border rounded px-2 py-1"
-              placeholder="5000"
-              required
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Change Threshold (%)
-            <input
-              data-testid="budget-threshold-input"
-              type="number"
-              min="0"
-              max="100"
-              step="0.1"
-              value={changeThreshold}
-              onChange={(e) => setChangeThreshold(e.target.value)}
-              className="border rounded px-2 py-1"
-              placeholder="10"
-              required
-            />
-          </label>
-          <button
+          <div className="flex flex-col gap-1 text-sm flex-1 min-w-[200px]">
+            <span className="text-sm font-medium">Strategy</span>
+            {approvedStrategyId ? (
+              <div className="flex items-center gap-2">
+                <TextField
+                  data-testid="budget-strategy-id-input"
+                  type="text"
+                  value={approvedStrategyId}
+                  readOnly
+                  aria-label="Approved strategy ID (auto-selected)"
+                  fullWidth
+                />
+                <span className="text-xs text-green-600 font-medium whitespace-nowrap">✓ Approved</span>
+              </div>
+            ) : (
+              <TextField
+                data-testid="budget-strategy-id-input"
+                type="text"
+                value={strategyId}
+                onChange={(e) => setStrategyId(e.target.value)}
+                placeholder="No approved strategy yet"
+                required
+                fullWidth
+              />
+            )}
+          </div>
+          <TextField
+            data-testid="budget-cap-input"
+            label="Monthly Cap"
+            type="number"
+            inputProps={{ min: '0', step: '0.01' }}
+            value={totalMonthlyCap}
+            onChange={(e) => setTotalMonthlyCap(e.target.value)}
+            placeholder="5000"
+            required
+          />
+          <TextField
+            data-testid="budget-threshold-input"
+            label="Change Threshold (%)"
+            type="number"
+            inputProps={{ min: '0', max: '100', step: '0.1' }}
+            value={changeThreshold}
+            onChange={(e) => setChangeThreshold(e.target.value)}
+            placeholder="10"
+            required
+          />
+          <Button
             data-testid="generate-budget-btn"
             type="submit"
             disabled={isGenerating}
-            className="px-4 py-1 bg-blue-600 text-white rounded text-sm disabled:opacity-50"
+            loading={isGenerating}
+            loadingText="Generating…"
+            tone="primary"
           >
-            {isGenerating ? 'Generating…' : 'Generate'}
-          </button>
+            Generate
+          </Button>
         </form>
       </section>
 
@@ -132,24 +178,34 @@ export function BudgetPage(): React.ReactElement {
             </div>
             <div className="flex gap-2">
               {recommendation.status === 'DRAFT' && (
-                <button
+                <Button
                   data-testid="submit-budget-btn"
-                  onClick={() => submit(recommendation.recommendationId)}
+                  size="sm"
+                  tone="primary"
+                  onClick={() => {
+                    void submit(recommendation.recommendationId).then(() =>
+                      showSuccess('Budget submitted for approval'),
+                    );
+                  }}
                   disabled={isSubmitting}
-                  className="px-3 py-1 bg-blue-600 text-white rounded text-sm disabled:opacity-50"
+                  loading={isSubmitting}
+                  loadingText="Submitting…"
                 >
-                  {isSubmitting ? 'Submitting…' : 'Submit for Approval'}
-                </button>
+                  Submit for Approval
+                </Button>
               )}
               {recommendation.status === 'PENDING_APPROVAL' && (
-                <button
+                <Button
                   data-testid="approve-budget-btn"
-                  onClick={() => approve(recommendation.recommendationId)}
+                  size="sm"
+                  tone="success"
+                  onClick={() => setShowApprovalDialog(true)}
                   disabled={isApproving}
-                  className="px-3 py-1 bg-green-600 text-white rounded text-sm disabled:opacity-50"
+                  loading={isApproving}
+                  loadingText="Approving…"
                 >
-                  {isApproving ? 'Approving…' : 'Approve'}
-                </button>
+                  Approve
+                </Button>
               )}
             </div>
           </div>
@@ -169,26 +225,26 @@ export function BudgetPage(): React.ReactElement {
             <div>
               <p className="text-sm font-medium mb-2">Channel Allocations</p>
               <div className="border rounded overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="text-left px-4 py-2 font-medium">Channel</th>
-                      <th className="text-left px-4 py-2 font-medium">Amount</th>
-                      <th className="text-left px-4 py-2 font-medium">Daily Cap</th>
-                      <th className="text-left px-4 py-2 font-medium">Rationale</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell component="th" className="text-left px-4 py-2 font-medium">Channel</TableCell>
+                      <TableCell component="th" className="text-left px-4 py-2 font-medium">Amount</TableCell>
+                      <TableCell component="th" className="text-left px-4 py-2 font-medium">Daily Cap</TableCell>
+                      <TableCell component="th" className="text-left px-4 py-2 font-medium">Rationale</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
                     {recommendation.channelAllocations.map((a, idx) => (
-                      <tr key={idx} className="border-t">
-                        <td className="px-4 py-2">{a.channelType}</td>
-                        <td className="px-4 py-2">${a.recommendedAmount.toLocaleString()}</td>
-                        <td className="px-4 py-2">${a.dailyCap.toLocaleString()}</td>
-                        <td className="px-4 py-2 text-gray-600">{a.rationale}</td>
-                      </tr>
+                      <TableRow key={idx} className="border-t">
+                        <TableCell className="px-4 py-2">{a.channelType}</TableCell>
+                        <TableCell className="px-4 py-2">${a.recommendedAmount.toLocaleString()}</TableCell>
+                        <TableCell className="px-4 py-2">${a.dailyCap.toLocaleString()}</TableCell>
+                        <TableCell className="px-4 py-2 text-gray-600">{a.rationale}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </div>
           )}
@@ -206,6 +262,15 @@ export function BudgetPage(): React.ReactElement {
               <p className="text-sm text-gray-600">{recommendation.assumptions}</p>
             </div>
           )}
+
+          {/* P2-004: AI Reasoning & Provenance panel */}
+          <AIProvenancePanel
+            modelVersion={recommendation.modelVersion}
+            generatedAt={recommendation.generatedAt}
+            generatedBy={recommendation.generatedBy}
+            rationale={recommendation.rationale}
+            assumptions={recommendation.assumptions}
+          />
         </div>
       )}
 
@@ -213,6 +278,28 @@ export function BudgetPage(): React.ReactElement {
         <p data-testid="budget-empty" className="text-sm text-gray-500">
           No budget recommendation yet. Generate one above.
         </p>
+      )}
+
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+
+      {showApprovalDialog && recommendation && (
+        <ApprovalDialog
+          entityLabel="Budget Recommendation"
+          entityId={recommendation.recommendationId}
+          snapshotLines={[
+            `Total monthly cap: $${recommendation.totalMonthlyCap.toLocaleString()}`,
+            `Change threshold: ${recommendation.changeThresholdPct}%`,
+            `Status: ${recommendation.status}`,
+          ]}
+          isPending={isApproving}
+          onConfirm={(comment) => {
+            void approve(recommendation.recommendationId, comment).then(() => {
+              showSuccess('Budget approved');
+              setShowApprovalDialog(false);
+            });
+          }}
+          onCancel={() => setShowApprovalDialog(false)}
+        />
       )}
     </section>
   );

@@ -8,6 +8,7 @@ import {
   type AIActionLineage,
   type AIHookKind,
   type AIReviewState,
+  type NodeId,
   AIActionLineageTracker,
   createLineageEntry,
 } from '@ghatana/ui-builder';
@@ -36,6 +37,35 @@ export interface PageArtifactAIChangeRecord {
   readonly documentId: string;
 }
 
+export type PageArtifactOperationStatus =
+  | 'pending'
+  | 'succeeded'
+  | 'failed'
+  | 'requires-review';
+
+export type PageArtifactOperationKind =
+  | 'document-update'
+  | 'persist-success'
+  | 'persist-conflict'
+  | 'persist-offline'
+  | 'reload-remote'
+  | 'overwrite-remote'
+  | 'import-page'
+  | 'governance-record';
+
+export interface PageArtifactOperationRecord {
+  readonly id: string;
+  readonly artifactId: string;
+  readonly documentId: string;
+  readonly operation: PageArtifactOperationKind;
+  readonly status: PageArtifactOperationStatus;
+  readonly actor: string;
+  readonly summary: string;
+  readonly createdAt: string;
+  readonly phase?: string;
+  readonly metadata?: Record<string, string | number | boolean | null>;
+}
+
 /**
  * Creates a new `AIChangeRecord` for a given artifact using the platform
  * `createLineageEntry` factory.
@@ -54,7 +84,7 @@ export function createAIChangeRecord(
     readonly evidence?: readonly string[];
   },
 ): PageArtifactAIChangeRecord {
-  const lineage = createLineageEntry(hookKind, reason, confidence, affectedNodeIds, options);
+  const lineage = createLineageEntry(hookKind, reason, confidence, affectedNodeIds as readonly NodeId[], options);
   return { lineage, artifactId, documentId };
 }
 
@@ -75,6 +105,55 @@ export type PageArtifactSyncStatus =
   | 'error'
   | 'offline';
 
+export type PageArtifactGraphNodeKind =
+  | 'page'
+  | 'component'
+  | 'source'
+  | 'residual';
+
+export type PageArtifactGraphEdgeKind =
+  | 'contains'
+  | 'derived-from'
+  | 'references'
+  | 'residual-of';
+
+export interface PageArtifactGraphNode {
+  readonly id: string;
+  readonly kind: PageArtifactGraphNodeKind;
+  readonly label: string;
+  readonly sourceLocation?: {
+    readonly filePath: string;
+    readonly startLine: number;
+    readonly startColumn: number;
+    readonly endLine: number;
+    readonly endColumn: number;
+  };
+  readonly metadata?: Record<string, string | number | boolean | null>;
+}
+
+export interface PageArtifactGraphEdge {
+  readonly id: string;
+  readonly from: string;
+  readonly to: string;
+  readonly kind: PageArtifactGraphEdgeKind;
+}
+
+export interface PageArtifactGraphSnapshot {
+  readonly graphId: string;
+  readonly projectId: string;
+  readonly sourceType: string;
+  readonly source: string;
+  readonly importedAt: string;
+  readonly nodes: readonly PageArtifactGraphNode[];
+  readonly edges: readonly PageArtifactGraphEdge[];
+  readonly provenance: {
+    readonly createdBy: string;
+    readonly compiler: 'yappc-artifact-compiler';
+    readonly confidence: number;
+    readonly residualIslandIds: readonly string[];
+  };
+}
+
 export interface PageArtifactDocument {
   readonly artifactId: string;
   readonly documentId: string;
@@ -82,6 +161,7 @@ export interface PageArtifactDocument {
   readonly source: PageArtifactSource;
   readonly roundTripFidelity?: RoundTripFidelity;
   readonly residualIslandIds?: readonly string[];
+  readonly artifactGraph?: PageArtifactGraphSnapshot;
   readonly syncStatus: PageArtifactSyncStatus;
   readonly trustLevel: TrustLevel;
   readonly dataClassification: DataClassification;
@@ -90,6 +170,7 @@ export interface PageArtifactDocument {
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly aiChangeRecords?: readonly PageArtifactAIChangeRecord[];
+  readonly operationLog?: readonly PageArtifactOperationRecord[];
   readonly validationSummary?: {
     readonly valid: boolean;
     readonly errorCount: number;
@@ -190,6 +271,54 @@ export function appendAIChangeRecord(
     ...pageDocument,
     aiChangeRecords: [...(pageDocument.aiChangeRecords ?? []), record],
     updatedAt: new Date().toISOString(),
+  };
+}
+
+export function updateAIChangeRecordReviewState(
+  pageDocument: PageArtifactDocument,
+  actionId: string,
+  reviewState: AIReviewState,
+): PageArtifactDocument {
+  const records = pageDocument.aiChangeRecords ?? [];
+  const updatedRecords = records.map((record) => {
+    if (record.lineage.actionId !== actionId) {
+      return record;
+    }
+
+    return {
+      ...record,
+      lineage: {
+        ...record.lineage,
+        reviewState,
+      },
+    };
+  });
+
+  return {
+    ...pageDocument,
+    aiChangeRecords: updatedRecords,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+export function appendPageArtifactOperationRecord(
+  pageDocument: PageArtifactDocument,
+  record: Omit<PageArtifactOperationRecord, 'id' | 'artifactId' | 'documentId' | 'createdAt'> & {
+    readonly createdAt?: string;
+  },
+): PageArtifactDocument {
+  const createdAt = record.createdAt ?? new Date().toISOString();
+  const operationRecord: PageArtifactOperationRecord = {
+    ...record,
+    id: `${pageDocument.artifactId}:${record.operation}:${createdAt}`,
+    artifactId: pageDocument.artifactId,
+    documentId: pageDocument.documentId,
+    createdAt,
+  };
+
+  return {
+    ...pageDocument,
+    operationLog: [...(pageDocument.operationLog ?? []), operationRecord].slice(-100),
   };
 }
 

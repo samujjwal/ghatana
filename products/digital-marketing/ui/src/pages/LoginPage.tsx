@@ -11,6 +11,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { Button, TextField } from '@ghatana/design-system';
 
 // P0-007: Environment checks using Vite-safe env access
 const isProduction = import.meta.env.MODE === 'production';
@@ -20,17 +21,21 @@ const AUTH_AUTHORIZE_ENDPOINT = import.meta.env.VITE_AUTH_AUTHORIZE_ENDPOINT;
 const AUTH_CLIENT_ID = import.meta.env.VITE_AUTH_CLIENT_ID;
 
 /**
- * P0-007: Initiates OAuth2 authorization code flow with PKCE.
+ * P0-001 + P0-002: Initiates OAuth2 authorization code flow with PKCE S256.
+ * Fails closed in production when provider is not configured.
  */
-function initiateOAuthFlow(): void {
+async function initiateOAuthFlow(): Promise<void> {
   if (!AUTH_AUTHORIZE_ENDPOINT || !AUTH_CLIENT_ID) {
+    if (isProduction) {
+      throw new Error('[DMOS] Auth provider not configured. VITE_AUTH_AUTHORIZE_ENDPOINT and VITE_AUTH_CLIENT_ID are required in production.');
+    }
     console.error('[DMOS] Auth provider not configured');
     return;
   }
 
   // Generate PKCE parameters
   const codeVerifier = generateCodeVerifier();
-  const codeChallenge = generateCodeChallenge(codeVerifier);
+  const codeChallenge = await generateCodeChallenge(codeVerifier);
   const state = generateState();
 
   // Store PKCE and state for callback verification
@@ -57,10 +62,11 @@ function generateCodeVerifier(): string {
   return base64URLEncode(array);
 }
 
-function generateCodeChallenge(verifier: string): string {
-  // In production, this should use SHA-256
-  // For now, S256 method requires async crypto.subtle.digest
-  return verifier; // S256 implementation would go here
+async function generateCodeChallenge(verifier: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return base64URLEncode(new Uint8Array(digest));
 }
 
 function generateState(): string {
@@ -103,10 +109,13 @@ export function LoginPage(): React.ReactElement {
   const [principalId, setPrincipalId] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  // P0-007: Redirect to provider in production
+  // P0-001 + P0-002: Redirect to provider in production; fail closed on config errors
   useEffect(() => {
     if (isProduction && AUTH_PROVIDER_ENABLED && !isAuthenticated) {
-      initiateOAuthFlow();
+      initiateOAuthFlow().catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Auth provider configuration error.';
+        setError(message);
+      });
     }
   }, [isAuthenticated]);
 
@@ -158,96 +167,78 @@ export function LoginPage(): React.ReactElement {
             <p className="text-gray-600 mb-4">
               Please sign in with your configured authentication provider.
             </p>
-            <button
-              onClick={initiateOAuthFlow}
-              className="w-full bg-blue-600 text-white rounded px-4 py-2 text-sm hover:bg-blue-700"
+            <Button
+              onClick={() => {
+                initiateOAuthFlow().catch((err: unknown) => {
+                  const message = err instanceof Error ? err.message : 'Auth provider configuration error.';
+                  setError(message);
+                });
+              }}
+              fullWidth
+              tone="primary"
               data-testid="provider-login-btn"
             >
               Sign In with Provider
-            </button>
+            </Button>
           </div>
         )}
 
         {showManualForm && (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="token" className="block text-sm font-medium mb-1">
-                Bearer Token
-              </label>
-              <input
-                id="token"
-                type="password"
-                data-testid="login-token"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                className="w-full border rounded px-3 py-2 text-sm"
-              />
-            </div>
+            <TextField
+              id="token"
+              label="Bearer Token"
+              type="password"
+              data-testid="login-token"
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              fullWidth
+            />
 
-            <div>
-              <label
-                htmlFor="workspaceId"
-                className="block text-sm font-medium mb-1"
-              >
-                Workspace ID
-              </label>
-              <input
-                id="workspaceId"
-                type="text"
-                data-testid="login-workspace-id"
-                value={workspaceId}
-                onChange={(e) => setWorkspaceId(e.target.value)}
-                className="w-full border rounded px-3 py-2 text-sm"
-              />
-            </div>
+            <TextField
+              id="workspaceId"
+              label="Workspace ID"
+              type="text"
+              data-testid="login-workspace-id"
+              value={workspaceId}
+              onChange={(e) => setWorkspaceId(e.target.value)}
+              fullWidth
+            />
 
-            <div>
-              <label
-                htmlFor="tenantId"
-                className="block text-sm font-medium mb-1"
-              >
-                Tenant ID
-              </label>
-              <input
-                id="tenantId"
+            <TextField
+              id="tenantId"
+              label="Tenant ID"
               type="text"
               data-testid="login-tenant-id"
               value={tenantId}
               onChange={(e) => setTenantId(e.target.value)}
-              className="w-full border rounded px-3 py-2 text-sm"
+              fullWidth
             />
-          </div>
 
-          <div>
-            <label
-              htmlFor="principalId"
-              className="block text-sm font-medium mb-1"
-            >
-              User / Principal ID
-            </label>
-            <input
+            <TextField
               id="principalId"
+              label="User / Principal ID"
               type="text"
               data-testid="login-principal-id"
               value={principalId}
               onChange={(e) => setPrincipalId(e.target.value)}
-              className="w-full border rounded px-3 py-2 text-sm"
+              fullWidth
             />
-          </div>
 
-          {error && (
-            <p role="alert" className="text-red-600 text-sm">
-              {error}
-            </p>
-          )}
+            {error && (
+              <p role="alert" className="text-red-600 text-sm">
+                {error}
+              </p>
+            )}
 
-          <button
+            <Button
               type="submit"
               data-testid="login-submit"
-              className="w-full bg-blue-600 text-white rounded px-4 py-2 text-sm hover:bg-blue-700"
+              fullWidth
+              tone="primary"
             >
               Sign In
-            </button>
+            </Button>
           </form>
         )}
       </div>

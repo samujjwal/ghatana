@@ -12,7 +12,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
-import { listCampaigns, createCampaign, launchCampaign, pauseCampaign } from '@/api/campaigns';
+import { listCampaigns, createCampaign, launchCampaign, pauseCampaign, completeCampaign, archiveCampaign, rollbackCampaign, duplicateCampaign } from '@/api/campaigns';
 import type { Campaign, CreateCampaignRequest, CampaignListResponse } from '@/types/campaign';
 import type { ApiError } from '@/lib/http-client';
 
@@ -130,7 +130,11 @@ export function useLaunchCampaign(
 
   return {
     launch: mutation.mutateAsync,
-    isPendingFor: useCallback((campaignId: string) => pendingIds.has(campaignId) || mutation.isPending, [pendingIds, mutation.isPending]),
+    // P1-002: Only the specific row's ID is checked — do NOT include mutation.isPending
+    // which would disable every row while any single mutation is in flight.
+    // P1-002: Only the specific row's ID is checked — do NOT include mutation.isPending
+    // which would disable every row while any single mutation is in flight.
+    isPendingFor: useCallback((campaignId: string) => pendingIds.has(campaignId), [pendingIds]),
     isError: mutation.isError,
     error: mutation.error ?? null,
   };
@@ -176,7 +180,137 @@ export function usePauseCampaign(
 
   return {
     pause: mutation.mutateAsync,
-    isPendingFor: useCallback((campaignId: string) => pendingIds.has(campaignId) || mutation.isPending, [pendingIds, mutation.isPending]),
+    // P1-002: Only the specific row's ID is checked — do NOT include mutation.isPending
+    // which would disable every row while any single mutation is in flight.
+    isPendingFor: useCallback((campaignId: string) => pendingIds.has(campaignId), [pendingIds]),
+    isError: mutation.isError,
+    error: mutation.error ?? null,
+  };
+}
+
+// ---------- P2-003: Complete, Archive, Rollback, Duplicate ----------
+
+export interface UseCampaignActionReturn {
+  execute: (campaignId: string) => Promise<Campaign>;
+  isPendingFor: (campaignId: string) => boolean;
+  isError: boolean;
+  error: Error | null;
+}
+
+export function useCompleteCampaign(
+  workspaceId: string | null,
+  onError?: (error: ApiError, campaignId: string) => void,
+): UseCampaignActionReturn {
+  const queryClient = useQueryClient();
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+
+  const mutation = useMutation<Campaign, ApiError, string>({
+    mutationFn: async (campaignId) => {
+      setPendingIds((prev) => new Set(prev).add(campaignId));
+      try {
+        return await completeCampaign(workspaceId!, campaignId, crypto.randomUUID());
+      } finally {
+        setPendingIds((prev) => { const n = new Set(prev); n.delete(campaignId); return n; });
+      }
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] }); },
+    onError: (error, campaignId) => { onError?.(error, campaignId); },
+  });
+
+  return {
+    execute: mutation.mutateAsync,
+    isPendingFor: useCallback((id: string) => pendingIds.has(id), [pendingIds]),
+    isError: mutation.isError,
+    error: mutation.error ?? null,
+  };
+}
+
+export function useArchiveCampaign(
+  workspaceId: string | null,
+  onError?: (error: ApiError, campaignId: string) => void,
+): UseCampaignActionReturn {
+  const queryClient = useQueryClient();
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+
+  const mutation = useMutation<Campaign, ApiError, string>({
+    mutationFn: async (campaignId) => {
+      setPendingIds((prev) => new Set(prev).add(campaignId));
+      try {
+        return await archiveCampaign(workspaceId!, campaignId, crypto.randomUUID());
+      } finally {
+        setPendingIds((prev) => { const n = new Set(prev); n.delete(campaignId); return n; });
+      }
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] }); },
+    onError: (error, campaignId) => { onError?.(error, campaignId); },
+  });
+
+  return {
+    execute: mutation.mutateAsync,
+    isPendingFor: useCallback((id: string) => pendingIds.has(id), [pendingIds]),
+    isError: mutation.isError,
+    error: mutation.error ?? null,
+  };
+}
+
+export function useRollbackCampaign(
+  workspaceId: string | null,
+  onError?: (error: ApiError, campaignId: string) => void,
+): UseCampaignActionReturn {
+  const queryClient = useQueryClient();
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+
+  const mutation = useMutation<Campaign, ApiError, string>({
+    mutationFn: async (campaignId) => {
+      setPendingIds((prev) => new Set(prev).add(campaignId));
+      try {
+        return await rollbackCampaign(workspaceId!, campaignId, crypto.randomUUID());
+      } finally {
+        setPendingIds((prev) => { const n = new Set(prev); n.delete(campaignId); return n; });
+      }
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] }); },
+    onError: (error, campaignId) => { onError?.(error, campaignId); },
+  });
+
+  return {
+    execute: mutation.mutateAsync,
+    isPendingFor: useCallback((id: string) => pendingIds.has(id), [pendingIds]),
+    isError: mutation.isError,
+    error: mutation.error ?? null,
+  };
+}
+
+export interface UseDuplicateCampaignReturn {
+  execute: (campaignId: string, newName: string) => Promise<Campaign>;
+  isPendingFor: (campaignId: string) => boolean;
+  isError: boolean;
+  error: Error | null;
+}
+
+export function useDuplicateCampaign(
+  workspaceId: string | null,
+  onError?: (error: ApiError, campaignId: string) => void,
+): UseDuplicateCampaignReturn {
+  const queryClient = useQueryClient();
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+
+  const mutation = useMutation<Campaign, ApiError, { campaignId: string; newName: string }>({
+    mutationFn: async ({ campaignId, newName }) => {
+      setPendingIds((prev) => new Set(prev).add(campaignId));
+      try {
+        return await duplicateCampaign(workspaceId!, campaignId, newName, crypto.randomUUID());
+      } finally {
+        setPendingIds((prev) => { const n = new Set(prev); n.delete(campaignId); return n; });
+      }
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] }); },
+    onError: (error, { campaignId }) => { onError?.(error, campaignId); },
+  });
+
+  return {
+    execute: (campaignId: string, newName: string) => mutation.mutateAsync({ campaignId, newName }),
+    isPendingFor: useCallback((id: string) => pendingIds.has(id), [pendingIds]),
     isError: mutation.isError,
     error: mutation.error ?? null,
   };

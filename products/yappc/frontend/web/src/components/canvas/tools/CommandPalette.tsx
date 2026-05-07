@@ -193,7 +193,7 @@ const createBuiltInCommands = ({
   if (onTogglePanel) {
     const panels = [
       { id: 'tasks', label: 'Task Panel', shortcut: 'Cmd+B', icon: ViewSidebar },
-      { id: 'ai', label: 'AI Assistant', shortcut: 'Cmd+I', icon: AutoAwesome },
+      { id: 'ai', label: 'Guided Assistant', shortcut: 'Cmd+I', icon: AutoAwesome },
       { id: 'validation', label: 'Validation Panel', icon: CheckCircle },
       { id: 'generation', label: 'Code Generation', icon: Code },
       { id: 'history', label: 'Version History', icon: History },

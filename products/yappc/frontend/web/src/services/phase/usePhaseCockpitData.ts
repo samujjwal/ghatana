@@ -2,27 +2,28 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import { buildPhaseBlockers } from './PhaseBlockerBuilder';
-import { buildPhaseEvidence, buildPhaseGovernanceRecords } from './PhaseEvidenceBuilder';
-import { getPhaseCockpitConfig } from './PhaseCockpitConfigService';
 import {
+  buildPhaseCockpitContract,
+  type PhaseCockpitContract,
+} from './PhaseCockpitContractBuilder';
+import { buildPhaseEvidence, buildPhaseGovernanceRecords } from './PhaseEvidenceBuilder';
+import { getAdaptivePhaseCockpitConfig, getPhaseCockpitConfig } from './PhaseCockpitConfigService';
+import {
+  fetchProjectSnapshot,
   fetchPhaseTransitionPreview,
   isLifecyclePhase,
-  parseJsonResponse,
-  parseProjectResponse,
 } from './PhaseCockpitDataService';
+import type { LifecyclePhase } from './PhaseCockpitDataService';
 import { buildPhaseSuggestedSteps } from './PhaseSuggestionBuilder';
+import { yappcApi } from '@/lib/api/client';
 import type {
-  LifecyclePhase,
   MountedPhase,
   PhaseActivityEvent,
   PhaseActivityResponse,
+  PhaseCockpitContext,
   PhaseProjectSnapshot,
   PhaseTransitionPreviewSnapshot,
 } from './types';
-
-function asTypedList<T>(value: unknown): T[] {
-  return Array.isArray(value) ? (value as T[]) : [];
-}
 
 export interface UsePhaseCockpitDataParams {
   readonly phase: MountedPhase;
@@ -43,24 +44,28 @@ export interface UsePhaseCockpitDataResult {
   readonly evidence: ReturnType<typeof buildPhaseEvidence>;
   readonly governance: ReturnType<typeof buildPhaseGovernanceRecords>;
   readonly suggestions: ReturnType<typeof buildPhaseSuggestedSteps>;
+  readonly contract: PhaseCockpitContract | null;
 }
+
+const DEFAULT_ENABLED_PHASE_FLAGS: PhaseCockpitContext['enabledFlags'] = new Set([
+  'phase.generate.enabled',
+  'phase.run.preview.enabled',
+  'phase.observe.enabled',
+]);
 
 export function usePhaseCockpitData({
   phase,
   projectId,
   onSuggestionAction,
 }: UsePhaseCockpitDataParams): UsePhaseCockpitDataResult {
-  const config = getPhaseCockpitConfig(phase);
-
   const projectQuery = useQuery<PhaseProjectSnapshot>({
     queryKey: ['project', projectId],
     queryFn: async () => {
-      const response = await fetch(`/api/projects/${projectId}`);
-      if (!response.ok) {
-        throw new Error(`Failed to load the ${config.name.toLowerCase()} cockpit.`);
+      if (!projectId) {
+        throw new Error('Missing project id for phase cockpit.');
       }
 
-      return parseProjectResponse(response, `${config.name.toLowerCase()} cockpit`);
+      return fetchProjectSnapshot(projectId);
     },
     enabled: Boolean(projectId),
   });
@@ -68,12 +73,11 @@ export function usePhaseCockpitData({
   const activityQuery = useQuery<PhaseActivityResponse>({
     queryKey: ['project-activity', projectId],
     queryFn: async () => {
-      const response = await fetch(`/api/projects/${projectId}/activity`);
-      if (!response.ok) {
-        throw new Error('Failed to load recent project activity.');
+      if (!projectId) {
+        throw new Error('Missing project id for phase activity.');
       }
 
-      return parseJsonResponse<PhaseActivityResponse>(response, 'project activity');
+      return yappcApi.projects.activity(projectId);
     },
     enabled: Boolean(projectId),
   });
@@ -102,23 +106,55 @@ export function usePhaseCockpitData({
   const preview = previewQuery.data ?? null;
 
   const blockers = useMemo(
-    () => (project ? asTypedList(buildPhaseBlockers(phase, project, preview)) : []),
+    () => (project ? buildPhaseBlockers(phase, project, preview) : []),
     [phase, project, preview],
   );
   const evidence = useMemo(
-    () => (project ? asTypedList(buildPhaseEvidence(phase, project, activity, preview)) : []),
+    () => (project ? buildPhaseEvidence(phase, project, activity, preview) : []),
     [activity, phase, preview, project],
   );
   const governance = useMemo(
-    () => asTypedList(buildPhaseGovernanceRecords(activity)),
+    () => buildPhaseGovernanceRecords(activity),
     [activity],
   );
   const suggestions = useMemo(
     () =>
       project
-        ? asTypedList(buildPhaseSuggestedSteps(phase, project, onSuggestionAction))
+        ? buildPhaseSuggestedSteps(phase, project, onSuggestionAction, {
+            blockers,
+            preview,
+            role: 'contributor',
+          })
         : [],
-    [phase, project, onSuggestionAction],
+    [blockers, phase, preview, project, onSuggestionAction],
+  );
+  const contract = useMemo(
+    () =>
+      project
+        ? buildPhaseCockpitContract({
+            phase,
+            project,
+            activity,
+            preview,
+            blockers,
+            evidence,
+            governance,
+            suggestions,
+          })
+        : null,
+    [activity, blockers, evidence, governance, phase, preview, project, suggestions],
+  );
+  const config = useMemo(
+    () =>
+      getAdaptivePhaseCockpitConfig(phase, {
+        role: 'contributor',
+        tier: 'starter',
+        enabledFlags: DEFAULT_ENABLED_PHASE_FLAGS,
+        hasBlockers: blockers.length > 0,
+        gatesPassed: preview?.canAdvance ?? true,
+        currentLifecyclePhase: phase,
+      }),
+    [blockers.length, phase, preview?.canAdvance],
   );
 
   return {
@@ -134,5 +170,6 @@ export function usePhaseCockpitData({
     evidence,
     governance,
     suggestions,
+    contract,
   };
 }

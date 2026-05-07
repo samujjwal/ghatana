@@ -19,6 +19,9 @@ dependencies {
     implementation(project(":products:digital-marketing:dm-infra"))
     implementation(project(":products:digital-marketing:dm-connector-google-ads"))
 
+    // Platform policy-as-code for OPA AuthZ wiring
+    implementation(project(":platform:java:policy-as-code"))
+
     // Platform plugins for production-grade implementations
     implementation(project(":platform-plugins:plugin-consent"))
     implementation(project(":platform-plugins:plugin-human-approval"))

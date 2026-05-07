@@ -112,6 +112,8 @@ class ProductionBootstrapValidatorTest {
             .dataSource(new AlwaysValidDataSource())
             .campaignRepository(new PostgresCampaignRepository())
             .piiHmacKey("valid-hmac-key-that-is-32-chars-long-for-test")
+            .contactEncryptionKey("valid-contact-enc-key-32chars-long!")
+            .googleAdsOutboxExecutor(new ProductionOutboxExecutor())
             .kernelAdapter(new MinimalKernelAdapter())
             .validateAdapter(new RealProductionAdapter())
             .build();
@@ -212,6 +214,8 @@ class ProductionBootstrapValidatorTest {
             .campaignRepository(new PostgresCampaignRepository())
             .kernelAdapter(new MinimalKernelAdapter())
             .piiHmacKey("valid-hmac-key-that-is-32-chars-long-for-test")
+            .contactEncryptionKey("valid-contact-enc-key-32chars-long!")
+            .googleAdsOutboxExecutor(new ProductionOutboxExecutor())
             .validateAdapters(new RealProductionAdapter(), new RealProductionAdapter())
             .build();
 
@@ -355,6 +359,10 @@ class ProductionBootstrapValidatorTest {
         public Promise<String> recordAudit(com.ghatana.digitalmarketing.contracts.DmOperationContext context, String entityId, String action, java.util.Map<String, Object> attributes) {
             return Promise.of("audit-recorded");
         }
+    }
+
+    private static class ProductionOutboxExecutor {
+        // A "real" outbox executor — no stub/test/fake naming patterns
     }
 
     private static class TestPackageAdapter {

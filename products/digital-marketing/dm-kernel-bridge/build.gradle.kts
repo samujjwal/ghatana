@@ -18,6 +18,8 @@ dependencies {
     api(project(":platform-plugins:plugin-risk-management"))
     api(project(":platform-plugins:plugin-audit-trail"))
     api(project(":platform-plugins:plugin-notification"))
+    api(project(":platform:java:policy-as-code"))
+    api(project(":platform:java:workflow"))
 
     compileOnly(libs.spotbugs.annotations)
 

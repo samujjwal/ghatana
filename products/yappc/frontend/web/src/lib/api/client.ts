@@ -85,6 +85,49 @@ async function post<TBody, TResult>(path: string, body: TBody, context: string):
   return parseJsonResponse<TResult>(response, context);
 }
 
+async function postPossiblyEmpty<TBody, TResult>(path: string, body: TBody, context: string): Promise<TResult> {
+  const response = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) return handleError(response, context);
+  if (response.status === 204) return undefined as unknown as TResult;
+  return parsePossiblyEmptyJsonResponse<TResult>(response, context);
+}
+
+async function postWithHeaders<TBody, TResult>(
+  path: string,
+  body: TBody,
+  context: string,
+  headers: Readonly<Record<string, string>>,
+): Promise<TResult> {
+  const response = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...headers },
+    credentials: 'same-origin',
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) return handleError(response, context);
+  if (response.status === 204) return undefined as unknown as TResult;
+  return parsePossiblyEmptyJsonResponse<TResult>(response, context);
+}
+
+async function parsePossiblyEmptyJsonResponse<T>(response: Response, context: string): Promise<T> {
+  const payload = await response.text();
+  if (!payload.trim()) {
+    return undefined as unknown as T;
+  }
+
+  try {
+    return JSON.parse(payload) as T;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} returned invalid JSON: ${detail}`);
+  }
+}
+
 async function patch<TBody, TResult>(path: string, body: TBody, context: string): Promise<TResult> {
   const response = await fetch(path, {
     method: 'PATCH',
@@ -193,9 +236,56 @@ export interface UpdateProjectRequest {
   name?: string;
   description?: string;
 }
+export interface ProjectListResponse {
+  readonly owned: Project[];
+  readonly included: Project[];
+}
+export interface ProjectActivityEvent {
+  readonly id: string;
+  readonly source: 'lifecycle' | 'audit';
+  readonly action: string;
+  readonly summary: string;
+  readonly timestamp: string;
+  readonly actor: string | null;
+  readonly severity?: string | null;
+  readonly success?: boolean | null;
+}
+export interface ProjectActivityResponse {
+  readonly projectId: string;
+  readonly activity: ProjectActivityEvent[];
+}
+export interface PhaseTransitionPreviewResponse {
+  readonly projectId: string;
+  readonly currentPhase: string;
+  readonly nextPhase: string | null;
+  readonly canAdvance: boolean;
+  readonly readiness: number;
+  readonly blockers: string[];
+  readonly requiredArtifacts: string[];
+  readonly completedArtifacts: string[];
+  readonly estimatedReadyIn: string | null;
+  readonly estimatedReadyInHours: number | null;
+  readonly predictionConfidence: number | null;
+  readonly checkedAt: string;
+}
+
+function encodeQuery(params: Readonly<Record<string, string | undefined>>): string {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined) {
+      query.set(key, value);
+    }
+  });
+  const encoded = query.toString();
+  return encoded ? `?${encoded}` : '';
+}
 
 export const projects = {
-  list: () => get<Project[]>('/api/projects', 'projects.list'),
+  list: (workspaceId: string) =>
+    get<ProjectListResponse | Project[]>(
+      `/api/projects${encodeQuery({ workspaceId })}`,
+      'projects.list',
+    ),
   get: (projectId: string) => get<Project>(`/api/projects/${encodeURIComponent(projectId)}`, 'projects.get'),
   create: (body: CreateProjectRequest) => post<CreateProjectRequest, Project>('/api/projects', body, 'projects.create'),
   update: (projectId: string, body: UpdateProjectRequest) =>
@@ -207,7 +297,7 @@ export const projects = {
   current: (projectId: string) =>
     get<Project>(`/api/projects/${encodeURIComponent(projectId)}/current`, 'projects.current'),
   activity: (projectId: string) =>
-    get<unknown[]>(`/api/projects/${encodeURIComponent(projectId)}/activity`, 'projects.activity'),
+    get<ProjectActivityResponse>(`/api/projects/${encodeURIComponent(projectId)}/activity`, 'projects.activity'),
   aiCost: (projectId: string) =>
     get<{ totalCostUsd: number; breakdown: unknown[] }>(`/api/projects/${encodeURIComponent(projectId)}/ai-cost`, 'projects.aiCost'),
   capabilities: (projectId: string) =>
@@ -271,13 +361,71 @@ export const shape = {
 // Code Generation / Validation  (/api/v1/yappc/generate, /api/v1/yappc/validate)
 // ─────────────────────────────────────────────────────────────────────────────
 
+export interface GenerateArtifactsRequest {
+  readonly projectId: string;
+  readonly phase: string;
+  readonly techStack?: readonly string[];
+  readonly options?: Record<string, never>;
+}
+export interface GenerateArtifactsResponse {
+  readonly runId?: string;
+  readonly executionId?: string;
+  readonly status?: string;
+  readonly reviewRequired?: boolean;
+  readonly diff?: unknown;
+}
+export interface RegenerateDiffRequest {
+  readonly runId: string;
+  readonly diff: string;
+}
+export interface RegenerateDiffResponse {
+  readonly runId?: string;
+  readonly status?: string;
+  readonly diff?: unknown;
+  readonly reviewRequired?: boolean;
+}
+
 export const generate = {
-  run: (body: { projectId: string; shapeId?: string; config?: unknown }) =>
-    post<typeof body, { executionId: string; status: string }>('/api/v1/yappc/generate', body, 'generate.run'),
-  diff: (body: { executionId: string }) =>
-    post<typeof body, { diff: unknown }>('/api/v1/yappc/generate/diff', body, 'generate.diff'),
+  run: (body: GenerateArtifactsRequest) =>
+    postPossiblyEmpty<GenerateArtifactsRequest, GenerateArtifactsResponse>('/api/v1/yappc/generate', body, 'generate.run'),
+  diff: (body: RegenerateDiffRequest) =>
+    postPossiblyEmpty<RegenerateDiffRequest, RegenerateDiffResponse>('/api/v1/yappc/generate/diff', body, 'generate.diff'),
   artifact: (id: string) =>
     get<{ id: string; content: unknown }>(`/api/v1/yappc/generate/artifacts/${encodeURIComponent(id)}`, 'generate.artifact'),
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Workflows  (/api/v1/workflows/*)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type WorkflowRunStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+
+export interface WorkflowStartResponse {
+  readonly runId?: string;
+  readonly templateId?: string;
+  readonly status?: Extract<WorkflowRunStatus, 'PENDING' | 'RUNNING'>;
+  readonly startedAt?: string;
+}
+
+export interface WorkflowStatus {
+  readonly runId?: string;
+  readonly templateId?: string;
+  readonly status?: WorkflowRunStatus;
+  readonly startedAt?: string;
+  readonly completedAt?: string | null;
+  readonly error?: string | null;
+}
+
+export const workflows = {
+  start: (templateId: string, tenantId: string) =>
+    postWithHeaders<Record<string, never>, WorkflowStartResponse>(
+      `/api/v1/workflows/${encodeURIComponent(templateId)}/start`,
+      {},
+      'workflows.start',
+      { 'X-Tenant-Id': tenantId },
+    ),
+  status: (runId: string) =>
+    get<WorkflowStatus>(`/api/v1/workflows/${encodeURIComponent(runId)}/status`, 'workflows.status'),
 } as const;
 
 export const validate = {
@@ -311,6 +459,67 @@ export const artifacts = {
     get<Artifact>(`/api/artifacts/${encodeURIComponent(artifactId)}`, 'artifacts.get'),
   create: (body: { projectId: string; kind: string; content: unknown }) =>
     post<typeof body, Artifact>('/api/artifacts', body, 'artifacts.create'),
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Source Import  (/api/v1/yappc/artifact/import-source)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface SourceImportRequest {
+  readonly sourceType: string;
+  readonly source: string;
+  readonly projectId: string;
+  readonly targetComponentName?: string;
+  readonly options?: {
+    readonly includeDependencies?: boolean;
+    readonly includeStyles?: boolean;
+    readonly includeTests?: boolean;
+    readonly includeDocumentation?: boolean;
+    readonly preserveStructure?: boolean;
+    readonly allowUnsafeComponents?: boolean;
+  };
+}
+
+export interface SourceImportFile {
+  readonly path: string;
+  readonly content: string;
+  readonly type: 'component' | 'style' | 'test' | 'documentation' | 'other' | 'route';
+  readonly source?: string;
+}
+
+export interface SourceImportResponse {
+  readonly success: boolean;
+  readonly componentId?: string;
+  readonly files: SourceImportFile[];
+  readonly warnings: string[];
+  readonly errors: string[];
+  readonly metadata: {
+    readonly sourceType: string;
+    readonly source: string;
+    readonly importedAt: string;
+    readonly componentName?: string;
+    readonly dependencies: string[];
+    readonly fileCount: number;
+    readonly totalSize: number;
+  };
+  readonly extractedComponents?: readonly unknown[];
+}
+
+export const sourceImports = {
+  start: (
+    body: SourceImportRequest,
+    scope: { readonly tenantId: string; readonly workspaceId: string; readonly projectId: string },
+  ) =>
+    postWithHeaders<SourceImportRequest, SourceImportResponse>(
+      '/api/v1/yappc/artifact/import-source',
+      body,
+      'sourceImports.start',
+      {
+        'X-Tenant-ID': scope.tenantId,
+        'X-Workspace-ID': scope.workspaceId,
+        'X-Project-ID': scope.projectId,
+      },
+    ),
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -385,6 +594,31 @@ export const telemetry = {
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Audit  (/api/audit/*)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface AuditEventRequest {
+  readonly type: string;
+  readonly userId: string;
+  readonly projectId: string;
+  readonly artifactId?: string;
+  readonly flowStage: string;
+  readonly phase: string;
+  readonly metadata?: Record<string, unknown>;
+  readonly description: string;
+}
+
+export interface AuditEventResponse extends AuditEventRequest {
+  readonly id: string;
+  readonly timestamp: string;
+}
+
+export const audit = {
+  emit: (body: AuditEventRequest) =>
+    post<AuditEventRequest, AuditEventResponse>('/api/audit/events', body, 'audit.emit'),
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Persons / Phases  (/api/personas/*, /api/phases/*)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -395,8 +629,11 @@ export const personas = {
 
 export const phases = {
   list: () => get<unknown[]>('/api/phases', 'phases.list'),
-  next: (phase: string) =>
-    get<{ nextPhase: string }>(`/api/phases/${encodeURIComponent(phase)}/next`, 'phases.next'),
+  next: (phase: string, projectId: string) =>
+    get<PhaseTransitionPreviewResponse>(
+      `/api/phases/${encodeURIComponent(phase)}/next${encodeQuery({ projectId })}`,
+      'phases.next',
+    ),
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -470,11 +707,14 @@ export const yappcApi = {
   intent,
   shape,
   generate,
+  workflows,
   validate,
   artifacts,
+  sourceImports,
   codeAssociations,
   gates,
   telemetry,
+  audit,
   personas,
   phases,
   userData,

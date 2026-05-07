@@ -6,7 +6,12 @@ import {
   buildPhaseGovernanceRecords,
   rankNextActions,
   buildPhaseSuggestedSteps,
+  buildPhaseCockpitContract,
   getPhaseCockpitConfig,
+  getCanonicalPhaseLabel,
+  getNextCanonicalPhase,
+  normalizeToMountedPhase,
+  rankNextActionDetails,
   type PhaseActivityEvent,
   type PhaseProjectSnapshot,
   type PhaseTransitionPreviewSnapshot,
@@ -49,6 +54,13 @@ const preview: PhaseTransitionPreviewSnapshot = {
 };
 
 describe('phase services', () => {
+  it('normalizes legacy lifecycle names to canonical mounted phases', () => {
+    expect(normalizeToMountedPhase(LifecyclePhase.CONTEXT)).toBe('shape');
+    expect(normalizeToMountedPhase(LifecyclePhase.EXECUTE)).toBe('generate');
+    expect(getCanonicalPhaseLabel(LifecyclePhase.VERIFY)).toBe('Run');
+    expect(getNextCanonicalPhase(LifecyclePhase.PLAN)).toBe('generate');
+  });
+
   it('returns stable cockpit config for each phase', () => {
     const config = getPhaseCockpitConfig('generate');
 
@@ -114,5 +126,68 @@ describe('phase services', () => {
         'Request owner review for lifecycle promotion',
       ]),
     );
+  });
+
+  it('builds next-best-action details from backed guidance, blockers, permissions, and gate confidence', () => {
+    const ranked = rankNextActionDetails({
+      phase: LifecyclePhase.EXECUTE,
+      phaseSteps: [
+        { title: 'Confirm generated artifact diff', completed: true },
+      ],
+      completedSteps: [],
+      project: { hasUnsavedChanges: false },
+      projectSignals: {
+        aiNextActions: ['Review generated diff'],
+        aiHealthScore: 91,
+      },
+      role: 'contributor',
+      canTransitionForward: true,
+      blockers: [{ title: 'Security review missing', severity: 'critical' }],
+      predictionConfidence: 0.55,
+    });
+
+    expect(ranked[0]).toMatchObject({
+      title: 'Resolve blocker: Security review missing',
+      source: 'blocker',
+      risk: 'high',
+      requiresApproval: true,
+      safeToRun: false,
+    });
+    expect(ranked.map((action) => action.title)).toEqual(
+      expect.arrayContaining([
+        'Review generated diff',
+        'Gather stronger evidence before accepting lifecycle guidance',
+        'Request owner review for lifecycle promotion',
+      ]),
+    );
+  });
+
+  it('builds a canonical cockpit contract separating persisted, derived, suggested, and review data', () => {
+    const blockers = buildPhaseBlockers(
+      'generate',
+      project,
+      { ...preview, canAdvance: false, blockers: ['Approval missing'] },
+    );
+    const suggestions = buildPhaseSuggestedSteps('generate', project, vi.fn());
+    const contract = buildPhaseCockpitContract({
+      phase: 'generate',
+      project,
+      activity,
+      preview: { ...preview, canAdvance: false, blockers: ['Approval missing'] },
+      blockers,
+      evidence: buildPhaseEvidence('generate', project, activity, preview),
+      governance: buildPhaseGovernanceRecords(activity),
+      suggestions,
+    });
+
+    expect(contract.persisted.project.name).toBe('Alpha');
+    expect(contract.persisted.activity).toHaveLength(1);
+    expect(contract.derived.blockers.length).toBeGreaterThan(0);
+    expect(contract.suggested.actions[0]?.title).toBe('Review the latest lifecycle evidence');
+    expect(contract.review).toMatchObject({
+      required: true,
+      canAdvance: false,
+    });
+    expect(contract.review.reason).toContain('blocker');
   });
 });

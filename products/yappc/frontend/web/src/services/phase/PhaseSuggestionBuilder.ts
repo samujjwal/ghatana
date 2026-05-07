@@ -1,25 +1,76 @@
 import type { SuggestedStep } from '@/components/phase/PhaseSuggestedNextStep';
 
-import type { MountedPhase, PhaseProjectSnapshot } from './types';
+import type { Blocker } from '@/components/phase/PhaseBlockerPanel';
+import { rankNextActionDetails } from './NextActionRankingService';
+import type {
+  MountedPhase,
+  PhaseProjectSnapshot,
+  PhaseTransitionPreviewSnapshot,
+  PhaseUserRole,
+} from './types';
+
+function buildPhaseSteps(
+  phase: MountedPhase,
+  project: PhaseProjectSnapshot,
+  preview: PhaseTransitionPreviewSnapshot | null,
+): readonly { readonly title: string; readonly completed: boolean }[] {
+  const hasDescription = Boolean(project.description?.trim());
+  const hasRecentProjectTruth = Boolean(project.updatedAt);
+  const gatePassing = preview?.canAdvance ?? true;
+
+  return [
+    {
+      title: `Confirm ${phase} project context`,
+      completed: hasDescription,
+    },
+    {
+      title: 'Review latest backed project activity',
+      completed: hasRecentProjectTruth,
+    },
+    {
+      title: 'Clear lifecycle gate for the next phase',
+      completed: gatePassing,
+    },
+  ] as const;
+}
 
 export function buildPhaseSuggestedSteps(
   phase: MountedPhase,
   project: PhaseProjectSnapshot,
   onAccept: () => void,
+  options?: {
+    readonly blockers?: readonly Blocker[];
+    readonly preview?: PhaseTransitionPreviewSnapshot | null;
+    readonly role?: PhaseUserRole;
+  },
 ): SuggestedStep[] {
-  const nextActions = (project.nextActionHints ?? [])
-    .slice(0, 2)
-    .map((title, index) => ({
-      id: `${phase}-suggested-${index}`,
-      title,
-      description: 'Suggested next action from the latest backed project signals.',
-      type: 'review' as const,
-      estimatedTime: '5 min',
+  const preview = options?.preview ?? null;
+  const rankedActions = rankNextActionDetails({
+    phase,
+    phaseSteps: buildPhaseSteps(phase, project, preview),
+    completedSteps: [],
+    project: {
+      hasUnsavedChanges: false,
+    },
+    projectSignals: {
+      aiNextActions: project.nextActionHints ?? [],
+      aiHealthScore: project.healthScore ?? undefined,
+    },
+    role: options?.role ?? 'contributor',
+    canTransitionForward: preview?.canAdvance ?? false,
+    blockers: options?.blockers ?? [],
+    predictionConfidence: preview?.predictionConfidence,
+  });
+
+  if (rankedActions.length > 0) {
+    return rankedActions.map((action, index) => ({
+      id: `${phase}-next-best-${action.id || index}`,
+      title: action.title,
+      description: `${action.description} Source: ${action.source}; risk: ${action.risk}${action.requiresApproval ? '; review required' : ''}.`,
+      type: action.type,
+      estimatedTime: action.safeToRun ? '3 min' : '5 min',
       onAccept,
     }));
-
-  if (nextActions.length > 0) {
-    return nextActions;
   }
 
   return [

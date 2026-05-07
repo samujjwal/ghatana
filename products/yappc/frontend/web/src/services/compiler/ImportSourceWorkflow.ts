@@ -30,6 +30,7 @@ import {
   type ImportedSourceArtifactInput,
 } from '@/components/canvas/page/artifactCompilerBridge';
 import type { PageArtifactDocument } from '@/components/canvas/page/pageArtifactDocument';
+import { ApiRequestError, yappcApi } from '@/lib/api/client';
 import { assessComponentSafety } from '@/security/UnsafeComponentHandler';
 
 const compileImportedSourceToPageArtifactsSafe = compileImportedSourceToPageArtifacts as (
@@ -76,6 +77,14 @@ export interface ImportOptions {
   allowUnsafeComponents?: boolean;
   /** Explicit backend endpoint used for server-side source import orchestration */
   importApiEndpoint?: string;
+  /** Require server-side import orchestration; do not fall back to local/browser import handlers. */
+  requireServerImport?: boolean;
+  /** Tenant scope required for governed browser imports. */
+  tenantId?: string;
+  /** Workspace scope required for governed browser imports. */
+  workspaceId?: string;
+  /** Maximum allowed source locator size before the import request is rejected client-side. */
+  maxSourceLength?: number;
 }
 
 export interface ImportResult {
@@ -205,7 +214,7 @@ export async function importSourceToPageArtifacts(
 
   return {
     importResult,
-    pageArtifacts: compiledArtifacts as readonly PageArtifactDocument[],
+    pageArtifacts: compiledArtifacts,
   };
 }
 
@@ -686,7 +695,7 @@ async function fetchArtifact(
   const artifactData = parseArtifactJson(content);
   return {
     metadata: { name: artifactData.metadata?.name ?? extractComponentName(content) },
-    dependencies: artifactData.dependencies ?? [],
+    dependencies: [...(artifactData.dependencies ?? [])],
   };
 }
 
@@ -972,19 +981,48 @@ function parseArtifactJson(content: string): ParsedArtifactJson {
   };
 }
 
-function normalizeCompiledPageArtifacts(value: unknown): readonly Record<string, unknown>[] {
+function normalizeCompiledPageArtifacts(value: unknown): readonly PageArtifactDocument[] {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  const artifacts: Record<string, unknown>[] = [];
+  const artifacts: PageArtifactDocument[] = [];
   for (const entry of value) {
-    if (entry instanceof Object && entry != null) {
-      artifacts.push(entry as Record<string, unknown>);
+    if (isPageArtifactDocument(entry)) {
+      artifacts.push(entry);
     }
   }
 
   return artifacts;
+}
+
+function isPageArtifactDocument(value: unknown): value is PageArtifactDocument {
+  if (!(value instanceof Object) || value == null) {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.artifactId === 'string' &&
+    typeof candidate.documentId === 'string' &&
+    candidate.serializedBuilderDocument instanceof Object &&
+    candidate.serializedBuilderDocument != null &&
+    (candidate.source === 'created-in-builder' ||
+      candidate.source === 'decompiled' ||
+      candidate.source === 'imported' ||
+      candidate.source === 'generated') &&
+    (candidate.syncStatus === 'dirty' ||
+      candidate.syncStatus === 'saving' ||
+      candidate.syncStatus === 'synced' ||
+      candidate.syncStatus === 'error' ||
+      candidate.syncStatus === 'offline') &&
+    typeof candidate.trustLevel === 'string' &&
+    typeof candidate.dataClassification === 'string' &&
+    typeof candidate.createdBy === 'string' &&
+    typeof candidate.updatedBy === 'string' &&
+    typeof candidate.createdAt === 'string' &&
+    typeof candidate.updatedAt === 'string'
+  );
 }
 
 function normalizeSafetyAssessment(value: unknown): ComponentSafetyAssessment {
@@ -1047,7 +1085,22 @@ async function tryImportFromServer(options: ImportSourceOptions): Promise<Import
     return null;
   }
 
-  const endpoint = options.options?.importApiEndpoint ?? '/api/v1/yappc/artifact/import-source';
+  const requireServerImport = options.options?.requireServerImport === true;
+  const endpoint = options.options?.importApiEndpoint;
+  if (endpoint && endpoint !== '/api/v1/yappc/artifact/import-source') {
+    if (requireServerImport) {
+      throw new Error('Governed source imports must use the canonical backend import endpoint.');
+    }
+    return null;
+  }
+  const maxSourceLength = options.options?.maxSourceLength ?? 4096;
+  if (options.source.length > maxSourceLength) {
+    throw new Error(`Source locator exceeds the ${maxSourceLength} character import limit.`);
+  }
+  if (requireServerImport && (!options.options?.tenantId || !options.options.workspaceId || !options.projectId)) {
+    throw new Error('Governed source imports require tenant, workspace, and project scope.');
+  }
+
   const payload = {
     sourceType: options.sourceType,
     source: options.source,
@@ -1063,40 +1116,39 @@ async function tryImportFromServer(options: ImportSourceOptions): Promise<Import
     },
   };
 
-  let response: Response;
   try {
-    response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    const result = await yappcApi.sourceImports.start(
+      payload,
+      {
+        tenantId: options.options?.tenantId ?? '',
+        workspaceId: options.options?.workspaceId ?? '',
+        projectId: options.projectId,
       },
-      body: JSON.stringify(payload),
-    });
+    );
+
+    if (!isImportResultShape(result)) {
+      throw new Error('Server import returned an invalid response payload');
+    }
+
+    return result as ImportResult;
   } catch (networkError) {
+    if (
+      networkError instanceof ApiRequestError &&
+      (networkError.status === 404 || networkError.status === 501) &&
+      !requireServerImport
+    ) {
+      return null;
+    }
+
     // P1-011: Server import was selected for this source (shouldUseServerImport returned true).
     // A network failure must not silently fall through to browser-local handlers, as those
     // lack the auth and tenant context available on the server side.
     throw new Error(
-      `Server import request failed due to a network error: ${
+      `Server import request failed: ${
         networkError instanceof Error ? networkError.message : String(networkError)
       }`,
     );
   }
-
-  if (response.status === 404 || response.status === 501) {
-    return null;
-  }
-
-  if (!response.ok) {
-    throw new Error(`Server import failed (${response.status})`);
-  }
-
-  const result = (await response.json()) as ImportResult;
-  if (!isImportResultShape(result)) {
-    throw new Error('Server import returned an invalid response payload');
-  }
-
-  return result;
 }
 
 function shouldUseServerImport(options: ImportSourceOptions): boolean {
@@ -1223,7 +1275,7 @@ async function readExistingFiles(
   options?: ImportOptions,
 ): Promise<ImportedFile[]> {
   const files = await Promise.all(
-    candidates.map(async (candidate) => {
+    candidates.map(async (candidate): Promise<ImportedFile | null> => {
       try {
         return {
           path: candidate.split('/').pop() ?? candidate,

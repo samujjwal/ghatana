@@ -11,7 +11,7 @@
  */
 
 import { beforeEach, describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, waitFor } from '@testing-library/react';
 import BuilderPreviewRoute from '../preview-builder';
 import type {
   HostToPreviewMessage,
@@ -76,6 +76,15 @@ function dispatchFromParent(message: HostToPreviewMessage): void {
   window.dispatchEvent(event);
 }
 
+async function waitForPreviewReady(postMessageSpy: ReturnType<typeof vi.fn>): Promise<void> {
+  await waitFor(() => {
+    expect(postMessageSpy).toHaveBeenCalledWith(
+      expect.objectContaining<Partial<ReadyMessage>>({ type: 'READY' }),
+      expect.any(String),
+    );
+  });
+}
+
 describe('BuilderPreviewRoute', () => {
   const session = 'server-issued-preview-token';
   const expectedOrigin = document.referrer
@@ -92,15 +101,17 @@ describe('BuilderPreviewRoute', () => {
     vi.unstubAllEnvs();
   });
 
-  it('posts READY to window.parent on mount', () => {
+  it('posts READY to window.parent on mount', async () => {
     const postMessageSpy = vi.spyOn(window, 'postMessage');
 
     render(<BuilderPreviewRoute />);
 
-    expect(postMessageSpy).toHaveBeenCalledWith(
-      expect.objectContaining<Partial<ReadyMessage>>({ type: 'READY' }),
-      expectedOrigin,
-    );
+    await waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalledWith(
+        expect.objectContaining<Partial<ReadyMessage>>({ type: 'READY' }),
+        expectedOrigin,
+      );
+    });
   });
 
   it('renders the waiting state before any document is mounted', () => {
@@ -111,6 +122,7 @@ describe('BuilderPreviewRoute', () => {
   it('renders nodes after MOUNT_DOCUMENT and posts MOUNTED', async () => {
     const postMessageSpy = vi.spyOn(window, 'postMessage');
     render(<BuilderPreviewRoute />);
+    await waitForPreviewReady(postMessageSpy);
 
     const mountMsg: MountDocumentMessage = {
       type: 'MOUNT_DOCUMENT',
@@ -148,6 +160,7 @@ describe('BuilderPreviewRoute', () => {
   it('posts UPDATED after UPDATE_DOCUMENT', async () => {
     const postMessageSpy = vi.spyOn(window, 'postMessage');
     render(<BuilderPreviewRoute />);
+    await waitForPreviewReady(postMessageSpy);
 
     const mountMsg: MountDocumentMessage = {
       type: 'MOUNT_DOCUMENT',
@@ -195,6 +208,7 @@ describe('BuilderPreviewRoute', () => {
   it('responds to PING with PONG', async () => {
     const postMessageSpy = vi.spyOn(window, 'postMessage');
     render(<BuilderPreviewRoute />);
+    await waitForPreviewReady(postMessageSpy);
 
     await act(async () => {
       await Promise.resolve();
@@ -211,7 +225,9 @@ describe('BuilderPreviewRoute', () => {
   });
 
   it('clears the canvas on TEARDOWN', async () => {
+    const postMessageSpy = vi.spyOn(window, 'postMessage');
     render(<BuilderPreviewRoute />);
+    await waitForPreviewReady(postMessageSpy);
 
     await act(async () => {
       await Promise.resolve();
@@ -240,5 +256,63 @@ describe('BuilderPreviewRoute', () => {
 
     expect(screen.queryByTestId('node-node-abc')).not.toBeInTheDocument();
     expect(screen.getByText('Waiting for document…')).toBeInTheDocument();
+  });
+
+  it('applies viewport, theme, and locale messages to the runtime shell', async () => {
+    const postMessageSpy = vi.spyOn(window, 'postMessage');
+    render(<BuilderPreviewRoute />);
+    await waitForPreviewReady(postMessageSpy);
+
+    await act(async () => {
+      await Promise.resolve();
+      dispatchFromParent({
+        type: 'MOUNT_DOCUMENT',
+        document: makeDocument(['node-abc']),
+        sandbox: {
+          id: 'test-sandbox',
+          name: 'Test',
+          viewport: { width: 1440, height: 900, devicePixelRatio: 1, label: 'Desktop' },
+          theme: 'default',
+          locale: 'en-US',
+          featureFlags: {},
+          trustedOrigins: [window.location.origin],
+        },
+        correlationId: 'corr-1',
+      });
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      dispatchFromParent({
+        type: 'SET_VIEWPORT',
+        viewport: { width: 375, height: 812, devicePixelRatio: 3, label: 'Mobile' },
+        correlationId: 'viewport-1',
+      });
+      dispatchFromParent({
+        type: 'SET_THEME',
+        theme: 'contrast',
+        correlationId: 'theme-1',
+      });
+      dispatchFromParent({
+        type: 'SET_LOCALE',
+        locale: 'ar-SA',
+        correlationId: 'locale-1',
+      });
+      await Promise.resolve();
+    });
+
+    const shell = screen.getByTestId('preview-runtime-shell');
+    const viewport = screen.getByTestId('preview-runtime-viewport');
+
+    expect(shell).toHaveAttribute('data-preview-theme', 'contrast');
+    expect(shell).toHaveAttribute('data-preview-locale', 'ar-SA');
+    expect(shell).toHaveAttribute('data-preview-viewport-width', '375');
+    expect(shell).toHaveAttribute('dir', 'rtl');
+    expect(shell).toHaveStyle({ backgroundColor: 'rgb(0, 0, 0)' });
+    expect(viewport).toHaveStyle({
+      maxWidth: '375px',
+      minHeight: '812px',
+      outline: '2px solid #facc15',
+    });
   });
 });

@@ -168,7 +168,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
                 <Box className="flex items-center justify-between">
                     <Box className="flex items-center gap-2">
                         <AIIcon tone="primary" />
-                        <Typography as="h6">AI Assistant</Typography>
+                        <Typography as="h6">Guided Assistant</Typography>
                         <Chip
                             label="⌘K"
                             size="sm"

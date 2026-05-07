@@ -1,4 +1,6 @@
 import React, { useCallback, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAtomValue } from 'jotai';
 import { useNavigate, useParams } from 'react-router';
 
 import { PhaseBlockerPanel } from '../../../components/phase/PhaseBlockerPanel';
@@ -8,6 +10,8 @@ import { PhaseGovernanceTrace } from '../../../components/phase/PhaseGovernanceT
 import { PhasePrimaryActionCard } from '../../../components/phase/PhasePrimaryActionCard';
 import { PhaseSuggestedNextStep } from '../../../components/phase/PhaseSuggestedNextStep';
 import {
+  describePhaseActionError,
+  executePhasePrimaryAction,
   formatTimestamp,
   resolvePhaseIcon,
   usePhaseCockpitData,
@@ -17,6 +21,8 @@ import type {
 } from '../../../services/phase';
 import { PhaseStatusPanels } from './PhaseStatusPanels';
 import { PhaseEmbeddedSurface } from './PhaseEmbeddedSurface';
+import { currentUserAtom } from '../../../stores/user.store';
+import type { PhaseActionResult } from '../../../services/phase';
 
 
 /** Human-readable label for the advanced detail panel, per phase. */
@@ -34,7 +40,11 @@ const PHASE_DETAIL_LABELS: Record<MountedPhase, string> = {
 function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const currentUser = useAtomValue(currentUserAtom);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [actionResult, setActionResult] = useState<PhaseActionResult | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const scrollToSupportingSurface = useCallback(() => {
     document.getElementById(`${phase}-supporting-surface`)?.scrollIntoView({
@@ -65,17 +75,66 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     onSuggestionAction: scrollToSupportingSurface,
   });
 
-  const handlePrimaryAction = () => {
+  const actionMutation = useMutation({
+    mutationFn: executePhasePrimaryAction,
+    onSuccess: (result) => {
+      setActionResult(result);
+      setActionError(null);
+      setFeedback(null);
+      void queryClient.invalidateQueries({ queryKey: ['project-activity', projectId] });
+      if (result.kind === 'surface') {
+        scrollToSupportingSurface();
+      }
+    },
+    onError: (error) => {
+      setActionResult(null);
+      setActionError(describePhaseActionError(error));
+      if (preview && !preview.canAdvance) {
+        scrollToBlockerPanel();
+      }
+    },
+  });
+
+  const handlePrimaryAction = useCallback(() => {
+    setActionResult(null);
+    setActionError(null);
+
     if (phase === 'intent' && projectId) {
       void navigate(`/p/${projectId}/intent?drawer=idea`);
       return;
     }
 
+    if (!projectId) {
+      setActionError('Missing project context for this phase action.');
+      return;
+    }
+
+    if (phase === 'generate' || phase === 'run') {
+      actionMutation.mutate({
+        phase,
+        projectId,
+        tenantId: currentUser?.tenantId,
+        preview,
+      });
+      return;
+    }
+
     setFeedback(config.actionFeedback);
     scrollToSupportingSurface();
-  };
+  }, [
+    actionMutation,
+    config.actionFeedback,
+    currentUser?.tenantId,
+    navigate,
+    phase,
+    preview,
+    projectId,
+    scrollToSupportingSurface,
+  ]);
 
   const handleSecondaryAction = () => {
+    setActionResult(null);
+    setActionError(null);
     setFeedback(`Reviewing ${config.supportingTitle.toLowerCase()} for ${config.name}.`);
     scrollToSupportingSurface();
   };
@@ -128,7 +187,10 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     </div>
   );
 
-  const isCtaDisabled = (phase === 'validate' || phase === 'generate') && blockers.length > 0;
+  const isCtaDisabled = config.primaryLocked === true || actionMutation.isPending;
+  const disabledReason = actionMutation.isPending
+    ? 'The phase action is running. Keep this page open while the backend responds.'
+    : config.primaryLockedReason;
 
   return (
     <div className="p-6 space-y-6">
@@ -147,8 +209,10 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
             icon={resolvePhaseIcon(config.icon)}
             disabled={isCtaDisabled}
             disabledReason={
-              isCtaDisabled
-                ? `${blockers.length} blocker${blockers.length > 1 ? 's' : ''} must be resolved before continuing. Scroll down to review and resolve them.`
+              disabledReason
+                ? disabledReason
+                : isCtaDisabled
+                  ? `${blockers.length} blocker${blockers.length > 1 ? 's' : ''} must be resolved before continuing. Scroll down to review and resolve them.`
                 : undefined
             }
             testId={`${phase}-primary-action-card`}
@@ -162,12 +226,28 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
         suggestedAutomation={<PhaseSuggestedNextStep steps={suggestions} />}
         governanceTrace={<PhaseGovernanceTrace records={governance} />}
         advancedTools={advancedDetails}
-        advancedToolsLabel="Advanced details"
+        advancedToolsLabel={PHASE_DETAIL_LABELS[phase]}
       >
         <div className="space-y-4" data-testid={`${phase}-native-summary`}>
           {feedback ? (
             <div className="rounded-xl border border-info-border bg-info-bg p-4 text-sm text-info-color">
               {feedback}
+            </div>
+          ) : null}
+          {actionResult ? (
+            <div
+              className="rounded-xl border border-success-border bg-success-bg p-4 text-sm text-success-color"
+              data-testid="phase-action-result"
+            >
+              {actionResult.message}
+            </div>
+          ) : null}
+          {actionError ? (
+            <div
+              className="rounded-xl border border-destructive bg-destructive/10 p-4 text-sm text-destructive"
+              data-testid="phase-action-error"
+            >
+              {actionError}
             </div>
           ) : null}
           {statusPanels}

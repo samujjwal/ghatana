@@ -4,6 +4,8 @@
  * <p>P1-030: Surfaces mutation errors with toast notifications and correlation ID.</p>
  * <p>P1-031: Per-row action pending states for concurrent operations.</p>
  *
+ * <p>P2-003: Complete, archive, rollback (feature-flagged), and duplicate lifecycle actions.</p>
+ *
  * @doc.type page
  * @doc.purpose Campaign listing, creation, launch, and pause with error handling
  * @doc.layer frontend
@@ -11,22 +13,50 @@
 import React, { useState, useCallback } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useCampaigns, useCreateCampaign, useLaunchCampaign, usePauseCampaign } from '@/hooks/useCampaigns';
+import { useCampaigns, useCreateCampaign, useLaunchCampaign, usePauseCampaign, useCompleteCampaign, useArchiveCampaign, useRollbackCampaign, useDuplicateCampaign } from '@/hooks/useCampaigns';
+import { FEATURE_FLAGS, isFeatureEnabled } from '@/lib/feature-flags';
 import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/Toast';
 import { ApiError } from '@/lib/http-client';
-import type { CampaignType } from '@/types/campaign';
+import type { CampaignType, CampaignObjective } from '@/types/campaign';
+import {
+  Button,
+  TextField,
+  Select,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  Badge,
+} from '@ghatana/design-system';
 
 const CAMPAIGN_TYPES: CampaignType[] = ['EMAIL', 'SOCIAL', 'PAID_SEARCH', 'PUSH', 'SMS', 'OMNICHANNEL'];
+const CAMPAIGN_OBJECTIVES: CampaignObjective[] = ['AWARENESS', 'LEADS', 'CONVERSIONS', 'RETENTION', 'ENGAGEMENT', 'TRAFFIC'];
+
+const PAGE_SIZE = 20;
 
 export function CampaignsPage(): React.ReactElement {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { isAuthenticated } = useAuth();
   const { toasts, showSuccess, showError, dismissToast } = useToast();
+  const rollbackEnabled = isFeatureEnabled(FEATURE_FLAGS.ROLLBACK_WORKFLOW_ENABLED);
   const [name, setName] = useState('');
   const [type, setType] = useState<CampaignType>('EMAIL');
+  const [objective, setObjective] = useState<CampaignObjective>('AWARENESS');
+  const [budgetDollars, setBudgetDollars] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [audience, setAudience] = useState('');
+  const [landingPageUrl, setLandingPageUrl] = useState('');
+  const [page, setPage] = useState(0);
 
-  const { campaigns, isLoading, isError, error } = useCampaigns(workspaceId ?? null);
+  const { campaigns, count, isLoading, isError, error } = useCampaigns(workspaceId ?? null, {
+    limit: PAGE_SIZE,
+    offset: page * PAGE_SIZE,
+  });
+
+  const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
 
   // P1-030: Error handlers with correlation ID for diagnostics
   const handleCreateError = useCallback((err: ApiError) => {
@@ -55,19 +85,93 @@ export function CampaignsPage(): React.ReactElement {
   const { launch, isPendingFor: isLaunchingFor } = useLaunchCampaign(workspaceId ?? null, handleLaunchError);
   const { pause, isPendingFor: isPausingFor } = usePauseCampaign(workspaceId ?? null, handlePauseError);
 
+  const handleCompleteError = useCallback((err: ApiError, campaignId: string) => {
+    const campaign = campaigns.find(c => c.id === campaignId);
+    showError(`Failed to complete "${campaign?.name ?? 'campaign'}": ${err.getUserMessage()}`, err.correlationId ?? undefined);
+  }, [showError, campaigns]);
+
+  const handleArchiveError = useCallback((err: ApiError, campaignId: string) => {
+    const campaign = campaigns.find(c => c.id === campaignId);
+    showError(`Failed to archive "${campaign?.name ?? 'campaign'}": ${err.getUserMessage()}`, err.correlationId ?? undefined);
+  }, [showError, campaigns]);
+
+  const handleRollbackError = useCallback((err: ApiError, campaignId: string) => {
+    const campaign = campaigns.find(c => c.id === campaignId);
+    showError(`Failed to rollback "${campaign?.name ?? 'campaign'}": ${err.getUserMessage()}`, err.correlationId ?? undefined);
+  }, [showError, campaigns]);
+
+  const handleDuplicateError = useCallback((err: ApiError, campaignId: string) => {
+    const campaign = campaigns.find(c => c.id === campaignId);
+    showError(`Failed to duplicate "${campaign?.name ?? 'campaign'}": ${err.getUserMessage()}`, err.correlationId ?? undefined);
+  }, [showError, campaigns]);
+
+  const { execute: complete, isPendingFor: isCompletingFor } = useCompleteCampaign(workspaceId ?? null, handleCompleteError);
+  const { execute: archive, isPendingFor: isArchivingFor } = useArchiveCampaign(workspaceId ?? null, handleArchiveError);
+  const { execute: rollback, isPendingFor: isRollingBackFor } = useRollbackCampaign(workspaceId ?? null, handleRollbackError);
+  const { execute: duplicate, isPendingFor: isDuplicatingFor } = useDuplicateCampaign(workspaceId ?? null, handleDuplicateError);
+
+  const handleComplete = useCallback(async (campaignId: string, campaignName: string) => {
+    try {
+      await complete(campaignId);
+      showSuccess(`Campaign "${campaignName}" marked as completed`);
+    } catch { /* handled by handleCompleteError */ }
+  }, [complete, showSuccess]);
+
+  const handleArchive = useCallback(async (campaignId: string, campaignName: string) => {
+    if (!window.confirm(`Archive campaign "${campaignName}"? This cannot be undone.`)) return;
+    try {
+      await archive(campaignId);
+      showSuccess(`Campaign "${campaignName}" archived`);
+    } catch { /* handled by handleArchiveError */ }
+  }, [archive, showSuccess]);
+
+  const handleRollback = useCallback(async (campaignId: string, campaignName: string) => {
+    if (!window.confirm(`Roll back campaign "${campaignName}" to DRAFT?`)) return;
+    try {
+      await rollback(campaignId);
+      showSuccess(`Campaign "${campaignName}" rolled back to draft`);
+    } catch { /* handled by handleRollbackError */ }
+  }, [rollback, showSuccess]);
+
+  const handleDuplicate = useCallback(async (campaignId: string, campaignName: string) => {
+    const newName = window.prompt('Name for the duplicate campaign:', `${campaignName} (copy)`);
+    if (!newName?.trim()) return;
+    try {
+      await duplicate(campaignId, newName.trim());
+      showSuccess(`Campaign duplicated as "${newName.trim()}"`);
+    } catch { /* handled by handleDuplicateError */ }
+  }, [duplicate, showSuccess]);
+
   const handleCreate = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       if (!name.trim() || !workspaceId) return;
+      const budget = parseFloat(budgetDollars);
+      if (isNaN(budget) || budget <= 0) return;
       try {
-        await create({ name: name.trim(), type });
+        await create({
+          name: name.trim(),
+          type,
+          objective,
+          budgetCents: Math.round(budget * 100),
+          startDate,
+          endDate,
+          audience: audience.trim(),
+          landingPageUrl: landingPageUrl.trim() || undefined,
+        });
         showSuccess(`Campaign "${name.trim()}" created successfully`);
         setName('');
+        setBudgetDollars('');
+        setStartDate('');
+        setEndDate('');
+        setAudience('');
+        setLandingPageUrl('');
+        setPage(0);
       } catch {
         // Error is handled by handleCreateError callback
       }
     },
-    [create, name, type, workspaceId, showSuccess],
+    [create, name, type, objective, budgetDollars, startDate, endDate, audience, landingPageUrl, workspaceId, showSuccess],
   );
 
   const handleLaunch = useCallback(async (campaignId: string, campaignName: string) => {
@@ -105,42 +209,111 @@ export function CampaignsPage(): React.ReactElement {
 
       <section className="mb-8 p-4 border rounded bg-white">
         <h2 className="text-lg font-semibold mb-3">Create Campaign</h2>
-        <form onSubmit={handleCreate} className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-sm flex-1 min-w-[200px]">
-            Name
-            <input
+        <form onSubmit={handleCreate} className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          <div className="col-span-2 md:col-span-1">
+            <TextField
               data-testid="campaign-name-input"
+              label="Name *"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="border rounded px-2 py-1"
               placeholder="Q4 Acquisition"
               required
+              fullWidth
             />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Type
-            <select
+          </div>
+          <div>
+            <Select
               data-testid="campaign-type-select"
+              label="Type *"
               value={type}
               onChange={(e) => setType(e.target.value as CampaignType)}
-              className="border rounded px-2 py-1"
+              options={CAMPAIGN_TYPES.map((t) => ({ value: t, label: t }))}
+              fullWidth
+            />
+          </div>
+          <div>
+            <Select
+              data-testid="campaign-objective-select"
+              label="Objective *"
+              value={objective}
+              onChange={(e) => setObjective(e.target.value as CampaignObjective)}
+              options={CAMPAIGN_OBJECTIVES.map((o) => ({ value: o, label: o }))}
+              fullWidth
+            />
+          </div>
+          <div>
+            <TextField
+              data-testid="campaign-budget-input"
+              label="Budget (USD) *"
+              type="number"
+              min="1"
+              step="0.01"
+              value={budgetDollars}
+              onChange={(e) => setBudgetDollars(e.target.value)}
+              placeholder="500.00"
+              required
+              fullWidth
+            />
+          </div>
+          <div>
+            <TextField
+              data-testid="campaign-start-date-input"
+              label="Start Date *"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              required
+              fullWidth
+            />
+          </div>
+          <div>
+            <TextField
+              data-testid="campaign-end-date-input"
+              label="End Date *"
+              type="date"
+              value={endDate}
+              inputProps={{ min: startDate }}
+              onChange={(e) => setEndDate(e.target.value)}
+              required
+              fullWidth
+            />
+          </div>
+          <div className="col-span-2">
+            <TextField
+              data-testid="campaign-audience-input"
+              label="Audience *"
+              type="text"
+              value={audience}
+              onChange={(e) => setAudience(e.target.value)}
+              placeholder="E.g. SMB owners 25–45 in US"
+              required
+              fullWidth
+            />
+          </div>
+          <div className="col-span-2 md:col-span-1">
+            <TextField
+              data-testid="campaign-landing-page-input"
+              label="Landing Page URL"
+              type="url"
+              value={landingPageUrl}
+              onChange={(e) => setLandingPageUrl(e.target.value)}
+              placeholder="https://example.com/landing"
+              fullWidth
+            />
+          </div>
+          <div className="col-span-2 md:col-span-3 flex justify-end">
+            <Button
+              data-testid="create-campaign-btn"
+              type="submit"
+              disabled={isCreating || !name.trim() || !audience.trim() || !budgetDollars || !startDate || !endDate}
+              loading={isCreating}
+              loadingText="Creating…"
+              tone="primary"
             >
-              {CAMPAIGN_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            data-testid="create-campaign-btn"
-            type="submit"
-            disabled={isCreating || !name.trim()}
-            className="px-4 py-1 bg-blue-600 text-white rounded text-sm disabled:opacity-50"
-          >
-            {isCreating ? 'Creating…' : 'Create'}
-          </button>
+              Create Campaign
+            </Button>
+          </div>
         </form>
       </section>
 
@@ -163,65 +336,158 @@ export function CampaignsPage(): React.ReactElement {
       )}
 
       {!isLoading && !isError && campaigns.length > 0 && (
-        <div data-testid="campaigns-list" className="border rounded overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="text-left px-4 py-2 font-medium">Name</th>
-                <th className="text-left px-4 py-2 font-medium">Type</th>
-                <th className="text-left px-4 py-2 font-medium">Status</th>
-                <th className="text-left px-4 py-2 font-medium">Created</th>
-                <th className="text-left px-4 py-2 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {campaigns.map((c) => (
-                <tr key={c.id} className="border-t" data-testid={`campaign-row-${c.id}`}>
-                  <td className="px-4 py-2">{c.name}</td>
-                  <td className="px-4 py-2">{c.type}</td>
-                  <td className="px-4 py-2">
-                    <span
-                      className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                        c.status === 'LAUNCHED'
-                          ? 'bg-green-100 text-green-800'
-                          : c.status === 'PAUSED'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {c.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2 text-gray-500">{new Date(c.createdAt).toLocaleDateString()}</td>
-                  <td className="px-4 py-2">
-                    <div className="flex gap-2">
-                      {c.status === 'DRAFT' && (
-                        <button
-                          data-testid={`launch-campaign-${c.id}`}
-                          onClick={() => handleLaunch(c.id, c.name)}
-                          disabled={isLaunchingFor(c.id)}
-                          className="px-3 py-1 bg-green-600 text-white rounded text-xs disabled:opacity-50"
+        <>
+          <div data-testid="campaigns-list" className="border rounded overflow-hidden">
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell component="th" className="text-left px-4 py-2 font-medium">Name</TableCell>
+                  <TableCell component="th" className="text-left px-4 py-2 font-medium">Type</TableCell>
+                  <TableCell component="th" className="text-left px-4 py-2 font-medium">Status</TableCell>
+                  <TableCell component="th" className="text-left px-4 py-2 font-medium">Created</TableCell>
+                  <TableCell component="th" className="text-left px-4 py-2 font-medium">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {campaigns.map((c) => (
+                  <TableRow key={c.id} className="border-t" data-testid={`campaign-row-${c.id}`}>
+                    <TableCell className="px-4 py-2">{c.name}</TableCell>
+                    <TableCell className="px-4 py-2">{c.type}</TableCell>
+                    <TableCell className="px-4 py-2">
+                      <Badge
+                        tone={
+                          c.status === 'LAUNCHED' ? 'success'
+                          : c.status === 'PAUSED' ? 'warning'
+                          : 'neutral'
+                        }
+                      >
+                        {c.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="px-4 py-2 text-gray-500">{new Date(c.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell className="px-4 py-2">
+                      <div className="flex gap-2">
+                        {c.status === 'DRAFT' && (
+                          <Button
+                            data-testid={`launch-campaign-${c.id}`}
+                            size="sm"
+                            tone="success"
+                            onClick={() => handleLaunch(c.id, c.name)}
+                            disabled={isLaunchingFor(c.id)}
+                            loading={isLaunchingFor(c.id)}
+                            loadingText="Launching…"
+                          >
+                            Launch
+                          </Button>
+                        )}
+                        {c.status === 'LAUNCHED' && (
+                          <Button
+                            data-testid={`pause-campaign-${c.id}`}
+                            size="sm"
+                            tone="warning"
+                            onClick={() => handlePause(c.id, c.name)}
+                            disabled={isPausingFor(c.id)}
+                            loading={isPausingFor(c.id)}
+                            loadingText="Pausing…"
+                          >
+                            Pause
+                          </Button>
+                        )}
+                        {(c.status === 'LAUNCHED' || c.status === 'ACTIVE') && (
+                          <Button
+                            data-testid={`complete-campaign-${c.id}`}
+                            size="sm"
+                            tone="primary"
+                            onClick={() => handleComplete(c.id, c.name)}
+                            disabled={isCompletingFor(c.id)}
+                            loading={isCompletingFor(c.id)}
+                            loadingText="Completing…"
+                          >
+                            Complete
+                          </Button>
+                        )}
+                        {c.status === 'COMPLETED' && (
+                          <Button
+                            data-testid={`archive-campaign-${c.id}`}
+                            size="sm"
+                            tone="neutral"
+                            onClick={() => handleArchive(c.id, c.name)}
+                            disabled={isArchivingFor(c.id)}
+                            loading={isArchivingFor(c.id)}
+                            loadingText="Archiving…"
+                          >
+                            Archive
+                          </Button>
+                        )}
+                        {c.status === 'LAUNCHED' && rollbackEnabled && (
+                          <Button
+                            data-testid={`rollback-campaign-${c.id}`}
+                            size="sm"
+                            tone="warning"
+                            variant="soft"
+                            onClick={() => handleRollback(c.id, c.name)}
+                            disabled={isRollingBackFor(c.id)}
+                            loading={isRollingBackFor(c.id)}
+                            loadingText="Rolling back…"
+                          >
+                            Rollback
+                          </Button>
+                        )}
+                        <Button
+                          data-testid={`duplicate-campaign-${c.id}`}
+                          size="sm"
+                          variant="outline"
+                          tone="neutral"
+                          onClick={() => handleDuplicate(c.id, c.name)}
+                          disabled={isDuplicatingFor(c.id)}
+                          loading={isDuplicatingFor(c.id)}
+                          loadingText="Duplicating…"
                         >
-                          {isLaunchingFor(c.id) ? 'Launching…' : 'Launch'}
-                        </button>
-                      )}
-                      {c.status === 'LAUNCHED' && (
-                        <button
-                          data-testid={`pause-campaign-${c.id}`}
-                          onClick={() => handlePause(c.id, c.name)}
-                          disabled={isPausingFor(c.id)}
-                          className="px-3 py-1 bg-yellow-500 text-white rounded text-xs disabled:opacity-50"
-                        >
-                          {isPausingFor(c.id) ? 'Pausing…' : 'Pause'}
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                          Duplicate
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* P1-001: Pagination controls */}
+          <div
+            data-testid="campaigns-pagination"
+            className="flex items-center justify-between mt-4 text-sm text-gray-600"
+          >
+            <span data-testid="campaigns-count">
+              {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, count)} of {count} campaign{count !== 1 ? 's' : ''}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                data-testid="campaigns-prev-page"
+                variant="outline"
+                tone="neutral"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+              >
+                ← Previous
+              </Button>
+              <span className="px-3 py-1">
+                Page {page + 1} of {totalPages}
+              </span>
+              <Button
+                data-testid="campaigns-next-page"
+                variant="outline"
+                tone="neutral"
+                size="sm"
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+              >
+                Next →
+              </Button>
+            </div>
+          </div>
+        </>
       )}
       </section>
     </>

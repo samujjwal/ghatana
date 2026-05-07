@@ -1,15 +1,41 @@
 export { buildPhaseBlockers } from './PhaseBlockerBuilder';
 export {
+  fetchProjectSnapshot,
   fetchPhaseTransitionPreview,
   formatTimestamp,
   isLifecyclePhase,
   parseJsonResponse,
   parseProjectResponse,
+  normalizeProjectSnapshot,
 } from './PhaseCockpitDataService';
 export type { LifecyclePhase } from './PhaseCockpitDataService';
-export { getAllPhaseCockpitConfig, getPhaseCockpitConfig, getAdaptivePhaseCockpitConfig } from './PhaseCockpitConfigService';\nexport { resolvePhaseIcon } from './PhaseIconResolver';
+export { getAllPhaseCockpitConfig, getPhaseCockpitConfig, getAdaptivePhaseCockpitConfig } from './PhaseCockpitConfigService';
+export {
+  describePhaseActionError,
+  executePhasePrimaryAction,
+} from './PhaseCockpitActionService';
+export type {
+  ExecutePhaseActionParams,
+  PhaseActionKind,
+  PhaseActionResult,
+} from './PhaseCockpitActionService';
+export {
+  buildPhaseCockpitContract,
+} from './PhaseCockpitContractBuilder';
+export type {
+  PhaseCockpitContract,
+} from './PhaseCockpitContractBuilder';
 export { buildPhaseEvidence, buildPhaseGovernanceRecords } from './PhaseEvidenceBuilder';
-export { rankNextActions } from './NextActionRankingService';
+export {
+  CANONICAL_PHASE_LABELS,
+  CANONICAL_PHASE_ORDER,
+  getCanonicalPhaseLabel,
+  getNextCanonicalPhase,
+  normalizeToMountedPhase,
+} from './CanonicalPhaseService';
+export type { PhaseNameInput } from './CanonicalPhaseService';
+export { rankNextActionDetails, rankNextActions } from './NextActionRankingService';
+export type { RankedNextAction } from './NextActionRankingService';
 export { buildPhaseSuggestedSteps } from './PhaseSuggestionBuilder';
 export { usePhaseCockpitData } from './usePhaseCockpitData';
 export type {

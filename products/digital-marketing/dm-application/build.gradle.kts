@@ -46,6 +46,7 @@ dependencies {
     api(project(":platform:java:observability"))
     api(project(":platform:java:security"))
     api(project(":platform-plugins:plugin-compliance"))
+    api(project(":platform-plugins:plugin-consent"))
 
     compileOnly(libs.spotbugs.annotations)
     implementation(libs.activej.promise)

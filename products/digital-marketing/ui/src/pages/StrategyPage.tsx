@@ -8,16 +8,41 @@
 import React, { useState, useCallback } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/useToast';
+import { ToastContainer } from '@/components/Toast';
+import { ApprovalDialog } from '@/components/ApprovalDialog';
+import { AIProvenancePanel } from '@/components/AIProvenancePanel';
+import { ApiError } from '@/lib/http-client';
 import {
   useStrategy,
   useGenerateStrategy,
   useSubmitStrategyApproval,
   useApproveStrategy,
 } from '@/hooks/useStrategy';
+import {
+  Button,
+  TextField,
+  Checkbox,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+} from '@ghatana/design-system';
 
 export function StrategyPage(): React.ReactElement {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { isAuthenticated } = useAuth();
+  const { toasts, showSuccess, showError, dismissToast } = useToast();
+  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
+
+  const handleMutationError = useCallback((err: unknown, context: string) => {
+    const apiErr = err instanceof ApiError ? err : null;
+    showError(
+      apiErr ? `${context}: ${apiErr.getUserMessage()}` : `${context}: An unexpected error occurred.`,
+      apiErr?.correlationId ?? undefined,
+    );
+  }, [showError]);
 
   const [serviceArea, setServiceArea] = useState('');
   const [primaryOffer, setPrimaryOffer] = useState('');
@@ -29,9 +54,15 @@ export function StrategyPage(): React.ReactElement {
   const [topCompetitorCount, setTopCompetitorCount] = useState('0');
 
   const { strategy, isLoading, isError, error } = useStrategy(workspaceId ?? null);
-  const { generate, isPending: isGenerating } = useGenerateStrategy(workspaceId ?? null);
-  const { submit, isPending: isSubmitting } = useSubmitStrategyApproval(workspaceId ?? null);
-  const { approve, isPending: isApproving } = useApproveStrategy(workspaceId ?? null);
+  const { generate, isPending: isGenerating } = useGenerateStrategy(workspaceId ?? null, {
+    onError: (err) => handleMutationError(err, 'Strategy generation failed'),
+  });
+  const { submit, isPending: isSubmitting } = useSubmitStrategyApproval(workspaceId ?? null, {
+    onError: (err) => handleMutationError(err, 'Failed to submit for approval'),
+  });
+  const { approve, isPending: isApproving } = useApproveStrategy(workspaceId ?? null, {
+    onError: (err) => handleMutationError(err, 'Approval failed'),
+  });
 
   const handleGenerate = useCallback(
     async (e: React.FormEvent) => {
@@ -60,25 +91,29 @@ export function StrategyPage(): React.ReactElement {
       )
         return;
 
-      await generate({
-        serviceArea: serviceArea.trim(),
-        primaryOffer: primaryOffer.trim(),
-        monthlyBudget: budget,
-        intakeCompletionPct: intake,
-        auditFindingCount: audit,
-        trackingGapsDetected,
-        keywordOpportunityCount: keywords,
-        topCompetitorCount: competitors,
-      });
-
-      setServiceArea('');
-      setPrimaryOffer('');
-      setMonthlyBudget('');
-      setIntakeCompletionPct('100');
-      setAuditFindingCount('0');
-      setTrackingGapsDetected(false);
-      setKeywordOpportunityCount('0');
-      setTopCompetitorCount('0');
+      try {
+        await generate({
+          serviceArea: serviceArea.trim(),
+          primaryOffer: primaryOffer.trim(),
+          monthlyBudget: budget,
+          intakeCompletionPct: intake,
+          auditFindingCount: audit,
+          trackingGapsDetected,
+          keywordOpportunityCount: keywords,
+          topCompetitorCount: competitors,
+        });
+        showSuccess('Strategy generated successfully');
+        setServiceArea('');
+        setPrimaryOffer('');
+        setMonthlyBudget('');
+        setIntakeCompletionPct('100');
+        setAuditFindingCount('0');
+        setTrackingGapsDetected(false);
+        setKeywordOpportunityCount('0');
+        setTopCompetitorCount('0');
+      } catch {
+        // Error is surfaced through the onError callback registered in useGenerateStrategy
+      }
     },
     [
       generate,
@@ -110,114 +145,102 @@ export function StrategyPage(): React.ReactElement {
       <section className="mb-8 p-4 border rounded bg-white">
         <h2 className="text-lg font-semibold mb-3">Generate 30-Day Marketing Strategy</h2>
         <form onSubmit={handleGenerate} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1 text-sm">
-            Service Area
-            <input
-              id="strategy-service-area"
-              name="serviceArea"
-              data-testid="strategy-service-area-input"
-              type="text"
-              value={serviceArea}
-              onChange={(e) => setServiceArea(e.target.value)}
-              className="border rounded px-2 py-1"
-              placeholder="e.g. Austin, TX"
-              required
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Primary Offer
-            <input
-              id="strategy-primary-offer"
-              name="primaryOffer"
-              data-testid="strategy-offer-input"
-              type="text"
-              value={primaryOffer}
-              onChange={(e) => setPrimaryOffer(e.target.value)}
-              className="border rounded px-2 py-1"
-              placeholder="e.g. Dental implants"
-              required
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Monthly Budget
-            <input
-              id="strategy-monthly-budget"
-              name="monthlyBudget"
-              data-testid="strategy-budget-input"
-              type="number"
-              min="0"
-              value={monthlyBudget}
-              onChange={(e) => setMonthlyBudget(e.target.value)}
-              className="border rounded px-2 py-1"
-              placeholder="5000"
-              required
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Intake Completion (%)
-            <input
-              data-testid="strategy-intake-input"
-              type="number"
-              min="0"
-              max="100"
-              value={intakeCompletionPct}
-              onChange={(e) => setIntakeCompletionPct(e.target.value)}
-              className="border rounded px-2 py-1"
-              required
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Audit Findings
-            <input
-              data-testid="strategy-audit-input"
-              type="number"
-              min="0"
-              value={auditFindingCount}
-              onChange={(e) => setAuditFindingCount(e.target.value)}
-              className="border rounded px-2 py-1"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Keyword Opportunities
-            <input
-              data-testid="strategy-keywords-input"
-              type="number"
-              min="0"
-              value={keywordOpportunityCount}
-              onChange={(e) => setKeywordOpportunityCount(e.target.value)}
-              className="border rounded px-2 py-1"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Top Competitors
-            <input
-              data-testid="strategy-competitors-input"
-              type="number"
-              min="0"
-              value={topCompetitorCount}
-              onChange={(e) => setTopCompetitorCount(e.target.value)}
-              className="border rounded px-2 py-1"
-            />
-          </label>
-          <label className="flex items-center gap-2 text-sm sm:pt-6">
-            <input
+          <TextField
+            id="strategy-service-area"
+            name="serviceArea"
+            data-testid="strategy-service-area-input"
+            label="Service Area"
+            type="text"
+            value={serviceArea}
+            onChange={(e) => setServiceArea(e.target.value)}
+            placeholder="e.g. Austin, TX"
+            required
+            fullWidth
+          />
+          <TextField
+            id="strategy-primary-offer"
+            name="primaryOffer"
+            data-testid="strategy-offer-input"
+            label="Primary Offer"
+            type="text"
+            value={primaryOffer}
+            onChange={(e) => setPrimaryOffer(e.target.value)}
+            placeholder="e.g. Dental implants"
+            required
+            fullWidth
+          />
+          <TextField
+            id="strategy-monthly-budget"
+            name="monthlyBudget"
+            data-testid="strategy-budget-input"
+            label="Monthly Budget"
+            type="number"
+            inputProps={{ min: '0' }}
+            value={monthlyBudget}
+            onChange={(e) => setMonthlyBudget(e.target.value)}
+            placeholder="5000"
+            required
+            fullWidth
+          />
+          <TextField
+            data-testid="strategy-intake-input"
+            label="Intake Completion (%)"
+            type="number"
+            inputProps={{ min: '0', max: '100' }}
+            value={intakeCompletionPct}
+            onChange={(e) => setIntakeCompletionPct(e.target.value)}
+            required
+            fullWidth
+          />
+          <TextField
+            data-testid="strategy-audit-input"
+            label="Audit Findings"
+            type="number"
+            inputProps={{ min: '0' }}
+            value={auditFindingCount}
+            onChange={(e) => setAuditFindingCount(e.target.value)}
+            fullWidth
+          />
+          <TextField
+            data-testid="strategy-keywords-input"
+            label="Keyword Opportunities"
+            type="number"
+            inputProps={{ min: '0' }}
+            value={keywordOpportunityCount}
+            onChange={(e) => setKeywordOpportunityCount(e.target.value)}
+            fullWidth
+          />
+          <TextField
+            data-testid="strategy-competitors-input"
+            label="Top Competitors"
+            type="number"
+            inputProps={{ min: '0' }}
+            value={topCompetitorCount}
+            onChange={(e) => setTopCompetitorCount(e.target.value)}
+            fullWidth
+          />
+          <div className="flex items-center gap-2 sm:pt-6">
+            <Checkbox
               data-testid="strategy-tracking-gaps-input"
-              type="checkbox"
+              id="strategy-tracking-gaps"
               checked={trackingGapsDetected}
-              onChange={(e) => setTrackingGapsDetected(e.target.checked)}
-              className="border rounded"
+              onChange={(e) => setTrackingGapsDetected((e.target as HTMLInputElement).checked)}
             />
-            Tracking gaps detected
-          </label>
+            <label htmlFor="strategy-tracking-gaps" className="text-sm cursor-pointer">
+              Tracking gaps detected
+            </label>
+          </div>
           <div className="sm:col-span-2">
-            <button
+            <Button
               data-testid="generate-strategy-btn"
               type="submit"
               disabled={isGenerating}
-              className="px-4 py-1 bg-blue-600 text-white rounded text-sm disabled:opacity-50"
+              loading={isGenerating}
+              loadingText="Generating…"
+              tone="primary"
             >
-              {isGenerating ? 'Generating…' : 'Generate Strategy'}
-            </button>
+              Generate Strategy
+            </Button>
           </div>
         </form>
       </section>
@@ -245,24 +268,34 @@ export function StrategyPage(): React.ReactElement {
             </div>
             <div className="flex gap-2">
               {strategy.status === 'DRAFT' && (
-                <button
+                <Button
                   data-testid="submit-strategy-btn"
-                  onClick={() => submit(strategy.strategyId)}
+                  size="sm"
+                  tone="primary"
+                  onClick={() => {
+                    void submit(strategy.strategyId).then(() =>
+                      showSuccess('Strategy submitted for approval'),
+                    );
+                  }}
                   disabled={isSubmitting}
-                  className="px-3 py-1 bg-blue-600 text-white rounded text-sm disabled:opacity-50"
+                  loading={isSubmitting}
+                  loadingText="Submitting…"
                 >
-                  {isSubmitting ? 'Submitting…' : 'Submit for Approval'}
-                </button>
+                  Submit for Approval
+                </Button>
               )}
               {strategy.status === 'PENDING_APPROVAL' && (
-                <button
+                <Button
                   data-testid="approve-strategy-btn"
-                  onClick={() => approve(strategy.strategyId)}
+                  size="sm"
+                  tone="success"
+                  onClick={() => setShowApprovalDialog(true)}
                   disabled={isApproving}
-                  className="px-3 py-1 bg-green-600 text-white rounded text-sm disabled:opacity-50"
+                  loading={isApproving}
+                  loadingText="Approving…"
                 >
-                  {isApproving ? 'Approving…' : 'Approve'}
-                </button>
+                  Approve
+                </Button>
               )}
             </div>
           </div>
@@ -295,24 +328,24 @@ export function StrategyPage(): React.ReactElement {
             <div className="mb-4">
               <p className="text-sm font-medium mb-2">Channel Plans</p>
               <div className="border rounded overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="text-left px-4 py-2 font-medium">Channel</th>
-                      <th className="text-left px-4 py-2 font-medium">Objective</th>
-                      <th className="text-left px-4 py-2 font-medium">Estimated Budget</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell component="th" className="text-left px-4 py-2 font-medium">Channel</TableCell>
+                      <TableCell component="th" className="text-left px-4 py-2 font-medium">Objective</TableCell>
+                      <TableCell component="th" className="text-left px-4 py-2 font-medium">Estimated Budget</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
                     {strategy.channelPlans.map((p, idx) => (
-                      <tr key={idx} className="border-t">
-                        <td className="px-4 py-2">{p.channelType}</td>
-                        <td className="px-4 py-2">{p.objective}</td>
-                        <td className="px-4 py-2">${p.estimatedBudget.toLocaleString()}</td>
-                      </tr>
+                      <TableRow key={idx} className="border-t">
+                        <TableCell className="px-4 py-2">{p.channelType}</TableCell>
+                        <TableCell className="px-4 py-2">{p.objective}</TableCell>
+                        <TableCell className="px-4 py-2">${p.estimatedBudget.toLocaleString()}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </div>
           )}
@@ -344,6 +377,15 @@ export function StrategyPage(): React.ReactElement {
               <p className="text-sm text-gray-600">{strategy.contentPlan}</p>
             </div>
           )}
+
+          {/* P2-004: AI Reasoning & Provenance panel */}
+          <AIProvenancePanel
+            modelVersion={strategy.modelVersion}
+            generatedAt={strategy.generatedAt}
+            generatedBy={strategy.generatedBy}
+            rationale={strategy.rationale}
+            assumptions={strategy.assumptions}
+          />
         </div>
       )}
 
@@ -351,6 +393,29 @@ export function StrategyPage(): React.ReactElement {
         <p data-testid="strategy-empty" className="text-sm text-gray-500">
           No strategy generated yet. Fill out the form above to create one.
         </p>
+      )}
+
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+
+      {showApprovalDialog && strategy && (
+        <ApprovalDialog
+          entityLabel="Marketing Strategy"
+          entityId={strategy.strategyId}
+          snapshotLines={[
+            `Service area: ${strategy.serviceArea ?? '—'}`,
+            `Primary offer: ${strategy.primaryOffer ?? '—'}`,
+            `Status: ${strategy.status}`,
+            `Generated: ${strategy.generatedAt ? new Date(strategy.generatedAt).toLocaleString() : '—'}`,
+          ]}
+          isPending={isApproving}
+          onConfirm={(comment) => {
+            void approve(strategy.strategyId, comment).then(() => {
+              showSuccess('Strategy approved');
+              setShowApprovalDialog(false);
+            });
+          }}
+          onCancel={() => setShowApprovalDialog(false)}
+        />
       )}
     </section>
   );

@@ -39,6 +39,14 @@ function toPrimitiveValue(value: unknown): PrimitiveValue {
   return '';
 }
 
+function hasMeaningfulValue(value: unknown): boolean {
+  if (typeof value === 'string') {
+    return value.trim().length > 0;
+  }
+
+  return value !== null && value !== undefined && value !== false;
+}
+
 export const PropertyForm: React.FC<PropertyFormProps> = ({
   contractName,
   instanceName,
@@ -65,6 +73,8 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
       Object.entries(initialProps).map(([key, value]) => [key, toPrimitiveValue(value)]),
     ),
   );
+  const [reviewAcknowledged, setReviewAcknowledged] = useState(false);
+  const [telemetryConsentAcknowledged, setTelemetryConsentAcknowledged] = useState(false);
 
   useEffect(() => {
     setDraftName(instanceName ?? '');
@@ -73,19 +83,41 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         Object.entries(initialProps).map(([key, value]) => [key, toPrimitiveValue(value)]),
       ),
     );
+    setReviewAcknowledged(false);
+    setTelemetryConsentAcknowledged(false);
   }, [initialProps, instanceName]);
+
+  const initialPrimitiveProps = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(initialProps).map(([key, value]) => [key, toPrimitiveValue(value)]),
+      ),
+    [initialProps],
+  );
 
   const isDirty =
     draftName !== (instanceName ?? '') ||
     JSON.stringify(draftProps) !==
-      JSON.stringify(
-        Object.fromEntries(
-          Object.entries(initialProps).map(([key, value]) => [key, toPrimitiveValue(value)]),
-        ),
-      );
+      JSON.stringify(initialPrimitiveProps);
+
+  const changedReviewRequiredProps = governance.reviewRequiredProps.filter(
+    (propName) => draftProps[propName] !== initialPrimitiveProps[propName],
+  );
+  const missingA11yProps = governance.requiredA11yProps.filter(
+    (propName) => !hasMeaningfulValue(draftProps[propName] ?? initialProps[propName]),
+  );
+  const canSubmit =
+    isDirty &&
+    missingA11yProps.length === 0 &&
+    (changedReviewRequiredProps.length === 0 || reviewAcknowledged) &&
+    (governance.telemetryEventNames.length === 0 || telemetryConsentAcknowledged);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
+    if (!canSubmit) {
+      return;
+    }
+
     onUpdate({
       props: draftProps,
       name: draftName || undefined,
@@ -204,13 +236,53 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         </Typography>
       )}
 
+      {missingA11yProps.length > 0 && (
+        <Typography variant="caption" color="danger" data-testid="property-policy-a11y-blocker">
+          Required accessibility props missing: {missingA11yProps.join(', ')}
+        </Typography>
+      )}
+
+      {changedReviewRequiredProps.length > 0 && (
+        <Box className="rounded-md border border-warning-border bg-warning-bg p-3">
+          <Typography variant="caption" color="warning" style={{ display: 'block', marginBottom: 8 }}>
+            Review required before applying governed prop changes: {changedReviewRequiredProps.join(', ')}
+          </Typography>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={reviewAcknowledged}
+                onChange={(event) => setReviewAcknowledged(event.target.checked)}
+              />
+            }
+            label="I have reviewed the governed change"
+          />
+        </Box>
+      )}
+
+      {governance.telemetryEventNames.length > 0 && (
+        <Box className="rounded-md border border-info-border bg-info-bg p-3">
+          <Typography variant="caption" color="info" style={{ display: 'block', marginBottom: 8 }}>
+            This component can emit telemetry events: {governance.telemetryEventNames.join(', ')}
+          </Typography>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={telemetryConsentAcknowledged}
+                onChange={(event) => setTelemetryConsentAcknowledged(event.target.checked)}
+              />
+            }
+            label="Telemetry consent has been confirmed for this change"
+          />
+        </Box>
+      )}
+
         <Box className="flex justify-end gap-2 pt-2">
           {onCancel ? (
             <Button variant="outline" onClick={onCancel} type="button">
               Cancel
             </Button>
           ) : null}
-          <Button type="submit" disabled={!isDirty}>
+          <Button type="submit" disabled={!canSubmit}>
             Apply
           </Button>
         </Box>

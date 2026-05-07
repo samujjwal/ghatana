@@ -43,6 +43,11 @@ describe('artifactCompilerBridge', () => {
     expect(artifacts[0]?.source).toBe('decompiled');
     expect(artifacts[0]?.residualIslandIds).toEqual(['island-1', 'island-2']);
     expect(artifacts[0]?.roundTripFidelity?.confidence).toBe(0.8);
+    expect(artifacts[0]?.artifactGraph?.provenance.residualIslandIds).toEqual(['island-1', 'island-2']);
+    expect(artifacts[0]?.artifactGraph?.edges[0]).toMatchObject({
+      kind: 'residual-of',
+      to: 'page-1:page',
+    });
   });
 
   it('imports artifacts from serialized semantic model text', () => {
@@ -85,5 +90,90 @@ describe('artifactCompilerBridge', () => {
     expect(artifacts[0]?.artifactId).toBe('proj-42-inbox-panel');
     expect(artifacts[0]?.source).toBe('imported');
     expect(artifacts[0]?.updatedAt).toBe('2026-05-01T10:00:00.000Z');
+    expect(artifacts[0]?.artifactGraph).toMatchObject({
+      graphId: 'proj-42-inbox-panel:graph',
+      projectId: 'proj-42',
+      sourceType: 'tsx',
+      source: '/tmp/InboxPanel.tsx',
+      provenance: {
+        createdBy: 'importer',
+        compiler: 'yappc-artifact-compiler',
+      },
+    });
+  });
+
+  it('preserves source graph nodes, edges, and source locations from extracted components', () => {
+    const artifacts = compileImportedSourceToPageArtifacts(
+      {
+        projectId: 'proj-graph',
+        componentName: 'ContactForm',
+        source: '/src/ContactForm.tsx',
+        sourceType: 'route',
+        importedAt: '2026-05-01T10:00:00.000Z',
+        extractedComponents: [
+          {
+            name: 'ContactForm',
+            isDefaultExport: true,
+            jsxUsage: ['Card', 'Button'],
+            props: [{ name: 'onSubmit', type: '() => void', required: true }],
+            slots: [{ name: 'children', multiple: true, required: false }],
+            hooksUsed: ['useState'],
+            accessibility: { role: 'form' },
+            sourceLocation: {
+              filePath: '/src/ContactForm.tsx',
+              startLine: 3,
+              startColumn: 1,
+              endLine: 12,
+              endColumn: 2,
+            },
+          },
+        ],
+      },
+      'importer',
+    );
+
+    const graph = artifacts[0]?.artifactGraph;
+    expect(graph?.nodes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'proj-graph-contact-form:source',
+          kind: 'source',
+        }),
+        expect.objectContaining({
+          id: 'proj-graph-contact-form:component:ContactForm',
+          kind: 'component',
+          sourceLocation: expect.objectContaining({ startLine: 3 }),
+          metadata: expect.objectContaining({
+            defaultExport: true,
+            propCount: 1,
+            slotCount: 1,
+            hookCount: 1,
+            hasAccessibilityMetadata: true,
+          }),
+        }),
+        expect.objectContaining({
+          id: 'proj-graph-contact-form:component-ref:Card',
+          kind: 'component',
+        }),
+      ]),
+    );
+    expect(graph?.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'derived-from',
+          from: 'proj-graph-contact-form:page',
+          to: 'proj-graph-contact-form:source',
+        }),
+        expect.objectContaining({
+          kind: 'contains',
+          to: 'proj-graph-contact-form:component:ContactForm',
+        }),
+        expect.objectContaining({
+          kind: 'references',
+          to: 'proj-graph-contact-form:component-ref:Button',
+        }),
+      ]),
+    );
+    expect(graph?.provenance.confidence).toBeGreaterThan(0.7);
   });
 });

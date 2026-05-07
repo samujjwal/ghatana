@@ -41,7 +41,14 @@ export function useStrategy(workspaceId: string | null): {
   };
 }
 
-export function useGenerateStrategy(workspaceId: string | null): {
+export interface UseStrategyMutationOptions {
+  onError?: (error: Error) => void;
+}
+
+export function useGenerateStrategy(
+  workspaceId: string | null,
+  options: UseStrategyMutationOptions = {}
+): {
   generate: (body: GenerateStrategyRequest) => Promise<MarketingStrategy>;
   isPending: boolean;
   isError: boolean;
@@ -60,6 +67,9 @@ export function useGenerateStrategy(workspaceId: string | null): {
       queryClient.invalidateQueries({ queryKey: ['strategy', 'latest', workspaceId] });
       queryClient.invalidateQueries({ queryKey: ['ai-actions', workspaceId] });
     },
+    onError: (error) => {
+      options.onError?.(error);
+    },
   });
 
   return {
@@ -70,7 +80,10 @@ export function useGenerateStrategy(workspaceId: string | null): {
   };
 }
 
-export function useSubmitStrategyApproval(workspaceId: string | null): {
+export function useSubmitStrategyApproval(
+  workspaceId: string | null,
+  options: UseStrategyMutationOptions = {}
+): {
   submit: (strategyId: string) => Promise<MarketingStrategy>;
   isPending: boolean;
   isError: boolean;
@@ -89,6 +102,9 @@ export function useSubmitStrategyApproval(workspaceId: string | null): {
       queryClient.invalidateQueries({ queryKey: ['strategy', 'latest', workspaceId] });
       queryClient.invalidateQueries({ queryKey: ['approvals', 'pending', workspaceId] });
     },
+    onError: (error) => {
+      options.onError?.(error);
+    },
   });
 
   return {
@@ -99,29 +115,33 @@ export function useSubmitStrategyApproval(workspaceId: string | null): {
   };
 }
 
-export function useApproveStrategy(workspaceId: string | null): {
-  approve: (strategyId: string) => Promise<MarketingStrategy>;
+export function useApproveStrategy(
+  workspaceId: string | null,
+  options: UseStrategyMutationOptions = {}
+): {
+  approve: (strategyId: string, auditComment?: string) => Promise<MarketingStrategy>;
   isPending: boolean;
   isError: boolean;
   error: Error | null;
 } {
   const queryClient = useQueryClient();
 
-  const mutation = useMutation<MarketingStrategy, Error, string>({
-    mutationFn: (strategyId) => {
-      // P1-022: Generate idempotency key at mutation start
+  const mutation = useMutation<MarketingStrategy, Error, { strategyId: string; auditComment?: string }>({
+    mutationFn: ({ strategyId, auditComment }) => {
       const idempotencyKey = crypto.randomUUID();
-      return approveStrategy(workspaceId!, strategyId, idempotencyKey);
+      return approveStrategy(workspaceId!, strategyId, idempotencyKey, auditComment);
     },
     onSuccess: () => {
-      // P1-032: Invalidate strategy and approval queue queries
       queryClient.invalidateQueries({ queryKey: ['strategy', 'latest', workspaceId] });
       queryClient.invalidateQueries({ queryKey: ['approvals', 'pending', workspaceId] });
+    },
+    onError: (error) => {
+      options.onError?.(error);
     },
   });
 
   return {
-    approve: mutation.mutateAsync,
+    approve: (strategyId, auditComment) => mutation.mutateAsync({ strategyId, auditComment }),
     isPending: mutation.isPending,
     isError: mutation.isError,
     error: mutation.error ?? null,

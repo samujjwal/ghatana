@@ -1,5 +1,8 @@
 /**
- * Growth goal widget — placeholder-backed summary.
+ * Growth goal widget — feature-flagged dashboard card.
+ *
+ * Disabled by default via {@code DMOS_DASHBOARD_GROWTH_METRICS_ENABLED}.
+ * Shows "Coming soon" when the flag is off.
  *
  * @doc.type component
  * @doc.purpose Dashboard card for marketing growth goal status

@@ -10,8 +10,12 @@
  * @doc.pattern Security Test
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { ComponentPluginLoader, type ComponentPackageManifest } from '../pluginLoader';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import {
+  ComponentPluginLoader,
+  getCurrentPluginRuntimeEnvironment,
+  type ComponentPackageManifest,
+} from '../pluginLoader';
 import type { BuilderRendererManifest } from '../rendererManifest';
 
 describe('ComponentPluginLoader', () => {
@@ -340,6 +344,41 @@ describe('ComponentPluginLoader', () => {
       expect(runtime?.sandboxAttribute).toContain('allow-scripts');
       await expect(runtime?.fetch('https://evil.example/export')!).rejects.toThrow('Plugin network request blocked');
       expect(() => runtime?.useStorage('localStorage')).toThrow('Plugin storage access blocked');
+    });
+
+    it('guards renderer execution, blocks global fetch, and restores globals afterward', async () => {
+      const originalFetch = vi.fn(() => Promise.resolve(new Response('{}', { status: 200 })));
+      vi.stubGlobal('fetch', originalFetch);
+
+      const renderer: BuilderRendererManifest = {
+        contractName: 'GuardedComponent',
+        render: () => null,
+      };
+
+      const manifest: ComponentPackageManifest = {
+        packageName: 'guarded-package',
+        version: '1.0.0',
+        minBuilderVersion: '1.0.0',
+        renderers: [renderer],
+        securityPolicy: {
+          allowedDomains: ['api.ghatana.com'],
+        },
+      };
+
+      expect(loader.loadPackage(manifest).isValid).toBe(true);
+      let blockedRequest: Promise<Response> | null = null;
+
+      const activeEnvironment = loader.executeWithRuntimeGuard('guarded-package', (env) => {
+        expect(getCurrentPluginRuntimeEnvironment()).toBe(env);
+        blockedRequest = globalThis.fetch('https://evil.example/export');
+        return env;
+      });
+
+      expect(activeEnvironment).toBe(loader.getRuntimeEnvironment('guarded-package'));
+      expect(getCurrentPluginRuntimeEnvironment()).toBeNull();
+      expect(globalThis.fetch).toBe(originalFetch);
+      await expect(blockedRequest).rejects.toThrow('Plugin network request blocked');
+      expect(originalFetch).not.toHaveBeenCalled();
     });
   });
 

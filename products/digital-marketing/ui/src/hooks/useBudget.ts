@@ -41,7 +41,14 @@ export function useBudgetRecommendation(workspaceId: string | null): {
   };
 }
 
-export function useGenerateBudget(workspaceId: string | null): {
+export interface UseBudgetMutationOptions {
+  onError?: (error: Error) => void;
+}
+
+export function useGenerateBudget(
+  workspaceId: string | null,
+  options: UseBudgetMutationOptions = {}
+): {
   generate: (body: GenerateBudgetRequest) => Promise<BudgetRecommendation>;
   isPending: boolean;
   isError: boolean;
@@ -60,6 +67,9 @@ export function useGenerateBudget(workspaceId: string | null): {
       queryClient.invalidateQueries({ queryKey: ['budget', 'latest', workspaceId] });
       queryClient.invalidateQueries({ queryKey: ['ai-actions', workspaceId] });
     },
+    onError: (error) => {
+      options.onError?.(error);
+    },
   });
 
   return {
@@ -70,7 +80,10 @@ export function useGenerateBudget(workspaceId: string | null): {
   };
 }
 
-export function useSubmitBudgetApproval(workspaceId: string | null): {
+export function useSubmitBudgetApproval(
+  workspaceId: string | null,
+  options: UseBudgetMutationOptions = {}
+): {
   submit: (recId: string) => Promise<BudgetRecommendation>;
   isPending: boolean;
   isError: boolean;
@@ -89,6 +102,9 @@ export function useSubmitBudgetApproval(workspaceId: string | null): {
       queryClient.invalidateQueries({ queryKey: ['budget', 'latest', workspaceId] });
       queryClient.invalidateQueries({ queryKey: ['approvals', 'pending', workspaceId] });
     },
+    onError: (error) => {
+      options.onError?.(error);
+    },
   });
 
   return {
@@ -99,29 +115,33 @@ export function useSubmitBudgetApproval(workspaceId: string | null): {
   };
 }
 
-export function useApproveBudget(workspaceId: string | null): {
-  approve: (recId: string) => Promise<BudgetRecommendation>;
+export function useApproveBudget(
+  workspaceId: string | null,
+  options: UseBudgetMutationOptions = {}
+): {
+  approve: (recId: string, auditComment?: string) => Promise<BudgetRecommendation>;
   isPending: boolean;
   isError: boolean;
   error: Error | null;
 } {
   const queryClient = useQueryClient();
 
-  const mutation = useMutation<BudgetRecommendation, Error, string>({
-    mutationFn: (recId) => {
-      // P1-022: Generate idempotency key at mutation start
+  const mutation = useMutation<BudgetRecommendation, Error, { recId: string; auditComment?: string }>({
+    mutationFn: ({ recId, auditComment }) => {
       const idempotencyKey = crypto.randomUUID();
-      return approveBudgetRecommendation(workspaceId!, recId, idempotencyKey);
+      return approveBudgetRecommendation(workspaceId!, recId, idempotencyKey, auditComment);
     },
     onSuccess: () => {
-      // P1-032: Invalidate budget and approval queue queries
       queryClient.invalidateQueries({ queryKey: ['budget', 'latest', workspaceId] });
       queryClient.invalidateQueries({ queryKey: ['approvals', 'pending', workspaceId] });
+    },
+    onError: (error) => {
+      options.onError?.(error);
     },
   });
 
   return {
-    approve: mutation.mutateAsync,
+    approve: (recId, auditComment) => mutation.mutateAsync({ recId, auditComment }),
     isPending: mutation.isPending,
     isError: mutation.isError,
     error: mutation.error ?? null,

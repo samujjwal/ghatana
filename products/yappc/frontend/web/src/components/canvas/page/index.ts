@@ -7,6 +7,7 @@
  */
 
 export { PageDesigner } from './PageDesigner';
-export { SimplePageDesigner } from './SimplePageDesigner';
 export { ConnectionEditor } from './ConnectionEditor';
-export type { SimplePageComponent } from './SimplePageDesigner';
+
+// Intentionally do not export the legacy/demo SimplePageDesigner from this
+// production page-builder barrel. Production routes should use PageDesigner.

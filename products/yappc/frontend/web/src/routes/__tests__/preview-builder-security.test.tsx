@@ -1,4 +1,4 @@
-import { render, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import BuilderPreviewRoute from '../preview-builder';
@@ -89,4 +89,70 @@ describe('BuilderPreviewRoute security', () => {
     );
   });
 
+  it('blocks the runtime when the preview session is invalid', async () => {
+    vi.mocked(validatePreviewSessionToken).mockResolvedValue({
+      valid: false,
+      reason: 'Session expired',
+    });
+    const postMessageSpy = vi.spyOn(window, 'postMessage');
+
+    render(<BuilderPreviewRoute />);
+
+    expect(await screen.findByText('Preview access denied')).toBeInTheDocument();
+    expect(screen.getByText('Session expired')).toBeInTheDocument();
+    expect(postMessageSpy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'READY' }),
+      expect.any(String),
+    );
+  });
+
+  it('rejects malformed mount documents with a runtime error message', async () => {
+    const postMessageSpy = vi.spyOn(window, 'postMessage');
+
+    render(<BuilderPreviewRoute />);
+
+    await waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'READY' }),
+        window.location.origin,
+      );
+    });
+
+    const malformedMessage = {
+      type: 'MOUNT_DOCUMENT',
+      document: {
+        id: 'doc-1',
+      },
+      sandbox: {
+        id: 'sandbox',
+        name: 'Sandbox',
+        viewport: { width: 1280, height: 720, devicePixelRatio: 1, label: 'Desktop' },
+        theme: 'default',
+        locale: 'en-US',
+        featureFlags: {},
+        trustedOrigins: [window.location.origin],
+      },
+      correlationId: 'corr-invalid-doc',
+    } as unknown as HostToPreviewMessage;
+
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        source: window,
+        origin: window.location.origin,
+        data: malformedMessage,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'ERROR',
+          correlationId: 'corr-invalid-doc',
+          code: 'INVALID_PREVIEW_DOCUMENT',
+        }),
+        window.location.origin,
+      );
+    });
+    expect(screen.getByText('Waiting for document…')).toBeInTheDocument();
+  });
 });

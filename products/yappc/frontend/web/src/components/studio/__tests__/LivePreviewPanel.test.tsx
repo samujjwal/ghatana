@@ -168,6 +168,46 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
         }),
       );
     });
+
+    it('sends viewport, theme, and locale updates to the preview runtime', async () => {
+      render(<LivePreviewPanel document={baseDocument} />);
+
+      await waitFor(() => {
+        expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({ type: 'SET_VIEWPORT' }));
+      });
+      sendMock.mockClear();
+
+      fireEvent.change(screen.getByDisplayValue('Desktop (1440px)'), {
+        target: { value: 'mobile' },
+      });
+      fireEvent.change(screen.getByDisplayValue('Default theme'), {
+        target: { value: 'contrast' },
+      });
+      fireEvent.change(screen.getByDisplayValue('en-US'), {
+        target: { value: 'en-GB' },
+      });
+
+      await waitFor(() => {
+        expect(sendMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: 'SET_VIEWPORT',
+            viewport: expect.objectContaining({ width: 375, height: 812 }),
+          }),
+        );
+        expect(sendMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: 'SET_THEME',
+            theme: 'contrast',
+          }),
+        );
+        expect(sendMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: 'SET_LOCALE',
+            locale: 'en-GB',
+          }),
+        );
+      });
+    });
   });
 
   describe('Default preview URL', () => {

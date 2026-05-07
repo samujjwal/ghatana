@@ -2,6 +2,8 @@ import type {
   PhaseProjectSnapshot,
   PhaseTransitionPreviewSnapshot,
 } from './types';
+import type { Project } from '@/lib/api/client';
+import { yappcApi } from '@/lib/api/client';
 
 export type LifecyclePhase =
   | 'INTENT'
@@ -14,6 +16,9 @@ export type LifecyclePhase =
   | 'EVOLVE';
 
 interface RawPhaseProjectSnapshot extends Omit<PhaseProjectSnapshot, 'healthScore' | 'nextActionHints'> {
+  currentPhase?: string;
+  healthScore?: number | null;
+  nextActionHints?: string[];
   aiHealthScore?: number | null;
   aiNextActions?: string[];
 }
@@ -101,26 +106,32 @@ export async function parseProjectResponse(
   };
 }
 
+export function normalizeProjectSnapshot(
+  project: Project | RawPhaseProjectSnapshot | { readonly project: RawPhaseProjectSnapshot },
+): PhaseProjectSnapshot {
+  const rawProject = (
+    typeof project === 'object' &&
+    project !== null &&
+    'project' in project
+      ? project.project
+      : project
+  ) as RawPhaseProjectSnapshot;
+  return {
+    ...rawProject,
+    lifecyclePhase: rawProject.lifecyclePhase ?? rawProject.currentPhase,
+    healthScore: rawProject.aiHealthScore ?? rawProject.healthScore ?? null,
+    nextActionHints: rawProject.aiNextActions ?? rawProject.nextActionHints ?? [],
+  };
+}
+
+export async function fetchProjectSnapshot(projectId: string): Promise<PhaseProjectSnapshot> {
+  const project = await yappcApi.projects.get(projectId);
+  return normalizeProjectSnapshot(project);
+}
+
 export async function fetchPhaseTransitionPreview(
   currentPhase: LifecyclePhase,
   projectId: string,
 ): Promise<PhaseTransitionPreviewSnapshot> {
-  const response = await fetch(
-    `/api/phases/${encodeURIComponent(currentPhase)}/next?projectId=${encodeURIComponent(projectId)}`,
-    {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-      },
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error('Failed to load phase transition preview.');
-  }
-
-  return parseJsonResponse<PhaseTransitionPreviewSnapshot>(
-    response,
-    'fetch phase transition preview',
-  );
+  return yappcApi.phases.next(currentPhase, projectId);
 }

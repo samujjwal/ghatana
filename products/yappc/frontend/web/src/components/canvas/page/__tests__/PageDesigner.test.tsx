@@ -322,12 +322,45 @@ vi.mock('@ghatana/ui-builder', () => ({
 
 import { PageDesigner } from '../PageDesigner';
 
+function makeSingleNodeDocument(nodeId = 'node-preview-hover') {
+  return {
+    id: 'doc-1',
+    version: '1',
+    name: 'Preview Sync Doc',
+    designSystem: {
+      id: 'ds-1',
+      name: 'Design System',
+      version: '1.0.0',
+      tokenSetIds: [],
+      componentContracts: [],
+      themeId: 'default',
+    },
+    rootNodes: [nodeId],
+    nodes: new Map([
+      [nodeId, {
+        id: nodeId,
+        contractName: 'Button',
+        props: {},
+        slots: {},
+        bindings: [],
+        metadata: { name: 'Button' },
+      }],
+    ]),
+    metadata: {
+      createdAt: '2026-05-06T00:00:00.000Z',
+      updatedAt: '2026-05-06T00:00:00.000Z',
+      trustLevel: 'GENERATED_TRUSTED',
+    },
+  };
+}
+
 describe('PageDesigner', () => {
   const onComponentsChange = vi.fn();
   const onDocumentChange = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
     insertNodeMock.mockClear();
     moveNodeMock.mockClear();
     validateDocumentMock.mockReturnValue({ valid: true, errors: [], warnings: [] });
@@ -349,6 +382,67 @@ describe('PageDesigner', () => {
     render(<PageDesigner onComponentsChange={onComponentsChange} />);
     fireEvent.click(screen.getByText('Button'));
     expect(onComponentsChange).toHaveBeenCalled();
+  });
+
+  it('persists scoped command audit records when audit context is available', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            id: 'audit-1',
+            timestamp: '2026-05-06T12:00:00.000Z',
+            type: 'PAGE_BUILDER_INSERT_COMPONENT',
+            userId: 'user-1',
+            projectId: 'proj-1',
+            artifactId: 'artifact-1',
+            flowStage: 'BUILD',
+            phase: 'SHAPE',
+            description: 'Page builder command insert-component completed.',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      ),
+    );
+
+    render(
+      <PageDesigner
+        auditContext={{
+          userId: 'user-1',
+          tenantId: 'tenant-1',
+          workspaceId: 'workspace-1',
+          projectId: 'proj-1',
+          artifactId: 'artifact-1',
+          phase: 'SHAPE',
+        }}
+      />,
+    );
+    fireEvent.click(screen.getByText('Button'));
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/audit/events',
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+    const request = vi.mocked(fetch).mock.calls[0]?.[1];
+    const body = JSON.parse(String(request?.body)) as {
+      type: string;
+      userId: string;
+      projectId: string;
+      artifactId: string;
+      metadata: Record<string, unknown>;
+    };
+    expect(body.type).toBe('PAGE_BUILDER_INSERT_COMPONENT');
+    expect(body.userId).toBe('user-1');
+    expect(body.projectId).toBe('proj-1');
+    expect(body.artifactId).toBe('artifact-1');
+    expect(body.metadata).toMatchObject({
+      tenantId: 'tenant-1',
+      workspaceId: 'workspace-1',
+      commandType: 'insert-component',
+      success: true,
+    });
   });
 
   it('surfaces validation issues inline', () => {
@@ -378,6 +472,37 @@ describe('PageDesigner', () => {
       expect.objectContaining({ id: expect.any(String) }),
       expect.objectContaining({ valid: true }),
     );
+  });
+
+  it('highlights externally hovered preview nodes without changing selection', () => {
+    const onSelectionChange = vi.fn();
+
+    render(
+      <PageDesigner
+        initialComponents={makeSingleNodeDocument()}
+        externalHoveredNodeId="node-preview-hover"
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+
+    expect(screen.getByTestId('page-button')).toHaveAttribute('data-preview-hovered', 'true');
+    expect(onSelectionChange).toHaveBeenLastCalledWith(null);
+  });
+
+  it('emits non-destructive hover changes for preview sync', () => {
+    const onHoverChange = vi.fn();
+    render(
+      <PageDesigner
+        initialComponents={makeSingleNodeDocument()}
+        onHoverChange={onHoverChange}
+      />,
+    );
+
+    fireEvent.mouseEnter(screen.getByTestId('page-button'));
+    fireEvent.mouseLeave(screen.getByTestId('page-button'));
+
+    expect(onHoverChange).toHaveBeenCalledWith('node-preview-hover');
+    expect(onHoverChange).toHaveBeenCalledWith(null);
   });
 
   it('moves an existing node to root when dropped on design area', () => {
@@ -442,6 +567,35 @@ describe('PageDesigner', () => {
       'default',
       expect.anything(),
     );
+  });
+
+  it('shows explicit feedback for invalid self drops', () => {
+    render(<PageDesigner />);
+    fireEvent.click(screen.getByText('Button'));
+
+    const beforeMarker = screen.getByTestId('page-button-drop-before');
+    const dataTransfer = {
+      getData: (type: string) => (type === 'application/x-page-node' ? 'node-1' : ''),
+      setData: vi.fn(),
+      effectAllowed: 'move',
+    };
+
+    fireEvent.drop(beforeMarker, { dataTransfer });
+
+    expect(screen.getByTestId('page-drop-feedback')).toHaveTextContent('Cannot drop a component onto itself.');
+  });
+
+  it('supports keyboard reordering with Alt+ArrowUp', () => {
+    render(<PageDesigner />);
+    fireEvent.click(screen.getByText('Button'));
+    fireEvent.click(screen.getByText('Card'));
+
+    fireEvent.keyDown(screen.getByTestId('page-card'), {
+      key: 'ArrowUp',
+      altKey: true,
+    });
+
+    expect(moveNodeMock).toHaveBeenCalled();
   });
 });
 
@@ -558,7 +712,7 @@ describe('PageDesigner — import panel', () => {
 
   it('calls onImportArtifacts and shows residuals after a successful import', () => {
     const onImportArtifacts = vi.fn();
-    render(<PageDesigner onImportArtifacts={onImportArtifacts} />);
+    render(<PageDesigner projectId="proj-1" onImportArtifacts={onImportArtifacts} />);
     fireEvent.click(screen.getByTestId('page-designer-import-btn'));
     const textarea = screen.getByTestId('page-designer-import-textarea') as HTMLTextAreaElement;
     fireEvent.change(textarea, { target: { value: '{ "pages": [] }' } });
@@ -573,20 +727,105 @@ describe('PageDesigner — import panel', () => {
 
   it('imports from source command syntax and emits imported artifacts', async () => {
     const onImportArtifacts = vi.fn();
-    render(<PageDesigner onImportArtifacts={onImportArtifacts} />);
+    render(
+      <PageDesigner
+        projectId="proj-1"
+        auditContext={{
+          userId: 'user-1',
+          tenantId: 'tenant-1',
+          workspaceId: 'workspace-1',
+          projectId: 'proj-1',
+          artifactId: 'artifact-1',
+          phase: 'SHAPE',
+        }}
+        onImportArtifacts={onImportArtifacts}
+      />,
+    );
     fireEvent.click(screen.getByTestId('page-designer-import-btn'));
     const textarea = screen.getByTestId('page-designer-import-textarea') as HTMLTextAreaElement;
     fireEvent.change(textarea, { target: { value: 'source:tsx:https://example.com/Page.tsx' } });
     fireEvent.click(screen.getByTestId('page-designer-import-confirm'));
 
     await waitFor(() => {
-      expect(importSourceToPageArtifactsMock).toHaveBeenCalled();
+      expect(importSourceToPageArtifactsMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          projectId: 'proj-1',
+          options: expect.objectContaining({
+            requireServerImport: true,
+            tenantId: 'tenant-1',
+            workspaceId: 'workspace-1',
+          }),
+        }),
+        'import',
+      );
     });
     expect(onImportArtifacts).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.objectContaining({ artifactId: 'imported-project-imported-remote-page' }),
       ]),
     );
+  });
+
+  it('imports from guided source fields without requiring command syntax', async () => {
+    const onImportArtifacts = vi.fn();
+    render(
+      <PageDesigner
+        projectId="proj-1"
+        auditContext={{
+          userId: 'user-1',
+          tenantId: 'tenant-1',
+          workspaceId: 'workspace-1',
+          projectId: 'proj-1',
+          artifactId: 'artifact-1',
+          phase: 'SHAPE',
+        }}
+        onImportArtifacts={onImportArtifacts}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('page-designer-import-btn'));
+    expect(screen.getByText(/Step 1: choose an import path/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('page-import-mode-source'));
+    fireEvent.change(screen.getByTestId('page-designer-source-type'), {
+      target: { value: 'route' },
+    });
+    fireEvent.change(screen.getByTestId('page-designer-source-locator'), {
+      target: { value: 'https://example.com/routes/Home.tsx' },
+    });
+    fireEvent.click(screen.getByTestId('page-designer-import-confirm'));
+
+    await waitFor(() => {
+      expect(importSourceToPageArtifactsMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sourceType: 'route',
+          source: 'https://example.com/routes/Home.tsx',
+          projectId: 'proj-1',
+        }),
+        'import',
+      );
+    });
+    expect(onImportArtifacts).toHaveBeenCalled();
+  });
+
+  it('requires authenticated tenant and workspace context for source command imports', async () => {
+    render(<PageDesigner projectId="proj-1" />);
+    fireEvent.click(screen.getByTestId('page-designer-import-btn'));
+    const textarea = screen.getByTestId('page-designer-import-textarea') as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: 'source:tsx:https://example.com/Page.tsx' } });
+    fireEvent.click(screen.getByTestId('page-designer-import-confirm'));
+
+    expect(await screen.findByText(/authenticated tenant and workspace context/i)).toBeInTheDocument();
+    expect(importSourceToPageArtifactsMock).not.toHaveBeenCalled();
+  });
+
+  it('requires active project context for source command imports', async () => {
+    render(<PageDesigner />);
+    fireEvent.click(screen.getByTestId('page-designer-import-btn'));
+    const textarea = screen.getByTestId('page-designer-import-textarea') as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: 'source:tsx:https://example.com/Page.tsx' } });
+    fireEvent.click(screen.getByTestId('page-designer-import-confirm'));
+
+    expect(await screen.findByText(/active project context/i)).toBeInTheDocument();
+    expect(importSourceToPageArtifactsMock).not.toHaveBeenCalled();
   });
 
   it('closes the import panel after a successful import', () => {

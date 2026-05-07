@@ -174,8 +174,9 @@ class RepositoryParityTest {
         }
 
         if (!Files.exists(appPath)) {
-            // Running from different working directory - try alternative
-            return Set.of("CampaignRepository"); // Fallback for test environments
+            fail("P1-010: Application source path not found. Tests must run from the monorepo root or module root. " +
+                 "Checked: %s and %s", APPLICATION_PATH, Paths.get("../../..").resolve(APPLICATION_PATH));
+            throw new IllegalStateException("unreachable"); // satisfy compiler flow
         }
 
         try (Stream<Path> paths = Files.walk(appPath)) {
@@ -207,7 +208,10 @@ class RepositoryParityTest {
         }
 
         if (!Files.exists(module)) {
-            return false;
+            fail("P1-010: Module path not found for class lookup '%s'. " +
+                 "Checked path: %s. Tests must run from the monorepo root or module root.",
+                className, modulePath);
+            throw new IllegalStateException("unreachable"); // satisfy compiler flow
         }
 
         String fileName = className + ".java";
@@ -217,7 +221,9 @@ class RepositoryParityTest {
                 .filter(Files::isRegularFile)
                 .anyMatch(p -> p.getFileName().toString().equals(fileName));
         } catch (IOException e) {
-            return false;
+            fail("P1-010: IOException while searching for class '%s' in module '%s': %s",
+                className, modulePath, e.getMessage());
+            throw new IllegalStateException("unreachable"); // satisfy compiler flow
         }
     }
 

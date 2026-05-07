@@ -5,6 +5,7 @@ import {
   LocalStoragePageArtifactPersistenceAdapter,
   ResilientPageArtifactPersistenceAdapter,
   PageArtifactConflictError,
+  PageArtifactPersistenceError,
   isConflictError,
 } from '../pageArtifactPersistence';
 import { createPageArtifactDocument } from '../pageArtifactDocument';
@@ -15,6 +16,12 @@ const buildDocument = () =>
     name: 'Landing',
     createdBy: 'tester',
   });
+
+const scope = {
+  tenantId: 'tenant-1',
+  workspaceId: 'workspace-1',
+  projectId: 'project-1',
+};
 
 describe('pageArtifactPersistence', () => {
   it('saves and loads with local storage adapter', async () => {
@@ -38,6 +45,7 @@ describe('pageArtifactPersistence', () => {
     const adapter = new HttpPageArtifactPersistenceAdapter({
       baseUrl: '/api/v1/page-artifacts',
       fetchImpl: fetchImpl as unknown as typeof fetch,
+      scope,
     });
 
     await adapter.save(document);
@@ -111,6 +119,7 @@ describe('pageArtifactPersistence — conflict detection', () => {
     const adapter = new HttpPageArtifactPersistenceAdapter({
       baseUrl: '/api/v1/page-artifacts',
       fetchImpl: fetchImpl as unknown as typeof fetch,
+      scope,
     });
 
     await expect(adapter.save(document)).rejects.toThrow(PageArtifactConflictError);
@@ -127,6 +136,7 @@ describe('pageArtifactPersistence — conflict detection', () => {
     const adapter = new HttpPageArtifactPersistenceAdapter({
       baseUrl: '/api/v1/page-artifacts',
       fetchImpl: fetchImpl as unknown as typeof fetch,
+      scope,
     });
 
     await adapter.save(document);
@@ -136,9 +146,68 @@ describe('pageArtifactPersistence — conflict detection', () => {
       expect.objectContaining({
         headers: expect.objectContaining({
           'If-Match': document.documentId,
+          'X-Tenant-ID': scope.tenantId,
+          'X-Workspace-ID': scope.workspaceId,
+          'X-Project-ID': scope.projectId,
         }),
+        credentials: 'include',
       }),
     );
+  });
+
+  it('HTTP adapter fails actionably when scope is missing', async () => {
+    const document = buildDocument();
+    const fetchImpl = vi.fn();
+    const adapter = new HttpPageArtifactPersistenceAdapter({
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    await expect(adapter.save(document)).rejects.toMatchObject({
+      kind: 'missing-scope',
+      status: 422,
+    });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('HTTP adapter maps 401 and 403 to distinct errors', async () => {
+    const document = buildDocument();
+    const unauthorizedFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      headers: { get: () => null },
+      text: async () => '',
+    });
+    const forbiddenFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      headers: { get: () => null },
+      text: async () => '',
+    });
+
+    await expect(
+      new HttpPageArtifactPersistenceAdapter({
+        fetchImpl: unauthorizedFetch as unknown as typeof fetch,
+        scope,
+      }).save(document),
+    ).rejects.toMatchObject({ kind: 'unauthenticated', status: 401 });
+
+    await expect(
+      new HttpPageArtifactPersistenceAdapter({
+        fetchImpl: forbiddenFetch as unknown as typeof fetch,
+        scope,
+      }).save(document),
+    ).rejects.toMatchObject({ kind: 'forbidden', status: 403 });
+  });
+
+  it('local drafts reject sensitive artifacts by policy', async () => {
+    const document = {
+      ...buildDocument(),
+      dataClassification: 'SENSITIVE' as never,
+    };
+    const adapter = new LocalStoragePageArtifactPersistenceAdapter('test:page-artifact:');
+
+    await expect(adapter.save(document)).rejects.toThrow(PageArtifactPersistenceError);
+    expect(localStorage.getItem(`test:page-artifact:${document.artifactId}`)).toBeNull();
   });
 
   it('isConflictError correctly identifies conflict errors', () => {
@@ -183,5 +252,24 @@ describe('pageArtifactPersistence — conflict detection', () => {
     await adapter.save(document);
 
     expect(fallback.save).toHaveBeenCalledWith(document);
+  });
+
+  it('ResilientAdapter does not write local fallback for authorization or validation failures', async () => {
+    const document = buildDocument();
+    const primary = {
+      save: vi.fn().mockRejectedValue(
+        new PageArtifactPersistenceError('forbidden', 'Not allowed', 403),
+      ),
+      load: vi.fn(),
+    };
+    const fallback = {
+      save: vi.fn().mockResolvedValue(undefined),
+      load: vi.fn(),
+    };
+
+    const adapter = new ResilientPageArtifactPersistenceAdapter(primary, fallback);
+
+    await expect(adapter.save(document)).rejects.toMatchObject({ kind: 'forbidden' });
+    expect(fallback.save).not.toHaveBeenCalled();
   });
 });

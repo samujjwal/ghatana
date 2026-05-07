@@ -36,8 +36,29 @@ public final class ContactEncryptionService {
     private final SecretKey encryptionKey;
     private final SecureRandom secureRandom;
 
+    /**
+     * Creates a service that reads the key from {@code DMOS_CONTACT_ENCRYPTION_KEY} env var.
+     * Throws {@link IllegalStateException} if the key is absent or too short.
+     */
     public ContactEncryptionService() {
         this.encryptionKey = deriveKey();
+        this.secureRandom = new SecureRandom();
+    }
+
+    /**
+     * Creates a service using the supplied raw key material.
+     *
+     * <p>Intended for testing only. Production code must use the no-arg constructor
+     * which reads the key from the environment.</p>
+     *
+     * @param rawKey a key string of at least 32 characters
+     */
+    public ContactEncryptionService(String rawKey) {
+        Objects.requireNonNull(rawKey, "rawKey must not be null");
+        if (rawKey.length() < 32) {
+            throw new IllegalArgumentException("rawKey must be at least 32 characters");
+        }
+        this.encryptionKey = deriveKeyFromString(rawKey);
         this.secureRandom = new SecureRandom();
     }
 
@@ -105,14 +126,28 @@ public final class ContactEncryptionService {
     }
 
     /**
-     * Derives the encryption key from an environment variable or default.
+     * Derives the encryption key from the environment variable.
+     *
+     * <p>Fails immediately if the key is absent or too short. A default key is
+     * never used: relying on a well-known fallback would encrypt PII with a key
+     * that is effectively public. The {@code ProductionBootstrapValidator} must
+     * verify the key is present before this service is constructed.</p>
      */
     private SecretKey deriveKey() {
         String keySource = System.getenv("DMOS_CONTACT_ENCRYPTION_KEY");
         if (keySource == null || keySource.isBlank()) {
-            keySource = "default-encryption-key-change-in-production-32-bytes";
+            throw new IllegalStateException(
+                "DMOS_CONTACT_ENCRYPTION_KEY is not set. ContactEncryptionService " +
+                "refuses to start without an explicit key to prevent silent use of a default.");
         }
+        if (keySource.length() < 32) {
+            throw new IllegalStateException(
+                "DMOS_CONTACT_ENCRYPTION_KEY is too short (minimum 32 characters required).");
+        }
+        return deriveKeyFromString(keySource);
+    }
 
+    private static SecretKey deriveKeyFromString(String keySource) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(keySource.getBytes(StandardCharsets.UTF_8));

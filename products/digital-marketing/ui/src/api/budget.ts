@@ -46,9 +46,10 @@ export async function approveBudgetRecommendation(
   workspaceId: string,
   recId: string,
   idempotencyKey?: string,
+  auditComment?: string,
 ): Promise<BudgetRecommendation> {
   return apiRequest<BudgetRecommendation>(
     `${base(workspaceId)}/${encodeURIComponent(recId)}/approve`,
-    { method: 'POST', idempotencyKey },
+    { method: 'POST', idempotencyKey, body: auditComment ? { auditComment } : undefined },
   );
 }

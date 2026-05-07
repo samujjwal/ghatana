@@ -13,7 +13,11 @@ import com.ghatana.digitalmarketing.domain.contact.ConsentStatus;
 import com.ghatana.digitalmarketing.domain.contact.Contact;
 import com.ghatana.digitalmarketing.domain.suppression.SuppressionEntry;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.plugin.consent.ConsentPlugin;
 import io.activej.promise.Promise;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,12 +29,19 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @DisplayName("DataSubjectRequestServiceImpl")
+@ExtendWith(MockitoExtension.class)
 class DataSubjectRequestServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
     private InMemoryContactRepository contactRepository;
+    @Mock
+    private ConsentPlugin consentPlugin;
     private DataSubjectRequestServiceImpl service;
     private DmOperationContext ctx;
 
@@ -38,7 +49,9 @@ class DataSubjectRequestServiceImplTest extends EventloopTestBase {
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
         contactRepository = new InMemoryContactRepository();
-        service = new DataSubjectRequestServiceImpl(kernelAdapter, contactRepository, new NoopSuppressionRepository());
+        // Default: deleteAllForSubject returns 0 consent records erased (lenient — not all tests call this)
+        lenient().when(consentPlugin.deleteAllForSubject(anyString())).thenReturn(Promise.of(0));
+        service = new DataSubjectRequestServiceImpl(kernelAdapter, contactRepository, new NoopSuppressionRepository(), consentPlugin);
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
             .workspaceId(DmWorkspaceId.of("ws-1"))
@@ -60,6 +73,34 @@ class DataSubjectRequestServiceImplTest extends EventloopTestBase {
         assertThat(kernelAdapter.lastAuditAttributes)
             .containsEntry("contactId", "contact-1")
             .containsEntry("deleted", "true");
+    }
+
+    @Test
+    @DisplayName("deleteContactData invokes consentPlugin.deleteAllForSubject for DSAR erasure (KERNEL-P0-2)")
+    void deleteContactDataErasesConsentRecords() {
+        contactRepository.saveSync(contact("contact-3", "hash-3"));
+        when(consentPlugin.deleteAllForSubject("contact-3")).thenReturn(Promise.of(5));
+
+        Boolean deleted = runPromise(() -> service.deleteContactData(ctx, "contact-3"));
+
+        assertThat(deleted).isTrue();
+        verify(consentPlugin).deleteAllForSubject("contact-3");
+        assertThat(kernelAdapter.lastAuditAttributes)
+            .containsEntry("consentRecordsErased", "5");
+    }
+
+    @Test
+    @DisplayName("deleteContactData still completes DSAR when consent plugin finds 0 records")
+    void deleteContactDataErasesConsentRecordsZero() {
+        contactRepository.saveSync(contact("contact-4", "hash-4"));
+        // when(consentPlugin.deleteAllForSubject(anyString())).thenReturn(Promise.of(0)) — set in setUp
+
+        Boolean deleted = runPromise(() -> service.deleteContactData(ctx, "contact-4"));
+
+        assertThat(deleted).isTrue();
+        verify(consentPlugin).deleteAllForSubject("contact-4");
+        assertThat(kernelAdapter.lastAuditAttributes)
+            .containsEntry("consentRecordsErased", "0");
     }
 
     @Test

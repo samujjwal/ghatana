@@ -24,6 +24,7 @@ import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignApi
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignLinkRepository;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCredentialRepository;
 import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
+import com.ghatana.digitalmarketing.application.metrics.MicrometerDmosMetricsCollector;
 import com.ghatana.digitalmarketing.application.strategy.MarketingStrategyRepository;
 import com.ghatana.digitalmarketing.application.strategy.StrategyGeneratorService;
 import com.ghatana.digitalmarketing.application.strategy.StrategyGeneratorServiceImpl;
@@ -35,6 +36,7 @@ import com.ghatana.digitalmarketing.application.workspace.WorkspaceService;
 import com.ghatana.digitalmarketing.application.workspace.WorkspaceServiceImpl;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapterImpl;
+import com.ghatana.digitalmarketing.bridge.DmosRiskEvaluatorRegistrar;
 import com.ghatana.digitalmarketing.connector.googleads.HttpDmGoogleAdsCampaignApiClientAdapter;
 import com.ghatana.digitalmarketing.connector.googleads.InMemoryDmGoogleAdsCampaignApiClient;
 import com.ghatana.digitalmarketing.infra.ProductionProfileGuard;
@@ -54,9 +56,12 @@ import com.ghatana.digitalmarketing.persistence.strategy.PostgresMarketingStrate
 import com.ghatana.digitalmarketing.persistence.workspace.PostgresWorkspaceRepository;
 import com.ghatana.digitalmarketing.persistence.command.PostgresDmCommandRepository;
 import com.ghatana.digitalmarketing.persistence.governance.PostgresDmKillSwitchService;
+import com.ghatana.digitalmarketing.bridge.OpaAuthorizationService;
 import com.ghatana.kernel.bridge.port.BridgeAuthorizationService;
 import com.ghatana.kernel.bridge.port.BridgeAuditEmitter;
 import com.ghatana.kernel.bridge.port.BridgeHealthIndicator;
+import com.ghatana.platform.pac.CircuitBreakingPolicyAsCodeEngine;
+import com.ghatana.platform.pac.OpaClient;
 import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.platform.observability.Metrics;
 import com.ghatana.platform.observability.TracingManager;
@@ -348,7 +353,12 @@ public final class DmosApiServer extends Launcher {
 
         TracingManager tracingManager;
         if (environment.equals(PRODUCTION) || environment.equals(STAGING)) {
-            String collectorEndpoint = System.getenv("OTEL_COLLECTOR_ENDPOINT");
+            // P1-014: Support both standard OTEL_EXPORTER_OTLP_ENDPOINT and the custom OTEL_COLLECTOR_ENDPOINT.
+            // Standard env var takes precedence per OpenTelemetry specification.
+            String collectorEndpoint = System.getenv("OTEL_EXPORTER_OTLP_ENDPOINT");
+            if (collectorEndpoint == null || collectorEndpoint.isBlank()) {
+                collectorEndpoint = System.getenv("OTEL_COLLECTOR_ENDPOINT");
+            }
             if (collectorEndpoint == null || collectorEndpoint.isBlank()) {
                 collectorEndpoint = "http://localhost:4317";
             }
@@ -362,6 +372,10 @@ public final class DmosApiServer extends Launcher {
 
         DmosObservability observability = new DmosObservability(metrics, tracingManager);
         register(DmosObservability.class, observability);
+
+        // KERNEL-P1-4: Register MicrometerDmosMetricsCollector using the already-wired MeterRegistry
+        DmosMetricsCollector dmosMetrics = new MicrometerDmosMetricsCollector(meterRegistry);
+        register(DmosMetricsCollector.class, dmosMetrics);
 
         // P1-026: Register DmosTelemetry for span instrumentation
         com.ghatana.digitalmarketing.api.observability.DmosTelemetry telemetry =
@@ -569,12 +583,15 @@ public final class DmosApiServer extends Launcher {
             };
         }
 
+        // KERNEL-P1-4: Use Micrometer-backed collector registered in wireObservability()
+        DmosMetricsCollector dmosMetrics = get(DmosMetricsCollector.class);
+
         CampaignService campaignService = new CampaignServiceImpl(
             kernelAdapter,
             campaignRepo,
             compliancePlugin,
             preflightProvider,
-            DmosMetricsCollector.noop(),
+            dmosMetrics,
             killSwitchService,
             commandService,
             new ObjectMapper()
@@ -585,7 +602,7 @@ public final class DmosApiServer extends Launcher {
         ApprovalSnapshotRepository approvalRepo = get(ApprovalSnapshotRepository.class);
         HumanApprovalPlugin approvalPlugin = get(HumanApprovalPlugin.class);
         ApprovalWorkflowServiceImpl approvalService = new ApprovalWorkflowServiceImpl(
-            kernelAdapter, approvalPlugin, approvalRepo, DmosMetricsCollector.noop());
+            kernelAdapter, approvalPlugin, approvalRepo, dmosMetrics);
         register(ApprovalWorkflowService.class, approvalService);
 
         // AI Action Log Service
@@ -672,14 +689,28 @@ public final class DmosApiServer extends Launcher {
 
     /**
      * Creates the authorization service implementation based on environment.
-     * Production uses real kernel bridge; dev/test uses allowAll for convenience.
+     *
+     * <p>When {@code DMOS_OPA_URL} is set, a real OPA-backed authorization service is
+     * returned wrapped in a circuit breaker (fail-closed on OPA unavailability).
+     * Otherwise falls back to allow-all for development convenience.</p>
      */
     private BridgeAuthorizationService createAuthorizationService() {
-        if (environment.equals(PRODUCTION)) {
-            LOG.warn("[PRODUCTION] Kernel bridge authorization not configured; using allowAll. Enable via DMOS_KERNEL_AUTH_ENABLED.");
-            return BridgeAuthorizationService.allowAll();
+        String opaUrl = System.getenv("DMOS_OPA_URL");
+        if (opaUrl != null && !opaUrl.isBlank()) {
+            Executor blockingExecutor = Executors.newCachedThreadPool();
+            OpaClient opaClient = new OpaClient(opaUrl, blockingExecutor);
+            Eventloop eventloop = get(Eventloop.class);
+            CircuitBreakingPolicyAsCodeEngine circuitBreakingEngine =
+                new CircuitBreakingPolicyAsCodeEngine(opaClient, eventloop);
+            LOG.info("[{}] Using OpaAuthorizationService with OPA endpoint: {}", environment, opaUrl);
+            return new OpaAuthorizationService(circuitBreakingEngine);
         }
-        LOG.info("[{}] Using allowAll authorization for development", environment);
+        if (environment.equals(PRODUCTION)) {
+            LOG.warn("[PRODUCTION] DMOS_OPA_URL not configured; authorization will use allowAll. " +
+                "Set DMOS_OPA_URL to enable real OPA-backed policy enforcement.");
+        } else {
+            LOG.info("[{}] Using allowAll authorization for development (set DMOS_OPA_URL for OPA)", environment);
+        }
         return BridgeAuthorizationService.allowAll();
     }
 
@@ -750,7 +781,9 @@ public final class DmosApiServer extends Launcher {
      */
     private RiskManagementPlugin createRiskManagementPlugin() {
         LOG.info("[{}] Using StandardRiskManagementPlugin", environment);
-        return new StandardRiskManagementPlugin();
+        StandardRiskManagementPlugin plugin = new StandardRiskManagementPlugin();
+        DmosRiskEvaluatorRegistrar.register(plugin);
+        return plugin;
     }
 
     /**

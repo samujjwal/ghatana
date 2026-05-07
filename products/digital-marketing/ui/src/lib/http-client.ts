@@ -165,7 +165,8 @@ export class ApiError extends Error {
   }
 
   /**
-   * Returns a user-friendly error message including correlation ID if available.
+   * Returns a user-friendly error message that never exposes raw backend response text.
+   * P1-011: All status codes return sanitized messages only.
    */
   getUserMessage(): string {
     if (this.status >= 500) {
@@ -180,6 +181,16 @@ export class ApiError extends Error {
     if (this.status === 429) {
       return 'Too many requests. Please wait a moment and try again.';
     }
-    return `Request failed: ${this.message}${this.correlationId ? ` (Ref: ${this.correlationId})` : ''}`;
+    if (this.status === 404) {
+      return `The requested resource was not found.${this.correlationId ? ` (Ref: ${this.correlationId})` : ''}`;
+    }
+    if (this.status === 401) {
+      return 'Your session has expired. Please log in again.';
+    }
+    if (this.status === 400) {
+      return `Invalid request. Please check your inputs.${this.correlationId ? ` (Ref: ${this.correlationId})` : ''}`;
+    }
+    // Fallback: never expose raw message / backend body
+    return `Request failed (HTTP ${this.status}).${this.correlationId ? ` (Ref: ${this.correlationId})` : ''}`;
   }
 }

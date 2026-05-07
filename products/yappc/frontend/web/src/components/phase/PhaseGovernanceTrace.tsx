@@ -46,7 +46,9 @@ const SOURCE_COLORS: Record<GovernanceRecord['source'], string> = {
 /**
  * Review state colors
  */
-const REVIEW_STATE_COLORS: Record<GovernanceRecord['reviewState'], string> = {
+type GovernanceReviewState = NonNullable<GovernanceRecord['reviewState']>;
+
+const REVIEW_STATE_COLORS: Record<GovernanceReviewState, string> = {
   pending: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
   approved: 'bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color',
   rejected: 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive',

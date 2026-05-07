@@ -2,6 +2,7 @@ package com.ghatana.yappc.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.audit.AuditLogger;
 import com.ghatana.platform.governance.security.Principal;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -33,10 +34,16 @@ public final class PreviewSessionApiController {
 
     private final ObjectMapper objectMapper;
     private final String signingSecret;
+    private final AuditLogger auditLogger;
 
     public PreviewSessionApiController(@NotNull ObjectMapper objectMapper, String signingSecret) {
+        this(objectMapper, signingSecret, AuditLogger.noop());
+    }
+
+    public PreviewSessionApiController(@NotNull ObjectMapper objectMapper, String signingSecret, @NotNull AuditLogger auditLogger) {
         this.objectMapper = objectMapper;
         this.signingSecret = signingSecret;
+        this.auditLogger = auditLogger;
     }
 
     public Promise<HttpResponse> createSession(HttpRequest request) {
@@ -88,10 +95,15 @@ public final class PreviewSessionApiController {
                         "sessionToken", sessionToken,
                         "expiresAt", expiresAt.toString()
                 );
-                return Promise.of(HttpResponse.ok200()
+                HttpResponse httpResponse = HttpResponse.ok200()
                         .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
                         .withJson(objectMapper.writeValueAsString(response))
-                        .build());
+                        .build();
+                return auditPreviewEvent("preview.session.create", "succeeded", principal, payload.projectId(), payload.artifactId(), Map.of(
+                        "sessionId", unsignedSession.get("sessionId"),
+                        "expiresAt", expiresAt.toString(),
+                        "durationSeconds", actualDuration
+                )).map(ignored -> httpResponse);
             } catch (Exception e) {
                 return Promise.of(HttpResponse.ofCode(400)
                         .withJson("{\"error\":\"Invalid preview session request\"}")
@@ -117,13 +129,24 @@ public final class PreviewSessionApiController {
                 }
 
                 ValidationResult validation = validateToken(payload.sessionToken());
-                return Promise.of(HttpResponse.ok200()
+                Map<String, Object> responseBody = new LinkedHashMap<>();
+                responseBody.put("valid", validation.valid());
+                responseBody.put("reason", validation.reason());
+                HttpResponse httpResponse = HttpResponse.ok200()
                         .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
-                        .withJson(objectMapper.writeValueAsString(Map.of(
+                        .withJson(objectMapper.writeValueAsString(responseBody))
+                        .build();
+                return auditPreviewEvent(
+                        "preview.session.validate",
+                        validation.valid() ? "succeeded" : "failed",
+                        request.getAttachment(Principal.class),
+                        null,
+                        null,
+                        Map.of(
                                 "valid", validation.valid(),
-                                "reason", validation.reason()
-                        )))
-                        .build());
+                                "reason", validation.reason() != null ? validation.reason() : "valid"
+                        )
+                ).map(ignored -> httpResponse);
             } catch (Exception e) {
                 return Promise.of(HttpResponse.ofCode(400)
                         .withJson("{\"valid\":false,\"reason\":\"Invalid preview session validation request\"}")
@@ -210,6 +233,26 @@ public final class PreviewSessionApiController {
 
     private String stringValue(Object value) {
         return value instanceof String string ? string : null;
+    }
+
+    private Promise<Void> auditPreviewEvent(
+            String eventType,
+            String outcome,
+            Principal principal,
+            String projectId,
+            String artifactId,
+            Map<String, Object> metadata
+    ) {
+        Map<String, Object> event = new LinkedHashMap<>();
+        event.put("type", eventType);
+        event.put("outcome", outcome);
+        event.put("actor", principal != null ? principal.getName() : "anonymous");
+        event.put("tenantId", principal != null ? principal.getTenantId() : "unknown");
+        event.put("projectId", projectId);
+        event.put("artifactId", artifactId);
+        event.put("timestamp", Instant.now().toString());
+        event.put("metadata", metadata);
+        return auditLogger.log(event);
     }
 
     public record CreatePreviewSessionRequest(

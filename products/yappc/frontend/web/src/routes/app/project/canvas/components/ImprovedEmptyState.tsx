@@ -49,7 +49,7 @@ export function ImprovedEmptyState({
             onClick={onAIAssistant}
             className="flex-1 whitespace-nowrap"
           >
-            AI Assistant
+            Guided Assistant
           </Button>
           <Button
             variant="outlined"
@@ -86,4 +86,3 @@ export function ImprovedEmptyState({
     </Box>
   );
 }
-

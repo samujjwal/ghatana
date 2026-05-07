@@ -188,29 +188,56 @@ export const createFallbackRenderer = (): BuilderRendererManifest => ({
   isFallback: true,
   render: (instance, slots, context) => {
     const isReviewRequired = context.mode === 'preview';
+    const metadata = instance.metadata as Record<string, unknown>;
+    const sourceLocation = typeof metadata.sourceLocation === 'string' ? metadata.sourceLocation : null;
+    const residualReason = typeof metadata.residualReason === 'string'
+      ? metadata.residualReason
+      : 'No registered renderer exists for this component contract.';
+    const confidence = typeof metadata.confidence === 'number' ? metadata.confidence : null;
+    const suggestedContractName = typeof metadata.suggestedContractName === 'string'
+      ? metadata.suggestedContractName
+      : null;
     
     return (
       <div
         style={{
           padding: 16,
-          border: '2px dashed #ef4444',
+          border: '2px dashed var(--color-destructive-border, #ef4444)',
           borderRadius: 8,
-          backgroundColor: '#fef2f2',
-          color: '#991b1b',
+          backgroundColor: 'var(--color-destructive-bg, #fef2f2)',
+          color: 'var(--color-destructive, #991b1b)',
         }}
         data-testid={`fallback-renderer-${instance.contractName}`}
+        role="group"
+        aria-label={`Review unknown component ${instance.contractName}`}
       >
         <div style={{ fontWeight: 600, marginBottom: 8 }}>
           {isReviewRequired ? 'Review required: ' : 'Unknown component: '}
           {instance.contractName}
         </div>
-        {isReviewRequired && (
-          <div style={{ fontSize: 12, color: '#7f1d1d' }}>
-            This component needs a registered renderer or custom implementation.
+        <div style={{ fontSize: 12, color: 'var(--color-destructive, #7f1d1d)' }}>
+          {residualReason}
+        </div>
+        {sourceLocation ? (
+          <div style={{ fontSize: 12, marginTop: 6 }}>
+            Source: {sourceLocation}
           </div>
-        )}
+        ) : null}
+        {confidence !== null ? (
+          <div style={{ fontSize: 12, marginTop: 6 }}>
+            Confidence: {Math.round(confidence * 100)}%
+          </div>
+        ) : null}
+        {suggestedContractName ? (
+          <div style={{ fontSize: 12, marginTop: 6 }}>
+            Suggested registry contract: {suggestedContractName}
+          </div>
+        ) : null}
         <div style={{ fontSize: 11, marginTop: 8, opacity: 0.8 }}>
           Props: {JSON.stringify(Object.keys(instance.props), null, 2)}
+        </div>
+        <div style={{ fontSize: 11, marginTop: 8, fontWeight: 600 }}>
+          Action needed: register a renderer, map to a known contract, or mark this residual island as intentionally unsupported.
         </div>
         {slots.default}
       </div>

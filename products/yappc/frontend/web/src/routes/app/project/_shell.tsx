@@ -69,7 +69,7 @@ const BASE_PROJECT_TABS = [
     key: 'generate',
     label: 'Generate',
     icon: Zap,
-    tooltip: 'AI-powered code, test, and artefact generation',
+    tooltip: 'Guided code, test, and artefact generation',
   },
   {
     key: 'run',
@@ -87,7 +87,7 @@ const BASE_PROJECT_TABS = [
     key: 'learn',
     label: 'Learn',
     icon: BookOpen,
-    tooltip: 'Retrospectives, AI insights, and knowledge capture',
+    tooltip: 'Retrospectives, recommended insights, and knowledge capture',
   },
   {
     key: 'evolve',
@@ -328,7 +328,7 @@ export function Layout() {
     if (!response.ok) return null;
     return parseJsonResponse<Record<string, unknown>>(
       response,
-      'project shell AI assist'
+      'project shell suggested assist'
     );
   }, [projectId, aiAssistEnabled]);
 

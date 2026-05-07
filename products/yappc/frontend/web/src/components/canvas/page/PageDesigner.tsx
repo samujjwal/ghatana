@@ -29,12 +29,16 @@ import {
   normalizeContractName,
   type LegacyComponentType,
 } from './registry';
-import type { DropRequest } from './ComponentRenderer';
+import type { DropRequest, KeyboardMoveRequest } from './ComponentRenderer';
 import { importPageArtifactsFromCode } from './artifactCompilerBridge';
 import { AIActionLineageTracker, createAIChangeRecord } from './pageArtifactDocument';
 import type { PageArtifactAIChangeRecord } from './pageArtifactDocument';
 import { importSourceToPageArtifacts, type ImportSourceType } from '../../../services/compiler/ImportSourceWorkflow';
 import { PageBuilderCommands, type Command, type InsertComponentCommand, type MoveComponentCommand } from '../../../services/canvas/commands/PageBuilderCommands';
+import {
+  emitPageBuilderCommandAudit,
+  type PageBuilderCommandAuditContext,
+} from '../../../services/canvas/commands/PageBuilderCommandAuditService';
 import type { PhaseCanvasConfig } from '../../../services/canvas/phase-config/PhaseCanvasConfig';
 
 import type { ComponentData } from './schemas';
@@ -121,6 +125,8 @@ interface SourceImportCommand {
   readonly source: string;
 }
 
+type ImportWorkflowMode = 'semantic-model' | 'source';
+
 function parseSourceImportCommand(input: string): SourceImportCommand | null {
   const trimmed = input.trim();
   if (!trimmed.startsWith('source:')) {
@@ -158,29 +164,43 @@ function parseSourceImportCommand(input: string): SourceImportCommand | null {
  */
 interface PageDesignerProps {
   readonly initialComponents?: ComponentData[] | BuilderDocument;
+  readonly projectId?: string;
   readonly onComponentsChange?: (components: ComponentData[]) => void;
   readonly onDocumentChange?: (document: BuilderDocument, validation: ValidationResult) => void;
   /** Called when the designer imports a decompiled model, producing one or more page artifacts */
   readonly onImportArtifacts?: (artifacts: readonly import('./pageArtifactDocument').PageArtifactDocument[]) => void;
   /** Called when an AI change is applied to the page (for audit/governance recording) */
   readonly onAIChangeRecord?: (record: PageArtifactAIChangeRecord) => void;
+  /** Called when a pending AI/automation change is accepted or rejected. */
+  readonly onAIReviewDecision?: (actionId: string, decision: 'accepted' | 'rejected') => void;
   /** Called when the user selects a node in the designer canvas */
   readonly onSelectionChange?: (nodeId: string | null) => void;
+  /** Called when the user hovers a node in the designer canvas */
+  readonly onHoverChange?: (nodeId: string | null) => void;
   /** Optional externally controlled selection (used by preview click sync) */
   readonly externalSelectedNodeId?: string | null;
+  /** Optional externally controlled hover state (used by preview hover sync) */
+  readonly externalHoveredNodeId?: string | null;
   /** Phase-aware canvas configuration controlling available tools and editing capabilities */
   readonly phaseConfig?: PhaseCanvasConfig;
+  /** Scope used to persist immutable command audit records when available. */
+  readonly auditContext?: PageBuilderCommandAuditContext;
 }
 
 export const PageDesigner: React.FC<PageDesignerProps> = ({
   initialComponents = [],
+  projectId,
   onComponentsChange,
   onDocumentChange,
   onImportArtifacts,
   onAIChangeRecord,
+  onAIReviewDecision,
   onSelectionChange,
+  onHoverChange,
   externalSelectedNodeId,
+  externalHoveredNodeId,
   phaseConfig,
+  auditContext,
 }) => {
   const canEdit = phaseConfig?.allowEditing ?? true;
   const canAdd = phaseConfig?.allowAddComponent ?? true;
@@ -195,27 +215,53 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   });
   const commandServiceRef = useRef<PageBuilderCommands | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [importPanelOpen, setImportPanelOpen] = useState(false);
   const [importInput, setImportInput] = useState('');
+  const [importWorkflowMode, setImportWorkflowMode] = useState<ImportWorkflowMode>('semantic-model');
+  const [guidedSourceType, setGuidedSourceType] = useState<ImportSourceType>('tsx');
+  const [guidedSourceLocator, setGuidedSourceLocator] = useState('');
   const [importError, setImportError] = useState<string | null>(null);
   const [importResiduals, setImportResiduals] = useState<readonly string[]>([]);
   const [importFidelity, setImportFidelity] = useState<
     import('./pageArtifactDocument').PageArtifactDocument['roundTripFidelity'] | null
   >(null);
+  const [commandAuditWarning, setCommandAuditWarning] = useState<string | null>(null);
+  const [dropFeedback, setDropFeedback] = useState<string | null>(null);
   const importTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const auditContextRef = useRef<PageBuilderCommandAuditContext | undefined>(auditContext);
 
   // Governance trace tracker — scoped to this designer session
   const lineageTrackerRef = useRef(new AIActionLineageTracker());
   const [pendingAIActions, setPendingAIActions] = useState<readonly import('./pageArtifactDocument').AIActionLineage[]>([]);
 
   const validation = useMemo(() => validateDocument(document, contracts), [contracts, document]);
+  const announceDropFeedback = useCallback((message: string): void => {
+    setDropFeedback(message);
+  }, []);
+
+  useEffect(() => {
+    auditContextRef.current = auditContext;
+  }, [auditContext]);
 
   if (!commandServiceRef.current) {
     commandServiceRef.current = new PageBuilderCommands({
       initialDocument: document,
-      onAudit: () => undefined,
+      onAudit: (record, result) => {
+        const scopedAuditContext = auditContextRef.current;
+        if (!scopedAuditContext) {
+          return;
+        }
+
+        void emitPageBuilderCommandAudit(scopedAuditContext, record, result)
+          .then(() => setCommandAuditWarning(null))
+          .catch((error: unknown) => {
+            const message = error instanceof Error ? error.message : 'Command audit failed.';
+            setCommandAuditWarning(`Command audit could not be persisted: ${message}`);
+          });
+      },
       onTelemetry: () => undefined,
       validate: (candidate) => validateDocument(candidate, contracts),
     });
@@ -239,7 +285,13 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
     }
   }, [externalSelectedNodeId, selectedId]);
 
+  const handleNodeHover = useCallback((nodeId: string | null) => {
+    setHoveredId(nodeId);
+    onHoverChange?.(nodeId);
+  }, [onHoverChange]);
+
   const selectedInstance = selectedId ? document.nodes.get(selectedId as NodeId) : undefined;
+  const effectiveHoveredNodeId = externalHoveredNodeId ?? hoveredId;
 
   const publishDocument = useCallback(
     (nextDocument: BuilderDocument) => {
@@ -282,8 +334,9 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
     (actionId: string, decision: 'accepted' | 'rejected') => {
       lineageTrackerRef.current.setReviewState(actionId, decision);
       setPendingAIActions(lineageTrackerRef.current.getPending());
+      onAIReviewDecision?.(actionId, decision);
     },
-    [],
+    [onAIReviewDecision],
   );
 
   const resolveInsertionTarget = useCallback((): {
@@ -308,19 +361,41 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   const handleImportConfirm = useCallback(async () => {
     setImportError(null);
     const trimmedInput = importInput.trim();
-    if (!trimmedInput) {
+    const trimmedSourceLocator = guidedSourceLocator.trim();
+    if (importWorkflowMode === 'semantic-model' && !trimmedInput) {
       setImportError('Paste a JSON semantic model to import.');
+      return;
+    }
+    if (importWorkflowMode === 'source' && !trimmedSourceLocator) {
+      setImportError('Enter a source URL, route, Storybook story, artifact ID, or zip locator to import.');
       return;
     }
 
     let artifacts: readonly import('./pageArtifactDocument').PageArtifactDocument[];
-    const sourceImportCommand = parseSourceImportCommand(trimmedInput);
+    const sourceImportCommand = importWorkflowMode === 'source'
+      ? { sourceType: guidedSourceType, source: trimmedSourceLocator }
+      : parseSourceImportCommand(trimmedInput);
     if (sourceImportCommand) {
+      if (!projectId) {
+        setImportError('Source imports require an active project context.');
+        return;
+      }
+      if (!auditContext?.tenantId || !auditContext.workspaceId) {
+        setImportError('Source imports require authenticated tenant and workspace context.');
+        return;
+      }
+
       const importFromSourceResult = await importSourceToPageArtifacts(
         {
           sourceType: sourceImportCommand.sourceType,
           source: sourceImportCommand.source,
-          projectId: 'imported-project',
+          projectId,
+          options: {
+            requireServerImport: true,
+            tenantId: auditContext.tenantId,
+            workspaceId: auditContext.workspaceId,
+            maxSourceLength: 4096,
+          },
         },
         'import',
       );
@@ -371,8 +446,8 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
     const importedNodes = importedDocument.nodes;
     const affectedNodeIds: readonly string[] =
       importedNodes instanceof Map
-        ? [...importedNodes.keys()]
-        : Object.keys(importedNodes as Record<string, unknown>);
+        ? [...importedNodes.keys()].map(String)
+        : Object.keys(importedNodes as unknown as Record<string, unknown>);
     recordAIChange(
       createAIChangeRecord(
         first.artifactId,
@@ -398,7 +473,8 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
 
     setImportPanelOpen(false);
     setImportInput('');
-  }, [executeCommand, importInput, onImportArtifacts, recordAIChange]);
+    setGuidedSourceLocator('');
+  }, [auditContext?.tenantId, auditContext?.workspaceId, executeCommand, guidedSourceLocator, guidedSourceType, importInput, importWorkflowMode, onImportArtifacts, projectId, recordAIChange]);
 
   const handleAddComponent = useCallback(
     (contractOrType: string) => {
@@ -475,28 +551,33 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         } satisfies MoveComponentCommand);
 
         if (!result?.success) {
+          announceDropFeedback('Could not move component to the root canvas.');
           return;
         }
 
         publishDocument(result.document);
+        setDropFeedback(null);
         setSelectedId(draggedNodeId);
       }
     },
-    [document, publishDocument],
+    [announceDropFeedback, document, publishDocument],
   );
 
   const handleRendererDropRequest = useCallback(
     (request: DropRequest) => {
       if (request.source.kind === 'node' && request.source.nodeId === request.targetNodeId) {
+        announceDropFeedback('Cannot drop a component onto itself.');
         return;
       }
 
       if (request.placement === 'slot' && !request.slotName) {
+        announceDropFeedback('Cannot drop into a slot without a target slot.');
         return;
       }
 
       const targetLocation = findNodeLocation(document, request.targetNodeId);
       if (!targetLocation && request.placement !== 'slot') {
+        announceDropFeedback('Cannot find the target position for this drop.');
         return;
       }
 
@@ -528,20 +609,24 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         } satisfies InsertComponentCommand);
 
         if (!result?.success) {
+          announceDropFeedback('Could not insert component at the requested position.');
           return;
         }
 
         publishDocument(result.document);
+        setDropFeedback(null);
         setSelectedId((result.changedNodeIds[0] as string | undefined) ?? null);
         return;
       }
 
       const sourceNodeId = request.source.nodeId;
       if (!document.nodes.has(sourceNodeId)) {
+        announceDropFeedback('Cannot move a component that is no longer in the document.');
         return;
       }
 
       if (destinationParentId && isDescendant(document, sourceNodeId, destinationParentId)) {
+        announceDropFeedback('Cannot move a component into one of its own descendants.');
         return;
       }
 
@@ -573,13 +658,76 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
       } satisfies MoveComponentCommand);
 
       if (!result?.success) {
+        announceDropFeedback('Could not move component to the requested position.');
         return;
       }
 
       publishDocument(result.document);
+      setDropFeedback(null);
       setSelectedId(sourceNodeId);
     },
-    [document, publishDocument],
+    [announceDropFeedback, document, publishDocument],
+  );
+
+  const handleKeyboardMoveRequest = useCallback(
+    (request: KeyboardMoveRequest) => {
+      const sourceLocation = findNodeLocation(document, request.nodeId);
+      if (!sourceLocation) {
+        announceDropFeedback('Cannot move a component that is no longer in the document.');
+        return;
+      }
+
+      const siblings = getNodeChildren(document, sourceLocation.parentId, sourceLocation.slotName);
+      let newParentId = sourceLocation.parentId;
+      let newSlotName = sourceLocation.slotName;
+      let index = sourceLocation.index;
+
+      if (request.direction === 'previous') {
+        if (sourceLocation.index === 0) {
+          announceDropFeedback('Component is already first in this group.');
+          return;
+        }
+        index = sourceLocation.index - 1;
+      } else if (request.direction === 'next') {
+        if (sourceLocation.index >= siblings.length - 1) {
+          announceDropFeedback('Component is already last in this group.');
+          return;
+        }
+        index = sourceLocation.index + 1;
+      } else {
+        if (!sourceLocation.parentId) {
+          announceDropFeedback('Component is already at the top level.');
+          return;
+        }
+
+        const parentLocation = findNodeLocation(document, sourceLocation.parentId);
+        newParentId = parentLocation?.parentId ?? null;
+        newSlotName = parentLocation?.slotName;
+        index = (parentLocation?.index ?? document.rootNodes.length - 1) + 1;
+      }
+
+      const result = commandServiceRef.current?.execute({
+        id: `move-component-${Date.now()}`,
+        type: 'move-component',
+        timestamp: new Date().toISOString(),
+        data: {
+          nodeId: request.nodeId,
+          newParentId,
+          newSlotName,
+          index,
+        },
+      } satisfies MoveComponentCommand);
+
+      if (!result?.success) {
+        announceDropFeedback('Could not move component with the keyboard command.');
+        return;
+      }
+
+      publishDocument(result.document);
+      setDropFeedback(null);
+      setSelectedId(request.nodeId);
+    },
+    [announceDropFeedback, document, publishDocument],
   );
 
   const handleDeleteComponent = useCallback(() => {
@@ -688,7 +836,9 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
             size="small"
             onClick={() => {
               setImportInput('');
+              setGuidedSourceLocator('');
               setImportError(null);
+              setImportWorkflowMode('semantic-model');
               setImportPanelOpen(true);
             }}
             title="Import from code / Decompile"
@@ -736,22 +886,77 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
               </IconButton>
             </Box>
             <Typography variant="caption" color="muted" style={{ display: 'block', marginBottom: 6 }}>
-              Paste a JSON semantic model, or use source import format: source:tsx:https://example.com/Page.tsx
+              Step 1: choose an import path. Step 2: review source details and confidence. Step 3: decompile and apply reviewed artifacts.
             </Typography>
-            <TextArea
-              ref={importTextareaRef}
-              value={importInput}
-              onChange={(e) => {
-                setImportInput(e.target.value);
-                setImportError(null);
-              }}
-              rows={6}
-              placeholder='{"pages": [{"name": "Home", ...}]}'
-              aria-label="Paste semantic model JSON"
-              data-testid="page-designer-import-textarea"
-              className="w-full font-mono text-xs"
-              error={importError ?? undefined}
-            />
+            <Box className="mb-2 flex gap-2" role="group" aria-label="Import workflow mode">
+              <Button
+                variant={importWorkflowMode === 'semantic-model' ? 'solid' : 'outline'}
+                size="small"
+                onClick={() => {
+                  setImportWorkflowMode('semantic-model');
+                  setImportError(null);
+                }}
+                data-testid="page-import-mode-semantic"
+              >
+                Semantic model
+              </Button>
+              <Button
+                variant={importWorkflowMode === 'source' ? 'solid' : 'outline'}
+                size="small"
+                onClick={() => {
+                  setImportWorkflowMode('source');
+                  setImportError(null);
+                }}
+                data-testid="page-import-mode-source"
+              >
+                Governed source
+              </Button>
+            </Box>
+            {importWorkflowMode === 'source' ? (
+              <Box>
+                <Typography variant="caption" style={{ display: 'block', marginBottom: 4 }}>
+                  Source type
+                </Typography>
+                <select
+                  value={guidedSourceType}
+                  onChange={(event) => setGuidedSourceType(event.target.value as ImportSourceType)}
+                  aria-label="Source import type"
+                  data-testid="page-designer-source-type"
+                  className="mb-2 w-full rounded border border-border bg-surface px-2 py-1 text-xs"
+                >
+                  <option value="tsx">TSX component</option>
+                  <option value="route">Route file</option>
+                  <option value="storybook">Storybook story</option>
+                  <option value="artifact">Artifact ID</option>
+                  <option value="zip">Zip archive</option>
+                </select>
+                <input
+                  value={guidedSourceLocator}
+                  onChange={(event) => {
+                    setGuidedSourceLocator(event.target.value);
+                    setImportError(null);
+                  }}
+                  placeholder="https://example.com/Page.tsx"
+                  aria-label="Source locator"
+                  data-testid="page-designer-source-locator"
+                  className="w-full rounded border border-border bg-surface px-2 py-1 text-xs"
+                />
+              </Box>
+            ) : (
+              <TextArea
+                ref={importTextareaRef}
+                value={importInput}
+                onChange={(e) => {
+                  setImportInput(e.target.value);
+                  setImportError(null);
+                }}
+                rows={6}
+                placeholder='{"pages": [{"name": "Home", ...}]}'
+                aria-label="Paste semantic model JSON"
+                data-testid="page-designer-import-textarea"
+                className="w-full font-mono text-xs"
+              />
+            )}
             {importError && (
               <Typography variant="caption" color="danger" style={{ display: 'block', marginTop: 4 }}>
                 {importError}
@@ -834,6 +1039,34 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
           </Paper>
         ) : null}
 
+        {commandAuditWarning ? (
+          <Paper
+            elevation={1}
+            className="mb-4 flex items-start gap-3 border border-warning-border bg-warning-bg p-3"
+            data-testid="page-builder-audit-warning"
+          >
+            <AlertTriangle size={16} />
+            <Typography variant="caption" color="danger">
+              {commandAuditWarning}
+            </Typography>
+          </Paper>
+        ) : null}
+
+        {dropFeedback ? (
+          <Paper
+            elevation={1}
+            className="mb-4 flex items-start gap-3 border border-warning-border bg-warning-bg p-3"
+            data-testid="page-drop-feedback"
+            role="alert"
+            aria-live="polite"
+          >
+            <AlertTriangle size={16} />
+            <Typography variant="caption" color="danger">
+              {dropFeedback}
+            </Typography>
+          </Paper>
+        ) : null}
+
         {selectedInstance ? (
           <Paper elevation={3} className="absolute right-4 top-4 z-10 flex gap-2 p-2">
             <IconButton
@@ -887,8 +1120,11 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
                   document={document}
                   nodeId={nodeId}
                   selectedNodeId={selectedId}
+                  hoveredNodeId={effectiveHoveredNodeId}
                   onSelect={setSelectedId}
+                  onNodeHover={handleNodeHover}
                   onDropRequest={handleRendererDropRequest}
+                  onKeyboardMoveRequest={handleKeyboardMoveRequest}
                 />
               ))}
             </Stack>

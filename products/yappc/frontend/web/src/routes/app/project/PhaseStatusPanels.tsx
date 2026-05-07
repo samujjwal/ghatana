@@ -166,7 +166,7 @@ export function PhaseStatusPanels({ phase, preview, blockers, activity }: PhaseS
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Codegen readiness</p>
                 <Badge
-                  variant={isReady ? 'success' : 'warning'}
+                  variant={isReady ? 'success' : 'secondary'}
                   data-testid="codegen-readiness-badge"
                 >
                   {isReady ? 'Ready' : 'Not ready'}

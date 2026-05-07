@@ -8,7 +8,7 @@
  * to the corresponding route.
  *
  * Usage:
- *   import { LazyCanvas, LazyAIPanel } from '@/routes/lazyRoutes';
+ *   import { LazyCanvas, LazyGuidedPanel } from '@/routes/lazyRoutes';
  *   // Wrap with <Suspense fallback={<PageSkeleton />}> at the route level.
  *
  * @doc.type module
@@ -17,20 +17,26 @@
  * @doc.pattern LazyLoading
  */
 
-import { lazy } from 'react';
+import { createElement, lazy } from 'react';
 
 // ---------------------------------------------------------------------------
 // Heavy canvas sub-features
 // ---------------------------------------------------------------------------
 
 /**
- * AI assistance panel rendered inside the canvas view.
+ * Guided assistance panel rendered inside the canvas view.
  * Chunk: app-canvas (see vite.config.ts manualChunks).
  */
 export const LazyAIPanel = lazy(
-  async () => ({
-    default: () => null,
-  }),
+  () =>
+    import('../components/route/LazyFeatureUnavailable').then((module) => ({
+      default: () =>
+        createElement(module.LazyFeatureUnavailable, {
+          title: 'Guided assistant unavailable',
+          description: 'This workspace has not enabled the guided canvas assistant yet. Existing canvas tools remain available.',
+          testId: 'lazy-guided-panel-unavailable',
+        }),
+    })),
 );
 
 /**
@@ -66,13 +72,19 @@ export const LazyOutlinePanel = lazy(
 // ---------------------------------------------------------------------------
 
 /**
- * AI Explainability panel (approval detail view).
+ * Recommendation explainability panel (approval detail view).
  * Chunk: app-project.
  */
 export const LazyAIExplainability = lazy(
-  async () => ({
-    default: () => null,
-  }),
+  () =>
+    import('../components/route/LazyFeatureUnavailable').then((module) => ({
+      default: () =>
+        createElement(module.LazyFeatureUnavailable, {
+          title: 'Recommendation details unavailable',
+          description: 'Explainability details are feature-gated for this environment. Review and approval workflows remain available from the phase cockpit.',
+          testId: 'lazy-explainability-unavailable',
+        }),
+    })),
 );
 
 /**
@@ -90,9 +102,15 @@ export const LazyObservabilityDashboard = lazy(
  * Bulk operations dialog (heavy mutation surface).
  */
 export const LazyBulkOperationsDialog = lazy(
-  async () => ({
-    default: () => null,
-  }),
+  () =>
+    import('../components/route/LazyFeatureUnavailable').then((module) => ({
+      default: () =>
+        createElement(module.LazyFeatureUnavailable, {
+          title: 'Bulk operations unavailable',
+          description: 'Bulk mutations are disabled until the workspace exposes the required review and rollback controls.',
+          testId: 'lazy-bulk-operations-unavailable',
+        }),
+    })),
 );
 
 // ---------------------------------------------------------------------------

@@ -37,10 +37,12 @@ vi.mock('@/components/canvas/page/PageDesigner', () => ({
     onDocumentChange,
     onImportArtifacts,
     onAIChangeRecord,
+    onAIReviewDecision,
   }: {
     onDocumentChange?: (doc: unknown, validation: { valid: boolean; errors: unknown[]; warnings: unknown[] }) => void;
     onImportArtifacts?: (artifacts: readonly unknown[]) => void;
     onAIChangeRecord?: (record: unknown) => void;
+    onAIReviewDecision?: (actionId: string, decision: 'accepted' | 'rejected') => void;
   }) => (
     <div>
       <button
@@ -100,6 +102,10 @@ vi.mock('@/components/canvas/page/PageDesigner', () => ({
             },
           })
         }
+      />
+      <button
+        data-testid="trigger-ai-review-accept"
+        onClick={() => onAIReviewDecision?.('ai-1', 'accepted')}
       />
     </div>
   ),
@@ -367,6 +373,52 @@ describe('PageDesignerNode', () => {
       fireEvent.click(screen.getByTestId('trigger-ai-record'));
       expect(mockExecuteCommand).toHaveBeenCalledTimes(1);
     });
+
+    it('persists AI review decisions into the page artifact governance records', () => {
+      const pageDocument = {
+        ...createPageArtifactDocument({
+          artifactId: 'artifact-main',
+          name: 'Home Page',
+          createdBy: 'tester',
+        }),
+        aiChangeRecords: [
+          {
+            artifactId: 'artifact-main',
+            documentId: 'doc-1',
+            lineage: {
+              actionId: 'ai-1',
+              hookKind: 'property-completion' as const,
+              reason: 'Synthetic AI change for node test',
+              confidence: 0.9,
+              reversible: true,
+              reviewState: 'pending' as const,
+              affectedNodeIds: [],
+              appliedAt: new Date().toISOString(),
+              evidence: [],
+            },
+          },
+        ],
+      };
+
+      render(<PageDesignerNode {...makeNodeProps({ expanded: true, pageDocument })} />);
+      fireEvent.click(screen.getByTestId('trigger-ai-review-accept'));
+
+      expect(mockExecuteCommand).toHaveBeenCalledTimes(1);
+      const command = mockExecuteCommand.mock.calls[0]?.[0] as {
+        readonly to?: { readonly pageDocument?: typeof pageDocument };
+      };
+      const persistedDocument = command.to?.pageDocument;
+      expect(persistedDocument?.syncStatus).toBe('dirty');
+      expect(persistedDocument?.aiChangeRecords?.[0]?.lineage.reviewState).toBe('accepted');
+      expect(persistedDocument?.operationLog?.at(-1)).toMatchObject({
+        operation: 'governance-record',
+        status: 'succeeded',
+        metadata: {
+          actionId: 'ai-1',
+          decision: 'accepted',
+        },
+      });
+    });
   });
 
   describe('conflict resolution', () => {
@@ -380,11 +432,11 @@ describe('PageDesignerNode', () => {
 
       render(<PageDesignerNode {...makeNodeProps({ expanded: true, pageDocument: conflicted })} />);
 
-      fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Reload remote' }));
       expect(mockPersistenceLoad).toHaveBeenCalledWith('artifact-main');
     });
 
-    it('shows conflict controls and force-saves when Force Save is clicked', () => {
+    it('requires an audit reason before overwriting the remote conflict', () => {
       const conflicted = {
         ...createPageArtifactDocument({ artifactId: 'artifact-main', name: 'Home Page', createdBy: 'tester' }),
         syncStatus: 'error' as const,
@@ -392,7 +444,13 @@ describe('PageDesignerNode', () => {
 
       render(<PageDesignerNode {...makeNodeProps({ expanded: true, pageDocument: conflicted })} />);
 
-      fireEvent.click(screen.getByRole('button', { name: 'Force Save' }));
+      const overwriteButton = screen.getByRole('button', { name: 'Overwrite with reason' });
+      expect(overwriteButton).toBeDisabled();
+
+      fireEvent.change(screen.getByTestId('page-conflict-overwrite-reason'), {
+        target: { value: 'Local version has reviewed changes' },
+      });
+      fireEvent.click(overwriteButton);
       expect(mockPersistenceSave).toHaveBeenCalled();
     });
   });

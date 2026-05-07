@@ -257,6 +257,34 @@ export function LivePreviewPanel({
     setCurrentViewport(key);
   };
 
+  const createPreviewCorrelationId = (operation: string): string => {
+    return `live-preview-${operation}-${Date.now()}`;
+  };
+
+  useEffect(() => {
+    if (!previewServiceRef.current || previewPolicy.fallbackState) {
+      return;
+    }
+
+    previewServiceRef.current.send({
+      type: 'SET_VIEWPORT',
+      viewport: PRESET_VIEWPORTS[currentViewport],
+      correlationId: createPreviewCorrelationId('viewport'),
+    });
+    previewServiceRef.current.send({
+      type: 'SET_THEME',
+      theme: currentTheme,
+      correlationId: createPreviewCorrelationId('theme'),
+    });
+    previewServiceRef.current.send({
+      type: 'SET_LOCALE',
+      locale: currentLocale,
+      correlationId: createPreviewCorrelationId('locale'),
+    });
+  }, [currentLocale, currentTheme, currentViewport, previewPolicy.fallbackState, previewPolicy.profile]);
+
+  const currentViewportSpec = PRESET_VIEWPORTS[currentViewport];
+
   return (
     <div
       className={cn(
@@ -368,12 +396,16 @@ export function LivePreviewPanel({
             </div>
           </div>
         ) : (
-          <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-border dark:border-border p-4 min-h-[200px]">
+          <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-border dark:border-border p-4 min-h-[200px] overflow-auto">
             <iframe
               ref={iframeRef}
               src={resolvedPreviewUrl ?? previewUrl ?? '/preview/builder'}
               title="Live Preview"
-              className="w-full h-full border-0"
+              className="h-full max-w-full border-0 transition-[width,height] duration-200 ease-out"
+              style={{
+                width: `${currentViewportSpec.width}px`,
+                minHeight: `${currentViewportSpec.height}px`,
+              }}
               sandbox={previewPolicy.sandbox.join(' ')}
             />
           </div>

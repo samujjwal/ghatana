@@ -41,8 +41,10 @@ public final class ProductionBootstrapValidator {
     private final CampaignRepository campaignRepository;
     private final DigitalMarketingKernelAdapter kernelAdapter;
     private final String piiHmacKey;
+    private final String contactEncryptionKey;
     private final List<Object> adaptersToValidate;
     private final com.ghatana.digitalmarketing.pack.DigitalMarketingComplianceRulePack complianceRulePack;
+    private final Object googleAdsOutboxExecutor;
 
     private ProductionBootstrapValidator(Builder builder) {
         this.isProduction = builder.isProduction;
@@ -50,10 +52,12 @@ public final class ProductionBootstrapValidator {
         this.campaignRepository = builder.campaignRepository;
         this.kernelAdapter = builder.kernelAdapter;
         this.piiHmacKey = builder.piiHmacKey;
+        this.contactEncryptionKey = builder.contactEncryptionKey;
         this.adaptersToValidate = builder.adaptersToValidate != null
             ? builder.adaptersToValidate
             : new ArrayList<>();
         this.complianceRulePack = builder.complianceRulePack;
+        this.googleAdsOutboxExecutor = builder.googleAdsOutboxExecutor;
     }
 
     /**
@@ -151,14 +155,28 @@ public final class ProductionBootstrapValidator {
         } else if (piiHmacKey.length() < 32) {
             violations.add("PII-002: PII HMAC key too short (minimum 32 characters required).");
         }
+
+        // P1-015: Contact encryption key must be explicitly configured in production
+        if (contactEncryptionKey == null || contactEncryptionKey.isBlank()) {
+            violations.add("PII-003: DMOS_CONTACT_ENCRYPTION_KEY not configured. " +
+                "ContactEncryptionService will reject all operations in production.");
+        } else if (contactEncryptionKey.length() < 32) {
+            violations.add("PII-004: DMOS_CONTACT_ENCRYPTION_KEY too short (minimum 32 characters required).");
+        }
     }
 
     private void validateExternalIntegrations(List<String> violations) {
-        // Check that external integrations (Google Ads, Meta, etc.) have
-        // proper outbox/workflow configuration for durability
-
-        // This is a placeholder - actual implementation would check
-        // specific connector configurations
+        // Validate Google Ads outbox executor is present and not a stub
+        if (googleAdsOutboxExecutor == null) {
+            violations.add("INTEGRATION-001: GoogleAdsOutboxExecutor is not configured. " +
+                "Google Ads campaign commands cannot be durably executed without it.");
+        } else {
+            String name = googleAdsOutboxExecutor.getClass().getSimpleName();
+            if (isInvalidAdapterName(name)) {
+                violations.add("INTEGRATION-002: GoogleAdsOutboxExecutor is a stub/test class: " + name +
+                    ". Real outbox executor required in production.");
+            }
+        }
 
         LOG.info("[DMOS-BOOTSTRAP] External integration safety checks passed");
     }
@@ -248,8 +266,10 @@ public final class ProductionBootstrapValidator {
         private CampaignRepository campaignRepository;
         private DigitalMarketingKernelAdapter kernelAdapter;
         private String piiHmacKey;
+        private String contactEncryptionKey;
         private List<Object> adaptersToValidate = new ArrayList<>();
         private com.ghatana.digitalmarketing.pack.DigitalMarketingComplianceRulePack complianceRulePack;
+        private Object googleAdsOutboxExecutor;
 
         public Builder isProduction(boolean isProduction) {
             this.isProduction = isProduction;
@@ -277,6 +297,15 @@ public final class ProductionBootstrapValidator {
         }
 
         /**
+         * P1-015: Sets the contact encryption key for PII validation.
+         * Must be at least 32 characters (derived from DMOS_CONTACT_ENCRYPTION_KEY env var).
+         */
+        public Builder contactEncryptionKey(String contactEncryptionKey) {
+            this.contactEncryptionKey = contactEncryptionKey;
+            return this;
+        }
+
+        /**
          * P0-016: Registers an adapter to validate for invalid/deterministic naming.
          * All production adapters should be registered here to prevent accidental
          * use of test implementations.
@@ -293,6 +322,14 @@ public final class ProductionBootstrapValidator {
          */
         public Builder complianceRulePack(com.ghatana.digitalmarketing.pack.DigitalMarketingComplianceRulePack complianceRulePack) {
             this.complianceRulePack = complianceRulePack;
+            return this;
+        }
+
+        /**
+         * P0-005: Sets the Google Ads outbox executor to validate for production readiness.
+         */
+        public Builder googleAdsOutboxExecutor(Object googleAdsOutboxExecutor) {
+            this.googleAdsOutboxExecutor = googleAdsOutboxExecutor;
             return this;
         }
 

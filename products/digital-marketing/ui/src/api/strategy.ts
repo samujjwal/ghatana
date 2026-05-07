@@ -44,9 +44,10 @@ export async function approveStrategy(
   workspaceId: string,
   strategyId: string,
   idempotencyKey?: string,
+  auditComment?: string,
 ): Promise<MarketingStrategy> {
   return apiRequest<MarketingStrategy>(
     `${base(workspaceId)}/${encodeURIComponent(strategyId)}/approve`,
-    { method: 'POST', idempotencyKey },
+    { method: 'POST', idempotencyKey, body: auditComment ? { auditComment } : undefined },
   );
 }
