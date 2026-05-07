@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { Button } from '@ghatana/design-system';
 import { Info, CheckCircle, AlertTriangle as Warning, Lightbulb, ChevronDown as ExpandMore, ChevronUp as ExpandLess } from 'lucide-react';
 import type { LifecyclePhase } from '@/shared/types/lifecycle';
 import type { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
@@ -71,9 +72,11 @@ export function PhaseContextPanel({
     return (
         <div className="bg-bg-paper border border-divider rounded-lg overflow-hidden">
             {/* Header */}
-            <button
+            <Button
+                type="button"
                 onClick={() => setExpanded(!expanded)}
                 className="w-full flex items-center justify-between p-4 hover:bg-grey-50 dark:hover:bg-grey-800/50 transition-colors"
+                aria-expanded={expanded}
             >
                 <div className="flex items-center gap-3">
                     <Info className="text-primary-500" />
@@ -87,7 +90,7 @@ export function PhaseContextPanel({
                     </div>
                 </div>
                 {expanded ? <ExpandLess /> : <ExpandMore />}
-            </button>
+            </Button>
 
             {expanded && (
                 <div className="p-4 pt-0 space-y-4">
@@ -142,7 +145,8 @@ export function PhaseContextPanel({
                                 AI Recommendations
                             </h4>
                             {suggestions.slice(0, 3).map((suggestion, idx) => (
-                                <button
+                                <Button
+                                    type="button"
                                     key={idx}
                                     onClick={() => onActionClick?.(suggestion.title, suggestion.artifactKind)}
                                     className="w-full text-left p-3 rounded-lg border border-divider bg-bg-default hover:bg-grey-50 dark:hover:bg-grey-800/50 transition-colors"
@@ -168,7 +172,7 @@ export function PhaseContextPanel({
                                             )}
                                         </div>
                                     </div>
-                                </button>
+                                </Button>
                             ))}
                         </div>
                     ) : null}

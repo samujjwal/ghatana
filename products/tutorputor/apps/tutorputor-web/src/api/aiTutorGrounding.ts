@@ -17,19 +17,15 @@ export function buildAITutorGroundingPayload(
   overrides: Partial<AITutorGroundingPayload> = {},
 ): AITutorGroundingPayload {
   return {
-    moduleId: overrides.moduleId ?? "current-module",
-    claimIds: overrides.claimIds ?? ["current-claim"],
+    moduleId: overrides.moduleId ?? "",
+    claimIds: overrides.claimIds ?? [],
     currentSimulationState: overrides.currentSimulationState ?? {
       source: "web",
       available: false,
     },
     recentAttempts:
       overrides.recentAttempts ??
-      [
-        {
-          attemptId: "current-session",
-        },
-      ],
+      [],
     misconceptions: overrides.misconceptions ?? [],
     allowedHelpMode: overrides.allowedHelpMode ?? "socratic",
   };

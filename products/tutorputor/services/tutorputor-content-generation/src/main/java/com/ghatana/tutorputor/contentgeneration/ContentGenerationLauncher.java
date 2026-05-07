@@ -66,7 +66,16 @@ public final class ContentGenerationLauncher {
 
         if ((openAiApiKey == null || openAiApiKey.isBlank())
             && (ollamaUrl == null || ollamaUrl.isBlank())) {
-            LOG.warn("No explicit LLM provider configured. Falling back to the default Ollama URL at http://localhost:11434.");
+            String environment = System.getenv("ENVIRONMENT");
+            boolean isProductionLike = "production".equalsIgnoreCase(environment)
+                    || "staging".equalsIgnoreCase(environment);
+            if (isProductionLike) {
+                throw new IllegalStateException(
+                        "No LLM provider configured for environment '" + environment + "'. "
+                        + "Set OPENAI_API_KEY or OLLAMA_URL before starting the service.");
+            }
+            LOG.warn("No LLM provider configured. Content generation will use structural templates only. "
+                    + "Set OPENAI_API_KEY or OLLAMA_URL to enable AI-assisted generation.");
         }
 
         if (openAiApiKey != null && !openAiApiKey.isBlank()) {

@@ -287,13 +287,15 @@ export async function registerAIRoutes(
           }
         }
 
-        const governance = buildAIGovernanceMetadata({
-          consentState: "granted",
+        const governance = await buildAIGovernanceMetadata({
+          prisma: app.prisma as PrismaClient,
+          tenantId,
+          userId,
+          contentToFilter: question,
           learnerContextScope: moduleId ? "module" : "none",
           promptVersion: "tutorputor-tutor-query-v1",
           modelVersion: modelId || "unknown",
           retrievedContentIds: moduleId ? [String(moduleId)] : [],
-          safetyFilterResult: "passed",
         });
         assertAIInteractionAllowed(governance);
 
@@ -348,7 +350,7 @@ export async function registerAIRoutes(
       } finally {
         // Log AI inference for audit
         const latencyMs = Date.now() - startTime;
-        const governance = buildAIGovernanceMetadata({
+        const governance = await buildAIGovernanceMetadata({
           consentState: success ? "granted" : "missing",
           learnerContextScope: moduleId ? "module" : "none",
           promptVersion: "tutorputor-tutor-query-v1",

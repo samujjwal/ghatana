@@ -242,16 +242,19 @@ describe('PageBuilderCommands', () => {
         nodeId,
         props: { label: 'Email' },
         name: 'Email Field',
+        dataClassification: 'SENSITIVE',
       },
     };
 
     const updated = await commands.execute(updateCommand);
     expect(updated.document.nodes.get(nodeId)?.props.label).toBe('Email');
     expect(updated.document.nodes.get(nodeId)?.metadata.name).toBe('Email Field');
+    expect(updated.document.nodes.get(nodeId)?.metadata.dataClassification).toBe('SENSITIVE');
 
     const undone = await commands.undo();
     expect(undone.document.nodes.get(nodeId)?.props.label).toBeUndefined();
     expect(undone.document.nodes.get(nodeId)?.metadata.name).toBe('TextField');
+    expect(undone.document.nodes.get(nodeId)?.metadata.dataClassification).toBeUndefined();
   });
 
   it('adds event/data bindings as semantic commands and supports undo', async () => {

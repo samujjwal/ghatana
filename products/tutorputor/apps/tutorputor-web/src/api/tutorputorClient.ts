@@ -84,6 +84,30 @@ export interface ModuleSummary {
 
 import type { ContentBlockType } from "../pages/cms/types";
 
+export interface AssessmentChoice {
+  id: string;
+  text: string;
+}
+
+export interface AssessmentItem {
+  id: string;
+  stem: string;
+  type: string;
+  choices?: AssessmentChoice[];
+}
+
+export interface Assessment {
+  id: string;
+  title: string;
+  description?: string;
+  timeLimitMinutes?: number;
+  items: AssessmentItem[];
+}
+
+export interface AttemptResponse {
+  id: string;
+}
+
 export interface LearningObjective {
   id: string;
   label: string;
@@ -805,6 +829,36 @@ export class TutorPutorApiClient {
       riskLevel: string;
       riskFactors?: string[];
     }>>("/v1/analytics/at-risk");
+  }
+
+  /**
+   * Fetch a specific assessment by ID.
+   */
+  async getAssessment(assessmentId: string): Promise<Assessment> {
+    return await this.request<Assessment>(`/v1/assessments/${assessmentId}`);
+  }
+
+  /**
+   * Start a new attempt for the given assessment.
+   * Returns the attempt record including the server-generated attempt ID.
+   */
+  async startAssessmentAttempt(assessmentId: string): Promise<AttemptResponse> {
+    return await this.request<AttemptResponse>(`/v1/assessments/${assessmentId}/attempts`, {
+      method: "POST",
+    });
+  }
+
+  /**
+   * Submit the learner's responses for an in-progress attempt.
+   */
+  async submitAssessmentAttempt(
+    attemptId: string,
+    responses: Record<string, { type: string; selectedChoiceIds?: string[]; answer?: string }>,
+  ): Promise<void> {
+    await this.request<void>(`/v1/assessment-attempts/${attemptId}/submit`, {
+      method: "POST",
+      body: JSON.stringify({ responses }),
+    });
   }
 }
 

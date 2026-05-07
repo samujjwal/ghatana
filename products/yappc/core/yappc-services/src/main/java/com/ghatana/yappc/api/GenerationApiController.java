@@ -1,6 +1,8 @@
 package com.ghatana.yappc.api;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ghatana.audit.AuditLogger;
+import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
@@ -21,6 +23,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static com.ghatana.yappc.api.HttpResponses.*;
@@ -39,10 +45,19 @@ public class GenerationApiController {
     private final GenerationService generationService;
     private final YappcArtifactRepository artifactRepository;
     private final RateLimiter generationRateLimiter;
+    private final AuditLogger auditLogger;
 
     public GenerationApiController(GenerationService generationService, YappcArtifactRepository artifactRepository) {
+        this(generationService, artifactRepository, AuditLogger.noop());
+    }
+
+    public GenerationApiController(
+            GenerationService generationService,
+            YappcArtifactRepository artifactRepository,
+            AuditLogger auditLogger) {
         this.generationService = generationService;
         this.artifactRepository = artifactRepository;
+        this.auditLogger = auditLogger;
         this.generationRateLimiter = DefaultRateLimiter.create(
             RateLimiterConfig.builder()
                 .maxRequestsPerMinute(Integer.parseInt(System.getenv().getOrDefault("YAPPC_GENERATE_RATE_LIMIT_MAX", String.valueOf(GENERATION_RATE_LIMIT))))
@@ -64,7 +79,15 @@ public class GenerationApiController {
 
         HttpResponse throttled = rateLimitResponseIfNeeded(request, "generate");
         if (throttled != null) {
-            return Promise.of(throttled);
+            return auditThenRespond(
+                request,
+                "generation.generate.request",
+                "throttled",
+                null,
+                null,
+                Map.of("route", "generate"),
+                throttled
+            );
         }
 
         return request.loadBody()
@@ -74,17 +97,47 @@ public class GenerationApiController {
                         ValidatedSpec spec = parseValidatedSpec(json);
 
                         return generationService.generate(spec)
-                                .map(artifacts -> {
+                                .then(artifacts -> {
                                     try {
-                                        return ok200Json(JsonMapper.toJson(artifacts));
+                                        HttpResponse response = ok200Json(JsonMapper.toJson(artifacts));
+                                        return auditThenRespond(
+                                            request,
+                                            "generation.generate.request",
+                                            "succeeded",
+                                            null,
+                                            null,
+                                            Map.of(
+                                                "route", "generate",
+                                                "specId", spec.shapeSpec().id(),
+                                                "artifactId", artifacts.id() == null ? "" : artifacts.id(),
+                                                "artifactCount", artifacts.artifacts() == null ? 0 : artifacts.artifacts().size()
+                                            ),
+                                            response
+                                        );
                                     } catch (JsonProcessingException e) {
                                         log.error("Error serializing response", e);
-                                        return error500("Internal server error");
+                                        return auditThenRespond(
+                                            request,
+                                            "generation.generate.request",
+                                            "failed",
+                                            null,
+                                            null,
+                                            Map.of("route", "generate", "error", "serialization"),
+                                            error500("Internal server error")
+                                        );
                                     }
                                 });
                     } catch (JsonProcessingException | IllegalArgumentException e) {
                         log.error("Error parsing request", e);
-                        return Promise.of(badRequest400(e.getMessage() == null ? "Invalid generation request" : e.getMessage()));
+                        return auditThenRespond(
+                            request,
+                            "generation.generate.request",
+                            "rejected",
+                            null,
+                            null,
+                            Map.of("route", "generate", "reason", e.getMessage() == null ? "Invalid generation request" : e.getMessage()),
+                            badRequest400(e.getMessage() == null ? "Invalid generation request" : e.getMessage())
+                        );
                     }
                 })
                 .whenException(e -> log.error("Error generating artifacts", e));
@@ -100,7 +153,15 @@ public class GenerationApiController {
     public Promise<HttpResponse> regenerateWithDiff(HttpRequest request) {
         HttpResponse throttled = rateLimitResponseIfNeeded(request, "generate-diff");
         if (throttled != null) {
-            return Promise.of(throttled);
+            return auditThenRespond(
+                request,
+                "generation.diff.request",
+                "throttled",
+                null,
+                null,
+                Map.of("route", "generate-diff"),
+                throttled
+            );
         }
 
         return request.loadBody()
@@ -115,17 +176,47 @@ public class GenerationApiController {
                         GeneratedArtifacts existing = validateExistingArtifacts(diffRequest.existingArtifacts());
 
                         return generationService.regenerateWithDiff(spec, existing)
-                                .map(diff -> {
+                                .then(diff -> {
                                     try {
-                                        return ok200Json(JsonMapper.toJson(diff));
+                                        HttpResponse response = ok200Json(JsonMapper.toJson(diff));
+                                        return auditThenRespond(
+                                            request,
+                                            "generation.diff.request",
+                                            "succeeded",
+                                            null,
+                                            null,
+                                            Map.of(
+                                                "route", "generate-diff",
+                                                "specId", spec.shapeSpec().id(),
+                                                "existingArtifactsId", existing.id(),
+                                                "diffCount", diff.diffs() == null ? 0 : diff.diffs().size()
+                                            ),
+                                            response
+                                        );
                                     } catch (JsonProcessingException e) {
                                         log.error("Error serializing response", e);
-                                        return error500("Internal server error");
+                                        return auditThenRespond(
+                                            request,
+                                            "generation.diff.request",
+                                            "failed",
+                                            null,
+                                            null,
+                                            Map.of("route", "generate-diff", "error", "serialization"),
+                                            error500("Internal server error")
+                                        );
                                     }
                                 });
                     } catch (JsonProcessingException | IllegalArgumentException e) {
                         log.error("Error parsing request", e);
-                        return Promise.of(badRequest400(e.getMessage() == null ? "Invalid diff generation request" : e.getMessage()));
+                        return auditThenRespond(
+                            request,
+                            "generation.diff.request",
+                            "rejected",
+                            null,
+                            null,
+                            Map.of("route", "generate-diff", "reason", e.getMessage() == null ? "Invalid diff generation request" : e.getMessage()),
+                            badRequest400(e.getMessage() == null ? "Invalid diff generation request" : e.getMessage())
+                        );
                     }
                 })
                 .whenException(e -> log.error("Diff generation failed", e));
@@ -220,12 +311,28 @@ public class GenerationApiController {
     private Promise<HttpResponse> handleReviewDecision(HttpRequest request, GenerationReviewAction action) {
         HttpResponse throttled = rateLimitResponseIfNeeded(request, "generate-review-" + action.wireValue());
         if (throttled != null) {
-            return Promise.of(throttled);
+            return auditThenRespond(
+                request,
+                "generation.review.request",
+                "throttled",
+                null,
+                runIdFromPath(request),
+                Map.of("route", "generate-review", "action", action.wireValue()),
+                throttled
+            );
         }
 
-        String runId = request.getPathParameter("runId");
+        String runId = runIdFromPath(request);
         if (runId == null || runId.isBlank()) {
-            return Promise.of(badRequest400("runId is required"));
+            return auditThenRespond(
+                request,
+                "generation.review.request",
+                "rejected",
+                null,
+                null,
+                Map.of("route", "generate-review", "action", action.wireValue(), "reason", "runId is required"),
+                badRequest400("runId is required")
+            );
         }
 
         return request.loadBody()
@@ -248,20 +355,115 @@ public class GenerationApiController {
                     );
 
                     return generationService.reviewDecision(reviewRequest)
-                        .map(result -> {
+                        .then(result -> {
                             try {
-                                return ok200Json(JsonMapper.toJson(result));
+                                HttpResponse response = ok200Json(JsonMapper.toJson(result));
+                                return auditThenRespond(
+                                    request,
+                                    "generation.review.request",
+                                    "succeeded",
+                                    decisionBody.projectId(),
+                                    runId,
+                                    Map.of(
+                                        "route", "generate-review",
+                                        "action", action.wireValue(),
+                                        "status", result.status(),
+                                        "reasonProvided", decisionBody.reason() != null && !decisionBody.reason().isBlank()
+                                    ),
+                                    response
+                                );
                             } catch (JsonProcessingException e) {
                                 log.error("Error serializing review decision response", e);
-                                return error500("Internal server error");
+                                return auditThenRespond(
+                                    request,
+                                    "generation.review.request",
+                                    "failed",
+                                    decisionBody.projectId(),
+                                    runId,
+                                    Map.of("route", "generate-review", "action", action.wireValue(), "error", "serialization"),
+                                    error500("Internal server error")
+                                );
                             }
                         });
                 } catch (JsonProcessingException | IllegalArgumentException e) {
                     log.error("Error parsing review decision request", e);
-                    return Promise.of(badRequest400(e.getMessage() == null ? "Invalid review decision request" : e.getMessage()));
+                    return auditThenRespond(
+                        request,
+                        "generation.review.request",
+                        "rejected",
+                        null,
+                        runId,
+                        Map.of("route", "generate-review", "action", action.wireValue(), "reason", e.getMessage() == null ? "Invalid review decision request" : e.getMessage()),
+                        badRequest400(e.getMessage() == null ? "Invalid review decision request" : e.getMessage())
+                    );
                 }
             })
             .whenException(e -> log.error("Generation review decision failed", e));
+    }
+
+    private Promise<HttpResponse> auditThenRespond(
+            HttpRequest request,
+            String eventType,
+            String outcome,
+            String projectId,
+            String runId,
+            Map<String, Object> metadata,
+            HttpResponse response) {
+        return auditGenerationEvent(request, eventType, outcome, projectId, runId, metadata)
+            .then(($, e) -> {
+                if (e != null) {
+                    log.warn("Generation controller audit failed for eventType={} outcome={}: {}",
+                        eventType, outcome, e.getMessage());
+                }
+                return Promise.of(response);
+            });
+    }
+
+    private Promise<Void> auditGenerationEvent(
+            HttpRequest request,
+            String eventType,
+            String outcome,
+            String projectId,
+            String runId,
+            Map<String, Object> metadata) {
+        Principal principal = request.getAttachment(Principal.class);
+        Map<String, Object> event = new LinkedHashMap<>();
+        event.put("type", eventType);
+        event.put("outcome", outcome);
+        event.put("actor", principal != null ? principal.getName() : firstNonBlank(request.getHeader(HttpHeaders.of("X-Actor-Id")), "anonymous"));
+        event.put("tenantId", principal != null ? principal.getTenantId() : firstNonBlank(
+            request.getHeader(HttpHeaders.of("X-Tenant-Id")),
+            request.getHeader(HttpHeaders.of("X-Tenant-ID")),
+            "unknown"
+        ));
+        event.put("workspaceId", firstNonBlank(
+            request.getHeader(HttpHeaders.of("X-Workspace-Id")),
+            request.getHeader(HttpHeaders.of("X-Workspace-ID")),
+            "unknown"
+        ));
+        event.put("projectId", firstNonBlank(projectId, request.getHeader(HttpHeaders.of("X-Project-Id")), "unknown"));
+        event.put("runId", firstNonBlank(runId, "unknown"));
+        event.put("correlationId", firstNonBlank(
+            request.getHeader(HttpHeaders.of("X-Correlation-ID")),
+            request.getHeader(HttpHeaders.of("X-Request-ID")),
+            UUID.randomUUID().toString()
+        ));
+        event.put("timestamp", Instant.now().toString());
+        event.put("metadata", metadata == null ? Map.of() : metadata);
+        return auditLogger.log(event);
+    }
+
+    private String runIdFromPath(HttpRequest request) {
+        return request.getPathParameter("runId");
+    }
+
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return "";
     }
 
     private ReviewDecisionBody parseReviewDecisionBody(String json) throws JsonProcessingException {

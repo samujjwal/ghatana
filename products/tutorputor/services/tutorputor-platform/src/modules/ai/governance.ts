@@ -95,31 +95,66 @@ async function fetchActualConsentState(
 }
 
 /**
- * Run actual safety filter check on content
+ * Rule-based safety filter for learner-submitted content.
+ *
+ * Checks content against categories of unsafe patterns. Returns:
+ * - "blocked"              — content matches a clearly unsafe pattern
+ * - "human_review_required" — content matches a borderline pattern
+ * - "passed"               — no unsafe patterns detected
+ *
+ * This implementation is the defence-in-depth layer. Integrating an external
+ * moderation API (e.g. OpenAI Moderation, AWS Comprehend Moderation) will replace
+ * the regex-only checks when the platform AI safety service is available, while
+ * keeping this function's signature and contract unchanged.
  */
 async function runSafetyFilter(
   content: string,
 ): Promise<"passed" | "blocked" | "human_review_required" | "redacted"> {
-  // Placeholder for actual safety filter implementation
-  // TODO: Integrate with real safety filter service
-  if (!content || content.length === 0) {
+  if (!content || content.trim().length === 0) {
     return "passed";
   }
-  
-  // Basic heuristic checks (replace with actual safety filter)
-  const unsafePatterns = [
-    /password/i,
-    /credit card/i,
-    /ssn/i,
-    /social security/i,
+
+  // Patterns that should be blocked outright — PII, credentials, self-harm triggers
+  const blockedPatterns: RegExp[] = [
+    /\bpassword\b/i,
+    /\bcredit\s*card\b/i,
+    /\b(ssn|social\s*security\s*number)\b/i,
+    /\bsocial\s*security\b/i,
+    /\b(api[_-]?key|secret[_-]?key|access[_-]?token|bearer\s+[a-z0-9._-]{20,})\b/i,
+    /\b(kill|suicide|self[_-]?harm|cut\s+myself)\b/i,
+    /\b(bomb|explosive|weapon\s+of\s+mass)\b/i,
+    /\b(child\s+abuse|csam)\b/i,
   ];
-  
-  for (const pattern of unsafePatterns) {
+
+  // Patterns that warrant human review before proceeding
+  const reviewPatterns: RegExp[] = [
+    /\b(hate|racist|sexist|discriminat)\b/i,
+    /\b(drug|narcotic|controlled\s+substance)\b/i,
+    /\b(personal\s+information|private\s+data)\b/i,
+    /\b(copyright|plagiari)\b/i,
+    /[^a-zA-Z0-9\s.,!?'"()\-–—:;@#$%&*+=[\]{}|<>/\\]{5,}/u, // high density of unusual chars
+  ];
+
+  for (const pattern of blockedPatterns) {
     if (pattern.test(content)) {
+      console.warn("[SafetyFilter] Blocked — pattern matched", {
+        patternSource: pattern.source,
+        contentLength: content.length,
+      });
       return "blocked";
     }
   }
-  
+
+  for (const pattern of reviewPatterns) {
+    if (pattern.test(content)) {
+      console.warn("[SafetyFilter] Human review required — borderline pattern matched", {
+        patternSource: pattern.source,
+        contentLength: content.length,
+      });
+      return "human_review_required";
+    }
+  }
+
   return "passed";
 }
 

@@ -4,6 +4,7 @@ package com.ghatana.yappc.domain.generate;
  * @doc.type enum
  * @doc.purpose Supported human review decisions for generated artifact runs
  * @doc.layer domain
+ * @doc.pattern Enum
  */
 public enum GenerationReviewAction {
     APPLY("apply", "APPLIED"),

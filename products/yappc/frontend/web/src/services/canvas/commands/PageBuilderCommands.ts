@@ -31,6 +31,8 @@ import {
 
 import { migrateRegistryContractInstance } from '@/components/canvas/page/registry';
 
+type InstanceDataClassification = ComponentInstance['metadata']['dataClassification'];
+
 export type CommandType =
   | 'insert-component'
   | 'move-component'
@@ -83,6 +85,7 @@ export type UpdatePropsCommand = BaseCommand<
     readonly nodeId: NodeId;
     readonly props: Record<string, unknown>;
     readonly name?: string;
+    readonly dataClassification?: InstanceDataClassification;
   }
 >;
 
@@ -533,12 +536,24 @@ export class PageBuilderCommands {
     let nextDocument = updateNodeProps(document, nodeId, command.data.props);
     const node = nextDocument.nodes.get(nodeId);
 
-    if (node && command.data.name !== undefined && command.data.name !== node.metadata.name) {
+    if (
+      node &&
+      (
+        (command.data.name !== undefined && command.data.name !== node.metadata.name) ||
+        (
+          command.data.dataClassification !== undefined &&
+          command.data.dataClassification !== node.metadata.dataClassification
+        )
+      )
+    ) {
       const updatedNode: ComponentInstance = {
         ...node,
         metadata: {
           ...node.metadata,
-          name: command.data.name,
+          ...(command.data.name !== undefined ? { name: command.data.name } : {}),
+          ...(command.data.dataClassification !== undefined
+            ? { dataClassification: command.data.dataClassification }
+            : {}),
         },
       };
       const nextNodes = new Map(nextDocument.nodes);

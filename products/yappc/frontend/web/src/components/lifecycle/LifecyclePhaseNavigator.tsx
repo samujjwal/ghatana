@@ -11,6 +11,7 @@
  */
 
 import React from 'react';
+import { Button } from '@ghatana/design-system';
 import {
     LifecyclePhase,
     PHASE_LABELS,
@@ -165,7 +166,7 @@ const PhaseButton: React.FC<PhaseButtonProps> = ({
     const sizeClasses = variant === 'compact' ? 'px-3 py-2 text-sm' : 'px-4 py-3 text-base';
 
     return (
-        <button
+        <Button
             onClick={onClick}
             disabled={disabled}
             className={`${buttonClasses} ${sizeClasses}`}
@@ -180,7 +181,7 @@ const PhaseButton: React.FC<PhaseButtonProps> = ({
             {isActive && (
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full border-2 border-info-border" />
             )}
-        </button>
+        </Button>
     );
 };
 

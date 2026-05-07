@@ -124,8 +124,14 @@ export function ModulePage() {
   const handleMarkStepComplete = () => {
     if (!data?.userEnrollment) return;
 
+    const totalBlocks = data.module.contentBlocks.length;
     const currentProgress = data.userEnrollment.progressPercent;
-    const newProgress = Math.min(currentProgress + 10, 100);
+    const completedSteps = totalBlocks > 0
+      ? Math.round(currentProgress / (100 / totalBlocks))
+      : 0;
+    const newProgress = totalBlocks > 0
+      ? Math.min(Math.round((completedSteps + 1) / totalBlocks * 100), 100)
+      : 100;
     const timeDelta = 60; // 1 minute per step
 
     progressMutation.mutate({

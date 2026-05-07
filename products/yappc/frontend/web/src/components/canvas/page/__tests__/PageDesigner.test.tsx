@@ -62,6 +62,7 @@ vi.mock('../PropertyForm', () => ({
           stateVariant: { state: 'hover', props: { variant: 'outline' } },
           dataBinding: { id: 'binding-data', type: 'data', source: 'dataSource.orders', target: 'children' },
           actionBinding: { id: 'binding-action', type: 'event', source: 'onClick', target: 'navigate:/orders' },
+          privacyClassification: 'SENSITIVE',
         }),
       }, 'Save'),
       React.createElement('button', { 'data-testid': 'cancel-property', onClick: onCancel }, 'Cancel'),
@@ -700,6 +701,7 @@ describe('PageDesigner', () => {
     expect(updatedNode.metadata.stateVariants).toEqual([
       { state: 'hover', props: { variant: 'outline' } },
     ]);
+    expect(updatedNode.metadata.dataClassification).toBe('SENSITIVE');
     expect(updatedNode.bindings).toEqual([
       { id: 'binding-data', type: 'data', source: 'dataSource.orders', target: 'children' },
       { id: 'binding-action', type: 'event', source: 'onClick', target: 'navigate:/orders' },
@@ -962,6 +964,28 @@ describe('PageDesigner', () => {
     expect(screen.getByTestId('page-drop-feedback')).toHaveTextContent(
       'Cannot move into a container because there is no previous component.',
     );
+  });
+
+  it('exposes keyboard movement instructions and live invalid-move feedback to assistive tech', () => {
+    render(<PageDesigner />);
+    fireEvent.click(screen.getByText('Button'));
+
+    const buttonNode = screen.getByRole('treeitem', {
+      name: /Button component\. Use Alt\+ArrowUp or Alt\+ArrowDown to reorder/i,
+    });
+    expect(buttonNode).toHaveAttribute('tabindex', '0');
+    expect(buttonNode).toHaveAccessibleName(
+      'Button component. Use Alt+ArrowUp or Alt+ArrowDown to reorder, Alt+ArrowRight to move into the previous container, Alt+ArrowLeft to move out of a container.',
+    );
+
+    fireEvent.keyDown(buttonNode, {
+      key: 'ArrowLeft',
+      altKey: true,
+    });
+
+    const feedback = screen.getByRole('alert');
+    expect(feedback).toHaveAttribute('aria-live', 'polite');
+    expect(feedback).toHaveTextContent('Component is already at the top level.');
   });
 });
 

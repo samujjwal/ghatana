@@ -413,9 +413,12 @@ public class LifecycleServiceModule extends AbstractModule {
 
     /** Provides GenerationApiController for Phase 3 (Generate) HTTP routes. */
     @Provides
-    GenerationApiController generationApiController(GenerationService generationService, YappcArtifactRepository repo) {
+    GenerationApiController generationApiController(
+            GenerationService generationService,
+            YappcArtifactRepository repo,
+            AuditLogger auditLogger) {
         logger.info("Creating GenerationApiController");
-        return new GenerationApiController(generationService, repo);
+        return new GenerationApiController(generationService, repo, auditLogger);
     }
 
     /** Provides ValidationApiController for Phase 8 (Validate) HTTP routes. */

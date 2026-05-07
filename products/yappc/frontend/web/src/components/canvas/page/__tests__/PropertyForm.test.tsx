@@ -137,7 +137,7 @@ describe('PropertyForm governance enforcement', () => {
       target: { value: 'dataSource.orders' },
     });
     fireEvent.change(screen.getByLabelText('Data target prop'), {
-      target: { value: 'children' },
+      target: { value: 'ariaLabel' },
     });
     fireEvent.change(screen.getByLabelText('Data transform'), {
       target: { value: 'latestOrder.label' },
@@ -151,6 +151,9 @@ describe('PropertyForm governance enforcement', () => {
     });
     fireEvent.change(screen.getByLabelText('Action payload'), {
       target: { value: 'latestOrder.id' },
+    });
+    fireEvent.change(screen.getByLabelText('Privacy classification'), {
+      target: { value: 'REGULATED' },
     });
 
     fireEvent.click(screen.getByLabelText('Telemetry consent has been confirmed for this change'));
@@ -179,10 +182,10 @@ describe('PropertyForm governance enforcement', () => {
         },
       },
       dataBinding: {
-        id: 'inspector-data-datasource-orders-children',
+        id: 'inspector-data-datasource-orders-arialabel',
         type: 'data',
         source: 'dataSource.orders',
-        target: 'children',
+        target: 'ariaLabel',
         transform: 'latestOrder.label',
         bidirectional: true,
       },
@@ -193,6 +196,33 @@ describe('PropertyForm governance enforcement', () => {
         target: 'navigate:/orders',
         transform: 'latestOrder.id',
       },
+      privacyClassification: 'REGULATED',
     });
+  });
+
+  it('derives binding picker options from contract fields and existing action events', () => {
+    render(
+      <PropertyForm
+        contractName="Button"
+        initialProps={{ ariaLabel: 'Submit order', variant: 'solid' }}
+        initialBindings={[
+          {
+            id: 'existing-action',
+            type: 'event',
+            source: 'onMouseEnter',
+            target: 'track:hover',
+          },
+        ]}
+        onUpdate={vi.fn()}
+      />,
+    );
+
+    const dataTargetPicker = screen.getByLabelText('Data target prop');
+    expect(dataTargetPicker).toHaveTextContent('ariaLabel');
+    expect(dataTargetPicker).toHaveTextContent('variant');
+
+    const actionEventPicker = screen.getByLabelText('Action event');
+    expect(actionEventPicker).toHaveTextContent('onClick');
+    expect(actionEventPicker).toHaveTextContent('onMouseEnter');
   });
 });

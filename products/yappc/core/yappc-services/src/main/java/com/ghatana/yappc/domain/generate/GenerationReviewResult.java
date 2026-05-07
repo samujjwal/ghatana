@@ -7,6 +7,7 @@ import java.util.Map;
  * @doc.type record
  * @doc.purpose Auditable result returned after a generated artifact review decision
  * @doc.layer domain
+ * @doc.pattern DTO
  */
 public record GenerationReviewResult(
     String runId,

@@ -11,6 +11,10 @@ import type {
     UpdateProjectRequestContract,
 } from '@/contracts/workspace-project';
 import { SaveSyncStatusBadge } from '../../../components/status/SaveSyncStatusBadge';
+import { Button } from '../../../components/ui/Button';
+import { Input } from '../../../components/ui/Input';
+import { Select } from '../../../components/ui/Select';
+import { Textarea } from '../../../components/ui/Textarea';
 
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
 
@@ -19,10 +23,6 @@ interface ProjectSettingsFormState {
     description: string;
     type: ProjectTypeContract;
 }
-
-const inputCls =
-    'w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg placeholder-fg-muted focus:outline-none focus:ring-2 focus:ring-brand';
-const labelCls = 'block text-xs font-medium text-fg-muted mb-1';
 
 const projectTypeOptions: Array<{ value: ProjectTypeContract; label: string; description: string }> = [
     { value: 'FULL_STACK', label: 'Full Stack Application', description: 'Frontend and backend delivered together.' },
@@ -155,10 +155,9 @@ export default function Component() {
             <div className="rounded-xl border border-border bg-surface-raised shadow-sm">
                 <div className="space-y-5 p-6" data-testid="project-config-tab">
                     <div>
-                        <label className={labelCls} htmlFor="project-name">Project Name</label>
-                        <input
+                        <Input
                             id="project-name"
-                            className={inputCls}
+                            label="Project Name"
                             value={form.name}
                             onChange={(event) => {
                                 setSaveStatus('local-only');
@@ -169,11 +168,10 @@ export default function Component() {
                     </div>
 
                     <div>
-                        <label className={labelCls} htmlFor="project-description">Description</label>
-                        <textarea
+                        <Textarea
                             id="project-description"
+                            label="Description"
                             rows={4}
-                            className={inputCls}
                             value={form.description}
                             onChange={(event) => {
                                 setSaveStatus('local-only');
@@ -184,23 +182,17 @@ export default function Component() {
                     </div>
 
                     <div>
-                        <label className={labelCls} htmlFor="project-type">Project Type</label>
-                        <select
+                        <Select
                             id="project-type"
-                            className={inputCls}
+                            label="Project Type"
+                            options={projectTypeOptions}
                             value={form.type}
                             onChange={(event) => {
                                 setSaveStatus('local-only');
                                 setForm((prev) => ({ ...prev, type: event.target.value as ProjectTypeContract }));
                             }}
                             data-testid="project-type-select"
-                        >
-                            {projectTypeOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                    {option.label}
-                                </option>
-                            ))}
-                        </select>
+                        />
                         <p className="mt-2 text-xs text-fg-muted">
                             {projectTypeOptions.find((option) => option.value === form.type)?.description}
                         </p>
@@ -214,14 +206,16 @@ export default function Component() {
                                     Backed project metadata stays available on demand without turning settings into an admin panel.
                                 </p>
                             </div>
-                            <button
+                            <Button
                                 type="button"
-                                className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-fg-muted transition-colors hover:bg-surface"
+                                variant="outline"
+                                size="small"
+                                className="border-border text-fg-muted hover:bg-surface"
                                 onClick={() => setShowAdvancedMetadata((currentValue) => !currentValue)}
                                 data-testid="project-advanced-metadata-toggle"
                             >
                                 {showAdvancedMetadata ? 'Hide details' : 'Show details'}
-                            </button>
+                            </Button>
                         </div>
 
                         {showAdvancedMetadata && project && (
@@ -255,15 +249,17 @@ export default function Component() {
                     )}
 
                     {saveSuccess && (
-                        <p className="text-sm text-emerald-400" role="status">
+                        <p className="text-sm text-success-color" role="status">
                             Project settings saved.
                         </p>
                     )}
                 </div>
 
                 <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
-                    <button
-                        className="rounded-lg border border-border px-4 py-2 text-sm text-fg-muted hover:bg-surface-muted transition-colors"
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="border-border text-fg-muted hover:bg-surface-muted"
                         onClick={() => {
                             if (project) {
                                 setForm({
@@ -275,16 +271,16 @@ export default function Component() {
                         }}
                     >
                         Discard
-                    </button>
-                    <button
-                        className="flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark transition-colors disabled:opacity-60"
+                    </Button>
+                    <Button
+                        type="button"
                         onClick={() => saveSettingsMutation.mutate(form)}
                         disabled={saveSettingsMutation.isPending}
                         data-testid="save-settings-button"
+                        startIcon={<Save className="h-4 w-4" />}
                     >
-                        <Save className="h-4 w-4" />
                         {saveSettingsMutation.isPending ? 'Saving…' : 'Save Changes'}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

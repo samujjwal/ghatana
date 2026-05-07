@@ -133,6 +133,54 @@ describe("TutorPutorApiClient", () => {
     );
   });
 
+  it("fetches assessment by ID with GET /v1/assessments/:id", async () => {
+    const assessmentPayload = {
+      id: "assessment-1",
+      title: "Kinematics Quiz",
+      items: [{ id: "item-1", stem: "What is velocity?", type: "multiple_choice", choices: [] }],
+    };
+    fetchMock.mockResolvedValueOnce(jsonResponse(assessmentPayload));
+
+    const result = await client.getAssessment("assessment-1");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/assessments/assessment-1",
+      expect.objectContaining({
+        headers: expect.objectContaining({ "Content-Type": "application/json" }),
+      }),
+    );
+    expect(result).toEqual(assessmentPayload);
+  });
+
+  it("starts an assessment attempt with POST /v1/assessments/:id/attempts", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ id: "attempt-99" }));
+
+    const result = await client.startAssessmentAttempt("assessment-1");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/assessments/assessment-1/attempts",
+      expect.objectContaining({ method: "POST" }),
+    );
+    expect(result).toEqual({ id: "attempt-99" });
+  });
+
+  it("submits an assessment attempt with POST /v1/assessment-attempts/:id/submit", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({}));
+
+    const responses: Record<string, { type: string; selectedChoiceIds?: string[] }> = {
+      "item-1": { type: "multiple_choice", selectedChoiceIds: ["choice-a"] },
+    };
+    await client.submitAssessmentAttempt("attempt-99", responses);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/assessment-attempts/attempt-99/submit",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ responses }),
+      }),
+    );
+  });
+
   it("exports a shared default API client instance", () => {
     expect(apiClient).toBeInstanceOf(TutorPutorApiClient);
   });

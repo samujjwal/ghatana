@@ -18,6 +18,7 @@ import {
     ListItemButton,
     ListItemIcon,
     Box,
+    Button,
     Typography,
 } from '@ghatana/design-system';
 import { Home as HomeIcon, Activity as TimelineIcon, PenLine as CanvasIcon, ClipboardList as AssignmentIcon, Lightbulb as InsightsIcon, Shield as AuditIcon, Settings as SettingsIcon } from 'lucide-react';
@@ -159,15 +160,15 @@ function MobileBottomNav() {
     return (
         <Box className="fixed bottom-[0px] left-[0px] right-[0px] z-[1100] flex border-t border-border bg-white dark:border-border dark:bg-surface">
             {mobileItems.map((item) => (
-                <button
+                <Button
                     key={item.id}
-                  type="button"
-                  onClick={() => navigate(item.path)}
-                  className={`flex flex-1 flex-col items-center gap-1 py-2 text-xs ${item === mobileItems[activeIndex] ? 'text-info-color' : 'text-fg-muted dark:text-fg-muted'}`}
+                    type="button"
+                    onClick={() => navigate(item.path)}
+                    className={`flex flex-1 flex-col items-center gap-1 py-2 text-xs ${item === mobileItems[activeIndex] ? 'text-info-color' : 'text-fg-muted dark:text-fg-muted'}`}
                 >
                     {item.icon}
                     <span>{item.label}</span>
-                </button>
+                </Button>
             ))}
         </Box>
     );

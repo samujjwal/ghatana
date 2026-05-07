@@ -26,6 +26,7 @@ import type { GenerateReviewDecision } from '@/lib/api/client';
 import { PhaseStatusPanels } from './PhaseStatusPanels';
 import { PhaseEmbeddedSurface } from './PhaseEmbeddedSurface';
 import { currentUserAtom } from '../../../stores/user.store';
+import { Button } from '../../../components/ui/Button';
 import type { PhaseActionResult } from '../../../services/phase';
 import type { PhaseCockpitContract } from '../../../services/phase/PhaseCockpitContractBuilder';
 import type { PhaseCockpitDataWarning } from '../../../services/phase/usePhaseCockpitData';
@@ -140,13 +141,16 @@ function PhaseDataRecoveryPanel({ warnings }: { readonly warnings: readonly Phas
               {warning.title}
             </p>
             <p className="mt-1 text-xs text-fg-muted">{warning.message}</p>
-            <button
+            <Button
               type="button"
-              className="mt-2 rounded-lg border border-warning-border bg-warning-bg px-3 py-1.5 text-xs font-semibold text-warning-color"
+              variant="outline"
+              tone="warning"
+              size="small"
+              className="mt-2 border-warning-border bg-warning-bg text-warning-color"
               onClick={warning.retry}
             >
               {warning.retryLabel}
-            </button>
+            </Button>
           </div>
         ))}
       </div>
@@ -439,33 +443,42 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
                 Apply approved diffs, reject unsafe changes, or roll back an already-applied generation run.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <button
+                <Button
                   type="button"
-                  className="rounded-lg border border-success-border bg-success-bg px-3 py-2 text-xs font-semibold text-success-color disabled:opacity-60"
+                  variant="outline"
+                  tone="success"
+                  size="small"
+                  className="border-success-border bg-success-bg text-success-color"
                   data-testid="generate-apply"
                   disabled={isGenerateReviewPending}
                   onClick={() => handleGenerateReviewDecision('apply')}
                 >
                   Apply
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className="rounded-lg border border-warning-border bg-warning-bg px-3 py-2 text-xs font-semibold text-warning-color disabled:opacity-60"
+                  variant="outline"
+                  tone="warning"
+                  size="small"
+                  className="border-warning-border bg-warning-bg text-warning-color"
                   data-testid="generate-reject"
                   disabled={isGenerateReviewPending}
                   onClick={() => handleGenerateReviewDecision('reject')}
                 >
                   Reject
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className="rounded-lg border border-destructive bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive disabled:opacity-60"
+                  variant="outline"
+                  tone="danger"
+                  size="small"
+                  className="border-destructive bg-destructive-bg text-destructive"
                   data-testid="generate-rollback"
                   disabled={isGenerateReviewPending}
                   onClick={() => handleGenerateReviewDecision('rollback')}
                 >
                   Roll back
-                </button>
+                </Button>
               </div>
             </div>
           ) : null}
@@ -479,33 +492,42 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
                 Promote a healthy run, roll back an unsafe deployment, or hand off the run to Observe for live signal review.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <button
+                <Button
                   type="button"
-                  className="rounded-lg border border-destructive bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive disabled:opacity-60"
+                  variant="outline"
+                  tone="danger"
+                  size="small"
+                  className="border-destructive bg-destructive-bg text-destructive"
                   data-testid="run-rollback"
                   disabled={isRunPostActionPending}
                   onClick={() => handleRunPostAction('rollback')}
                 >
                   Roll back
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className="rounded-lg border border-success-border bg-success-bg px-3 py-2 text-xs font-semibold text-success-color disabled:opacity-60"
+                  variant="outline"
+                  tone="success"
+                  size="small"
+                  className="border-success-border bg-success-bg text-success-color"
                   data-testid="run-promote"
                   disabled={isRunPostActionPending}
                   onClick={() => handleRunPostAction('promote')}
                 >
                   Promote
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className="rounded-lg border border-info-border bg-info-bg px-3 py-2 text-xs font-semibold text-info-color disabled:opacity-60"
+                  variant="outline"
+                  tone="info"
+                  size="small"
+                  className="border-info-border bg-info-bg text-info-color"
                   data-testid="run-observe-handoff"
                   disabled={isRunPostActionPending}
                   onClick={() => handleRunPostAction('observe')}
                 >
                   Hand off to Observe
-                </button>
+                </Button>
               </div>
             </div>
           ) : null}

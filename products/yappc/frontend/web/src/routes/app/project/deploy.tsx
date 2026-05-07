@@ -29,6 +29,8 @@ import { usePhaseGates } from "../../../services/canvas/lifecycle/PhaseGateServi
 import type { TransitionResult } from '../../../services/canvas/lifecycle/PhaseGateService';
 import { phaseTransitionAPI, type PhaseTransitionPreview } from '@/services/lifecycle/phase-transition-api';
 import { LegacyRouteCompatibilityNotice } from './LegacyRouteCompatibilityNotice';
+import { Button } from '../../../components/ui/Button';
+import { Textarea } from '../../../components/ui/Textarea';
 
 function getReleasePlanningStatusView(
     preview: PhaseTransitionPreview | null,
@@ -85,7 +87,7 @@ function getReleasePlanningStatusClassName(status: ReleasePlanningStatusContract
     switch (status) {
         case 'planning-ready':
         case 'final-phase':
-            return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200';
+            return 'border-success-border bg-success-bg text-success-color dark:border-success-border/60 dark:bg-success-bg/40 dark:text-success-color';
         case 'approval-needed':
             return 'border-warning-border bg-warning-bg text-warning-color dark:border-warning-border/60 dark:bg-warning-bg/40 dark:text-warning-color';
         default:
@@ -385,7 +387,7 @@ export default function Component() {
                         {releasePlanningStatus.detail}
                     </p>
                 </div>
-                <button
+                <Button
                     type="button"
                     data-testid="advance-phase-trigger"
                     onClick={() => {
@@ -397,14 +399,15 @@ export default function Component() {
                         !phasePreview?.canAdvance ||
                         !phasePreview?.nextPhase
                     }
-                    className="rounded-lg bg-success-bg px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-success-bg disabled:cursor-not-allowed disabled:opacity-50"
+                    tone="success"
+                    className="bg-success-bg hover:bg-success-bg"
                 >
                     {isAdvancing
                         ? 'Advancing...'
                         : phasePreview?.nextPhase
                             ? `Advance to ${phasePreview.nextPhase}`
                             : 'Advance Phase'}
-                </button>
+                </Button>
             </div>
 
             {/* Advance confirmation with risk controls */}
@@ -423,7 +426,7 @@ export default function Component() {
                         </div>
                         <div className="rounded-lg border border-divider p-3">
                             <span className="block text-[10px] uppercase tracking-wide text-text-secondary">Risk score</span>
-                            <span className={`block text-lg font-semibold ${deploymentPlan.riskScore >= 7 ? 'text-destructive' : deploymentPlan.riskScore >= 4 ? 'text-warning-color' : 'text-emerald-600'}`}>
+                            <span className={`block text-lg font-semibold ${deploymentPlan.riskScore >= 7 ? 'text-destructive' : deploymentPlan.riskScore >= 4 ? 'text-warning-color' : 'text-success-color'}`}>
                                 {deploymentPlan.riskScore}/10
                             </span>
                         </div>
@@ -448,7 +451,7 @@ export default function Component() {
                         Strategy: {deploymentPlan.strategy}. Rollback: an incident report artifact will be auto-created if the promotion triggers an anomaly. You can also create one manually below.
                     </p>
                     <div className="mt-3 flex gap-3">
-                        <button
+                        <Button
                             type="button"
                             data-testid="confirm-advance-button"
                             onClick={() => {
@@ -456,19 +459,21 @@ export default function Component() {
                                 void handleAdvancePhase(operatorNote.trim() || undefined);
                             }}
                             disabled={isAdvancing}
-                            className="rounded-lg bg-success-bg px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-success-bg disabled:cursor-not-allowed disabled:opacity-50"
+                            tone="success"
+                            className="bg-success-bg hover:bg-success-bg"
                         >
                             {isAdvancing ? 'Advancing...' : 'Confirm advance'}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="button"
                             data-testid="cancel-advance-button"
                             onClick={() => setShowConfirmAdvance(false)}
                             disabled={isAdvancing}
-                            className="rounded-lg border border-divider px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-grey-100 dark:hover:bg-grey-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            variant="outline"
+                            className="border-divider text-text-primary hover:bg-surface-muted"
                         >
                             Cancel
-                        </button>
+                        </Button>
                     </div>
                 </div>
             )}
@@ -494,7 +499,7 @@ export default function Component() {
             >
                 <div className="grid gap-4 lg:grid-cols-[1.4fr,1fr]">
                     <div>
-                        <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-primary-600">Operator control surface</h2>
+                        <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-info-color">Operator control surface</h2>
                         <p className="mt-2 text-base font-semibold text-text-primary">Release posture for lifecycle promotion planning</p>
                         <p className="mt-1 text-sm text-text-secondary">
                             Planning recommendation: strategy {deploymentPlan.strategy}, estimated risk score {deploymentPlan.riskScore}, readiness {deploymentPlan.readiness}%.
@@ -512,30 +517,29 @@ export default function Component() {
                         </p>
                     </div>
                     <div>
-                        <label className="block text-xs font-medium uppercase tracking-[0.14em] text-text-secondary" htmlFor="operator-note">
-                            Operator note
-                        </label>
-                        <textarea
+                        <Textarea
                             id="operator-note"
+                            label="Operator note"
                             data-testid="operator-note-input"
                             rows={3}
                             value={operatorNote}
                             onChange={(event) => setOperatorNote(event.target.value)}
-                            className="mt-2 w-full rounded-lg border border-divider bg-bg-default px-3 py-2 text-sm text-text-primary"
                             placeholder="Capture rollout context, approval notes, or incident clues."
                         />
                         <div className="mt-3 flex flex-wrap gap-3">
-                            <button
+                            <Button
                                 type="button"
                                 data-testid="operator-create-incident"
                                 onClick={() => {
                                     void handleCreateIncidentFromOperatorSurface();
                                 }}
-                                className="rounded-lg border border-divider px-3 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-grey-100 dark:hover:bg-grey-800"
+                                variant="outline"
+                                size="small"
+                                className="border-divider text-text-primary hover:bg-surface-muted"
                             >
                                 Create incident report
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 type="button"
                                 data-testid="operator-advance-with-note"
                                 disabled={
@@ -547,10 +551,10 @@ export default function Component() {
                                 onClick={() => {
                                     void handleOperatorAdvance();
                                 }}
-                                className="rounded-lg bg-primary-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                size="small"
                             >
                                 Advance with operator note
-                            </button>
+                            </Button>
                         </div>
                         {operatorFeedback && (
                             <p className="mt-3 text-xs text-text-secondary" data-testid="operator-action-feedback">

@@ -16,6 +16,7 @@ import { RefreshCw as Refresh, ExternalLink as OpenInNew, Smartphone, Tablet, La
 import type { PreviewStatusContract } from '@/contracts/workspace-project';
 import { getExternalPreviewSandbox } from '@/security/ContentSecurityPolicy';
 import { LegacyRouteCompatibilityNotice } from './LegacyRouteCompatibilityNotice';
+import { Button } from '../../../components/ui/Button';
 
 type DeviceMode = 'mobile' | 'tablet' | 'desktop';
 
@@ -35,7 +36,7 @@ function getPreviewStatusView(status: PreviewStatusContract): {
         case 'external-ready':
             return {
                 label: 'External preview ready',
-                className: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200',
+                className: 'border-success-border bg-success-bg text-success-color dark:border-success-border/60 dark:bg-success-bg/40 dark:text-success-color',
                 detail: 'This route embeds a configured external preview host. It does not run a local preview runtime by itself.',
                 capabilityBoundary: 'Preview only — this is not a live deployment console. Changes are not deployed to production.',
             };
@@ -135,13 +136,14 @@ export default function PreviewPage() {
                             {previewStatusView.capabilityBoundary}
                         </p>
                         {previewStatus === 'unavailable' && (
-                            <button
+                            <Button
+                                type="button"
                                 onClick={() => setPreviewStatus('loading')}
-                                className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors text-sm"
+                                className="mt-4"
+                                startIcon={<Refresh className="w-4 h-4" />}
                             >
-                                <Refresh className="w-4 h-4" />
                                 Retry
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </div>
@@ -184,57 +186,77 @@ export default function PreviewPage() {
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-text-secondary">Device:</span>
                     <div className="flex items-center bg-bg-paper border border-divider rounded-lg overflow-hidden">
-                        <button
+                        <Button
+                            type="button"
                             onClick={() => setDevice('mobile')}
+                            variant="ghost"
+                            size="small"
                             className={`p-2 transition-colors ${
                                 device === 'mobile' 
-                                    ? 'bg-primary-100 text-primary-600 dark:bg-primary-900/30' 
-                                    : 'text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800'
+                                    ? 'bg-info-bg text-info-color'
+                                    : 'text-text-secondary hover:bg-surface-muted'
                             }`}
                             title="Mobile"
+                            aria-label="Preview mobile device"
                         >
                             <Smartphone className="w-5 h-5" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            type="button"
                             onClick={() => setDevice('tablet')}
+                            variant="ghost"
+                            size="small"
                             className={`p-2 transition-colors ${
                                 device === 'tablet' 
-                                    ? 'bg-primary-100 text-primary-600 dark:bg-primary-900/30' 
-                                    : 'text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800'
+                                    ? 'bg-info-bg text-info-color'
+                                    : 'text-text-secondary hover:bg-surface-muted'
                             }`}
                             title="Tablet"
+                            aria-label="Preview tablet device"
                         >
                             <Tablet className="w-5 h-5" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            type="button"
                             onClick={() => setDevice('desktop')}
+                            variant="ghost"
+                            size="small"
                             className={`p-2 transition-colors ${
                                 device === 'desktop' 
-                                    ? 'bg-primary-100 text-primary-600 dark:bg-primary-900/30' 
-                                    : 'text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800'
+                                    ? 'bg-info-bg text-info-color'
+                                    : 'text-text-secondary hover:bg-surface-muted'
                             }`}
                             title="Desktop"
+                            aria-label="Preview desktop device"
                         >
                             <Laptop className="w-5 h-5" />
-                        </button>
+                        </Button>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <button
+                    <Button
+                        type="button"
                         onClick={handleRefresh}
-                        className="p-2 text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors"
+                        variant="ghost"
+                        size="small"
+                        className="p-2 text-text-secondary hover:text-text-primary hover:bg-surface-muted"
                         title="Refresh Preview"
+                        aria-label="Refresh preview"
                     >
                         <Refresh className="w-5 h-5" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        type="button"
                         onClick={handleOpenExternal}
-                        className="p-2 text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors"
+                        variant="ghost"
+                        size="small"
+                        className="p-2 text-text-secondary hover:text-text-primary hover:bg-surface-muted"
                         title="Open in New Tab"
+                        aria-label="Open preview in new tab"
                     >
                         <OpenInNew className="w-5 h-5" />
-                    </button>
+                    </Button>
                 </div>
             </div>
 

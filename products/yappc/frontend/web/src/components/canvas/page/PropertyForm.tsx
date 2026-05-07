@@ -6,7 +6,7 @@ import {
   TextField,
   Typography,
 } from '@ghatana/design-system';
-import type { Binding, ResponsiveVariant, StateVariant } from '@ghatana/ui-builder';
+import type { Binding, ComponentInstance, ResponsiveVariant, StateVariant } from '@ghatana/ui-builder';
 import React, { useEffect, useMemo, useState } from 'react';
 
 import {
@@ -22,6 +22,7 @@ export interface PropertyFormUpdatePayload {
   readonly stateVariant?: StateVariant;
   readonly dataBinding?: Binding;
   readonly actionBinding?: Binding;
+  readonly privacyClassification?: PrivacyClassification;
 }
 
 export interface PropertyFormProps {
@@ -31,6 +32,7 @@ export interface PropertyFormProps {
   readonly initialBindings?: readonly Binding[];
   readonly initialResponsiveVariants?: readonly ResponsiveVariant[];
   readonly initialStateVariants?: readonly StateVariant[];
+  readonly initialDataClassification?: PrivacyClassification;
   readonly onUpdate: (payload: PropertyFormUpdatePayload) => void;
   readonly onCancel?: () => void;
   readonly readOnly?: boolean;
@@ -39,6 +41,7 @@ export interface PropertyFormProps {
 
 type PrimitiveValue = string | number | boolean;
 type EditableStateVariant = StateVariant['state'];
+type PrivacyClassification = NonNullable<ComponentInstance['metadata']['dataClassification']>;
 
 const STATE_VARIANT_OPTIONS: readonly EditableStateVariant[] = [
   'hover',
@@ -49,6 +52,16 @@ const STATE_VARIANT_OPTIONS: readonly EditableStateVariant[] = [
   'loading',
   'selected',
 ];
+
+const PRIVACY_CLASSIFICATION_OPTIONS: readonly PrivacyClassification[] = [
+  'PUBLIC',
+  'INTERNAL',
+  'SENSITIVE',
+  'CREDENTIALS',
+  'REGULATED',
+];
+
+const DEFAULT_ACTION_EVENT_OPTIONS = ['onClick', 'onChange', 'onSubmit', 'onFocus', 'onBlur'] as const;
 
 function toPrimitiveValue(value: unknown): PrimitiveValue {
   if (
@@ -132,6 +145,32 @@ function bindingIdFor(type: Binding['type'], source: string, target: string): st
   return `inspector-${type}-${safeSource}-${safeTarget}`;
 }
 
+function normalizePrivacyClassification(value: unknown): PrivacyClassification {
+  if (typeof value === 'string') {
+    const normalized = value.trim().toUpperCase();
+    if (PRIVACY_CLASSIFICATION_OPTIONS.includes(normalized as PrivacyClassification)) {
+      return normalized as PrivacyClassification;
+    }
+  }
+
+  return 'INTERNAL';
+}
+
+function isActionEventProp(propName: string): boolean {
+  return /^on[A-Z]/.test(propName);
+}
+
+function mergeUniqueOptions(...optionGroups: readonly (readonly string[])[]): readonly string[] {
+  return Array.from(
+    new Set(
+      optionGroups
+        .flat()
+        .map((option) => option.trim())
+        .filter((option) => option.length > 0),
+    ),
+  );
+}
+
 export const PropertyForm: React.FC<PropertyFormProps> = ({
   contractName,
   instanceName,
@@ -139,6 +178,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
   initialBindings = [],
   initialResponsiveVariants = [],
   initialStateVariants = [],
+  initialDataClassification,
   onUpdate,
   onCancel,
   readOnly = false,
@@ -170,6 +210,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
   const initialStateVariant = initialStateVariants[0];
   const initialDataBinding = getFirstBinding(initialBindings, 'data');
   const initialActionBinding = getFirstBinding(initialBindings, 'event');
+  const initialPrivacyClassification = normalizePrivacyClassification(initialDataClassification);
   const [responsiveBreakpoint, setResponsiveBreakpoint] = useState(initialResponsiveVariant?.breakpoint ?? '');
   const [responsivePropsJson, setResponsivePropsJson] = useState(() =>
     initialResponsiveVariant ? formatPropsJson(initialResponsiveVariant.props) : '',
@@ -189,6 +230,20 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
   const [actionBindingEvent, setActionBindingEvent] = useState(initialActionBinding?.source ?? '');
   const [actionBindingTarget, setActionBindingTarget] = useState(initialActionBinding?.target ?? '');
   const [actionBindingPayload, setActionBindingPayload] = useState(initialActionBinding?.transform ?? '');
+  const [privacyClassification, setPrivacyClassification] = useState(initialPrivacyClassification);
+  const dataBindingTargetOptions = useMemo(
+    () => mergeUniqueOptions(fields.map((field) => field.name), dataBindingTarget ? [dataBindingTarget] : []),
+    [dataBindingTarget, fields],
+  );
+  const actionBindingEventOptions = useMemo(
+    () =>
+      mergeUniqueOptions(
+        fields.map((field) => field.name).filter(isActionEventProp),
+        DEFAULT_ACTION_EVENT_OPTIONS,
+        actionBindingEvent ? [actionBindingEvent] : [],
+      ),
+    [actionBindingEvent, fields],
+  );
 
   useEffect(() => {
     setDraftName(instanceName ?? '');
@@ -211,9 +266,11 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
     setActionBindingEvent(initialActionBinding?.source ?? '');
     setActionBindingTarget(initialActionBinding?.target ?? '');
     setActionBindingPayload(initialActionBinding?.transform ?? '');
+    setPrivacyClassification(initialPrivacyClassification);
   }, [
     initialActionBinding,
     initialDataBinding,
+    initialPrivacyClassification,
     initialProps,
     initialResponsiveVariant,
     initialStateVariant,
@@ -272,7 +329,8 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
     stableStringify(responsiveVariant) !== stableStringify(initialResponsiveVariant) ||
     stableStringify(stateVariant) !== stableStringify(initialStateVariant) ||
     stableStringify(dataBinding) !== stableStringify(initialDataBinding) ||
-    stableStringify(actionBinding) !== stableStringify(initialActionBinding);
+    stableStringify(actionBinding) !== stableStringify(initialActionBinding) ||
+    privacyClassification !== initialPrivacyClassification;
   const isDirty =
     draftName !== (instanceName ?? '') ||
     JSON.stringify(draftProps) !==
@@ -302,7 +360,9 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
     (propName) => !hasMeaningfulValue(draftProps[propName] ?? initialProps[propName]),
   );
   const privacyLevelLabel = getPrivacyLevelLabel(governance.privacyLevel);
-  const privacyAcknowledgementRequired = requiresPrivacyAcknowledgement(governance.privacyLevel);
+  const privacyAcknowledgementRequired =
+    requiresPrivacyAcknowledgement(governance.privacyLevel) ||
+    requiresPrivacyAcknowledgement(privacyClassification);
   const canSubmit =
     !readOnly &&
     isDirty &&
@@ -326,6 +386,9 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
       ...(stateVariant ? { stateVariant } : {}),
       ...(dataBinding ? { dataBinding } : {}),
       ...(actionBinding ? { actionBinding } : {}),
+      ...(privacyClassification !== initialPrivacyClassification
+        ? { privacyClassification }
+        : {}),
     };
 
     onUpdate(payload);
@@ -537,15 +600,29 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
           disabled={readOnly}
           onChange={(event) => setDataBindingSource(event.target.value)}
         />
-        <TextField
-          label="Data target prop"
-          placeholder="value"
-          value={dataBindingTarget}
-          fullWidth
-          size="sm"
-          disabled={readOnly}
-          onChange={(event) => setDataBindingTarget(event.target.value)}
-        />
+        <Box className="flex flex-col gap-1">
+          <Typography variant="caption" color="subtle">Data target prop</Typography>
+          <select
+            aria-label="Data target prop"
+            value={dataBindingTarget}
+            disabled={readOnly}
+            onChange={(event) => setDataBindingTarget(event.target.value)}
+            style={{
+              width: '100%',
+              padding: '6px 8px',
+              border: '1px solid #d1d5db',
+              borderRadius: '4px',
+              fontSize: '0.875rem',
+              background: 'white',
+              color: '#111827',
+            }}
+          >
+            <option value="">Select prop...</option>
+            {dataBindingTargetOptions.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+        </Box>
         <TextField
           label="Data transform"
           placeholder="user.name"
@@ -571,15 +648,29 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         <Typography variant="body2" style={{ fontWeight: 600, display: 'block', marginBottom: 8 }}>
           Action binding
         </Typography>
-        <TextField
-          label="Action event"
-          placeholder="onClick"
-          value={actionBindingEvent}
-          fullWidth
-          size="sm"
-          disabled={readOnly}
-          onChange={(event) => setActionBindingEvent(event.target.value)}
-        />
+        <Box className="flex flex-col gap-1">
+          <Typography variant="caption" color="subtle">Action event</Typography>
+          <select
+            aria-label="Action event"
+            value={actionBindingEvent}
+            disabled={readOnly}
+            onChange={(event) => setActionBindingEvent(event.target.value)}
+            style={{
+              width: '100%',
+              padding: '6px 8px',
+              border: '1px solid #d1d5db',
+              borderRadius: '4px',
+              fontSize: '0.875rem',
+              background: 'white',
+              color: '#111827',
+            }}
+          >
+            <option value="">Select event...</option>
+            {actionBindingEventOptions.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+        </Box>
         <TextField
           label="Action target"
           placeholder="navigate:/projects"
@@ -598,6 +689,36 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
           disabled={readOnly}
           onChange={(event) => setActionBindingPayload(event.target.value)}
         />
+      </Box>
+
+      <Box className="rounded-md border border-neutral-border bg-neutral-bg p-3">
+        <Typography variant="body2" style={{ fontWeight: 600, display: 'block', marginBottom: 8 }}>
+          Privacy classification
+        </Typography>
+        <select
+          aria-label="Privacy classification"
+          value={privacyClassification}
+          disabled={readOnly}
+          onChange={(event) =>
+            setPrivacyClassification(normalizePrivacyClassification(event.target.value))
+          }
+          style={{
+            width: '100%',
+            padding: '6px 8px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            fontSize: '0.875rem',
+            background: 'white',
+            color: '#111827',
+          }}
+        >
+          {PRIVACY_CLASSIFICATION_OPTIONS.map((option) => (
+            <option key={option} value={option}>{option}</option>
+          ))}
+        </select>
+        <Typography variant="caption" color="muted">
+          Classification is stored on the selected builder node and participates in privacy review gates.
+        </Typography>
       </Box>
 
       {(governance.requiredA11yProps.length > 0 || governance.telemetryEventNames.length > 0) && (

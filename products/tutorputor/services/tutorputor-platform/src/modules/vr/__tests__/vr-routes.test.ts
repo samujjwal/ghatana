@@ -3,11 +3,23 @@
  *
  * Verifies that GET /sessions/:sessionId enforces self-or-privileged access,
  * and that all write operations are properly role-gated.
+ * Also verifies the vr_webxr feature flag preHandler blocks all routes when
+ * the flag is disabled.
  */
 import Fastify from "fastify";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { vrRoutes } from "../vr-routes.js";
+
+// ---------------------------------------------------------------------------
+// Feature flag mock — default: vr_webxr is DISABLED (matches production default)
+// ---------------------------------------------------------------------------
+const mockIsEnabled = vi.fn().mockReturnValue(false);
+vi.mock("../../feature-flags/FeatureFlagService.js", () => ({
+  FeatureFlagService: class {
+    isEnabled = mockIsEnabled;
+  },
+}));
 
 const SESSION_OWNER_ID = "learner-1";
 const OTHER_USER_ID = "learner-2";
@@ -74,6 +86,12 @@ function buildApp(userId: string, role: string) {
 }
 
 describe("VR Routes — session ownership enforcement", () => {
+  beforeEach(() => {
+    // Enable VR feature flag by default so existing route tests exercise the handlers.
+    // The "vr_webxr feature flag preHandler" describe overrides this per test.
+    mockIsEnabled.mockReturnValue(true);
+  });
+
   describe("GET /sessions/:sessionId", () => {
     it("allows session owner to access their own session", async () => {
       const { app } = buildApp(SESSION_OWNER_ID, "learner");
@@ -188,6 +206,7 @@ describe("VR Routes — session ownership enforcement", () => {
 
   describe("POST /labs — role guard", () => {
     it("returns 403 when a learner attempts to create a VR lab", async () => {
+      mockIsEnabled.mockReturnValue(true);
       const { app } = buildApp("learner-1", "learner");
       await app.ready();
 
@@ -199,6 +218,41 @@ describe("VR Routes — session ownership enforcement", () => {
       });
 
       expect(response.statusCode).toBe(403);
+      await app.close();
+    });
+  });
+
+  describe("vr_webxr feature flag preHandler", () => {
+    it("returns 404 for all VR routes when flag is disabled", async () => {
+      mockIsEnabled.mockReturnValue(false);
+      const { app } = buildApp(SESSION_OWNER_ID, "admin");
+      await app.ready();
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/labs",
+        headers: { "x-tenant-id": TENANT_ID },
+      });
+
+      expect(response.statusCode).toBe(404);
+      const body = JSON.parse(response.body) as { error: string };
+      expect(body.error).toBe("VR features are not available.");
+      await app.close();
+    });
+
+    it("allows through to route handlers when flag is enabled", async () => {
+      mockIsEnabled.mockReturnValue(true);
+      const { app } = buildApp(SESSION_OWNER_ID, "admin");
+      await app.ready();
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/labs",
+        headers: { "x-tenant-id": TENANT_ID },
+      });
+
+      // Route handler runs — not a feature-flag 404 (may be 200 or another status)
+      expect(response.statusCode).not.toBe(404);
       await app.close();
     });
   });

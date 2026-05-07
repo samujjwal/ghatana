@@ -19,6 +19,7 @@ import {
   VRSessionServiceImpl,
   VRAnalyticsServiceImpl,
 } from "./index.js";
+import { FeatureFlagService } from "../feature-flags/FeatureFlagService.js";
 
 function asTenantId(value: string): TenantId {
   return value as TenantId;
@@ -45,6 +46,15 @@ export const vrRoutes = async (app: FastifyInstance) => {
   const labService = new VRLabServiceImpl(prisma);
   const sessionService = new VRSessionServiceImpl(prisma);
   const analyticsService = new VRAnalyticsServiceImpl(prisma);
+  const featureFlags = new FeatureFlagService();
+
+  // Guard all VR routes via a preHandler hook at the plugin level.
+  app.addHook("preHandler", async (req, reply) => {
+    const userId = getUserId(req);
+    if (!featureFlags.isEnabled("vr_webxr", userId)) {
+      void reply.status(404).send({ error: "VR features are not available." });
+    }
+  });
 
   // ===========================================================================
   // VR Labs

@@ -68,10 +68,10 @@ export function AITutorPage() {
         body: JSON.stringify({
           question,
           ...buildAITutorGroundingPayload({
-            moduleId: currentModuleId ?? "current-module",
+            moduleId: currentModuleId ?? undefined,
             claimIds: currentModuleId
               ? [`claim:${currentModuleId}`]
-              : ["current-claim"],
+              : undefined,
             currentSimulationState: {
               route: window.location.pathname,
               moduleId: currentModuleId,

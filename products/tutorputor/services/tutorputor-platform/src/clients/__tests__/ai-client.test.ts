@@ -58,6 +58,7 @@ import { AiClient } from "../ai-client";
 import type {
   GeneratePathRequest,
   GradeAssessmentRequest,
+  GradeResponseRequest,
   GenerateItemsRequest,
   RemediationRequest,
   GenerateClaimsRequest,
@@ -302,6 +303,68 @@ describe("AiClient", () => {
         "GenerateSimulation",
         req,
       );
+    });
+  });
+
+  describe("gradeResponse", () => {
+    const req: GradeResponseRequest = {
+      question: "What is Newton's second law?",
+      response: "Force equals mass times acceleration.",
+    };
+
+    it("derives confidence from average feedback score when feedback is present", async () => {
+      mocks.breakerFire.mockResolvedValueOnce({
+        total_score: 80,
+        passed: true,
+        overall_comments: "Good",
+        feedback: [
+          { question_id: "q1", score: 90, feedback_text: "Excellent", correct_answer_explanation: "", is_correct: true },
+          { question_id: "q2", score: 70, feedback_text: "Mostly right", correct_answer_explanation: "", is_correct: false },
+        ],
+      });
+
+      const result = await client.gradeResponse(req);
+
+      // confidence = (90 + 70) / 2 / 100 = 0.80
+      expect(result).not.toBeNull();
+      expect(result!.confidence).toBeCloseTo(0.8, 5);
+    });
+
+    it("falls back to total_score / 100 for confidence when feedback array is empty", async () => {
+      mocks.breakerFire.mockResolvedValueOnce({
+        total_score: 60,
+        passed: false,
+        overall_comments: "Needs work",
+        feedback: [],
+      });
+
+      const result = await client.gradeResponse(req);
+
+      // confidence = 60 / 100 = 0.60
+      expect(result).not.toBeNull();
+      expect(result!.confidence).toBeCloseTo(0.6, 5);
+    });
+
+    it("returns null when circuit breaker returns null", async () => {
+      mocks.breakerFire.mockResolvedValueOnce(null);
+
+      const result = await client.gradeResponse(req);
+
+      expect(result).toBeNull();
+    });
+
+    it("clamps confidence to [0, 1] range", async () => {
+      mocks.breakerFire.mockResolvedValueOnce({
+        total_score: 150,
+        passed: true,
+        overall_comments: "",
+        feedback: [],
+      });
+
+      const result = await client.gradeResponse(req);
+
+      expect(result!.confidence).toBeLessThanOrEqual(1.0);
+      expect(result!.confidence).toBeGreaterThanOrEqual(0.0);
     });
   });
 

@@ -545,7 +545,9 @@ export class AiClient {
       scorePercent: result.total_score,
       earnedPoints: (result.total_score / 100) * maxPoints,
       maxPoints,
-      confidence: result.passed ? 0.85 : 0.6,
+      confidence: result.feedback.length > 0
+        ? Math.min(1.0, Math.max(0.0, result.feedback.reduce((sum, f) => sum + f.score, 0) / result.feedback.length / 100))
+        : Math.min(1.0, Math.max(0.0, result.total_score / 100)),
       strengths,
       improvements,
       comments: result.overall_comments,

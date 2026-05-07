@@ -1,5 +1,7 @@
 package com.ghatana.yappc.api;
 
+import com.ghatana.audit.AuditLogger;
+import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.yappc.common.JsonMapper;
 import com.ghatana.yappc.domain.generate.Artifact;
 import com.ghatana.yappc.domain.generate.DiffResult;
@@ -15,6 +17,7 @@ import com.ghatana.yappc.storage.YappcArtifactRepository;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.bytebuf.ByteBuf;
 import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -25,6 +28,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -41,13 +45,15 @@ class GenerationApiControllerTest extends EventloopTestBase {
 
     private InMemoryGenerationService generationService;
     private InMemoryYappcArtifactRepository artifactRepository;
+    private RecordingAuditLogger auditLogger;
     private GenerationApiController controller;
 
     @BeforeEach
     void setUp() {
         generationService = new InMemoryGenerationService();
         artifactRepository = new InMemoryYappcArtifactRepository();
-        controller = new GenerationApiController(generationService, artifactRepository);
+        auditLogger = new RecordingAuditLogger();
+        controller = new GenerationApiController(generationService, artifactRepository, auditLogger);
     }
 
     @Test
@@ -66,6 +72,14 @@ class GenerationApiControllerTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(400);
         assertThat(generationService.getGenerateCallCount()).isEqualTo(0);
+        assertThat(auditLogger.events()).hasSize(1);
+        assertThat(auditLogger.events().get(0))
+            .containsEntry("type", "generation.generate.request")
+            .containsEntry("outcome", "rejected")
+            .containsEntry("projectId", "unknown");
+        Map<?, ?> metadata = (Map<?, ?>) auditLogger.events().get(0).get("metadata");
+        assertThat(metadata.get("route")).isEqualTo("generate");
+        assertThat(metadata.get("reason")).isEqualTo("validatedSpec must pass validation before generation");
     }
 
     @Test
@@ -96,6 +110,45 @@ class GenerationApiControllerTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(200);
         assertThat(generationService.getRegenerateWithDiffCallCount()).isEqualTo(1);
+        assertThat(auditLogger.events()).extracting(event -> event.get("type"))
+            .contains("generation.diff.request");
+        assertThat(auditLogger.events().get(auditLogger.events().size() - 1))
+            .containsEntry("outcome", "succeeded")
+            .containsEntry("projectId", "unknown");
+    }
+
+    @Test
+    @DisplayName("generate request audit includes actor tenant workspace project and correlation metadata")
+    void generateRequestAuditIncludesScopeAndCorrelation() throws Exception {
+        ValidatedSpec validSpec = ValidatedSpec.of(
+            ShapeSpec.builder().id("shape-1").build(),
+            LifecycleValidationResult.builder().passed(true).build()
+        );
+
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/generate")
+            .withHeader(HttpHeaders.of("X-Workspace-Id"), "workspace-1")
+            .withHeader(HttpHeaders.of("X-Project-Id"), "project-1")
+            .withHeader(HttpHeaders.of("X-Correlation-ID"), "corr-1")
+            .withBody(ByteBuf.wrapForReading(JsonMapper.toJson(validSpec).getBytes(StandardCharsets.UTF_8)))
+            .build();
+        request.attach(Principal.class, new Principal("user-1", List.of("builder"), "tenant-1"));
+
+        HttpResponse response = runPromise(() -> controller.generateArtifacts(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(auditLogger.events()).hasSize(1);
+        assertThat(auditLogger.events().get(0))
+            .containsEntry("type", "generation.generate.request")
+            .containsEntry("outcome", "succeeded")
+            .containsEntry("actor", "user-1")
+            .containsEntry("tenantId", "tenant-1")
+            .containsEntry("workspaceId", "workspace-1")
+            .containsEntry("projectId", "project-1")
+            .containsEntry("correlationId", "corr-1");
+        Map<?, ?> metadata = (Map<?, ?>) auditLogger.events().get(0).get("metadata");
+        assertThat(metadata.get("route")).isEqualTo("generate");
+        assertThat(metadata.get("specId")).isEqualTo("shape-1");
+        assertThat(metadata.get("artifactCount")).isEqualTo(0);
     }
 
     @Test
@@ -124,6 +177,15 @@ class GenerationApiControllerTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(400);
         assertThat(generationService.getReviewDecisionCallCount()).isEqualTo(0);
+        assertThat(auditLogger.events()).hasSize(1);
+        assertThat(auditLogger.events().get(0))
+            .containsEntry("type", "generation.review.request")
+            .containsEntry("outcome", "rejected")
+            .containsEntry("runId", "run-1");
+        Map<?, ?> metadata = (Map<?, ?>) auditLogger.events().get(0).get("metadata");
+        assertThat(metadata.get("route")).isEqualTo("generate-review");
+        assertThat(metadata.get("action")).isEqualTo("apply");
+        assertThat(metadata.get("reason")).isEqualTo("actorId is required");
     }
 
     private HttpResponse serveReviewDecision(String path, String body) {
@@ -142,6 +204,20 @@ class GenerationApiControllerTest extends EventloopTestBase {
     }
 
     private record ReviewDecisionBody(String projectId, String actorId, String reason) {
+    }
+
+    private static final class RecordingAuditLogger implements AuditLogger {
+        private final List<Map<String, Object>> events = new ArrayList<>();
+
+        @Override
+        public Promise<Void> log(Map<String, Object> event) {
+            events.add(event);
+            return Promise.complete();
+        }
+
+        List<Map<String, Object>> events() {
+            return events;
+        }
     }
 
     private static final class InMemoryGenerationService implements GenerationService {

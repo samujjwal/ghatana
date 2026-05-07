@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { StageNavigation, type StageNavigationProps } from '../ui';
+import { Button, StageNavigation, type StageNavigationProps } from '../ui';
 import { useRealtimeLifecycle } from '../../hooks/useRealtimeLifecycle';
 
 // Define lifecycle stage type locally to avoid import issues
@@ -163,12 +163,13 @@ export function RealtimeStageNavigation({
         {isConnected ? 'Connected' : 'Disconnected'}
       </span>
       {!isConnected && (
-        <button
+        <Button
+          type="button"
           onClick={handleRefresh}
           className="text-xs text-info-color hover:text-info-color underline"
         >
           Reconnect
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -181,12 +182,14 @@ export function RealtimeStageNavigation({
       <div className="bg-destructive-bg border border-destructive-border rounded-md p-3 mb-4">
         <div className="flex items-center justify-between">
           <p className="text-sm text-destructive">{localError}</p>
-          <button
+          <Button
+            type="button"
             onClick={() => setLocalError(null)}
             className="text-destructive hover:text-destructive"
+            aria-label="Dismiss realtime lifecycle error"
           >
             ×
-          </button>
+          </Button>
         </div>
       </div>
     );

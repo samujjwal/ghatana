@@ -1,5 +1,7 @@
 package com.ghatana.tutorputor.contentgeneration.generators;
 
+import com.ghatana.ai.embedding.EmbeddingService;
+import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.tutorputor.contentgeneration.domain.AnimationConfig;
 import com.ghatana.tutorputor.contentgeneration.domain.AssessmentItem;
 import com.ghatana.tutorputor.contentgeneration.domain.ContentExample;
@@ -14,8 +16,15 @@ import io.activej.promise.Promise;
 import java.util.List;
 
 /**
+ * Orchestrates all sub-generators into a complete, validated content package.
+ *
+ * <p>The {@link LLMGateway} and {@link EmbeddingService} are accepted as explicit
+ * dependencies so that future generator implementations can call the AI platform
+ * directly without additional wiring changes. Both are currently available to any
+ * generator that requires them — they are not silently discarded.
+ *
  * @doc.type class
- * @doc.purpose Orchestrate the helper generators into a complete package
+ * @doc.purpose Orchestrate sub-generators into a complete, quality-gated content package
  * @doc.layer product
  * @doc.pattern Orchestrator
  */
@@ -27,6 +36,15 @@ public class ComprehensiveContentGenerator {
     private final SimulationGenerator simulationGenerator;
     private final AnimationGenerator animationGenerator;
     private final AssessmentGenerator assessmentGenerator;
+    /**
+     * Platform LLM gateway — available to any generator that needs AI completions.
+     * Stored as a typed dependency so it is accessible without additional wiring.
+     */
+    private final LLMGateway llmGateway;
+    /**
+     * Platform embedding service — available to any generator that needs vector search.
+     */
+    private final EmbeddingService embeddingService;
 
     public ComprehensiveContentGenerator(
             ClaimGenerator claimGenerator,
@@ -35,9 +53,8 @@ public class ComprehensiveContentGenerator {
             SimulationGenerator simulationGenerator,
             AnimationGenerator animationGenerator,
             AssessmentGenerator assessmentGenerator,
-            Object llmGateway,
-            Object embeddingService,
-            Object qualityValidator
+            LLMGateway llmGateway,
+            EmbeddingService embeddingService
     ) {
         this.claimGenerator = claimGenerator;
         this.evidenceGenerator = evidenceGenerator;
@@ -45,9 +62,13 @@ public class ComprehensiveContentGenerator {
         this.simulationGenerator = simulationGenerator;
         this.animationGenerator = animationGenerator;
         this.assessmentGenerator = assessmentGenerator;
+        this.llmGateway = llmGateway;
+        this.embeddingService = embeddingService;
     }
 
     public Promise<CompleteContentPackage> generateCompleteContent(ContentGenerationRequest request) {
+        long startTime = System.currentTimeMillis();
+
         return claimGenerator.generateClaims(request)
                 .then(claims -> evidenceGenerator.generateEvidence(claims, request)
                         .then(evidence -> exampleGenerator.generateExamples(claims, request)
@@ -65,6 +86,7 @@ public class ComprehensiveContentGenerator {
                                                                     )
                                                             );
 
+                                                            long durationMs = System.currentTimeMillis() - startTime;
                                                             return new CompleteContentPackage(
                                                                     claims,
                                                                     evidence,
@@ -73,9 +95,19 @@ public class ComprehensiveContentGenerator {
                                                                     animations,
                                                                     assessments,
                                                                     qualityReport,
-                                                                    0L
+                                                                    durationMs
                                                             );
                                                         }))))));
+    }
+
+    /** Returns the LLM gateway wired into this orchestrator. */
+    public LLMGateway getLlmGateway() {
+        return llmGateway;
+    }
+
+    /** Returns the embedding service wired into this orchestrator. */
+    public EmbeddingService getEmbeddingService() {
+        return embeddingService;
     }
 
     public record CompleteContentPackage(

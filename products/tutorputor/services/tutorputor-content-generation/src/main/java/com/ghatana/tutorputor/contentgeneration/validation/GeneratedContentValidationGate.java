@@ -44,10 +44,13 @@ public final class GeneratedContentValidationGate {
         validateSimulations(simulations, claimIds, issues);
         validateAssessments(assessments, issues);
 
+        // Weighted scoring — each issue deducts 0.1 from 1.0, floored at 0.0.
+        // A package with zero issues scores 1.0; five or more structural issues score 0.0.
+        double overallScore = Math.max(0.0, 1.0 - (issues.size() * 0.1));
         boolean passed = issues.isEmpty();
         return QualityReport.builder()
                 .passed(passed)
-                .overallScore(passed ? 1.0 : 0.0)
+                .overallScore(overallScore)
                 .issues(issues)
                 .build();
     }

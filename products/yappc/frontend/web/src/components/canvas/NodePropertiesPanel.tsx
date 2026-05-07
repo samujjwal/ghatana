@@ -17,6 +17,8 @@ import {
 } from '@ghatana/design-system';
 import { X as Close, Trash2 as Delete } from 'lucide-react';
 import type { Node } from '@xyflow/react';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
 
 type EditableNodeData = {
     text?: string;
@@ -73,6 +75,8 @@ export const NodePropertiesPanel: React.FC<NodePropertiesPanelProps> = ({
         setLocalData(prev => ({ ...prev, ...updates }));
     };
 
+    const inputIdFor = (label: string) => `node-properties-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+
     const renderLabeledInput = (
         label: string,
         value: string | number,
@@ -81,15 +85,14 @@ export const NodePropertiesPanel: React.FC<NodePropertiesPanelProps> = ({
         placeholder?: string,
     ) => (
         <Box className="mb-4">
-            <Typography variant="body2" className="mb-1 font-medium">
-                {label}
-            </Typography>
-            <input
+            <Input
+                id={inputIdFor(label)}
+                label={label}
                 type={type}
                 value={value}
                 placeholder={placeholder}
                 onChange={(event) => onChange(event.target.value)}
-                className="w-full rounded border border-border px-3 py-2 text-sm"
+                fullWidth
             />
         </Box>
     );
@@ -101,14 +104,13 @@ export const NodePropertiesPanel: React.FC<NodePropertiesPanelProps> = ({
         rows = 4,
     ) => (
         <Box className="mb-4">
-            <Typography variant="body2" className="mb-1 font-medium">
-                {label}
-            </Typography>
-            <textarea
+            <Textarea
+                id={inputIdFor(label)}
+                label={label}
                 rows={rows}
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
-                className="w-full rounded border border-border px-3 py-2 text-sm"
+                fullWidth
             />
         </Box>
     );
@@ -121,16 +123,15 @@ export const NodePropertiesPanel: React.FC<NodePropertiesPanelProps> = ({
         onChange: (value: number) => void,
     ) => (
         <Box className="mb-4">
-            <Typography variant="body2" className="mb-1 font-medium">
-                {label}: {value}
-            </Typography>
-            <input
+            <Input
+                id={inputIdFor(label)}
+                label={`${label}: ${value}`}
                 type="range"
                 value={value}
                 min={min}
                 max={max}
                 onChange={(event) => onChange(Number(event.target.value))}
-                className="w-full"
+                fullWidth
             />
         </Box>
     );

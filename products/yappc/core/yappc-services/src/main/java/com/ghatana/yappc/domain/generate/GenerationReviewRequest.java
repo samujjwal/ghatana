@@ -4,6 +4,7 @@ package com.ghatana.yappc.domain.generate;
  * @doc.type record
  * @doc.purpose Backend service request for a generated artifact review decision
  * @doc.layer domain
+ * @doc.pattern DTO
  */
 public record GenerationReviewRequest(
     String runId,

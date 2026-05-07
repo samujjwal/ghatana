@@ -89,11 +89,10 @@ describe("ModulePage", () => {
             },
           ],
           contentBlocks: [
-            {
-              id: "block-1",
-              blockType: "text",
-              payload: { markdown: "Acceleration changes velocity over time." },
-            },
+            { id: "block-1", blockType: "text", payload: { markdown: "Block 1." } },
+            { id: "block-2", blockType: "text", payload: { markdown: "Block 2." } },
+            { id: "block-3", blockType: "text", payload: { markdown: "Block 3." } },
+            { id: "block-4", blockType: "text", payload: { markdown: "Block 4." } },
           ],
         },
         userEnrollment: {
@@ -101,8 +100,8 @@ describe("ModulePage", () => {
           moduleId: "module-1",
           userId: "learner-1",
           status: "active",
-          progressPercent: 65,
-          timeSpentSeconds: 1800,
+          progressPercent: 25,
+          timeSpentSeconds: 600,
           enrolledAt: "2026-04-20T00:00:00.000Z",
         },
       },
@@ -116,11 +115,54 @@ describe("ModulePage", () => {
       screen.getByRole("button", { name: /mark step completed/i }),
     );
 
+    // 4 blocks, at 25% (1 done) → completing next step → 2/4 = 50%
     expect(mockMutate).toHaveBeenCalledWith({
       enrollmentId: "enrollment-1",
-      progressPercent: 75,
+      progressPercent: 50,
       timeSpentSecondsDelta: 60,
     });
+  });
+
+  it("caps progress at 100% on the final step", async () => {
+    mockUseModuleBySlug.mockReturnValue({
+      data: {
+        module: {
+          id: "module-1",
+          title: "Kinematics Basics",
+          slug: "kinematics-basics",
+          description: "Understand speed, velocity, and acceleration.",
+          domain: "PHYSICS",
+          difficulty: "beginner",
+          estimatedTimeMinutes: 30,
+          learningObjectives: [],
+          contentBlocks: [
+            { id: "block-1", blockType: "text", payload: { markdown: "Block 1." } },
+            { id: "block-2", blockType: "text", payload: { markdown: "Block 2." } },
+          ],
+        },
+        userEnrollment: {
+          id: "enrollment-1",
+          moduleId: "module-1",
+          userId: "learner-1",
+          status: "active",
+          progressPercent: 100,
+          timeSpentSeconds: 1200,
+          enrolledAt: "2026-04-20T00:00:00.000Z",
+        },
+      },
+      isLoading: false,
+      error: null,
+    } as never);
+
+    renderWithProviders(<ModulePage />);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /mark step completed/i }),
+    );
+
+    expect(mockMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ progressPercent: 100 }),
+    );
   });
 
   it("starts module enrollment for learners without an existing enrollment", async () => {

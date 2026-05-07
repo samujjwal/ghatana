@@ -1,4 +1,7 @@
 import { Queue } from "bullmq";
+import { createStandaloneLogger } from "@tutorputor/core/logger";
+
+const logger = createStandaloneLogger({ component: "ContentGenerationQueue" });
 
 export const CONTENT_GENERATION_QUEUE = "content-generation";
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
@@ -114,15 +117,30 @@ export function getContentGenerationQueue(): ContentGenerationQueueLike {
       process.env.NODE_ENV === "test";
 
     if (disableQueue) {
+      if (process.env.NODE_ENV === "production") {
+        throw new Error(
+          "Content generation queue is disabled (CONTENT_QUEUE_DISABLED=true) " +
+          "in a production environment. This is not allowed. " +
+          "Ensure Redis is configured and CONTENT_QUEUE_DISABLED is unset.",
+        );
+      }
+      logger.warn({
+        message: "Content generation queue is running in noop mode",
+        reason: process.env.CONTENT_QUEUE_DISABLED === "true"
+          ? "CONTENT_QUEUE_DISABLED=true"
+          : "NODE_ENV=test",
+      });
       queueSingleton = {
         async add(_name, _data, opts) {
           const id =
             typeof opts?.["jobId"] === "string" ? opts["jobId"] : "noop";
+          logger.warn({ message: "Queue noop: add()", jobId: id });
           return { id };
         },
         async addBulk(jobs) {
           return jobs.map(job => {
             const id = typeof job.opts?.["jobId"] === "string" ? job.opts["jobId"] : "noop";
+            logger.warn({ message: "Queue noop: addBulk()", jobId: id });
             return { id };
           });
         },

@@ -2,30 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Box, Card, Text, Button, Spinner, Progress } from "@/components/ui";
-
-interface Choice {
-    id: string;
-    text: string;
-}
-
-interface AssessmentItem {
-    id: string;
-    stem: string;
-    type: string;
-    choices?: Choice[];
-}
-
-interface Assessment {
-    id: string;
-    title: string;
-    description?: string;
-    timeLimitMinutes?: number;
-    items: AssessmentItem[];
-}
-
-interface AttemptResponse {
-    id: string;
-}
+import { apiClient, type Assessment, type AttemptResponse } from "../api/tutorputorClient";
 
 /**
  * Page for taking a specific assessment.
@@ -45,28 +22,19 @@ export function AssessmentDetailPage() {
 
     const { data: assessment, isLoading } = useQuery<Assessment>({
         queryKey: ["assessment", assessmentId],
-        queryFn: async (): Promise<Assessment> => {
-            // Placeholder - getAssessment to be implemented on apiClient
-            return { id: assessmentId!, title: "", items: [] };
-        },
+        queryFn: () => apiClient.getAssessment(assessmentId!),
         enabled: !!assessmentId
     });
 
     const startAttemptMutation = useMutation<AttemptResponse, Error>({
-        mutationFn: async (): Promise<AttemptResponse> => {
-            // Placeholder - startAssessmentAttempt to be implemented on apiClient
-            return { id: `attempt-${Date.now()}` };
-        },
+        mutationFn: () => apiClient.startAssessmentAttempt(assessmentId!),
         onSuccess: (data) => {
             setAttemptId(data.id);
         }
     });
 
     const submitAttemptMutation = useMutation({
-        mutationFn: async () => {
-            // Placeholder - submitAssessmentAttempt to be implemented on apiClient
-            return {};
-        },
+        mutationFn: () => apiClient.submitAssessmentAttempt(attemptId!, responses),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["assessments"] });
             navigate(`/assessments/${assessmentId}/results`);

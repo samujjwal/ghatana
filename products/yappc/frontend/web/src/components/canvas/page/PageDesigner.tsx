@@ -58,7 +58,7 @@ import {
   validateDocument,
   deserializeDocument,
 } from '@ghatana/ui-builder';
-import type { Binding, BuilderDocument, LossPoint, NodeId, ResponsiveVariant, StateVariant, ValidationResult } from '@ghatana/ui-builder';
+import type { Binding, BuilderDocument, ComponentInstance, LossPoint, NodeId, ResponsiveVariant, StateVariant, ValidationResult } from '@ghatana/ui-builder';
 
 interface NodeLocation {
   readonly parentId: NodeId | null;
@@ -1153,6 +1153,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
       readonly stateVariant?: StateVariant;
       readonly dataBinding?: Binding;
       readonly actionBinding?: Binding;
+      readonly privacyClassification?: NonNullable<ComponentInstance['metadata']['dataClassification']>;
     }) => {
       if (!canEdit) {
         announceReadOnly();
@@ -1170,6 +1171,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
           nodeId: selectedInstance.id,
           props: payload.props,
           name: payload.name,
+          dataClassification: payload.privacyClassification,
         },
       });
       if (!nextDocument) {
@@ -1851,6 +1853,10 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
             initialBindings={editingInstance.bindings}
             initialResponsiveVariants={editingInstance.metadata.responsiveVariants}
             initialStateVariants={editingInstance.metadata.stateVariants}
+            initialDataClassification={
+              editingInstance.metadata.dataClassification ??
+              document.metadata.dataClassification
+            }
             onUpdate={handleUpdateComponent}
             readOnly={!canEdit}
             readOnlyReason={readOnlyReason}
