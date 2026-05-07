@@ -8,6 +8,7 @@
 import type {
     AchievementCategory,
     CredentialType,
+    CredentialMetadata,
     SkillLevel,
     AchievementCriteria,
 } from "../models/credential";
@@ -98,12 +99,22 @@ export interface AchievementRule {
     imageUrl?: string;
 }
 
+export interface AchievementEvaluationMetadata extends Record<string, unknown> {
+    ruleId?: string;
+    ruleName?: string;
+    category?: AchievementCategory;
+    tier?: CredentialMetadata["tier"];
+    rarity?: CredentialMetadata["rarity"];
+    points?: number;
+    credentialType?: CredentialType;
+}
+
 export interface EvaluationResult {
     achieved: boolean;
     criteria: AchievementCriteria[];
     credentialName?: string;
     credentialDescription?: string;
-    metadata?: Record<string, unknown>;
+    metadata?: AchievementEvaluationMetadata;
 }
 
 // =============================================================================

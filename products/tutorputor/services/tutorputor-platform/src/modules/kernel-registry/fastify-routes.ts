@@ -9,6 +9,8 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import type { PluginMetadata as PolicyPluginMetadata } from "@tutorputor/simulation/sdk";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
 import { validateMetadata as validatePluginMetadata } from "./validation/plugin-policy.js";
 import { getTenantId } from "../../core/http/requestContext.js";
 
@@ -66,6 +68,10 @@ function rowToMetadata(row: Record<string, unknown>): PluginMetadata {
   };
 }
 
+function getPrisma(server: FastifyInstance): TutorPrismaClient {
+  return (server as FastifyInstance & { prisma: TutorPrismaClient }).prisma;
+}
+
 /**
  * Register a new plugin
  */
@@ -76,10 +82,12 @@ async function registerPlugin(
   try {
     const metadata = request.body;
     const tenantId = getTenantId(request);
-    const prisma = (request.server as FastifyInstance & { prisma: any }).prisma;
+    const prisma = getPrisma(request.server);
 
     // Validate plugin metadata
-    const validation = validatePluginMetadata(metadata as any);
+    const validation = validatePluginMetadata(
+      metadata as unknown as PolicyPluginMetadata,
+    );
     if (!validation.passed) {
       return reply.code(400).send({
         error: "Invalid plugin metadata",
@@ -134,7 +142,7 @@ async function getPlugin(
 ) {
   try {
     const { pluginId } = request.params;
-    const prisma = (request.server as FastifyInstance & { prisma: any }).prisma;
+    const prisma = getPrisma(request.server);
 
     const row = await prisma.kernelPlugin.findUnique({
       where: { pluginId },
@@ -160,7 +168,7 @@ async function listPlugins(
   try {
     const { kernelType, capability } = request.query;
     const tenantId = getTenantId(request);
-    const prisma = (request.server as FastifyInstance & { prisma: any }).prisma;
+    const prisma = getPrisma(request.server);
 
     const where: Record<string, unknown> = { tenantId };
     if (kernelType) where.kernelType = kernelType;
@@ -191,7 +199,7 @@ async function deletePlugin(
 ) {
   try {
     const { pluginId } = request.params;
-    const prisma = (request.server as FastifyInstance & { prisma: any }).prisma;
+    const prisma = getPrisma(request.server);
 
     const existing = await prisma.kernelPlugin.findUnique({
       where: { pluginId },
@@ -218,10 +226,12 @@ async function updatePlugin(
   try {
     const { pluginId } = request.params;
     const metadata = request.body;
-    const prisma = (request.server as FastifyInstance & { prisma: any }).prisma;
+    const prisma = getPrisma(request.server);
 
     // Validate plugin metadata
-    const validation = validatePluginMetadata(metadata as any);
+    const validation = validatePluginMetadata(
+      metadata as unknown as PolicyPluginMetadata,
+    );
     if (!validation.passed) {
       return reply.code(400).send({
         error: "Invalid plugin metadata",
@@ -286,7 +296,7 @@ export async function registerKernelRegistryRoutes(fastify: FastifyInstance) {
 
   // Health check for kernel registry
   fastify.get("/api/v1/plugins/health", async (_request, reply) => {
-    const prisma = (fastify as FastifyInstance & { prisma: any }).prisma;
+    const prisma = getPrisma(fastify);
     const pluginCount = await prisma.kernelPlugin.count();
     return reply.send({
       status: "ok",

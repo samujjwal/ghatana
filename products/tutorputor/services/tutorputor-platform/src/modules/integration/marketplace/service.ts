@@ -41,6 +41,53 @@ interface ListTemplatesArgs {
   pageSize?: number;
 }
 
+interface MarketplaceListingRecord {
+  id: string;
+  tenantId: string;
+  moduleId: string;
+  creatorId: string;
+  status: string;
+  visibility: string;
+  priceCents: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+  publishedAt: Date | null;
+}
+
+interface SimulationTemplateRecord {
+  id: string;
+  tenantId: string;
+  slug: string;
+  title: string;
+  description: string;
+  domain: string;
+  difficulty: string;
+  tags: unknown;
+  thumbnailUrl: string | null;
+  license: string;
+  isPremium: boolean;
+  isVerified: boolean;
+  version: string;
+  authorId: string;
+  authorName: string | null;
+  authorAvatarUrl: string | null;
+  organization: string | null;
+  statsViews: number | null;
+  statsUses: number | null;
+  statsFavorites: number | null;
+  statsRating: number | null;
+  statsRatingCount: number | null;
+  statsCompletionRate: number | null;
+  statsAvgTimeMinutes: number | null;
+  status: string;
+  publishedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  moduleId: string | null;
+  manifestId: string | null;
+  conceptId: string | null;
+}
+
 /**
  * Service for managing simulation templates and listings.
  *
@@ -109,7 +156,8 @@ export function createMarketplaceService(
       const tagFilters = tags.map((tag) => ({
         tags: { contains: `"${tag}"` },
       }));
-      where.AND = [...((where.AND as any[]) ?? []), ...tagFilters];
+      const existingAnd = Array.isArray(where.AND) ? where.AND : [];
+      where.AND = [...existingAnd, ...tagFilters];
     }
 
     if (status) {
@@ -499,7 +547,7 @@ export function createMarketplaceService(
   };
 }
 
-function mapListing(record: any): MarketplaceListing {
+function mapListing(record: MarketplaceListingRecord): MarketplaceListing {
   return {
     id: record.id as MarketplaceListingId,
     tenantId: record.tenantId as TenantId,
@@ -522,7 +570,7 @@ function notFoundError(
   return createHttpError(404, "MARKETPLACE_NOT_FOUND", message);
 }
 
-function safeParseTags(raw: any): string[] {
+function safeParseTags(raw: unknown): string[] {
   if (!raw) return [];
   try {
     const value = typeof raw === "string" ? raw : String(raw);
@@ -554,7 +602,9 @@ function buildTemplatesOrderBy(
   }
 }
 
-function mapDbTemplateToContract(record: any): SimulationTemplate {
+function mapDbTemplateToContract(
+  record: SimulationTemplateRecord,
+): SimulationTemplate {
   const tags = safeParseTags(record.tags);
 
   return {

@@ -36,6 +36,10 @@ export interface QualityAlert {
   resolvedAt: Date | null;
 }
 
+type ContentEvaluationRecord = {
+  isCorrect?: boolean | null;
+};
+
 export class ContentQualityMonitoringService {
   constructor(private prisma: PrismaClient) {}
 
@@ -52,11 +56,11 @@ export class ContentQualityMonitoringService {
       create: {
         contentId,
         contentType,
-        baselineMetrics: metrics as any,
+        baselineMetrics: JSON.stringify(metrics),
         establishedAt: new Date(),
       },
       update: {
-        baselineMetrics: metrics as any,
+        baselineMetrics: JSON.stringify(metrics),
         establishedAt: new Date(),
       },
     });
@@ -234,7 +238,9 @@ export class ContentQualityMonitoringService {
       return 0.8; // Default if no evaluations
     }
 
-    const correctEvaluations = evaluations.filter((e) => (e as any).isCorrect).length;
+    const correctEvaluations = (evaluations as ContentEvaluationRecord[]).filter(
+      (e) => e.isCorrect === true,
+    ).length;
     return correctEvaluations / evaluations.length;
   }
 

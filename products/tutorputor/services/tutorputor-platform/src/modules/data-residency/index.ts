@@ -8,7 +8,8 @@
  * @doc.layer platform
  * @doc.pattern Module
  */
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyRequest } from "fastify";
+import type { PrismaClient } from "@tutorputor/core/db";
 import { DataResidencyService, type TenantResidencyConfig } from "./DataResidencyService.js";
 import { z } from "zod";
 
@@ -25,14 +26,38 @@ const validateAccessSchema = z.object({
   operation: z.enum(["read", "write", "delete"]),
 });
 
+const validateComplianceSchema = z.object({
+  framework: z.string().min(1),
+});
+
+interface RouteUser {
+  role?: string;
+}
+
+type AuthenticatedRouteRequest = FastifyRequest & {
+  tenantId?: string;
+  user?: RouteUser;
+};
+
+function getRouteContext(request: FastifyRequest): { tenantId?: string; user?: RouteUser } {
+  const authenticatedRequest = request as AuthenticatedRouteRequest;
+  const context: { tenantId?: string; user?: RouteUser } = {};
+  if (authenticatedRequest.tenantId) {
+    context.tenantId = authenticatedRequest.tenantId;
+  }
+  if (authenticatedRequest.user && typeof authenticatedRequest.user === "object" && !Buffer.isBuffer(authenticatedRequest.user)) {
+    context.user = authenticatedRequest.user;
+  }
+  return context;
+}
+
 export const dataResidencyModule: FastifyPluginAsync = async (app) => {
-  const residencyService = new DataResidencyService(app.prisma as any);
+  const residencyService = new DataResidencyService(app.prisma as unknown as PrismaClient);
   app.decorate("dataResidencyService", residencyService);
 
   // GET /api/v1/data-residency/config - Get tenant residency configuration
   app.get("/api/v1/data-residency/config", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -49,8 +74,7 @@ export const dataResidencyModule: FastifyPluginAsync = async (app) => {
 
   // PUT /api/v1/data-residency/config - Set tenant residency configuration
   app.put("/api/v1/data-residency/config", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -86,8 +110,7 @@ export const dataResidencyModule: FastifyPluginAsync = async (app) => {
 
   // POST /api/v1/data-residency/validate-access - Validate data access request
   app.post("/api/v1/data-residency/validate-access", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -101,8 +124,7 @@ export const dataResidencyModule: FastifyPluginAsync = async (app) => {
 
   // GET /api/v1/data-residency/retention-policy - Get data retention policy
   app.get("/api/v1/data-residency/retention-policy", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -119,8 +141,7 @@ export const dataResidencyModule: FastifyPluginAsync = async (app) => {
 
   // GET /api/v1/data-residency/compliance-frameworks - Get compliance frameworks
   app.get("/api/v1/data-residency/compliance-frameworks", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -133,8 +154,7 @@ export const dataResidencyModule: FastifyPluginAsync = async (app) => {
 
   // POST /api/v1/data-residency/validate-compliance - Validate compliance with framework
   app.post("/api/v1/data-residency/validate-compliance", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -144,7 +164,7 @@ export const dataResidencyModule: FastifyPluginAsync = async (app) => {
       return reply.code(403).send({ error: "Insufficient permissions" });
     }
 
-    const body = request.body as { framework: string };
+    const body = validateComplianceSchema.parse(request.body);
     const result = await residencyService.validateCompliance(tenantId, body.framework);
 
     return reply.send(result);

@@ -9,9 +9,6 @@ import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Map;
@@ -19,21 +16,14 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link OpaAuthorizationService}.
  */
 @DisplayName("OpaAuthorizationService")
-@ExtendWith(MockitoExtension.class)
 class OpaAuthorizationServiceTest extends EventloopTestBase {
 
-    @Mock
-    private PolicyAsCodeEngine policyEngine;
-
+    private TestPolicyAsCodeEngine policyEngine;
     private OpaAuthorizationService authService;
 
     private BridgeContext buildContext(String tenantId, String principalId) {
@@ -46,6 +36,7 @@ class OpaAuthorizationServiceTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
+        policyEngine = new TestPolicyAsCodeEngine();
         authService = new OpaAuthorizationService(policyEngine);
     }
 
@@ -54,13 +45,13 @@ class OpaAuthorizationServiceTest extends EventloopTestBase {
     void allowsWhenPolicyAllows() {
         BridgeContext ctx = buildContext("acme", "user-42");
         PolicyEvalResult allowResult = PolicyEvalResult.allow("dmos/authz");
-        when(policyEngine.evaluate(eq("acme"), eq("dmos/authz"), any()))
-            .thenReturn(Promise.of(allowResult));
+        policyEngine.setEvalResult(allowResult);
 
         Boolean result = runPromise(() -> authService.isAuthorized(ctx, "campaigns/123", "read"));
 
         assertThat(result).isTrue();
-        verify(policyEngine).evaluate(eq("acme"), eq("dmos/authz"), any());
+        assertThat(policyEngine.getLastTenantId()).isEqualTo("acme");
+        assertThat(policyEngine.getLastPolicyId()).isEqualTo("dmos/authz");
     }
 
     @Test
@@ -69,8 +60,7 @@ class OpaAuthorizationServiceTest extends EventloopTestBase {
         BridgeContext ctx = buildContext("acme", "user-42");
         PolicyEvalResult denyResult = PolicyEvalResult.deny("dmos/authz",
             List.of("principal has no write permission"), 80);
-        when(policyEngine.evaluate(eq("acme"), eq("dmos/authz"), any()))
-            .thenReturn(Promise.of(denyResult));
+        policyEngine.setEvalResult(denyResult);
 
         Boolean result = runPromise(() -> authService.isAuthorized(ctx, "campaigns/123", "write"));
 
@@ -81,28 +71,23 @@ class OpaAuthorizationServiceTest extends EventloopTestBase {
     @DisplayName("passes tenantId, principalId, resource, and action to OPA input")
     void passesPolicyInputCorrectly() {
         BridgeContext ctx = buildContext("tenant-xyz", "svc-worker");
-        when(policyEngine.evaluate(eq("tenant-xyz"), eq("dmos/authz"), any()))
-            .thenAnswer(inv -> {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> input = (Map<String, Object>) inv.getArgument(2);
-                assertThat(input).containsEntry("tenantId", "tenant-xyz");
-                assertThat(input).containsEntry("principalId", "svc-worker");
-                assertThat(input).containsEntry("resource", "privacy/dsar");
-                assertThat(input).containsEntry("action", "write");
-                return Promise.of(PolicyEvalResult.allow("dmos/authz"));
-            });
+        PolicyEvalResult allowResult = PolicyEvalResult.allow("dmos/authz");
+        policyEngine.setEvalResult(allowResult);
 
         Boolean result = runPromise(() -> authService.isAuthorized(ctx, "privacy/dsar", "write"));
 
         assertThat(result).isTrue();
+        assertThat(policyEngine.getLastInput()).containsEntry("tenantId", "tenant-xyz");
+        assertThat(policyEngine.getLastInput()).containsEntry("principalId", "svc-worker");
+        assertThat(policyEngine.getLastInput()).containsEntry("resource", "privacy/dsar");
+        assertThat(policyEngine.getLastInput()).containsEntry("action", "write");
     }
 
     @Test
     @DisplayName("fails closed (propagates exception) when policy engine throws")
     void failsClosedOnEngineException() {
         BridgeContext ctx = buildContext("acme", "user-99");
-        when(policyEngine.evaluate(any(), any(), any()))
-            .thenReturn(Promise.ofException(new RuntimeException("OPA unreachable")));
+        policyEngine.setFailure(new RuntimeException("OPA unreachable"));
 
         // The promise should fail — callers treat failure as denied via circuit breaker
         assertThatThrownBy(() -> runPromise(() -> authService.isAuthorized(ctx, "campaigns/1", "write")))
@@ -138,5 +123,45 @@ class OpaAuthorizationServiceTest extends EventloopTestBase {
     void constructorRejectsNullPolicyEngine() {
         assertThatNullPointerException()
             .isThrownBy(() -> new OpaAuthorizationService(null));
+    }
+
+    private static final class TestPolicyAsCodeEngine implements PolicyAsCodeEngine {
+        private PolicyEvalResult evalResult = PolicyEvalResult.allow("default");
+        private RuntimeException failure;
+        private String lastTenantId;
+        private String lastPolicyId;
+        private Map<String, Object> lastInput;
+
+        void setEvalResult(PolicyEvalResult result) {
+            this.evalResult = result;
+            this.failure = null;
+        }
+
+        void setFailure(RuntimeException failure) {
+            this.failure = failure;
+        }
+
+        String getLastTenantId() {
+            return lastTenantId;
+        }
+
+        String getLastPolicyId() {
+            return lastPolicyId;
+        }
+
+        Map<String, Object> getLastInput() {
+            return lastInput;
+        }
+
+        @Override
+        public Promise<PolicyEvalResult> evaluate(String tenantId, String policyId, Map<String, Object> input) {
+            this.lastTenantId = tenantId;
+            this.lastPolicyId = policyId;
+            this.lastInput = input;
+            if (failure != null) {
+                return Promise.ofException(failure);
+            }
+            return Promise.of(evalResult);
+        }
     }
 }

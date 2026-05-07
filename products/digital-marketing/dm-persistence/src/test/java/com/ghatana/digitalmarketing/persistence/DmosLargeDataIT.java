@@ -68,8 +68,7 @@ class DmosLargeDataIT extends EventloopTestBase {
         try (var conn = POSTGRES.createConnection("")) {
             conn.createStatement().executeUpdate(
                     "INSERT INTO dmos_workspaces (id, tenant_id, name, status, created_at, updated_at, created_by) VALUES " +
-                    "('" + PERF_WORKSPACE + "','perf-tenant','perf-ws','ACTIVE',NOW(),NOW(),'perf') " +
-                    "ON CONFLICT (id) DO NOTHING"
+                    "('" + PERF_WORKSPACE + "','perf-tenant','perf-ws','ACTIVE',NOW(),NOW(),'perf')"
             );
         }
 
@@ -86,8 +85,7 @@ class DmosLargeDataIT extends EventloopTestBase {
             var stmt = conn.prepareStatement(
                     "INSERT INTO dmos_campaigns " +
                     "(id, workspace_id, name, status, type, created_at, updated_at, created_by) " +
-                    "VALUES (?, ?, ?, 'DRAFT', 'EMAIL', NOW(), NOW(), 'perf-user') " +
-                    "ON CONFLICT (id) DO NOTHING"
+                    "VALUES (?, ?, ?, 'DRAFT', 'EMAIL', NOW(), NOW(), 'perf-user')"
             );
             for (int i = 0; i < TOTAL_ROWS; i++) {
                 stmt.setString(1, "perf-camp-" + i);
@@ -141,8 +139,8 @@ class DmosLargeDataIT extends EventloopTestBase {
     @Test
     @DisplayName("listByWorkspace — non-overlapping pages collectively cover all rows")
     void pages_areNonOverlapping() {
-        int pageSize = 500;
-        int totalPages = TOTAL_ROWS / pageSize;
+        int pageSize = 100; // Repository caps at MAX_PAGE_SIZE=100
+        int totalPages = (TOTAL_ROWS + pageSize - 1) / pageSize; // Ceiling division
 
         List<String> allIds = new ArrayList<>();
         for (int p = 0; p < totalPages; p++) {

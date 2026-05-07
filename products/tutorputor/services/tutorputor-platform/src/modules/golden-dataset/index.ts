@@ -8,7 +8,8 @@
  * @doc.layer platform
  * @doc.pattern Module
  */
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyRequest } from "fastify";
+import type { PrismaClient } from "@tutorputor/core/db";
 import { GoldenDatasetService } from "./GoldenDatasetService.js";
 import { z } from "zod";
 
@@ -20,14 +21,34 @@ const addGoldenEntrySchema = z.object({
   qualityMetrics: z.string(), // JSON string of { clarity, accuracy, completeness }
 });
 
+interface RouteUser {
+  role?: string;
+}
+
+type AuthenticatedRouteRequest = FastifyRequest & {
+  tenantId?: string;
+  user?: RouteUser;
+};
+
+function getRouteContext(request: FastifyRequest): { tenantId?: string; user?: RouteUser } {
+  const authenticatedRequest = request as AuthenticatedRouteRequest;
+  const context: { tenantId?: string; user?: RouteUser } = {};
+  if (authenticatedRequest.tenantId) {
+    context.tenantId = authenticatedRequest.tenantId;
+  }
+  if (authenticatedRequest.user) {
+    context.user = authenticatedRequest.user;
+  }
+  return context;
+}
+
 export const goldenDatasetModule: FastifyPluginAsync = async (app) => {
-  const goldenService = new GoldenDatasetService(app.prisma as any);
+  const goldenService = new GoldenDatasetService(app.prisma as unknown as PrismaClient);
   app.decorate("goldenService", goldenService);
 
   // POST /api/v1/golden-dataset/entries - Add a golden dataset entry
   app.post("/api/v1/golden-dataset/entries", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -45,8 +66,7 @@ export const goldenDatasetModule: FastifyPluginAsync = async (app) => {
 
   // POST /api/v1/golden-dataset/test/:moduleId - Run regression test for a module
   app.post("/api/v1/golden-dataset/test/:moduleId", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -64,8 +84,7 @@ export const goldenDatasetModule: FastifyPluginAsync = async (app) => {
 
   // GET /api/v1/golden-dataset/history/:moduleId - Get regression test history
   app.get("/api/v1/golden-dataset/history/:moduleId", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -80,8 +99,7 @@ export const goldenDatasetModule: FastifyPluginAsync = async (app) => {
 
   // GET /api/v1/golden-dataset/stats/:moduleId - Get regression statistics
   app.get("/api/v1/golden-dataset/stats/:moduleId", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });

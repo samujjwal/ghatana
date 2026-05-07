@@ -34,7 +34,7 @@ for (const marker of [
   "Prevent new @ts-nocheck usage",
   "Audit production any usage",
   "node products/tutorputor/scripts/audit-any-types.ts",
-  "ANY_TYPE_THRESHOLD: \"307\"",
+  "ANY_TYPE_THRESHOLD: \"176\"",
   "Validate type-safety gates",
 ]) {
   if (!texts.workflow.includes(marker)) {

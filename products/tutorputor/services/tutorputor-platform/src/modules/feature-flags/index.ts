@@ -9,12 +9,18 @@
  * @doc.pattern Module
  */
 
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { getTenantId, getUserId, roleGuard } from '../../core/http/requestContext.js';
 import { buildSensitiveOperationAuditEntry } from '../policy/resource-access-helpers.js';
 import { FeatureFlagService } from './FeatureFlagService.js';
 
 const adminGuard = roleGuard(['admin', 'superadmin']);
+
+type FeatureFlagRequest = FastifyRequest & {
+  user?: {
+    id?: string;
+  };
+};
 
 /**
  * Feature flags module plugin
@@ -86,7 +92,7 @@ export const featureFlagsModule: FastifyPluginAsync = async (app) => {
     },
   }, async (request, reply) => {
     const { key } = request.params as { key: string };
-    const userId = (request as any).user?.id;
+    const userId = (request as FeatureFlagRequest).user?.id;
     const enabled = featureFlagService.isEnabled(key, userId);
     const flag = featureFlagService.getFlag(key);
     return reply.send({ enabled, flag });

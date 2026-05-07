@@ -49,6 +49,12 @@ export interface BenchmarkResult {
   regressionDetails: string[];
 }
 
+type GenerationJobTimingRecord = {
+  status: string;
+  startedAt: Date | null;
+  completedAt: Date | null;
+};
+
 export class ContentGenerationBenchmarkService {
   constructor(private prisma: PrismaClient) {}
 
@@ -107,14 +113,15 @@ export class ContentGenerationBenchmarkService {
       };
     }
 
-    const completedJobs = jobs.filter((j) => (j as any).status === "COMPLETED");
-    const failedJobs = jobs.filter((j) => (j as any).status === "FAILED");
+    const typedJobs = jobs as GenerationJobTimingRecord[];
+    const completedJobs = typedJobs.filter((j) => j.status === "COMPLETED");
+    const failedJobs = typedJobs.filter((j) => j.status === "FAILED");
 
     const processingTimes = completedJobs
-      .filter((j) => (j as any).completedAt)
+      .filter((j) => j.completedAt)
       .map((j) => {
-        const startedAt = new Date((j as any).startedAt);
-        const completedAt = new Date((j as any).completedAt);
+        const startedAt = new Date(j.startedAt ?? j.completedAt ?? now);
+        const completedAt = new Date(j.completedAt ?? now);
         return completedAt.getTime() - startedAt.getTime();
       });
 
@@ -123,7 +130,7 @@ export class ContentGenerationBenchmarkService {
       : 0;
 
     const throughputPerSecond = completedJobs.length / 3600; // jobs per hour / 3600 seconds
-    const queueDepth = jobs.filter((j) => (j as any).status === "PENDING" || (j as any).status === "RUNNING").length;
+    const queueDepth = typedJobs.filter((j) => j.status === "PENDING" || j.status === "RUNNING").length;
     const successRate = jobs.length > 0 ? completedJobs.length / jobs.length : 1;
 
     return {
@@ -172,11 +179,10 @@ export class ContentGenerationBenchmarkService {
 
       // Calculate latencies from job completion times
       const completedJobs = jobs.filter((j) => {
-        const status = (j as any).status;
-        return status === "COMPLETED" && j.startedAt && j.completedAt;
+        return j.status === "COMPLETED" && j.startedAt && j.completedAt;
       });
 
-      const failedJobs = jobs.filter((j) => (j as any).status === "FAILED");
+      const failedJobs = jobs.filter((j) => j.status === "FAILED");
 
       const latencies = completedJobs.map((j) => {
         const startedAt = new Date(j.startedAt!);
@@ -316,7 +322,7 @@ export class ContentGenerationBenchmarkService {
       return null;
     }
 
-    return (baseline as any).metrics as BenchmarkMetrics;
+    return baseline.metrics as unknown as BenchmarkMetrics;
   }
 
   /**
@@ -384,8 +390,8 @@ export class ContentGenerationBenchmarkService {
     const result = await this.prisma.contentGenerationBenchmark.create({
       data: {
         tenantId,
-        metrics: metrics as any,
-        baseline: baseline as any,
+        metrics: JSON.stringify(metrics),
+        baseline: baseline ? JSON.stringify(baseline) : null,
         regressionDetected,
         regressionDetails,
         isBaseline: false,

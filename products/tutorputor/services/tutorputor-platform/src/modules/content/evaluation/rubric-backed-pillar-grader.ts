@@ -9,6 +9,12 @@ export interface RubricBackedPillarGrader {
   grade: (args: unknown) => Promise<{
     score: number;
     pillarScores: Record<string, number>;
+    overallScore: number;
+    pillarResults: Array<{
+      pillar: "educational" | "experiential" | "technical" | "safety";
+      weightedScore: number;
+      blocksPublish: boolean;
+    }>;
   }>;
 }
 
@@ -16,11 +22,19 @@ export class RubricBackedPillarGraderImpl implements RubricBackedPillarGrader {
   async grade(_args: unknown): Promise<{
     score: number;
     pillarScores: Record<string, number>;
+    overallScore: number;
+    pillarResults: Array<{
+      pillar: "educational" | "experiential" | "technical" | "safety";
+      weightedScore: number;
+      blocksPublish: boolean;
+    }>;
   }> {
     // Placeholder implementation
     return {
       score: 1.0,
       pillarScores: {},
+      overallScore: 100,
+      pillarResults: [],
     };
   }
 }

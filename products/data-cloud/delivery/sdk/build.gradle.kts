@@ -14,7 +14,7 @@ plugins {
 group = "com.ghatana.datacloud"
 version = rootProject.version
 
-val openApiSpec = projectDir.parentFile.resolve("contracts/openapi/data-cloud.yaml")
+val openApiSpec = projectDir.parentFile.parentFile.resolve("contracts/openapi/data-cloud.yaml")
 val generatedSdkRoot = layout.buildDirectory.dir("generated/sdk")
 val generatedJavaSources = generatedSdkRoot.map { it.dir("java/src/main/java") }
 val generatedTypeScriptDir = generatedSdkRoot.map { it.dir("typescript") }

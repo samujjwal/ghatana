@@ -126,24 +126,24 @@ public class PlatformContentGenerator implements UnifiedContentGenerator {
     }
 
     @Override
-    public Promise<ClaimsResponse> generateClaims(ClaimsRequest request) {
-        Objects.requireNonNull(request, "request required");
-        promptEngine.buildPrompt(request, Map.of(
+    public Promise<ClaimsResponse> generateClaims(ClaimsRequest claimsRequest) {
+        Objects.requireNonNull(claimsRequest, "request required");
+        promptEngine.buildPrompt(claimsRequest, Map.of(
                 "operation", "generateClaims",
-                "topic", request.topic(),
-                "gradeLevel", request.gradeLevel(),
-                "domain", request.domain(),
-                "maxClaims", request.maxClaims()
+                "topic", claimsRequest.topic(),
+                "gradeLevel", claimsRequest.gradeLevel(),
+                "domain", claimsRequest.domain(),
+                "maxClaims", claimsRequest.maxClaims()
         ));
 
         List<LearningClaim> claims = new ArrayList<>();
-        int maxClaims = Math.max(1, request.maxClaims());
+        int maxClaims = Math.max(1, claimsRequest.maxClaims());
         for (int index = 0; index < maxClaims; index++) {
             claims.add(LearningClaim.builder()
                     .id(UUID.randomUUID().toString())
-                    .text("Explain " + request.topic() + " concept " + (index + 1))
-                    .domain(request.domain())
-                    .gradeLevel(request.gradeLevel())
+                    .text("Explain " + claimsRequest.topic() + " concept " + (index + 1))
+                    .domain(claimsRequest.domain())
+                    .gradeLevel(claimsRequest.gradeLevel())
                     .prerequisites(List.of())
                     .build());
         }

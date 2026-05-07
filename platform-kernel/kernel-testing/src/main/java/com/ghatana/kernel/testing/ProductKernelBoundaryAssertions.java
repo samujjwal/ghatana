@@ -3,8 +3,11 @@ package com.ghatana.kernel.testing;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -46,10 +49,31 @@ public final class ProductKernelBoundaryAssertions {
                 continue;
             }
 
-            Files.walk(root)
-                    .filter(Files::isRegularFile)
-                    .filter(ProductKernelBoundaryAssertions::isScannableSourceFile)
-                    .forEach(path -> inspectFile(root, path, violations));
+            Files.walkFileTree(root, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                    if (!root.equals(dir) && isIgnoredPath(root, dir)) {
+                        return FileVisitResult.SKIP_SUBTREE;
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (attrs.isRegularFile() && isScannableSourceFile(file)) {
+                        inspectFile(root, file, violations);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exception) {
+                    if (!isIgnoredPath(root, file)) {
+                        violations.add(root.relativize(file) + " -> unable to inspect source: " + exception.getMessage());
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
         }
 
         assertThat(violations)
@@ -63,6 +87,22 @@ public final class ProductKernelBoundaryAssertions {
     private static boolean isScannableSourceFile(Path path) {
         String name = path.getFileName().toString();
         return SCANNED_EXTENSIONS.stream().anyMatch(name::endsWith);
+    }
+
+    private static boolean isIgnoredPath(Path root, Path path) {
+        Path relative = root.relativize(path);
+        for (Path segment : relative) {
+            String name = segment.toString();
+            if ("node_modules".equals(name)
+                    || "build".equals(name)
+                    || "dist".equals(name)
+                    || ".gradle".equals(name)
+                    || ".next".equals(name)
+                    || ".turbo".equals(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void inspectFile(Path root, Path file, List<String> violations) {

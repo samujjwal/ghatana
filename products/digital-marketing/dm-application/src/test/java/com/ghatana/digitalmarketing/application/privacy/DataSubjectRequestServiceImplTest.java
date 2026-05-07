@@ -15,9 +15,6 @@ import com.ghatana.digitalmarketing.domain.suppression.SuppressionEntry;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.plugin.consent.ConsentPlugin;
 import io.activej.promise.Promise;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,19 +26,13 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @DisplayName("DataSubjectRequestServiceImpl")
-@ExtendWith(MockitoExtension.class)
 class DataSubjectRequestServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
     private InMemoryContactRepository contactRepository;
-    @Mock
-    private ConsentPlugin consentPlugin;
+    private TestConsentPlugin consentPlugin;
     private DataSubjectRequestServiceImpl service;
     private DmOperationContext ctx;
 
@@ -49,8 +40,7 @@ class DataSubjectRequestServiceImplTest extends EventloopTestBase {
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
         contactRepository = new InMemoryContactRepository();
-        // Default: deleteAllForSubject returns 0 consent records erased (lenient — not all tests call this)
-        lenient().when(consentPlugin.deleteAllForSubject(anyString())).thenReturn(Promise.of(0));
+        consentPlugin = new TestConsentPlugin();
         service = new DataSubjectRequestServiceImpl(kernelAdapter, contactRepository, new NoopSuppressionRepository(), consentPlugin);
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -79,12 +69,12 @@ class DataSubjectRequestServiceImplTest extends EventloopTestBase {
     @DisplayName("deleteContactData invokes consentPlugin.deleteAllForSubject for DSAR erasure (KERNEL-P0-2)")
     void deleteContactDataErasesConsentRecords() {
         contactRepository.saveSync(contact("contact-3", "hash-3"));
-        when(consentPlugin.deleteAllForSubject("contact-3")).thenReturn(Promise.of(5));
+        consentPlugin.setDeleteCount(5);
 
         Boolean deleted = runPromise(() -> service.deleteContactData(ctx, "contact-3"));
 
         assertThat(deleted).isTrue();
-        verify(consentPlugin).deleteAllForSubject("contact-3");
+        assertThat(consentPlugin.getLastSubjectId()).isEqualTo("contact-3");
         assertThat(kernelAdapter.lastAuditAttributes)
             .containsEntry("consentRecordsErased", "5");
     }
@@ -93,12 +83,12 @@ class DataSubjectRequestServiceImplTest extends EventloopTestBase {
     @DisplayName("deleteContactData still completes DSAR when consent plugin finds 0 records")
     void deleteContactDataErasesConsentRecordsZero() {
         contactRepository.saveSync(contact("contact-4", "hash-4"));
-        // when(consentPlugin.deleteAllForSubject(anyString())).thenReturn(Promise.of(0)) — set in setUp
+        consentPlugin.setDeleteCount(0);
 
         Boolean deleted = runPromise(() -> service.deleteContactData(ctx, "contact-4"));
 
         assertThat(deleted).isTrue();
-        verify(consentPlugin).deleteAllForSubject("contact-4");
+        assertThat(consentPlugin.getLastSubjectId()).isEqualTo("contact-4");
         assertThat(kernelAdapter.lastAuditAttributes)
             .containsEntry("consentRecordsErased", "0");
     }
@@ -252,6 +242,79 @@ class DataSubjectRequestServiceImplTest extends EventloopTestBase {
                 return Promise.of(true);
             }
             return Promise.of(false);
+        }
+    }
+
+    private static final class TestConsentPlugin implements ConsentPlugin {
+        private int deleteCount = 0;
+        private String lastSubjectId;
+
+        void setDeleteCount(int count) {
+            this.deleteCount = count;
+        }
+
+        String getLastSubjectId() {
+            return lastSubjectId;
+        }
+
+        @Override
+        public com.ghatana.platform.plugin.PluginMetadata metadata() {
+            return com.ghatana.platform.plugin.PluginMetadata.builder()
+                .id("test-consent")
+                .name("Test Consent Plugin")
+                .version("1.0.0")
+                .build();
+        }
+
+        @Override
+        public com.ghatana.platform.plugin.PluginState getState() {
+            return com.ghatana.platform.plugin.PluginState.RUNNING;
+        }
+
+        @Override
+        public Promise<Void> initialize(com.ghatana.platform.plugin.PluginContext context) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> start() {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> stop() {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<ConsentRecord> recordConsent(String subjectId, String purpose, ConsentAction action) {
+            return Promise.of(new ConsentRecord("test-id", subjectId, purpose, ConsentStatus.GRANTED, action, "test-basis", Instant.now(), Instant.now().plusSeconds(3600), null, null));
+        }
+
+        @Override
+        public Promise<Boolean> verifyConsent(String subjectId, String purpose) {
+            return Promise.of(true);
+        }
+
+        @Override
+        public Promise<Void> revokeConsent(String consentId) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<java.util.List<ConsentRecord>> getConsentHistory(String subjectId) {
+            return Promise.of(java.util.List.of());
+        }
+
+        @Override
+        public Promise<ConsentStatus> getCurrentConsent(String subjectId, String purpose) {
+            return Promise.of(ConsentStatus.GRANTED);
+        }
+
+        @Override
+        public Promise<Integer> deleteAllForSubject(String subjectId) {
+            this.lastSubjectId = subjectId;
+            return Promise.of(deleteCount);
         }
     }
 }

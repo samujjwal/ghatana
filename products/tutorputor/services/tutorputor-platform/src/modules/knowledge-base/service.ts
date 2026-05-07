@@ -175,6 +175,10 @@ export class KnowledgeBaseServiceImpl {
     }
   }
 
+  getStatsDatabase(): PrismaClient {
+    return this.prisma;
+  }
+
   private isGovernedEvidenceDomain(domain: string): boolean {
     const governedDomains =
       this.config.governedEvidenceDomains ?? DEFAULT_GOVERNED_EVIDENCE_DOMAINS;

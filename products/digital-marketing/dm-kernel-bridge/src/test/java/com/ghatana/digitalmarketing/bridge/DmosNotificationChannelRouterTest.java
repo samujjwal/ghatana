@@ -6,55 +6,46 @@ import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link DmosNotificationChannelRouter} (KERNEL-P1-3).
  */
 @DisplayName("DmosNotificationChannelRouter")
-@ExtendWith(MockitoExtension.class)
 class DmosNotificationChannelRouterTest extends EventloopTestBase {
 
-    @Mock
-    private NotificationPlugin notificationPlugin;
-
+    private TestNotificationPlugin notificationPlugin;
     private DmosNotificationChannelRouter router;
 
     @BeforeEach
     void setUp() {
+        notificationPlugin = new TestNotificationPlugin();
         router = new DmosNotificationChannelRouter(notificationPlugin);
     }
 
     @Test
     @DisplayName("dispatch routes email.* template and returns notification ID")
     void dispatchEmailTemplate() {
-        when(notificationPlugin.dispatch(eq("recipient-1"), eq(DmosNotificationChannelRouter.EMAIL_CAMPAIGN_LAUNCHED), any()))
-            .thenReturn(Promise.of("notif-email-1"));
+        notificationPlugin.setDispatchResult("notif-email-1");
 
         String notifId = runPromise(() -> router.dispatch("recipient-1",
             DmosNotificationChannelRouter.EMAIL_CAMPAIGN_LAUNCHED, Map.of("campaignId", "c-1")));
 
         assertThat(notifId).isEqualTo("notif-email-1");
-        verify(notificationPlugin).dispatch("recipient-1",
-            DmosNotificationChannelRouter.EMAIL_CAMPAIGN_LAUNCHED, Map.of("campaignId", "c-1"));
+        assertThat(notificationPlugin.getLastRecipient()).isEqualTo("recipient-1");
+        assertThat(notificationPlugin.getLastTemplate()).isEqualTo(DmosNotificationChannelRouter.EMAIL_CAMPAIGN_LAUNCHED);
+        assertThat(notificationPlugin.getLastContext()).isEqualTo(Map.of("campaignId", "c-1"));
     }
 
     @Test
     @DisplayName("dispatch routes sms.* template")
     void dispatchSmsTemplate() {
-        when(notificationPlugin.dispatch(eq("recipient-2"), eq(DmosNotificationChannelRouter.SMS_BUDGET_ALERT), any()))
-            .thenReturn(Promise.of("notif-sms-1"));
+        notificationPlugin.setDispatchResult("notif-sms-1");
 
         String notifId = runPromise(() -> router.dispatch("recipient-2",
             DmosNotificationChannelRouter.SMS_BUDGET_ALERT, Map.of("amount", "5000")));
@@ -65,8 +56,7 @@ class DmosNotificationChannelRouterTest extends EventloopTestBase {
     @Test
     @DisplayName("dispatch routes push.* template")
     void dispatchPushTemplate() {
-        when(notificationPlugin.dispatch(eq("recipient-3"), eq(DmosNotificationChannelRouter.PUSH_APPROVAL_REQUIRED), any()))
-            .thenReturn(Promise.of("notif-push-1"));
+        notificationPlugin.setDispatchResult("notif-push-1");
 
         String notifId = runPromise(() -> router.dispatch("recipient-3",
             DmosNotificationChannelRouter.PUSH_APPROVAL_REQUIRED, Map.of("workflowId", "wf-1")));
@@ -77,8 +67,7 @@ class DmosNotificationChannelRouterTest extends EventloopTestBase {
     @Test
     @DisplayName("dispatch propagates plugin failure as rejected promise")
     void dispatchPropagatesFailure() {
-        when(notificationPlugin.dispatch(any(), any(), any()))
-            .thenReturn(Promise.ofException(new RuntimeException("dispatch-failure")));
+        notificationPlugin.setFailure(new RuntimeException("dispatch-failure"));
 
         assertThatThrownBy(() -> runPromise(() -> router.dispatch("recipient-4",
             DmosNotificationChannelRouter.EMAIL_DSAR_ERASURE_COMPLETE, Map.of())))
@@ -121,5 +110,94 @@ class DmosNotificationChannelRouterTest extends EventloopTestBase {
     void constructorNullPluginThrows() {
         assertThatThrownBy(() -> new DmosNotificationChannelRouter(null))
             .isInstanceOf(NullPointerException.class);
+    }
+
+    private static final class TestNotificationPlugin implements NotificationPlugin {
+        private String dispatchResult = "default-notif-id";
+        private RuntimeException failure;
+        private String lastRecipient;
+        private String lastTemplate;
+        private Map<String, String> lastContext;
+
+        void setDispatchResult(String result) {
+            this.dispatchResult = result;
+            this.failure = null;
+        }
+
+        void setFailure(RuntimeException failure) {
+            this.failure = failure;
+        }
+
+        String getLastRecipient() {
+            return lastRecipient;
+        }
+
+        String getLastTemplate() {
+            return lastTemplate;
+        }
+
+        Map<String, String> getLastContext() {
+            return lastContext;
+        }
+
+        @Override
+        public com.ghatana.platform.plugin.PluginMetadata metadata() {
+            return com.ghatana.platform.plugin.PluginMetadata.builder()
+                .id("test-notification")
+                .name("Test Notification Plugin")
+                .version("1.0.0")
+                .build();
+        }
+
+        @Override
+        public com.ghatana.platform.plugin.PluginState getState() {
+            return com.ghatana.platform.plugin.PluginState.RUNNING;
+        }
+
+        @Override
+        public Promise<Void> initialize(com.ghatana.platform.plugin.PluginContext context) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> start() {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> stop() {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<String> dispatch(String recipient, String template, Map<String, String> context) {
+            this.lastRecipient = recipient;
+            this.lastTemplate = template;
+            this.lastContext = context;
+            if (failure != null) {
+                return Promise.ofException(failure);
+            }
+            return Promise.of(dispatchResult);
+        }
+
+        @Override
+        public Promise<DeliveryStatus> getDeliveryStatus(String notificationId) {
+            return Promise.of(new DeliveryStatus(notificationId, lastRecipient, lastTemplate, DeliveryState.DELIVERED, 1, Instant.now(), null, Instant.now()));
+        }
+
+        @Override
+        public Promise<Void> retry(String notificationId) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<java.util.List<DeadLetterEntry>> listDeadLetterQueue(int limit, int offset) {
+            return Promise.of(java.util.List.of());
+        }
+
+        @Override
+        public Promise<Void> reprocessDeadLetter(String notificationId) {
+            return Promise.complete();
+        }
     }
 }

@@ -8,9 +8,19 @@
  * @doc.layer platform
  * @doc.pattern Module
  */
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyRequest } from "fastify";
+import type { PrismaClient } from "@tutorputor/core/db";
 import { ContentQualityMonitoringService } from "./ContentQualityMonitoringService.js";
 import { z } from "zod";
+
+type RouteUser = {
+  role?: string;
+};
+
+type AuthenticatedRouteRequest = FastifyRequest & {
+  tenantId?: string;
+  user?: RouteUser;
+};
 
 const establishBaselineSchema = z.object({
   contentId: z.string(),
@@ -24,13 +34,14 @@ const establishBaselineSchema = z.object({
 });
 
 export const contentQualityMonitoringModule: FastifyPluginAsync = async (app) => {
-  const monitoringService = new ContentQualityMonitoringService(app.prisma as any);
+  const monitoringService = new ContentQualityMonitoringService(
+    app.prisma as unknown as PrismaClient,
+  );
   app.decorate("contentQualityMonitoringService", monitoringService);
 
   // POST /api/v1/content-quality/baselines - Establish quality baseline
   app.post("/api/v1/content-quality/baselines", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -52,8 +63,7 @@ export const contentQualityMonitoringModule: FastifyPluginAsync = async (app) =>
 
   // POST /api/v1/content-quality/monitor/:contentId - Monitor content quality
   app.post("/api/v1/content-quality/monitor/:contentId", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -71,8 +81,7 @@ export const contentQualityMonitoringModule: FastifyPluginAsync = async (app) =>
 
   // GET /api/v1/content-quality/alerts - Get active quality alerts
   app.get("/api/v1/content-quality/alerts", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -110,8 +119,7 @@ export const contentQualityMonitoringModule: FastifyPluginAsync = async (app) =>
 
   // POST /api/v1/content-quality/alerts/:alertId/resolve - Resolve a quality alert
   app.post("/api/v1/content-quality/alerts/:alertId/resolve", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -129,8 +137,7 @@ export const contentQualityMonitoringModule: FastifyPluginAsync = async (app) =>
 
   // POST /api/v1/content-quality/batch-monitor - Run batch monitoring
   app.post("/api/v1/content-quality/batch-monitor", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });

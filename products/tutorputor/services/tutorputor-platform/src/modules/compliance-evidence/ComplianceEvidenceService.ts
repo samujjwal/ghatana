@@ -342,12 +342,36 @@ export class ComplianceEvidenceService {
    * Save evidence package
    */
   private async saveEvidencePackage(evidence: ComplianceEvidence): Promise<void> {
+    const evidencePayload = {
+      ...evidence,
+      generatedAt: evidence.generatedAt.toISOString(),
+      periodStart: evidence.periodStart.toISOString(),
+      periodEnd: evidence.periodEnd.toISOString(),
+      sections: {
+        ...evidence.sections,
+        security: {
+          ...evidence.sections.security,
+          securityIncidents: evidence.sections.security.securityIncidents.map((incident) => ({
+            ...incident,
+            date: incident.date.toISOString(),
+          })),
+        },
+        aiGovernance: {
+          ...evidence.sections.aiGovernance,
+          modelInventory: evidence.sections.aiGovernance.modelInventory.map((model) => ({
+            ...model,
+            lastUsed: model.lastUsed.toISOString(),
+          })),
+        },
+      },
+    };
+
     await this.prisma.complianceEvidence.create({
       data: {
         id: evidence.reportId,
         tenantId: evidence.tenantId,
         reportType: evidence.reportType,
-        evidence: evidence as any,
+        evidence: JSON.stringify(evidencePayload),
         periodStart: evidence.periodStart,
         periodEnd: evidence.periodEnd,
         generatedAt: evidence.generatedAt,

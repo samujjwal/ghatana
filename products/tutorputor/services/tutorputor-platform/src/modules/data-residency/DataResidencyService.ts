@@ -21,6 +21,15 @@ export interface TenantResidencyConfig {
   complianceFrameworks: string[];
 }
 
+interface TenantResidencySettingsRecord {
+  tenantId: string;
+  dataResidencyRegion?: string | null;
+  allowedRegions?: string | null;
+  dataRetentionDays?: number | null;
+  crossBorderTransferAllowed?: boolean | null;
+  complianceFrameworks?: string | null;
+}
+
 export class DataResidencyService {
   private residencyCache = new Map<string, TenantResidencyConfig>();
 
@@ -45,15 +54,15 @@ export class DataResidencyService {
       throw new Error(`Tenant not found: ${tenantId}`);
     }
 
-    const settings = tenant.settings as any;
+    const settings = tenant.settings as unknown as TenantResidencySettingsRecord | null;
 
     const config: TenantResidencyConfig = {
       tenantId,
-      primaryRegion: settings?.dataResidencyRegion || "US",
-      allowedRegions: this.parseAllowedRegions(settings?.allowedRegions),
+      primaryRegion: this.parsePrimaryRegion(settings?.dataResidencyRegion),
+      allowedRegions: this.parseAllowedRegions(settings?.allowedRegions ?? undefined),
       dataRetentionDays: settings?.dataRetentionDays || 365,
       crossBorderTransferAllowed: settings?.crossBorderTransferAllowed ?? false,
-      complianceFrameworks: this.parseComplianceFrameworks(settings?.complianceFrameworks),
+      complianceFrameworks: this.parseComplianceFrameworks(settings?.complianceFrameworks ?? undefined),
     };
 
     // Cache the configuration
@@ -109,7 +118,9 @@ export class DataResidencyService {
     }
 
     const tenantSettings = await this.prisma.tenantSettings.findUnique({ where: { tenantId } });
-    const settings = tenantSettings ? (tenantSettings as any) : { tenantId };
+    const settings: TenantResidencySettingsRecord = tenantSettings
+      ? (tenantSettings as unknown as TenantResidencySettingsRecord)
+      : { tenantId };
 
     if (primaryRegion) {
       settings.dataResidencyRegion = primaryRegion;
@@ -134,11 +145,11 @@ export class DataResidencyService {
     if (tenantSettings) {
       await this.prisma.tenantSettings.update({
         where: { tenantId },
-        data: settings as any,
+        data: settings as unknown as Parameters<typeof this.prisma.tenantSettings.update>[0]["data"],
       });
     } else {
       await this.prisma.tenantSettings.create({
-        data: settings as any,
+        data: settings as unknown as Parameters<typeof this.prisma.tenantSettings.create>[0]["data"],
       });
     }
 
@@ -235,6 +246,12 @@ export class DataResidencyService {
     const validRegions: Region[] = ["US", "EU", "APAC", "GLOBAL"];
 
     return regions.filter((r) => validRegions.includes(r as Region)) as Region[];
+  }
+
+  private parsePrimaryRegion(region?: string | null): Region {
+    const validRegions: Region[] = ["US", "EU", "APAC", "GLOBAL"];
+    const normalizedRegion = region?.trim().toUpperCase();
+    return validRegions.includes(normalizedRegion as Region) ? (normalizedRegion as Region) : "US";
   }
 
   /**

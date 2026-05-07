@@ -9,8 +9,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -47,8 +47,8 @@ class DataCloudFactoryRealProviderTest extends EventloopTestBase {
     @Container
     @SuppressWarnings("resource")
     private static final KafkaContainer KAFKA = new KafkaContainer( 
-        DockerImageName.parse("confluentinc/cp-kafka:7.5.0")
-    ).withEmbeddedZookeeper().withReuse(true); 
+        DockerImageName.parse("apache/kafka-native:3.8.0")
+    ).withReuse(true); 
 
     @BeforeAll
     static void migrateSchemaAndConfigureProviders() { 

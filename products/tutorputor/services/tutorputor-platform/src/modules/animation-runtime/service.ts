@@ -13,6 +13,7 @@ import {
   lerpColor,
   clamp,
 } from "@tutorputor/simulation/renderer/easing";
+import type { EasingFunction } from "@tutorputor/contracts/v1/simulation";
 
 type FrameRequestCallback = (timestamp: number) => void;
 
@@ -39,6 +40,28 @@ const caf: (id: number) => void =
         clearTimeout(id as unknown as NodeJS.Timeout);
       };
 
+const EASING_FUNCTIONS: ReadonlySet<string> = new Set([
+  "linear",
+  "easeIn",
+  "easeOut",
+  "easeInOut",
+  "easeInQuad",
+  "easeOutQuad",
+  "easeInOutQuad",
+  "easeInCubic",
+  "easeOutCubic",
+  "easeInOutCubic",
+  "easeInElastic",
+  "easeOutElastic",
+  "easeInBounce",
+  "easeOutBounce",
+  "spring",
+]);
+
+function isEasingFunction(value: unknown): value is EasingFunction {
+  return typeof value === "string" && EASING_FUNCTIONS.has(value);
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -47,7 +70,7 @@ export interface AnimationKeyframe {
   timeMs: number;
   description: string;
   properties: Record<string, string | number>;
-  easing?: string; // Easing function to use for this keyframe
+  easing?: EasingFunction; // Easing function to use for this keyframe
 }
 
 export interface AnimationSpec {
@@ -57,7 +80,7 @@ export interface AnimationSpec {
   type: "2d" | "3d" | "timeline";
   durationSeconds: number;
   keyframes: AnimationKeyframe[];
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   loop?: boolean;
   autoplay?: boolean;
 }
@@ -371,7 +394,7 @@ export class AnimationRuntime {
     }
   }
 
-  private interpolateProperties(timeMs: number): Record<string, any> {
+  private interpolateProperties(timeMs: number): Record<string, unknown> {
     if (!this.animation) return {};
 
     const keyframes = this.animation.keyframes;
@@ -408,11 +431,13 @@ export class AnimationRuntime {
         : 1;
 
     // Apply easing
-    const easing = nextKeyframe.easing || "linear";
-    const easedProgress = applyEasing(segmentProgress, easing as any);
+    const easing = isEasingFunction(nextKeyframe.easing)
+      ? nextKeyframe.easing
+      : "linear";
+    const easedProgress = applyEasing(segmentProgress, easing);
 
     // Interpolate properties
-    const interpolated: Record<string, any> = {};
+    const interpolated: Record<string, unknown> = {};
 
     for (const [property, endValue] of Object.entries(
       nextKeyframe.properties,
@@ -579,8 +604,8 @@ export function createAnimationSpec(config: {
   duration: number;
   keyframes: Array<{
     time: number; // in seconds
-    properties: Record<string, any>;
-    easing?: string;
+    properties: Record<string, string | number>;
+    easing?: EasingFunction;
   }>;
   type?: "2d" | "3d" | "timeline";
   loop?: boolean;

@@ -166,14 +166,14 @@ public final class ProductionBootstrapValidator {
     }
 
     private void validateExternalIntegrations(List<String> violations) {
-        // Validate Google Ads outbox executor is present and not a stub
+        // Validate Google Ads outbox executor is present and not a test implementation
         if (googleAdsOutboxExecutor == null) {
             violations.add("INTEGRATION-001: GoogleAdsOutboxExecutor is not configured. " +
                 "Google Ads campaign commands cannot be durably executed without it.");
         } else {
             String name = googleAdsOutboxExecutor.getClass().getSimpleName();
             if (isInvalidAdapterName(name)) {
-                violations.add("INTEGRATION-002: GoogleAdsOutboxExecutor is a stub/test class: " + name +
+                violations.add("INTEGRATION-002: GoogleAdsOutboxExecutor is a test class: " + name +
                     ". Real outbox executor required in production.");
             }
         }

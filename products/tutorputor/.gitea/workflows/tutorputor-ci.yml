@@ -201,7 +201,7 @@ jobs:
       - name: Audit production any usage
         run: node products/tutorputor/scripts/audit-any-types.ts
         env:
-          ANY_TYPE_THRESHOLD: "307"
+          ANY_TYPE_THRESHOLD: "176"
           ANY_AUDIT_INCLUDE_TESTS: "false"
 
       - name: Run tests

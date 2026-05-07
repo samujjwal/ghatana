@@ -20,7 +20,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -99,7 +101,7 @@ class DataCloudMigrationTest {
             assertTableExists(conn, "events");
             assertTableExists(conn, "entities");
             assertTableExists(conn, "timeseries");
-            assertTableExists(conn, "collections_metadata");
+            assertTableExists(conn, "collections");
             assertTableExists(conn, "event_log");
             assertTableExists(conn, "entity_relations");
             assertTableExists(conn, "agent_releases");
@@ -161,7 +163,7 @@ class DataCloudMigrationTest {
                 """;
             
             try (PreparedStatement stmt = conn.prepareStatement(insertSql)) {
-                stmt.setString(1, "550e8400-e29b-41d4-a716-446655440000");
+                stmt.setObject(1, UUID.fromString("550e8400-e29b-41d4-a716-446655440000"));
                 stmt.setString(2, "test-tenant");
                 stmt.setString(3, "test-collection");
                 stmt.setString(4, "EVENT");
@@ -170,8 +172,8 @@ class DataCloudMigrationTest {
                 stmt.setString(7, "test-stream");
                 stmt.setInt(8, 0);
                 stmt.setLong(9, 1);
-                stmt.setObject(10, java.time.Instant.now());
-                stmt.setObject(11, java.time.Instant.now());
+                stmt.setTimestamp(10, Timestamp.from(java.time.Instant.now()));
+                stmt.setTimestamp(11, Timestamp.from(java.time.Instant.now()));
                 
                 int rowsInserted = stmt.executeUpdate();
                 assertEquals(1, rowsInserted, "Should insert one event");
@@ -203,36 +205,35 @@ class DataCloudMigrationTest {
             String insertSql = """
                 INSERT INTO entities (
                     id, tenant_id, collection_name, record_type, data, metadata,
-                    entity_id, entity_version
-                ) VALUES (?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?)
+                    version
+                ) VALUES (?, ?, ?, ?, ?::jsonb, ?::jsonb, ?)
                 """;
             
             try (PreparedStatement stmt = conn.prepareStatement(insertSql)) {
-                stmt.setString(1, "550e8400-e29b-41d4-a716-446655440001");
+                stmt.setObject(1, UUID.fromString("550e8400-e29b-41d4-a716-446655440001"));
                 stmt.setString(2, "test-tenant");
                 stmt.setString(3, "test-collection");
                 stmt.setString(4, "ENTITY");
                 stmt.setString(5, "{\"name\": \"test-entity\"}");
                 stmt.setString(6, "{\"version\": 1}");
-                stmt.setString(7, "entity-123");
-                stmt.setInt(8, 1);
+                stmt.setInt(7, 1);
                 
                 int rowsInserted = stmt.executeUpdate();
                 assertEquals(1, rowsInserted, "Should insert one entity");
             }
 
             // Query the entity back
-            String selectSql = "SELECT data, entity_id, entity_version FROM entities WHERE tenant_id = ?";
+            String selectSql = "SELECT id, data, version FROM entities WHERE tenant_id = ?";
             try (PreparedStatement stmt = conn.prepareStatement(selectSql)) {
                 stmt.setString(1, "test-tenant");
                 ResultSet rs = stmt.executeQuery();
                 
                 assertTrue(rs.next(), "Should retrieve the inserted entity");
+                String entityId = rs.getString("id");
                 String data = rs.getString("data");
-                String entityId = rs.getString("entity_id");
-                int entityVersion = rs.getInt("entity_version");
+                int entityVersion = rs.getInt("version");
                 assertEquals("{\"name\": \"test-entity\"}", data);
-                assertEquals("entity-123", entityId);
+                assertEquals("550e8400-e29b-41d4-a716-446655440001", entityId);
                 assertEquals(1, entityVersion);
             }
         } catch (SQLException e) {
@@ -256,7 +257,7 @@ class DataCloudMigrationTest {
                 """;
             
             try (PreparedStatement stmt = conn.prepareStatement(insertSql)) {
-                stmt.setString(1, "550e8400-e29b-41d4-a716-446655440002");
+                stmt.setObject(1, UUID.fromString("550e8400-e29b-41d4-a716-446655440002"));
                 stmt.setString(2, "test-tenant");
                 stmt.setString(3, "test-collection");
                 stmt.setString(4, "INVALID_TYPE"); // Invalid record type
@@ -265,8 +266,8 @@ class DataCloudMigrationTest {
                 stmt.setString(7, "test-stream");
                 stmt.setInt(8, 0);
                 stmt.setLong(9, 1);
-                stmt.setObject(10, java.time.Instant.now());
-                stmt.setObject(11, java.time.Instant.now());
+                stmt.setTimestamp(10, Timestamp.from(java.time.Instant.now()));
+                stmt.setTimestamp(11, Timestamp.from(java.time.Instant.now()));
                 
                 assertThrows(SQLException.class, stmt::executeUpdate,
                     "Should reject invalid record type due to check constraint");
@@ -290,7 +291,7 @@ class DataCloudMigrationTest {
                 """;
             
             try (PreparedStatement stmt = conn.prepareStatement(insertSql)) {
-                stmt.setString(1, "550e8400-e29b-41d4-a716-446655440003");
+                stmt.setObject(1, UUID.fromString("550e8400-e29b-41d4-a716-446655440003"));
                 stmt.setString(2, "test-tenant");
                 stmt.setString(3, "test-collection");
                 stmt.setString(4, "EVENT");
@@ -299,14 +300,14 @@ class DataCloudMigrationTest {
                 stmt.setString(7, "test-stream");
                 stmt.setInt(8, 0);
                 stmt.setLong(9, 1);
-                stmt.setObject(10, java.time.Instant.now());
-                stmt.setObject(11, java.time.Instant.now());
+                stmt.setTimestamp(10, Timestamp.from(java.time.Instant.now()));
+                stmt.setTimestamp(11, Timestamp.from(java.time.Instant.now()));
                 stmt.executeUpdate();
             }
 
             // Try to insert second event with same offset - should fail
             try (PreparedStatement stmt = conn.prepareStatement(insertSql)) {
-                stmt.setString(1, "550e8400-e29b-41d4-a716-446655440004");
+                stmt.setObject(1, UUID.fromString("550e8400-e29b-41d4-a716-446655440004"));
                 stmt.setString(2, "test-tenant");
                 stmt.setString(3, "test-collection");
                 stmt.setString(4, "EVENT");
@@ -315,8 +316,8 @@ class DataCloudMigrationTest {
                 stmt.setString(7, "test-stream");
                 stmt.setInt(8, 0);
                 stmt.setLong(9, 1); // Same offset
-                stmt.setObject(10, java.time.Instant.now());
-                stmt.setObject(11, java.time.Instant.now());
+                stmt.setTimestamp(10, Timestamp.from(java.time.Instant.now()));
+                stmt.setTimestamp(11, Timestamp.from(java.time.Instant.now()));
                 
                 assertThrows(SQLException.class, stmt::executeUpdate,
                     "Should reject duplicate offset due to unique constraint");
@@ -342,7 +343,7 @@ class DataCloudMigrationTest {
                 """;
             
             try (PreparedStatement stmt = conn.prepareStatement(insertSql)) {
-                stmt.setString(1, "550e8400-e29b-41d4-a716-446655440005");
+                stmt.setObject(1, UUID.fromString("550e8400-e29b-41d4-a716-446655440005"));
                 stmt.setString(2, "test-collection");
                 stmt.setString(3, "EVENT");
                 stmt.setString(4, "{}");
@@ -350,8 +351,8 @@ class DataCloudMigrationTest {
                 stmt.setString(6, "test-stream");
                 stmt.setInt(7, 0);
                 stmt.setLong(8, 1);
-                stmt.setObject(9, java.time.Instant.now());
-                stmt.setObject(10, java.time.Instant.now());
+                stmt.setTimestamp(9, Timestamp.from(java.time.Instant.now()));
+                stmt.setTimestamp(10, Timestamp.from(java.time.Instant.now()));
                 
                 assertThrows(SQLException.class, stmt::executeUpdate,
                     "Should reject insert without tenant_id due to NOT NULL constraint");
@@ -375,7 +376,7 @@ class DataCloudMigrationTest {
                 """;
             
             try (PreparedStatement stmt = conn.prepareStatement(insertSql)) {
-                stmt.setString(1, "550e8400-e29b-41d4-a716-446655440006");
+                stmt.setObject(1, UUID.fromString("550e8400-e29b-41d4-a716-446655440006"));
                 stmt.setString(2, "tenant-a");
                 stmt.setString(3, "test-collection");
                 stmt.setString(4, "EVENT");
@@ -384,8 +385,8 @@ class DataCloudMigrationTest {
                 stmt.setString(7, "test-stream");
                 stmt.setInt(8, 0);
                 stmt.setLong(9, 1);
-                stmt.setObject(10, java.time.Instant.now());
-                stmt.setObject(11, java.time.Instant.now());
+                stmt.setTimestamp(10, Timestamp.from(java.time.Instant.now()));
+                stmt.setTimestamp(11, Timestamp.from(java.time.Instant.now()));
                 stmt.executeUpdate();
             }
 
@@ -438,7 +439,7 @@ class DataCloudMigrationTest {
                 """;
             
             try (PreparedStatement stmt = conn.prepareStatement(insertSql)) {
-                stmt.setString(1, "550e8400-e29b-41d4-a716-446655440007");
+                stmt.setObject(1, UUID.fromString("550e8400-e29b-41d4-a716-446655440007"));
                 stmt.setString(2, "test-tenant");
                 stmt.setString(3, "test-collection");
                 stmt.setString(4, "EVENT");
@@ -447,8 +448,8 @@ class DataCloudMigrationTest {
                 stmt.setString(7, "test-stream");
                 stmt.setInt(8, 0);
                 stmt.setLong(9, 1);
-                stmt.setObject(10, java.time.Instant.now());
-                stmt.setObject(11, java.time.Instant.now());
+                stmt.setTimestamp(10, Timestamp.from(java.time.Instant.now()));
+                stmt.setTimestamp(11, Timestamp.from(java.time.Instant.now()));
                 stmt.executeUpdate();
             }
 
@@ -504,15 +505,12 @@ class DataCloudMigrationTest {
     }
 
     private void assertIndexExists(Connection conn, String indexName) throws SQLException {
-        ResultSet rs = conn.getMetaData().getIndexInfo(null, null, null, false, false);
-        boolean found = false;
-        while (rs.next()) {
-            if (indexName.equals(rs.getString("INDEX_NAME"))) {
-                found = true;
-                break;
-            }
+        String indexSql = "SELECT 1 FROM pg_indexes WHERE indexname = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(indexSql)) {
+            stmt.setString(1, indexName);
+            ResultSet rs = stmt.executeQuery();
+            assertTrue(rs.next(), "Index " + indexName + " should exist");
         }
-        assertTrue(found, "Index " + indexName + " should exist");
     }
 
     private void assertCheckConstraintExists(Connection conn, String tableName, String constraintName) throws SQLException {

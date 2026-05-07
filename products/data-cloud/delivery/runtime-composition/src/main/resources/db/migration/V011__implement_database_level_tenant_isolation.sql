@@ -139,9 +139,9 @@ CREATE TABLE IF NOT EXISTS tenant_security.cross_tenant_access_log (
 );
 
 -- Create index for efficient querying
-CREATE INDEX idx_cross_tenant_detected_at ON tenant_security.cross_tenant_access_log(detected_at DESC);
-CREATE INDEX idx_cross_tenant_severity ON tenant_security.cross_tenant_access_log(severity);
-CREATE INDEX idx_cross_tenant_resolved ON tenant_security.cross_tenant_access_log(resolved);
+CREATE INDEX IF NOT EXISTS idx_cross_tenant_detected_at ON tenant_security.cross_tenant_access_log(detected_at DESC);
+CREATE INDEX IF NOT EXISTS idx_cross_tenant_severity ON tenant_security.cross_tenant_access_log(severity);
+CREATE INDEX IF NOT EXISTS idx_cross_tenant_resolved ON tenant_security.cross_tenant_access_log(resolved);
 
 -- Function to detect cross-tenant access attempts
 CREATE OR REPLACE FUNCTION tenant_security.detect_cross_tenant_access()

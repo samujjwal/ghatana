@@ -354,19 +354,26 @@ export class CredentialService {
     return {
       credential,
       valid: isCredentialValid(credential),
-      verificationUrl: credential.verification.verificationUrl,
+      ...(credential.verification.verificationUrl
+        ? { verificationUrl: credential.verification.verificationUrl }
+        : {}),
       revoked: credential.status === "revoked",
     };
   }
 
   async revokeCredential(id: string, reason: string): Promise<Credential | null> {
+    const existing = await this.findById(id);
+    if (!existing) {
+      return null;
+    }
+
     return this.update(id, {
       status: "revoked",
       revokedAt: new Date(),
       metadata: {
-        ...(await this.findById(id))?.metadata,
+        ...existing.metadata,
         customData: {
-          ...((await this.findById(id))?.metadata.customData ?? {}),
+          ...(existing.metadata.customData ?? {}),
           revocationReason: reason,
         },
       },

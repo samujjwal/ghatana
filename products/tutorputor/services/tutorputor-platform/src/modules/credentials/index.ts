@@ -6,7 +6,7 @@ import { credentialRoutes } from "./routes";
 export const credentialModule = fp(async (fastify: FastifyInstance) => {
     const service = new CredentialService(fastify.prisma);
 
-    fastify.register(credentialRoutes as any, { service } as any);
+    fastify.register(credentialRoutes, { service });
 
     fastify.log.info("Credentials module registered");
 });

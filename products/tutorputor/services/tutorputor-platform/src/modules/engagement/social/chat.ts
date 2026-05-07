@@ -33,6 +33,43 @@ type DbChatMessageType =
   | "QUIZ_SHARE"
   | "SYSTEM";
 
+type ChatMessageStatus = ChatMessage["status"];
+
+interface ChatRoomRow {
+  id: string;
+  tenantId: string;
+  type: string;
+  name?: string | null;
+  studyGroupId?: string | null;
+  classroomId?: string | null;
+  tutoringSessionId?: string | null;
+  participants: string;
+  maxParticipants?: number | null;
+  isEncrypted: boolean;
+  retentionDays: number;
+  messageCount: number;
+  lastMessageAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface ChatMessageRow {
+  id: string;
+  roomId: string;
+  senderId: string;
+  senderName: string;
+  type: string;
+  content: string;
+  metadata?: string | null;
+  attachments?: string | null;
+  replyToId?: string | null;
+  reactions?: string | null;
+  status: string;
+  editedAt?: Date | null;
+  deletedAt?: Date | null;
+  createdAt: Date;
+}
+
 /**
  * Configuration for ChatServiceImpl
  */
@@ -126,7 +163,7 @@ export class ChatServiceImpl implements ChatService {
       const room = await this.prisma.chatRoom.create({
         data: {
           tenantId: args.tenantId,
-          type: this.mapRoomTypeToDb("study_group") as any,
+          type: this.mapRoomTypeToDb("study_group"),
           studyGroupId: args.studyGroupId,
           participants: JSON.stringify(scopedParticipants),
           retentionDays: this.defaultRetentionDays,
@@ -158,7 +195,7 @@ export class ChatServiceImpl implements ChatService {
       const room = await this.prisma.chatRoom.create({
         data: {
           tenantId: args.tenantId,
-          type: this.mapRoomTypeToDb("tutoring") as any,
+          type: this.mapRoomTypeToDb("tutoring"),
           tutoringSessionId: args.tutoringSessionId,
           participants: JSON.stringify(scopedParticipants),
           retentionDays: this.defaultRetentionDays,
@@ -193,7 +230,7 @@ export class ChatServiceImpl implements ChatService {
     const room = await this.prisma.chatRoom.create({
       data: {
         tenantId: args.tenantId,
-        type: this.mapRoomTypeToDb(args.type) as any,
+        type: this.mapRoomTypeToDb(args.type),
         ...(args.studyGroupId ? { studyGroupId: args.studyGroupId } : {}),
         ...(args.tutoringSessionId
           ? { tutoringSessionId: args.tutoringSessionId }
@@ -241,13 +278,13 @@ export class ChatServiceImpl implements ChatService {
     const allRooms = await this.prisma.chatRoom.findMany({
       where: {
         tenantId: args.tenantId,
-        ...(args.type && { type: this.mapRoomTypeToDb(args.type) as any }),
+        ...(args.type && { type: this.mapRoomTypeToDb(args.type) }),
       },
       orderBy: { lastMessageAt: "desc" },
     });
 
     // Filter rooms where user is a participant
-    const userRooms = allRooms.filter((room: Record<string, unknown>) => {
+    const userRooms = allRooms.filter((room) => {
       const participants: string[] = JSON.parse(String(room.participants));
       return participants.includes(args.userId);
     });
@@ -257,9 +294,7 @@ export class ChatServiceImpl implements ChatService {
     const paginatedRooms = userRooms.slice(offset, offset + limit);
 
     return {
-      items: paginatedRooms.map((r: Record<string, unknown>) =>
-        this.mapRoomFromDb(r),
-      ),
+      items: paginatedRooms.map((r) => this.mapRoomFromDb(r)),
       totalCount: userRooms.length,
       total: userRooms.length,
       hasMore: offset + paginatedRooms.length < userRooms.length,
@@ -294,7 +329,7 @@ export class ChatServiceImpl implements ChatService {
         roomId: args.roomId,
         senderId: args.senderId,
         senderName: "", // Would be populated from user service
-        type: this.mapMessageTypeToDb(args.type) as any,
+        type: this.mapMessageTypeToDb(args.type),
         content: args.content,
         metadata: args.metadata ? JSON.stringify(args.metadata) : null,
         ...(args.replyToId ? { replyToId: args.replyToId } : {}),
@@ -398,9 +433,7 @@ export class ChatServiceImpl implements ChatService {
     }
 
     return {
-      messages: resultMessages.map((m: Record<string, unknown>) =>
-        this.mapMessageFromDb(m),
-      ),
+      messages: resultMessages.map((m) => this.mapMessageFromDb(m)),
       hasMore,
     };
   }
@@ -717,7 +750,14 @@ export class ChatServiceImpl implements ChatService {
     return map[type] ?? "text";
   }
 
-  private mapRoomFromDb(room: any): ChatRoom {
+  private mapMessageStatusFromDb(status: string): ChatMessageStatus {
+    const validStatuses: ChatMessageStatus[] = ["sent", "delivered", "read", "deleted"];
+    return validStatuses.includes(status as ChatMessageStatus)
+      ? (status as ChatMessageStatus)
+      : "sent";
+  }
+
+  private mapRoomFromDb(room: ChatRoomRow): ChatRoom {
     const mapped: ChatRoom = {
       id: room.id,
       tenantId: room.tenantId,
@@ -751,24 +791,33 @@ export class ChatServiceImpl implements ChatService {
     return mapped;
   }
 
-  private mapMessageFromDb(message: any): ChatMessage {
-    return {
+  private mapMessageFromDb(message: ChatMessageRow): ChatMessage {
+    const mapped: ChatMessage = {
       id: message.id,
       roomId: message.roomId,
       senderId: message.senderId,
       senderName: message.senderName,
       type: this.mapMessageTypeFromDb(message.type),
       content: message.content,
-      metadata: message.metadata ? JSON.parse(message.metadata) : undefined,
-      attachments: message.attachments
-        ? JSON.parse(message.attachments)
-        : undefined,
-      replyToId: message.replyToId ?? undefined,
       reactions: JSON.parse(message.reactions || "{}"),
-      status: message.status as any,
-      editedAt: message.editedAt ?? undefined,
-      deletedAt: message.deletedAt ?? undefined,
+      status: this.mapMessageStatusFromDb(message.status),
       createdAt: message.createdAt,
     };
+    if (message.metadata) {
+      mapped.metadata = JSON.parse(message.metadata) as Record<string, unknown>;
+    }
+    if (message.attachments) {
+      mapped.attachments = JSON.parse(message.attachments) as NonNullable<ChatMessage["attachments"]>;
+    }
+    if (message.replyToId) {
+      mapped.replyToId = message.replyToId;
+    }
+    if (message.editedAt) {
+      mapped.editedAt = message.editedAt;
+    }
+    if (message.deletedAt) {
+      mapped.deletedAt = message.deletedAt;
+    }
+    return mapped;
   }
 }

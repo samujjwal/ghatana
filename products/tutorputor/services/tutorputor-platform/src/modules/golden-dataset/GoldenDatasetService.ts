@@ -32,6 +32,24 @@ export interface RegressionTestResult {
   timestamp: Date;
 }
 
+interface QualityMetrics {
+  clarity: number;
+  accuracy: number;
+  completeness: number;
+}
+
+interface RegressionTestResultRecord {
+  entryId: string;
+  moduleId: string;
+  input: string;
+  actualOutput: string;
+  expectedOutput: string;
+  passed: boolean;
+  qualityDiff: string;
+  regressionDetected: boolean;
+  timestamp: Date;
+}
+
 export class GoldenDatasetService {
   constructor(private prisma: PrismaClient) {}
 
@@ -45,7 +63,7 @@ export class GoldenDatasetService {
         inputType: entry.inputType,
         input: entry.input,
         expectedOutput: entry.expectedOutput,
-        qualityMetrics: entry.qualityMetrics as any,
+        qualityMetrics: entry.qualityMetrics,
       },
     });
 
@@ -82,11 +100,7 @@ export class GoldenDatasetService {
 
     // Calculate quality metrics
     const actualQuality = await this.calculateQualityMetrics(actualOutput);
-    const expectedQuality = JSON.parse(entry.qualityMetrics) as {
-      clarity: number;
-      accuracy: number;
-      completeness: number;
-    };
+    const expectedQuality = JSON.parse(entry.qualityMetrics) as QualityMetrics;
 
     // Calculate quality differences
     const qualityDiff = {
@@ -221,7 +235,7 @@ export class GoldenDatasetService {
       take: limit,
     });
 
-    return history as RegressionTestResult[];
+    return history.map((record) => this.mapRegressionResult(record));
   }
 
   /**
@@ -252,10 +266,11 @@ export class GoldenDatasetService {
       };
     }
 
-    const passed = results.filter((r) => (r as any).passed).length;
-    const regressions = results.filter((r) => (r as any).regressionDetected).length;
+    const regressionResults = results.map((record) => this.mapRegressionResult(record));
+    const passed = regressionResults.filter((result) => result.passed).length;
+    const regressions = regressionResults.filter((result) => result.regressionDetected).length;
 
-    const qualityDiffs = results.map((r) => (r as any).qualityDiff);
+    const qualityDiffs = regressionResults.map((result) => this.parseQualityDiff(result.qualityDiff));
     const avgQualityDiff = {
       clarity:
         qualityDiffs.reduce((sum, d) => sum + (d.clarity || 0), 0) / qualityDiffs.length,
@@ -272,5 +287,32 @@ export class GoldenDatasetService {
       regressions,
       avgQualityDiff,
     };
+  }
+
+  private mapRegressionResult(record: RegressionTestResultRecord): RegressionTestResult {
+    return {
+      entryId: record.entryId,
+      moduleId: record.moduleId,
+      input: record.input,
+      actualOutput: record.actualOutput,
+      expectedOutput: record.expectedOutput,
+      passed: record.passed,
+      qualityDiff: record.qualityDiff,
+      regressionDetected: record.regressionDetected,
+      timestamp: record.timestamp,
+    };
+  }
+
+  private parseQualityDiff(qualityDiff: string): QualityMetrics {
+    try {
+      const parsed = JSON.parse(qualityDiff) as Partial<QualityMetrics>;
+      return {
+        clarity: typeof parsed.clarity === "number" ? parsed.clarity : 0,
+        accuracy: typeof parsed.accuracy === "number" ? parsed.accuracy : 0,
+        completeness: typeof parsed.completeness === "number" ? parsed.completeness : 0,
+      };
+    } catch {
+      return { clarity: 0, accuracy: 0, completeness: 0 };
+    }
   }
 }

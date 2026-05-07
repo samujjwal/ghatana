@@ -8,9 +8,19 @@
  * @doc.layer platform
  * @doc.pattern Module
  */
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyRequest } from "fastify";
+import type { PrismaClient } from "@tutorputor/core/db";
 import { ContentCorrectnessEvaluator } from "./ContentCorrectnessEvaluator.js";
 import { z } from "zod";
+
+type RouteUser = {
+  role?: string;
+};
+
+type AuthenticatedRouteRequest = FastifyRequest & {
+  tenantId?: string;
+  user?: RouteUser;
+};
 
 const evaluateContentSchema = z.object({
   content: z.string(),
@@ -18,13 +28,14 @@ const evaluateContentSchema = z.object({
 });
 
 export const contentEvaluationModule: FastifyPluginAsync = async (app) => {
-  const evaluator = new ContentCorrectnessEvaluator(app.prisma as any);
+  const evaluator = new ContentCorrectnessEvaluator(
+    app.prisma as unknown as PrismaClient,
+  );
   app.decorate("contentEvaluator", evaluator);
 
   // POST /api/v1/content-evaluation/evaluate - Evaluate content for correctness
   app.post("/api/v1/content-evaluation/evaluate", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -42,8 +53,7 @@ export const contentEvaluationModule: FastifyPluginAsync = async (app) => {
 
   // GET /api/v1/content-evaluation/stats/:moduleId - Get evaluation statistics for a module
   app.get("/api/v1/content-evaluation/stats/:moduleId", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });

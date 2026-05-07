@@ -24,6 +24,105 @@ import type {
 } from "@tutorputor/contracts/v1/social";
 import { createSocialNotification } from "../../notifications/delivery.js";
 
+interface TutorProfileRow {
+  id: string;
+  userId: string;
+  tenantId: string;
+  displayName: string;
+  bio: string;
+  avatarUrl?: string | null;
+  subjects?: string | null;
+  modules?: string | null;
+  qualifications?: string | null;
+  isAvailable: boolean;
+  availabilitySchedule?: string | null;
+  timezone: string;
+  responseTime: string;
+  sessionTypes?: string | null;
+  maxSessionsPerWeek: number;
+  pricePerHour?: number | null;
+  rating: number;
+  reviewCount: number;
+  sessionsCompleted: number;
+  totalHelpedStudents: number;
+  status: string;
+  verifiedAt?: Date | null;
+  verifiedBy?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface TutoringRequestRow {
+  id: string;
+  studentId: string;
+  tutorId?: string | null;
+  tutor?: TutorProfileRow | null;
+  tenantId: string;
+  subject: string;
+  moduleId?: string | null;
+  lessonId?: string | null;
+  title: string;
+  description: string;
+  attachments?: string | null;
+  preferredTypes?: string | null;
+  preferredTime?: Date | null;
+  estimatedDuration: number;
+  urgency: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+  acceptedAt?: Date | null;
+  completedAt?: Date | null;
+  cancelledAt?: Date | null;
+  cancellationReason?: string | null;
+}
+
+interface TutoringSessionRow {
+  id: string;
+  requestId: string;
+  studentId: string;
+  tutorId: string;
+  tutor?: TutorProfileRow | null;
+  tenantId: string;
+  type: string;
+  scheduledAt: Date;
+  duration: number;
+  meetingUrl?: string | null;
+  moduleId?: string | null;
+  lessonId?: string | null;
+  notes?: string | null;
+  sharedResources?: string | null;
+  status: string;
+  startedAt?: Date | null;
+  endedAt?: Date | null;
+  actualDuration?: number | null;
+  recordingUrl?: string | null;
+  transcriptUrl?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface TutoringReviewRow {
+  id: string;
+  sessionId: string;
+  reviewerId: string;
+  tutorId: string;
+  tutor?: TutorProfileRow | null;
+  rating: number;
+  helpfulness: number;
+  communication: number;
+  knowledge: number;
+  comment?: string | null;
+  privateNote?: string | null;
+  response?: string | null;
+  respondedAt?: Date | null;
+  isVisible: boolean;
+  moderatedBy?: string | null;
+  moderatedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 /**
  * Configuration for PeerTutoringServiceImpl
  */
@@ -424,11 +523,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
       true,
     );
 
-    if (
-      !(request as { tutor?: { id: string; userId: string } }).tutor ||
-      (request as { tutor: { id: string; userId: string } }).tutor.userId !==
-        args.tutorId
-    ) {
+    if (!request.tutor || request.tutor.userId !== args.tutorId) {
       throw new Error("Request not found or tutor mismatch");
     }
 
@@ -437,7 +532,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
         tenantId: args.tenantId,
         requestId: args.requestId,
         studentId: request.studentId,
-        tutorId: (request as { tutor: { id: string } }).tutor.id,
+        tutorId: request.tutor.id,
         type: args.type,
         scheduledAt: args.scheduledAt,
         duration: args.duration,
@@ -539,9 +634,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
     );
 
     // Only tutor can start session
-    if (
-      (session as { tutor: { userId: string } }).tutor.userId !== args.userId
-    ) {
+    if (session.tutor?.userId !== args.userId) {
       throw new Error("Only the tutor can start the session");
     }
 
@@ -680,7 +773,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
     // Notify tutor
     await this.createNotification(
       args.tenantId,
-      (session as { tutor: { userId: string } }).tutor.userId,
+      session.tutor?.userId ?? session.tutorId,
       {
         type: "REVIEW_RECEIVED",
         title: "New review received",
@@ -702,9 +795,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
   }): Promise<TutoringReview> {
     const review = await this.requireReview(args.tenantId, args.reviewId, true);
 
-    if (
-      (review as { tutor: { userId: string } }).tutor.userId !== args.tutorId
-    ) {
+    if (review.tutor?.userId !== args.tutorId) {
       throw new Error("Review not found or not authorized");
     }
 
@@ -765,45 +856,45 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
     tenantId: TenantId,
     requestId: string,
     includeTutor = false,
-  ): Promise<any> {
+  ): Promise<TutoringRequestRow> {
     const request = await this.prisma.tutoringRequest.findUnique({
       where: { id: requestId },
-      include: includeTutor ? ({ tutor: true } as any) : undefined,
-    } as any);
+      ...(includeTutor ? { include: { tutor: true } } : {}),
+    });
 
     if (!request || request.tenantId !== tenantId) {
       throw new Error("Request not found");
     }
 
-    return request;
+    return request as unknown as TutoringRequestRow;
   }
 
   private async requireSession(
     tenantId: TenantId,
     sessionId: string,
     includeTutor = false,
-  ): Promise<any> {
+  ): Promise<TutoringSessionRow> {
     const session = await this.prisma.tutoringSession.findFirst({
       where: { id: sessionId, tenantId },
-      include: includeTutor ? ({ tutor: true } as any) : undefined,
-    } as any);
+      ...(includeTutor ? { include: { tutor: true } } : {}),
+    });
 
     if (!session) {
       throw new Error("Session not found");
     }
 
-    return session;
+    return session as unknown as TutoringSessionRow;
   }
 
   private async requireReview(
     tenantId: TenantId,
     reviewId: string,
     includeTutor = false,
-  ): Promise<any> {
+  ): Promise<TutoringReviewRow> {
     const review = await this.prisma.tutoringReview.findUnique({
       where: { id: reviewId },
-      include: includeTutor ? ({ tutor: true } as any) : undefined,
-    } as any);
+      ...(includeTutor ? { include: { tutor: true } } : {}),
+    });
 
     if (!review) {
       throw new Error("Review not found or not authorized");
@@ -820,7 +911,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
       throw new Error("Review not found or not authorized");
     }
 
-    return review;
+    return review as unknown as TutoringReviewRow;
   }
 
   private async createNotification(
@@ -906,115 +997,202 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
     return map[status] ?? "scheduled";
   }
 
-  private mapProfileFromDb(profile: any): TutorProfile {
-    return {
+  private mapTutorStatusFromDb(status: string): TutorProfile["status"] {
+    const map: Record<string, TutorProfile["status"]> = {
+      ACTIVE: "active",
+      PAUSED: "paused",
+      INACTIVE: "inactive",
+    };
+    return map[status] ?? "inactive";
+  }
+
+  private mapUrgencyFromDb(urgency: string): TutoringRequest["urgency"] {
+    const validUrgencies: TutoringRequest["urgency"][] = ["low", "medium", "high"];
+    const normalizedUrgency = urgency.toLowerCase();
+    return validUrgencies.includes(normalizedUrgency as TutoringRequest["urgency"])
+      ? (normalizedUrgency as TutoringRequest["urgency"])
+      : "medium";
+  }
+
+  private mapSessionTypeFromDb(type: string): TutoringSession["type"] {
+    const validTypes: TutoringSession["type"][] = [
+      "text_chat",
+      "video_call",
+      "screen_share",
+      "collaborative_whiteboard",
+    ];
+    return validTypes.includes(type as TutoringSession["type"])
+      ? (type as TutoringSession["type"])
+      : "text_chat";
+  }
+
+  private mapProfileFromDb(profile: TutorProfileRow): TutorProfile {
+    const mapped: TutorProfile = {
       id: profile.id,
       userId: profile.userId,
       tenantId: profile.tenantId,
       displayName: profile.displayName,
       bio: profile.bio,
-      avatarUrl: profile.avatarUrl ?? undefined,
       subjects: JSON.parse(profile.subjects || "[]"),
       modules: JSON.parse(profile.modules || "[]"),
-      qualifications: profile.qualifications
-        ? JSON.parse(profile.qualifications)
-        : undefined,
       isAvailable: profile.isAvailable,
-      availabilitySchedule: profile.availabilitySchedule
-        ? JSON.parse(profile.availabilitySchedule)
-        : undefined,
       timezone: profile.timezone,
       responseTime: profile.responseTime,
       sessionTypes: JSON.parse(profile.sessionTypes || "[]"),
       maxSessionsPerWeek: profile.maxSessionsPerWeek,
-      pricePerHour: profile.pricePerHour ?? undefined,
       rating: profile.rating,
       reviewCount: profile.reviewCount,
       sessionsCompleted: profile.sessionsCompleted,
       totalHelpedStudents: profile.totalHelpedStudents,
-      status: profile.status.toLowerCase() as any,
-      verifiedAt: profile.verifiedAt ?? undefined,
-      verifiedBy: profile.verifiedBy ?? undefined,
+      status: this.mapTutorStatusFromDb(profile.status),
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
     };
+    if (profile.avatarUrl) {
+      mapped.avatarUrl = profile.avatarUrl;
+    }
+    if (profile.qualifications) {
+      mapped.qualifications = JSON.parse(profile.qualifications) as NonNullable<TutorProfile["qualifications"]>;
+    }
+    if (profile.availabilitySchedule) {
+      mapped.availabilitySchedule = JSON.parse(profile.availabilitySchedule) as NonNullable<TutorProfile["availabilitySchedule"]>;
+    }
+    if (typeof profile.pricePerHour === "number") {
+      mapped.pricePerHour = profile.pricePerHour;
+    }
+    if (profile.verifiedAt) {
+      mapped.verifiedAt = profile.verifiedAt;
+    }
+    if (profile.verifiedBy) {
+      mapped.verifiedBy = profile.verifiedBy;
+    }
+    return mapped;
   }
 
-  private mapRequestFromDb(request: any): TutoringRequest {
-    return {
+  private mapRequestFromDb(request: TutoringRequestRow): TutoringRequest {
+    const mapped: TutoringRequest = {
       id: request.id,
-      studentId: request.studentId,
-      tutorId: request.tutorId ?? undefined,
-      tenantId: request.tenantId,
+      studentId: request.studentId as UserId,
+      tenantId: request.tenantId as TenantId,
       subject: request.subject,
-      moduleId: request.moduleId ?? undefined,
-      lessonId: request.lessonId ?? undefined,
       title: request.title,
       description: request.description,
-      attachments: request.attachments
-        ? JSON.parse(request.attachments)
-        : undefined,
       preferredTypes: JSON.parse(request.preferredTypes || "[]"),
-      preferredTime: request.preferredTime ?? undefined,
       estimatedDuration: request.estimatedDuration,
-      urgency: request.urgency as any,
+      urgency: this.mapUrgencyFromDb(request.urgency),
       status: this.mapRequestStatusFromDb(request.status),
       createdAt: request.createdAt,
       updatedAt: request.updatedAt,
-      acceptedAt: request.acceptedAt ?? undefined,
-      completedAt: request.completedAt ?? undefined,
-      cancelledAt: request.cancelledAt ?? undefined,
-      cancellationReason: request.cancellationReason ?? undefined,
     };
+    if (request.tutorId) {
+      mapped.tutorId = request.tutorId as UserId;
+    }
+    if (request.moduleId) {
+      mapped.moduleId = request.moduleId as ModuleId;
+    }
+    if (request.lessonId) {
+      mapped.lessonId = request.lessonId;
+    }
+    if (request.attachments) {
+      mapped.attachments = JSON.parse(request.attachments) as NonNullable<TutoringRequest["attachments"]>;
+    }
+    if (request.preferredTime) {
+      mapped.preferredTime = request.preferredTime;
+    }
+    if (request.acceptedAt) {
+      mapped.acceptedAt = request.acceptedAt;
+    }
+    if (request.completedAt) {
+      mapped.completedAt = request.completedAt;
+    }
+    if (request.cancelledAt) {
+      mapped.cancelledAt = request.cancelledAt;
+    }
+    if (request.cancellationReason) {
+      mapped.cancellationReason = request.cancellationReason;
+    }
+    return mapped;
   }
 
-  private mapSessionFromDb(session: any): TutoringSession {
-    return {
+  private mapSessionFromDb(session: TutoringSessionRow): TutoringSession {
+    const mapped: TutoringSession = {
       id: session.id,
       requestId: session.requestId,
-      studentId: session.studentId,
+      studentId: session.studentId as UserId,
       tutorId: session.tutorId,
-      tenantId: session.tenantId,
-      type: session.type as any,
+      tenantId: session.tenantId as TenantId,
+      type: this.mapSessionTypeFromDb(session.type),
       scheduledAt: session.scheduledAt,
       duration: session.duration,
-      meetingUrl: session.meetingUrl ?? undefined,
-      moduleId: session.moduleId ?? undefined,
-      lessonId: session.lessonId ?? undefined,
-      notes: session.notes ?? undefined,
-      sharedResources: session.sharedResources
-        ? JSON.parse(session.sharedResources)
-        : undefined,
       status: this.mapSessionStatusFromDb(session.status),
-      startedAt: session.startedAt ?? undefined,
-      endedAt: session.endedAt ?? undefined,
-      actualDuration: session.actualDuration ?? undefined,
-      recordingUrl: session.recordingUrl ?? undefined,
-      transcriptUrl: session.transcriptUrl ?? undefined,
       createdAt: session.createdAt,
       updatedAt: session.updatedAt,
     };
+    if (session.meetingUrl) {
+      mapped.meetingUrl = session.meetingUrl;
+    }
+    if (session.moduleId) {
+      mapped.moduleId = session.moduleId as ModuleId;
+    }
+    if (session.lessonId) {
+      mapped.lessonId = session.lessonId;
+    }
+    if (session.notes) {
+      mapped.notes = session.notes;
+    }
+    if (session.sharedResources) {
+      mapped.sharedResources = JSON.parse(session.sharedResources) as NonNullable<TutoringSession["sharedResources"]>;
+    }
+    if (session.startedAt) {
+      mapped.startedAt = session.startedAt;
+    }
+    if (session.endedAt) {
+      mapped.endedAt = session.endedAt;
+    }
+    if (typeof session.actualDuration === "number") {
+      mapped.actualDuration = session.actualDuration;
+    }
+    if (session.recordingUrl) {
+      mapped.recordingUrl = session.recordingUrl;
+    }
+    if (session.transcriptUrl) {
+      mapped.transcriptUrl = session.transcriptUrl;
+    }
+    return mapped;
   }
 
-  private mapReviewFromDb(review: any): TutoringReview {
-    return {
+  private mapReviewFromDb(review: TutoringReviewRow): TutoringReview {
+    const mapped: TutoringReview = {
       id: review.id,
       sessionId: review.sessionId,
-      reviewerId: review.reviewerId,
+      reviewerId: review.reviewerId as UserId,
       revieweeId: review.tutorId,
       rating: review.rating,
       helpfulness: review.helpfulness,
       communication: review.communication,
       knowledge: review.knowledge,
-      comment: review.comment ?? undefined,
-      privateNote: review.privateNote ?? undefined,
-      response: review.response ?? undefined,
-      respondedAt: review.respondedAt ?? undefined,
       isVisible: review.isVisible,
-      moderatedBy: review.moderatedBy ?? undefined,
-      moderatedAt: review.moderatedAt ?? undefined,
       createdAt: review.createdAt,
       updatedAt: review.updatedAt,
     };
+    if (review.comment) {
+      mapped.comment = review.comment;
+    }
+    if (review.privateNote) {
+      mapped.privateNote = review.privateNote;
+    }
+    if (review.response) {
+      mapped.response = review.response;
+    }
+    if (review.respondedAt) {
+      mapped.respondedAt = review.respondedAt;
+    }
+    if (review.moderatedBy) {
+      mapped.moderatedBy = review.moderatedBy;
+    }
+    if (review.moderatedAt) {
+      mapped.moderatedAt = review.moderatedAt;
+    }
+    return mapped;
   }
 }

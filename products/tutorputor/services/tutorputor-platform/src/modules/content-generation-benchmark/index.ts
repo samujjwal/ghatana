@@ -8,17 +8,28 @@
  * @doc.layer platform
  * @doc.pattern Module
  */
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyRequest } from "fastify";
+import type { PrismaClient } from "@tutorputor/core/db";
 import { ContentGenerationBenchmarkService } from "./ContentGenerationBenchmarkService.js";
 
+type RouteUser = {
+  role?: string;
+};
+
+type AuthenticatedRouteRequest = FastifyRequest & {
+  tenantId?: string;
+  user?: RouteUser;
+};
+
 export const contentGenerationBenchmarkModule: FastifyPluginAsync = async (app) => {
-  const benchmarkService = new ContentGenerationBenchmarkService(app.prisma as any);
+  const benchmarkService = new ContentGenerationBenchmarkService(
+    app.prisma as unknown as PrismaClient,
+  );
   app.decorate("contentGenerationBenchmarkService", benchmarkService);
 
   // POST /api/v1/content-generation-benchmark/run - Run benchmark
   app.post("/api/v1/content-generation-benchmark/run", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -35,8 +46,7 @@ export const contentGenerationBenchmarkModule: FastifyPluginAsync = async (app) 
 
   // POST /api/v1/content-generation-benchmark/:benchmarkId/baseline - Set as baseline
   app.post("/api/v1/content-generation-benchmark/:benchmarkId/baseline", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -54,8 +64,7 @@ export const contentGenerationBenchmarkModule: FastifyPluginAsync = async (app) 
 
   // GET /api/v1/content-generation-benchmark/history - Get benchmark history
   app.get("/api/v1/content-generation-benchmark/history", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -74,8 +83,7 @@ export const contentGenerationBenchmarkModule: FastifyPluginAsync = async (app) 
 
   // GET /api/v1/content-generation-benchmark/stats - Get benchmark statistics
   app.get("/api/v1/content-generation-benchmark/stats", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });

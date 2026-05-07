@@ -31,15 +31,124 @@ type ContentReportDelegate = {
   create(args: {
     data: {
       tenantId: TenantId;
-      contentType: "topic" | "post";
-      contentId: string;
-      reporterId: UserId;
+      userId: UserId;
+      entityType: "forumPost" | "comment";
+      entityId: string;
       reason: string;
       details: string | null;
-      status: "PENDING";
+      status: "pending";
     };
   }): Promise<{ id: string }>;
 };
+
+type FollowDelegate = {
+  create(args: {
+    data: {
+      tenantId: TenantId;
+      followerId: UserId;
+      followingId: UserId;
+    };
+  }): Promise<unknown>;
+  deleteMany(args: {
+    where: {
+      tenantId: TenantId;
+      followerId: UserId;
+      followingId: UserId;
+    };
+  }): Promise<unknown>;
+  findMany(args:
+    | {
+        where: {
+          tenantId: TenantId;
+          followingId: UserId;
+        };
+        select: {
+          followerId: true;
+        };
+      }
+    | {
+        where: {
+          tenantId: TenantId;
+          followerId: UserId;
+        };
+        select: {
+          followingId: true;
+        };
+      }): Promise<Array<{ followerId?: UserId; followingId?: UserId }>>;
+};
+
+interface ForumRow {
+  id: string;
+  tenantId: string;
+  name: string;
+  description: string;
+  iconUrl?: string | null;
+  scope: string;
+  scopeId?: string | null;
+  allowAnonymousPosts: boolean;
+  requireModeration: boolean;
+  allowAttachments: boolean;
+  allowPolls: boolean;
+  categories?: string | null;
+  topicCount: number;
+  postCount: number;
+  lastPostAt?: Date | null;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface ForumTopicRow {
+  id: string;
+  forumId: string;
+  forum?: { tenantId: string; requireModeration?: boolean };
+  categoryId?: string | null;
+  title: string;
+  slug: string;
+  authorId: string;
+  authorName: string;
+  content: string;
+  contentFormat: string;
+  attachments?: string | null;
+  viewCount: number;
+  replyCount: number;
+  likeCount: number;
+  isPinned: boolean;
+  isLocked: boolean;
+  isAnswered: boolean;
+  answerId?: string | null;
+  status: string;
+  moderatedBy?: string | null;
+  moderatedAt?: Date | null;
+  moderationNote?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  lastReplyAt?: Date | null;
+  lastReplyBy?: string | null;
+}
+
+interface ForumPostRow {
+  id: string;
+  topicId: string;
+  authorId: string;
+  authorName: string;
+  isAnonymous: boolean;
+  content: string;
+  contentFormat: string;
+  attachments?: string | null;
+  parentId?: string | null;
+  depth: number;
+  likeCount: number;
+  isAcceptedAnswer: boolean;
+  status: string;
+  moderatedBy?: string | null;
+  moderatedAt?: Date | null;
+  isEdited: boolean;
+  editedAt?: Date | null;
+  editHistory?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 /**
  * Configuration for ForumServiceImpl
@@ -156,7 +265,7 @@ export class ForumServiceImpl implements ForumService {
     ]);
 
     return {
-      items: items.map((f: Record<string, unknown>) => this.mapForumFromDb(f)),
+      items: items.map((f) => this.mapForumFromDb(f)),
       totalCount: total,
       total,
       hasMore: (args.pagination.offset ?? 0) + items.length < total,
@@ -303,7 +412,7 @@ export class ForumServiceImpl implements ForumService {
     ]);
 
     return {
-      items: items.map((t: Record<string, unknown>) => this.mapTopicFromDb(t)),
+      items: items.map((t) => this.mapTopicFromDb(t)),
       totalCount: total,
       total,
       hasMore: (args.pagination.offset ?? 0) + items.length < total,
@@ -426,7 +535,7 @@ export class ForumServiceImpl implements ForumService {
       depth = parent.depth + 1;
     }
 
-    const status = topic.forum.requireModeration ? "PENDING" : "PUBLISHED";
+    const status = topic.forum?.requireModeration ? "PENDING" : "PUBLISHED";
 
     const post = await this.prisma.forumPost.create({
       data: {
@@ -517,7 +626,7 @@ export class ForumServiceImpl implements ForumService {
     ]);
 
     return {
-      items: items.map((p: Record<string, unknown>) => this.mapPostFromDb(p)),
+      items: items.map((p) => this.mapPostFromDb(p)),
       totalCount: total,
       total,
       hasMore: (args.pagination.offset ?? 0) + items.length < total,
@@ -734,8 +843,8 @@ export class ForumServiceImpl implements ForumService {
     reason: string;
     details?: string;
   }): Promise<{ reportId: string }> {
-    const report = await (this.prisma as PrismaClient & {
-      contentReport: any;
+    const report = await (this.prisma as unknown as PrismaClient & {
+      contentReport: ContentReportDelegate;
     }).contentReport.create({
       data: {
         tenantId: args.tenantId,
@@ -800,8 +909,8 @@ export class ForumServiceImpl implements ForumService {
       throw new Error("Cannot follow yourself");
     }
 
-    await (this.prisma as PrismaClient & {
-      follow: any;
+    await (this.prisma as unknown as PrismaClient & {
+      follow: FollowDelegate;
     }).follow.create({
       data: {
         tenantId: args.tenantId,
@@ -816,8 +925,8 @@ export class ForumServiceImpl implements ForumService {
     followerId: UserId;
     followingId: UserId;
   }): Promise<void> {
-    await (this.prisma as PrismaClient & {
-      follow: any;
+    await (this.prisma as unknown as PrismaClient & {
+      follow: FollowDelegate;
     }).follow.deleteMany({
       where: {
         tenantId: args.tenantId,
@@ -831,8 +940,8 @@ export class ForumServiceImpl implements ForumService {
     tenantId: TenantId;
     userId: UserId;
   }): Promise<UserId[]> {
-    const follows = await (this.prisma as PrismaClient & {
-      follow: any;
+    const follows = await (this.prisma as unknown as PrismaClient & {
+      follow: FollowDelegate;
     }).follow.findMany({
       where: {
         tenantId: args.tenantId,
@@ -843,15 +952,15 @@ export class ForumServiceImpl implements ForumService {
       },
     });
 
-    return follows.map((f: any) => f.followerId);
+    return follows.flatMap((f) => (f.followerId ? [f.followerId as UserId] : []));
   }
 
   async getFollowing(args: {
     tenantId: TenantId;
     userId: UserId;
   }): Promise<UserId[]> {
-    const follows = await (this.prisma as PrismaClient & {
-      follow: any;
+    const follows = await (this.prisma as unknown as PrismaClient & {
+      follow: FollowDelegate;
     }).follow.findMany({
       where: {
         tenantId: args.tenantId,
@@ -862,7 +971,7 @@ export class ForumServiceImpl implements ForumService {
       },
     });
 
-    return follows.map((f: any) => f.followingId);
+    return follows.flatMap((f) => (f.followingId ? [f.followingId as UserId] : []));
   }
 
   // ---------------------------------------------------------------------------
@@ -872,7 +981,7 @@ export class ForumServiceImpl implements ForumService {
   private async requireForum(
     tenantId: TenantId,
     forumId: string,
-  ): Promise<any> {
+  ): Promise<ForumRow> {
     const forum = await this.prisma.forum.findFirst({
       where: {
         id: forumId,
@@ -884,39 +993,40 @@ export class ForumServiceImpl implements ForumService {
       throw new Error("Forum not found");
     }
 
-    return forum;
+    return forum as unknown as ForumRow;
   }
 
   private async requireTopic(
     tenantId: TenantId,
     topicId: string,
     includeForum = false,
-  ): Promise<any> {
+  ): Promise<ForumTopicRow> {
     const topic = await this.prisma.forumTopic.findUnique({
       where: { id: topicId },
-      include: includeForum ? ({ forum: true } as any) : undefined,
-    } as any);
+      ...(includeForum ? { include: { forum: true } } : {}),
+    });
 
     if (!topic) {
       throw new Error("Topic not found");
     }
 
+    const topicRow = topic as unknown as ForumTopicRow;
     if (includeForum) {
-      if ((topic as any).forum?.tenantId !== tenantId) {
+      if (topicRow.forum?.tenantId !== tenantId) {
         throw new Error("Topic not found");
       }
-      return topic;
+      return topicRow;
     }
 
-    await this.requireForum(tenantId, topic.forumId);
-    return topic;
+    await this.requireForum(tenantId, topicRow.forumId);
+    return topicRow;
   }
 
   private async requirePostInTenant(
     tenantId: TenantId,
     postId: string,
     includeReactions = false,
-  ): Promise<any> {
+  ): Promise<ForumPostRow> {
     const post = await this.prisma.forumPost.findFirst({
       where: {
         id: postId,
@@ -926,21 +1036,21 @@ export class ForumServiceImpl implements ForumService {
           },
         },
       },
-      include: includeReactions ? ({ reactions: true } as const) : undefined,
-    } as any);
+      ...(includeReactions ? { include: { reactions: true } } : {}),
+    });
 
     if (!post) {
       throw new Error("Post not found");
     }
 
-    return post;
+    return post as unknown as ForumPostRow;
   }
 
   private async requirePostInTopic(
     tenantId: TenantId,
     topicId: string,
     postId: string,
-  ): Promise<any> {
+  ): Promise<ForumPostRow> {
     const post = await this.prisma.forumPost.findFirst({
       where: {
         id: postId,
@@ -951,13 +1061,13 @@ export class ForumServiceImpl implements ForumService {
           },
         },
       },
-    } as any);
+    });
 
     if (!post) {
       throw new Error("Post not found");
     }
 
-    return post;
+    return post as unknown as ForumPostRow;
   }
 
   private async publishActivity(
@@ -1092,23 +1202,20 @@ export class ForumServiceImpl implements ForumService {
     return map[reaction] ?? "like";
   }
 
-  private mapForumFromDb(forum: any): Forum {
-    return {
+  private mapForumFromDb(forum: ForumRow): Forum {
+    const mapped: Forum = {
       id: forum.id,
       tenantId: forum.tenantId,
       name: forum.name,
       description: forum.description,
-      iconUrl: forum.iconUrl ?? undefined,
       scope: this.mapScopeFromDb(forum.scope),
-      scopeId: forum.scopeId ?? undefined,
       allowAnonymousPosts: forum.allowAnonymousPosts,
       requireModeration: forum.requireModeration,
       allowAttachments: forum.allowAttachments,
       allowPolls: forum.allowPolls,
-      categories: forum.categories ? JSON.parse(forum.categories) : [],
+      categories: forum.categories ? (JSON.parse(forum.categories) as Forum["categories"]) : [],
       topicCount: forum.topicCount,
       postCount: forum.postCount,
-      lastPostAt: forum.lastPostAt ?? undefined,
       status: (forum.status as string).toLowerCase() as
         | "active"
         | "archived"
@@ -1116,47 +1223,72 @@ export class ForumServiceImpl implements ForumService {
       createdAt: forum.createdAt,
       updatedAt: forum.updatedAt,
     };
+    if (forum.iconUrl) {
+      mapped.iconUrl = forum.iconUrl;
+    }
+    if (forum.scopeId) {
+      mapped.scopeId = forum.scopeId;
+    }
+    if (forum.lastPostAt) {
+      mapped.lastPostAt = forum.lastPostAt;
+    }
+    return mapped;
   }
 
-  private mapTopicFromDb(topic: any): ForumTopic {
-    return {
+  private mapTopicFromDb(topic: ForumTopicRow): ForumTopic {
+    const mapped: ForumTopic = {
       id: topic.id,
       forumId: topic.forumId,
-      categoryId: topic.categoryId ?? undefined,
       title: topic.title,
       slug: topic.slug,
       authorId: topic.authorId,
       authorName: topic.authorName,
       content: topic.content,
       contentFormat: topic.contentFormat as "markdown" | "html" | "plain",
-      attachments: topic.attachments
-        ? JSON.parse(topic.attachments as string)
-        : undefined,
       viewCount: topic.viewCount,
       replyCount: topic.replyCount,
       likeCount: topic.likeCount,
       isPinned: topic.isPinned,
       isLocked: topic.isLocked,
       isAnswered: topic.isAnswered,
-      answerId: topic.answerId ?? undefined,
       status: (topic.status as string).toLowerCase() as
         | "draft"
         | "pending"
         | "published"
         | "hidden"
         | "deleted",
-      moderatedBy: topic.moderatedBy ?? undefined,
-      moderatedAt: topic.moderatedAt ?? undefined,
-      moderationNote: topic.moderationNote ?? undefined,
       createdAt: topic.createdAt,
       updatedAt: topic.updatedAt,
-      lastReplyAt: topic.lastReplyAt ?? undefined,
-      lastReplyBy: topic.lastReplyBy ?? undefined,
     };
+    if (topic.categoryId) {
+      mapped.categoryId = topic.categoryId;
+    }
+    if (topic.attachments) {
+      mapped.attachments = JSON.parse(topic.attachments) as NonNullable<ForumTopic["attachments"]>;
+    }
+    if (topic.answerId) {
+      mapped.answerId = topic.answerId;
+    }
+    if (topic.moderatedBy) {
+      mapped.moderatedBy = topic.moderatedBy;
+    }
+    if (topic.moderatedAt) {
+      mapped.moderatedAt = topic.moderatedAt;
+    }
+    if (topic.moderationNote) {
+      mapped.moderationNote = topic.moderationNote;
+    }
+    if (topic.lastReplyAt) {
+      mapped.lastReplyAt = topic.lastReplyAt;
+    }
+    if (topic.lastReplyBy) {
+      mapped.lastReplyBy = topic.lastReplyBy;
+    }
+    return mapped;
   }
 
-  private mapPostFromDb(post: any): ForumPost {
-    return {
+  private mapPostFromDb(post: ForumPostRow): ForumPost {
+    const mapped: ForumPost = {
       id: post.id,
       topicId: post.topicId,
       authorId: post.authorId,
@@ -1164,10 +1296,6 @@ export class ForumServiceImpl implements ForumService {
       isAnonymous: post.isAnonymous,
       content: post.content,
       contentFormat: post.contentFormat as "markdown" | "html" | "plain",
-      attachments: post.attachments
-        ? JSON.parse(post.attachments as string)
-        : undefined,
-      parentId: post.parentId ?? undefined,
       depth: post.depth,
       likeCount: post.likeCount,
       isAcceptedAnswer: post.isAcceptedAnswer,
@@ -1177,13 +1305,28 @@ export class ForumServiceImpl implements ForumService {
         | "published"
         | "hidden"
         | "deleted",
-      moderatedBy: post.moderatedBy ?? undefined,
-      moderatedAt: post.moderatedAt ?? undefined,
       isEdited: post.isEdited,
-      editedAt: post.editedAt ?? undefined,
-      editHistory: post.editHistory ? JSON.parse(post.editHistory) : undefined,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
     };
+    if (post.attachments) {
+      mapped.attachments = JSON.parse(post.attachments) as NonNullable<ForumPost["attachments"]>;
+    }
+    if (post.parentId) {
+      mapped.parentId = post.parentId;
+    }
+    if (post.moderatedBy) {
+      mapped.moderatedBy = post.moderatedBy;
+    }
+    if (post.moderatedAt) {
+      mapped.moderatedAt = post.moderatedAt;
+    }
+    if (post.editedAt) {
+      mapped.editedAt = post.editedAt;
+    }
+    if (post.editHistory) {
+      mapped.editHistory = JSON.parse(post.editHistory) as NonNullable<ForumPost["editHistory"]>;
+    }
+    return mapped;
   }
 }

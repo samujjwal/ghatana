@@ -4,7 +4,7 @@
  * Fastify routes for issuing and managing credentials.
  */
 
-import { FastifyInstance } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
 import { CredentialService } from "./service";
 import {
   getTenantId,
@@ -18,6 +18,10 @@ import {
   CredentialFilterSchema,
   IssueCredentialDTO,
   CredentialFilter,
+  CredentialMetadata,
+  AchievementDetails,
+  SkillDetails,
+  CertificateDetails,
 } from "./models/credential";
 import {
   evaluateAchievements,
@@ -44,10 +48,36 @@ const revokeCredentialSchema = z.object({
   reason: z.string().min(1),
 });
 
-export async function credentialRoutes(
-  fastify: FastifyInstance,
-  options: { service: CredentialService },
-) {
+type ParsedCredentialMetadata = {
+  category?: CredentialMetadata["category"] | undefined;
+  points?: CredentialMetadata["points"] | undefined;
+  tier?: CredentialMetadata["tier"] | undefined;
+  rarity?: CredentialMetadata["rarity"] | undefined;
+  tags?: CredentialMetadata["tags"] | undefined;
+  customData?: CredentialMetadata["customData"] | undefined;
+};
+
+function cleanCredentialMetadata(metadata: ParsedCredentialMetadata): Partial<CredentialMetadata> {
+  return {
+    ...(metadata.category ? { category: metadata.category } : {}),
+    ...(typeof metadata.points === "number" ? { points: metadata.points } : {}),
+    ...(metadata.tier ? { tier: metadata.tier } : {}),
+    ...(metadata.rarity ? { rarity: metadata.rarity } : {}),
+    ...(metadata.tags ? { tags: metadata.tags } : {}),
+    ...(metadata.customData ? { customData: metadata.customData } : {}),
+  };
+}
+
+function stripUndefinedFields(value: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, fieldValue]) => fieldValue !== undefined),
+  );
+}
+
+export const credentialRoutes: FastifyPluginAsync<{ service: CredentialService }> = async (
+  fastify,
+  options,
+) => {
   const service = options.service;
   const privilegedCredentialRoles = ["teacher", "admin", "superadmin"];
 
@@ -253,8 +283,24 @@ export async function credentialRoutes(
 
       try {
         const credential = await service.issueFromEvidence({
-          ...dto,
+          type: dto.type,
+          userId: dto.userId,
           tenantId,
+          moduleId: dto.moduleId,
+          name: dto.name,
+          description: dto.description,
+          metadata: cleanCredentialMetadata(dto.metadata),
+          ...(dto.imageUrl ? { imageUrl: dto.imageUrl } : {}),
+          ...(dto.achievement
+            ? { achievement: stripUndefinedFields(dto.achievement) as Partial<AchievementDetails> }
+            : {}),
+          ...(dto.skill
+            ? { skill: stripUndefinedFields(dto.skill) as Partial<SkillDetails> }
+            : {}),
+          ...(dto.certificate
+            ? { certificate: stripUndefinedFields(dto.certificate) as Partial<CertificateDetails> }
+            : {}),
+          ...(dto.expiresAt ? { expiresAt: dto.expiresAt } : {}),
         });
 
         reply.code(201).send({
@@ -390,32 +436,35 @@ export async function credentialRoutes(
       // Filter out already-earned achievements
       const newAchievements = [];
       for (const achievement of achievedResults) {
-        const ruleId = achievement.metadata?.ruleId as string;
-        const alreadyHas = await service.hasCredential(result.userId, ruleId);
+        const metadata = achievement.metadata;
+        if (!metadata?.ruleId || !metadata.credentialType || !metadata.category) {
+          continue;
+        }
+        const alreadyHas = await service.hasCredential(result.userId, metadata.ruleId);
 
         if (!alreadyHas) {
           // Create credential for new achievement
           const credential = createCredential({
-            type: achievement.metadata?.credentialType as any,
+            type: metadata.credentialType,
             userId: result.userId,
             tenantId,
             name: achievement.credentialName || "",
             description: achievement.credentialDescription || "",
             metadata: {
-              ...(achievement.metadata?.category
-                ? { category: achievement.metadata.category as any }
+              ...(metadata.category
+                ? { category: metadata.category }
                 : {}),
-              ...(achievement.metadata?.tier
-                ? { tier: achievement.metadata.tier as any }
+              ...(metadata.tier
+                ? { tier: metadata.tier }
                 : {}),
-              ...(achievement.metadata?.rarity
-                ? { rarity: achievement.metadata.rarity as any }
+              ...(metadata.rarity
+                ? { rarity: metadata.rarity }
                 : {}),
-              ...(typeof achievement.metadata?.points === "number"
-                ? { points: achievement.metadata.points as number }
+              ...(typeof metadata.points === "number"
+                ? { points: metadata.points }
                 : {}),
-              ...(achievement.metadata
-                ? { customData: achievement.metadata }
+              ...(metadata
+                ? { customData: metadata }
                 : {}),
             },
             achievement: {
@@ -449,4 +498,4 @@ export async function credentialRoutes(
 
   // Credentials are event-sourced through LearningEvent and verified by ID through
   // the credential lookup projection in CredentialService.
-}
+};

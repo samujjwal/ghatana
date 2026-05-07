@@ -29,6 +29,37 @@ import type {
 } from "@tutorputor/contracts/v1/social";
 import { createSocialNotification } from "../../notifications/delivery.js";
 
+interface StudyGroupMemberRow {
+  id: string;
+  groupId: string;
+  userId: string;
+  role: string;
+}
+
+interface StudyGroupJoinRequestRow {
+  id: string;
+  groupId: string;
+  userId: string;
+  status: string;
+}
+
+interface StudyGroupInviteRow {
+  id: string;
+  groupId: string;
+  invitedBy: string;
+  invitedUserId?: string | null;
+  email?: string | null;
+  status: string;
+  expiresAt: Date;
+}
+
+interface StudySessionRow {
+  id: string;
+  groupId: string;
+  title: string;
+  status: string;
+}
+
 /**
  * Configuration for StudyGroupServiceImpl
  */
@@ -860,7 +891,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     groupId: string,
     userId: string,
     roles: string[],
-  ): Promise<any> {
+  ): Promise<StudyGroupMemberRow> {
     const member = await this.prisma.studyGroupMember.findFirst({
       where: {
         groupId,
@@ -869,19 +900,19 @@ export class StudyGroupServiceImpl implements StudyGroupService {
           tenantId,
         },
       },
-    } as any);
+    });
 
     if (!member || !roles.includes(member.role)) {
       throw new Error("Insufficient permissions");
     }
 
-    return member;
+    return member as unknown as StudyGroupMemberRow;
   }
 
   private async requireJoinRequestInTenant(
     tenantId: string,
     requestId: string,
-  ): Promise<any> {
+  ): Promise<StudyGroupJoinRequestRow> {
     const request = await this.prisma.studyGroupJoinRequest.findFirst({
       where: {
         id: requestId,
@@ -889,19 +920,19 @@ export class StudyGroupServiceImpl implements StudyGroupService {
           tenantId,
         },
       },
-    } as any);
+    });
 
     if (!request) {
       throw new Error("Join request not found");
     }
 
-    return request;
+    return request as unknown as StudyGroupJoinRequestRow;
   }
 
   private async requireInviteInTenant(
     tenantId: string,
     inviteId: string,
-  ): Promise<any> {
+  ): Promise<StudyGroupInviteRow> {
     const invite = await this.prisma.studyGroupInvite.findFirst({
       where: {
         id: inviteId,
@@ -909,20 +940,20 @@ export class StudyGroupServiceImpl implements StudyGroupService {
           tenantId,
         },
       },
-    } as any);
+    });
 
     if (!invite) {
       throw new Error("Invite not found or already processed");
     }
 
-    return invite;
+    return invite as unknown as StudyGroupInviteRow;
   }
 
   private async requireMemberInGroup(
     tenantId: string,
     groupId: string,
     memberId: string,
-  ): Promise<any> {
+  ): Promise<StudyGroupMemberRow> {
     const member = await this.prisma.studyGroupMember.findFirst({
       where: {
         id: memberId,
@@ -931,19 +962,19 @@ export class StudyGroupServiceImpl implements StudyGroupService {
           tenantId,
         },
       },
-    } as any);
+    });
 
     if (!member) {
       throw new Error("Member not found");
     }
 
-    return member;
+    return member as unknown as StudyGroupMemberRow;
   }
 
   private async requireSessionInTenant(
     tenantId: string,
     sessionId: string,
-  ): Promise<any> {
+  ): Promise<StudySessionRow> {
     const session = await this.prisma.studySession.findFirst({
       where: {
         id: sessionId,
@@ -951,13 +982,13 @@ export class StudyGroupServiceImpl implements StudyGroupService {
           tenantId,
         },
       },
-    } as any);
+    });
 
     if (!session) {
       throw new Error("Session not found");
     }
 
-    return session;
+    return session as unknown as StudySessionRow;
   }
 
   private async publishActivity(

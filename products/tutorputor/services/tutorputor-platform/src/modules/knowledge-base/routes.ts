@@ -285,13 +285,13 @@ export function registerKnowledgeBaseRoutes(
   // Get knowledge base statistics
   fastify.get("/api/knowledge-base/stats", async (_request, reply) => {
     try {
-      const prisma = (knowledgeBaseService as any).prisma;
+      const prisma = knowledgeBaseService.getStatsDatabase();
       
       // Query actual statistics from the database
-      const [totalConcepts, totalSources, evidenceBundles] = await Promise.all([
+      const [conceptGroups, totalSources, evidenceBundles] = await Promise.all([
         // Count total concepts from learner mastery
-        prisma.learnerMastery.count({
-          distinct: ['conceptId'],
+        prisma.learnerMastery.groupBy({
+          by: ["conceptId"],
         }),
         // Count total sources from evidence bundles
         prisma.evidenceBundleMetadata.count(),
@@ -308,6 +308,7 @@ export function registerKnowledgeBaseRoutes(
         : 0;
 
       // Get unique domains from modules
+      const totalConcepts = conceptGroups.length;
       const modules = await prisma.module.findMany({
         select: { domain: true },
         distinct: ['domain'],
