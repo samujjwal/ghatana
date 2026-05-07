@@ -26,7 +26,7 @@
     "check:duplicate-packages": "./scripts/check-duplicate-package-names.sh",
     "check:platform-package-governance": "node ./scripts/check-platform-package-governance.js",
     "check:truth-surfaces": "node ./scripts/check-truth-surfaces.mjs",
-    "check:data-cloud-ui-contracts": "pnpm --dir ./products/data-cloud/ui exec vitest run src/__tests__/pages/ContractBacked.test.tsx src/__tests__/api/capabilities.service.test.ts",
+    "check:data-cloud-ui-contracts": "pnpm --dir ./products/data-cloud/delivery/ui exec vitest run src/__tests__/pages/ContractBacked.test.tsx src/__tests__/api/capabilities.service.test.ts",
     "check:tsconfig-strict": "node ./scripts/check-typescript-strict.js",
     "check:production-readiness": "node ./scripts/check-production-readiness.mjs",
     "check:audit-todo-burndown": "node ./scripts/generate-audit-todo-burndown.mjs",

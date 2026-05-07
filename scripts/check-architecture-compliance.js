@@ -497,7 +497,7 @@ class ArchitectureChecker {
     if (relative.startsWith('products/data-cloud/')) return '@data-cloud';
     if (relative.startsWith('products/dcmaar/')) return '@dcmaar';
     if (relative.startsWith('products/audio-video/')) return '@audio-video';
-    if (relative.startsWith('products/aep/')) return '@aep';
+    if (relative.startsWith('products/data-cloud/planes/action/')) return '@aep';
     if (relative.startsWith('shared-services/')) return '@shared';
 
     return null;

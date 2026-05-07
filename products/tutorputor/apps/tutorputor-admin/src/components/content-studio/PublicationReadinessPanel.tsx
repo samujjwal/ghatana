@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     AlertTriangle,
     CheckCircle2,
+    CircleDot,
     RefreshCcw,
     Send,
 } from 'lucide-react';
@@ -35,6 +36,23 @@ function deriveRiskLevel(validation: AdminValidationResult): RiskLevel {
     }
 
     return 'LOW';
+}
+
+const readinessTargets = [
+    { id: 'claims', label: 'Learning claims', match: /claim|objective/i, fixAction: 'Open claim map' },
+    { id: 'evidence', label: 'Evidence mapping', match: /evidence|coverage|artifact/i, fixAction: 'Map evidence' },
+    { id: 'simulation', label: 'Simulation settings', match: /simulation|manifest|parameter|seed/i, fixAction: 'Configure simulation' },
+    { id: 'assessment', label: 'Assessment coverage', match: /assessment|cbm|question|task|scoring/i, fixAction: 'Edit assessment' },
+    { id: 'accessibility', label: 'Accessibility metadata', match: /accessibility|caption|transcript|alternative|aria/i, fixAction: 'Add accessibility notes' },
+    { id: 'review', label: 'Review status', match: /review|sme|qa|approval|validation/i, fixAction: 'Send to reviewer' },
+];
+
+function matchesReadinessTarget(
+    check: AdminValidationResult['checks'][number],
+    target: (typeof readinessTargets)[number],
+): boolean {
+    const searchable = `${check.checkId} ${check.pillar} ${check.name} ${check.message} ${check.suggestion ?? ''}`;
+    return target.match.test(searchable);
 }
 
 export function PublicationReadinessPanel({
@@ -80,6 +98,20 @@ export function PublicationReadinessPanel({
     );
 
     const riskLevel = validation ? deriveRiskLevel(validation) : 'MEDIUM';
+
+    const guidedTargets = useMemo(
+        () =>
+            readinessTargets.map((target) => {
+                const failedChecks =
+                    validation?.checks.filter((check) => !check.passed && matchesReadinessTarget(check, target)) ?? [];
+                return {
+                    ...target,
+                    failedChecks,
+                    status: failedChecks.length === 0 ? 'complete' : 'missing',
+                };
+            }),
+        [validation],
+    );
 
     const handlePublish = useCallback(async () => {
         if (!validation?.canPublish) {
@@ -194,6 +226,64 @@ export function PublicationReadinessPanel({
                                 <div className="mt-2 text-2xl font-semibold text-amber-600 dark:text-amber-300">
                                     {advisoryChecks.length}
                                 </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50/70 p-4 dark:border-indigo-900 dark:bg-indigo-950/20">
+                            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <h4 className="text-sm font-semibold text-indigo-900 dark:text-indigo-100">
+                                        Guided Publish Readiness
+                                    </h4>
+                                    <p className="text-sm text-indigo-700 dark:text-indigo-300">
+                                        Fix the exact missing production requirements before the Publish button unlocks.
+                                    </p>
+                                </div>
+                                <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
+                                    {guidedTargets.filter((target) => target.status === 'complete').length}/{guidedTargets.length} complete
+                                </span>
+                            </div>
+
+                            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                {guidedTargets.map((target) => (
+                                    <div
+                                        key={target.id}
+                                        className={`rounded-lg border px-3 py-3 ${
+                                            target.status === 'complete'
+                                                ? 'border-emerald-200 bg-white/80 dark:border-emerald-900 dark:bg-emerald-950/20'
+                                                : 'border-amber-200 bg-white/90 dark:border-amber-900 dark:bg-amber-950/20'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            {target.status === 'complete' ? (
+                                                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                            ) : (
+                                                <CircleDot className="h-4 w-4 text-amber-600" />
+                                            )}
+                                            <span className="font-medium text-gray-900 dark:text-white">
+                                                {target.label}
+                                            </span>
+                                        </div>
+                                        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                                            {target.status === 'complete'
+                                                ? 'Ready'
+                                                : `${target.failedChecks.length} issue${target.failedChecks.length === 1 ? '' : 's'} to resolve`}
+                                        </p>
+                                        {target.failedChecks[0]?.suggestion ? (
+                                            <p className="mt-2 text-xs text-amber-800 dark:text-amber-200">
+                                                {target.failedChecks[0].suggestion}
+                                            </p>
+                                        ) : null}
+                                        {target.status !== 'complete' ? (
+                                            <button
+                                                type="button"
+                                                className="mt-3 rounded-md border border-indigo-200 px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-200"
+                                            >
+                                                {target.fixAction}
+                                            </button>
+                                        ) : null}
+                                    </div>
+                                ))}
                             </div>
                         </div>
 

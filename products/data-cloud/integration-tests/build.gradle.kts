@@ -8,10 +8,10 @@ version = rootProject.version
 description = "Data Cloud cross-module integration test suite"
 
 dependencies {
-    testImplementation(project(":products:data-cloud:launcher"))
-    testImplementation(project(":products:data-cloud:platform-launcher"))
-    testImplementation(project(":products:data-cloud:platform-entity"))
-    testImplementation(project(":products:data-cloud:spi"))
+    testImplementation(project(":products:data-cloud:delivery:launcher"))
+    testImplementation(project(":products:data-cloud:delivery:runtime-composition"))
+    testImplementation(project(":products:data-cloud:planes:data:entity"))
+    testImplementation(project(":products:data-cloud:planes:shared-spi"))
     testImplementation(project(":platform:java:domain"))
     testImplementation(project(":platform:java:testing"))
     testImplementation(project(":platform:java:security"))

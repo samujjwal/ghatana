@@ -79,6 +79,18 @@ const CACHEABLE_API_ROUTES = [
   '/api/modules',
   '/api/curriculum',
   '/api/progress',
+  '/api/v1/modules',
+  '/api/v1/learning/dashboard',
+  '/api/v1/telemetry/learning/batch',
+];
+
+const OFFLINE_MUTATION_ROUTES = [
+  '/api/progress',
+  '/api/progress/complete-lesson',
+  '/api/v1/simulations',
+  '/api/v1/assessments',
+  '/api/v1/telemetry/learning/batch',
+  '/api/v1/ai/tutor/query',
 ];
 
 /**
@@ -129,13 +141,15 @@ self.addEventListener('fetch', (event) => {
   const { request } = fetchEvent;
   const url = new URL(request.url);
 
-  // Skip non-GET requests
-  if (request.method !== 'GET') {
+  // Skip cross-origin requests
+  if (url.origin !== self.location.origin) {
     return;
   }
 
-  // Skip cross-origin requests
-  if (url.origin !== self.location.origin) {
+  if (request.method !== 'GET') {
+    if (OFFLINE_MUTATION_ROUTES.some((route) => url.pathname.startsWith(route))) {
+      fetchEvent.respondWith(networkMutationStrategy(request));
+    }
     return;
   }
 
@@ -161,6 +175,39 @@ self.addEventListener('fetch', (event) => {
 function isStaticAsset(pathname: string): boolean {
   const staticExtensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.woff', '.woff2'];
   return staticExtensions.some((ext) => pathname.endsWith(ext));
+}
+
+async function networkMutationStrategy(request: Request): Promise<Response> {
+  try {
+    return await fetch(request);
+  } catch {
+    const clients = await self.clients.matchAll();
+    clients.forEach((client) => {
+      client.postMessage({
+        type: 'OFFLINE_MUTATION_CAPTURED',
+        payload: {
+          url: request.url,
+          method: request.method,
+          timestamp: Date.now(),
+        },
+      });
+    });
+
+    return new Response(
+      JSON.stringify({
+        status: 'queued',
+        conflictPolicyVersion: 'offline-sync-v1',
+        message: 'Offline mutation queued for conflict-aware replay.',
+      }),
+      {
+        status: 202,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-TutorPutor-Offline-Queued': 'true',
+        },
+      },
+    );
+  }
 }
 
 /**

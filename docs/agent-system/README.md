@@ -22,7 +22,7 @@
 - **Register an agent**: [ARCHITECTURE.md §4](./ARCHITECTURE.md#4-three-tier-dispatch-system)
 - **YAML agent spec**: [agent-spec.md](./agent-spec.md)
 - **ADR decisions**: [../adr/ADR-001](../adr/ADR-001-typed-agent-framework.md), [ADR-020](../adr/ADR-020-agent-system-five-layer-architecture.md)
-- **AEP product docs**: `products/aep/docs/`
+- **AEP product docs**: `products/data-cloud/docs/aep/docs/`
 
 ### 3.2 DSLA vs NDSLA vs Hybrid (Theory → Practice Mapping)
 
@@ -59,13 +59,13 @@ See [ADR-020: Agent System Five-Layer Architecture](/docs/adr/ADR-020-agent-syst
 │  ├─ GovernedAgentDispatcher (single execution gate)                      │
 │  ├─ AgentPackageLoader + AgentSwapCoordinator (hot-swap)                 │
 │  ├─ CatalogAgentDispatcher (Tier-J / Tier-S / Tier-L resolution)         │
-│  └─ products/aep/aep-agent-runtime, orchestrator, aep-engine            │
+│  └─ products/data-cloud/planes/action/agent-runtime, orchestrator, aep-engine            │
 ├──────────────────────────────────────────────────────────────────────────┤
 │  LAYER D: MEMORY, CONTEXT, AND EVALUATION PLANE                          │
 │  ├─ AgentReleaseRepository + DataCloudAgentReleaseRepository             │
 │  ├─ MemoryPromotionService (7-step episodic→procedural path)             │
 │  ├─ EvaluationResultRepository + MemoryNamespaceRepository               │
-│  └─ products/data-cloud/platform-api, agent-registry, platform-config   │
+│  └─ products/data-cloud/delivery/api, agent-registry, platform-config   │
 ├──────────────────────────────────────────────────────────────────────────┤
 │  LAYER E: PRODUCT CAPABILITY PLANE                                       │
 │  ├─ Audio-Video ToolHandler adapters (STT, TTS, vision, multimodal)      │
@@ -308,10 +308,10 @@ governance:
 
 ### AEP Documentation
 
-- [AEP World-Class Report](../../products/aep/docs/AEP_WORLD_CLASS_AGENTIC_EVENT_PROCESSING_REPORT_2026-03-23.md)
-- [AEP Deep Audit](../../products/aep/docs/AEP_V2_DEEP_AUDIT_2026-03-19.md)
-- [AEP Topology](../../products/aep/docs/TOPOLOGY.md)
-- [AEP Operational Runbook](../../products/aep/docs/OPERATIONAL_RUNBOOK.md)
+- [AEP World-Class Report](../../products/data-cloud/docs/aep/docs/AEP_WORLD_CLASS_AGENTIC_EVENT_PROCESSING_REPORT_2026-03-23.md)
+- [AEP Deep Audit](../../products/data-cloud/docs/aep/docs/AEP_V2_DEEP_AUDIT_2026-03-19.md)
+- [AEP Topology](../../products/data-cloud/docs/aep/docs/TOPOLOGY.md)
+- [AEP Operational Runbook](../../products/data-cloud/docs/aep/docs/OPERATIONAL_docs/operations/RUNBOOK.md)
 
 ### Platform Contracts
 

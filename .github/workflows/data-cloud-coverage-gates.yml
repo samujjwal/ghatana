@@ -75,7 +75,7 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: romeovs/lcov-reporter-action@v0.3.1
         with:
-          lcov-file: ./products/data-cloud/launcher/build/reports/jacoco/test/jacocoTestReport.xml
+          lcov-file: ./products/data-cloud/delivery/launcher/build/reports/jacoco/test/jacocoTestReport.xml
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate Coverage Summary
@@ -95,7 +95,7 @@ jobs:
           | platform-api | 75% | :hourglass: |
           | platform-analytics | 60% | :hourglass: |
           
-          See full report: `products/data-cloud/launcher/build/reports/jacoco/test/html/index.html`
+          See full report: `products/data-cloud/delivery/launcher/build/reports/jacoco/test/html/index.html`
           EOF
           cat /tmp/coverage-summary.txt
 

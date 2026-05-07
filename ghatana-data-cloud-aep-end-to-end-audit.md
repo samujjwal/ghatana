@@ -1,9 +1,9 @@
 # Ghatana Data Cloud + AEP — Ultra-Strict End-to-End Product Audit
 
-**Repository:** `samujjwal/ghatana`  
-**Reviewed target roots:** `products/data-cloud`, `products/aep`  
-**Reviewed ref observed from GitHub connector:** `be380e9ebc92cece8164ce86f3b97cb6789a4db5`  
-**Audit basis:** user-provided ultra-strict product audit prompt, current repository source/docs, architecture rules, product READMEs, OpenAPI/API docs, product audit docs, selected source/test files.  
+**Repository:** `samujjwal/ghatana`
+**Reviewed target roots:** `products/data-cloud`, `products/data-cloud/planes/action`
+**Reviewed ref observed from GitHub connector:** `be380e9ebc92cece8164ce86f3b97cb6789a4db5`
+**Audit basis:** user-provided ultra-strict product audit prompt, current repository source/docs, architecture rules, product READMEs, OpenAPI/API docs, product audit docs, selected source/test files.
 **Repo mutation:** none. This file is ready to copy into `docs/audits/end-to-end-product-correctness-audit.md` or split into product-specific audit files.
 
 ---

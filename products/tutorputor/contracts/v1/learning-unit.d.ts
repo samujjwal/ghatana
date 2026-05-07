@@ -23,6 +23,27 @@ export type ArtifactType = "simulation" | "explainer_video" | "visual_article" |
 export type AssessmentModel = "cbm" | "cbm_plus_process" | "mastery_grid";
 export type VivaConditionType = "overconfident_wrong" | "speed_anomaly" | "pattern_mismatch" | "explanation_avoidance" | "gaming_detection" | "sim_evidence_contradiction";
 export type CredentialIssueCondition = "all_claims_mastered" | "primary_claim_mastered" | "completion";
+export type LocaleCode = string;
+export type LocalizedText = Record<LocaleCode, string>;
+export interface LocalizedTextResource {
+    default: string;
+    translations: LocalizedText;
+}
+export interface LocalizationFieldCoverage {
+    contentBlocks: boolean;
+    captions: boolean;
+    transcripts: boolean;
+    prompts: boolean;
+    feedback: boolean;
+    rubrics: boolean;
+    accessibilityAlternatives: boolean;
+}
+export interface LocalizationConfig {
+    sourceLocale: LocaleCode;
+    supportedLocales: LocaleCode[];
+    requiredFields: LocalizationFieldCoverage;
+    publishRequiresCompleteCoverage: boolean;
+}
 /**
  * Why does this Learning Unit exist?
  */
@@ -48,6 +69,8 @@ export interface Claim {
     prerequisites?: string[];
     /** Content needs analysis for this claim */
     contentNeeds?: ContentNeeds;
+    /** Localized claim text for learner, admin preview, and AI tutor context */
+    localizedText?: LocalizedTextResource;
 }
 export type ExampleType = "real_world_application" | "step_by_step" | "visual_representation" | "problem_solving" | "analogy" | "case_study" | "comparison" | "counter_example";
 export type SimulationInteractionType = "demonstration" | "parameter_exploration" | "guided_discovery" | "open_ended" | "prediction" | "construction" | "diagnosis";
@@ -111,6 +134,8 @@ export interface Evidence {
     description: string;
     /** Data points captured for this evidence */
     observables: Observable[];
+    /** Localized evidence description for dashboards and review workflows */
+    localizedDescription?: LocalizedTextResource;
 }
 /**
  * Base interface for all task types
@@ -126,6 +151,10 @@ export interface TaskBase {
     evidenceRef: string;
     /** The prompt or question shown to the learner */
     prompt: string;
+    /** Localized learner prompt for assessments and AI tutor grounding */
+    localizedPrompt?: LocalizedTextResource;
+    /** Localized feedback/remediation text keyed by outcome identifier */
+    localizedFeedback?: Record<string, LocalizedTextResource>;
 }
 /**
  * Prediction task with mandatory confidence
@@ -136,6 +165,8 @@ export interface PredictionTask extends TaskBase {
     confidenceRequired: true;
     /** Answer options */
     options: string[];
+    /** Localized answer options by locale */
+    localizedOptions?: Record<LocaleCode, string[]>;
     /** Correct answer */
     correctAnswer?: string;
 }
@@ -148,6 +179,8 @@ export interface SimulationTask extends TaskBase {
     simulationRef: string;
     /** Human-readable goal description */
     goal: string;
+    /** Localized non-visual goal and state summary for simulation accessibility */
+    localizedGoal?: LocalizedTextResource;
     /** Success criteria */
     successCriteria: {
         /** Maximum allowed RMSE (e.g., "<= 0.25") */
@@ -167,6 +200,8 @@ export interface ExplanationTask extends TaskBase {
     minWords?: number;
     /** Reference to scoring rubric */
     rubricRef?: string;
+    /** Localized scoring rubric shown in assessment preview/review */
+    localizedRubric?: LocalizedTextResource;
     /** Key terms that should appear */
     expectedTerms?: string[];
 }
@@ -196,6 +231,13 @@ export interface Artifact {
     claims: string[];
     /** Task IDs this artifact scaffolds (for explainers) */
     scaffolds?: string[];
+    /** Localized captions/transcripts/accessibility alternatives for the artifact */
+    localization?: {
+        title?: LocalizedTextResource;
+        captions?: Record<LocaleCode, string>;
+        transcript?: LocalizedTextResource;
+        accessibilityAlternative?: LocalizedTextResource;
+    };
 }
 /**
  * Configuration for telemetry capture
@@ -273,6 +315,12 @@ export interface AssessmentConfig {
     vivaTrigger?: {
         conditions: VivaCondition[];
     };
+    /** Locale-ready assessment feedback and rubric resources */
+    localization?: {
+        instructions?: LocalizedTextResource;
+        feedback?: Record<string, LocalizedTextResource>;
+        rubrics?: Record<string, LocalizedTextResource>;
+    };
 }
 /**
  * Credential/badge configuration
@@ -306,6 +354,7 @@ export interface LearningUnit {
     artifacts: Artifact[];
     telemetry: TelemetryConfig;
     assessment: AssessmentConfig;
+    localization: LocalizationConfig;
     credential?: CredentialConfig;
     createdAt: string;
     updatedAt: string;

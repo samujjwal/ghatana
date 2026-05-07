@@ -4,7 +4,7 @@
   ],
   "hardcodedStyleExceptions": [],
   "localLayoutPrimitiveFiles": [
-    "products/data-cloud/ui/src/components/layout/AppShell.tsx",
+    "products/data-cloud/delivery/ui/src/components/layout/AppShell.tsx",
     "products/phr/apps/web/src/layout/AppShell.tsx",
     "products/yappc/frontend/libs/yappc-ui/src/components/layout/AppShell.tsx"
   ]

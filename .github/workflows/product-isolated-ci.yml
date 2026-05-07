@@ -6,7 +6,7 @@ name: Product-Isolated CI
 #
 # Products covered:
 #   - yappc        → products/yappc/**
-#   - aep          → products/aep/**
+#   - aep          → products/data-cloud/planes/action/**
 #   - data-cloud   → products/data-cloud/**
 #   - audio-video  → products/audio-video/**
 #   - dcmaar       → products/dcmaar/**
@@ -61,7 +61,7 @@ jobs:
             yappc:
               - 'products/yappc/**'
             aep:
-              - 'products/aep/**'
+              - 'products/data-cloud/planes/action/**'
             data_cloud:
               - 'products/data-cloud/**'
             audio_video:
@@ -314,11 +314,11 @@ jobs:
 
       - name: Build AEP
         run: |
-          ./gradlew :products:aep:build \
+          ./gradlew :products:data-cloud:planes:action:build \
             --no-daemon --parallel --build-cache --stacktrace
 
       - name: Test AEP
-        run: ./gradlew :products:aep:test --no-daemon
+        run: ./gradlew :products:data-cloud:planes:action:test --no-daemon
 
 # ─────────────────────────────────────────────────────────────────────────────
 # STEP 5: Data Cloud isolated build

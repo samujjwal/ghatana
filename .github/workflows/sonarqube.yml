@@ -50,7 +50,7 @@ jobs:
           -Dsonar.qualitygate.wait=true
       
       - name: Run SonarQube Analysis for AEP
-        working-directory: products/aep
+        working-directory: products/data-cloud/planes/action
         run: ./gradlew sonarqube \
           -Dsonar.projectKey=ghatana_aep \
           -Dsonar.projectName="Agentic Event Processor" \
@@ -66,7 +66,7 @@ jobs:
           name: sonarqube-reports
           path: |
             products/data-cloud/build/reports/sonarqube/
-            products/aep/build/reports/sonarqube/
+            products/data-cloud/planes/action/build/reports/sonarqube/
           retention-days: 30
       
       - name: Comment PR with SonarQube results

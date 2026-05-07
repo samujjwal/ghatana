@@ -80,11 +80,11 @@ jobs:
           restore-keys: gradle-${{ runner.os }}-
 
       - name: Build (compile only)
-        run: ./gradlew :products:data-cloud:platform-launcher:compileJava --no-daemon --parallel
+        run: ./gradlew :products:data-cloud:delivery:runtime-composition:compileJava --no-daemon --parallel
 
       - name: Run unit tests
         run: |
-          ./gradlew :products:data-cloud:platform-launcher:test \
+          ./gradlew :products:data-cloud:delivery:runtime-composition:test \
             --no-daemon \
             --tests "com.ghatana.datacloud.*" \
             --info
@@ -96,10 +96,10 @@ jobs:
           DOCKER_TLS_CERTDIR: ""
           TESTCONTAINERS_RYUK_DISABLED: "true"
         run: |
-          ./gradlew :products:data-cloud:platform-launcher:integrationTest \
+          ./gradlew :products:data-cloud:delivery:runtime-composition:integrationTest \
             --no-daemon \
             --info || \
-          ./gradlew :products:data-cloud:platform-launcher:test \
+          ./gradlew :products:data-cloud:delivery:runtime-composition:test \
             --tests "*IntegrationTest" \
             --tests "*KafkaEventLogStoreTest" \
             --tests "*ClickHouseTimeSeriesConnectorTest" \
@@ -107,10 +107,10 @@ jobs:
             --info
 
       - name: Run checkstyle
-        run: ./gradlew :products:data-cloud:platform-launcher:checkstyleMain --no-daemon
+        run: ./gradlew :products:data-cloud:delivery:runtime-composition:checkstyleMain --no-daemon
 
       - name: Run PMD
-        run: ./gradlew :products:data-cloud:platform-launcher:pmdMain --no-daemon
+        run: ./gradlew :products:data-cloud:delivery:runtime-composition:pmdMain --no-daemon
 
       - name: Publish test results
         uses: actions/upload-artifact@v4
@@ -127,7 +127,7 @@ jobs:
     name: Build UI
     runs-on: ubuntu-latest
     # Only runs if a UI directory exists
-    if: hashFiles('products/data-cloud/ui/package.json') != ''
+    if: hashFiles('products/data-cloud/delivery/ui/package.json') != ''
 
     steps:
       - name: Checkout code
@@ -144,19 +144,19 @@ jobs:
 
       - name: Install UI dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: products/data-cloud/ui
+        working-directory: products/data-cloud/delivery/ui
 
       - name: Lint UI
         run: pnpm lint
-        working-directory: products/data-cloud/ui
+        working-directory: products/data-cloud/delivery/ui
 
       - name: Build UI
         run: pnpm build
-        working-directory: products/data-cloud/ui
+        working-directory: products/data-cloud/delivery/ui
 
       - name: Run UI tests
         run: pnpm test --passWithNoTests
-        working-directory: products/data-cloud/ui
+        working-directory: products/data-cloud/delivery/ui
 
   # ---------------------------------------------------------------------------
   # Job 3: Docker build
@@ -179,8 +179,8 @@ jobs:
 
       - name: Build production JAR
         run: |
-          ./gradlew :products:data-cloud:launcher:bootJar --no-daemon || \
-          ./gradlew :products:data-cloud:launcher:jar --no-daemon
+          ./gradlew :products:data-cloud:delivery:launcher:bootJar --no-daemon || \
+          ./gradlew :products:data-cloud:delivery:launcher:jar --no-daemon
 
       # QEMU enables cross-compilation for non-native architectures (arm64).
       - name: Set up QEMU (for multi-arch cross-compilation)
@@ -346,7 +346,7 @@ jobs:
       # ── SpotBugs static analysis ─────────────────────────────────────────
       - name: Run SpotBugs (SAST)
         run: |
-          ./gradlew :products:data-cloud:platform-launcher:spotbugsMain \
+          ./gradlew :products:data-cloud:delivery:runtime-composition:spotbugsMain \
             --no-daemon \
             --continue
         # SpotBugs exit-code ≠ 0 on findings; the Upload step still runs
@@ -357,7 +357,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name:           spotbugs-report-${{ gitea.sha }}
-          path:           products/data-cloud/platform-launcher/build/reports/spotbugs/
+          path:           products/data-cloud/delivery/runtime-composition/build/reports/spotbugs/
           retention-days: 14
 
       - name: Convert SpotBugs XML → SARIF and upload
@@ -366,7 +366,7 @@ jobs:
         run: |
           pip install spotbugs-sarif-converter --quiet 2>/dev/null || true
           if spotbugs-sarif-converter \
-              products/data-cloud/platform-launcher/build/reports/spotbugs/main.xml \
+              products/data-cloud/delivery/runtime-composition/build/reports/spotbugs/main.xml \
               -o spotbugs.sarif 2>/dev/null; then
             echo "SARIF generated"
           else
@@ -388,7 +388,7 @@ jobs:
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
-          ./gradlew :products:data-cloud:platform-launcher:dependencyCheckAnalyze \
+          ./gradlew :products:data-cloud:delivery:runtime-composition:dependencyCheckAnalyze \
             --no-daemon \
             --info
         # Allow pipeline to continue to upload report even if CVEs found;
@@ -400,13 +400,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name:           owasp-report-${{ gitea.sha }}
-          path:           products/data-cloud/platform-launcher/build/reports/owasp/
+          path:           products/data-cloud/delivery/runtime-composition/build/reports/owasp/
           retention-days: 30
 
       - name: Upload OWASP SARIF to Security tab
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: products/data-cloud/platform-launcher/build/reports/owasp/dependency-check-report.sarif
+          sarif_file: products/data-cloud/delivery/runtime-composition/build/reports/owasp/dependency-check-report.sarif
           category:   owasp-dependency-check
         continue-on-error: true   # SARIF file may not exist if NVD fetch failed

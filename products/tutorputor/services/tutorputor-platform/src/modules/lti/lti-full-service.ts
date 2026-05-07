@@ -40,6 +40,10 @@ import type {
 } from "@tutorputor/contracts/v1/services";
 
 import type { LtiIdTokenClaims, OidcState, LtiAccessToken } from "./types.js";
+import {
+  calculateEvidenceBackedLtiGrade,
+  type EvidenceGradePrisma,
+} from "../integration/lti/evidence-grade.js";
 
 // In-memory state store (use Redis in production)
 const oidcStateStore = new Map<string, OidcState>();
@@ -1302,7 +1306,7 @@ export class LtiGradeServiceImpl implements LtiGradeService {
       };
     }
 
-    // Get enrollments for module
+    // Enrollments identify launched learners; scores are calculated only from evidence.
     const enrollments = await this.prisma.enrollment.findMany({
       where: {
         moduleId: args.moduleId,
@@ -1323,15 +1327,34 @@ export class LtiGradeServiceImpl implements LtiGradeService {
       if (!mapping) continue;
 
       for (const lineItem of lineItems) {
-        const score: LtiScore = {
-          userId: mapping.ltiUserId,
-          scoreGiven: enrollment.progressPercent,
-          scoreMaximum: 100,
-          activityProgress:
-            enrollment.progressPercent >= 100 ? "Completed" : "InProgress",
-          gradingProgress: "FullyGraded",
-          timestamp: new Date().toISOString(),
-        };
+        let score: LtiScore;
+        try {
+          const evidenceScore = await calculateEvidenceBackedLtiGrade(
+            this.prisma as unknown as EvidenceGradePrisma,
+            {
+              tenantId: args.tenantId,
+              userId: mapping.userId as UserId,
+              moduleId: args.moduleId,
+            },
+          );
+          score = {
+            userId: mapping.ltiUserId,
+            scoreGiven: evidenceScore.scoreGiven,
+            scoreMaximum: evidenceScore.scoreMaximum,
+            activityProgress: evidenceScore.activityProgress,
+            gradingProgress: evidenceScore.gradingProgress,
+            timestamp: evidenceScore.timestamp,
+            comment: evidenceScore.comment,
+          };
+        } catch (error) {
+          failed++;
+          errors.push(
+            error instanceof Error
+              ? error.message
+              : "No assessment or mastery evidence found for LTI passback",
+          );
+          continue;
+        }
 
         // Find session for user
         const session = await this.prisma.ltiSession.findFirst({

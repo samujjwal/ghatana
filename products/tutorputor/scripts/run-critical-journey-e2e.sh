@@ -33,6 +33,24 @@ if [[ ${#PLAYWRIGHT_SPECS[@]} -eq 0 ]]; then
   )
 fi
 
+WEB_CRITICAL_SPECS=(
+  "e2e/critical-learner-journey.spec.ts"
+  "e2e/offline-resume-critical-journey.spec.ts"
+)
+
+ADMIN_CRITICAL_SPECS=(
+  "e2e/admin-core.spec.ts"
+)
+
+MOBILE_CRITICAL_FLOWS=(
+  "login.yaml"
+  "dashboard.yaml"
+  "modules.yaml"
+  "ai-tutor.yaml"
+  "offline.yaml"
+  "navigation.yaml"
+)
+
 PIDS=()
 cleanup() {
   local exit_code=$?
@@ -193,5 +211,38 @@ echo "Running Tutorputor live E2E specs: ${PLAYWRIGHT_SPECS[*]}"
   PLATFORM_URL="$PLATFORM_URL" \
   npx playwright test "${PLAYWRIGHT_SPECS[@]}"
 )
+
+echo "Running learner web critical journey specs: ${WEB_CRITICAL_SPECS[*]}"
+(
+  cd "$TUTORPUTOR_ROOT/apps/tutorputor-web"
+  PLAYWRIGHT_SKIP_WEBSERVER=true \
+  BASE_URL="$BASE_URL" \
+  pnpm exec playwright test "${WEB_CRITICAL_SPECS[@]}"
+)
+
+echo "Running admin critical journey specs: ${ADMIN_CRITICAL_SPECS[*]}"
+(
+  cd "$TUTORPUTOR_ROOT/apps/tutorputor-admin"
+  PLAYWRIGHT_SKIP_WEBSERVER=true \
+  ADMIN_URL="$ADMIN_URL" \
+  pnpm exec playwright test "${ADMIN_CRITICAL_SPECS[@]}"
+)
+
+echo "Checking mobile critical journey flows..."
+for flow in "${MOBILE_CRITICAL_FLOWS[@]}"; do
+  test -f "$TUTORPUTOR_ROOT/apps/tutorputor-mobile/e2e/$flow"
+done
+
+if command -v maestro >/dev/null 2>&1; then
+  (
+    cd "$TUTORPUTOR_ROOT/apps/tutorputor-mobile"
+    maestro test e2e/
+  )
+elif [[ "${TUTORPUTOR_REQUIRE_MAESTRO:-false}" == "true" ]]; then
+  echo "Maestro is required but was not found on PATH." >&2
+  exit 1
+else
+  echo "Maestro not found; validated mobile flow files only. Set TUTORPUTOR_REQUIRE_MAESTRO=true in device CI."
+fi
 
 echo "Tutorputor live E2E run completed successfully. Logs: $LOG_DIR"

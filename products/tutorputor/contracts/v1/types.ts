@@ -12,7 +12,17 @@ export type MarketplaceListingId = string & { readonly __marketplaceListingId: u
 
 export type Difficulty = "INTRO" | "INTERMEDIATE" | "ADVANCED";
 export type ModuleStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
-export type UserRole = "student" | "teacher" | "admin" | "creator";
+export type UserRole =
+  | "student"
+  | "parent"
+  | "teacher"
+  | "content_author"
+  | "sme_reviewer"
+  | "qa"
+  | "admin"
+  | "institution_admin"
+  | "superadmin"
+  | "creator";
 
 export interface UserSummary {
   id: UserId;

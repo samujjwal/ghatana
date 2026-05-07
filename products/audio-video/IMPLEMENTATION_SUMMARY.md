@@ -287,9 +287,9 @@ Module is auto-discovered by settings.gradle.kts fileTree configuration.
 
 ## References
 
-- **Database Pattern**: `products/data-cloud/platform-launcher/.../JpaCollectionRepositoryImpl.java`
-- **Security Pattern**: `products/aep/aep-security/src/main/java/.../AepSecurityFilter.java`
-- **Cache Pattern**: `products/aep/aep-engine/src/main/java/.../AepQueryResultCache.java`
-- **Messaging Pattern**: `products/aep/aep-registry/src/main/java/.../QueueSinkConnector.java`
+- **Database Pattern**: `products/data-cloud/delivery/runtime-composition/.../JpaCollectionRepositoryImpl.java`
+- **Security Pattern**: `products/data-cloud/planes/action/security/src/main/java/.../AepSecurityFilter.java`
+- **Cache Pattern**: `products/data-cloud/planes/action/engine/src/main/java/.../AepQueryResultCache.java`
+- **Messaging Pattern**: `products/data-cloud/planes/action/registry/src/main/java/.../QueueSinkConnector.java`
 - **Platform**: `platform/java/database/src/main/java/com/ghatana/core/database/`
 - **Guidelines**: `.github/copilot-instructions.md`

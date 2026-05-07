@@ -421,7 +421,7 @@ export class FlashitTranscriptionService {
 
 #### Data-Cloud Integration
 ```typescript
-// products/data-cloud/ui/package.json
+// products/data-cloud/delivery/ui/package.json
 {
   "dependencies": {
     "@audio-video/types": "workspace:*",
@@ -431,7 +431,7 @@ export class FlashitTranscriptionService {
 ```
 
 ```typescript
-// products/data-cloud/ui/src/components/AudioAnalysis.tsx
+// products/data-cloud/delivery/ui/src/components/AudioAnalysis.tsx
 import { AudioPlayer, TranscriptionDisplay } from '@audio-video/ui';
 import type { STTResult } from '@audio-video/types';
 

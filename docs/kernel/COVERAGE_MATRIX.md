@@ -79,7 +79,7 @@
 
 | Product | Unit (tier-0) | Contract (tier-0) | Integration (tier-1/2) | E2E (tier-4) | Load (tier-4) | Notes |
 |---------|:---:|:---:|:---:|:---:|:---:|-------|
-| `products/aep` | ✅ | ✅ | ✅ | ⚠️ | ❌ | State machine, queue, idempotency |
+| `products/data-cloud/planes/action` | ✅ | ✅ | ✅ | ⚠️ | ❌ | State machine, queue, idempotency |
 | `products/data-cloud` | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | Query semantics ⚠️ |
 | `products/yappc` | ✅ | ✅ | ✅ | ⚠️ | ❌ | AI eval tier-4 partial |
 | `products/audio-video` | ✅ | ⚠️ | ✅ | ❌ | ❌ | Media privacy/security |
@@ -113,11 +113,11 @@
 | Cache memory growth | ✅ | Integration | `platform/java/cache` |
 | Messaging throughput / ordering | ✅ | Integration | `platform/java/messaging` |
 | Plugin contract isolation | ✅ | Contract | `platform-plugins` |
-| AEP orchestration state machine | ✅ | Integration | `products/aep` |
-| AEP queue concurrency + idempotency | ✅ | Integration | `products/aep` |
+| AEP orchestration state machine | ✅ | Integration | `products/data-cloud/planes/action` |
+| AEP queue concurrency + idempotency | ✅ | Integration | `products/data-cloud/planes/action` |
 | Data-cloud query semantics | ⚠️ | Unit (partial) | `products/data-cloud` |
 | Audio-video media privacy | ✅ | Unit + Integration | `products/audio-video` |
-| GDPR / CCPA compliance flows | ✅ | Integration | `products/aep`, `products/data-cloud` |
+| GDPR / CCPA compliance flows | ✅ | Integration | `products/data-cloud/planes/action`, `products/data-cloud` |
 | Browser E2E (YAPPC frontend) | ⚠️ | E2E (Playwright) | CI tier-4 partial |
 | Accessibility (a11y) | ⚠️ | Lighthouse / axe | CI tier-4 partial |
 | Performance budgets | ⚠️ | Lighthouse | CI tier-4 partial |

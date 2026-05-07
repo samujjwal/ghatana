@@ -5,17 +5,17 @@ const repoRoot = process.cwd();
 
 const targets = [
   'products/data-cloud/README.md',
-  'products/data-cloud/ui/src/pages/SqlWorkspacePage.tsx',
-  'products/data-cloud/ui/src/pages/SettingsPage.tsx',
-  'products/data-cloud/ui/src/components/brain',
+  'products/data-cloud/delivery/ui/src/pages/SqlWorkspacePage.tsx',
+  'products/data-cloud/delivery/ui/src/pages/SettingsPage.tsx',
+  'products/data-cloud/delivery/ui/src/components/brain',
   'products/audio-video/modules/intelligence/ai-voice/README.md',
   'products/audio-video/modules/intelligence/ai-voice/INTEGRATION_GUIDE.md',
   'products/audio-video/modules/intelligence/ai-voice/DEPLOYMENT_GUIDE.md',
   'products/audio-video/modules/intelligence/ai-voice/apps/desktop/src/components/layout',
   'products/audio-video/modules/intelligence/ai-voice/apps/desktop/src/components/views',
-  'products/aep/ui/src/pages/GovernancePage.tsx',
-  'products/aep/ui/src/pages/RunDetailPage.tsx',
-  'products/aep/server/src/main/resources/openapi.yaml'
+  'products/data-cloud/planes/action/ui/src/pages/GovernancePage.tsx',
+  'products/data-cloud/planes/action/ui/src/pages/RunDetailPage.tsx',
+  'products/data-cloud/planes/action/server/src/main/resources/openapi.yaml'
 ];
 
 const issues = [];

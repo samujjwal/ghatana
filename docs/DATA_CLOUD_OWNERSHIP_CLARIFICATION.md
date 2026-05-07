@@ -46,13 +46,13 @@ The following components are owned exclusively by the Data Cloud product team:
 
 | Component | Owner | Escalation Path |
 |-----------|-------|-----------------|
-| `products/data-cloud/platform-launcher` | Data Cloud Team | Data Cloud Tech Lead |
-| `products/data-cloud/platform-api` | Data Cloud Team | Data Cloud Tech Lead |
-| `products/data-cloud/platform-entity` | Data Cloud Team | Data Cloud Tech Lead |
-| `products/data-cloud/launcher` | Data Cloud Team | Data Cloud Tech Lead |
-| `products/data-cloud/ui` | Data Cloud Team | Data Cloud Tech Lead |
-| `products/data-cloud/agent-registry` | Data Cloud Team | Data Cloud Tech Lead |
-| `products/data-cloud/agent-catalog` | Data Cloud Team | Data Cloud Tech Lead |
+| `products/data-cloud/delivery/runtime-composition` | Data Cloud Team | Data Cloud Tech Lead |
+| `products/data-cloud/delivery/api` | Data Cloud Team | Data Cloud Tech Lead |
+| `products/data-cloud/planes/data/entity` | Data Cloud Team | Data Cloud Tech Lead |
+| `products/data-cloud/delivery/launcher` | Data Cloud Team | Data Cloud Tech Lead |
+| `products/data-cloud/delivery/ui` | Data Cloud Team | Data Cloud Tech Lead |
+| `products/data-cloud/extensions/agent-registry` | Data Cloud Team | Data Cloud Tech Lead |
+| `products/data-cloud/extensions/agent-catalog` | Data Cloud Team | Data Cloud Tech Lead |
 | `products/data-cloud/integration-tests` | Data Cloud Team | Data Cloud Tech Lead |
 
 **Responsibilities:**
@@ -74,7 +74,7 @@ The following components are owned exclusively by the AEP product team:
 
 | Component | Owner | Escalation Path |
 |-----------|-------|-----------------|
-| `products/aep/*` | AEP Team | AEP Tech Lead |
+| `products/data-cloud/planes/action/*` | AEP Team | AEP Tech Lead |
 | AEP-specific agent catalog entries | AEP Team | AEP Tech Lead |
 | AEP workflow templates | AEP Team | AEP Tech Lead |
 
@@ -89,7 +89,7 @@ The following components are owned exclusively by the AEP product team:
 
 ### Agent Catalog
 
-- **Definition File:** `products/data-cloud/agent-catalog/agent-catalog.yaml`
+- **Definition File:** `products/data-cloud/extensions/agent-catalog/agent-catalog.yaml`
 - **Owner:** Data Cloud Team
 - **Shared By:** AEP may reference Data Cloud agents, but Data Cloud owns the catalog
 - **Escalation:** Data Cloud Tech Lead
@@ -101,7 +101,7 @@ The following components are owned exclusively by the AEP product team:
 
 ### Agent Registry
 
-- **Implementation:** `products/data-cloud/agent-registry`
+- **Implementation:** `products/data-cloud/extensions/agent-registry`
 - **Owner:** Data Cloud Team
 - **Shared By:** AEP uses the same registry pattern but with AEP-specific implementations
 - **Escalation:** Data Cloud Tech Lead
@@ -115,7 +115,7 @@ The following components are owned exclusively by the AEP product team:
 
 - **Platform Layer:** `platform/java/ai-integration` (owned by Platform Team)
 - **Data Cloud Layer:** Data Cloud-specific AI services in `platform-api`
-- **AEP Layer:** AEP-specific AI services in `products/aep`
+- **AEP Layer:** AEP-specific AI services in `products/data-cloud/planes/action`
 
 **Boundary:**
 - Platform provides generic AI integration interfaces
@@ -183,7 +183,7 @@ The following components are owned exclusively by the AEP product team:
 
 - Platform issues: `platform/*` GitHub projects
 - Data Cloud issues: `products/data-cloud` GitHub projects
-- AEP issues: `products/aep` GitHub projects
+- AEP issues: `products/data-cloud/planes/action` GitHub projects
 - Cross-product issues: Create in Platform project, tag all relevant teams
 
 ## Migration Path
@@ -207,5 +207,5 @@ This document will be reviewed quarterly or when:
 
 - [Platform Architecture Guide](../architecture/)
 - [Data Cloud README](../products/data-cloud/README.md)
-- [AEP README](../products/aep/README.md)
+- [AEP README](../products/data-cloud/planes/action/README.md)
 - [Governance Model](GOVERNANCE.md)

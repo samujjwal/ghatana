@@ -24,7 +24,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "rm -rf dist && tsc",
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc",
     "type-check": "tsc --noEmit",
     "prepare": "npm run build",
     "prepublishOnly": "npm run build"

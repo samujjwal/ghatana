@@ -7,12 +7,12 @@ Scope: `products/data-cloud`, `products/aep`, and directly related architecture/
 ## P0 — Must Fix Before Any Production Release
 
 ### DC-P0-001 — Fix Data Cloud analytics async/build correctness
-- [ ] Inspect `products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/AnalyticsHandler.java`.
+- [ ] Inspect `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/AnalyticsHandler.java`.
 - [ ] Remove the suspicious `Promise.ofBlocking(...)` wrapper around asynchronous `request.loadBody().then(...)`.
 - [ ] Rewrite `handleAnalyticsQuery` as a direct ActiveJ `Promise<HttpResponse>` chain.
 - [ ] Ensure no nested `Promise<Promise<HttpResponse>>` or equivalent async shape can compile.
 - [ ] Keep blocking work out of the ActiveJ event loop.
-- [ ] Run `./gradlew :products:data-cloud:launcher:compileJava`.
+- [ ] Run `./gradlew :products:data-cloud:delivery:launcher:compileJava`.
 - [ ] Run targeted analytics tests.
 - [ ] Add valid-query, invalid-json, missing-query, blank-query, invalid-limit, analytics-engine-absent, and analytics-engine-exception tests.
 - [ ] Verify response shape is stable and contract-compliant.

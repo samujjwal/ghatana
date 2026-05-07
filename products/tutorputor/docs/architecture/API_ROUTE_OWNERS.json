@@ -1,0 +1,30 @@
+{
+  "runtimeModel": "primary-platform-with-worker-runtimes",
+  "canonicalBackend": "services/tutorputor-platform",
+  "routes": {
+    "/content/generate": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/generation/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "test": "services/tutorputor-platform/src/modules/content/generation/__tests__/routes.test.ts"
+    },
+    "/content/generate/{contentId}": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/generation/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "test": "services/tutorputor-platform/src/modules/content/generation/__tests__/routes.test.ts"
+    },
+    "/libraries": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/contentApi.ts",
+      "test": "services/tutorputor-platform/src/modules/content/__tests__/routes.test.ts"
+    },
+    "/learning-paths/{userId}": {
+      "backendOwner": "services/tutorputor-platform/src/modules/learning/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "test": "services/tutorputor-platform/src/modules/learning/__tests__/routes.test.ts"
+    }
+  }
+}

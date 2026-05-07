@@ -76,7 +76,7 @@ platform/typescript/                   @platform-team
 products/data-cloud/                   @data-cloud-team @platform-team
 
 # ── Products — AEP ───────────────────────────────────────────────────────────
-products/aep/                          @aep-team @platform-team
+products/data-cloud/planes/action/                          @aep-team @platform-team
 
 # ── Products — Finance ───────────────────────────────────────────────────────
 products/finance/                      @finance-team @platform-team

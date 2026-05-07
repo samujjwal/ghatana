@@ -304,6 +304,6 @@ cd products/<product>
 | Product | File | Purpose |
 |---------|------|---------|
 | data-cloud | `products/data-cloud/settings.gradle.kts` | Robust standalone/monorepo settings |
-| aep | `products/aep/settings.gradle.kts` | Robust standalone/monorepo settings |
+| aep | `products/data-cloud/planes/action/settings.gradle.kts` | Robust standalone/monorepo settings |
 
 Backups preserved as `settings.gradle.kts.backup`.

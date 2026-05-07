@@ -127,7 +127,7 @@ echo ""
     DATACLOUD_HTTP_ENABLED="$DATACLOUD_HTTP_ENABLED" \
     DATACLOUD_HTTP_PORT="$DATACLOUD_HTTP_PORT" \
     DATACLOUD_CORS_ALLOWED_ORIGINS="$UI_ORIGIN" \
-    ./gradlew :products:data-cloud:launcher:runLauncher 2>&1 | sed 's/^/[data-cloud-backend] /'
+    ./gradlew :products:data-cloud:delivery:launcher:runLauncher 2>&1 | sed 's/^/[data-cloud-backend] /'
 ) &
 BACKEND_PID=$!
 

@@ -41,6 +41,11 @@ type ReviewTaskMetricsRecord = {
   reviewedScore: number | null;
 };
 
+type GradingAttemptMetricsRecord = {
+  assessmentId: string;
+  scorePercent: number | null;
+};
+
 type ReviewTaskMetricsDelegate = {
   findMany(args: {
     where: Record<string, unknown>;
@@ -208,14 +213,14 @@ export class GradingQualityMonitoringService {
     };
   }
 
-  private calculateAccuracy(attempts: any[]): number {
+  private calculateAccuracy(attempts: GradingAttemptMetricsRecord[]): number {
     if (attempts.length === 0) return 1;
     // Simplified: use score distribution as proxy for accuracy
     const avgScore = attempts.reduce((sum, a) => sum + (a.scorePercent || 0), 0) / attempts.length;
     return avgScore / 100;
   }
 
-  private calculateAgreement(reviewTasks: any[]): number {
+  private calculateAgreement(reviewTasks: ReviewTaskMetricsRecord[]): number {
     const completedWithScores = reviewTasks.filter(
       (t) => t.status === 'completed' && t.aiGradingResult && t.reviewedScore !== null,
     );
@@ -232,7 +237,7 @@ export class GradingQualityMonitoringService {
     return agreements.reduce((sum, a) => sum + a, 0) / agreements.length;
   }
 
-  private calculateConsistency(attempts: any[]): number {
+  private calculateConsistency(attempts: GradingAttemptMetricsRecord[]): number {
     if (attempts.length < 2) return 1;
     
     // Group by assessment and calculate variance
@@ -259,13 +264,13 @@ export class GradingQualityMonitoringService {
     return Math.max(0, 1 - (avgVariance / 1000)); // Normalize
   }
 
-  private calculateBias(attempts: any[]): number {
+  private calculateBias(_attempts: GradingAttemptMetricsRecord[]): number {
     // Check for score distribution anomalies across student groups
     // Requires demographic data which is not currently available
     throw new Error('Bias calculation requires demographic data. Implement demographic tracking in assessment attempts.');
   }
 
-  private calculateAvgConfidence(reviewTasks: any[]): number {
+  private calculateAvgConfidence(reviewTasks: ReviewTaskMetricsRecord[]): number {
     const withConfidence = reviewTasks.filter((t) => t.aiGradingResult?.confidence);
     if (withConfidence.length === 0) return 0.8;
 
@@ -273,13 +278,15 @@ export class GradingQualityMonitoringService {
     return total / withConfidence.length;
   }
 
-  private calculateNeedsReviewRate(reviewTasks: any[]): number {
+  private calculateNeedsReviewRate(reviewTasks: ReviewTaskMetricsRecord[]): number {
     if (reviewTasks.length === 0) return 0;
-    const needsReview = reviewTasks.filter((t) => t.aiGradingResult?.confidence < 0.7).length;
+    const needsReview = reviewTasks.filter(
+      (t) => (t.aiGradingResult?.confidence ?? 1) < 0.7,
+    ).length;
     return needsReview / reviewTasks.length;
   }
 
-  private calculateAvgProcessingTime(attempts: any[]): number {
+  private calculateAvgProcessingTime(_attempts: GradingAttemptMetricsRecord[]): number {
     // Requires processing time data from assessment attempts
     throw new Error('Average processing time calculation requires timing data. Add processingTime field to GradingAttempt schema.');
   }

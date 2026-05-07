@@ -2,7 +2,7 @@
 
 Reviewed and authored on 2026-04-11 from:
 - current Ghatana canvas packages under `platform/typescript/canvas*`
-- product usage in `products/yappc`, `products/aep`, and `products/data-cloud`
+- product usage in `products/yappc`, `products/data-cloud/planes/action`, and `products/data-cloud`
 - repo governance and ADR material
 - current official ecosystem references for React Flow / XYFlow, Yjs, and OpenTelemetry
 

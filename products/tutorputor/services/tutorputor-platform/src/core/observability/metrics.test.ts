@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
-import { setupHealthChecks } from "./metrics.js";
+import { register } from "prom-client";
+import { recordTutorPutorDomainMetric, setupHealthChecks } from "./metrics.js";
 
 describe("setupHealthChecks", () => {
   let app: FastifyInstance | null = null;
@@ -84,5 +85,64 @@ describe("setupHealthChecks", () => {
         },
       },
     });
+  });
+});
+
+describe("recordTutorPutorDomainMetric", () => {
+  it("records TutorPutor-specific AI, LTI, telemetry, scoring, content, privacy, and simulation metrics", async () => {
+    recordTutorPutorDomainMetric({
+      type: "ai.request",
+      useCase: "tutor",
+      provider: "openai",
+      model: "gpt-test",
+      status: "failure",
+      latencySeconds: 1.25,
+      costUsd: 0.03,
+      failureMode: "safety_filter",
+    });
+    recordTutorPutorDomainMetric({
+      type: "simulation.error",
+      domain: "PHYSICS",
+      failureMode: "seed_mismatch",
+    });
+    recordTutorPutorDomainMetric({
+      type: "telemetry.ingest.failure",
+      eventType: "sim.capture",
+      failureMode: "schema_validation",
+    });
+    recordTutorPutorDomainMetric({
+      type: "assessment.scoring.failure",
+      itemType: "simulation",
+      policy: "cbm",
+      failureMode: "missing_confidence",
+    });
+    recordTutorPutorDomainMetric({
+      type: "lti.passback.failure",
+      platform: "canvas",
+      failureMode: "ags_rejected",
+    });
+    recordTutorPutorDomainMetric({
+      type: "content_generation.validation.failure",
+      domain: "science",
+      artifactType: "assessment",
+      failureMode: "incorrect_answer_key",
+    });
+    recordTutorPutorDomainMetric({
+      type: "privacy.deletion.failure",
+      operation: "delete",
+      failureMode: "cascade_incomplete",
+    });
+
+    const metrics = await register.metrics();
+
+    expect(metrics).toContain("tutorputor_ai_request_duration_seconds_bucket");
+    expect(metrics).toContain("tutorputor_ai_token_cost_usd_total");
+    expect(metrics).toContain("tutorputor_ai_failures_total");
+    expect(metrics).toContain("tutorputor_simulation_runtime_errors_total");
+    expect(metrics).toContain("tutorputor_telemetry_ingest_failures_total");
+    expect(metrics).toContain("tutorputor_assessment_scoring_failures_total");
+    expect(metrics).toContain("tutorputor_lti_passback_failures_total");
+    expect(metrics).toContain("tutorputor_content_generation_validation_failures_total");
+    expect(metrics).toContain("tutorputor_privacy_deletion_failures_total");
   });
 });

@@ -12,6 +12,16 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Module } from '@tutorputor/contracts';
+import {
+  createOfflineSyncRecord,
+  loadOfflineSyncQueue,
+  markOfflineRecordSynced,
+  queueOfflineSyncRecord,
+  resolveOfflineConflict,
+  type OfflineMutationType,
+  type OfflineMutationPayload,
+  type OfflineSyncRecord,
+} from '../offline/offlineSync';
 
 // Re-export types from @ghatana/state for convenience
 // In a real implementation, these would come from the state library
@@ -300,23 +310,17 @@ export function useOfflineProgress(): {
   const [pendingUpdates, setPendingUpdates] = useState(0);
   const { isOnline } = useOnlineStatus();
 
-  const queueMutation = useCallback(async (type: string, payload: unknown) => {
+  const queueMutation = useCallback(async (type: OfflineMutationType, payload: OfflineMutationPayload) => {
     try {
       const db = await openDatabase();
       const tx = db.transaction('mutations', 'readwrite');
       const store = tx.objectStore('mutations');
 
-      const mutation = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        type,
-        payload,
-        createdAt: new Date().toISOString(),
-        retryCount: 0,
-        maxRetries: 3,
-      };
+      const mutation = createOfflineSyncRecord(type, payload);
+      queueOfflineSyncRecord(mutation);
 
       await new Promise<void>((resolve, reject) => {
-        const request = store.add(mutation);
+        const request = store.add({ id: mutation.metadata.clientMutationId, ...mutation });
         request.onsuccess = () => resolve();
         request.onerror = () => reject(request.error);
       });
@@ -331,7 +335,13 @@ export function useOfflineProgress(): {
 
   const updateProgress = useCallback(
     async (moduleId: string, lessonId: string, progress: number) => {
-      const payload = { moduleId, lessonId, progress, timestamp: Date.now() };
+      const payload = {
+        moduleId,
+        lessonId,
+        progressPercent: progress,
+        timeSpentSeconds: 0,
+        updatedAt: new Date().toISOString(),
+      };
 
       if (isOnline) {
         try {
@@ -343,10 +353,10 @@ export function useOfflineProgress(): {
           });
         } catch {
           // Fall back to queue
-          await queueMutation('UPDATE_PROGRESS', payload);
+          await queueMutation('module.progress', payload);
         }
       } else {
-        await queueMutation('UPDATE_PROGRESS', payload);
+        await queueMutation('module.progress', payload);
       }
     },
     [isOnline, queueMutation]
@@ -354,7 +364,14 @@ export function useOfflineProgress(): {
 
   const completeLesson = useCallback(
     async (moduleId: string, lessonId: string, timeSpentMs: number) => {
-      const payload = { moduleId, lessonId, timeSpentMs, completedAt: new Date().toISOString() };
+      const payload = {
+        moduleId,
+        lessonId,
+        progressPercent: 100,
+        timeSpentSeconds: Math.ceil(timeSpentMs / 1000),
+        completedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
       if (isOnline) {
         try {
@@ -364,10 +381,10 @@ export function useOfflineProgress(): {
             body: JSON.stringify(payload),
           });
         } catch {
-          await queueMutation('COMPLETE_LESSON', payload);
+          await queueMutation('module.progress', payload);
         }
       } else {
-        await queueMutation('COMPLETE_LESSON', payload);
+        await queueMutation('module.progress', payload);
       }
     },
     [isOnline, queueMutation]
@@ -381,25 +398,61 @@ export function useOfflineProgress(): {
       const tx = db.transaction('mutations', 'readonly');
       const store = tx.objectStore('mutations');
 
-      const mutations = await new Promise<unknown[]>((resolve, reject) => {
+      const indexedDbMutations = await new Promise<OfflineSyncRecord[]>((resolve, reject) => {
         const request = store.getAll();
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
       });
+      const mutations = mergeOfflineMutationQueues(loadOfflineSyncQueue(), indexedDbMutations);
 
-      // Process mutations in order
       for (const mutation of mutations) {
-        // ... sync logic would go here
+        const response = await fetch('/api/v1/offline/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(mutation),
+        });
+
+        if (response.status === 409) {
+          const server = await response.json();
+          const resolution = resolveOfflineConflict(mutation, server.payload ?? null, server.serverVersion);
+          if (resolution.status === 'conflict') {
+            queueOfflineSyncRecord({
+              ...mutation,
+              payload: resolution.payload,
+              metadata: {
+                ...mutation.metadata,
+                status: 'conflict',
+                updatedAt: new Date().toISOString(),
+              },
+            });
+            continue;
+          }
+        }
+
+        if (response.ok) {
+          markOfflineRecordSynced(mutation.metadata.clientMutationId);
+        }
       }
 
       db.close();
-      setPendingUpdates(0);
+      setPendingUpdates(loadOfflineSyncQueue().length);
     } catch (err) {
       console.error('Failed to sync progress:', err);
     }
   }, [isOnline]);
 
   return { updateProgress, completeLesson, pendingUpdates, syncProgress };
+}
+
+function mergeOfflineMutationQueues(
+  localStorageQueue: OfflineSyncRecord[],
+  indexedDbQueue: OfflineSyncRecord[],
+): OfflineSyncRecord[] {
+  const byId = new Map<string, OfflineSyncRecord>();
+  for (const record of [...indexedDbQueue, ...localStorageQueue]) {
+    byId.set(record.metadata.clientMutationId, record);
+  }
+  return [...byId.values()].sort((a, b) => a.metadata.createdAt.localeCompare(b.metadata.createdAt));
 }
 
 // ============================================================================

@@ -21,6 +21,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useLocation, useParams } from "react-router-dom";
 import { useProactiveHelp } from "../hooks/useProactiveHelp";
 import { useAuth } from "../contexts/AuthContext";
+import { buildAITutorGroundingPayload } from "../api/aiTutorGrounding";
 import { createLogger } from '../utils/logger.js';
 const logger = createLogger('OmnipresentAITutor');
 
@@ -274,7 +275,16 @@ export function OmnipresentAITutor() {
         },
         body: JSON.stringify({
           question,
-          context: `User is currently viewing ${getContextHint()}`,
+          ...buildAITutorGroundingPayload({
+            moduleId: getContextHint(),
+            claimIds: [`claim:${getContextHint()}`],
+            currentSimulationState: {
+              route: window.location.pathname,
+              contextHint: getContextHint(),
+            },
+            recentAttempts: [{ attemptId: "omnipresent-current-session" }],
+            allowedHelpMode: isAssessmentPage ? "hint" : "socratic",
+          }),
           locale: navigator.language || "en",
         }),
       });
@@ -560,6 +570,7 @@ export function OmnipresentAITutor() {
             />
             <button
               type="submit"
+              aria-label="Send message to AI tutor"
               disabled={!input.trim() || askTutorMutation.isPending}
               className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
             >

@@ -24,7 +24,7 @@ This directory is for networked services and gateways that are shared by multipl
 - `ai-inference-service`: **DELETED** (2026-04-21) — superseded by `platform:java:ai-integration`; product teams use platform module directly
 - `ai-registry-service`: **DELETED** (2026-04-21) — test-only stub with no implementation
 - `auth-service`: **DELETED** (2026-04-21) — test-only stub; OAuth2 functionality in auth-gateway/AuthService.java
-- `feature-store-ingest`: **RESIDUE** — canonical location is `products/data-cloud/feature-store-ingest`; this directory is not included in Gradle and will be deleted in the next cleanup sprint
+- `feature-store-ingest`: **RESIDUE** — canonical location is `products/data-cloud/planes/intelligence/feature-ingest`; this directory is not included in Gradle and will be deleted in the next cleanup sprint
 
 ## Build conventions
 

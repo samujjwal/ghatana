@@ -87,6 +87,11 @@ export interface CBMResult {
   readonly calibrationDelta: number;
 }
 
+export interface CBMScoredSubmission {
+  readonly isCorrect: boolean;
+  readonly confidence: number;
+}
+
 /**
  * Aggregated CBM metrics for a session or topic.
  */
@@ -199,6 +204,20 @@ export class CBMProcessor implements EvidenceProcessor {
       const isCorrect = this.extractCorrectness(payload);
       const confidenceValue = this.extractConfidence(payload, context);
 
+      if (isCorrect !== undefined && confidenceValue === undefined) {
+        return {
+          pluginId,
+          status: "error",
+          error: {
+            pluginId,
+            code: "CBM_CONFIDENCE_REQUIRED",
+            message:
+              "Confidence is required for every scored CBM assessment item.",
+          },
+          durationMs: Date.now() - startTime,
+        };
+      }
+
       if (isCorrect === undefined || confidenceValue === undefined) {
         // Need both answer and confidence to calculate CBM
         // Store partial data for later
@@ -267,7 +286,21 @@ export class CBMProcessor implements EvidenceProcessor {
     if ("score" in payload && typeof payload.score === "number") {
       return payload.score > 0;
     }
-    return undefined;
+      return undefined;
+  }
+
+  /**
+   * Domain-owned scoring entry point for API/services. Scored assessment items
+   * must call this instead of applying CBM scoring in the UI.
+   */
+  scoreScoredItem(submission: CBMScoredSubmission): CBMResult {
+    if (typeof submission.confidence !== "number") {
+      throw new Error("CBM_CONFIDENCE_REQUIRED");
+    }
+    return this.calculateCBM(
+      submission.isCorrect,
+      this.normalizeConfidence(submission.confidence),
+    );
   }
 
   /**

@@ -67,11 +67,11 @@
 | Architecture rules | `docs/architecture/ARCHITECTURE_RULES.md` |
 | Ownership | `docs/DATA_CLOUD_OWNERSHIP_CLARIFICATION.md` |
 | Data Cloud product docs | `products/data-cloud/README.md` |
-| Data Cloud UI architecture | `products/data-cloud/ui/ARCHITECTURE.md` |
-| Data Cloud UI routes | `products/data-cloud/ui/src/routes.tsx` |
-| Data Cloud workflow contract | `products/data-cloud/launcher/src/main/java/.../WorkflowExecutionCapability.java` |
-| Data Cloud analytics handler | `products/data-cloud/launcher/src/main/java/.../AnalyticsHandler.java` |
-| Data Cloud workflow tests | `products/data-cloud/launcher/src/test/java/.../DataCloudHttpServerWorkflowExecutionTest.java` |
+| Data Cloud UI architecture | `products/data-cloud/delivery/ui/ARCHITECTURE.md` |
+| Data Cloud UI routes | `products/data-cloud/delivery/ui/src/routes.tsx` |
+| Data Cloud workflow contract | `products/data-cloud/delivery/launcher/src/main/java/.../WorkflowExecutionCapability.java` |
+| Data Cloud analytics handler | `products/data-cloud/delivery/launcher/src/main/java/.../AnalyticsHandler.java` |
+| Data Cloud workflow tests | `products/data-cloud/delivery/launcher/src/test/java/.../DataCloudHttpServerWorkflowExecutionTest.java` |
 | AEP product docs | `products/aep/README.md` |
 | AEP engine factory | `products/aep/aep-engine/src/main/java/com/ghatana/aep/Aep.java` |
 | AEP gateway | `products/aep/gateway/src/app.ts` |
@@ -104,7 +104,7 @@
 
 | UI Item | File(s) | Purpose | User Actions | Data Dependencies | API/State Dependencies | Status | Issues |
 |---|---|---|---|---|---|---|---|
-| Root app/providers | `products/data-cloud/ui/src/App.tsx` | App shell, QueryClient, Jotai, theme, router, onboarding | app boot, onboarding complete | route config/session bootstrap | Jotai/TanStack/router/theme | Complete | Onboarding role/tenant/a11y tests still needed. |
+| Root app/providers | `products/data-cloud/delivery/ui/src/App.tsx` | App shell, QueryClient, Jotai, theme, router, onboarding | app boot, onboarding complete | route config/session bootstrap | Jotai/TanStack/router/theme | Complete | Onboarding role/tenant/a11y tests still needed. |
 | `/` Intelligent Hub | `routes.tsx`, `IntelligentHub` | Command center | navigate to data/query/pipeline/trust | launcher APIs | route/action cards | Complete | Needs UI-to-backend journey E2E. |
 | `/data` | `DataExplorer` | Unified data explorer | browse/filter/select | collections/entities | entity APIs | Complete | Large dataset and deterministic sort tests needed. |
 | `/data/new` | `CreateCollectionPage` | Create collection | submit/cancel | metadata/entity store | collection API | Complete | Duplicate submit/concurrency tests needed. |
@@ -390,7 +390,7 @@
 
 | Capability/Flow | Existing Tests | Missing Tests | Invalid/Stale Tests | Required Tests | Priority |
 |---|---|---|---|---|---|
-| Data Cloud analytics query | not fetched | compile, response contract, trace/cost/cancel metadata, row limit, engine failure | current audit doc stale | `./gradlew :products:data-cloud:launcher:test` targeted + contract tests | P0 |
+| Data Cloud analytics query | not fetched | compile, response contract, trace/cost/cancel metadata, row limit, engine failure | current audit doc stale | `./gradlew :products:data-cloud:delivery:launcher:test` targeted + contract tests | P0 |
 | Data Cloud analytics cancel | not fetched | UI disabled, OpenAPI optional, 501 contract | previous audit expected 503 | API + UI disabled tests | P1 |
 | Data Cloud workflow execution | real server with mocks | real provider, durable restart, strict tenant/auth | route test could give false confidence | provider IT + restart IT | P1 |
 | Data Fabric | unknown | production-off, capability boundary, no demo metrics as live | n/a | feature flag + browser tests | P1 |
@@ -406,7 +406,7 @@
 
 | Priority | Area | Issue | Evidence/File(s) | Required Fix | Acceptance Criteria | Tests Required |
 |---|---|---|---|---|---|---|
-| P0 | Data Cloud analytics | Probable compile/async defect in `handleAnalyticsQuery` | `products/data-cloud/launcher/.../AnalyticsHandler.java` | Remove `Promise.ofBlocking`; return a direct `request.loadBody().then(...)` chain. | Module compiles; endpoint returns expected response for valid and invalid payload. | Compile + API tests. |
+| P0 | Data Cloud analytics | Probable compile/async defect in `handleAnalyticsQuery` | `products/data-cloud/delivery/launcher/.../AnalyticsHandler.java` | Remove `Promise.ofBlocking`; return a direct `request.loadBody().then(...)` chain. | Module compiles; endpoint returns expected response for valid and invalid payload. | Compile + API tests. |
 | P0 | Data Cloud analytics contract | Production `FIXME` placeholders and disabled broker enrichment | `AnalyticsHandler.java` | Restore `traceId`, `costEstimate`, `cancellation`, `explainPlan`; remove all FIXME. | No production `FIXME`; SQL Workspace contract matches API. | Contract + UI tests. |
 | P1 | Data Cloud analytics cancel | Hardcoded 501 Not Implemented | `AnalyticsHandler.java` | Implement cancellation or remove route and capability-gate UI/OpenAPI. | No visible/live cancel action unless supported; backend returns capability-consistent result. | API + UI tests. |
 | P1 | Data Cloud Data Fabric | Preview/demo metrics reachable | README + `/fabric` route | Production-disable by default or render preview boundary. | No demo metrics appear as live in production config. | Feature + browser tests. |
@@ -480,16 +480,16 @@ The next engineering action should be a focused Data Cloud analytics fix-and-tes
 
 | File | Audit Area | Findings |
 |---|---|---|
-| `products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/AnalyticsHandler.java` | Analytics async correctness (P0) | `Promise.ofBlocking` wrapping async chain; `FIXME` placeholders; fake streaming branch |
-| `products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/WorkflowHandler.java` | Workflow execution | Routes exist; provider is pluggable |
-| `products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/DataCloudLauncher.java` | Server wiring | SPI/plugin loading via `ServiceLoader` |
-| `products/data-cloud/spi/src/main/java/com/ghatana/datacloud/DataCloudClient.java` | Public API contract | Canonical SPI entry point |
-| `products/data-cloud/spi/src/main/java/com/ghatana/datacloud/spi/EntityStore.java` | Persistence SPI | Correct tenant-scoped contract |
-| `products/data-cloud/ui/src/pages/SqlWorkspacePage.tsx` | UI correctness | Analytics cancellation hardcoded 501 |
-| `products/data-cloud/ui/src/pages/DataFabricPage.tsx` | Data Fabric surface | Demo metrics hardcoded |
-| `products/data-cloud/ui/src/services/ai-operations.service.ts` | AI operations | Explicitly documented as not yet available |
-| `products/data-cloud/launcher/src/test/java/com/ghatana/datacloud/launcher/http/AnalyticsHandlerTest.java` | Analytics test coverage | Tests present post P0 fix |
-| `products/data-cloud/launcher/src/test/java/com/ghatana/datacloud/launcher/DataCloudArchitectureTest.java` | Architecture boundary | ArchUnit fitness functions present |
+| `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/AnalyticsHandler.java` | Analytics async correctness (P0) | `Promise.ofBlocking` wrapping async chain; `FIXME` placeholders; fake streaming branch |
+| `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/WorkflowHandler.java` | Workflow execution | Routes exist; provider is pluggable |
+| `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/DataCloudLauncher.java` | Server wiring | SPI/plugin loading via `ServiceLoader` |
+| `products/data-cloud/planes/shared-spi/src/main/java/com/ghatana/datacloud/DataCloudClient.java` | Public API contract | Canonical SPI entry point |
+| `products/data-cloud/planes/shared-spi/src/main/java/com/ghatana/datacloud/spi/EntityStore.java` | Persistence SPI | Correct tenant-scoped contract |
+| `products/data-cloud/delivery/ui/src/pages/SqlWorkspacePage.tsx` | UI correctness | Analytics cancellation hardcoded 501 |
+| `products/data-cloud/delivery/ui/src/pages/DataFabricPage.tsx` | Data Fabric surface | Demo metrics hardcoded |
+| `products/data-cloud/delivery/ui/src/services/ai-operations.service.ts` | AI operations | Explicitly documented as not yet available |
+| `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/AnalyticsHandlerTest.java` | Analytics test coverage | Tests present post P0 fix |
+| `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/DataCloudArchitectureTest.java` | Architecture boundary | ArchUnit fitness functions present |
 
 ### A.2 AEP — Files Examined
 

@@ -3,7 +3,7 @@ name: AEP Data Cloud Architecture Gates
 on:
   pull_request:
     paths:
-      - 'products/aep/**'
+      - 'products/data-cloud/planes/action/**'
       - 'products/data-cloud/**'
       - 'platform/contracts/capability-schema/**'
       - 'scripts/check-*.mjs'

@@ -40,14 +40,14 @@ Any product module that is consumed by other products must be one of:
 ### Cluster 1: Data Cloud shared surface still leaks product implementation
 
 Violations:
-- `:products:data-cloud:spi -> :products:data-cloud:platform-entity`
-- `:products:aep:* -> :products:data-cloud:agent-registry`
-- `:products:aep:server -> :products:data-cloud:platform-launcher`
-- `:products:yappc:core:knowledge-graph -> :products:data-cloud:platform-launcher`
-- `:products:yappc:core:knowledge-graph -> :products:data-cloud:platform-plugins`
+- `:products:data-cloud:planes:shared-spi -> :products:data-cloud:planes:data:entity`
+- `:products:data-cloud:planes:action:* -> :products:data-cloud:extensions:agent-registry`
+- `:products:data-cloud:planes:action:server -> :products:data-cloud:delivery:runtime-composition`
+- `:products:yappc:core:knowledge-graph -> :products:data-cloud:delivery:runtime-composition`
+- `:products:yappc:core:knowledge-graph -> :products:data-cloud:extensions:plugins`
 
 Assessment:
-- `:products:data-cloud:spi` is intended to be the shared contract surface.
+- `:products:data-cloud:planes:shared-spi` is intended to be the shared contract surface.
 - It currently depends on `platform-entity` because SPI interfaces reference `EntityInterface` and `QuerySpecInterface` from product-owned code.
 - `agent-registry`, `platform-launcher`, and `platform-plugins` are runtime implementation modules and should not be consumed cross-product.
 
@@ -64,16 +64,16 @@ Recommended implementation order:
 ### Cluster 2: AEP runtime surfaces are being consumed as shared platform capabilities
 
 Violations:
-- `:products:virtual-org:* -> :products:aep:aep-agent-runtime`
-- `:products:virtual-org:modules:integration -> :products:aep:aep-engine`
-- `:products:yappc:core:agents:* -> :products:aep:aep-agent-runtime`
-- `:products:yappc:core:agents:runtime -> :products:aep:aep-engine`
-- `:products:yappc:core:services-lifecycle -> :products:aep:aep-agent-runtime`
-- `:products:yappc:core:services-lifecycle -> :products:aep:aep-engine`
-- `:products:yappc:core:services-lifecycle -> :products:aep:orchestrator`
-- `:products:yappc:core:yappc-infrastructure -> :products:aep:aep-agent-runtime`
-- `:products:yappc:core:yappc-infrastructure -> :products:aep:aep-engine`
-- `:products:yappc:core:yappc-infrastructure -> :products:aep:aep-registry`
+- `:products:virtual-org:* -> :products:data-cloud:planes:action:agent-runtime`
+- `:products:virtual-org:modules:integration -> :products:data-cloud:planes:action:engine`
+- `:products:yappc:core:agents:* -> :products:data-cloud:planes:action:agent-runtime`
+- `:products:yappc:core:agents:runtime -> :products:data-cloud:planes:action:engine`
+- `:products:yappc:core:services-lifecycle -> :products:data-cloud:planes:action:agent-runtime`
+- `:products:yappc:core:services-lifecycle -> :products:data-cloud:planes:action:engine`
+- `:products:yappc:core:services-lifecycle -> :products:data-cloud:planes:action:orchestrator`
+- `:products:yappc:core:yappc-infrastructure -> :products:data-cloud:planes:action:agent-runtime`
+- `:products:yappc:core:yappc-infrastructure -> :products:data-cloud:planes:action:engine`
+- `:products:yappc:core:yappc-infrastructure -> :products:data-cloud:planes:action:registry`
 
 Assessment:
 - These dependencies indicate AEP runtime has become a de facto shared platform layer.
@@ -108,8 +108,8 @@ Required long-term action:
 ## Allowed Shared Product APIs
 
 The current gate intentionally allows only these product-owned shared surfaces:
-- `:products:data-cloud:spi`
-- `:products:aep:aep-operator-contracts`
+- `:products:data-cloud:planes:shared-spi`
+- `:products:data-cloud:planes:action:operator-contracts`
 
 This allowlist is temporary and must remain small.
 

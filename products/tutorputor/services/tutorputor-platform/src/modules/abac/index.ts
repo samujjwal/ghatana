@@ -9,9 +9,21 @@
  * @doc.layer platform
  * @doc.pattern Module
  */
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyRequest } from "fastify";
 import { ABACService } from "./ABACService.js";
 import { z } from "zod";
+import type { PrismaClient } from "@tutorputor/core/db";
+
+type RouteUser = {
+  id?: string;
+  role?: string;
+};
+
+type AuthenticatedRouteRequest = FastifyRequest & {
+  tenantId?: string;
+  userId?: string;
+  user?: RouteUser;
+};
 
 const evaluateRequestSchema = z.object({
   action: z.string(),
@@ -43,13 +55,12 @@ const setAttributeSchema = z.object({
 });
 
 export const abacModule: FastifyPluginAsync = async (app) => {
-  const abacService = new ABACService(app.prisma as any);
+  const abacService = new ABACService(app.prisma as unknown as PrismaClient);
   app.decorate("abacService", abacService);
 
   // POST /api/v1/abac/evaluate - Evaluate access decision
   app.post("/api/v1/abac/evaluate", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const userId = (request as any).userId;
+    const { tenantId, userId } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !userId) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -70,8 +81,7 @@ export const abacModule: FastifyPluginAsync = async (app) => {
 
   // POST /api/v1/abac/policies - Create a new policy (admin only)
   app.post("/api/v1/abac/policies", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -93,8 +103,7 @@ export const abacModule: FastifyPluginAsync = async (app) => {
 
   // POST /api/v1/abac/attributes - Set an attribute on an entity (admin only)
   app.post("/api/v1/abac/attributes", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -118,8 +127,7 @@ export const abacModule: FastifyPluginAsync = async (app) => {
 
   // GET /api/v1/abac/attributes/:entityType/:entityId - Get attributes for an entity
   app.get("/api/v1/abac/attributes/:entityType/:entityId", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const userId = (request as any).userId;
+    const { tenantId, userId } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !userId) {
       return reply.code(401).send({ error: "Authentication required" });

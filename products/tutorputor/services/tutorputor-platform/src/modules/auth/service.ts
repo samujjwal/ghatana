@@ -528,11 +528,11 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
       };
     },
 
-    // async handleSamlAcs(args: any) {
+    // async handleSamlAcs(args: unknown) {
     //     throw new Error("Not implemented");
     // },
 
-    // async logout(args: any) {
+    // async logout(args: unknown) {
     //      return { success: true };
     // },
 

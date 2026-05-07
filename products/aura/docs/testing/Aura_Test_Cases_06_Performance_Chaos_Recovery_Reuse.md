@@ -319,7 +319,7 @@ Expected:
 Level: Integration
 Priority: P0
 Source Docs: `Aura_Technical_Stack_Blueprint.md`, `Aura_Monorepo_Structure.md`
-Preconditions: Version or behavior change in shared modules such as `products/aep/platform`, `products/data-cloud/platform`, `products/data-cloud/spi`, `governance`, `security`, `observability`, `ingestion`, or `testing`.
+Preconditions: Version or behavior change in shared modules such as `products/data-cloud/planes/action/platform`, `products/data-cloud/platform`, `products/data-cloud/planes/shared-spi`, `governance`, `security`, `observability`, `ingestion`, or `testing`.
 Steps:
 1. Run Aura integration and contract suites after shared-module change.
 Expected:

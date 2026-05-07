@@ -10,8 +10,8 @@ The platform folder audit (April 2025) mentioned `platform/shared-services` as o
 
 - **`platform/shared-services` directory does not exist** - it was likely never created at the platform level
 - **Kernel bridges exist under products/**:
-  - `products/aep/kernel-bridge/` - AEP kernel bridge implementation
-  - `products/data-cloud/kernel-bridge/` - Data Cloud kernel bridge implementation
+  - `products/data-cloud/planes/action/kernel-bridge/` - AEP kernel bridge implementation
+  - `products/data-cloud/extensions/kernel-bridge/` - Data Cloud kernel bridge implementation
   - `products/yappc/kernel-bridge/` - YAPPC kernel bridge implementation
 - **Root `shared-services/` directory exists** with actual deployable services:
   - `auth-gateway/` - Authentication gateway service
@@ -43,8 +43,8 @@ The original concept for `shared-services` was to provide:
 
 The audit document's reference to "empty shared-services kernel bridges" was likely referring to a planned but never-created `platform/shared-services` directory. The actual kernel bridges are properly implemented under their respective products:
 
-- `products/aep/kernel-bridge/` - Provides AEP kernel integration
-- `products/data-cloud/kernel-bridge/` - Provides Data Cloud kernel integration
+- `products/data-cloud/planes/action/kernel-bridge/` - Provides AEP kernel integration
+- `products/data-cloud/extensions/kernel-bridge/` - Provides Data Cloud kernel integration
 - `products/yappc/kernel-bridge/` - Provides YAPPC kernel integration
 
 These kernel bridges follow the proper dependency direction:
@@ -56,7 +56,7 @@ platform-plugins (platform-kernel aware, product-agnostic)
     ↑
 data-cloud-kernel-bridge / aep-kernel-bridge / yappc-kernel-bridge
     ↑
-products/data-cloud / products/aep / products/yappc (provide bridge implementations)
+products/data-cloud / products/data-cloud/planes/action / products/yappc (provide bridge implementations)
 ```
 
 ## Recommended Architecture for Cross-Product Integration
@@ -190,7 +190,7 @@ export class AEPClient {
 ### Step 3: Implement in AEP
 
 ```java
-// products/aep/src/main/java/com/ghatana/aep/integration/DataCloudController.java
+// products/data-cloud/planes/action/src/main/java/com/ghatana/aep/integration/DataCloudController.java
 import com.ghatana.platform.http.HttpHandler;
 import com.ghatana.platform.observability.Metrics;
 

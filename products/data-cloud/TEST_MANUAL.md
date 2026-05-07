@@ -5,7 +5,7 @@ This manual explains how to validate Data Cloud safely and repeatedly across bac
 Use it together with:
 
 - `DEVELOPER_MANUAL.md` for everyday development setup
-- `RUNBOOK.md` for validated deployment and recovery paths
+- `docs/operations/docs/operations/RUNBOOK.md` for validated deployment and recovery paths
 - `README.md` for the product overview and quick start
 
 ## 1. Test Strategy
@@ -37,11 +37,11 @@ Before blaming Data Cloud code, verify Docker is actually healthy if a durable p
 Run this first when your change touches normal product code:
 
 ```bash
-./gradlew :products:data-cloud:launcher:test
-./gradlew :products:data-cloud:sdk:build
-pnpm --dir products/data-cloud/ui type-check
-pnpm --dir products/data-cloud/ui lint
-pnpm --dir products/data-cloud/ui test
+./gradlew :products:data-cloud:delivery:launcher:test
+./gradlew :products:data-cloud:delivery:sdk:build
+pnpm --dir products/data-cloud/delivery/ui type-check
+pnpm --dir products/data-cloud/delivery/ui lint
+pnpm --dir products/data-cloud/delivery/ui test
 ```
 
 This gives you coverage across:
@@ -64,9 +64,9 @@ Use this before merging broad backend changes.
 ### Focused provider tests
 
 ```bash
-./gradlew :products:data-cloud:platform-plugins:test --tests "*PostgresEntityStore*"
-./gradlew :products:data-cloud:platform-plugins:test --tests "*DurableMultiTenantLoadIntegrationTest"
-./gradlew :products:data-cloud:platform-launcher:test --tests "*DataCloudFactoryTest"
+./gradlew :products:data-cloud:extensions:plugins:test --tests "*PostgresEntityStore*"
+./gradlew :products:data-cloud:extensions:plugins:test --tests "*DurableMultiTenantLoadIntegrationTest"
+./gradlew :products:data-cloud:delivery:runtime-composition:test --tests "*DataCloudFactoryTest"
 ```
 
 Use these when you change:
@@ -79,13 +79,13 @@ Use these when you change:
 ### JMH-backed benchmark path
 
 ```bash
-./gradlew :products:data-cloud:platform-launcher:jmhClasses
-./gradlew :products:data-cloud:platform-launcher:jmh -Pjmh.include="EntityCrudBenchmark|DataCloudBenchmark"
+./gradlew :products:data-cloud:delivery:runtime-composition:jmhClasses
+./gradlew :products:data-cloud:delivery:runtime-composition:jmh -Pjmh.include="EntityCrudBenchmark|DataCloudBenchmark"
 ```
 
 Results are written under:
 
-- `products/data-cloud/platform-launcher/build/reports/jmh/`
+- `products/data-cloud/delivery/runtime-composition/build/reports/jmh/`
 
 ## 5. Durable Load And Isolation Validation
 
@@ -125,27 +125,27 @@ Useful environment overrides:
 ### Install once
 
 ```bash
-pnpm --dir products/data-cloud/ui install
+pnpm --dir products/data-cloud/delivery/ui install
 ```
 
 ### Type-check and lint
 
 ```bash
-pnpm --dir products/data-cloud/ui type-check
-pnpm --dir products/data-cloud/ui lint
+pnpm --dir products/data-cloud/delivery/ui type-check
+pnpm --dir products/data-cloud/delivery/ui lint
 ```
 
 ### Unit and component tests
 
 ```bash
-pnpm --dir products/data-cloud/ui test
-pnpm --dir products/data-cloud/ui test:ui
+pnpm --dir products/data-cloud/delivery/ui test
+pnpm --dir products/data-cloud/delivery/ui test:ui
 ```
 
 ### Focused route-truth, adapter, and shell-disclosure regressions
 
 ```bash
-pnpm --dir products/data-cloud/ui vitest run \
+pnpm --dir products/data-cloud/delivery/ui vitest run \
 	src/__tests__/lib/session.test.ts \
 	src/__tests__/routes/routeTruthMatrix.test.ts \
 	src/__tests__/components/GlobalSearch.test.tsx \
@@ -157,15 +157,15 @@ pnpm --dir products/data-cloud/ui vitest run \
 ### Contract tests
 
 ```bash
-pnpm --dir products/data-cloud/ui test:contract
+pnpm --dir products/data-cloud/delivery/ui test:contract
 ```
 
 ### Browser tests
 
 ```bash
-pnpm --dir products/data-cloud/ui test:e2e
-pnpm --dir products/data-cloud/ui test:e2e:headed
-pnpm --dir products/data-cloud/ui test:e2e:debug
+pnpm --dir products/data-cloud/delivery/ui test:e2e
+pnpm --dir products/data-cloud/delivery/ui test:e2e:headed
+pnpm --dir products/data-cloud/delivery/ui test:e2e:debug
 ```
 
 Use headed or debug modes only when diagnosing a failure. Keep the default CI path lean.
@@ -182,9 +182,9 @@ products/data-cloud/scripts/verify-requirements.sh
 
 Run `check-openapi-drift.sh` whenever you touch:
 
-- `launcher/`
-- `REST_API_DOCUMENTATION.md`
-- `api/openapi.yaml`
+- `delivery/launcher/`
+- `docs/api/docs/api/REST_API_DOCUMENTATION.md`
+- `contracts/openapi/data-cloud.yaml`
 - frontend API clients or contract schemas
 
 ## 8. Operational And Recovery Validation
@@ -199,7 +199,7 @@ products/data-cloud/scripts/run-backup-drill.sh
 products/data-cloud/scripts/run-smoke-e2e.sh
 ```
 
-Use the product `RUNBOOK.md` as the source of truth for interpreting recovery success and provider-specific failure signatures.
+Use the product `docs/operations/docs/operations/RUNBOOK.md` as the source of truth for interpreting recovery success and provider-specific failure signatures.
 
 ## 9. CI-Oriented Verification Set
 
@@ -207,10 +207,10 @@ A strong pre-merge verification set for non-trivial changes is:
 
 ```bash
 ./gradlew :products:data-cloud:build
-./gradlew :products:data-cloud:sdk:build
-pnpm --dir products/data-cloud/ui type-check
-pnpm --dir products/data-cloud/ui lint
-pnpm --dir products/data-cloud/ui test:contract
+./gradlew :products:data-cloud:delivery:sdk:build
+pnpm --dir products/data-cloud/delivery/ui type-check
+pnpm --dir products/data-cloud/delivery/ui lint
+pnpm --dir products/data-cloud/delivery/ui test:contract
 products/data-cloud/scripts/check-openapi-drift.sh
 ```
 
@@ -227,7 +227,7 @@ Add the durable load suite if you changed any of these areas:
 
 Run:
 
-- `:products:data-cloud:launcher:test`
+- `:products:data-cloud:delivery:launcher:test`
 - `products/data-cloud/scripts/check-openapi-drift.sh`
 - relevant frontend contract tests if a UI consumer exists
 
@@ -243,7 +243,7 @@ Run:
 
 Run:
 
-- `:products:data-cloud:sdk:build`
+- `:products:data-cloud:delivery:sdk:build`
 - OpenAPI drift checks
 - frontend contract tests if TypeScript clients consume the same schema
 
@@ -251,10 +251,10 @@ Run:
 
 Run:
 
-- `pnpm --dir products/data-cloud/ui type-check`
-- `pnpm --dir products/data-cloud/ui lint`
-- `pnpm --dir products/data-cloud/ui test`
-- `pnpm --dir products/data-cloud/ui test:e2e` for key flows if navigation changed materially
+- `pnpm --dir products/data-cloud/delivery/ui type-check`
+- `pnpm --dir products/data-cloud/delivery/ui lint`
+- `pnpm --dir products/data-cloud/delivery/ui test`
+- `pnpm --dir products/data-cloud/delivery/ui test:e2e` for key flows if navigation changed materially
 
 ### Deployment or profile change
 
@@ -272,14 +272,14 @@ Check:
 
 - Docker Desktop is running
 - ports are not blocked by a stale local process
-- the environment matches the Data Cloud convention documented in `RUNBOOK.md`
+- the environment matches the Data Cloud convention documented in `docs/operations/docs/operations/RUNBOOK.md`
 
 ### UI contract tests fail but unit tests pass
 
 Usually means a drift between:
 
 - backend route registration
-- `api/openapi.yaml`
+- `contracts/openapi/data-cloud.yaml`
 - frontend API or schema assumptions
 
 Treat this as a contract bug, not just a test annoyance.

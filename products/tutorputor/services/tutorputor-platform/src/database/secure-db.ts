@@ -40,6 +40,26 @@ export interface DatabaseMetrics {
   activeConnections: number;
 }
 
+const MODULE_DOMAINS = ["MATH", "SCIENCE", "TECH"] as const;
+const MODULE_DIFFICULTIES = ["INTRO", "INTERMEDIATE", "ADVANCED"] as const;
+const ASSESSMENT_TYPES = ["QUIZ", "PROJECT", "SIMULATION"] as const;
+
+type ModuleDomainValue = (typeof MODULE_DOMAINS)[number];
+type ModuleDifficultyValue = (typeof MODULE_DIFFICULTIES)[number];
+type AssessmentTypeValue = (typeof ASSESSMENT_TYPES)[number];
+
+function assertLiteralValue<T extends readonly string[]>(
+  allowed: T,
+  value: string,
+  label: string,
+): T[number] {
+  if (allowed.includes(value)) {
+    return value as T[number];
+  }
+
+  throw new Error(`Invalid ${label}: ${value}`);
+}
+
 /**
  * Secure Database Manager
  */
@@ -182,7 +202,7 @@ export class SecureDatabaseManager {
   /**
    * Validate and sanitize input parameters
    */
-  private validateInput(input: any): any {
+  private validateInput<T>(input: T): T {
     if (typeof input === "string") {
       // Basic SQL injection prevention
       const dangerousPatterns = [
@@ -199,11 +219,11 @@ export class SecureDatabaseManager {
       }
 
       // Escape special characters
-      return input.replace(/['"\\]/g, "\\$&");
+      return input.replace(/['"\\]/g, "\\$&") as T;
     }
 
     if (Array.isArray(input)) {
-      return input.map((item) => this.validateInput(item));
+      return input.map((item) => this.validateInput(item)) as T;
     }
 
     if (typeof input === "object" && input !== null) {
@@ -211,7 +231,7 @@ export class SecureDatabaseManager {
       for (const [key, value] of Object.entries(input)) {
         sanitized[key] = this.validateInput(value);
       }
-      return sanitized;
+      return sanitized as T;
     }
 
     return input;
@@ -232,7 +252,7 @@ export class SecureDatabaseManager {
         data: {
           email: sanitizedData.email,
           tenantId: sanitizedData.tenantId,
-          displayName: sanitizedData.email.split("@")[0],
+          displayName: sanitizedData.email.split("@")[0] ?? sanitizedData.email,
           role: sanitizedData.roles?.[0] || "student",
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -254,6 +274,16 @@ export class SecureDatabaseManager {
     estimatedTimeMinutes: number;
   }) {
     const sanitizedData = this.validateInput(moduleData);
+    const domain: ModuleDomainValue = assertLiteralValue(
+      MODULE_DOMAINS,
+      sanitizedData.domain,
+      "module domain",
+    );
+    const difficulty: ModuleDifficultyValue = assertLiteralValue(
+      MODULE_DIFFICULTIES,
+      sanitizedData.difficulty,
+      "module difficulty",
+    );
 
     return this.executeQuery(async (prisma) => {
       return prisma.module.create({
@@ -261,8 +291,8 @@ export class SecureDatabaseManager {
           title: sanitizedData.title,
           slug: sanitizedData.slug,
           tenantId: sanitizedData.tenantId,
-          domain: sanitizedData.domain as any,
-          difficulty: sanitizedData.difficulty as any,
+          domain,
+          difficulty,
           description: sanitizedData.description,
           estimatedTimeMinutes: sanitizedData.estimatedTimeMinutes,
           status: "DRAFT",
@@ -286,6 +316,11 @@ export class SecureDatabaseManager {
   }) {
     const sanitizedData = this.validateInput(assessmentData);
     const actorId = sanitizedData.createdBy || "system";
+    const type: AssessmentTypeValue = assertLiteralValue(
+      ASSESSMENT_TYPES,
+      sanitizedData.type,
+      "assessment type",
+    );
 
     return this.executeQuery(async (prisma) => {
       return prisma.assessment.create({
@@ -295,7 +330,7 @@ export class SecureDatabaseManager {
             connect: { id: sanitizedData.moduleId },
           },
           tenantId: sanitizedData.tenantId,
-          type: sanitizedData.type as any,
+          type,
           status: "DRAFT",
           createdBy: actorId,
           updatedBy: actorId,

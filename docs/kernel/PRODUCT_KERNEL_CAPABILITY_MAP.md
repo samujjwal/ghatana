@@ -154,7 +154,7 @@ platform-plugins (platform-kernel aware, product-agnostic)
     ↑
 data-cloud-kernel-bridge / aep-kernel-bridge / yappc-kernel-bridge
     ↑                                   ↑
-products/data-cloud (provides bridge)   products/aep (provides bridge)
+products/data-cloud (provides bridge)   products/data-cloud/planes/action (provides bridge)
     ↑
 products/phr, products/finance (consume bridges + plugins)
 ```

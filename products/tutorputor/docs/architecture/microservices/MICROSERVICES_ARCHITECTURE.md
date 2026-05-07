@@ -7,7 +7,20 @@
 
 ## Overview
 
-TutorPutor uses a microservices architecture to separate concerns and enable independent scaling and deployment of different system components.
+TutorPutor uses a deliberately composed hybrid architecture. The canonical
+product backend is the TypeScript `tutorputor-platform` service. It owns public
+product APIs, persistence, policy, telemetry, analytics, compliance, LTI,
+credentials, and orchestration.
+
+Java/ActiveJ agent libraries, content-generation workers, simulation runtimes,
+and specialist services are worker runtimes behind platform-owned typed
+boundaries. They may scale independently, but they do not own public product
+routes or duplicate product persistence rules. `apps/api-gateway` is a thin
+edge gateway and must delegate to platform-owned contracts.
+
+The enforceable route ownership map is
+`docs/architecture/API_ROUTE_OWNERS.json`; the conformance gate is
+`scripts/validate-product-traceability.mjs`.
 
 ---
 

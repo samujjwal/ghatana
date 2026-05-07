@@ -13,7 +13,7 @@ The platform requires persistent storage for pipelines, agents, checkpoints, pat
 
 Use **Flyway** for all database schema management with version-prefixed SQL migrations:
 
-**AEP migrations** (`products/aep/platform/src/main/resources/db/migration/`):
+**AEP migrations** (`products/data-cloud/planes/action/platform/src/main/resources/db/migration/`):
 
 | File | Purpose |
 |------|---------|
@@ -24,7 +24,7 @@ Use **Flyway** for all database schema management with version-prefixed SQL migr
 | `V005__create_patterns_table.sql` | Event pattern definitions (NFA/temporal/composite) |
 | `V006__create_audit_trail.sql` | Persistent audit events |
 
-**Data-Cloud migrations** (`products/data-cloud/platform-launcher/src/main/resources/db/migration/`):
+**Data-Cloud migrations** (`products/data-cloud/delivery/runtime-composition/src/main/resources/db/migration/`):
 
 | File | Purpose |
 |------|---------|

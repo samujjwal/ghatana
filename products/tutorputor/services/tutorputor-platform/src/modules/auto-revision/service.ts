@@ -5,7 +5,7 @@
  * and A/B experiment lifecycle management.
  */
 
-import type { PrismaClient } from "@tutorputor/core/db";
+import type { Prisma, PrismaClient } from "@tutorputor/core/db";
 
 type ContentStudioRefinementService = {
   refineExperience?: (input: {
@@ -289,18 +289,43 @@ export class AutoRevisionService {
     experienceId: string,
     signals: DriftSignal[] = [],
     insights: RegenerationInsight[] = [],
-  ): Promise<any> {
+  ): Promise<unknown> {
+    const signalPayloads: Prisma.InputJsonArray = signals.map((signal) => ({
+      type: signal.type,
+      severity: signal.severity,
+      metric: signal.metric,
+      value: signal.value,
+      threshold: signal.threshold,
+      recommendation: signal.recommendation,
+      detectedAt: signal.detectedAt.toISOString(),
+    }));
+    const insightPayloads: Prisma.InputJsonArray = insights.map((insight) => ({
+      category: insight.category,
+      issue: insight.issue,
+      evidence:
+        insight.evidence === undefined
+          ? null
+          : JSON.parse(JSON.stringify(insight.evidence)),
+      suggestedAction: insight.suggestedAction,
+      priority: insight.priority,
+    }));
+    const analyticsSnapshot: Prisma.InputJsonObject = {
+      signals: signalPayloads,
+      insights: insightPayloads,
+    };
+    const appliedGuardrails: Prisma.InputJsonObject = {
+      version: "1.0.0",
+      source: "auto-revision",
+    };
+
     return this.prisma.experienceAutoRefinement.create({
       data: {
         experienceId,
-        analyticsSnapshot: { signals, insights },
+        analyticsSnapshot,
         triggerReason: signals[0]?.type || "manual_regeneration",
-        appliedGuardrails: {
-          version: "1.0.0",
-          source: "auto-revision",
-        },
+        appliedGuardrails,
         status: "pending",
-      } as any,
+      },
     });
   }
 

@@ -4,7 +4,7 @@
 #
 # PURPOSE:
 #   Detects divergence between the HTTP routes registered in
-#   DataCloudHttpServer.java and the paths declared in api/openapi.yaml.
+#   DataCloudHttpServer.java and the paths declared in contracts/openapi/data-cloud.yaml.
 #   Fails CI when routes are added / removed in code without updating the spec.
 #
 # USAGE:
@@ -21,7 +21,7 @@
 # ALGORITHM:
 #   1. Extract routes from DataCloudHttpServer.java using .with(HttpMethod.X, "path") lines
 #   2. Normalise ActiveJ parameters (:param → {param}) to match OpenAPI style
-#   3. Extract path keys from api/openapi.yaml (lines matching '^  /…:')
+#   3. Extract path keys from contracts/openapi/data-cloud.yaml (lines matching '^  /…:')
 #   4. Compute symmetric difference; exit 1 on any mismatch
 #
 # EXCLUSIONS (intentionally omitted from spec by design):
@@ -34,8 +34,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PRODUCT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-SERVER_FILE="${PRODUCT_DIR}/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java"
-OPENAPI_FILE="${PRODUCT_DIR}/api/openapi.yaml"
+SERVER_FILE="${PRODUCT_DIR}/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java"
+OPENAPI_FILE="${PRODUCT_DIR}/contracts/openapi/data-cloud.yaml"
 WARN_ONLY=false
 
 # ── Parse flags ─────────────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ DRIFT_FOUND=false
 if [[ -n "${CODE_ONLY}" ]]; then
   DRIFT_FOUND=true
   echo ""
-  echo "⚠️  ROUTES IN CODE BUT MISSING FROM api/openapi.yaml"
+  echo "⚠️  ROUTES IN CODE BUT MISSING FROM contracts/openapi/data-cloud.yaml"
   echo "   These routes are live but not documented:"
   while IFS= read -r route; do
     echo "   + ${route}"
@@ -101,7 +101,7 @@ fi
 if [[ -n "${SPEC_ONLY}" ]]; then
   DRIFT_FOUND=true
   echo ""
-  echo "⚠️  PATHS IN api/openapi.yaml BUT NOT IN CODE"
+  echo "⚠️  PATHS IN contracts/openapi/data-cloud.yaml BUT NOT IN CODE"
   echo "   These paths are documented but have no registered handler:"
   while IFS= read -r path; do
     echo "   - ${path}"
@@ -120,7 +120,7 @@ if [[ "${WARN_ONLY}" == "true" ]]; then
   echo "⚠️  OpenAPI drift found (--warn-only: not failing build)."
   exit 0
 else
-  echo "❌ OpenAPI drift found. Update api/openapi.yaml to match code."
-  echo "   See api/openapi.yaml for the canonical spec."
+  echo "❌ OpenAPI drift found. Update contracts/openapi/data-cloud.yaml to match code."
+  echo "   See contracts/openapi/data-cloud.yaml for the canonical spec."
   exit 1
 fi

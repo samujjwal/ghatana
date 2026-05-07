@@ -2,7 +2,7 @@
  * Standard Error Response Middleware
  *
  * Ensures all API modules return identical error envelope structure:
- * { code: string, message: string, requestId: string, details?: any }
+ * { code: string, message: string, requestId: string, details?: unknown }
  *
  * @doc.type middleware
  * @doc.purpose Standardize error response shapes across all API modules
@@ -10,14 +10,14 @@
  * @doc.pattern Middleware
  */
 import type { FastifyRequest, FastifyReply } from "fastify";
+import {
+  createErrorEnvelope,
+  getRequestTraceId,
+  type CanonicalErrorEnvelope,
+} from "../http/error-envelope.js";
 
-export interface StandardErrorResponse {
-  code: string;
-  message: string;
-  requestId: string;
-  details?: unknown;
-  timestamp: string;
-}
+export type StandardErrorResponse = CanonicalErrorEnvelope;
+const requestIds = new WeakMap<FastifyRequest, string>();
 
 export class StandardError extends Error {
   constructor(
@@ -44,13 +44,13 @@ export async function standardErrorResponseMiddleware(
 
   // If it's already a StandardError, use it directly
   if (error instanceof StandardError) {
-    const response: StandardErrorResponse = {
+    const response = createErrorEnvelope({
       code: error.code,
       message: error.message,
-      requestId,
       details: error.details,
-      timestamp: new Date().toISOString(),
-    };
+      statusCode: error.statusCode,
+      traceId: requestId,
+    });
 
     reply.status(error.statusCode).send(response);
     return;
@@ -58,56 +58,56 @@ export async function standardErrorResponseMiddleware(
 
   // Handle common error types
   if (error.name === "ValidationError") {
-    const response: StandardErrorResponse = {
+    const response = createErrorEnvelope({
       code: "VALIDATION_ERROR",
       message: error.message,
-      requestId,
-      timestamp: new Date().toISOString(),
-    };
+      statusCode: 400,
+      traceId: requestId,
+    });
     reply.status(400).send(response);
     return;
   }
 
   if (error.name === "UnauthorizedError") {
-    const response: StandardErrorResponse = {
+    const response = createErrorEnvelope({
       code: "UNAUTHORIZED",
       message: "Authentication required",
-      requestId,
-      timestamp: new Date().toISOString(),
-    };
+      statusCode: 401,
+      traceId: requestId,
+    });
     reply.status(401).send(response);
     return;
   }
 
   if (error.name === "ForbiddenError") {
-    const response: StandardErrorResponse = {
+    const response = createErrorEnvelope({
       code: "FORBIDDEN",
       message: error.message || "Access denied",
-      requestId,
-      timestamp: new Date().toISOString(),
-    };
+      statusCode: 403,
+      traceId: requestId,
+    });
     reply.status(403).send(response);
     return;
   }
 
   if (error.name === "NotFoundError") {
-    const response: StandardErrorResponse = {
+    const response = createErrorEnvelope({
       code: "NOT_FOUND",
       message: error.message || "Resource not found",
-      requestId,
-      timestamp: new Date().toISOString(),
-    };
+      statusCode: 404,
+      traceId: requestId,
+    });
     reply.status(404).send(response);
     return;
   }
 
   // Generic error fallback
-  const response: StandardErrorResponse = {
+  const response = createErrorEnvelope({
     code: "INTERNAL_ERROR",
     message: "An unexpected error occurred",
-    requestId,
-    timestamp: new Date().toISOString(),
-  };
+    statusCode: 500,
+    traceId: requestId,
+  });
 
   // Log the error for debugging
   request.log.error({ err: error, requestId }, "Unhandled error");
@@ -132,11 +132,7 @@ export function createStandardErrorResponse(
   details?: unknown,
 ): StandardErrorResponse {
   return {
-    code,
-    message,
-    requestId: generateRequestId(),
-    details,
-    timestamp: new Date().toISOString(),
+    ...createErrorEnvelope({ code, message, statusCode, details }),
   };
 }
 
@@ -147,7 +143,11 @@ export async function addRequestIdHook(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const requestId = (request.headers["x-request-id"] as string) || generateRequestId();
-  (request as any).requestId = requestId;
+  const requestId = getRequestTraceId(request);
+  requestIds.set(request, requestId);
   reply.header("x-request-id", requestId);
+}
+
+export function getStoredRequestId(request: FastifyRequest): string | undefined {
+  return requestIds.get(request);
 }

@@ -112,7 +112,7 @@ jobs:
           FAILED=0
           for doc in \
             products/data-cloud/docs/audits/end-to-end-product-correctness-audit.md \
-            products/aep/docs/audits/end-to-end-product-correctness-audit.md; do
+            products/data-cloud/docs/aep/docs/audits/end-to-end-product-correctness-audit.md; do
             if [ -f "$doc" ] && ! grep -qi "archived\|superseded" "$doc"; then
               echo "❌ $doc is not marked as archived/superseded. Product-specific audit docs must defer to the shared doc."
               FAILED=$((FAILED + 1))
@@ -125,7 +125,7 @@ jobs:
       - name: Verify no audit doc references stale commit c4fc61
         run: |
           STALE_COMMIT="c4fc61"
-          HITS=$(grep -rl "${STALE_COMMIT}" docs/audits products/data-cloud/docs products/aep/docs 2>/dev/null || true)
+          HITS=$(grep -rl "${STALE_COMMIT}" docs/audits products/data-cloud/docs products/data-cloud/docs/aep/docs 2>/dev/null || true)
           if [ -n "$HITS" ]; then
             echo "❌ The following audit docs still reference the stale commit ${STALE_COMMIT}:"
             echo "$HITS"
@@ -139,7 +139,7 @@ jobs:
           # Absolute local paths (e.g. /home/user/, C:\Users\) must not appear in docs.
           # They are a sign of accidental copy-paste from a dev machine.
           HITS=$(grep -rn --include='*.md' -E '(^|[^`])(\/home\/[a-zA-Z]|C:\\\\Users\\\\|D:\\\\|\/Users\/[a-zA-Z])' \
-            docs products/data-cloud/docs products/aep/docs 2>/dev/null | head -20 || true)
+            docs products/data-cloud/docs products/data-cloud/docs/aep/docs 2>/dev/null | head -20 || true)
           if [ -n "$HITS" ]; then
             echo "❌ Found absolute local filesystem paths in docs (must use relative repo paths):"
             echo "$HITS"
@@ -154,7 +154,7 @@ jobs:
           # README or doc files must not claim "production ready" without citing a test or evidence.
           # This catches accidentally copy-pasted marketing text.
           HITS=$(grep -rn --include='*.md' -iE '\bproduction.?ready\b' \
-            docs products/data-cloud/docs products/aep/docs README.md 2>/dev/null \
+            docs products/data-cloud/docs products/data-cloud/docs/aep/docs README.md 2>/dev/null \
             | grep -iv "not.*production.?ready\|conditional\|exit criteria\|readiness gate\|audit\|checklist\|#" \
             | head -10 || true)
           if [ -n "$HITS" ]; then

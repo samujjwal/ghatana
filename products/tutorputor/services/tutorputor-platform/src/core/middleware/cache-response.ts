@@ -21,6 +21,10 @@ interface CacheOptions {
 }
 
 const DEFAULT_TTL = 300; // 5 minutes
+const requestCacheMetadata = new WeakMap<
+  FastifyRequest,
+  { cacheKey: string; ttl: number }
+>();
 
 export class ResponseCacheMiddleware {
   private redis: Redis;
@@ -42,7 +46,7 @@ export class ResponseCacheMiddleware {
     // Create a hash of the request for consistent key generation
     const keyString = `${method}:${url}:${JSON.stringify(headers)}`;
     const hash = crypto.createHash('sha256').update(keyString).digest('hex');
-    return `http:cache:${hash}`;
+    return `http:cache:${method}:${hash}`;
   }
 
   /**
@@ -103,8 +107,7 @@ export class ResponseCacheMiddleware {
         reply.header('X-Cache', 'MISS');
         
         // Store cache key on request for onSend hook
-        (req as any).cacheKey = cacheKey;
-        (req as any).cacheTTL = ttl;
+        requestCacheMetadata.set(req, { cacheKey, ttl });
 
         return reply;
       } catch (error) {
@@ -121,10 +124,9 @@ export class ResponseCacheMiddleware {
    * This should be registered on the Fastify instance
    */
   async onSendHook(req: FastifyRequest, reply: FastifyReply, payload: unknown) {
-    const cacheKey = (req as any).cacheKey;
-    const ttl = (req as any).cacheTTL;
+    const metadata = requestCacheMetadata.get(req);
 
-    if (!cacheKey || !ttl) {
+    if (!metadata) {
       return payload;
     }
 
@@ -132,14 +134,14 @@ export class ResponseCacheMiddleware {
       const responsePayload = typeof payload === 'string' ? payload : JSON.stringify(payload);
       
       await this.redis.set(
-        cacheKey,
+        metadata.cacheKey,
         JSON.stringify({
           statusCode: reply.statusCode,
           headers: reply.getHeaders(),
           body: responsePayload,
         }),
         'EX',
-        ttl,
+        metadata.ttl,
       );
     } catch (error) {
       // Log error but don't fail the request

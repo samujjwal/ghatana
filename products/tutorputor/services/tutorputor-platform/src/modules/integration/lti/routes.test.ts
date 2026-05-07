@@ -46,6 +46,12 @@ type MockPrisma = {
   ltiScore: {
     create: ReturnType<typeof vi.fn>;
   };
+  assessmentAttempt: {
+    findFirst: ReturnType<typeof vi.fn>;
+  };
+  learnerMastery: {
+    findMany: ReturnType<typeof vi.fn>;
+  };
   module: {
     findMany: ReturnType<typeof vi.fn>;
   };
@@ -70,6 +76,12 @@ describe("LTI integration routes", () => {
       },
       ltiScore: {
         create: vi.fn(),
+      },
+      assessmentAttempt: {
+        findFirst: vi.fn(),
+      },
+      learnerMastery: {
+        findMany: vi.fn(),
       },
       module: {
         findMany: vi.fn(),
@@ -335,6 +347,124 @@ describe("LTI integration routes", () => {
       error: "Line item not found",
     });
     expect(prisma.ltiSession.findUnique).toHaveBeenCalledTimes(1);
+  });
+
+  it("calculates LTI grade passback from assessment evidence", async () => {
+    prisma.assessmentAttempt.findFirst.mockResolvedValue({
+      id: "attempt-1",
+      tenantId: "tenant-1",
+      userId: "lti-user-1",
+      status: "GRADED",
+      scorePercent: 87,
+      gradedAt: new Date("2026-05-06T12:00:00.000Z"),
+      assessment: {
+        moduleId: "module-1",
+      },
+    });
+    prisma.ltiLineItem.findUnique.mockResolvedValue(null);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/grade-passback",
+      headers: {
+        "x-tenant-id": "tenant-1",
+      },
+      payload: {
+        userId: "lti-user-1",
+        assessmentAttemptId: "attempt-1",
+        lineItemId: "line-item-1",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      success: false,
+      lineItemId: "line-item-1",
+      userId: "lti-user-1",
+      scoreGiven: 87,
+      error: "Line item not found",
+    });
+    expect(prisma.assessmentAttempt.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          id: "attempt-1",
+          tenantId: "tenant-1",
+          userId: "lti-user-1",
+        },
+      }),
+    );
+  });
+
+  it("calculates LTI grade passback from module claim mastery evidence", async () => {
+    prisma.learnerMastery.findMany.mockResolvedValue([
+      { conceptId: "claim-1", masteryProbability: 0.8, evidenceCount: 3 },
+      { conceptId: "claim-2", masteryProbability: 0.9, evidenceCount: 2 },
+    ]);
+    prisma.ltiLineItem.findUnique.mockResolvedValue(null);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/grade-passback",
+      headers: {
+        "x-tenant-id": "tenant-1",
+      },
+      payload: {
+        userId: "lti-user-1",
+        moduleId: "module-1",
+        lineItemId: "line-item-1",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      success: false,
+      lineItemId: "line-item-1",
+      userId: "lti-user-1",
+      scoreGiven: 85,
+      error: "Line item not found",
+    });
+    expect(prisma.learnerMastery.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          tenantId: "tenant-1",
+          userId: "lti-user-1",
+        }),
+      }),
+    );
+  });
+
+  it("rejects evidence-backed grade passback when assessment evidence is ungraded", async () => {
+    prisma.assessmentAttempt.findFirst.mockResolvedValue({
+      id: "attempt-1",
+      tenantId: "tenant-1",
+      userId: "lti-user-1",
+      status: "SUBMITTED",
+      scorePercent: null,
+      submittedAt: new Date("2026-05-06T12:00:00.000Z"),
+      assessment: {
+        moduleId: "module-1",
+      },
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/grade-passback",
+      headers: {
+        "x-tenant-id": "tenant-1",
+      },
+      payload: {
+        userId: "lti-user-1",
+        assessmentAttemptId: "attempt-1",
+        lineItemId: "line-item-1",
+      },
+    });
+
+    expect(response.statusCode).toBe(422);
+    expect(response.json()).toMatchObject({
+      error: {
+        code: "LTI_EVIDENCE_NOT_READY",
+      },
+    });
   });
 
   it("rejects malformed launch payload before validation", async () => {

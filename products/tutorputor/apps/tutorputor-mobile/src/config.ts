@@ -19,6 +19,14 @@ export const ENABLE_BACKGROUND_SYNC = process.env.ENABLE_BACKGROUND_SYNC !== 'fa
 // Sync Configuration
 export const SYNC_MAX_CONCURRENT = parseInt(process.env.SYNC_MAX_CONCURRENT || '3', 10);
 export const SYNC_RETRY_DELAY_MS = parseInt(process.env.SYNC_RETRY_DELAY_MS || '1000', 10);
+export const SYNC_CONFLICT_POLICY_VERSION = process.env.SYNC_CONFLICT_POLICY_VERSION || 'offline-sync-v1';
+export const SYNC_ENTITY_TYPES = [
+  'module.progress',
+  'simulation.capture',
+  'assessment.attempt',
+  'ai.disabled-state',
+  'telemetry.batch',
+] as const;
 
 // Debug Configuration
 export const ENABLE_DEBUG_LOGGING = process.env.NODE_ENV === 'development';

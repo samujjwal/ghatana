@@ -3,18 +3,18 @@ name: Data Cloud Route Truth Docs
 on:
   pull_request:
     paths:
-      - 'products/data-cloud/ui/src/lib/routing/**'
-      - 'products/data-cloud/ui/scripts/generate-route-truth-matrix.ts'
-      - 'products/data-cloud/ui/docs/ROUTE_TRUTH_MATRIX.md'
-      - 'products/data-cloud/ui/package.json'
+      - 'products/data-cloud/delivery/ui/src/lib/routing/**'
+      - 'products/data-cloud/delivery/ui/scripts/generate-route-truth-matrix.ts'
+      - 'products/data-cloud/delivery/ui/docs/ROUTE_TRUTH_MATRIX.md'
+      - 'products/data-cloud/delivery/ui/package.json'
   push:
     branches:
       - main
     paths:
-      - 'products/data-cloud/ui/src/lib/routing/**'
-      - 'products/data-cloud/ui/scripts/generate-route-truth-matrix.ts'
-      - 'products/data-cloud/ui/docs/ROUTE_TRUTH_MATRIX.md'
-      - 'products/data-cloud/ui/package.json'
+      - 'products/data-cloud/delivery/ui/src/lib/routing/**'
+      - 'products/data-cloud/delivery/ui/scripts/generate-route-truth-matrix.ts'
+      - 'products/data-cloud/delivery/ui/docs/ROUTE_TRUTH_MATRIX.md'
+      - 'products/data-cloud/delivery/ui/package.json'
 
 jobs:
   verify-route-truth-doc:

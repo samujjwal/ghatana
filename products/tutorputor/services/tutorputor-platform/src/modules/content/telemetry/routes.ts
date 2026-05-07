@@ -18,6 +18,7 @@ import {
 import type { PrismaClient } from "@tutorputor/core/db";
 import { TelemetryService } from "./telemetry-service.js";
 import { z } from "zod";
+import { assertConsentAllowed, ConsentPolicyError } from "../../compliance/consentPolicy.js";
 
 interface TrackExplorerEventInput {
   userId?: string;
@@ -56,6 +57,27 @@ const trackBatchBodySchema = z.object({
   events: z.array(trackEventBodySchema).min(1),
 });
 
+const learningTelemetryEventSchema = z.object({
+  type: z.string().trim().min(1),
+  timestamp: z.string().datetime(),
+  actor: z.object({
+    id: z.string().trim().min(1),
+  }).passthrough(),
+  context: z.object({
+    tenantId: z.string().trim().min(1),
+    learningUnitId: z.string().trim().min(1).optional(),
+    claimId: z.string().trim().min(1).optional(),
+    sessionId: z.string().trim().min(1),
+    platform: z.enum(["web", "mobile", "vr"]),
+  }).passthrough(),
+  object: z.record(z.string(), z.unknown()),
+  result: z.record(z.string(), z.unknown()).optional(),
+}).passthrough();
+
+const learningTelemetryBatchBodySchema = z.object({
+  events: z.array(learningTelemetryEventSchema).min(1).max(100),
+});
+
 function sendValidationError(
   reply: { status: (code: number) => { send: (body: unknown) => unknown } },
   error: z.ZodError,
@@ -64,6 +86,16 @@ function sendValidationError(
   return reply.status(400).send({
     error: message,
     issues: error.issues,
+  });
+}
+
+function enforceTelemetryConsent(request: { headers: Record<string, unknown> }) {
+  const consentHeader = request.headers["x-telemetry-consent"];
+  const consentState = Array.isArray(consentHeader) ? consentHeader[0] : consentHeader;
+  assertConsentAllowed({
+    useCase: "learning_telemetry",
+    granted: consentState !== "missing" && consentState !== "revoked" && consentState !== "denied",
+    revoked: consentState === "revoked" || consentState === "denied",
   });
 }
 
@@ -145,6 +177,40 @@ export function registerTelemetryRoutes(
       );
 
       return reply.status(200).send(result);
+    },
+  );
+
+  // ---------------------------------------------------------------------------
+  // POST /telemetry/learning/batch - Track learning evidence telemetry
+  // ---------------------------------------------------------------------------
+  app.post(
+    "/telemetry/learning/batch",
+    { preHandler: [authGuard] },
+    async (request, reply) => {
+      try {
+        enforceTelemetryConsent(request);
+      } catch (error) {
+        if (error instanceof ConsentPolicyError) {
+          return reply.status(403).send({ error: error.message, reason: error.decision.reason });
+        }
+        throw error;
+      }
+      const bodyResult = learningTelemetryBatchBodySchema.safeParse(request.body);
+      if (!bodyResult.success) {
+        return sendValidationError(
+          reply,
+          bodyResult.error,
+          "Invalid learning telemetry batch payload",
+        );
+      }
+
+      const result = await service.ingestLearningTelemetryBatch(
+        getTenantId(request),
+        getUserId(request),
+        bodyResult.data as never,
+      );
+
+      return reply.status(202).send(result);
     },
   );
 }

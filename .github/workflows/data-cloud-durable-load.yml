@@ -96,7 +96,7 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: |
-            products/data-cloud/platform-plugins/build/test-results/test/*.xml
+            products/data-cloud/extensions/plugins/build/test-results/test/*.xml
           check_name: Data Cloud Durable Load Test Results
 
       - name: Enforce durable load thresholds from metrics artifact
@@ -219,7 +219,7 @@ jobs:
         with:
           name: data-cloud-durable-load-test-results
           path: |
-            products/data-cloud/platform-plugins/build/test-results/test/
-            products/data-cloud/platform-plugins/build/reports/tests/test/
+            products/data-cloud/extensions/plugins/build/test-results/test/
+            products/data-cloud/extensions/plugins/build/reports/tests/test/
           if-no-files-found: warn
           retention-days: 30

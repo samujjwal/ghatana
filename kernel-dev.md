@@ -30,7 +30,7 @@
    Enforce that `platform-kernel/**` cannot import or depend on `products/**`.
 
 10. **Add ArchUnit rule: platform plugins must not depend on product implementations.**
-    Enforce that `platform-plugins/**` cannot import `products/phr`, `products/finance`, `products/yappc`, `products/data-cloud`, or `products/aep`.
+    Enforce that `platform-plugins/**` cannot import `products/phr`, `products/finance`, `products/yappc`, `products/data-cloud`, or `products/data-cloud/planes/action`.
 
 ---
 

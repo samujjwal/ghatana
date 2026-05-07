@@ -105,12 +105,12 @@ jobs:
           IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
           TAG="${{ needs.gate.outputs.image_tag }}"
           # Patch the image tag in-place using kustomize edit
-          cd products/aep/k8s
+          cd products/data-cloud/planes/action/k8s
           kustomize edit set image aep-service-manager="${IMAGE}:${TAG}" || true
 
       - name: Apply Kubernetes manifests (kustomize)
         run: |
-          kubectl apply -k products/aep/k8s/ \
+          kubectl apply -k products/data-cloud/planes/action/k8s/ \
             --namespace=${{ env.K8S_NAMESPACE }} \
             --server-side \
             --force-conflicts
@@ -194,7 +194,7 @@ jobs:
 
       - name: Apply Kubernetes manifests (kustomize)
         run: |
-          kubectl apply -k products/aep/k8s/ \
+          kubectl apply -k products/data-cloud/planes/action/k8s/ \
             --namespace=${{ env.K8S_NAMESPACE }} \
             --server-side \
             --force-conflicts

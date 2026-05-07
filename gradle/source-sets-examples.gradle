@@ -79,7 +79,7 @@ dependencies {
 // =============================================================================
 // MODULE WITH FUNCTIONAL TESTS
 // =============================================================================
-// Example: products/aep/orchestrator/build.gradle
+// Example: products/data-cloud/planes/action/orchestrator/build.gradle
 /*
 plugins {
     id 'java-library'

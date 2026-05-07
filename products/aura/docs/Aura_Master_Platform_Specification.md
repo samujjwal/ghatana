@@ -69,8 +69,8 @@ Aura uses a **7-layer platform architecture**. Each layer has a clear responsibi
 
 ## Shared Platform Boundary Rules
 
-- **AEP is the only event communication path:** Aura publishes and consumes cross-process events through `products/aep/platform` and its contracts. Aura code must not integrate directly with Event Cloud or raw broker infrastructure.
-- **Data Cloud is the authoritative data-management plane:** Durable data handling, storage lifecycle, lineage, retention, export assembly, and plugin-managed data access run through `products/data-cloud/platform` or an approved `products/data-cloud/spi` plugin. Aura may define logical schemas and dataset contracts, but not bypass Data Cloud for managed data paths.
+- **AEP is the only event communication path:** Aura publishes and consumes cross-process events through `products/data-cloud/planes/action/platform` and its contracts. Aura code must not integrate directly with Event Cloud or raw broker infrastructure.
+- **Data Cloud is the authoritative data-management plane:** Durable data handling, storage lifecycle, lineage, retention, export assembly, and plugin-managed data access run through `products/data-cloud/platform` or an approved `products/data-cloud/planes/shared-spi` plugin. Aura may define logical schemas and dataset contracts, but not bypass Data Cloud for managed data paths.
 - **Security, auth, audit, and observability are shared capabilities:** Aura integrates shared auth, security, governance, and o11y services/modules. Aura should not build product-local replacements for those cross-cutting concerns.
 
 ## Layer Overview

@@ -13,6 +13,8 @@
 
 import type { PrismaClient } from "@tutorputor/core/db";
 import { Prisma } from "@tutorputor/core/db";
+import type { LearningTelemetryEvent } from "@tutorputor/contracts/v1/telemetry-events";
+import { XAPI_VERBS } from "@tutorputor/contracts/v1/telemetry-events";
 import { createLearnerProfileService } from "../../learning/learner-profile-service.js";
 
 interface ExplorerEvent {
@@ -49,6 +51,17 @@ interface TrackExplorerEventInput {
 
 interface TrackBatchEventsInput {
   events: TrackExplorerEventInput[];
+}
+
+export interface LearningTelemetryBatchInput {
+  events: LearningTelemetryEvent[];
+}
+
+export interface PrivacyTelemetryTarget {
+  tenantId: string;
+  userId: string;
+  runId?: string;
+  attemptId?: string;
 }
 
 const POSITIVE_FEEDBACK = new Set(["positive", "helpful", "relevant"]);
@@ -100,6 +113,105 @@ export class TelemetryService {
 
   constructor(private readonly prisma: PrismaClient) {
     this.learnerProfileService = createLearnerProfileService(prisma as never);
+  }
+
+  async ingestLearningTelemetryBatch(
+    tenantId: string,
+    userId: string,
+    input: LearningTelemetryBatchInput,
+  ): Promise<{ count: number }> {
+    if (input.events.length === 0) {
+      throw new Error("Learning telemetry batch must contain at least one event");
+    }
+
+    const data = input.events.map((event) => {
+      this.assertValidLearningTelemetryEvent(tenantId, userId, event);
+      return {
+        tenantId,
+        userId,
+        moduleId: event.context.learningUnitId ?? null,
+        eventType: event.type,
+        payload: event as unknown as Prisma.InputJsonValue,
+        timestamp: new Date(event.timestamp),
+      };
+    });
+
+    const result = await this.prisma.learningEvent.createMany({
+      data,
+      skipDuplicates: true,
+    });
+
+    return { count: result.count };
+  }
+
+  async getLearningTelemetryDashboardSummary(
+    tenantId: string,
+    userId?: string,
+  ): Promise<{
+    totalEvents: number;
+    byType: Record<string, number>;
+    simulationRuns: number;
+    assessmentAnswers: number;
+    hints: number;
+    aiInteractions: number;
+  }> {
+    const rows = await this.prisma.learningEvent.findMany({
+      where: {
+        tenantId,
+        ...(userId ? { userId } : {}),
+      },
+      select: {
+        eventType: true,
+        payload: true,
+      },
+    });
+    const byType: Record<string, number> = {};
+
+    for (const row of rows) {
+      const eventType = String(row.eventType);
+      byType[eventType] = (byType[eventType] ?? 0) + 1;
+    }
+
+    return {
+      totalEvents: rows.length,
+      byType,
+      simulationRuns: rows.filter((row) =>
+        String(row.eventType).startsWith("sim."),
+      ).length,
+      assessmentAnswers: byType["assess.answer"] ?? 0,
+      hints: byType["assist.hint"] ?? 0,
+      aiInteractions: rows.filter((row) =>
+        String(row.eventType).startsWith("ai."),
+      ).length,
+    };
+  }
+
+  async exportLearningTelemetryForPrivacy(
+    target: PrivacyTelemetryTarget,
+  ): Promise<Array<{ id: string; eventType: string; payload: unknown }>> {
+    const rows = await this.findPrivacyTargetedLearningEvents(target);
+    return rows.map((row) => ({
+      id: String(row.id),
+      eventType: String(row.eventType),
+      payload: row.payload,
+    }));
+  }
+
+  async deleteLearningTelemetryForPrivacy(
+    target: PrivacyTelemetryTarget,
+  ): Promise<{ count: number }> {
+    const rows = await this.findPrivacyTargetedLearningEvents(target);
+    if (rows.length === 0) {
+      return { count: 0 };
+    }
+
+    const result = await this.prisma.learningEvent.deleteMany({
+      where: {
+        tenantId: target.tenantId,
+        id: { in: rows.map((row) => String(row.id)) },
+      },
+    });
+    return { count: result.count };
   }
 
   /**
@@ -249,6 +361,58 @@ export class TelemetryService {
         recommendationStatus: "STALE",
       },
     });
+  }
+
+  private assertValidLearningTelemetryEvent(
+    tenantId: string,
+    userId: string,
+    event: LearningTelemetryEvent,
+  ): void {
+    if (!(event.type in XAPI_VERBS)) {
+      throw new Error(`Unsupported learning telemetry event type: ${event.type}`);
+    }
+    if (event.actor.id !== userId) {
+      throw new Error("Learning telemetry actor does not match authenticated user");
+    }
+    if (event.context.tenantId !== tenantId) {
+      throw new Error("Learning telemetry tenant does not match request tenant");
+    }
+    if (!event.context.sessionId) {
+      throw new Error("Learning telemetry event requires a sessionId");
+    }
+  }
+
+  private async findPrivacyTargetedLearningEvents(target: PrivacyTelemetryTarget) {
+    const rows = await this.prisma.learningEvent.findMany({
+      where: {
+        tenantId: target.tenantId,
+        userId: target.userId,
+      },
+      select: {
+        id: true,
+        eventType: true,
+        payload: true,
+      },
+    });
+
+    return rows.filter((row) =>
+      this.matchesPrivacyTarget(row.payload, target),
+    );
+  }
+
+  private matchesPrivacyTarget(
+    payload: unknown,
+    target: PrivacyTelemetryTarget,
+  ): boolean {
+    if (!target.runId && !target.attemptId) {
+      return true;
+    }
+    const serialized = JSON.stringify(payload);
+    return (
+      (!target.runId || serialized.includes(`"runId":"${target.runId}"`)) &&
+      (!target.attemptId ||
+        serialized.includes(`"attemptId":"${target.attemptId}"`))
+    );
   }
 
   private async applyLearnerFeedbackSignals(

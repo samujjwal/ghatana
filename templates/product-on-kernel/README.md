@@ -28,7 +28,7 @@ This template shows how to wire a Ghatana product into the **Platform Kernel** u
    │ (DataCloud ext) │   │ (AepExtension)  │  └──────────────────────────┘
    └─────────────────┘   └─────────────────┘
               ▲                    ▲
-    products/data-cloud     products/aep
+    products/data-cloud     products/data-cloud/planes/action
          (provides               (provides
       DataCloudClient)         AepClient)
 ```

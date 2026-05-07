@@ -17,7 +17,7 @@ dependencies {
     api(project(":platform:java:agent-core"))
 
     // AEP Agent Runtime (for MemoryRedactionFilter)
-    implementation(project(":products:aep:aep-agent-runtime"))
+    implementation(project(":products:data-cloud:planes:action:agent-runtime"))
 
     // Platform libs
     implementation(project(":platform:java:observability"))
@@ -32,7 +32,7 @@ dependencies {
     implementation(project(":products:yappc:libs:java:yappc-domain"))
 
     // Data-Cloud SPI (for ConversationRepository and PromptVersioningService)
-    implementation(project(":products:data-cloud:spi"))
+    implementation(project(":products:data-cloud:planes:shared-spi"))
     implementation(project(":products:yappc:infrastructure:datacloud"))
 
     // ActiveJ

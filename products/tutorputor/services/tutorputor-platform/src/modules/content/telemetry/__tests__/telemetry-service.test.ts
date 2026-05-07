@@ -49,6 +49,11 @@ function makePrisma() {
       createMany: vi.fn().mockResolvedValue({ count: 2 }),
       findMany: vi.fn().mockResolvedValue([]),
     },
+    learningEvent: {
+      createMany: vi.fn().mockResolvedValue({ count: 3 }),
+      findMany: vi.fn().mockResolvedValue([]),
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
     contentAsset: {
       findMany: vi.fn().mockResolvedValue([
         { id: "asset-1", conceptId: "concept-1", assetType: "EXPLAINER" },
@@ -225,5 +230,213 @@ describe("TelemetryService", () => {
         }),
       }),
     );
+  });
+
+  it("validates and persists typed learning telemetry event batches", async () => {
+    const result = await service.ingestLearningTelemetryBatch("tenant-1", "user-1", {
+      events: [
+        {
+          type: "sim.capture",
+          timestamp: "2026-05-06T00:00:00.000Z",
+          actor: { id: "user-1" },
+          context: {
+            tenantId: "tenant-1",
+            learningUnitId: "module-1",
+            claimId: "claim-1",
+            sessionId: "session-1",
+            platform: "web",
+          },
+          object: {
+            simulationId: "sim-1",
+            runId: "run-1",
+            captureId: "capture-1",
+            claimId: "claim-1",
+            evidenceId: "evidence-1",
+            taskId: "task-1",
+          },
+          result: {
+            processFeatures: { attempts: 2 },
+            outputState: { distance: 12 },
+            validEvidence: true,
+          },
+        },
+        {
+          type: "assess.answer",
+          timestamp: "2026-05-06T00:00:01.000Z",
+          actor: { id: "user-1" },
+          context: {
+            tenantId: "tenant-1",
+            learningUnitId: "module-1",
+            claimId: "claim-1",
+            sessionId: "session-1",
+            platform: "web",
+          },
+          object: {
+            assessmentId: "assessment-1",
+            attemptId: "attempt-1",
+            itemId: "item-1",
+            taskId: "task-1",
+            claimId: "claim-1",
+            evidenceId: "evidence-1",
+          },
+          result: {
+            response: "12",
+            correct: true,
+            score: 1,
+            maxScore: 1,
+            confidence: "medium",
+            durationMs: 2000,
+          },
+        },
+        {
+          type: "assist.hint",
+          timestamp: "2026-05-06T00:00:02.000Z",
+          actor: { id: "user-1" },
+          context: {
+            tenantId: "tenant-1",
+            learningUnitId: "module-1",
+            claimId: "claim-1",
+            sessionId: "session-1",
+            platform: "web",
+          },
+          object: {
+            moduleId: "module-1",
+            claimId: "claim-1",
+            taskId: "task-1",
+            hintId: "hint-1",
+          },
+          result: {
+            source: "ai_tutor",
+            level: "nudge",
+            accepted: true,
+          },
+        },
+      ],
+    });
+
+    expect(result.count).toBe(3);
+    expect(prisma.learningEvent.createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.arrayContaining([
+          expect.objectContaining({
+            tenantId: "tenant-1",
+            userId: "user-1",
+            moduleId: "module-1",
+            eventType: "sim.capture",
+          }),
+          expect.objectContaining({
+            eventType: "assess.answer",
+          }),
+          expect.objectContaining({
+            eventType: "assist.hint",
+          }),
+        ]),
+        skipDuplicates: true,
+      }),
+    );
+  });
+
+  it("rejects learning telemetry when actor and tenant do not match request context", async () => {
+    await expect(
+      service.ingestLearningTelemetryBatch("tenant-1", "user-1", {
+        events: [
+          {
+            type: "sim.start",
+            timestamp: "2026-05-06T00:00:00.000Z",
+            actor: { id: "different-user" },
+            context: {
+              tenantId: "tenant-1",
+              sessionId: "session-1",
+              platform: "web",
+            },
+            object: {
+              id: "sim-1",
+              name: "Simulation",
+              blueprintId: "blueprint-1",
+            },
+          },
+        ],
+      }),
+    ).rejects.toThrow("actor does not match");
+  });
+
+  it("aggregates dashboard telemetry from persisted learning events", async () => {
+    prisma.learningEvent.findMany.mockResolvedValue([
+      { eventType: "sim.capture", payload: {} },
+      { eventType: "assess.answer", payload: {} },
+      { eventType: "assist.hint", payload: {} },
+      { eventType: "ai.tutor.response", payload: {} },
+    ]);
+
+    const summary = await service.getLearningTelemetryDashboardSummary(
+      "tenant-1",
+      "user-1",
+    );
+
+    expect(prisma.learningEvent.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { tenantId: "tenant-1", userId: "user-1" },
+      }),
+    );
+    expect(summary).toEqual({
+      totalEvents: 4,
+      byType: {
+        "sim.capture": 1,
+        "assess.answer": 1,
+        "assist.hint": 1,
+        "ai.tutor.response": 1,
+      },
+      simulationRuns: 1,
+      assessmentAnswers: 1,
+      hints: 1,
+      aiInteractions: 1,
+    });
+  });
+
+  it("exports and deletes privacy-targeted telemetry by user/run/attempt", async () => {
+    prisma.learningEvent.findMany.mockResolvedValue([
+      {
+        id: "event-1",
+        eventType: "sim.capture",
+        payload: { object: { runId: "run-1" } },
+      },
+      {
+        id: "event-2",
+        eventType: "assess.answer",
+        payload: { object: { attemptId: "attempt-1" } },
+      },
+      {
+        id: "event-3",
+        eventType: "assist.hint",
+        payload: { object: { hintId: "hint-1" } },
+      },
+    ]);
+    prisma.learningEvent.deleteMany.mockResolvedValue({ count: 1 });
+
+    const exported = await service.exportLearningTelemetryForPrivacy({
+      tenantId: "tenant-1",
+      userId: "user-1",
+      runId: "run-1",
+    });
+    const deleted = await service.deleteLearningTelemetryForPrivacy({
+      tenantId: "tenant-1",
+      userId: "user-1",
+      attemptId: "attempt-1",
+    });
+
+    expect(exported).toEqual([
+      {
+        id: "event-1",
+        eventType: "sim.capture",
+        payload: { object: { runId: "run-1" } },
+      },
+    ]);
+    expect(prisma.learningEvent.deleteMany).toHaveBeenCalledWith({
+      where: {
+        tenantId: "tenant-1",
+        id: { in: ["event-2"] },
+      },
+    });
+    expect(deleted).toEqual({ count: 1 });
   });
 });

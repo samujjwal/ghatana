@@ -1,0 +1,75 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "types": ["vite/client", "node"],
+    "noEmit": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@ghatana/canvas/plugins": [
+        "../../../../platform/typescript/canvas/src/plugins/index.ts"
+      ],
+      "@ghatana/design-system": [
+        "../../../../platform/typescript/design-system/src/index.ts"
+      ],
+      "@ghatana/canvas": [
+        "../../../../platform/typescript/canvas/src/index.ts"
+      ],
+      "@ghatana/theme": ["../../../../platform/typescript/theme/src"],
+      "@ghatana/tokens": ["../../../../platform/typescript/tokens/src"],
+      "@ghatana/platform-utils": [
+        "../../../../platform/typescript/platform-utils/src/index.ts"
+      ],
+      "@ghatana/realtime": [
+        "../../../../platform/typescript/realtime/src/index.ts"
+      ],
+      "@ghatana/platform-events": [
+        "../../../../platform/typescript/platform-events/src/index.ts"
+      ],
+      "@ghatana/audit": [
+        "../../../../platform/typescript/audit/src/index.ts"
+      ],
+      "@ghatana/domain-components": [
+        "../../../../platform/typescript/domain-components/src/index.ts"
+      ],
+      "@ghatana/domain-components/privacy": [
+        "../../../../platform/typescript/domain-components/src/privacy/index.ts"
+      ],
+      "@audio-video/ui": [
+        "../../../../products/audio-video/libs/audio-video-ui/src/index.tsx"
+      ],
+      "@ghatana/privacy-ui": [
+        "../../../../platform/typescript/privacy-ui/src"
+      ],
+      "@ghatana/security-ui": [
+        "../../../../platform/typescript/security-ui/src"
+      ],
+      "@ghatana/voice-ui": [
+        "../../../../platform/typescript/voice-ui/src"
+      ],
+      "@ghatana/nlp-ui": [
+        "../../../../platform/typescript/nlp-ui/src"
+      ],
+      "@ghatana/audit-ui": [
+        "../../../../platform/typescript/audit-ui/src"
+      ],
+      "@ghatana/selection-ui": [
+        "../../../../platform/typescript/selection-ui/src"
+      ],
+      "clsx": ["./node_modules/clsx/clsx.d.ts"],
+      "tailwind-merge": ["./node_modules/tailwind-merge/dist/types.d.ts"]
+    },
+    "ignoreDeprecations": "6.0",
+    "baseUrl": "."
+  },
+  "include": ["src"]
+}

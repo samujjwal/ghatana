@@ -120,7 +120,7 @@ fun Project.javaCoverageThreshold(): Double = when {
     path.startsWith(":platform:java") && path.matches(P1_MODULES) -> 0.80
     path.startsWith(":platform:java") && path.matches(P2_MODULES) -> 0.70
     path.startsWith(":products:data-cloud") -> 0.80
-    path.startsWith(":products:aep") -> 0.80
+    path.startsWith(":products:data-cloud:planes:action") -> 0.80
     path.startsWith(":products") -> 0.70
     else -> 0.60
 }

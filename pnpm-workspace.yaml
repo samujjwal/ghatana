@@ -8,10 +8,10 @@ packages:
   - "platform/typescript/ghatana-studio"
 
   # Product UIs
-  - "products/data-cloud/ui"
+  - "products/data-cloud/delivery/ui"
   - "products/data-cloud/libs/*"
-  - "products/aep/ui"
-  - "products/aep/gateway"
+  - "products/data-cloud/planes/action/ui"
+  - "products/data-cloud/planes/action/gateway"
   - "products/phr/apps/*"
   - "products/digital-marketing/ui"
   # Finance currently ships as backend-only in this monorepo. Add a workspace entry here

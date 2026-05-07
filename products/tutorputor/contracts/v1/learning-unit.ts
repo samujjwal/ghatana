@@ -45,6 +45,14 @@ export type ConfidenceLevel = "low" | "medium" | "high";
 
 export type LearningUnitStatus = "draft" | "review" | "published" | "archived";
 
+export type PublishReviewStatus =
+  | "draft"
+  | "in_review"
+  | "sme_approved"
+  | "qa_approved"
+  | "accessibility_approved"
+  | "complete";
+
 export type ArtifactType =
   | "simulation"
   | "explainer_video"
@@ -59,12 +67,45 @@ export type VivaConditionType =
   | "pattern_mismatch"
   | "explanation_avoidance"
   | "gaming_detection"
-  | "sim_evidence_contradiction";
+  | "sim_evidence_contradiction"
+  | "random_sampling";
 
 export type CredentialIssueCondition =
   | "all_claims_mastered"
   | "primary_claim_mastered"
   | "completion";
+
+export type LocaleCode = string;
+
+export type LocalizedText = Record<LocaleCode, string>;
+
+export interface LocalizedTextResource {
+  /** Source language text used as the authoring fallback */
+  default: string;
+  /** Locale-specific translations keyed by BCP-47 locale code */
+  translations: LocalizedText;
+}
+
+export interface LocalizationFieldCoverage {
+  contentBlocks: boolean;
+  captions: boolean;
+  transcripts: boolean;
+  prompts: boolean;
+  feedback: boolean;
+  rubrics: boolean;
+  accessibilityAlternatives: boolean;
+}
+
+export interface LocalizationConfig {
+  /** Source locale authored by the content owner */
+  sourceLocale: LocaleCode;
+  /** Locales the unit is allowed to render or preview */
+  supportedLocales: LocaleCode[];
+  /** Required localized surfaces for lesson, assessment, AI prompt, and accessibility content */
+  requiredFields: LocalizationFieldCoverage;
+  /** Whether publishing is blocked until all required locale resources are complete */
+  publishRequiresCompleteCoverage: boolean;
+}
 
 // ============================================================================
 // Intent
@@ -100,6 +141,8 @@ export interface Claim {
   prerequisites?: string[];
   /** Content needs analysis for this claim */
   contentNeeds?: ContentNeeds;
+  /** Localized claim text for learner, admin preview, and AI tutor context */
+  localizedText?: LocalizedTextResource;
 }
 
 // ============================================================================
@@ -202,6 +245,8 @@ export interface Evidence {
   description: string;
   /** Data points captured for this evidence */
   observables: Observable[];
+  /** Localized evidence description for dashboards and review workflows */
+  localizedDescription?: LocalizedTextResource;
 }
 
 // ============================================================================
@@ -222,6 +267,10 @@ export interface TaskBase {
   evidenceRef: string;
   /** The prompt or question shown to the learner */
   prompt: string;
+  /** Localized learner prompt for assessments and AI tutor grounding */
+  localizedPrompt?: LocalizedTextResource;
+  /** Localized feedback/remediation text keyed by outcome identifier */
+  localizedFeedback?: Record<string, LocalizedTextResource>;
 }
 
 /**
@@ -233,6 +282,8 @@ export interface PredictionTask extends TaskBase {
   confidenceRequired: true;
   /** Answer options */
   options: string[];
+  /** Localized answer options by locale */
+  localizedOptions?: Record<LocaleCode, string[]>;
   /** Correct answer */
   correctAnswer?: string;
 }
@@ -246,6 +297,8 @@ export interface SimulationTask extends TaskBase {
   simulationRef: string;
   /** Human-readable goal description */
   goal: string;
+  /** Localized non-visual goal and state summary for simulation accessibility */
+  localizedGoal?: LocalizedTextResource;
   /** Success criteria */
   successCriteria: {
     /** Maximum allowed RMSE (e.g., "<= 0.25") */
@@ -266,6 +319,8 @@ export interface ExplanationTask extends TaskBase {
   minWords?: number;
   /** Reference to scoring rubric */
   rubricRef?: string;
+  /** Localized scoring rubric shown in assessment preview/review */
+  localizedRubric?: LocalizedTextResource;
   /** Key terms that should appear */
   expectedTerms?: string[];
 }
@@ -306,6 +361,13 @@ export interface Artifact {
   claims: string[];
   /** Task IDs this artifact scaffolds (for explainers) */
   scaffolds?: string[];
+  /** Localized captions/transcripts/accessibility alternatives for the artifact */
+  localization?: {
+    title?: LocalizedTextResource;
+    captions?: Record<LocaleCode, string>;
+    transcript?: LocalizedTextResource;
+    accessibilityAlternative?: LocalizedTextResource;
+  };
 }
 
 // ============================================================================
@@ -440,6 +502,12 @@ export interface AssessmentConfig {
   vivaTrigger?: {
     conditions: VivaCondition[];
   };
+  /** Locale-ready assessment feedback and rubric resources */
+  localization?: {
+    instructions?: LocalizedTextResource;
+    feedback?: Record<string, LocalizedTextResource>;
+    rubrics?: Record<string, LocalizedTextResource>;
+  };
 }
 
 // ============================================================================
@@ -456,6 +524,36 @@ export interface CredentialConfig {
   issueOn: CredentialIssueCondition;
   /** Reference to badge definition */
   badgeRef?: string;
+}
+
+// ============================================================================
+// Publish Readiness
+// ============================================================================
+
+export interface AIUseDisclosureConfig {
+  /** Whether this learning unit used AI-assisted generation or editing */
+  required: boolean;
+  /** Whether learner/admin-facing AI-use disclosure text is configured */
+  configured: boolean;
+  /** Human-readable disclosure summary */
+  summary?: string;
+}
+
+export interface PublishReadinessConfig {
+  /** Whether the simulation block is configured and linked to tasks/artifacts */
+  simulationConfigured: boolean;
+  /** Whether assessments cover the declared claims/evidence */
+  assessmentCoverage: "none" | "partial" | "complete";
+  /** Accessibility notes for authors, QA, and learner alternatives */
+  accessibilityNotes: string;
+  /** Whether telemetry capture is enabled for the unit */
+  telemetryEnabled: boolean;
+  /** AI-use disclosure state for generated or AI-assisted content */
+  aiUseDisclosure: AIUseDisclosureConfig;
+  /** Final cross-functional review state */
+  reviewStatus: PublishReviewStatus;
+  /** Remaining blocking validation issue IDs/messages */
+  unresolvedValidationErrors: string[];
 }
 
 // ============================================================================
@@ -485,7 +583,9 @@ export interface LearningUnit {
   artifacts: Artifact[];
   telemetry: TelemetryConfig;
   assessment: AssessmentConfig;
+  localization: LocalizationConfig;
   credential?: CredentialConfig;
+  publishReadiness?: PublishReadinessConfig;
 
   // Metadata
   createdAt: string;

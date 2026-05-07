@@ -1,5 +1,7 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { canUseTrustedProxyAuth } from "./trustedProxyAuth.js";
+import { createErrorEnvelope } from "./error-envelope.js";
+import { hasPermission, rolesForPermission, type TutorPutorPermission } from "../authz/permissionPolicy.js";
 
 type HttpError = Error & { statusCode: number; code: string };
 
@@ -103,6 +105,18 @@ export function requireRole(req: FastifyRequest, allowedRoles: string[]) {
   }
 }
 
+export function requirePermission(req: FastifyRequest, permission: TutorPutorPermission) {
+  const role = getUserRole(req);
+
+  if (!hasPermission(role, permission)) {
+    throw createHttpError(
+      403,
+      "FORBIDDEN",
+      `Insufficient permissions. Required permission ${permission}; allowed roles: ${rolesForPermission(permission).join(", ")}`,
+    );
+  }
+}
+
 /**
  * Helper to handle service errors consistently.
  */
@@ -123,10 +137,11 @@ export async function respondWithErrors<T>(
         : "Internal Server Error";
     const code = typeof err.code === "string" ? err.code : "INTERNAL_ERROR";
 
-    reply.code(statusCode).send({
-      error: message,
-      code: code,
-    });
+    reply.code(statusCode).send(createErrorEnvelope({
+      code,
+      message,
+      statusCode,
+    }));
   }
 }
 
@@ -148,10 +163,11 @@ export function roleGuard(
     try {
       requireRole(req, allowedRoles);
     } catch {
-      return reply.code(403).send({
-        error: "Forbidden",
+      return reply.code(403).send(createErrorEnvelope({
+        code: "FORBIDDEN",
         message: `Required role: ${allowedRoles.join(" or ")}`,
-      });
+        statusCode: 403,
+      }, req));
     }
   };
 }

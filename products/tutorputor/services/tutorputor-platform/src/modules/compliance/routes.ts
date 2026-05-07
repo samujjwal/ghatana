@@ -11,13 +11,24 @@ import type { TenantId, UserId } from "@tutorputor/contracts";
 import {
   getTenantId,
   getUserId,
-  requireRole,
+  requirePermission,
 } from "../../core/http/requestContext.js";
 import { z } from "zod";
 
 type ComplianceRoutesService = Pick<
   ComplianceServiceImpl,
-  "requestUserExport" | "createDeletionVerification" | "verifyAndProcessDeletion"
+  | "requestUserExport"
+  | "getExportStatus"
+  | "downloadExport"
+  | "requestUserDeletion"
+  | "cancelDeletionRequest"
+  | "getDeletionStatus"
+  | "createDeletionVerification"
+  | "verifyAndProcessDeletion"
+  | "getPrivacyDataAccessSummary"
+  | "revokeConsent"
+  | "deleteTelemetryForUser"
+  | "processDeletionNow"
 >;
 
 type ComplianceRoutesOptions = {
@@ -30,6 +41,18 @@ const ExportBodySchema = z.object({
 
 const DeletionVerifyBodySchema = z.object({
   token: z.string().min(1),
+});
+
+const DeletionRequestBodySchema = z.object({
+  reason: z.string().min(1).optional(),
+});
+
+const ConsentRevocationBodySchema = z.object({
+  consentType: z.enum(["ai_tutor", "learning_telemetry", "personalization", "voice_image", "social"]),
+});
+
+const TelemetryDeletionBodySchema = z.object({
+  anonymize: z.boolean().optional(),
 });
 
 function createValidationErrorResponse(error: z.ZodError) {
@@ -45,7 +68,6 @@ export const complianceRoutes: FastifyPluginAsync<ComplianceRoutesOptions> = asy
   options,
 ) => {
   const complianceService = options.service ?? new ComplianceServiceImpl(app.prisma);
-  const adminRoles = ["admin", "superadmin"];
 
   /**
    * POST /compliance/export
@@ -67,7 +89,7 @@ export const complianceRoutes: FastifyPluginAsync<ComplianceRoutesOptions> = asy
       (parseResult.data.userId as UserId | undefined) ?? requesterId;
 
     if (targetUserId !== requesterId) {
-      requireRole(request, adminRoles);
+      requirePermission(request, "admin.export");
     }
 
     try {
@@ -76,7 +98,7 @@ export const complianceRoutes: FastifyPluginAsync<ComplianceRoutesOptions> = asy
       });
       if (!user) return reply.code(404).send({ error: "User not found" });
 
-      const result = await complianceService.requestUserExport({
+    const result = await complianceService.requestUserExport({
         userId: targetUserId,
         tenantId,
         requestedBy: requesterId,
@@ -92,6 +114,51 @@ export const complianceRoutes: FastifyPluginAsync<ComplianceRoutesOptions> = asy
   });
 
   /**
+   * GET /compliance/privacy-center
+   * Product-facing summary for privacy center state.
+   */
+  app.get("/privacy-center", async (request, reply) => {
+    const tenantId = getTenantId(request) as TenantId;
+    const userId = getUserId(request) as UserId;
+
+    const summary = await complianceService.getPrivacyDataAccessSummary({
+      userId,
+      tenantId,
+    });
+    return reply.send(summary);
+  });
+
+  /**
+   * GET /compliance/export/:requestId
+   * Export request status.
+   */
+  app.get<{ Params: { requestId: string } }>("/export/:requestId", async (request, reply) => {
+    const tenantId = getTenantId(request) as TenantId;
+    const result = await complianceService.getExportStatus({
+      requestId: request.params.requestId,
+      tenantId,
+    });
+    return reply.send(result);
+  });
+
+  /**
+   * GET /compliance/export/:requestId/download
+   * Download URL/evidence for completed export.
+   */
+  app.get<{ Params: { requestId: string } }>("/export/:requestId/download", async (request, reply) => {
+    const tenantId = getTenantId(request) as TenantId;
+    try {
+      const result = await complianceService.downloadExport({
+        requestId: request.params.requestId,
+        tenantId,
+      });
+      return reply.send(result);
+    } catch (error) {
+      return reply.code(404).send({ error: error instanceof Error ? error.message : "Export not found" });
+    }
+  });
+
+  /**
    * POST /compliance/deletion/request-token
    */
   app.post("/deletion/request-token", async (request, reply) => {
@@ -103,6 +170,45 @@ export const complianceRoutes: FastifyPluginAsync<ComplianceRoutesOptions> = asy
     const result = await complianceService.createDeletionVerification({
       userId,
       userEmail: user.email,
+    });
+    return reply.send(result);
+  });
+
+  /**
+   * POST /compliance/deletion/request
+   * Product-facing deletion request that creates a retention-window workflow.
+   */
+  app.post<{ Body: { reason?: string } }>("/deletion/request", async (request, reply) => {
+    const tenantId = getTenantId(request) as TenantId;
+    const userId = getUserId(request) as UserId;
+    const parseResult = DeletionRequestBodySchema.safeParse(request.body ?? {});
+    if (!parseResult.success) {
+      return reply.code(400).send(createValidationErrorResponse(parseResult.error));
+    }
+
+    const result = await complianceService.requestUserDeletion({
+      userId,
+      tenantId,
+      requestedBy: userId,
+      reason: parseResult.data.reason,
+    });
+    return reply.code(202).send(result);
+  });
+
+  app.get<{ Params: { requestId: string } }>("/deletion/:requestId", async (request, reply) => {
+    const tenantId = getTenantId(request) as TenantId;
+    const result = await complianceService.getDeletionStatus({
+      requestId: request.params.requestId,
+      tenantId,
+    });
+    return reply.send(result);
+  });
+
+  app.delete<{ Params: { requestId: string } }>("/deletion/:requestId", async (request, reply) => {
+    const tenantId = getTenantId(request) as TenantId;
+    const result = await complianceService.cancelDeletionRequest({
+      requestId: request.params.requestId,
+      tenantId,
     });
     return reply.send(result);
   });
@@ -135,4 +241,62 @@ export const complianceRoutes: FastifyPluginAsync<ComplianceRoutesOptions> = asy
       }
     },
   );
+
+  /**
+   * POST /compliance/consent/revoke
+   * Revoke a product consent and make the result immediately visible.
+   */
+  app.post<{ Body: { consentType: "ai_tutor" | "learning_telemetry" | "personalization" | "voice_image" | "social" } }>(
+    "/consent/revoke",
+    async (request, reply) => {
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
+      const parseResult = ConsentRevocationBodySchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.code(400).send(createValidationErrorResponse(parseResult.error));
+      }
+      const result = await complianceService.revokeConsent({
+        userId,
+        tenantId,
+        consentType: parseResult.data.consentType,
+        ipAddress: request.ip,
+        userAgent: request.headers["user-agent"],
+      });
+      return reply.send(result);
+    },
+  );
+
+  /**
+   * POST /compliance/telemetry/delete
+   * Delete or anonymize learning telemetry for the authenticated user.
+   */
+  app.post<{ Body: { anonymize?: boolean } }>("/telemetry/delete", async (request, reply) => {
+    const tenantId = getTenantId(request) as TenantId;
+    const userId = getUserId(request) as UserId;
+    const parseResult = TelemetryDeletionBodySchema.safeParse(request.body ?? {});
+    if (!parseResult.success) {
+      return reply.code(400).send(createValidationErrorResponse(parseResult.error));
+    }
+    const result = await complianceService.deleteTelemetryForUser({
+      userId,
+      tenantId,
+      anonymize: parseResult.data.anonymize,
+    });
+    return reply.send(result);
+  });
+
+  /**
+   * POST /compliance/deletion/process-now
+   * Admin-only operational endpoint used by product support and test evidence.
+   */
+  app.post<{ Body: { userId: string } }>("/deletion/process-now", async (request, reply) => {
+    requirePermission(request, "privacy.delete.process");
+    const tenantId = getTenantId(request) as TenantId;
+    const targetUserId = request.body.userId as UserId;
+    const result = await complianceService.processDeletionNow({
+      userId: targetUserId,
+      tenantId,
+    });
+    return reply.send(result);
+  });
 };

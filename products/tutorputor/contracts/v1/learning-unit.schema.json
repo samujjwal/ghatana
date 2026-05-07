@@ -16,7 +16,8 @@
         "tasks",
         "artifacts",
         "telemetry",
-        "assessment"
+        "assessment",
+        "localization"
     ],
     "properties": {
         "id": {
@@ -95,8 +96,14 @@
         "assessment": {
             "$ref": "#/definitions/AssessmentConfig"
         },
+        "localization": {
+            "$ref": "#/definitions/LocalizationConfig"
+        },
         "credential": {
             "$ref": "#/definitions/CredentialConfig"
+        },
+        "publishReadiness": {
+            "$ref": "#/definitions/PublishReadinessConfig"
         },
         "createdAt": {
             "type": "string",
@@ -139,6 +146,79 @@
                 }
             }
         },
+        "LocalizedTextResource": {
+            "type": "object",
+            "required": [
+                "default",
+                "translations"
+            ],
+            "properties": {
+                "default": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "translations": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string",
+                        "minLength": 1
+                    }
+                }
+            },
+            "additionalProperties": false
+        },
+        "LocalizationFieldCoverage": {
+            "type": "object",
+            "required": [
+                "contentBlocks",
+                "captions",
+                "transcripts",
+                "prompts",
+                "feedback",
+                "rubrics",
+                "accessibilityAlternatives"
+            ],
+            "properties": {
+                "contentBlocks": { "type": "boolean" },
+                "captions": { "type": "boolean" },
+                "transcripts": { "type": "boolean" },
+                "prompts": { "type": "boolean" },
+                "feedback": { "type": "boolean" },
+                "rubrics": { "type": "boolean" },
+                "accessibilityAlternatives": { "type": "boolean" }
+            },
+            "additionalProperties": false
+        },
+        "LocalizationConfig": {
+            "type": "object",
+            "required": [
+                "sourceLocale",
+                "supportedLocales",
+                "requiredFields",
+                "publishRequiresCompleteCoverage"
+            ],
+            "properties": {
+                "sourceLocale": {
+                    "type": "string",
+                    "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$"
+                },
+                "supportedLocales": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string",
+                        "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$"
+                    }
+                },
+                "requiredFields": {
+                    "$ref": "#/definitions/LocalizationFieldCoverage"
+                },
+                "publishRequiresCompleteCoverage": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false
+        },
         "Claim": {
             "type": "object",
             "required": [
@@ -165,6 +245,9 @@
                         "evaluate",
                         "create"
                     ]
+                },
+                "localizedText": {
+                    "$ref": "#/definitions/LocalizedTextResource"
                 },
                 "prerequisites": {
                     "type": "array",
@@ -241,6 +324,9 @@
                     "items": {
                         "$ref": "#/definitions/Observable"
                     }
+                },
+                "localizedDescription": {
+                    "$ref": "#/definitions/LocalizedTextResource"
                 }
             }
         },
@@ -279,6 +365,15 @@
                     "type": "string",
                     "minLength": 10
                 },
+                "localizedPrompt": {
+                    "$ref": "#/definitions/LocalizedTextResource"
+                },
+                "localizedFeedback": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/LocalizedTextResource"
+                    }
+                },
                 "confidenceRequired": {
                     "type": "boolean"
                 },
@@ -288,11 +383,23 @@
                         "type": "string"
                     }
                 },
+                "localizedOptions": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
                 "simulationRef": {
                     "type": "string"
                 },
                 "goal": {
                     "type": "string"
+                },
+                "localizedGoal": {
+                    "$ref": "#/definitions/LocalizedTextResource"
                 },
                 "successCriteria": {
                     "type": "object",
@@ -313,6 +420,9 @@
                 },
                 "rubricRef": {
                     "type": "string"
+                },
+                "localizedRubric": {
+                    "$ref": "#/definitions/LocalizedTextResource"
                 },
                 "artifactType": {
                     "type": "string"
@@ -393,6 +503,26 @@
                     "items": {
                         "type": "string",
                         "pattern": "^T[0-9]+$"
+                    }
+                },
+                "localization": {
+                    "type": "object",
+                    "properties": {
+                        "title": {
+                            "$ref": "#/definitions/LocalizedTextResource"
+                        },
+                        "captions": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
+                        "transcript": {
+                            "$ref": "#/definitions/LocalizedTextResource"
+                        },
+                        "accessibilityAlternative": {
+                            "$ref": "#/definitions/LocalizedTextResource"
+                        }
                     }
                 }
             }
@@ -513,6 +643,26 @@
                             }
                         }
                     }
+                },
+                "localization": {
+                    "type": "object",
+                    "properties": {
+                        "instructions": {
+                            "$ref": "#/definitions/LocalizedTextResource"
+                        },
+                        "feedback": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/definitions/LocalizedTextResource"
+                            }
+                        },
+                        "rubrics": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/definitions/LocalizedTextResource"
+                            }
+                        }
+                    }
                 }
             }
         },
@@ -539,6 +689,76 @@
                 },
                 "badgeRef": {
                     "type": "string"
+                }
+            }
+        },
+        "AIUseDisclosureConfig": {
+            "type": "object",
+            "required": [
+                "required",
+                "configured"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "configured": {
+                    "type": "boolean"
+                },
+                "summary": {
+                    "type": "string"
+                }
+            }
+        },
+        "PublishReadinessConfig": {
+            "type": "object",
+            "required": [
+                "simulationConfigured",
+                "assessmentCoverage",
+                "accessibilityNotes",
+                "telemetryEnabled",
+                "aiUseDisclosure",
+                "reviewStatus",
+                "unresolvedValidationErrors"
+            ],
+            "properties": {
+                "simulationConfigured": {
+                    "type": "boolean"
+                },
+                "assessmentCoverage": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "partial",
+                        "complete"
+                    ]
+                },
+                "accessibilityNotes": {
+                    "type": "string",
+                    "minLength": 10
+                },
+                "telemetryEnabled": {
+                    "type": "boolean"
+                },
+                "aiUseDisclosure": {
+                    "$ref": "#/definitions/AIUseDisclosureConfig"
+                },
+                "reviewStatus": {
+                    "type": "string",
+                    "enum": [
+                        "draft",
+                        "in_review",
+                        "sme_approved",
+                        "qa_approved",
+                        "accessibility_approved",
+                        "complete"
+                    ]
+                },
+                "unresolvedValidationErrors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         }

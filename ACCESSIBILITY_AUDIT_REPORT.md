@@ -56,7 +56,7 @@ This audit reveals significant inconsistencies in design system implementations 
 **Recommendation:** Migrate to `@ghatana/tokens` and remove local duplication
 
 ### 3. Data-Cloud Design System
-**Location:** `/Users/samujjwal/Development/ghatana/products/data-cloud/ui/src/theme/variables.css`
+**Location:** `/Users/samujjwal/Development/ghatana/products/data-cloud/delivery/ui/src/theme/variables.css`
 
 **Status:** CSS custom properties, different color scheme
 
@@ -85,7 +85,7 @@ This audit reveals significant inconsistencies in design system implementations 
 **Recommendation:** Align secondary color with platform, add typography and focus state tokens
 
 ### 5. AEP Design System
-**Location:** `/Users/samujjwal/Development/ghatana/products/aep/ui/src/index.css`
+**Location:** `/Users/samujjwal/Development/ghatana/products/data-cloud/planes/action/ui/src/index.css`
 
 **Status:** Tailwind CSS with minimal customization
 

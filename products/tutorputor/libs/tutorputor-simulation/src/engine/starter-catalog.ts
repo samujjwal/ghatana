@@ -157,9 +157,103 @@ function makeManifest(input: {
     initialEntities: input.entities,
     steps: input.steps,
     accessibility: {
+      altText: `${input.title}: ${input.description}`,
       screenReaderNarration: true,
       reducedMotion: false,
       highContrast: true,
+    },
+    safety: {
+      parameterBounds: {
+        enforced: true,
+        maxIterations: 500,
+      },
+      executionLimits: {
+        maxSteps: Math.max(input.steps.length, 1),
+        maxRuntimeMs: input.steps.reduce(
+          (total, step) => total + (step.duration ?? 0),
+          0,
+        ),
+      },
+    },
+    replay: {
+      deterministic: true,
+      seedStrategy: "fixed",
+    },
+    ecd: {
+      claims: [
+        {
+          id: `${input.id}-claim`,
+          description: input.description,
+          evidenceIds: [`${input.id}-evidence`],
+        },
+      ],
+      evidence: [
+        {
+          id: `${input.id}-evidence`,
+          source: "telemetry.parameterChange",
+          tolerance: 0.05,
+          requiredForClaim: [`${input.id}-claim`],
+        },
+      ],
+      tasks: [
+        {
+          id: `${input.id}-task`,
+          type: "manipulation",
+          claimIds: [`${input.id}-claim`],
+        },
+      ],
+    },
+    rendering: {
+      requiredCapabilities: ["2d"],
+      optionalCapabilities: ["3d", "vr"],
+    },
+    compliance: {
+      dataRetentionDays: 365,
+      analyticsConsentRequired: true,
+      auditLevel: "full",
+    },
+    canonical: {
+      seed: 42,
+      parameterBounds: [
+        {
+          parameterId: "primary-input",
+          label: "Primary input",
+          min: 0,
+          max: 10,
+          defaultValue: 5,
+        },
+      ],
+      outputs: [
+        {
+          outputId: "baseline-output",
+          label: "Baseline output",
+          type: "numeric",
+          expectedValue: 5,
+          tolerance: 0.001,
+        },
+      ],
+      failureStates: [
+        {
+          id: "out-of-bounds",
+          condition: "primary-input outside configured range",
+          learnerMessage: "Adjust the control back into the highlighted range.",
+          recoverable: true,
+        },
+      ],
+      telemetryEvents: [
+        { eventType: "sim.start", required: true },
+        { eventType: "sim.control.change", required: true },
+        { eventType: "sim.snapshot", required: true },
+        { eventType: "sim.capture", required: true },
+        { eventType: "sim.complete", required: true },
+      ],
+      claimLinks: [
+        {
+          claimId: `${input.id}-claim`,
+          evidenceIds: [`${input.id}-evidence`],
+          taskIds: [`${input.id}-task`],
+        },
+      ],
     },
     createdAt: timestamp,
     updatedAt: timestamp,

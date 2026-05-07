@@ -58,8 +58,8 @@ jobs:
           # Generate SBOM for each deployable service
           for module in \
             ":shared-services:auth-gateway" \
-            ":products:aep:server" \
-            ":products:data-cloud:platform-launcher" \
+            ":products:data-cloud:planes:action:server" \
+            ":products:data-cloud:delivery:runtime-composition" \
             ":products:yappc:core:services-lifecycle"; do
             ./gradlew "$module:cyclonedxBom" --continue 2>/dev/null || \
               echo "::warning::SBOM task not available for $module — skipping"
@@ -186,7 +186,7 @@ jobs:
 
       - name: AEP health + contract smoke tests
         run: |
-          ./gradlew :products:aep:server:test \
+          ./gradlew :products:data-cloud:planes:action:server:test \
             --tests "*SmokeTest*" \
             -PincludeTags="smoke" \
             --continue || true

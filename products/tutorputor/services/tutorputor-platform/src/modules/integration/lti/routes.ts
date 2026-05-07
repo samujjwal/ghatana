@@ -14,6 +14,10 @@ import { createLTIService } from "../../lti/service.js";
 import { createLtiServices } from "../../lti/lti-full-service.js";
 import type { TutorPrismaClient } from "@tutorputor/core/db";
 import { LTIValidator } from "../../lti/validation.js";
+import {
+  calculateEvidenceBackedLtiGrade,
+  type EvidenceGradePrisma,
+} from "./evidence-grade.js";
 import { z } from "zod";
 
 type ErrorWithStatus = Error & {
@@ -61,9 +65,11 @@ const deepLinkingBodySchema = z
 const gradePassbackBodySchema = z.object({
   sessionId: z.string().trim().min(1).optional(),
   userId: z.string().trim().min(1),
-  score: z.number().finite().min(0),
-  maxScore: z.number().positive(),
+  score: z.number().finite().min(0).optional(),
+  maxScore: z.number().positive().optional(),
   lineItemId: z.string().trim().min(1),
+  assessmentAttemptId: z.string().trim().min(1).optional(),
+  moduleId: z.string().trim().min(1).optional(),
   activityProgress: z
     .enum(["Completed", "Initialized", "Started", "InProgress", "Submitted"])
     .optional(),
@@ -72,7 +78,20 @@ const gradePassbackBodySchema = z.object({
     .optional(),
   comment: z.string().trim().min(1).optional(),
   timestamp: z.string().datetime().optional(),
-}).refine((value) => value.score <= value.maxScore, {
+}).refine((value) => {
+  const hasStaticScore =
+    typeof value.score === "number" && typeof value.maxScore === "number";
+  return hasStaticScore || Boolean(value.assessmentAttemptId || value.moduleId);
+}, {
+  message:
+    "Provide score/maxScore for legacy passback or assessmentAttemptId/moduleId for evidence-backed passback",
+  path: ["score"],
+}).refine((value) => {
+  if (typeof value.score !== "number" || typeof value.maxScore !== "number") {
+    return true;
+  }
+  return value.score <= value.maxScore;
+}, {
   message: "score must be less than or equal to maxScore",
   path: ["score"],
 });
@@ -306,28 +325,44 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
       score,
       maxScore,
       lineItemId,
+      assessmentAttemptId,
+      moduleId,
       activityProgress,
       gradingProgress,
       comment,
       timestamp,
     } = bodyResult.data as z.infer<typeof gradePassbackBodySchema>;
 
-    await respondWithErrors(reply, () =>
-      fullLtiServices.gradeService.submitScore({
+    await respondWithErrors(reply, async () => {
+      const scorePayload =
+        assessmentAttemptId || moduleId
+          ? await calculateEvidenceBackedLtiGrade(prisma as unknown as EvidenceGradePrisma, {
+              tenantId,
+              userId: userId as UserId,
+              ...(assessmentAttemptId ? { assessmentAttemptId } : {}),
+              ...(moduleId ? { moduleId } : {}),
+              ...(timestamp ? { timestamp } : {}),
+            })
+          : {
+              userId,
+              scoreGiven: score ?? 0,
+              scoreMaximum: maxScore ?? 100,
+              activityProgress: activityProgress ?? "Completed",
+              gradingProgress: gradingProgress ?? "FullyGraded",
+              timestamp: timestamp ?? new Date().toISOString(),
+              ...(comment ? { comment } : {}),
+            };
+
+      return fullLtiServices.gradeService.submitScore({
         tenantId,
         sessionId: sessionId ?? "",
         lineItemId,
         score: {
-          userId,
-          scoreGiven: score,
-          scoreMaximum: maxScore,
-          activityProgress: activityProgress ?? "Completed",
-          gradingProgress: gradingProgress ?? "FullyGraded",
-          timestamp: timestamp ?? new Date().toISOString(),
+          ...scorePayload,
           ...(comment ? { comment } : {}),
         },
-      }),
-    );
+      });
+    });
   });
 
   /**

@@ -9,6 +9,12 @@
         "type",
         "mode",
         "simulationRef",
+        "seed",
+        "targetState",
+        "scoringTolerances",
+        "processFeatures",
+        "captureRules",
+        "claimEvidenceMappings",
         "gradingStrategy",
         "points"
     ],
@@ -92,6 +98,10 @@
                             "minimum": 0
                         }
                     }
+                },
+                "manifestSnapshot": {
+                    "$ref": "../simulation/manifest.schema.json",
+                    "description": "Optional canonical manifest snapshot used to make the assessment reproducible and auditable"
                 }
             }
         },
@@ -137,6 +147,142 @@
                             ]
                         },
                         "description": "Discrete allowed values"
+                    }
+                }
+            }
+        },
+        "seed": {
+            "type": "integer",
+            "description": "Deterministic seed used for reproducible replay and scoring"
+        },
+        "targetState": {
+            "type": "object",
+            "required": [
+                "stateId",
+                "description"
+            ],
+            "properties": {
+                "stateId": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                }
+            }
+        },
+        "scoringTolerances": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "object",
+                "required": [
+                    "variableId",
+                    "tolerance",
+                    "toleranceType"
+                ],
+                "properties": {
+                    "variableId": {
+                        "type": "string"
+                    },
+                    "tolerance": {
+                        "type": "number",
+                        "minimum": 0
+                    },
+                    "toleranceType": {
+                        "type": "string",
+                        "enum": [
+                            "absolute",
+                            "relative",
+                            "percentage"
+                        ]
+                    }
+                }
+            }
+        },
+        "processFeatures": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "object",
+                "required": [
+                    "featureId",
+                    "sourceEvent",
+                    "description",
+                    "weight"
+                ],
+                "properties": {
+                    "featureId": {
+                        "type": "string"
+                    },
+                    "sourceEvent": {
+                        "type": "string",
+                        "enum": [
+                            "sim.control.change",
+                            "sim.snapshot",
+                            "sim.capture"
+                        ]
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "weight": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                    }
+                }
+            }
+        },
+        "captureRules": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "object",
+                "required": [
+                    "ruleId",
+                    "eventType",
+                    "required"
+                ],
+                "properties": {
+                    "ruleId": {
+                        "type": "string"
+                    },
+                    "eventType": {
+                        "type": "string",
+                        "enum": [
+                            "sim.snapshot",
+                            "sim.capture"
+                        ]
+                    },
+                    "required": {
+                        "type": "boolean"
+                    },
+                    "minCount": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                }
+            }
+        },
+        "claimEvidenceMappings": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "object",
+                "required": [
+                    "claimId",
+                    "evidenceId",
+                    "taskId"
+                ],
+                "properties": {
+                    "claimId": {
+                        "type": "string"
+                    },
+                    "evidenceId": {
+                        "type": "string"
+                    },
+                    "taskId": {
+                        "type": "string"
                     }
                 }
             }

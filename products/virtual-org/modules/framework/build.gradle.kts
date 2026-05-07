@@ -14,10 +14,10 @@ dependencies {
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:database"))
     implementation(project(":platform:java:agent-core"))
-    implementation(project(":products:aep:aep-agent-runtime"))  // Migrated from agent-memory: MemoryPlane
+    implementation(project(":products:data-cloud:planes:action:agent-runtime"))  // Migrated from agent-memory: MemoryPlane
 
     // AEP contracts (provides com.ghatana.core.operator.* and com.ghatana.core.pipeline.*)
-    implementation(project(":products:aep:aep-operator-contracts"))
+    implementation(project(":products:data-cloud:planes:action:operator-contracts"))
 
     // ActiveJ
     implementation(libs.activej.eventloop)

@@ -540,11 +540,45 @@ export interface ContentAssetRevision {
   assetId: string;
   version: number;
   changeNote?: string;
+  changeSource?: ContentRevisionChangeSource;
   snapshot: Record<string, unknown>;
   qualityScore?: number;
   validationId?: string;
+  provenance?: ContentRevisionProvenance;
+  reviewStatus?: ContentRevisionReviewStatus;
   createdBy: string;
   createdAt: string;
+}
+
+export type ContentRevisionChangeSource =
+  | "create"
+  | "manual_edit"
+  | "ai_generate"
+  | "review_comment"
+  | "publish"
+  | "rollback"
+  | "historical_preview";
+
+export type ContentRevisionReviewStatus =
+  | "not_required"
+  | "pending"
+  | "sme_reviewed"
+  | "qa_reviewed"
+  | "approved"
+  | "rejected";
+
+export interface ContentRevisionProvenance {
+  actorId: string;
+  sourcePromptId?: string;
+  sourcePromptVersion?: string;
+  generationRequestId?: string;
+  modelProvider?: string;
+  modelVersion?: string;
+  retrievedSourceIds?: string[];
+  validationId?: string;
+  reviewDecisionId?: string;
+  rolledBackFromVersion?: number;
+  rolledBackFromRevisionId?: string;
 }
 
 /**
@@ -579,8 +613,46 @@ export interface ArtifactManifest {
   validationErrors?: ValidationCheck[];
   generatedBy?: "ai" | "human" | "hybrid";
   generationId?: string;
+  generationProvenance?: GeneratedContentProvenance;
   createdAt: string;
   updatedAt: string;
+}
+
+export type GeneratedContentValidationStatus =
+  | "not_run"
+  | "passed"
+  | "failed"
+  | "needs_review";
+
+export type GeneratedContentReviewStatus =
+  | "not_required"
+  | "pending"
+  | "approved"
+  | "rejected";
+
+export type GeneratedContentPublishEligibility =
+  | "eligible"
+  | "blocked"
+  | "requires_review";
+
+export interface GeneratedContentSource {
+  id: string;
+  title?: string;
+  url?: string;
+  citation?: string;
+}
+
+export interface GeneratedContentProvenance {
+  sourcePromptId: string;
+  sourcePromptVersion: string;
+  modelProvider: string;
+  modelVersion: string;
+  retrievedSources: GeneratedContentSource[];
+  generatedAt: string;
+  confidenceScore: number;
+  validationStatus: GeneratedContentValidationStatus;
+  smeReviewStatus: GeneratedContentReviewStatus;
+  publishEligibility: GeneratedContentPublishEligibility;
 }
 
 // ============================================================================

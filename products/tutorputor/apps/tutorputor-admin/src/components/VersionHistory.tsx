@@ -16,21 +16,27 @@ import { Card } from './ui';
 import { Button, Spinner } from '@ghatana/design-system';
 
 interface VersionHistoryItem {
-    id: string;
-    version: number;
+    versionId: string;
+    contentId: string;
+    contentType: string;
+    versionNumber: number;
     snapshot: Record<string, unknown>;
     createdBy: string;
     createdAt: string;
+    changeSummary: string;
+    isMajorVersion: boolean;
 }
 
 interface VersionHistoryProps {
-    entityType: 'domain' | 'concept' | 'simulation';
+    entityType: 'contentAsset' | 'learningExperience' | 'module' | 'assessment' | 'domain' | 'concept' | 'simulation';
     entityId: string;
     currentVersion: number;
+    tenantId?: string;
+    actorId?: string;
     onRestore?: (version: number) => void;
 }
 
-export function VersionHistory({ entityType, entityId, currentVersion, onRestore }: VersionHistoryProps) {
+export function VersionHistory({ entityType, entityId, currentVersion, tenantId = 'tenant-default', actorId = 'admin', onRestore }: VersionHistoryProps) {
     const [selectedVersion, setSelectedVersion] = useState<VersionHistoryItem | null>(null);
     const [showDiff, setShowDiff] = useState(false);
     const queryClient = useQueryClient();
@@ -39,8 +45,11 @@ export function VersionHistory({ entityType, entityId, currentVersion, onRestore
     const { data, isLoading } = useQuery({
         queryKey: ['version-history', entityType, entityId],
         queryFn: async () => {
-            // Note: This endpoint needs to be implemented in the backend
-            const res = await fetch(`/admin/api/v1/content/versions/${entityType}/${entityId}`);
+            const params = new URLSearchParams({
+                contentId: entityId,
+                contentType: entityType,
+            });
+            const res = await fetch(`/api/content/versions?${params}`);
             if (!res.ok) throw new Error('Failed to fetch version history');
             return res.json() as Promise<{ versions: VersionHistoryItem[] }>;
         },
@@ -49,10 +58,15 @@ export function VersionHistory({ entityType, entityId, currentVersion, onRestore
     // Restore version mutation
     const restoreMutation = useMutation({
         mutationFn: async (versionId: string) => {
-            const res = await fetch(`/admin/api/v1/content/versions/${entityType}/${entityId}/restore`, {
+            const res = await fetch(`/api/content/versions/${versionId}/rollback`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ versionId }),
+                body: JSON.stringify({
+                    contentId: entityId,
+                    contentType: entityType,
+                    tenantId,
+                    rolledBackBy: actorId,
+                }),
             });
             if (!res.ok) throw new Error('Failed to restore version');
             return res.json();
@@ -62,17 +76,16 @@ export function VersionHistory({ entityType, entityId, currentVersion, onRestore
             queryClient.invalidateQueries({ queryKey: [entityType, entityId] });
             setSelectedVersion(null);
             setShowDiff(false);
-            onRestore?.(data.version);
-            alert(`Successfully restored to version ${data.version}`);
+            onRestore?.(data.versionNumber ?? currentVersion + 1);
         },
         onError: (error) => {
-            alert(`Failed to restore version: ${error instanceof Error ? error.message : String(error)}`);
+            console.error(`Failed to restore version: ${error instanceof Error ? error.message : String(error)}`);
         },
     });
 
     const handleRestore = (version: VersionHistoryItem) => {
-        if (window.confirm(`Restore to version ${version.version}? This will create a new version with the old content.`)) {
-            restoreMutation.mutate(version.id);
+        if (window.confirm(`Restore to version ${version.versionNumber}? This will create a new version with the old content.`)) {
+            restoreMutation.mutate(version.versionId);
         }
     };
 
@@ -143,12 +156,12 @@ export function VersionHistory({ entityType, entityId, currentVersion, onRestore
 
                 <div className="space-y-3">
                     {versions.map((version, idx) => {
-                        const isCurrent = version.version === currentVersion;
+                        const isCurrent = version.versionNumber === currentVersion;
                         const nextVersion = versions[idx - 1];
 
                         return (
                             <div
-                                key={version.id}
+                                key={version.versionId}
                                 className={`p-3 rounded-lg border ${isCurrent
                                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
@@ -158,7 +171,7 @@ export function VersionHistory({ entityType, entityId, currentVersion, onRestore
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2">
                                             <span className="font-semibold text-gray-900 dark:text-white">
-                                                Version {version.version}
+                                                Version {version.versionNumber}
                                             </span>
                                             {isCurrent && (
                                                 <span className="px-2 py-0.5 bg-blue-500 text-white text-xs rounded">
@@ -168,6 +181,7 @@ export function VersionHistory({ entityType, entityId, currentVersion, onRestore
                                         </div>
                                         <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                             {new Date(version.createdAt).toLocaleString()} • {version.createdBy}
+                                            {version.changeSummary ? ` • ${version.changeSummary}` : ''}
                                         </div>
                                     </div>
 
@@ -209,7 +223,7 @@ export function VersionHistory({ entityType, entityId, currentVersion, onRestore
                         <div className="flex justify-between items-start mb-4">
                             <div>
                                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                    Changes in Version {selectedVersion.version}
+                                    Changes in Version {selectedVersion.versionNumber}
                                 </h2>
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                     {new Date(selectedVersion.createdAt).toLocaleString()} • {selectedVersion.createdBy}
@@ -228,7 +242,7 @@ export function VersionHistory({ entityType, entityId, currentVersion, onRestore
 
                         <div className="space-y-4">
                             {(() => {
-                                const currentIdx = versions.findIndex((v) => v.id === selectedVersion.id);
+                                const currentIdx = versions.findIndex((v) => v.versionId === selectedVersion.versionId);
                                 const previousVersion = versions[currentIdx + 1];
 
                                 if (!previousVersion) {

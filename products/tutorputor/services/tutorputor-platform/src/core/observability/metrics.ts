@@ -16,6 +16,20 @@ let _dbConnectionsTotal: Gauge | undefined;
 let _dbConnectionAcquisitions: Counter | undefined;
 let _cacheHits: Counter | undefined;
 let _cacheMisses: Counter | undefined;
+let _aiRequestDuration: Histogram | undefined;
+let _aiTokenCost: Counter | undefined;
+let _aiFailures: Counter | undefined;
+let _simulationRuntimeErrors: Counter | undefined;
+let _telemetryIngestFailures: Counter | undefined;
+let _assessmentScoringFailures: Counter | undefined;
+let _ltiPassbackFailures: Counter | undefined;
+let _contentGenerationValidationFailures: Counter | undefined;
+let _privacyDeletionFailures: Counter | undefined;
+const requestStartTimes = new WeakMap<object, number>();
+
+type RedisHealthClient = {
+  ping(): Promise<unknown>;
+};
 
 function getOrInitMetrics() {
   if (!_httpRequestDuration) {
@@ -67,6 +81,52 @@ function getOrInitMetrics() {
       help: "Total number of cache misses",
       labelNames: ["cache_key_prefix"],
     });
+    _aiRequestDuration = new Histogram({
+      name: "tutorputor_ai_request_duration_seconds",
+      help: "AI request latency by use case and provider",
+      labelNames: ["use_case", "provider", "model", "status"],
+      buckets: [0.1, 0.5, 1, 2, 5, 10, 30],
+    });
+    _aiTokenCost = new Counter({
+      name: "tutorputor_ai_token_cost_usd_total",
+      help: "Estimated AI token cost in USD by use case and provider",
+      labelNames: ["use_case", "provider", "model"],
+    });
+    _aiFailures = new Counter({
+      name: "tutorputor_ai_failures_total",
+      help: "AI request failures by use case, provider, and failure mode",
+      labelNames: ["use_case", "provider", "failure_mode"],
+    });
+    _simulationRuntimeErrors = new Counter({
+      name: "tutorputor_simulation_runtime_errors_total",
+      help: "Simulation runtime errors by domain and failure mode",
+      labelNames: ["domain", "failure_mode"],
+    });
+    _telemetryIngestFailures = new Counter({
+      name: "tutorputor_telemetry_ingest_failures_total",
+      help: "Learning telemetry ingest validation or persistence failures",
+      labelNames: ["event_type", "failure_mode"],
+    });
+    _assessmentScoringFailures = new Counter({
+      name: "tutorputor_assessment_scoring_failures_total",
+      help: "Assessment scoring failures by item type and scoring policy",
+      labelNames: ["item_type", "policy", "failure_mode"],
+    });
+    _ltiPassbackFailures = new Counter({
+      name: "tutorputor_lti_passback_failures_total",
+      help: "LTI grade passback failures by platform and failure mode",
+      labelNames: ["platform", "failure_mode"],
+    });
+    _contentGenerationValidationFailures = new Counter({
+      name: "tutorputor_content_generation_validation_failures_total",
+      help: "Generated content validation failures by domain and artifact type",
+      labelNames: ["domain", "artifact_type", "failure_mode"],
+    });
+    _privacyDeletionFailures = new Counter({
+      name: "tutorputor_privacy_deletion_failures_total",
+      help: "Privacy deletion/export failures by operation and failure mode",
+      labelNames: ["operation", "failure_mode"],
+    });
   }
   return {
     httpRequestDuration: _httpRequestDuration!,
@@ -79,7 +139,117 @@ function getOrInitMetrics() {
     dbConnectionAcquisitions: _dbConnectionAcquisitions!,
     cacheHits: _cacheHits!,
     cacheMisses: _cacheMisses!,
+    aiRequestDuration: _aiRequestDuration!,
+    aiTokenCost: _aiTokenCost!,
+    aiFailures: _aiFailures!,
+    simulationRuntimeErrors: _simulationRuntimeErrors!,
+    telemetryIngestFailures: _telemetryIngestFailures!,
+    assessmentScoringFailures: _assessmentScoringFailures!,
+    ltiPassbackFailures: _ltiPassbackFailures!,
+    contentGenerationValidationFailures: _contentGenerationValidationFailures!,
+    privacyDeletionFailures: _privacyDeletionFailures!,
   };
+}
+
+export type TutorPutorDomainMetric =
+  | {
+      type: "ai.request";
+      useCase: string;
+      provider: string;
+      model: string;
+      status: "success" | "failure";
+      latencySeconds: number;
+      costUsd?: number;
+      failureMode?: string;
+    }
+  | { type: "simulation.error"; domain: string; failureMode: string }
+  | { type: "telemetry.ingest.failure"; eventType: string; failureMode: string }
+  | {
+      type: "assessment.scoring.failure";
+      itemType: string;
+      policy: string;
+      failureMode: string;
+    }
+  | { type: "lti.passback.failure"; platform: string; failureMode: string }
+  | {
+      type: "content_generation.validation.failure";
+      domain: string;
+      artifactType: string;
+      failureMode: string;
+    }
+  | { type: "privacy.deletion.failure"; operation: string; failureMode: string };
+
+export function recordTutorPutorDomainMetric(metric: TutorPutorDomainMetric): void {
+  const productMetrics = getOrInitMetrics();
+
+  switch (metric.type) {
+    case "ai.request":
+      productMetrics.aiRequestDuration.observe(
+        {
+          use_case: metric.useCase,
+          provider: metric.provider,
+          model: metric.model,
+          status: metric.status,
+        },
+        metric.latencySeconds,
+      );
+      if (typeof metric.costUsd === "number" && metric.costUsd > 0) {
+        productMetrics.aiTokenCost.inc(
+          {
+            use_case: metric.useCase,
+            provider: metric.provider,
+            model: metric.model,
+          },
+          metric.costUsd,
+        );
+      }
+      if (metric.status === "failure") {
+        productMetrics.aiFailures.inc({
+          use_case: metric.useCase,
+          provider: metric.provider,
+          failure_mode: metric.failureMode ?? "unknown",
+        });
+      }
+      break;
+    case "simulation.error":
+      productMetrics.simulationRuntimeErrors.inc({
+        domain: metric.domain,
+        failure_mode: metric.failureMode,
+      });
+      break;
+    case "telemetry.ingest.failure":
+      productMetrics.telemetryIngestFailures.inc({
+        event_type: metric.eventType,
+        failure_mode: metric.failureMode,
+      });
+      break;
+    case "assessment.scoring.failure":
+      productMetrics.assessmentScoringFailures.inc({
+        item_type: metric.itemType,
+        policy: metric.policy,
+        failure_mode: metric.failureMode,
+      });
+      break;
+    case "lti.passback.failure":
+      productMetrics.ltiPassbackFailures.inc({
+        platform: metric.platform,
+        failure_mode: metric.failureMode,
+      });
+      break;
+    case "content_generation.validation.failure":
+      productMetrics.contentGenerationValidationFailures.inc({
+        domain: metric.domain,
+        artifact_type: metric.artifactType,
+        failure_mode: metric.failureMode,
+      });
+      break;
+    case "privacy.deletion.failure":
+      productMetrics.privacyDeletionFailures.inc({
+        operation: metric.operation,
+        failure_mode: metric.failureMode,
+      });
+      break;
+  }
 }
 
 /**
@@ -103,14 +273,14 @@ export async function setupMetrics(app: FastifyInstance) {
 
   // Hook into request lifecycle
   app.addHook("onRequest", async (request) => {
-    (request as any).startTime = Date.now();
+    requestStartTimes.set(request, Date.now());
     activeRequests.inc();
   });
 
   app.addHook("onResponse", async (request, reply) => {
     activeRequests.dec();
 
-    const duration = (Date.now() - (request as any).startTime!) / 1000;
+    const duration = (Date.now() - (requestStartTimes.get(request) ?? Date.now())) / 1000;
     const route =
       (request.routeOptions as { url?: string } | undefined)?.url ?? "unknown";
     const tenantId = (request.headers["x-tenant-id"] as string) || "default";
@@ -163,6 +333,7 @@ export async function setupHealthChecks(
   prisma: PrismaClient,
   redis: Redis,
 ) {
+  const healthRedis = redis as unknown as RedisHealthClient;
   const getLearnerProfileGrpcRuntimeState =
     (): LearnerProfileGrpcRuntimeState | null =>
       app.learnerProfileGrpcRuntimeState ?? null;
@@ -208,7 +379,7 @@ export async function setupHealthChecks(
     // Check Redis
     try {
       const start = Date.now();
-      await (redis as any).ping();
+      await healthRedis.ping();
       checks.redis = { status: "ok", latency: Date.now() - start };
     } catch (error) {
       checks.redis = {
@@ -262,7 +433,7 @@ export async function setupHealthChecks(
     // Check if service is ready to accept traffic
     try {
       await prisma.$queryRaw`SELECT 1`;
-      await (redis as any).ping();
+      await healthRedis.ping();
 
       const learnerProfileGrpcRuntime = getLearnerProfileGrpcRuntimeState();
       if (

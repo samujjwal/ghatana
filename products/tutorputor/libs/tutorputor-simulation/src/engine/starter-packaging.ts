@@ -19,8 +19,11 @@ import {
 } from "./export/vr-exporter";
 import {
   resolveSimulationStarter,
+  getSimulationStarterById,
   type SimulationStarter,
 } from "./starter-catalog";
+
+export { getSimulationStarterById };
 
 export interface CreateSimulationStarterManifestInput {
   starterRef: string;

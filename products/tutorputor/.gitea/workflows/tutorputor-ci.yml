@@ -17,12 +17,101 @@ env:
   IMAGE_GATEWAY: ghcr.io/ghatana/tutorputor/api-gateway
 
 jobs:
+  product-traceability:
+    name: Product Traceability Gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate product traceability and API route ownership
+        run: node products/tutorputor/scripts/validate-product-traceability.mjs
+
+      - name: Validate canonical content-generation Java ownership
+        run: node products/tutorputor/scripts/validate-content-generation-canonical.mjs
+
+      - name: Validate content-generation source integrity
+        run: node products/tutorputor/scripts/validate-content-generation-source.mjs
+
+      - name: Validate canonical AI service boundary
+        run: node products/tutorputor/scripts/validate-ai-boundary.mjs
+
+      - name: Validate API contract drift
+        run: node products/tutorputor/scripts/validate-api-contract-drift.mjs
+
+      - name: Validate tenant scope invariants
+        run: node products/tutorputor/scripts/validate-tenant-scope.mjs
+
+      - name: Validate canonical error envelope
+        run: node products/tutorputor/scripts/validate-error-envelope.mjs
+
+      - name: Validate UI package boundaries
+        run: node products/tutorputor/scripts/validate-ui-boundaries.mjs
+
+      - name: Validate critical learner journey coverage
+        run: node products/tutorputor/scripts/validate-critical-journey-coverage.mjs
+
+      - name: Validate automated accessibility gates
+        run: node products/tutorputor/scripts/validate-accessibility-gates.mjs
+
+      - name: Validate offline sync gates
+        run: node products/tutorputor/scripts/validate-offline-sync-gates.mjs
+
+      - name: Validate localization contract
+        run: node products/tutorputor/scripts/validate-localization-contract.mjs
+
+      - name: Validate privacy product flows
+        run: node products/tutorputor/scripts/validate-privacy-product-flows.mjs
+
+      - name: Validate backend permission matrix
+        run: node products/tutorputor/scripts/validate-permission-matrix.mjs
+
+      - name: Validate consent enforcement
+        run: node products/tutorputor/scripts/validate-consent-enforcement.mjs
+
+      - name: Validate LTI evidence-backed grade passback
+        run: node products/tutorputor/scripts/validate-lti-evidence-passback.mjs
+
+      - name: Validate credential evidence issuance
+        run: node products/tutorputor/scripts/validate-credential-evidence.mjs
+
+      - name: Validate remediation proof suite coverage
+        run: node products/tutorputor/scripts/validate-privacy-product-flows.mjs
+
+      - name: Validate content route verification script
+        run: node products/tutorputor/scripts/validate-api-contract-drift.mjs
+
+      - name: Validate social route verification coverage
+        run: node products/tutorputor/scripts/validate-consent-enforcement.mjs
+
+      - name: Validate LTI route/config verification coverage
+        run: node products/tutorputor/scripts/validate-lti-evidence-passback.mjs
+
+      - name: Validate encryption verification coverage
+        run: node products/tutorputor/scripts/validate-tenant-scope.mjs
+
+      - name: Validate CI verification script gates
+        run: node products/tutorputor/scripts/validate-ci-verification-gates.mjs
+
+      - name: Validate production readiness gates
+        run: node products/tutorputor/scripts/validate-production-readiness.mjs
+
+      - name: Validate TutorPutor observability gates
+        run: node products/tutorputor/scripts/validate-observability-gates.mjs
+
+      - name: Validate type-safety gates
+        run: node products/tutorputor/scripts/validate-type-safety-gates.mjs
+
   # ─────────────────────────────────────────────────────────────────────────
   # 1. Shared Package Validation
   # ─────────────────────────────────────────────────────────────────────────
   lint-typecheck:
     name: Shared Package Validation
     runs-on: ubuntu-latest
+    needs: [product-traceability]
     steps:
       - uses: actions/checkout@v4
 
@@ -108,6 +197,12 @@ jobs:
             echo "❌ @ts-nocheck usage changed. Update allowlist only after removing debt or approving a narrowly scoped exception."
             exit 1
           fi
+
+      - name: Audit production any usage
+        run: node products/tutorputor/scripts/audit-any-types.ts
+        env:
+          ANY_TYPE_THRESHOLD: "307"
+          ANY_AUDIT_INCLUDE_TESTS: "false"
 
       - name: Run tests
         run: pnpm --filter @tutorputor/platform test:coverage

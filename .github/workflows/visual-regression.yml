@@ -31,7 +31,7 @@ jobs:
           - product: tutorputor-admin
             path: products/tutorputor/apps/tutorputor-admin
           - product: data-cloud-ui
-            path: products/data-cloud/ui
+            path: products/data-cloud/delivery/ui
 
     steps:
       - name: Checkout

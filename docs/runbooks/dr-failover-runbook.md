@@ -219,5 +219,5 @@ kubectl --context=primary exec -n data-cloud deploy/data-cloud-api \
 - [Degraded Mode Runbook](aep-degraded-mode-runbook.md)
 - [AEP SLO Dashboard](../../monitoring/grafana/dashboards/aep-slos.json)
 - [YAPPC SLO Dashboard](../../monitoring/grafana/dashboards/yappc/yappc-slos.json)
-- [DisasterRecoveryE2ETest](../../products/data-cloud/platform-plugins/src/test/java/com/ghatana/datacloud/plugins/dr/DisasterRecoveryE2ETest.java)
+- [DisasterRecoveryE2ETest](../../products/data-cloud/extensions/plugins/src/test/java/com/ghatana/datacloud/plugins/dr/DisasterRecoveryE2ETest.java)
 - [Incident runbooks overview](README.md)

@@ -18,7 +18,7 @@ jobs:
                   cache: "gradle"
             - name: Check code formatting
               run: |
-                  ./products/aep/gradlew spotlessCheck --no-daemon --stacktrace
+                  ./products/data-cloud/planes/action/gradlew spotlessCheck --no-daemon --stacktrace
 
     dependency-updates:
         name: Check for Dependency Updates
@@ -31,7 +31,7 @@ jobs:
                   java-version: "21"
                   cache: "gradle"
             - name: Check for dependency updates
-              working-directory: ./products/aep
+              working-directory: ./products/data-cloud/planes/action
               run: |
                   ./gradlew dependencyUpdates -Drevision=release -DoutputFormatter=json -DoutputDir=build/dependency-updates
 
@@ -47,7 +47,7 @@ jobs:
                   java-version: "21"
                   cache: "gradle"
             - name: Build all projects
-              working-directory: ./products/aep
+              working-directory: ./products/data-cloud/planes/action
               run: |
                   ./gradlew build --no-daemon --stacktrace
             - name: Upload test results
@@ -56,6 +56,6 @@ jobs:
               with:
                   name: test-results
                   path: |
-                      products/aep/build/test-results/**/*.xml
-                      products/aep/build/reports/tests/**/*
+                      products/data-cloud/planes/action/build/test-results/**/*.xml
+                      products/data-cloud/planes/action/build/reports/tests/**/*
                   retention-days: 7

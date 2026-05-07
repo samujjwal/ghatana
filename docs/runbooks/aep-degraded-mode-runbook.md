@@ -309,5 +309,5 @@ After service is fully restored:
 - [Disaster Recovery Failover Runbook](dr-failover-runbook.md)
 - [Rollback Runbook](rollback-runbook.md)
 - [AEP SLO Dashboard](../../monitoring/grafana/dashboards/aep-slos.json)
-- [AEP Dev-Mode Resilience Test](../../products/aep/server/src/test/java/com/ghatana/aep/server/AepDevModeResilienceTest.java)
+- [AEP Dev-Mode Resilience Test](../../products/data-cloud/planes/action/server/src/test/java/com/ghatana/aep/server/AepDevModeResilienceTest.java)
 - [Incident runbooks overview](README.md)

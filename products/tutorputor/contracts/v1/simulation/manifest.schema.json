@@ -1,0 +1,173 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://tutorputor.io/schemas/v1/simulation/manifest.json",
+  "title": "CanonicalSimulationManifest",
+  "description": "Canonical simulation manifest used by catalog, packaging, CMS authoring, learner runtime, telemetry, and simulation assessment items.",
+  "type": "object",
+  "required": [
+    "id",
+    "version",
+    "title",
+    "domain",
+    "authorId",
+    "tenantId",
+    "canvas",
+    "playback",
+    "initialEntities",
+    "steps",
+    "accessibility",
+    "canonical",
+    "createdAt",
+    "updatedAt",
+    "schemaVersion"
+  ],
+  "properties": {
+    "id": { "type": "string" },
+    "version": { "type": "string" },
+    "title": { "type": "string" },
+    "description": { "type": "string" },
+    "domain": {
+      "type": "string",
+      "enum": [
+        "CS_DISCRETE",
+        "PHYSICS",
+        "ECONOMICS",
+        "CHEMISTRY",
+        "BIOLOGY",
+        "MEDICINE",
+        "ENGINEERING",
+        "MATHEMATICS"
+      ]
+    },
+    "authorId": { "type": "string" },
+    "tenantId": { "type": "string" },
+    "canvas": {
+      "type": "object",
+      "required": ["width", "height"],
+      "properties": {
+        "width": { "type": "number", "minimum": 1 },
+        "height": { "type": "number", "minimum": 1 },
+        "backgroundColor": { "type": "string" }
+      }
+    },
+    "playback": {
+      "type": "object",
+      "required": ["defaultSpeed"],
+      "properties": {
+        "defaultSpeed": { "type": "number", "exclusiveMinimum": 0 },
+        "loop": { "type": "boolean" },
+        "autoPlay": { "type": "boolean" }
+      }
+    },
+    "initialEntities": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "object", "required": ["id", "type", "x", "y"] }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "object", "required": ["id", "orderIndex", "actions"] }
+    },
+    "accessibility": {
+      "type": "object",
+      "required": ["altText", "screenReaderNarration", "reducedMotion", "highContrast"],
+      "properties": {
+        "altText": { "type": "string", "minLength": 1 },
+        "screenReaderNarration": { "type": "boolean" },
+        "reducedMotion": { "type": "boolean" },
+        "highContrast": { "type": "boolean" }
+      }
+    },
+    "canonical": {
+      "type": "object",
+      "required": ["seed", "parameterBounds", "outputs", "failureStates", "telemetryEvents", "claimLinks"],
+      "properties": {
+        "seed": { "type": "integer" },
+        "parameterBounds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["parameterId", "label", "min", "max", "defaultValue"],
+            "properties": {
+              "parameterId": { "type": "string" },
+              "label": { "type": "string" },
+              "min": { "type": "number" },
+              "max": { "type": "number" },
+              "defaultValue": { "type": "number" },
+              "unit": { "type": "string" }
+            }
+          }
+        },
+        "outputs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["outputId", "label", "type", "expectedValue", "tolerance"],
+            "properties": {
+              "outputId": { "type": "string" },
+              "label": { "type": "string" },
+              "type": { "enum": ["numeric", "categorical", "state", "chart"] },
+              "unit": { "type": "string" },
+              "expectedValue": { "type": "number" },
+              "tolerance": { "type": "number", "minimum": 0 }
+            }
+          }
+        },
+        "failureStates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "condition", "learnerMessage", "recoverable"],
+            "properties": {
+              "id": { "type": "string" },
+              "condition": { "type": "string" },
+              "learnerMessage": { "type": "string" },
+              "recoverable": { "type": "boolean" }
+            }
+          }
+        },
+        "telemetryEvents": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "object",
+            "required": ["eventType", "required"],
+            "properties": {
+              "eventType": {
+                "enum": [
+                  "sim.start",
+                  "sim.control.change",
+                  "sim.snapshot",
+                  "sim.capture",
+                  "sim.failure",
+                  "sim.complete"
+                ]
+              },
+              "required": { "type": "boolean" }
+            }
+          }
+        },
+        "claimLinks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["claimId", "evidenceIds", "taskIds"],
+            "properties": {
+              "claimId": { "type": "string" },
+              "evidenceIds": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+              "taskIds": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "schemaVersion": { "type": "string" }
+  }
+}

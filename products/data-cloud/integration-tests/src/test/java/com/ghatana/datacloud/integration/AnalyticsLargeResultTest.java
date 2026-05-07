@@ -9,11 +9,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
 import com.ghatana.datacloud.launcher.http.plugins.DataCloudRuntimePluginManager;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import java.net.ServerSocket;
 import java.net.URI;
@@ -42,6 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @DisplayName("Analytics Large-Result Behavior Verification")
 @Tag("production")
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AnalyticsLargeResultTest {
 
     private static final String TENANT_ID = "analytics-test-tenant";
@@ -54,7 +56,7 @@ class AnalyticsLargeResultTest {
     private int port;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    @BeforeEach
+    @BeforeAll
     void setUp() throws Exception {
         client = new DurableDataCloudClient();
 
@@ -72,7 +74,7 @@ class AnalyticsLargeResultTest {
         waitForServerReady(port);
     }
 
-    @AfterEach
+    @AfterAll
     void tearDown() {
         if (server != null) {
             server.stop();

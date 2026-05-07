@@ -94,7 +94,7 @@ jobs:
             -o "/usr/local/bin/buf" && chmod +x "/usr/local/bin/buf"
 
       - name: Buf Lint and Generate
-        working-directory: ./products/aep/contracts/proto
+        working-directory: ./products/data-cloud/planes/action/contracts/proto
         run: |
           buf --version
           buf lint
@@ -115,7 +115,7 @@ jobs:
           fi
 
       - name: Gradle proto audit and determinism
-        working-directory: ./products/aep
+        working-directory: ./products/data-cloud/planes/action
         run: |
           ./gradlew \
             :contracts:proto:protoAudit \
@@ -222,24 +222,24 @@ jobs:
           cache: "pnpm"
 
       - name: Install Dependencies
-        working-directory: ./products/aep/ui
+        working-directory: ./products/data-cloud/planes/action/ui
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        working-directory: ./products/aep/ui
+        working-directory: ./products/data-cloud/planes/action/ui
         run: pnpm run build
 
       - name: Run Tests
-        working-directory: ./products/aep/ui
+        working-directory: ./products/data-cloud/planes/action/ui
         run: pnpm test:ci
 
       - name: Run Linter
-        working-directory: ./products/aep/ui
+        working-directory: ./products/data-cloud/planes/action/ui
         run: pnpm lint
 
       - name: Archive Production Build
         uses: actions/upload-artifact@v4
         with:
           name: ui-build
-          path: ./products/aep/ui/dist
+          path: ./products/data-cloud/planes/action/ui/dist
           retention-days: 5

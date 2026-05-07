@@ -38,7 +38,7 @@ public interface AudioFileRepository {
 }
 ```
 
-**Reference:** `products/aep/aep-registry/src/main/java/.../JpaAgentRepository.java`
+**Reference:** `products/data-cloud/planes/action/registry/src/main/java/.../JpaAgentRepository.java`
 
 ---
 
@@ -60,7 +60,7 @@ public class AudioFileService {
 }
 ```
 
-**Reference:** `products/aep/aep-registry/src/main/java/.../AgentRegistryService.java`
+**Reference:** `products/data-cloud/planes/action/registry/src/main/java/.../AgentRegistryService.java`
 
 ---
 
@@ -81,7 +81,7 @@ boolean softDelete(String tenantId, UUID id);  // Sets deleted=true
 boolean hardDelete(String tenantId, UUID id); // Actually removes
 ```
 
-**Reference:** `products/aep/aep-registry/.../JpaAgentRepository.softDelete()`
+**Reference:** `products/data-cloud/planes/action/registry/.../JpaAgentRepository.softDelete()`
 
 ---
 

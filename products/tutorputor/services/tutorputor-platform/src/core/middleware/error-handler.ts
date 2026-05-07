@@ -13,6 +13,7 @@
 import type { FastifyError, FastifyReply, FastifyRequest } from "fastify";
 import type { Logger } from "pino";
 import { isDomainError, type DomainError } from "@tutorputor/core/errors";
+import { createErrorEnvelope } from "../http/error-envelope.js";
 
 /**
  * Error handler middleware for Fastify
@@ -54,14 +55,12 @@ function handleCanonicalError(
     "Domain error occurred",
   );
 
-  reply.code(error.statusCode).send({
-    error: {
-      code: error.code,
-      message: error.message,
-      details: error.details,
-      requestId: request.id,
-    },
-  });
+  reply.code(error.statusCode).send(createErrorEnvelope({
+    code: error.code,
+    message: error.message,
+    details: error.details,
+    statusCode: error.statusCode,
+  }, request));
 }
 
 function handleValidationError(
@@ -80,14 +79,12 @@ function handleValidationError(
     "Request validation failed",
   );
 
-  reply.code(400).send({
-    error: {
-      code: "VALIDATION_ERROR",
-      message: "Request validation failed",
-      details: { validation: error.validation },
-      requestId: request.id,
-    },
-  });
+  reply.code(400).send(createErrorEnvelope({
+    code: "VALIDATION_ERROR",
+    message: "Request validation failed",
+    details: { validation: error.validation },
+    statusCode: 400,
+  }, request));
 }
 
 function handleUnknownError(
@@ -106,14 +103,13 @@ function handleUnknownError(
   );
 
   const isDevelopment = process.env.NODE_ENV === "development";
-  reply.code(error.statusCode || 500).send({
-    error: {
-      code: "INTERNAL_ERROR",
-      message: "An internal error occurred",
-      requestId: request.id,
-      ...(isDevelopment ? { details: { stack: error.stack } } : {}),
-    },
-  });
+  const statusCode = error.statusCode || 500;
+  reply.code(statusCode).send(createErrorEnvelope({
+    code: "INTERNAL_ERROR",
+    message: "An internal error occurred",
+    statusCode,
+    ...(isDevelopment ? { details: { stack: error.stack } } : {}),
+  }, request));
 }
 
 export function asyncHandler<T extends FastifyRequest>(

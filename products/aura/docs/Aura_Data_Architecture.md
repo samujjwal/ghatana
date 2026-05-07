@@ -28,7 +28,7 @@ Aura owns the logical data model, quality rules, and domain semantics. Data hand
 
 - **Aura owns:** entity definitions, dataset semantics, retention requirements, access rules, trust flags, and product-facing data behavior.
 - **Data Cloud owns:** managed persistence, storage lifecycle, lineage, backups, restore, export assembly plumbing, retention execution, and plugin-based storage integration.
-- **Aura extensions:** when Aura needs specialized storage behavior, it should be implemented as an approved Data Cloud plugin or adapter through `products/data-cloud/spi`, not as a product-local storage subsystem.
+- **Aura extensions:** when Aura needs specialized storage behavior, it should be implemented as an approved Data Cloud plugin or adapter through `products/data-cloud/planes/shared-spi`, not as a product-local storage subsystem.
 
 `data/prisma` remains the logical schema source in the Aura repo, but production-grade data paths should run through Data Cloud-managed stores and workflows.
 

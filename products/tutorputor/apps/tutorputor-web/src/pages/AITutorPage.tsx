@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Box, Card, Text, Button, Spinner } from "@/components/ui";
 import { useAuth } from "../contexts/AuthContext";
+import { buildAITutorGroundingPayload } from "../api/aiTutorGrounding";
 import { createLogger } from '../utils/logger';
 const logger = createLogger('AITutorPage');
 
@@ -66,7 +67,17 @@ export function AITutorPage() {
         },
         body: JSON.stringify({
           question,
-          moduleId: currentModuleId,
+          ...buildAITutorGroundingPayload({
+            moduleId: currentModuleId ?? "current-module",
+            claimIds: currentModuleId
+              ? [`claim:${currentModuleId}`]
+              : ["current-claim"],
+            currentSimulationState: {
+              route: window.location.pathname,
+              moduleId: currentModuleId,
+            },
+            recentAttempts: [{ attemptId: "ai-tutor-current-session" }],
+          }),
           locale: navigator.language || "en",
         }),
       });

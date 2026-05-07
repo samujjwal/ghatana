@@ -23,7 +23,7 @@ dependencies {
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:database"))
     implementation(project(":platform:java:agent-core"))
-    implementation(project(":products:aep:aep-agent-runtime"))  // Migrated from agent-memory: MemoryPlane
+    implementation(project(":products:data-cloud:planes:action:agent-runtime"))  // Migrated from agent-memory: MemoryPlane
 
     // Platform contracts (proto-generated types)
     implementation(project(":platform:contracts"))

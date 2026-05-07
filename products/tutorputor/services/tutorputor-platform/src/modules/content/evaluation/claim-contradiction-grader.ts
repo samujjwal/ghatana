@@ -6,11 +6,17 @@
  */
 
 export interface ClaimContradictionGrader {
-  check: (args: any) => Promise<any>;
+  check: (args: unknown) => Promise<{
+    contradictions: unknown[];
+    score: number;
+  }>;
 }
 
 export class ClaimContradictionGraderImpl implements ClaimContradictionGrader {
-  async check(args: any): Promise<any> {
+  async check(_args: unknown): Promise<{
+    contradictions: unknown[];
+    score: number;
+  }> {
     // Placeholder implementation
     return {
       contradictions: [],

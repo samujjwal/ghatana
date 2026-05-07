@@ -63,6 +63,20 @@ TutorPutor is a **simulation-first AI learning platform** that teaches STEAM con
 
 ## 2. System Architecture
 
+### 2.0 Canonical Runtime Target
+
+The canonical architecture is defined in `docs/architecture/CANONICAL_TARGET_ARCHITECTURE.md`.
+TutorPutor is a deliberately composed hybrid with one primary product backend:
+`services/tutorputor-platform` owns public product APIs, persistence, policy,
+telemetry, analytics, compliance, LTI, credentials, and orchestration.
+Java/ActiveJ agent libraries and content-generation services are worker
+runtimes behind typed platform boundaries. `apps/api-gateway` is a thin edge
+gateway and must not fork product behavior.
+
+Every public route in `api/tutorputor-api.openapi.yaml` must be mapped in
+`docs/architecture/API_ROUTE_OWNERS.json` to one platform backend owner, one
+contract owner, one typed/generated client, and one test owner.
+
 ### 2.1 C4 Level 1 — System Context
 
 ```

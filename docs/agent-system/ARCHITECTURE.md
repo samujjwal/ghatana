@@ -11,7 +11,7 @@ The Ghatana agent system is a **layered, platform-wide agentic architecture**. I
 | Layer | Location | Owns |
 |-------|----------|------|
 | Platform contracts + control standards | `platform/java/agent-core`, `platform/java/tool-runtime`, `platform/java/workflow`, `platform-kernel/*` | `TypedAgent<I,O>` interface, nine-type taxonomy, release model, tool contracts |
-| AEP execution runtime | `products/aep/aep-agent-runtime` | Dispatch, execution policy, assurance, learning loops, governed execution |
+| AEP execution runtime | `products/data-cloud/planes/action/agent-runtime` | Dispatch, execution policy, assurance, learning loops, governed execution |
 | Data Cloud persistence | `products/data-cloud/` | Agent releases, memory artifacts, evaluation artifacts, rollout state, trace/index search |
 | Product adapters | `products/*/` | Domain-specific agent logic behind `AgentLogicProvider` SPI |
 

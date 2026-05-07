@@ -144,4 +144,48 @@ describe("isComplianceEvent", () => {
     });
     expect(isComplianceEvent(event as TutorPutorPlatformEvent)).toBe(true);
   });
+
+  it("keeps privacy export and deletion as platform compliance events", () => {
+    const exportEvent = createPlatformEvent<ComplianceEvent>({
+      id: uuid(),
+      category: "compliance",
+      type: "compliance.telemetry.exported",
+      source: "tutorputor-platform",
+      tenantId: "t1",
+      payload: {
+        type: "compliance.telemetry.exported",
+        userId: "u1",
+        tenantId: "t1",
+        requestId: "privacy-export-1",
+        recordCounts: {
+          telemetryEvents: 10,
+          aiAuditLogs: 2,
+        },
+        evidenceUri: "audit://privacy-export-1",
+      },
+    });
+    const deletionEvent = createPlatformEvent<ComplianceEvent>({
+      id: uuid(),
+      category: "compliance",
+      type: "compliance.telemetry.deleted",
+      source: "tutorputor-platform",
+      tenantId: "t1",
+      payload: {
+        type: "compliance.telemetry.deleted",
+        userId: "u1",
+        tenantId: "t1",
+        requestId: "privacy-delete-1",
+        recordCounts: {
+          telemetryEvents: 10,
+          aiAuditLogs: 2,
+        },
+        evidenceUri: "audit://privacy-delete-1",
+      },
+    });
+
+    expect(isTelemetryEvent(exportEvent as TutorPutorPlatformEvent)).toBe(false);
+    expect(isTelemetryEvent(deletionEvent as TutorPutorPlatformEvent)).toBe(false);
+    expect(isComplianceEvent(exportEvent as TutorPutorPlatformEvent)).toBe(true);
+    expect(isComplianceEvent(deletionEvent as TutorPutorPlatformEvent)).toBe(true);
+  });
 });

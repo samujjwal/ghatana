@@ -18,12 +18,12 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'products/aep/**'
+      - 'products/data-cloud/planes/action/**'
       - '.github/workflows/aep-ci.yml'
   pull_request:
     branches: [main, develop]
     paths:
-      - 'products/aep/**'
+      - 'products/data-cloud/planes/action/**'
 
 env:
   GRADLE_OPTS: -Dorg.gradle.daemon=false
@@ -45,7 +45,7 @@ jobs:
           distribution: 'temurin'
       
       - name: Validate AEP Spec
-        run: ./gradlew :products:aep:contracts:validateAepSpec
+        run: ./gradlew :products:data-cloud:contracts:validateAepSpec
         timeout-minutes: 5
 
   # ==================== Gate 2: Backend Tests ====================
@@ -63,7 +63,7 @@ jobs:
           distribution: 'temurin'
       
       - name: Run Platform Tests
-        run: ./gradlew :products:aep:platform:test --rerun-tasks
+        run: ./gradlew :products:data-cloud:planes:action:server:test --rerun-tasks
         timeout-minutes: 15
 
   orchestrator-test:
@@ -80,7 +80,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Run Orchestrator Tests
-        run: ./gradlew :products:aep:orchestrator:test --rerun-tasks
+        run: ./gradlew :products:data-cloud:planes:action:orchestrator:test --rerun-tasks
         timeout-minutes: 15
 
   # ==================== Gate 2b: Pinned Critical Regression Tests (AEP-A2, AEP-A8) ====================
@@ -99,7 +99,7 @@ jobs:
 
       - name: Run AepOpenApiSurfaceDriftTest (Hard Failure on Regression)
         run: |
-          ./gradlew :products:aep:server:test \
+          ./gradlew :products:data-cloud:planes:action:server:test \
             --no-daemon \
             --tests com.ghatana.aep.server.http.AepOpenApiSurfaceDriftTest \
             --rerun-tasks
@@ -120,7 +120,7 @@ jobs:
 
       - name: Run AgentExecutionServiceTest (Hard Failure on Regression)
         run: |
-          ./gradlew :products:aep:orchestrator:test \
+          ./gradlew :products:data-cloud:planes:action:orchestrator:test \
             --no-daemon \
             --tests com.ghatana.aep.engine.registry.AgentExecutionServiceTest \
             --rerun-tasks
@@ -141,7 +141,7 @@ jobs:
 
       - name: Run Server Verification Tests
         run: |
-          ./gradlew :products:aep:server:test \
+          ./gradlew :products:data-cloud:planes:action:server:test \
             --no-daemon \
             --info \
             --tests com.ghatana.aep.learning.EpisodeLearningPipelineTest \
@@ -173,20 +173,20 @@ jobs:
       - name: Generate AEP coverage reports
         run: |
           ./gradlew \
-            :products:aep:server:test \
-            :products:aep:server:jacocoTestReport \
-            :products:aep:aep-security:test \
-            :products:aep:aep-security:jacocoTestReport \
-            :products:aep:aep-scaling:test \
-            :products:aep:aep-scaling:jacocoTestReport \
-            :products:aep:aep-identity:test \
-            :products:aep:aep-identity:jacocoTestReport \
-            :products:aep:aep-compliance:test \
-            :products:aep:aep-compliance:jacocoTestReport \
-            :products:aep:aep-event-cloud:test \
-            :products:aep:aep-event-cloud:jacocoTestReport \
-            :products:aep:aep-api:test \
-            :products:aep:aep-api:jacocoTestReport \
+            :products:data-cloud:planes:action:server:test \
+            :products:data-cloud:planes:action:server:jacocoTestReport \
+            :products:data-cloud:planes:action:security:test \
+            :products:data-cloud:planes:action:security:jacocoTestReport \
+            :products:data-cloud:planes:action:scaling:test \
+            :products:data-cloud:planes:action:scaling:jacocoTestReport \
+            :products:data-cloud:planes:action:identity:test \
+            :products:data-cloud:planes:action:identity:jacocoTestReport \
+            :products:data-cloud:planes:action:compliance:test \
+            :products:data-cloud:planes:action:compliance:jacocoTestReport \
+            :products:data-cloud:planes:action:event-bridge:test \
+            :products:data-cloud:planes:action:event-bridge:jacocoTestReport \
+            :products:data-cloud:planes:action:api:test \
+            :products:data-cloud:planes:action:api:jacocoTestReport \
             --no-daemon \
             --info
         env:
@@ -198,7 +198,7 @@ jobs:
         if: always()
         with:
           name: aep-jacoco-coverage
-          path: products/aep/**/build/reports/jacoco/test/
+          path: products/data-cloud/planes/action/**/build/reports/jacoco/test/
           retention-days: 7
 
   # ==================== Gate 3: UI Build & Test ====================
@@ -219,16 +219,16 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
       
       - name: Install dependencies
-        run: pnpm --dir products/aep/ui install
+        run: pnpm -C products/data-cloud/planes/action/ui install
       
       - name: Type Check
-        run: pnpm --dir products/aep/ui typecheck
+        run: pnpm -C products/data-cloud/planes/action/ui run type-check
       
       - name: Build UI
-        run: pnpm --dir products/aep/ui build
+        run: pnpm -C products/data-cloud/planes/action/ui run build
       
       - name: Run Unit Tests
-        run: pnpm --dir products/aep/ui test -- --run
+        run: pnpm -C products/data-cloud/planes/action/ui run test -- --run
         timeout-minutes: 10
 
   # ==================== Gate 4: Gateway Build ====================
@@ -244,10 +244,10 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       
       - name: Install dependencies
-        run: npm --prefix products/aep/gateway install
+        run: npm --prefix products/data-cloud/planes/action/gateway install
       
       - name: Build Gateway
-        run: npm --prefix products/aep/gateway run build
+        run: npm --prefix products/data-cloud/planes/action/gateway run build
         # Note: May fail if fastify types missing - documented in audit
         continue-on-error: true
 
@@ -260,8 +260,8 @@ jobs:
       
       - name: Check Contract Copy Drift
         run: |
-          if [ -f products/aep/gateway/src/openapi/aep.yaml ]; then
-            diff products/aep/contracts/openapi.yaml products/aep/gateway/src/openapi/aep.yaml || exit 1
+          if [ -f products/data-cloud/planes/action/gateway/src/openapi/aep.yaml ]; then
+            diff products/data-cloud/contracts/openapi/aep.yaml products/data-cloud/planes/action/gateway/src/openapi/aep.yaml || exit 1
           fi
           echo "Contract drift check passed"
 
@@ -278,7 +278,7 @@ jobs:
       
       - name: Check Image Repository
         run: |
-          REPO=$(yq '.image.repository' products/aep/helm/aep/values.yaml)
+          REPO=$(yq '.image.repository' products/data-cloud/planes/action/helm/aep/values.yaml)
           if [[ "$REPO" != "ghcr.io/ghatana/aep-service-manager" ]]; then
             echo "ERROR: Image repository mismatch"
             exit 1
@@ -287,7 +287,7 @@ jobs:
       
       - name: Check Readiness Probe
         run: |
-          PATH=$(yq '.readinessProbe.httpGet.path' products/aep/helm/aep/values.yaml)
+          PATH=$(yq '.readinessProbe.httpGet.path' products/data-cloud/planes/action/helm/aep/values.yaml)
           if [[ "$PATH" != "/ready" ]]; then
             echo "ERROR: Readiness probe path mismatch"
             exit 1

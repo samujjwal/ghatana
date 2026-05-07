@@ -6,8 +6,8 @@ description = "Cross-product contract tests for AEP and YAPPC Data Cloud integra
 
 dependencies {
     testImplementation(project(":platform:java:testing"))
-    testImplementation(project(":products:aep:orchestrator"))
-    testImplementation(project(":products:data-cloud:spi"))
+    testImplementation(project(":products:data-cloud:planes:action:orchestrator"))
+    testImplementation(project(":products:data-cloud:planes:shared-spi"))
     testImplementation(project(":products:yappc:infrastructure:datacloud"))
     testImplementation(project(":products:yappc:libs:java:yappc-domain"))
     testImplementation(project(":products:yappc:core:yappc-services"))

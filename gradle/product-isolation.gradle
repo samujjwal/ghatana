@@ -19,7 +19,7 @@ allprojects { project ->
     if (!project.path.startsWith(':products:')) return
 
     // Determine which product this project belongs to
-    // e.g. :products:aep:core → product = "aep"
+    // e.g. :products:data-cloud:planes:action:engine -> product = "data-cloud"
     def pathSegments = project.path.split(':').findAll { it }
     if (pathSegments.size() < 2) return
     def ownProduct = pathSegments[1]
@@ -28,10 +28,9 @@ allprojects { project ->
     // These should eventually be extracted to platform/ modules.
     // Format: [consumer-product: [allowed-dependency-products]]
     def allowedCrossProductPairs = [
-        'aep'          : ['data-cloud'] as Set,       // AEP depends on data-cloud SPI
-        'yappc'        : ['data-cloud', 'aep'] as Set, // YAPPC integrates with data-cloud + AEP
-        'software-org' : ['virtual-org', 'aep'] as Set, // software-org composes virtual-org agents + AEP
-        'virtual-org'  : ['aep'] as Set,               // virtual-org uses core operator/pipeline types from AEP (TODO: extract to platform)
+        'yappc'        : ['data-cloud'] as Set,       // YAPPC integrates with Data Cloud and its AEP capability
+        'software-org' : ['virtual-org', 'data-cloud'] as Set, // software-org composes virtual-org agents + AEP contracts
+        'virtual-org'  : ['data-cloud'] as Set,       // virtual-org uses AEP operator/pipeline types from Data Cloud
     ]
 
     project.afterEvaluate {

@@ -44,6 +44,48 @@ export interface DataDeletionResult {
     errorMessage?: string;
 }
 
+export interface PrivacyDataAccessSummary {
+    userId: string;
+    tenantId: string;
+    exportRequests: Array<{
+        id: string;
+        status: DataRequestStatus | 'not_found';
+        requestedAt: Date | string;
+        completedAt?: Date | string | null;
+        downloadUrl?: string | null;
+    }>;
+    deletionRequests: Array<{
+        id: string;
+        status: string;
+        requestedAt?: Date | string | null;
+        scheduledDeletionAt?: Date | string | null;
+        completedAt?: Date | string | null;
+    }>;
+    consent: ConsentRecord[];
+}
+
+export interface ConsentRevocationResult {
+    userId: string;
+    tenantId: string;
+    consentType: string;
+    granted: false;
+    revokedAt: Date;
+}
+
+export interface PrivacyAuditEvidence {
+    requestId: string;
+    userId: string;
+    tenantId: string;
+    evidenceType: 'export' | 'deletion' | 'telemetry_deletion' | 'consent_revocation';
+    collectedAt: Date;
+    records: Array<{
+        dataType: string;
+        action: 'exported' | 'deleted' | 'anonymized' | 'retained' | 'revoked';
+        count: number;
+        evidenceRef?: string;
+    }>;
+}
+
 export interface RetainedDataInfo {
     dataType: string;
     reason: string;

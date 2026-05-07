@@ -22,6 +22,51 @@ import { NotFoundError, ConflictError } from "../../core/errors";
 
 const logger = createStandaloneLogger({ component: "ContentService" });
 
+type TagRecord = {
+  label: string;
+};
+
+type EnrollmentRecord = {
+  id: string;
+  moduleId: string;
+  userId: string;
+  status: string;
+  progressPercent: number;
+  startedAt?: Date | null;
+  completedAt?: Date | null;
+  timeSpentSeconds: number;
+};
+
+type ModuleSummaryRecord = {
+  id: string;
+  slug: string;
+  title: string;
+  domain: string;
+  difficulty: string;
+  estimatedTimeMinutes: number;
+  tags?: TagRecord[];
+  enrollments?: EnrollmentRecord[];
+};
+
+type ModuleDetailRecord = ModuleSummaryRecord & {
+  description: string;
+  learningObjectives?: Array<{
+    id: string;
+    label: string;
+    taxonomyLevel: string;
+  }>;
+  contentBlocks?: Array<{
+    id: string;
+    orderIndex: number;
+    blockType: string;
+    payload: unknown;
+  }>;
+  prerequisites?: Array<{
+    prerequisiteModuleId: string;
+  }>;
+  version: number;
+};
+
 export class ContentServiceImpl implements ContentService {
   private readonly modalityValidator: ModalityValidator;
 
@@ -129,9 +174,7 @@ export class ContentServiceImpl implements ContentService {
 
     const hasMore = modules.length > take;
     const trimmed = modules.slice(0, take);
-    const items = trimmed.map((module: Record<string, unknown>) =>
-      this.mapModuleSummary(module),
-    );
+    const items = trimmed.map((module) => this.mapModuleSummary(module));
 
     return {
       items,
@@ -283,76 +326,69 @@ export class ContentServiceImpl implements ContentService {
     return include;
   }
 
-  private mapModuleSummary(module: any): ModuleSummary {
-    const enrollment = (
-      module.enrollments as unknown as Array<Record<string, unknown>>
-    )?.[0];
-    const tags =
-      (module.tags as Array<Record<string, unknown>> | undefined) ?? [];
-    return {
+  private mapModuleSummary(module: ModuleSummaryRecord): ModuleSummary {
+    const enrollment = module.enrollments?.[0];
+    const tags = module.tags ?? [];
+    const summary: ModuleSummary = {
       id: module.id as ModuleId,
-      slug: module.slug as string,
-      title: module.title as string,
+      slug: module.slug,
+      title: module.title,
       domain: module.domain as ModuleSummary["domain"],
       difficulty: module.difficulty as ModuleSummary["difficulty"],
-      estimatedTimeMinutes: module.estimatedTimeMinutes as number,
-      tags: tags.map((tag) => tag.label as string),
+      estimatedTimeMinutes: module.estimatedTimeMinutes,
+      tags: tags.map((tag) => tag.label),
       status: "PUBLISHED",
-      progressPercent: (enrollment?.progressPercent as number) ?? undefined,
     };
+    if (enrollment?.progressPercent !== undefined) {
+      summary.progressPercent = enrollment.progressPercent;
+    }
+    return summary;
   }
 
-  private mapModuleDetail(module: any): ModuleDetail {
-    const contentBlocks =
-      (module.contentBlocks as Array<Record<string, unknown>> | undefined) ??
-      [];
-    const learningObjectives =
-      (module.learningObjectives as
-        | Array<Record<string, unknown>>
-        | undefined) ?? [];
-    const prerequisites =
-      (module.prerequisites as Array<Record<string, unknown>> | undefined) ??
-      [];
+  private mapModuleDetail(module: ModuleDetailRecord): ModuleDetail {
+    const contentBlocks = module.contentBlocks ?? [];
+    const learningObjectives = module.learningObjectives ?? [];
+    const prerequisites = module.prerequisites ?? [];
     return {
       ...this.mapModuleSummary(module),
-      description: module.description as string,
+      description: module.description,
       learningObjectives: learningObjectives.map((objective) => ({
         id: `${module.id}-${objective.id}`,
-        label: objective.label as string,
+        label: objective.label,
         taxonomyLevel:
           objective.taxonomyLevel as ModuleDetail["learningObjectives"][number]["taxonomyLevel"],
       })),
       contentBlocks: contentBlocks
         .slice()
-        .sort((a, b) => (a.orderIndex as number) - (b.orderIndex as number))
+        .sort((a, b) => a.orderIndex - b.orderIndex)
         .map((block) => ({
-          id: block.id as string,
-          orderIndex: block.orderIndex as number,
+          id: block.id,
+          orderIndex: block.orderIndex,
           blockType:
             block.blockType as ModuleDetail["contentBlocks"][number]["blockType"],
-          payload: block.payload as unknown,
+          payload: block.payload,
         })),
       prerequisites: prerequisites.map(
         (prereq) => prereq.prerequisiteModuleId as ModuleId,
       ),
-      version: module.version as number,
+      version: module.version,
     };
   }
 
-  private mapEnrollment(record: any): Enrollment {
+  private mapEnrollment(record: EnrollmentRecord): Enrollment {
     return {
       id: record.id as Enrollment["id"],
       moduleId: record.moduleId as ModuleId,
       userId: record.userId as UserId,
       status: record.status as Enrollment["status"],
-      progressPercent: record.progressPercent as number,
+      progressPercent: record.progressPercent,
       ...(record.startedAt
-        ? { startedAt: (record.startedAt as Date).toISOString() }
+        ? { startedAt: record.startedAt.toISOString() }
         : {}),
       ...(record.completedAt
-        ? { completedAt: (record.completedAt as Date).toISOString() }
+        ? { completedAt: record.completedAt.toISOString() }
         : {}),
-      timeSpentSeconds: record.timeSpentSeconds as number,
+      timeSpentSeconds: record.timeSpentSeconds,
     };
   }
 }

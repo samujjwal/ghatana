@@ -10,6 +10,7 @@ import type {
 } from "@tutorputor/contracts/v1/types";
 import type { ParsedIntent } from "@tutorputor/contracts/v1/simulation/types";
 import { WebSearchService, type WebSearchConfig } from "./web-search";
+import { buildSocraticTutorPrompt } from "./socratic-tutor-policy";
 
 // Type alias for backwards compatibility
 type PrismaClient = TutorPrismaClient;
@@ -137,6 +138,17 @@ export class TutorPutorAIProxyService implements AIProxyService {
     tenantId: TenantId;
     userId: UserId;
     moduleId?: ModuleId;
+    claimIds?: string[];
+    currentSimulationState?: Record<string, unknown>;
+    recentAttempts?: Array<{
+      attemptId: string;
+      taskId?: string;
+      correct?: boolean;
+      confidence?: "low" | "medium" | "high";
+      misconceptionId?: string;
+    }>;
+    misconceptions?: string[];
+    allowedHelpMode?: "hint" | "explain" | "socratic";
     question: string;
     locale?: string;
   }): Promise<TutorResponsePayload> {
@@ -146,7 +158,20 @@ export class TutorPutorAIProxyService implements AIProxyService {
     const context = await this.retrieveRAGContext(tenantId, moduleId, question);
 
     // Build pedagogy-aware prompt with retrieved context
-    const prompt = this.buildTutorPrompt(question, context);
+    const prompt = this.buildTutorPrompt(question, context, {
+      moduleId: moduleId ?? ("unscoped-module" as ModuleId),
+      claimIds: args.claimIds ?? ["unscoped-claim"],
+      currentSimulationState: args.currentSimulationState ?? {},
+      recentAttempts:
+        args.recentAttempts ??
+        [
+          {
+            attemptId: "unscoped-attempt",
+          },
+        ],
+      misconceptions: args.misconceptions ?? [],
+      allowedHelpMode: args.allowedHelpMode ?? "socratic",
+    });
 
     // Call LLM (or stub if no API key)
     const answer = await this.callLLM(prompt, context.moduleTitle);
@@ -553,51 +578,36 @@ Output JSON:
     };
   }
 
-  private buildTutorPrompt(question: string, context: RAGContext): string {
-    const contextParts: string[] = [];
-
-    if (context.moduleTitle) {
-      contextParts.push(`**Module:** ${context.moduleTitle}`);
-    }
-
-    if (context.moduleDescription) {
-      contextParts.push(`**Description:** ${context.moduleDescription}`);
-    }
-
-    if (context.learningObjectives.length > 0) {
-      contextParts.push(
-        `**Learning Objectives:**\n${context.learningObjectives.map((o) => `- ${o}`).join("\n")}`,
-      );
-    }
-
-    if (context.relevantContent.length > 0) {
-      contextParts.push(
-        `**Relevant Content:**\n${context.relevantContent.map((c) => `[${c.blockType}] ${c.textContent.substring(0, 500)}`).join("\n\n")}`,
-      );
-    }
-
-    const contextSection =
-      contextParts.length > 0
-        ? contextParts.join("\n\n")
-        : "No specific module context available. Provide a general educational response.";
-
-    return `You are TutorPutor, an expert AI tutor helping students learn mathematics, science, and technology.
-
-## Context
-${contextSection}
-
-## Student Question
-${question}
-
-## Instructions
-1. Use the provided context to give an accurate, curriculum-aligned response
-2. Apply the Socratic method: ask guiding questions to help the student discover the answer
-3. Reference the learning objectives when relevant
-4. Keep your response focused and educational (2-3 paragraphs)
-5. If the question is off-topic, politely redirect to the module content
-6. Use examples from the context when available
-
-## Response`;
+  private buildTutorPrompt(
+    question: string,
+    context: RAGContext,
+    grounding: {
+      moduleId: ModuleId;
+      claimIds: string[];
+      currentSimulationState?: Record<string, unknown>;
+      recentAttempts: Array<{
+        attemptId: string;
+        taskId?: string;
+        correct?: boolean;
+        confidence?: "low" | "medium" | "high";
+        misconceptionId?: string;
+      }>;
+      misconceptions: string[];
+      allowedHelpMode: "hint" | "explain" | "socratic";
+    },
+  ): string {
+    return buildSocraticTutorPrompt(question, {
+      moduleId: String(grounding.moduleId),
+      moduleTitle: context.moduleTitle,
+      moduleDescription: context.moduleDescription,
+      claimIds: grounding.claimIds,
+      currentSimulationState: grounding.currentSimulationState,
+      recentAttempts: grounding.recentAttempts,
+      misconceptions: grounding.misconceptions,
+      allowedHelpMode: grounding.allowedHelpMode,
+      learningObjectives: context.learningObjectives,
+      relevantContent: context.relevantContent,
+    });
   }
 
   private async callLLM(prompt: string, moduleTitle?: string): Promise<string> {
@@ -791,8 +801,8 @@ ${question}
       const response = completion.choices[0]?.message?.content || "";
       return response
         .split("\n")
-        .map((q) => q.replace(/^\d+\.\s*/, "").trim())
-        .filter((q) => q.length > 0)
+        .map((q: string) => q.replace(/^\d+\.\s*/, "").trim())
+        .filter((q: string) => q.length > 0)
         .slice(0, 3);
     } catch {
       return [

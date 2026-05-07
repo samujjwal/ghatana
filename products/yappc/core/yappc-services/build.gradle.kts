@@ -26,14 +26,14 @@ dependencies {
     implementation(project(":products:yappc:core:agents"))
 
     // AEP integration (absorbed from services-lifecycle)
-    implementation(project(":products:aep:aep-operator-contracts"))
-    implementation(project(":products:aep:orchestrator"))
-    implementation(project(":products:aep:aep-engine"))
-    implementation(project(":products:aep:aep-agent-runtime"))
+    implementation(project(":products:data-cloud:planes:action:operator-contracts"))
+    implementation(project(":products:data-cloud:planes:action:orchestrator"))
+    implementation(project(":products:data-cloud:planes:action:engine"))
+    implementation(project(":products:data-cloud:planes:action:agent-runtime"))
 
     // Data-Cloud SPI (for DataCloudClient)
     // DataCloud SPI included directly; DataCloudPort decoupling tracked in architecture backlog
-    implementation(project(":products:data-cloud:spi"))
+    implementation(project(":products:data-cloud:planes:shared-spi"))
     implementation(project(":products:yappc:infrastructure:datacloud"))
 
     // YAPPC infrastructure

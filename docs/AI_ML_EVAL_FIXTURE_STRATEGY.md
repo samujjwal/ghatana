@@ -8,7 +8,7 @@ Committed fixture roots:
 
 - `platform/java/ai-integration/src/test/resources/eval-fixtures`
 - `products/yappc/core/ai/src/test/resources/eval-fixtures`
-- `products/aep/aep-agent-runtime/src/test/resources/eval-fixtures`
+- `products/data-cloud/planes/action/agent-runtime/src/test/resources/eval-fixtures`
 
 ## Format and layout
 
@@ -37,7 +37,7 @@ Each JSONL case must include:
 
 - `platform/java/ai-integration`: owned by platform AI integration maintainers
 - `products/yappc/core/ai`: owned by YAPPC AI maintainers
-- `products/aep/aep-agent-runtime`: owned by AEP runtime maintainers
+- `products/data-cloud/planes/action/agent-runtime`: owned by AEP runtime maintainers
 
 Ownership is encoded directly in each `manifest.json` and reviewed with fixture changes.
 

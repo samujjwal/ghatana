@@ -35,8 +35,8 @@ Products must not import platform-internal implementation classes.
 Products may only import contracts and public SPI interfaces from platform packages.
 
 **Rule 2 — No peer product imports.**
-`products/aep` must not import `products/yappc`.
-`products/yappc` must not import `products/aep`.
+`products/data-cloud/planes/action` must not import `products/yappc`.
+`products/yappc` must not import `products/data-cloud/planes/action`.
 Cross-product integration must go through `platform/contracts` event schemas or
 shared `DataCloudClient` SPI, never via direct class references.
 
@@ -48,7 +48,7 @@ Integration happens through HTTP/WebSocket/SSE at runtime.
 
 | Exception | Justification | Scope |
 |-----------|-------------|-------|
-| `products/yappc/core/yappc-infrastructure` imports `products/aep:aep-engine` | Runtime wiring adapter only; no domain logic crosses the boundary | `yappc-infrastructure` module only |
+| `products/yappc/core/yappc-infrastructure` imports `products/data-cloud/planes/action:aep-engine` | Runtime wiring adapter only; no domain logic crosses the boundary | `yappc-infrastructure` module only |
 | `products/yappc/core/knowledge-graph` imports `products/data-cloud:platform-launcher` | Temporary; tracked in `TODO(ADAPTER-SEAM)` comment; must be resolved via `DataStorePort` | `knowledge-graph` module only |
 
 All other cross-product imports are forbidden and enforced by ArchUnit tests in
@@ -159,7 +159,7 @@ The following patterns are explicitly forbidden and will fail CI:
 
 ### 6.2 Product packages (`products/yappc/frontend/*`)
 
-- Must not import from another product's frontend (`products/aep/frontend/*`).
+- Must not import from another product's frontend (`products/data-cloud/planes/action/frontend/*`).
 - Should import platform packages (`@ghatana/*`) rather than re-implementing.
 - May not create local re-exports of platform packages.
 

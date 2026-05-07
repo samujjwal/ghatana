@@ -143,7 +143,7 @@ The gate checks for: required directory structure, `build.gradle.kts`, source se
 
 ## 4. AEP Engine Conventions
 
-Conventions established in the 2026-03 AEP audit. Apply these in `products/aep/` and any module extending AEP.
+Conventions established in the 2026-03 AEP audit. Apply these in `products/data-cloud/planes/action/` and any module extending AEP.
 
 ### Naming
 

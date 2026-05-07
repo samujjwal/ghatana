@@ -43,6 +43,49 @@ export interface StudentAnalytics {
   recommendations: string[];
 }
 
+export interface InstructorEvidenceDashboardTiles {
+  calibrationGain: number;
+  brierScore: number;
+  masteryByClaim: Array<{
+    claimId: string;
+    mastery: number;
+    evidenceCount: number;
+  }>;
+  processScoreDistribution: {
+    low: number;
+    medium: number;
+    high: number;
+  };
+  vivaQueue: {
+    total: number;
+    highPriority: number;
+  };
+  atRiskLearners: Array<{
+    userId: string;
+    riskScore: number;
+    reasons: string[];
+  }>;
+  remediationCompletion: {
+    assigned: number;
+    completed: number;
+    completionRate: number;
+  };
+}
+
+type EnrollmentAnalyticsRecord = {
+  userId: string;
+  status?: string | null;
+  progressPercent?: number | null;
+  user?: {
+    displayName?: string | null;
+  };
+};
+
+type AssessmentAttemptAnalyticsRecord = {
+  userId: string;
+  scorePercent?: number | null;
+};
+
 export class TeacherAnalyticsService {
   constructor(private readonly prisma: TutorPrismaClient) {}
 
@@ -57,8 +100,8 @@ export class TeacherAnalyticsService {
     });
 
     const [classroom, classroomMembers] = await Promise.all([
-      this.prisma.classroom.findUnique({
-        where: { id: classroomId },
+      this.prisma.classroom.findFirst({
+        where: { id: classroomId, tenantId },
         select: { id: true, title: true },
       }),
       this.prisma.classroomMember.findMany({
@@ -226,7 +269,96 @@ export class TeacherAnalyticsService {
     return recommendations;
   }
 
-  private calculateAtRiskCount(enrollments: any[], attempts: any[]): number {
+  async getInstructorEvidenceDashboardTiles(
+    tenantId: string,
+    classroomId: string,
+  ): Promise<InstructorEvidenceDashboardTiles> {
+    const classroom = await this.prisma.classroom.findFirst({
+      where: { id: classroomId, tenantId },
+      select: { id: true },
+    });
+
+    if (!classroom) {
+      throw new Error('Classroom not found');
+    }
+
+    const members = await this.prisma.classroomMember.findMany({
+      where: { classroomId },
+      select: { userId: true },
+    });
+    const memberIds = members.map((member) => member.userId);
+
+    if (memberIds.length === 0) {
+      return {
+        calibrationGain: 0,
+        brierScore: 0,
+        masteryByClaim: [],
+        processScoreDistribution: { low: 0, medium: 0, high: 0 },
+        vivaQueue: { total: 0, highPriority: 0 },
+        atRiskLearners: [],
+        remediationCompletion: { assigned: 0, completed: 0, completionRate: 0 },
+      };
+    }
+
+    const [attempts, events] = await Promise.all([
+      this.prisma.assessmentAttempt.findMany({
+        where: { tenantId, userId: { in: memberIds } },
+        select: {
+          userId: true,
+          scorePercent: true,
+          responses: true,
+          feedback: true,
+        },
+      }),
+      this.prisma.learningEvent.findMany({
+        where: { tenantId, userId: { in: memberIds } },
+        select: {
+          userId: true,
+          eventType: true,
+          payload: true,
+        },
+      }),
+    ]);
+
+    const answerEvents = events.filter((event) => event.eventType === "assess.answer");
+    const simCaptureEvents = events.filter((event) => event.eventType === "sim.capture");
+    const vivaEvents = events.filter((event) => event.eventType === "viva.scheduled");
+    const remediationAssigned = events.filter(
+      (event) => event.eventType === "remediation.assigned",
+    ).length;
+    const remediationCompleted = events.filter(
+      (event) => event.eventType === "remediation.completed",
+    ).length;
+
+    const brierScore = this.calculateBrierScore(answerEvents);
+    const baselineBrier = this.averageNumericFeedback(attempts, "baselineBrier", 0.25);
+    const calibrationGain = Math.max(0, baselineBrier - brierScore);
+
+    return {
+      calibrationGain,
+      brierScore,
+      masteryByClaim: this.calculateMasteryByClaim(answerEvents),
+      processScoreDistribution: this.calculateProcessScoreDistribution(simCaptureEvents),
+      vivaQueue: {
+        total: vivaEvents.length,
+        highPriority: vivaEvents.filter((event) =>
+          JSON.stringify(event.payload).includes('"priority":"high"'),
+        ).length,
+      },
+      atRiskLearners: this.calculateEvidenceBackedRisk(memberIds, attempts, events),
+      remediationCompletion: {
+        assigned: remediationAssigned,
+        completed: remediationCompleted,
+        completionRate:
+          remediationAssigned > 0 ? remediationCompleted / remediationAssigned : 0,
+      },
+    };
+  }
+
+  private calculateAtRiskCount(
+    _enrollments: EnrollmentAnalyticsRecord[],
+    attempts: AssessmentAttemptAnalyticsRecord[],
+  ): number {
     const studentAttempts = new Map<string, number[]>();
     attempts.forEach((a) => {
       const scores = studentAttempts.get(a.userId) || [];
@@ -243,7 +375,134 @@ export class TeacherAnalyticsService {
     return atRiskCount;
   }
 
-  private getTopPerformers(enrollments: any[], attempts: any[]): Array<{ userId: string; displayName: string; averageScore: number }> {
+  private calculateBrierScore(events: Array<{ payload: unknown }>): number {
+    if (events.length === 0) {
+      return 0;
+    }
+    const confidenceToProbability = {
+      low: 0.33,
+      medium: 0.66,
+      high: 0.9,
+    } as const;
+    const total = events.reduce((sum, event) => {
+      const payload = event.payload as {
+        result?: { confidence?: "low" | "medium" | "high"; correct?: boolean };
+      };
+      const confidence = payload.result?.confidence ?? "medium";
+      const probability = confidenceToProbability[confidence];
+      const outcome = payload.result?.correct ? 1 : 0;
+      return sum + (probability - outcome) ** 2;
+    }, 0);
+    return Number((total / events.length).toFixed(4));
+  }
+
+  private averageNumericFeedback(
+    attempts: Array<{ feedback: unknown }>,
+    key: string,
+    fallback: number,
+  ): number {
+    const values = attempts
+      .map((attempt) => (attempt.feedback as Record<string, unknown> | null)?.[key])
+      .filter((value): value is number => typeof value === "number");
+    if (values.length === 0) {
+      return fallback;
+    }
+    return values.reduce((sum, value) => sum + value, 0) / values.length;
+  }
+
+  private calculateMasteryByClaim(
+    events: Array<{ payload: unknown }>,
+  ): InstructorEvidenceDashboardTiles["masteryByClaim"] {
+    const byClaim = new Map<string, { score: number; count: number }>();
+    for (const event of events) {
+      const payload = event.payload as {
+        object?: { claimId?: string };
+        result?: { score?: number; maxScore?: number; correct?: boolean };
+      };
+      const claimId = payload.object?.claimId;
+      if (!claimId) {
+        continue;
+      }
+      const maxScore = payload.result?.maxScore ?? 1;
+      const score =
+        typeof payload.result?.score === "number"
+          ? payload.result.score / maxScore
+          : payload.result?.correct
+            ? 1
+            : 0;
+      const current = byClaim.get(claimId) ?? { score: 0, count: 0 };
+      current.score += score;
+      current.count += 1;
+      byClaim.set(claimId, current);
+    }
+    return Array.from(byClaim.entries()).map(([claimId, value]) => ({
+      claimId,
+      mastery: Number((value.score / value.count).toFixed(4)),
+      evidenceCount: value.count,
+    }));
+  }
+
+  private calculateProcessScoreDistribution(
+    events: Array<{ payload: unknown }>,
+  ): InstructorEvidenceDashboardTiles["processScoreDistribution"] {
+    const distribution = { low: 0, medium: 0, high: 0 };
+    for (const event of events) {
+      const payload = event.payload as {
+        result?: { processFeatures?: Record<string, unknown> };
+      };
+      const raw = payload.result?.processFeatures?.processScore;
+      const score = typeof raw === "number" ? raw : 0;
+      if (score < 0.4) {
+        distribution.low += 1;
+      } else if (score < 0.75) {
+        distribution.medium += 1;
+      } else {
+        distribution.high += 1;
+      }
+    }
+    return distribution;
+  }
+
+  private calculateEvidenceBackedRisk(
+    memberIds: string[],
+    attempts: Array<{ userId: string; scorePercent: number | null }>,
+    events: Array<{ userId: string; eventType: string; payload: unknown }>,
+  ): InstructorEvidenceDashboardTiles["atRiskLearners"] {
+    return memberIds
+      .map((userId) => {
+        const learnerAttempts = attempts.filter((attempt) => attempt.userId === userId);
+        const averageScore =
+          learnerAttempts.length > 0
+            ? learnerAttempts.reduce(
+                (sum, attempt) => sum + (attempt.scorePercent ?? 0),
+                0,
+              ) / learnerAttempts.length
+            : 100;
+        const learnerEvents = events.filter((event) => event.userId === userId);
+        const hintCount = learnerEvents.filter(
+          (event) => event.eventType === "assist.hint",
+        ).length;
+        const failedEvidence = learnerEvents.filter((event) =>
+          JSON.stringify(event.payload).includes('"correct":false'),
+        ).length;
+        const reasons: string[] = [];
+        if (averageScore < 60) reasons.push("low assessment score");
+        if (hintCount >= 2) reasons.push("repeated hint usage");
+        if (failedEvidence >= 2) reasons.push("repeated invalid evidence");
+        return {
+          userId,
+          riskScore: Math.min(1, (100 - averageScore) / 100 + hintCount * 0.1 + failedEvidence * 0.15),
+          reasons,
+        };
+      })
+      .filter((risk) => risk.reasons.length > 0)
+      .sort((a, b) => b.riskScore - a.riskScore);
+  }
+
+  private getTopPerformers(
+    enrollments: EnrollmentAnalyticsRecord[],
+    attempts: AssessmentAttemptAnalyticsRecord[],
+  ): Array<{ userId: string; displayName: string; averageScore: number }> {
     const studentScores = new Map<string, { displayName: string; scores: number[] }>();
     enrollments.forEach((e) => {
       studentScores.set(e.userId, { displayName: e.user?.displayName || '', scores: [] });
@@ -263,7 +522,10 @@ export class TeacherAnalyticsService {
       .slice(0, 5);
   }
 
-  private getStrugglingStudents(enrollments: any[], attempts: any[]): Array<{ userId: string; displayName: string; averageScore: number; riskFactors: string[] }> {
+  private getStrugglingStudents(
+    enrollments: EnrollmentAnalyticsRecord[],
+    attempts: AssessmentAttemptAnalyticsRecord[],
+  ): Array<{ userId: string; displayName: string; averageScore: number; riskFactors: string[] }> {
     const studentScores = new Map<string, { displayName: string; scores: number[]; progress: number }>();
     enrollments.forEach((e) => {
       studentScores.set(e.userId, { displayName: e.user?.displayName || '', scores: [], progress: e.progressPercent || 0 });
@@ -338,7 +600,10 @@ export class TeacherAnalyticsService {
     }));
   }
 
-  private calculateStudentRisk(enrollments: any[], attempts: any[]): { riskLevel: 'low' | 'medium' | 'high' | 'critical'; riskFactors: string[]; recommendations: string[] } {
+  private calculateStudentRisk(
+    enrollments: EnrollmentAnalyticsRecord[],
+    attempts: AssessmentAttemptAnalyticsRecord[],
+  ): { riskLevel: 'low' | 'medium' | 'high' | 'critical'; riskFactors: string[]; recommendations: string[] } {
     const riskFactors: string[] = [];
     const recommendations: string[] = [];
     let riskScore = 0;

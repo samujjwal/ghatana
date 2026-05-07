@@ -2,8 +2,8 @@
 # Paths are relative to repository root.
 
 platform/agent-catalog
-products/aep/agent-catalog
-products/data-cloud/agent-catalog
+products/data-cloud/planes/action/agent-catalog
+products/data-cloud/extensions/agent-catalog
 products/yappc/config/agents
 products/software-org/config/agents
 products/virtual-org/config/agents

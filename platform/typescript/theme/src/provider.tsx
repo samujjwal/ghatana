@@ -119,6 +119,17 @@ function resolveTheme(theme: ThemeMode, systemTheme: ResolvedTheme): ResolvedThe
 // Create context
 const ThemeContext = React.createContext<ThemeContextValue | undefined>(undefined);
 
+const fallbackThemeDefinition = createTheme('light');
+const fallbackThemeContext: ThemeContextValue = {
+  theme: 'light',
+  resolvedTheme: 'light',
+  systemTheme: 'light',
+  setTheme: () => {},
+  toggleTheme: () => {},
+  themeDefinition: fallbackThemeDefinition,
+  setThemeLayers: () => {},
+};
+
 /**
  * Theme Provider Component
  *
@@ -289,7 +300,7 @@ export function useTheme(): ThemeContextValue {
   const context = React.useContext(ThemeContext);
 
   if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    return fallbackThemeContext;
   }
 
   return context;

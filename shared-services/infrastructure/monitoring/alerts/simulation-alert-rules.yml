@@ -470,3 +470,108 @@ groups:
         annotations:
           summary: "Simulation error budget burn rate elevated"
           description: "6h error rate {{ $value | humanizePercentage }}. Will exhaust monthly budget at this rate."
+
+  # ==========================================================================
+  # TUTORPUTOR PRODUCT CORRECTNESS ALERTS
+  # ==========================================================================
+  - name: tutorputor-product-correctness-alerts
+    interval: 30s
+    rules:
+      - alert: TutorPutorAILatencyHigh
+        expr: histogram_quantile(0.95, rate(tutorputor_ai_request_duration_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-platform
+          category: ai
+        annotations:
+          summary: "TutorPutor AI latency is high"
+          description: "p95 AI latency is {{ $value | humanize }}s for use case {{ $labels.use_case }}"
+
+      - alert: TutorPutorAICostSpike
+        expr: increase(tutorputor_ai_token_cost_usd_total[1h]) > 50
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-platform
+          category: ai-cost
+        annotations:
+          summary: "TutorPutor AI cost spike detected"
+          description: "Estimated AI cost exceeded $50 in one hour for {{ $labels.use_case }}"
+
+      - alert: TutorPutorAIFailureRate
+        expr: rate(tutorputor_ai_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-platform
+          category: ai-reliability
+        annotations:
+          summary: "TutorPutor AI failures are elevated"
+          description: "{{ $value | humanize }}/s AI failures for {{ $labels.use_case }} / {{ $labels.failure_mode }}"
+
+      - alert: TutorPutorSimulationRuntimeErrors
+        expr: rate(tutorputor_simulation_runtime_errors_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: learning-correctness
+        annotations:
+          summary: "TutorPutor simulation runtime errors detected"
+          description: "{{ $value | humanize }}/s simulation errors for {{ $labels.domain }} / {{ $labels.failure_mode }}"
+
+      - alert: TutorPutorTelemetryIngestFailures
+        expr: rate(tutorputor_telemetry_ingest_failures_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          service: tutorputor-platform
+          category: learning-evidence
+        annotations:
+          summary: "TutorPutor telemetry ingestion failures detected"
+          description: "Learning evidence ingest is failing for {{ $labels.event_type }} / {{ $labels.failure_mode }}"
+
+      - alert: TutorPutorAssessmentScoringFailures
+        expr: rate(tutorputor_assessment_scoring_failures_total[5m]) > 0
+        for: 2m
+        labels:
+          severity: critical
+          service: tutorputor-platform
+          category: assessment-correctness
+        annotations:
+          summary: "TutorPutor assessment scoring failures detected"
+          description: "Scoring failures for {{ $labels.item_type }} using {{ $labels.policy }} / {{ $labels.failure_mode }}"
+
+      - alert: TutorPutorLTIPassbackFailures
+        expr: rate(tutorputor_lti_passback_failures_total[5m]) > 0.02
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-platform
+          category: lti
+        annotations:
+          summary: "TutorPutor LTI passback failures detected"
+          description: "LTI passback failures for {{ $labels.platform }} / {{ $labels.failure_mode }}"
+
+      - alert: TutorPutorContentGenerationValidationFailures
+        expr: rate(tutorputor_content_generation_validation_failures_total[5m]) > 0.02
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-platform
+          category: content-generation
+        annotations:
+          summary: "TutorPutor generated content validation failures detected"
+          description: "Generated {{ $labels.artifact_type }} validation failures in {{ $labels.domain }} / {{ $labels.failure_mode }}"
+
+      - alert: TutorPutorPrivacyDeletionFailures
+        expr: rate(tutorputor_privacy_deletion_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: tutorputor-platform
+          category: privacy
+        annotations:
+          summary: "TutorPutor privacy deletion failure detected"
+          description: "Privacy {{ $labels.operation }} failed due to {{ $labels.failure_mode }}"

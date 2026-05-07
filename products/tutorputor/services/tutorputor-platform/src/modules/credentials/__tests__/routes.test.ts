@@ -9,6 +9,10 @@ describe("credentialRoutes", () => {
     create: vi.fn(),
     getProgress: vi.fn(),
     hasCredential: vi.fn(),
+    issueFromEvidence: vi.fn(),
+    verifyCredential: vi.fn(),
+    revokeCredential: vi.fn(),
+    reissueCredential: vi.fn(),
   };
 
   let app: ReturnType<typeof Fastify>;
@@ -20,6 +24,15 @@ describe("credentialRoutes", () => {
     service.create.mockResolvedValue({ id: "cred-1" });
     service.getProgress.mockResolvedValue({});
     service.hasCredential.mockResolvedValue(false);
+    service.issueFromEvidence.mockResolvedValue({ id: "cred-evidence-1" });
+    service.verifyCredential.mockResolvedValue({
+      credential: { id: "cred-1", status: "issued" },
+      valid: true,
+      revoked: false,
+      verificationUrl: "https://verify.tutorputor.com/credentials/cred-1",
+    });
+    service.revokeCredential.mockResolvedValue({ id: "cred-1", status: "revoked" });
+    service.reissueCredential.mockResolvedValue({ id: "cred-2", status: "issued" });
 
     app = Fastify();
     await credentialRoutes(app, { service: service as never });
@@ -95,5 +108,85 @@ describe("credentialRoutes", () => {
       "user-1",
       expect.objectContaining({ tenantId: "tenant-1", page: 1, limit: 20 }),
     );
+  });
+
+  it("issues credentials from mastery evidence", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/credentials/issue-from-evidence",
+      headers: {
+        "x-tenant-id": "tenant-1",
+        "x-user-id": "teacher-1",
+        "x-user-role": "teacher",
+      },
+      payload: {
+        type: "certificate",
+        userId: "student-1",
+        moduleId: "module-1",
+        name: "Motion Mastery",
+        description: "Issued from demonstrated mastery evidence",
+        metadata: { category: "simulation_mastery" },
+        certificate: {
+          courseId: "module-1",
+          completionDate: "2026-05-06T00:00:00.000Z",
+        },
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(service.issueFromEvidence).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tenantId: "tenant-1",
+        userId: "student-1",
+        moduleId: "module-1",
+      }),
+    );
+  });
+
+  it("verifies credential URLs", async () => {
+    const response = await app.inject({
+      method: "GET",
+      url: "/credentials/cred-1/verify",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().data).toMatchObject({
+      valid: true,
+      verificationUrl: "https://verify.tutorputor.com/credentials/cred-1",
+    });
+  });
+
+  it("revokes credentials", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/credentials/cred-1/revoke",
+      headers: {
+        "x-tenant-id": "tenant-1",
+        "x-user-role": "admin",
+      },
+      payload: {
+        reason: "Assessment evidence invalidated",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(service.revokeCredential).toHaveBeenCalledWith(
+      "cred-1",
+      "Assessment evidence invalidated",
+    );
+  });
+
+  it("reissues credentials from existing evidence", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/credentials/cred-1/reissue",
+      headers: {
+        "x-tenant-id": "tenant-1",
+        "x-user-role": "admin",
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(service.reissueCredential).toHaveBeenCalledWith("cred-1");
   });
 });

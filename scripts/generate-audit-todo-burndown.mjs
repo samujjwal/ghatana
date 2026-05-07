@@ -7,7 +7,7 @@ const repoRoot = process.cwd();
 
 const PRODUCT_ROOTS = [
   { name: 'data-cloud', path: 'products/data-cloud' },
-  { name: 'aep', path: 'products/aep' },
+  { name: 'aep', path: 'products/data-cloud/planes/action' },
   { name: 'yappc', path: 'products/yappc' },
 ];
 

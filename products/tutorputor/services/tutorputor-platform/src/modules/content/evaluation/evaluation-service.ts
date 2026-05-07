@@ -570,8 +570,8 @@ function scoreCoherence(
   issues: EvaluationIssue[];
 } {
   const issues: EvaluationIssue[] = [];
-  const claims = (outputData["claims"] as any[] | undefined) ?? [];
-  const examples = (outputData["examples"] as any[] | undefined) ?? [];
+  const claims = readUnknownArray(outputData["claims"]);
+  const examples = readUnknownArray(outputData["examples"]);
   const jobTypeSupportsStandaloneArtifacts = [
     "explainer",
     "worked_example",
@@ -702,19 +702,20 @@ function scoreManifestValidity(
   }
 
   const manifests =
-    (outputData["simulations"] as any[]) ??
-    (outputData["animations"] as any[]) ??
-    [];
+    readUnknownArray(outputData["simulations"]).length > 0
+      ? readUnknownArray(outputData["simulations"])
+      : readUnknownArray(outputData["animations"]);
 
   manifests.forEach((m, idx) => {
-    if (!m.id) {
+    const manifest = readRecord(m);
+    if (!manifest?.id) {
       issues.push({
         dimension: "manifest_validity",
         severity: "error",
         message: `Manifest[${idx}] missing id`,
       });
     }
-    if (!m.title) {
+    if (!manifest.title) {
       issues.push({
         dimension: "manifest_validity",
         severity: "warning",
@@ -725,6 +726,16 @@ function scoreManifestValidity(
 
   const score = issues.some((i) => i.severity === "error") ? 0.3 : 1.0;
   return { score, issues };
+}
+
+function readUnknownArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function readRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
 }
 
 function deriveRecommendation(

@@ -37,7 +37,7 @@ jobs:
           -Dsonar.token=${{ secrets.SONAR_TOKEN_DATACLOUD }}
       
       - name: Run SonarQube Analysis for AEP
-        working-directory: products/aep
+        working-directory: products/data-cloud/planes/action
         run: ./gradlew sonarqube \
           -Dsonar.projectKey=ghatana_aep \
           -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \

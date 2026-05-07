@@ -270,7 +270,9 @@ function buildWorkedExampleShape(
     title: input.requestTitle,
     examples,
   };
-  const validation = validateWorkedExample(manifest as any);
+  const validation = validateWorkedExample(
+    manifest as unknown as Parameters<typeof validateWorkedExample>[0],
+  );
 
   return {
     assetType: "example_set",
@@ -365,7 +367,9 @@ function buildAnimationShape(
     readObject(item) ?? { id: `animation-${index + 1}` },
   );
   const first = animations[0] ?? {};
-  const validation = validateAnimation(first as any);
+  const validation = validateAnimation(
+    first as unknown as Parameters<typeof validateAnimation>[0],
+  );
   const manifests: MaterializationShape["manifests"] = animations.map(
     (animation) => ({
       manifestType: "animation",
@@ -418,7 +422,9 @@ function buildAssessmentShape(
     title: input.requestTitle,
     questions: assessments,
   };
-  const validation = validateAssessment(manifest as any);
+  const validation = validateAssessment(
+    manifest as unknown as Parameters<typeof validateAssessment>[0],
+  );
 
   return {
     assetType: "assessment",

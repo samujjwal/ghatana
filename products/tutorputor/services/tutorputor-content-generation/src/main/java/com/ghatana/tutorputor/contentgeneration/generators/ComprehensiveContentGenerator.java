@@ -8,6 +8,7 @@ import com.ghatana.tutorputor.contentgeneration.domain.LearningClaim;
 import com.ghatana.tutorputor.contentgeneration.domain.LearningEvidence;
 import com.ghatana.tutorputor.contentgeneration.domain.QualityReport;
 import com.ghatana.tutorputor.contentgeneration.domain.SimulationManifest;
+import com.ghatana.tutorputor.contentgeneration.validation.GeneratedContentValidationGate;
 import io.activej.promise.Promise;
 
 import java.util.List;
@@ -53,16 +54,28 @@ public class ComprehensiveContentGenerator {
                                 .then(examples -> simulationGenerator.generateSimulations(claims, request)
                                         .then(simulations -> animationGenerator.generateAnimations(claims, request)
                                                 .then(animations -> assessmentGenerator.generateAssessments(claims, request)
-                                                        .map(assessments -> new CompleteContentPackage(
-                                                                claims,
-                                                                evidence,
-                                                                examples,
-                                                                simulations,
-                                                                animations,
-                                                                assessments,
-                                                                new QualityReport(true, 1.0, List.of()),
-                                                                0L
-                                                        )))))));
+                                                        .map(assessments -> {
+                                                            QualityReport qualityReport = GeneratedContentValidationGate.validate(
+                                                                    new GeneratedContentValidationGate.GeneratedContentPackage(
+                                                                            claims,
+                                                                            evidence,
+                                                                            examples,
+                                                                            simulations,
+                                                                            assessments
+                                                                    )
+                                                            );
+
+                                                            return new CompleteContentPackage(
+                                                                    claims,
+                                                                    evidence,
+                                                                    examples,
+                                                                    simulations,
+                                                                    animations,
+                                                                    assessments,
+                                                                    qualityReport,
+                                                                    0L
+                                                            );
+                                                        }))))));
     }
 
     public record CompleteContentPackage(

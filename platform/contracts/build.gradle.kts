@@ -54,7 +54,7 @@ tasks.register<Copy>("copyProductOpenApiSpecs") {
     }
 
     // Data-Cloud spec (lives in the product area)
-    from(rootProject.layout.projectDirectory.file("products/data-cloud/api/openapi.yaml")) {
+    from(rootProject.layout.projectDirectory.file("products/data-cloud/contracts/openapi/data-cloud.yaml")) {
         rename { "data-cloud-openapi.yaml" }
     }
 

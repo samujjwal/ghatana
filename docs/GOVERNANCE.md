@@ -120,7 +120,7 @@ No new product-local agent infrastructure may be introduced. All new agent-relat
 
 ### Blocked Patterns
 
-Outside `platform/java/agent-*` and `products/aep/`, these patterns are frozen:
+Outside `platform/java/agent-*` and `products/data-cloud/planes/action/`, these patterns are frozen:
 
 | Pattern | Type |
 |---------|------|
@@ -142,9 +142,9 @@ Outside `platform/java/agent-*` and `products/aep/`, these patterns are frozen:
 |-----------|----------|-----------------|
 | `YAPPCAgentRegistry.java` | `products/yappc/libs/java/yappc-domain/` | Phase 5 |
 | `YappcAgentCatalog.java` | `products/yappc/libs/java/yappc-domain/` | Phase 5 |
-| Data Cloud agent-registry module | `products/data-cloud/agent-registry/` | Phase 6 |
-| `AgenticDataProcessor` bootstrap | `products/data-cloud/agent-service/` | Phase 6 |
-| AEP platform-registry local store | `products/aep/platform-registry/` | Phase 4 |
+| Data Cloud agent-registry module | `products/data-cloud/extensions/agent-registry/` | Phase 6 |
+| `AgenticDataProcessor` bootstrap | `products/data-cloud/planes/action/agent-runtime/` | Phase 6 |
+| AEP platform-registry local store | `products/data-cloud/planes/action/platform-registry/` | Phase 4 |
 
 ---
 

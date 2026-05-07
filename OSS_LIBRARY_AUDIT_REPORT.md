@@ -46,7 +46,7 @@ The Ghatana repository demonstrates **strong dependency governance** with compre
 **Affected Modules:**
 
 - `products/audio-video/modules/speech/tts-service` (lines 41, 47-48)
-- `products/data-cloud/sdk` (OpenAPI generator config)
+- `products/data-cloud/delivery/sdk` (OpenAPI generator config)
 - Multiple YAPPC modules using both Jackson and Gson
 
 ### 1.2 Duplicate JsonUtils Classes (HIGH PRIORITY)
@@ -156,7 +156,7 @@ The Ghatana repository demonstrates **strong dependency governance** with compre
 
 **Issue:** Data-Cloud SDK generation pulls in Gson unnecessarily
 
-- **Location:** `products/data-cloud/sdk/build.gradle.kts` (line 83)
+- **Location:** `products/data-cloud/delivery/sdk/build.gradle.kts` (line 83)
 - **Problem:** OpenAPI generator configured with `"serializationLibrary" to "gson"`
 - **Solution:** Change to Jackson serialization library
 
@@ -199,7 +199,7 @@ The Ghatana repository demonstrates **strong dependency governance** with compre
 
 **Issue:** Multiple classes named JsonMapper with similar purposes
 
-- `products/data-cloud/platform-launcher/src/main/java/com/ghatana/datacloud/plugins/knowledgegraph/api/JsonMapper.java`
+- `products/data-cloud/delivery/runtime-composition/src/main/java/com/ghatana/datacloud/plugins/knowledgegraph/api/JsonMapper.java`
 - `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/common/JsonMapper.java`
 
 **Remediation:** Consolidate to platform JsonUtils standard
@@ -243,7 +243,7 @@ sed -i '/libs\.gson/d' products/audio-video/modules/intelligence/multimodal-serv
 #### 6.1.3 Update OpenAPI Generator
 
 ```kotlin
-// In products/data-cloud/sdk/build.gradle.kts
+// In products/data-cloud/delivery/sdk/build.gradle.kts
 configOptions.set(
     mapOf(
         "library" to "okhttp-gson",

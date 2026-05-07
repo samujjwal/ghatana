@@ -8,9 +8,19 @@
  * @doc.layer platform
  * @doc.pattern Module
  */
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyRequest } from "fastify";
 import { ComplianceEvidenceService } from "./ComplianceEvidenceService.js";
 import { z } from "zod";
+import type { PrismaClient } from "@tutorputor/core/db";
+
+type RouteUser = {
+  role?: string;
+};
+
+type AuthenticatedRouteRequest = FastifyRequest & {
+  tenantId?: string;
+  user?: RouteUser;
+};
 
 const generateEvidenceSchema = z.object({
   reportType: z.enum(["GDPR", "CCPA", "PEDAGOGICAL", "SOC2", "ISO27001"]),
@@ -19,13 +29,14 @@ const generateEvidenceSchema = z.object({
 });
 
 export const complianceEvidenceModule: FastifyPluginAsync = async (app) => {
-  const complianceService = new ComplianceEvidenceService(app.prisma as any);
+  const complianceService = new ComplianceEvidenceService(
+    app.prisma as unknown as PrismaClient,
+  );
   app.decorate("complianceEvidenceService", complianceService);
 
   // POST /api/v1/compliance/evidence/generate - Generate compliance evidence package
   app.post("/api/v1/compliance/evidence/generate", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -48,8 +59,7 @@ export const complianceEvidenceModule: FastifyPluginAsync = async (app) => {
 
   // GET /api/v1/compliance/evidence/:reportId - Get evidence package by ID
   app.get("/api/v1/compliance/evidence/:reportId", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -71,8 +81,7 @@ export const complianceEvidenceModule: FastifyPluginAsync = async (app) => {
 
   // GET /api/v1/compliance/evidence - Get tenant evidence packages
   app.get("/api/v1/compliance/evidence", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -91,8 +100,7 @@ export const complianceEvidenceModule: FastifyPluginAsync = async (app) => {
 
   // GET /api/v1/compliance/evidence/:reportId/download - Download evidence package as JSON
   app.get("/api/v1/compliance/evidence/:reportId/download", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -118,8 +126,7 @@ export const complianceEvidenceModule: FastifyPluginAsync = async (app) => {
 
   // GET /api/v1/compliance/status - Get compliance status summary
   app.get("/api/v1/compliance/status", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });

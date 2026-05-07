@@ -6,11 +6,17 @@
  */
 
 export interface RubricBackedPillarGrader {
-  grade: (args: any) => Promise<any>;
+  grade: (args: unknown) => Promise<{
+    score: number;
+    pillarScores: Record<string, number>;
+  }>;
 }
 
 export class RubricBackedPillarGraderImpl implements RubricBackedPillarGrader {
-  async grade(args: any): Promise<any> {
+  async grade(_args: unknown): Promise<{
+    score: number;
+    pillarScores: Record<string, number>;
+  }> {
     // Placeholder implementation
     return {
       score: 1.0,

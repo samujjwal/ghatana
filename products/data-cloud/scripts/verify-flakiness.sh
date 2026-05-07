@@ -39,7 +39,7 @@ for i in $(seq 1 $RUNS); do
   fi
   
   # Run UI tests
-  if ! (cd products/data-cloud/ui && npm test -- --run -q) > /tmp/ui-test-run-${i}.log 2>&1; then
+  if ! (cd products/data-cloud/delivery/ui && npm test -- --run -q) > /tmp/ui-test-run-${i}.log 2>&1; then
     echo -e "${RED}✗ UI Run ${i} FAILED${NC}"
     FAILED_RUNS=$((FAILED_RUNS + 1))
   fi

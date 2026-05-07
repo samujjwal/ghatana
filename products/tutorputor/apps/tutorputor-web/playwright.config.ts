@@ -19,7 +19,7 @@ export default defineConfig({
         ["list"],
     ],
     use: {
-        baseURL: "http://localhost:5173",
+        baseURL: process.env.BASE_URL ?? "http://localhost:5173",
         trace: "on-first-retry",
         screenshot: "only-on-failure",
         video: "retain-on-failure",
@@ -42,9 +42,9 @@ export default defineConfig({
             use: { ...devices["Pixel 5"] },
         },
     ],
-    webServer: {
+    webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER === "true" ? undefined : {
         command: "pnpm dev",
-        url: "http://localhost:5173",
+        url: process.env.BASE_URL ?? "http://localhost:5173",
         reuseExistingServer: !process.env.CI,
         timeout: 120 * 1000,
     },

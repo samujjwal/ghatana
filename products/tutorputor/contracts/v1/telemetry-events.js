@@ -23,10 +23,14 @@ export const XAPI_VERBS = {
     'sim.goal.failed': 'http://adlnet.gov/expapi/verbs/failed',
     'sim.pause': 'http://adlnet.gov/expapi/verbs/suspended',
     'sim.resume': 'http://adlnet.gov/expapi/verbs/resumed',
+    'sim.snapshot': 'https://w3id.org/xapi/tutorputor/verbs/simulation-snapshot',
+    'sim.capture': 'https://w3id.org/xapi/tutorputor/verbs/simulation-capture',
     // Assessment Events
+    'assess.answer': 'http://adlnet.gov/expapi/verbs/answered',
     'assess.answer.submit': 'http://adlnet.gov/expapi/verbs/answered',
     'assess.confidence.submit': 'http://adlnet.gov/expapi/verbs/rated',
     'assess.hint.request': 'http://adlnet.gov/expapi/verbs/asked',
+    'assist.hint': 'http://adlnet.gov/expapi/verbs/asked',
     // Content Events
     'content.video.start': 'http://adlnet.gov/expapi/verbs/initialized',
     'content.video.complete': 'http://adlnet.gov/expapi/verbs/completed',
@@ -36,6 +40,10 @@ export const XAPI_VERBS = {
     // Credential Events
     'credential.badge.issued': 'http://adlnet.gov/expapi/verbs/earned',
     'credential.skill.mastered': 'http://adlnet.gov/expapi/verbs/mastered',
+    // AI Interaction Events
+    'ai.tutor.response': 'https://w3id.org/xapi/tutorputor/verbs/ai-tutor-response',
+    'ai.generation.created': 'https://w3id.org/xapi/tutorputor/verbs/ai-generation-created',
+    'ai.governance.blocked': 'https://w3id.org/xapi/tutorputor/verbs/ai-governance-blocked',
 };
 // ============================================================================
 // Event Builder Helpers

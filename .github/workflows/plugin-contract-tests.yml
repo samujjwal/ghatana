@@ -80,8 +80,8 @@ jobs:
       - name: Build and test kernel bridges
         run: |
           ./gradlew \
-            :products:data-cloud:kernel-bridge:test \
-            :products:aep:kernel-bridge:test \
+            :products:data-cloud:extensions:kernel-bridge:test \
+            :products:data-cloud:planes:action:kernel-bridge:test \
             :products:yappc:kernel-bridge:test \
             --no-daemon
 

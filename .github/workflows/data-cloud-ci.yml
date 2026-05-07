@@ -15,11 +15,11 @@ on:
 
 env:
   DC_MODULES: >-
-    :products:data-cloud:spi
-    :products:data-cloud:platform-launcher
-    :products:data-cloud:launcher
-    :products:data-cloud:sdk
-    :products:data-cloud:agent-registry
+    :products:data-cloud:planes:shared-spi
+    :products:data-cloud:delivery:runtime-composition
+    :products:data-cloud:delivery:launcher
+    :products:data-cloud:delivery:sdk
+    :products:data-cloud:extensions:agent-registry
     :products:data-cloud:integration-tests
 
 jobs:
@@ -47,16 +47,16 @@ jobs:
 
       - name: Install UI dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: products/data-cloud/ui
+        working-directory: products/data-cloud/delivery/ui
 
       # Backend: Compile all modules
       - name: Compile backend modules
         run: |
           ./gradlew \
-            :products:data-cloud:spi:compileJava \
-            :products:data-cloud:platform-launcher:compileJava \
-            :products:data-cloud:launcher:compileJava \
-            :products:data-cloud:agent-registry:compileJava \
+            :products:data-cloud:planes:shared-spi:compileJava \
+            :products:data-cloud:delivery:runtime-composition:compileJava \
+            :products:data-cloud:delivery:launcher:compileJava \
+            :products:data-cloud:extensions:agent-registry:compileJava \
             :products:data-cloud:integration-tests:testClasses \
             --no-daemon
 
@@ -64,22 +64,22 @@ jobs:
       - name: Run backend SpotBugs
         run: |
           ./gradlew \
-            :products:data-cloud:platform-launcher:spotbugsMain \
+            :products:data-cloud:delivery:runtime-composition:spotbugsMain \
             --no-daemon
 
       # Frontend: Type-check (must pass before tests)
       - name: Frontend type-check
         run: pnpm run type-check
-        working-directory: products/data-cloud/ui
+        working-directory: products/data-cloud/delivery/ui
 
       # Backend: Unit Tests
       - name: Run backend unit tests
         run: |
           ./gradlew \
-            :products:data-cloud:spi:test \
-            :products:data-cloud:launcher:test \
-            :products:data-cloud:platform-launcher:test \
-            :products:data-cloud:agent-registry:test \
+            :products:data-cloud:planes:shared-spi:test \
+            :products:data-cloud:delivery:launcher:test \
+            :products:data-cloud:delivery:runtime-composition:test \
+            :products:data-cloud:extensions:agent-registry:test \
             --no-daemon
 
       - name: Run cross-module integration test suite
@@ -91,11 +91,11 @@ jobs:
       # Frontend: Vitest
       - name: Run frontend tests
         run: pnpm run test -- --run
-        working-directory: products/data-cloud/ui
+        working-directory: products/data-cloud/delivery/ui
 
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
-        working-directory: products/data-cloud/ui
+        working-directory: products/data-cloud/delivery/ui
 
       - name: Run focused browser evidence
         run: |
@@ -104,13 +104,13 @@ jobs:
             e2e/query.spec.ts \
             e2e/governance.spec.ts \
             e2e/insights.spec.ts
-        working-directory: products/data-cloud/ui
+        working-directory: products/data-cloud/delivery/ui
 
       # Backend: Integration Tests (with Testcontainers)
       - name: Run integration tests
         run: |
           ./gradlew \
-            :products:data-cloud:platform-launcher:test \
+            :products:data-cloud:delivery:runtime-composition:test \
             -PincludeIT=true \
             --no-daemon
 
@@ -118,14 +118,14 @@ jobs:
       - name: Run architecture tests
         run: |
           ./gradlew \
-            :products:data-cloud:platform-launcher:test \
+            :products:data-cloud:delivery:runtime-composition:test \
             -Dtest=ArchitectureTests \
             --no-daemon
 
       - name: Run launcher architecture tests
         run: |
           ./gradlew \
-            :products:data-cloud:launcher:test \
+            :products:data-cloud:delivery:launcher:test \
             --tests com.ghatana.datacloud.launcher.DataCloudArchitectureTest \
             --no-daemon
 
@@ -133,10 +133,10 @@ jobs:
       - name: Generate code coverage report
         run: |
           ./gradlew \
-            :products:data-cloud:spi:jacocoTestReport \
-            :products:data-cloud:launcher:jacocoTestReport \
-            :products:data-cloud:platform-launcher:jacocoTestReport \
-            :products:data-cloud:agent-registry:jacocoTestReport \
+            :products:data-cloud:planes:shared-spi:jacocoTestReport \
+            :products:data-cloud:delivery:launcher:jacocoTestReport \
+            :products:data-cloud:delivery:runtime-composition:jacocoTestReport \
+            :products:data-cloud:extensions:agent-registry:jacocoTestReport \
             --no-daemon
 
       # Upload coverage to Codecov
@@ -151,10 +151,10 @@ jobs:
       - name: Build JAR artifacts
         run: |
           ./gradlew \
-            :products:data-cloud:spi:build \
-            :products:data-cloud:platform-launcher:build \
-            :products:data-cloud:launcher:build \
-            :products:data-cloud:agent-registry:build \
+            :products:data-cloud:planes:shared-spi:build \
+            :products:data-cloud:delivery:runtime-composition:build \
+            :products:data-cloud:delivery:launcher:build \
+            :products:data-cloud:extensions:agent-registry:build \
             :products:data-cloud:integration-tests:build \
             --no-daemon
 
@@ -216,7 +216,7 @@ jobs:
 
       - name: Validate UI package.json
         run: |
-          cd products/data-cloud/ui
+          cd products/data-cloud/delivery/ui
           # Ensure required fields exist
           node -e "
             const pkg = require('./package.json');
@@ -320,12 +320,12 @@ jobs:
       # Generate all three SDK targets from docs/openapi.yaml
       - name: Generate Data-Cloud SDKs from OpenAPI spec
         run: |
-          ./gradlew :products:data-cloud:sdk:generateAllSdks --no-daemon
+          ./gradlew :products:data-cloud:delivery:sdk:generateAllSdks --no-daemon
 
       # Validate the generated Java SDK compiles cleanly
       - name: Validate generated Java SDK compiles
         run: |
-          JAVA_SDK_DIR="products/data-cloud/sdk/build/generated/java-sdk"
+          JAVA_SDK_DIR="products/data-cloud/delivery/sdk/build/generated/java-sdk"
           if [ ! -d "$JAVA_SDK_DIR/src" ]; then
             echo "::error::Java SDK source directory not found after generation"
             exit 1
@@ -342,7 +342,7 @@ jobs:
       # Validate the generated TypeScript SDK type-checks cleanly
       - name: Validate generated TypeScript SDK type-checks
         run: |
-          TS_SDK_DIR="products/data-cloud/sdk/build/generated/typescript-sdk"
+          TS_SDK_DIR="products/data-cloud/delivery/sdk/build/generated/typescript-sdk"
           if [ -d "$TS_SDK_DIR" ]; then
             cd "$TS_SDK_DIR"
             if [ -f "package.json" ]; then
@@ -361,9 +361,9 @@ jobs:
         with:
           name: data-cloud-sdks
           path: |
-            products/data-cloud/sdk/build/generated/java-sdk/
-            products/data-cloud/sdk/build/generated/typescript-sdk/
-            products/data-cloud/sdk/build/generated/python-sdk/
+            products/data-cloud/delivery/sdk/build/generated/java-sdk/
+            products/data-cloud/delivery/sdk/build/generated/typescript-sdk/
+            products/data-cloud/delivery/sdk/build/generated/python-sdk/
           retention-days: 14
 
   # E2E smoke validation: runs the 8-check smoke matrix against a live DC instance.
@@ -572,7 +572,7 @@ jobs:
       - name: Run dependency vulnerability check
         run: |
           ./gradlew \
-            :products:data-cloud:platform-launcher:dependencyCheckAnalyze \
+            :products:data-cloud:delivery:runtime-composition:dependencyCheckAnalyze \
             --no-daemon
         continue-on-error: true
 

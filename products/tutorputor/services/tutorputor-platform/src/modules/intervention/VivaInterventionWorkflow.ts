@@ -86,6 +86,23 @@ export interface VivaQueueEntry {
   priority: number;
   reason: VivaConditionType;
   scheduledAt: Date;
+  slot: {
+    startsAt: Date;
+    durationMinutes: number;
+  };
+  rubric: Array<{
+    criterionId: string;
+    description: string;
+    maxScore: number;
+  }>;
+  state: "scheduled" | "completed" | "remediation_required" | "reviva_scheduled";
+  recordingUrl?: string;
+  remediationTask?: {
+    taskId: string;
+    claimId: string;
+    status: "assigned" | "completed";
+  };
+  reVivaForId?: string;
   conductedAt?: Date;
   result?: "pass" | "fail" | "inconclusive";
   notes?: string;
@@ -100,6 +117,7 @@ export interface WorkflowConfig {
   notifyLearner: boolean;
   blockOnCritical: boolean;
   instructorThreshold: InterventionSeverity;
+  randomSamplingRate: number;
 }
 
 /**
@@ -124,6 +142,7 @@ export class VivaInterventionWorkflow {
       notifyLearner: true,
       blockOnCritical: true,
       instructorThreshold: "high",
+      randomSamplingRate: 0.1,
       ...config,
     };
     this.interventionRules = this.initializeRules();
@@ -140,6 +159,13 @@ export class VivaInterventionWorkflow {
         severity: "critical",
         autoExecute: true,
         description: "Learner is confidently wrong - schedule oral assessment",
+      },
+      {
+        condition: "random_sampling",
+        action: "schedule_viva",
+        severity: "low",
+        autoExecute: true,
+        description: "Random quality-control viva sample",
       },
       {
         condition: "speed_anomaly",
@@ -189,14 +215,18 @@ export class VivaInterventionWorkflow {
     explanations: ExplanationRecord[] = [],
   ): Promise<InterventionResult[]> {
     // Identify viva candidates
-    const candidates = this.vivaEngine.identifyVivaCandidates(
+    const candidates = this.vivaEngine.identifyVivaCandidatesWithSampling(
       predictions,
       simulations,
       explanations,
+      this.config.randomSamplingRate,
     );
 
-    // Find candidates for this learner
-    const learnerCandidates = candidates.filter((c) => c.learnerId === learnerId);
+    // Find candidates for this learner, or process cohort-wide samples when requested.
+    const learnerCandidates =
+      learnerId === "*"
+        ? candidates
+        : candidates.filter((c) => c.learnerId === learnerId);
 
     // Execute interventions
     const results: InterventionResult[] = [];
@@ -342,6 +372,28 @@ export class VivaInterventionWorkflow {
       priority: event.metadata.priority,
       reason: event.triggerReason,
       scheduledAt: new Date(),
+      slot: {
+        startsAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        durationMinutes: 15,
+      },
+      rubric: [
+        {
+          criterionId: "conceptual-explanation",
+          description: "Learner explains the claim in their own words",
+          maxScore: 4,
+        },
+        {
+          criterionId: "simulation-evidence",
+          description: "Learner connects simulation behavior to evidence",
+          maxScore: 4,
+        },
+        {
+          criterionId: "confidence-calibration",
+          description: "Learner reflects accurately on confidence",
+          maxScore: 2,
+        },
+      ],
+      state: "scheduled",
     };
 
     this.vivaQueue.push(entry);
@@ -409,6 +461,7 @@ export class VivaInterventionWorkflow {
       explanation_avoidance: "You skipped explanation tasks. These help solidify understanding.",
       gaming_detection: "Progression has been paused. Please contact your instructor.",
       sim_evidence_contradiction: "There's a mismatch between your predictions and simulations. Let's discuss this.",
+      random_sampling: "You have been selected for a short verification viva sample.",
     };
 
     this.emit("learner:notified", {
@@ -457,16 +510,61 @@ export class VivaInterventionWorkflow {
     vivaId: string,
     result: "pass" | "fail" | "inconclusive",
     notes?: string,
+    recordingUrl?: string,
   ): void {
     const entry = this.vivaQueue.find((v) => v.id === vivaId);
     if (entry) {
       entry.result = result;
       entry.conductedAt = new Date();
+      entry.state = result === "pass" ? "completed" : "remediation_required";
       if (notes !== undefined) {
         entry.notes = notes;
       }
+      if (recordingUrl !== undefined) {
+        entry.recordingUrl = recordingUrl;
+      }
+      if (result === "fail") {
+        entry.remediationTask = {
+          taskId: `remediate-${entry.claimId}`,
+          claimId: entry.claimId,
+          status: "assigned",
+        };
+        this.scheduleReViva(entry);
+      }
       this.emit("viva:completed", entry);
     }
+  }
+
+  completeRemediation(vivaId: string): boolean {
+    const entry = this.vivaQueue.find((v) => v.id === vivaId);
+    if (!entry?.remediationTask) {
+      return false;
+    }
+    entry.remediationTask.status = "completed";
+    return true;
+  }
+
+  private scheduleReViva(original: VivaQueueEntry): void {
+    const vivaId = `reviva-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const reViva: VivaQueueEntry = {
+      ...original,
+      id: vivaId,
+      scheduledAt: new Date(),
+      slot: {
+        startsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        durationMinutes: 15,
+      },
+      state: "reviva_scheduled",
+      result: undefined,
+      conductedAt: undefined,
+      notes: undefined,
+      recordingUrl: undefined,
+      remediationTask: undefined,
+      reVivaForId: original.id,
+    };
+    original.state = "reviva_scheduled";
+    this.vivaQueue.push(reViva);
+    this.emit("viva:reviva_scheduled", reViva);
   }
 
   /**
@@ -537,6 +635,7 @@ export class VivaInterventionWorkflow {
       explanation_avoidance: 0,
       gaming_detection: 0,
       sim_evidence_contradiction: 0,
+      random_sampling: 0,
     };
 
     for (const event of this.interventionLog) {

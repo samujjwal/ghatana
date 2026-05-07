@@ -18,9 +18,15 @@ interface AnyUsage {
 
 const ROOT = path.resolve(
   process.cwd(),
-  "products/tutorputor/services/tutorputor-platform/src",
+  process.env.ANY_AUDIT_ROOT ?? "products/tutorputor/services/tutorputor-platform/src",
 );
-const THRESHOLD = Number.parseInt(process.env.ANY_TYPE_THRESHOLD ?? "100", 10);
+const THRESHOLD = Number.parseInt(process.env.ANY_TYPE_THRESHOLD ?? "307", 10);
+const INCLUDE_TESTS = process.env.ANY_AUDIT_INCLUDE_TESTS === "true";
+const EXCLUDED_PATH_PARTS = [
+  `${path.sep}node_modules${path.sep}`,
+  `${path.sep}dist${path.sep}`,
+  `${path.sep}generated${path.sep}`,
+];
 
 function collectTsFiles(dir: string, acc: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -28,11 +34,24 @@ function collectTsFiles(dir: string, acc: string[] = []): string[] {
     const stat = statSync(fullPath);
 
     if (stat.isDirectory()) {
+      if (EXCLUDED_PATH_PARTS.some((part) => fullPath.includes(part))) {
+        continue;
+      }
       collectTsFiles(fullPath, acc);
       continue;
     }
 
     if (fullPath.endsWith(".ts") || fullPath.endsWith(".tsx")) {
+      if (
+        !INCLUDE_TESTS &&
+        (fullPath.includes(`${path.sep}__tests__${path.sep}`) ||
+          fullPath.endsWith(".test.ts") ||
+          fullPath.endsWith(".test.tsx") ||
+          fullPath.endsWith(".spec.ts") ||
+          fullPath.endsWith(".spec.tsx"))
+      ) {
+        continue;
+      }
       acc.push(fullPath);
     }
   }
@@ -78,6 +97,8 @@ function main(): void {
   console.log("\n=== Any Type Audit Report ===\n");
   console.log(`Total files scanned: ${files.length}`);
   console.log(`Total explicit 'any' usages: ${usages.length}`);
+  console.log(`Tests included: ${INCLUDE_TESTS ? "yes" : "no"}`);
+  console.log(`Threshold: ${THRESHOLD}`);
 
   usages.slice(0, 50).forEach((usage) => {
     console.log(

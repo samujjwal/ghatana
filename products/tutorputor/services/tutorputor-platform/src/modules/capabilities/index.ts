@@ -8,7 +8,7 @@
  * @doc.layer platform
  * @doc.pattern Module
  */
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyRequest } from "fastify";
 import type Redis from "ioredis";
 import type { PrismaClient } from "@tutorputor/core/db";
 import { z } from "zod";
@@ -16,6 +16,15 @@ import { z } from "zod";
 const checkCapabilitySchema = z.object({
   capability: z.string(),
 });
+
+type RouteUser = {
+  role?: string;
+};
+
+type AuthenticatedRouteRequest = FastifyRequest & {
+  tenantId?: string;
+  user?: RouteUser;
+};
 
 /**
  * Capability Registry Service
@@ -48,13 +57,11 @@ class CapabilityRegistryService {
       return false;
     }
 
-    const tenantCapability = await this.prisma.tenantCapability.findUnique({
+    const tenantCapability = await this.prisma.tenantCapability.findFirst({
       where: {
-        tenantId_capabilityId: {
-          tenantId,
-          capabilityId: capability.id,
-        },
-      } as any,
+        tenantId,
+        capabilityId: capability.id,
+      },
     });
 
     // If tenant-specific setting exists, use it
@@ -160,24 +167,31 @@ class CapabilityRegistryService {
       throw new Error(`Capability not found: ${capabilityName}`);
     }
 
-    await this.prisma.tenantCapability.upsert({
+    const existing = await this.prisma.tenantCapability.findFirst({
       where: {
-        tenantId_capabilityId: {
-          tenantId,
-          capabilityId: capability.id,
-        },
-      } as any,
-      create: {
         tenantId,
         capabilityId: capability.id,
-        enabled: true,
-      },
-      update: {
-        enabled: true,
-        disabledAt: null,
-        updatedAt: new Date(),
       },
     });
+
+    if (existing) {
+      await this.prisma.tenantCapability.update({
+        where: { id: existing.id },
+        data: {
+          enabled: true,
+          disabledAt: null,
+          updatedAt: new Date(),
+        },
+      });
+    } else {
+      await this.prisma.tenantCapability.create({
+        data: {
+          tenantId,
+          capabilityId: capability.id,
+          enabled: true,
+        },
+      });
+    }
 
     // Invalidate cache
     const cacheKey = `capability:${tenantId}:${capabilityName}`;
@@ -200,24 +214,32 @@ class CapabilityRegistryService {
       throw new Error(`Capability not found: ${capabilityName}`);
     }
 
-    await this.prisma.tenantCapability.upsert({
+    const existing = await this.prisma.tenantCapability.findFirst({
       where: {
-        tenantId_capabilityId: {
-          tenantId,
-          capabilityId: capability.id,
-        },
-      } as any,
-      create: {
         tenantId,
         capabilityId: capability.id,
-        enabled: false,
-      },
-      update: {
-        enabled: false,
-        disabledAt: new Date(),
-        updatedAt: new Date(),
       },
     });
+
+    if (existing) {
+      await this.prisma.tenantCapability.update({
+        where: { id: existing.id },
+        data: {
+          enabled: false,
+          disabledAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+    } else {
+      await this.prisma.tenantCapability.create({
+        data: {
+          tenantId,
+          capabilityId: capability.id,
+          enabled: false,
+          disabledAt: new Date(),
+        },
+      });
+    }
 
     // Invalidate cache
     const cacheKey = `capability:${tenantId}:${capabilityName}`;
@@ -250,14 +272,14 @@ class CapabilityRegistryService {
  */
 export const capabilityRegistryModule: FastifyPluginAsync = async (app) => {
   const prisma = app.prisma as PrismaClient;
-  const redis = app.redis as any;
+  const redis = app.redis;
   const capabilityService = new CapabilityRegistryService(prisma, redis);
 
   app.decorate("capabilityService", capabilityService);
 
   // GET /api/v1/capabilities - Get all capabilities for the authenticated tenant
   app.get("/api/v1/capabilities", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
+    const { tenantId } = request as AuthenticatedRouteRequest;
     if (!tenantId) {
       return reply.code(401).send({ error: "Authentication required" });
     }
@@ -268,7 +290,7 @@ export const capabilityRegistryModule: FastifyPluginAsync = async (app) => {
 
   // GET /api/v1/capabilities/:name - Check if a specific capability is enabled
   app.get("/api/v1/capabilities/:name", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
+    const { tenantId } = request as AuthenticatedRouteRequest;
     if (!tenantId) {
       return reply.code(401).send({ error: "Authentication required" });
     }
@@ -280,8 +302,7 @@ export const capabilityRegistryModule: FastifyPluginAsync = async (app) => {
 
   // POST /api/v1/capabilities/:name/enable - Enable a capability (admin only)
   app.post("/api/v1/capabilities/:name/enable", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -298,8 +319,7 @@ export const capabilityRegistryModule: FastifyPluginAsync = async (app) => {
 
   // POST /api/v1/capabilities/:name/disable - Disable a capability (admin only)
   app.post("/api/v1/capabilities/:name/disable", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = request as AuthenticatedRouteRequest;
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });

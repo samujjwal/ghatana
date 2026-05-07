@@ -24,7 +24,16 @@ public class SimulationGenerator {
                         .title("Simulation: " + claim.getText())
                         .description("Interactive exploration for " + claim.getText())
                         .domain(request.getDomain().name())
-                        .configuration(Map.of("claimId", claim.getId()))
+                        .configuration(Map.of(
+                                "claimId", claim.getId(),
+                                "seed", 42,
+                                "parameterBounds", Map.of(
+                                        "input", List.of(0, 10)
+                                ),
+                                "expectedOutputs", Map.of(
+                                        "baseline", 5
+                                )
+                        ))
                         .build())
                 .toList());
     }

@@ -162,8 +162,11 @@ export type ComplianceEventType =
   | "compliance.consent.granted"
   | "compliance.consent.revoked"
   | "compliance.data.export.requested"
+  | "compliance.data.export.completed"
   | "compliance.data.deletion.requested"
-  | "compliance.data.deletion.completed";
+  | "compliance.data.deletion.completed"
+  | "compliance.telemetry.exported"
+  | "compliance.telemetry.deleted";
 
 export interface ComplianceEvent {
   readonly type: ComplianceEventType;
@@ -171,7 +174,22 @@ export interface ComplianceEvent {
   readonly tenantId: string;
   /** Consent types affected, e.g. ["analytics", "ai_processing"] */
   readonly consentTypes?: string[];
+  readonly requestId?: string;
+  readonly recordCounts?: {
+    telemetryEvents?: number;
+    aiAuditLogs?: number;
+    assessmentAttempts?: number;
+  };
+  readonly evidenceUri?: string;
 }
+
+export type OperationalPlatformEvent =
+  | ContentLifecycleEvent
+  | UserLifecycleEvent
+  | AuthEvent
+  | BillingEvent
+  | ComplianceEvent
+  | SystemEvent;
 
 // ============================================================================
 // System events

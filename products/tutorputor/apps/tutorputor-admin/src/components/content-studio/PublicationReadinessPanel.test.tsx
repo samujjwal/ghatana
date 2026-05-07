@@ -69,6 +69,135 @@ describe('PublicationReadinessPanel', () => {
         expect(screen.getByText('HIGH')).toBeInTheDocument();
     });
 
+    it('guides authors to exact missing publish-readiness fixes', async () => {
+        vi.mocked(contentStudioApi.validateExperience).mockResolvedValue({
+            status: 'invalid',
+            canPublish: false,
+            score: 41,
+            validatedAt: new Date('2026-05-06T00:00:00.000Z'),
+            pillarScores: {
+                Educational: 35,
+                Experiential: 30,
+                Safety: 100,
+                Technical: 40,
+                Accessibility: 20,
+            },
+            checks: [
+                {
+                    checkId: 'claims-present',
+                    pillar: 'educational',
+                    name: 'Learning claims present',
+                    passed: false,
+                    severity: 'error',
+                    message: 'No learning claims are defined.',
+                    suggestion: 'Add at least one learning claim.',
+                },
+                {
+                    checkId: 'evidence-coverage',
+                    pillar: 'educational',
+                    name: 'Evidence coverage',
+                    passed: false,
+                    severity: 'error',
+                    message: 'Claims are missing evidence links.',
+                    suggestion: 'Map each claim to evidence.',
+                },
+                {
+                    checkId: 'simulation-manifest',
+                    pillar: 'experiential',
+                    name: 'Simulation manifest configured',
+                    passed: false,
+                    severity: 'error',
+                    message: 'Simulation seed and parameters are missing.',
+                    suggestion: 'Configure the canonical simulation manifest.',
+                },
+                {
+                    checkId: 'assessment-task-coverage',
+                    pillar: 'assessment',
+                    name: 'Assessment coverage',
+                    passed: false,
+                    severity: 'error',
+                    message: 'Assessment tasks do not cover required evidence.',
+                    suggestion: 'Create assessment items for each evidence target.',
+                },
+                {
+                    checkId: 'accessibility-notes',
+                    pillar: 'accessibility',
+                    name: 'Accessibility metadata',
+                    passed: false,
+                    severity: 'error',
+                    message: 'Captions, transcripts, and text alternatives are missing.',
+                    suggestion: 'Add accessibility alternatives before QA.',
+                },
+                {
+                    checkId: 'sme-review',
+                    pillar: 'review',
+                    name: 'SME review status',
+                    passed: false,
+                    severity: 'error',
+                    message: 'SME review is incomplete.',
+                    suggestion: 'Send the module to an SME reviewer.',
+                },
+            ],
+        });
+
+        render(
+            <PublicationReadinessPanel
+                experienceId="exp-1"
+                experienceTitle="Energy Transfer"
+            />,
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText('Guided Publish Readiness')).toBeInTheDocument();
+        });
+
+        expect(screen.getByText('0/6 complete')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Open claim map' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Map evidence' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Configure simulation' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Edit assessment' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Add accessibility notes' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Send to reviewer' })).toBeInTheDocument();
+    });
+
+    it('shows publish-ready state when all guided readiness targets pass', async () => {
+        vi.mocked(contentStudioApi.validateExperience).mockResolvedValue({
+            status: 'valid',
+            canPublish: true,
+            score: 96,
+            validatedAt: new Date('2026-05-06T00:00:00.000Z'),
+            pillarScores: {
+                Educational: 100,
+                Experiential: 95,
+                Safety: 100,
+                Technical: 95,
+                Accessibility: 90,
+            },
+            checks: [
+                { checkId: 'claims-present', pillar: 'educational', name: 'Learning claims present', passed: true, severity: 'info', message: 'Claims present.' },
+                { checkId: 'evidence-coverage', pillar: 'educational', name: 'Evidence coverage', passed: true, severity: 'info', message: 'Evidence mapped.' },
+                { checkId: 'simulation-manifest', pillar: 'experiential', name: 'Simulation manifest configured', passed: true, severity: 'info', message: 'Simulation configured.' },
+                { checkId: 'assessment-task-coverage', pillar: 'assessment', name: 'Assessment coverage', passed: true, severity: 'info', message: 'Assessment covered.' },
+                { checkId: 'accessibility-notes', pillar: 'accessibility', name: 'Accessibility metadata', passed: true, severity: 'info', message: 'Accessibility ready.' },
+                { checkId: 'sme-review', pillar: 'review', name: 'SME review status', passed: true, severity: 'info', message: 'Review complete.' },
+            ],
+        });
+
+        render(
+            <PublicationReadinessPanel
+                experienceId="exp-1"
+                experienceTitle="Energy Transfer"
+            />,
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText('6/6 complete')).toBeInTheDocument();
+        });
+
+        expect(screen.getByText('Ready to publish')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Publish' })).toBeEnabled();
+    });
+
     it('publishes when validation passes', async () => {
         const user = userEvent.setup();
         const onPublished = vi.fn();

@@ -5,6 +5,10 @@ import type {
   TrackBatchEventsInput,
   TrackExplorerEventInput,
 } from "@tutorputor/contracts/v1/content-studio";
+import {
+  buildAITutorGroundingPayload,
+  type AITutorGroundingPayload,
+} from "./aiTutorGrounding";
 
 // Using native fetch instead of axios due to monorepo aliasing
 
@@ -387,13 +391,16 @@ export class TutorPutorApiClient {
 
   async queryTutor(
     question: string,
-    moduleId?: ModuleId,
+    grounding?: ModuleId | (Partial<AITutorGroundingPayload> & { moduleId?: ModuleId }),
   ): Promise<{ response: TutorResponsePayload }> {
+    const grounded = buildAITutorGroundingPayload(
+      typeof grounding === "string" ? { moduleId: grounding } : grounding,
+    );
     return await this.request<{
       response: TutorResponsePayload;
     }>("/v1/ai/tutor/query", {
       method: "POST",
-      body: JSON.stringify({ question, moduleId }),
+      body: JSON.stringify({ question, ...grounded }),
     });
   }
 

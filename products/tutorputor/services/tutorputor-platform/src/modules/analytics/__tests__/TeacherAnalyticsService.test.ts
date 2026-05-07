@@ -16,10 +16,20 @@ describe('TeacherAnalyticsService', () => {
 
   beforeEach(() => {
     mockPrisma = {
-      classroom: { findUnique: vi.fn() },
+      classroom: { findFirst: vi.fn() },
+      classroomMember: { findMany: vi.fn().mockResolvedValue([
+        { userId: 'user-1' },
+        { userId: 'user-2' },
+      ]) },
       enrollment: { findMany: vi.fn() },
       assessmentAttempt: { findMany: vi.fn() },
-      user: { findUnique: vi.fn() },
+      user: {
+        findUnique: vi.fn(),
+        findMany: vi.fn().mockResolvedValue([
+          { id: 'user-1', displayName: 'Student 1' },
+          { id: 'user-2', displayName: 'Student 2' },
+        ]),
+      },
       learningEvent: { findMany: vi.fn() },
     };
     service = new TeacherAnalyticsService(mockPrisma as any);
@@ -27,7 +37,7 @@ describe('TeacherAnalyticsService', () => {
 
   describe('getClassroomAnalytics', () => {
     it('should return classroom analytics', async () => {
-      mockPrisma.classroom.findUnique.mockResolvedValue({
+      mockPrisma.classroom.findFirst.mockResolvedValue({
         id: 'class-1',
         title: 'Math 101',
       });
@@ -42,6 +52,11 @@ describe('TeacherAnalyticsService', () => {
 
       const analytics = await service.getClassroomAnalytics('tenant-1', 'class-1');
 
+      expect(mockPrisma.classroom.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'class-1', tenantId: 'tenant-1' },
+        }),
+      );
       expect(analytics.classroomId).toBe('class-1');
       expect(analytics.classroomName).toBe('Math 101');
       expect(analytics.totalStudents).toBe(2);
@@ -50,7 +65,7 @@ describe('TeacherAnalyticsService', () => {
     });
 
     it('should throw error if classroom not found', async () => {
-      mockPrisma.classroom.findUnique.mockResolvedValue(null);
+      mockPrisma.classroom.findFirst.mockResolvedValue(null);
 
       await expect(service.getClassroomAnalytics('tenant-1', 'class-1')).rejects.toThrow('Classroom not found');
     });
@@ -101,7 +116,7 @@ describe('TeacherAnalyticsService', () => {
         { userId: 'user-1', scorePercent: 75 },
         { userId: 'user-2', scorePercent: 50 },
       ]);
-      mockPrisma.classroom.findUnique.mockResolvedValue({
+      mockPrisma.classroom.findFirst.mockResolvedValue({
         id: 'class-1',
         title: 'Math 101',
       });
@@ -110,6 +125,130 @@ describe('TeacherAnalyticsService', () => {
 
       expect(recommendations).toBeDefined();
       expect(Array.isArray(recommendations)).toBe(true);
+    });
+  });
+
+  describe('getInstructorEvidenceDashboardTiles', () => {
+    it('computes instructor tiles from persisted assessment and telemetry evidence', async () => {
+      mockPrisma.classroom.findFirst.mockResolvedValue({
+        id: 'class-1',
+        title: 'Math 101',
+      });
+      mockPrisma.assessmentAttempt.findMany.mockResolvedValue([
+        {
+          userId: 'user-1',
+          scorePercent: 80,
+          feedback: { baselineBrier: 0.3 },
+        },
+        {
+          userId: 'user-2',
+          scorePercent: 45,
+          feedback: { baselineBrier: 0.3 },
+        },
+      ]);
+      mockPrisma.learningEvent.findMany.mockResolvedValue([
+        {
+          userId: 'user-1',
+          eventType: 'assess.answer',
+          payload: {
+            object: { claimId: 'claim-1' },
+            result: { score: 1, maxScore: 1, confidence: 'high', correct: true },
+          },
+        },
+        {
+          userId: 'user-2',
+          eventType: 'assess.answer',
+          payload: {
+            object: { claimId: 'claim-1' },
+            result: { score: 0, maxScore: 1, confidence: 'high', correct: false },
+          },
+        },
+        {
+          userId: 'user-2',
+          eventType: 'sim.capture',
+          payload: {
+            result: { processFeatures: { processScore: 0.35 } },
+          },
+        },
+        {
+          userId: 'user-1',
+          eventType: 'sim.capture',
+          payload: {
+            result: { processFeatures: { processScore: 0.8 } },
+          },
+        },
+        {
+          userId: 'user-2',
+          eventType: 'assist.hint',
+          payload: { object: { hintId: 'hint-1' } },
+        },
+        {
+          userId: 'user-2',
+          eventType: 'assist.hint',
+          payload: { object: { hintId: 'hint-2' } },
+        },
+        {
+          userId: 'user-2',
+          eventType: 'viva.scheduled',
+          payload: { priority: 'high' },
+        },
+        {
+          userId: 'user-2',
+          eventType: 'remediation.assigned',
+          payload: { taskId: 'remediate-1' },
+        },
+        {
+          userId: 'user-2',
+          eventType: 'remediation.completed',
+          payload: { taskId: 'remediate-1' },
+        },
+      ]);
+
+      const tiles = await service.getInstructorEvidenceDashboardTiles(
+        'tenant-1',
+        'class-1',
+      );
+
+      expect(mockPrisma.classroom.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'class-1', tenantId: 'tenant-1' },
+        }),
+      );
+      expect(tiles.brierScore).toBe(0.41);
+      expect(tiles.calibrationGain).toBe(0);
+      expect(tiles.masteryByClaim).toEqual([
+        { claimId: 'claim-1', mastery: 0.5, evidenceCount: 2 },
+      ]);
+      expect(tiles.processScoreDistribution).toEqual({
+        low: 1,
+        medium: 0,
+        high: 1,
+      });
+      expect(tiles.vivaQueue).toEqual({ total: 1, highPriority: 1 });
+      expect(tiles.atRiskLearners[0]).toEqual(
+        expect.objectContaining({
+          userId: 'user-2',
+          reasons: expect.arrayContaining([
+            'low assessment score',
+            'repeated hint usage',
+          ]),
+        }),
+      );
+      expect(tiles.remediationCompletion).toEqual({
+        assigned: 1,
+        completed: 1,
+        completionRate: 1,
+      });
+    });
+
+    it('rejects cross-tenant classroom dashboard access', async () => {
+      mockPrisma.classroom.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.getInstructorEvidenceDashboardTiles('tenant-2', 'class-1'),
+      ).rejects.toThrow('Classroom not found');
+
+      expect(mockPrisma.classroomMember.findMany).not.toHaveBeenCalled();
     });
   });
 });

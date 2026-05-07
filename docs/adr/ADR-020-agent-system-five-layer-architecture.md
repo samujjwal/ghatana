@@ -8,7 +8,7 @@
 ## Context
 
 The Ghatana agent system evolved from strong individual pieces — `platform/java/agent-core`,
-`products/aep/aep-agent-runtime`, `products/data-cloud/agent-registry` — without a single
+`products/data-cloud/planes/action/agent-runtime`, `products/data-cloud/extensions/agent-registry` — without a single
 coherent operating model binding them together.
 
 This produced four concrete problems:
@@ -60,7 +60,7 @@ attached.
 
 **Primary home:** `platform/java/tool-runtime`, `platform/java/workflow`,
 `platform/java/policy-as-code`, `platform/java/identity`,
-`products/data-cloud/platform-config`
+`products/data-cloud/planes/operations/config`
 
 **Rules:**
 
@@ -75,8 +75,8 @@ attached.
 **Owns:** live invocation, planning dispatch, retries, assurance, checkpointing, delegation,
 HITL escalation.
 
-**Primary home:** `products/aep/aep-agent-runtime`, `products/aep/orchestrator`,
-`products/aep/aep-engine`
+**Primary home:** `products/data-cloud/planes/action/agent-runtime`, `products/data-cloud/planes/action/orchestrator`,
+`products/data-cloud/planes/action/engine`
 
 **Rules:**
 
@@ -92,8 +92,8 @@ HITL escalation.
 **Owns:** episodic memory, semantic memory, procedural memory, context packing, evaluation
 traces, autonomy state, release audit.
 
-**Primary home:** `products/data-cloud/platform-api`, `products/data-cloud/platform-config`,
-`products/data-cloud/agent-registry`
+**Primary home:** `products/data-cloud/delivery/api`, `products/data-cloud/planes/operations/config`,
+`products/data-cloud/extensions/agent-registry`
 
 **Rules:**
 
@@ -129,8 +129,8 @@ traces, autonomy state, release audit.
 | Concern | Module | Layer | Owner |
 |---------|--------|-------|-------|
 | Agent contracts + SPI | `platform/java/agent-core` | A | Platform |
-| Advanced runtime (dispatch, governed execution) | `products/aep/aep-agent-runtime` | C | AEP |
-| Durable registry (releases, metadata) | `products/data-cloud/agent-registry` | D | Data Cloud |
+| Advanced runtime (dispatch, governed execution) | `products/data-cloud/planes/action/agent-runtime` | C | AEP |
+| Durable registry (releases, metadata) | `products/data-cloud/extensions/agent-registry` | D | Data Cloud |
 | Tool governance | `platform/java/tool-runtime` | B | Platform |
 | Durable workflow / planning compilation | `platform/java/workflow` | B | Platform |
 | Plugin/kernel packaging and isolation | `platform-kernel` | B/C | Platform |

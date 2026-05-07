@@ -12,7 +12,7 @@ trap 'rm -f "${TMP_HITS}" "${TMP_FILTERED}"' EXIT
 
 TARGET_DIRS=(
   "${ROOT_DIR}/products/data-cloud"
-  "${ROOT_DIR}/products/aep"
+  "${ROOT_DIR}/products/data-cloud/planes/action"
 )
 
 find "${TARGET_DIRS[@]}" -type f \

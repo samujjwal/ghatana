@@ -8,8 +8,8 @@ Date: March 2026
 This document defines the implementation contract between Aura and the shared platform layers it
 depends on:
 
-- `products/aep/platform` for cross-process event communication
-- `products/data-cloud/platform` and `products/data-cloud/spi` for managed data handling
+- `products/data-cloud/planes/action/platform` for cross-process event communication
+- `products/data-cloud/platform` and `products/data-cloud/planes/shared-spi` for managed data handling
 - shared security, auth, audit, and observability capabilities
 
 If there is a conflict between this document and `Aura_Master_Platform_Specification.md`, the Master

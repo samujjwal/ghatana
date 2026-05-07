@@ -267,7 +267,7 @@ All 17 old libraries safely preserved in:
 
 ### 1. AEP Product Workspace Error (Out of Scope)
 
-**Issue:** `/Users/samujjwal/Development/ghatana/products/aep/ui-service` references `@aep/canvas@workspace:*` which doesn't exist
+**Issue:** `/Users/samujjwal/Development/ghatana/products/data-cloud/planes/action/ui-service` references `@aep/canvas@workspace:*` which doesn't exist
 
 **Impact:** Blocks full monorepo `pnpm install` (not app-creator scope)
 

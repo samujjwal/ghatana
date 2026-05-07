@@ -602,7 +602,7 @@ platform/typescript/
        │                                            │
        └─────────────┬──────────────────────────────┘
                      ▼
-  products/yappc, products/aep, products/data-cloud, etc.
+  products/yappc, products/data-cloud/planes/action, products/data-cloud, etc.
 ```
 
 **Rules enforced by dependency graph:**
@@ -1415,7 +1415,7 @@ export { assertAIContractSatisfied } from './ai-assertions';   // Verify AIVisib
 
 #### Task 2.9 — Migrate AEP and YAPPC to public canvas APIs only
 **Paths**:
-- `products/aep/ui/src/` — verify no raw source path imports
+- `products/data-cloud/planes/action/ui/src/` — verify no raw source path imports
 - `products/yappc/frontend/web/src/components/canvas/` — verify no raw source path imports, no `@ghatana/canvas/hybrid` etc.
 
 Steps:
@@ -2013,7 +2013,7 @@ Deliverables:
 ---
 
 #### Task 5.1 — AEP full migration to canonical canvas/flow + design-system
-**Path**: `products/aep/ui/src/`
+**Path**: `products/data-cloud/planes/action/ui/src/`
 
 Steps:
 1. Verify `aep-pipeline-plugin.ts` correctly uses `PluginManager` from `@ghatana/canvas` — it already does ✓
@@ -2041,7 +2041,7 @@ Steps:
 ---
 
 #### Task 5.3 — Data-Cloud topology and lineage migration
-**Path**: `products/data-cloud/ui/src/components/visualizations/`
+**Path**: `products/data-cloud/delivery/ui/src/components/visualizations/`
 
 Steps:
 1. Complete Task 2.3 — migrate `EventCloudTopology.tsx` from `@ghatana/flow-canvas` to `@ghatana/canvas/flow`

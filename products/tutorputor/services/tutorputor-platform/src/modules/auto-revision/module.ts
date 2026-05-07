@@ -11,6 +11,7 @@ import { createContentStudioService } from "../content/studio/service";
 import { registerAutoRevisionRoutes } from "./routes";
 import { AutoRevisionWorkerManager } from "./workers";
 import type { AutoRevisionModuleConfig } from "./types";
+import type { Logger } from "pino";
 
 // Auto-Revision module plugin
 export const autoRevisionModule: FastifyPluginAsync = async (fastify) => {
@@ -62,7 +63,7 @@ export const autoRevisionModule: FastifyPluginAsync = async (fastify) => {
     const workerManager = new AutoRevisionWorkerManager(
       autoRevisionService,
       config,
-      fastify.log as any,
+      fastify.log as unknown as Logger,
     );
     workerManager.start();
 

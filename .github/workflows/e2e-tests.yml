@@ -30,11 +30,11 @@ jobs:
           - product: tutorputor-admin
             path: products/tutorputor/apps/tutorputor-admin
           - product: data-cloud-ui
-            path: products/data-cloud/ui
+            path: products/data-cloud/delivery/ui
           - product: audio-video-desktop
             path: products/audio-video/modules/intelligence/ai-voice/apps/desktop
           - product: aep-ui
-            path: products/aep/ui
+            path: products/data-cloud/planes/action/ui
           - product: dmos-ui
             path: products/digital-marketing/ui
 

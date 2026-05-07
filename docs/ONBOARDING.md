@@ -57,13 +57,13 @@ pnpm test
 
 ```bash
 # Start backing services
-docker-compose -f products/aep/docker-compose.yml up -d
+docker-compose -f products/data-cloud/planes/action/docker-compose.yml up -d
 
 # Build
-./gradlew :products:aep:build
+./gradlew :products:data-cloud:planes:action:build
 
 # Run
-./gradlew :products:aep:run
+./gradlew :products:data-cloud:planes:action:server:run
 ```
 
 ### Example B — YAPPC (Frontend + API)

@@ -47,7 +47,7 @@ Successfully refactored the YAPPC agents module and fixed all 6 backend modules 
 ### ✅ Phase 2: Dependency Resolution
 
 **Added Missing Dependencies**:
-- AEP registry service: `:products:aep:aep-registry`
+- AEP registry service: `:products:data-cloud:planes:action:registry`
 - YAPPC API domain classes: `:products:yappc:core:yappc-api`
 - Lombok for data classes: `libs.lombok`
 - JavaParser for migration tools: `libs.javaparser.core`

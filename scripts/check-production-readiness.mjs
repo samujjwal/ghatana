@@ -12,7 +12,7 @@ const SCAN_ROOTS = [
   'shared-services',
   'services',
   'products/data-cloud',
-  'products/aep',
+  'products/data-cloud/planes/action',
   'products/yappc',
   'products/virtual-org',
 ];

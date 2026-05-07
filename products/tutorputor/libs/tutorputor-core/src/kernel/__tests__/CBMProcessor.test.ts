@@ -16,6 +16,7 @@
  * Requirement IDs: TPUT-FR-CBM-001 … TPUT-FR-CBM-010
  */
 import { describe, it, expect, beforeEach } from "vitest";
+import { CANONICAL_CBM_SCORING } from "@tutorputor/contracts/v1/learning-unit";
 import { CBMProcessor } from "../plugins/CBMProcessor";
 
 // ---------------------------------------------------------------------------
@@ -206,6 +207,40 @@ describe("CBMProcessor – Pedagogical Requirements", () => {
       const score: number = result.data?.score;
       expect(score).toBeGreaterThanOrEqual(CBM_SCORE_BOUNDS.uncertainWrong.min);
       expect(score).toBeLessThanOrEqual(CBM_SCORE_BOUNDS.uncertainWrong.max);
+    });
+  });
+
+  describe("TPUT-FR-CBM-003b: Scoring is domain-owned and confidence is mandatory", () => {
+    it("uses the canonical CBM matrix for low, medium, and high confidence answers", () => {
+      expect(
+        processor.scoreScoredItem({ isCorrect: true, confidence: 0.2 }).score,
+      ).toBe(CANONICAL_CBM_SCORING.correctLowConfidence);
+      expect(
+        processor.scoreScoredItem({ isCorrect: true, confidence: 0.5 }).score,
+      ).toBe(CANONICAL_CBM_SCORING.correctMediumConfidence);
+      expect(
+        processor.scoreScoredItem({ isCorrect: true, confidence: 0.9 }).score,
+      ).toBe(CANONICAL_CBM_SCORING.correctHighConfidence);
+      expect(
+        processor.scoreScoredItem({ isCorrect: false, confidence: 0.2 }).score,
+      ).toBe(CANONICAL_CBM_SCORING.incorrectLowConfidence);
+      expect(
+        processor.scoreScoredItem({ isCorrect: false, confidence: 0.5 }).score,
+      ).toBe(CANONICAL_CBM_SCORING.incorrectMediumConfidence);
+      expect(
+        processor.scoreScoredItem({ isCorrect: false, confidence: 0.9 }).score,
+      ).toBe(CANONICAL_CBM_SCORING.incorrectHighConfidence);
+    });
+
+    it("rejects scored answer submissions without confidence", async () => {
+      const result = await processor.process(makeLearnerContext(), {
+        type: "answer_submission",
+        evidenceId: "missing-confidence",
+        payload: { correct: true },
+      } as any);
+
+      expect(result.status).toBe("error");
+      expect(result.error?.code).toBe("CBM_CONFIDENCE_REQUIRED");
     });
   });
 

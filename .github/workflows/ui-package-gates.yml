@@ -4,9 +4,9 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'products/aep/ui/**'
-      - 'products/aep/gateway/**'
-      - 'products/data-cloud/ui/**'
+      - 'products/data-cloud/planes/action/ui/**'
+      - 'products/data-cloud/planes/action/gateway/**'
+      - 'products/data-cloud/delivery/ui/**'
       - 'platform/typescript/**'
 
 concurrency:

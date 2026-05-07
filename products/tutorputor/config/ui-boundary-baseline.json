@@ -1,0 +1,15 @@
+{
+  "hexColorOccurrences": 467,
+  "filesWithHexColors": 36,
+  "localSharedPrimitiveFiles": 8,
+  "localSharedPrimitiveFilePaths": [
+    "apps/tutorputor-web/src/components/ui/Button.tsx",
+    "apps/tutorputor-web/src/components/ui/Input.tsx",
+    "apps/tutorputor-web/src/components/ui/Badge.tsx",
+    "apps/tutorputor-web/src/components/ui/Spinner.tsx",
+    "apps/tutorputor-admin/src/components/ui/Button.tsx",
+    "apps/tutorputor-admin/src/components/ui/Input.tsx",
+    "apps/tutorputor-admin/src/components/ui/Badge.tsx",
+    "apps/tutorputor-admin/src/components/ui/Spinner.tsx"
+  ]
+}

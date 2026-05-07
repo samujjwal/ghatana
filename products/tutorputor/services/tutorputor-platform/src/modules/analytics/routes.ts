@@ -73,6 +73,25 @@ export function createAnalyticsRoutes(prisma: TutorPrismaClient): Router {
   });
 
   /**
+   * GET /analytics/classroom/:classroomId/evidence-tiles - Evidence-backed instructor dashboard tiles
+   */
+  router.get('/classroom/:classroomId/evidence-tiles', async (req, res) => {
+    try {
+      const { tenantId } = req.query;
+      const { classroomId } = req.params;
+
+      const tiles = await teacherAnalyticsService.getInstructorEvidenceDashboardTiles(
+        tenantId as string,
+        classroomId,
+      );
+
+      res.json(tiles);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch instructor evidence tiles', message: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
+  /**
    * GET /analytics/student/:studentId - Get student analytics
    */
   router.get('/student/:studentId', async (req, res) => {

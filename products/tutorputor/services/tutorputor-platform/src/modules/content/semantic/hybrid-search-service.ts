@@ -39,6 +39,35 @@ const DEFAULT_WEIGHTS: Record<RankingSignal, number> = {
   learner_fit: 0.05,
 };
 
+type RawSearchAsset = {
+  id: string;
+  tenantId: string;
+  slug: string;
+  title: string;
+  assetType: string;
+  domain: string;
+  conceptId?: string | null;
+  status: string;
+  currentVersion: number;
+  qualityScore?: number | null;
+  semanticIndexStatus?: string | null;
+  recommendationStatus?: string | null;
+  tags?: unknown;
+  targetGrades?: unknown;
+  difficultyLevel?: string | null;
+  authorId: string;
+  lastEditedBy?: string | null;
+  publishedAt?: Date | null;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
+  promptHash?: string | null;
+  riskLevel?: string | null;
+  confidenceScore?: number | null;
+  legacyModuleId?: string | null;
+  legacyExperienceId?: string | null;
+  estimatedTimeMinutes?: number | null;
+};
+
 // ---------------------------------------------------------------------------
 // Scoring helpers
 // ---------------------------------------------------------------------------
@@ -341,72 +370,68 @@ export class HybridSearchService {
   // Mapping helper
   // -------------------------------------------------------------------------
 
-  private mapAsset(raw: any): ContentAsset {
+  private mapAsset(raw: RawSearchAsset): ContentAsset {
     return {
-      id: raw.id as string,
-      tenantId: raw.tenantId as string,
-      slug: raw.slug as string,
-      title: raw.title as string,
-      assetType: (raw.assetType as string).toLowerCase() as ContentAssetType,
-      domain: raw.domain as string,
-      ...((raw.conceptId as string | null | undefined)
-        ? { conceptId: raw.conceptId as string }
+      id: raw.id,
+      tenantId: raw.tenantId,
+      slug: raw.slug,
+      title: raw.title,
+      assetType: raw.assetType.toLowerCase() as ContentAssetType,
+      domain: raw.domain,
+      ...(raw.conceptId
+        ? { conceptId: raw.conceptId }
         : {}),
-      status: (raw.status as string).toLowerCase() as ContentAsset["status"],
-      currentVersion: raw.currentVersion as number,
-      ...((raw.qualityScore as number | null | undefined) !== undefined &&
-      raw.qualityScore !== null
-        ? { qualityScore: raw.qualityScore as number }
+      status: raw.status.toLowerCase() as ContentAsset["status"],
+      currentVersion: raw.currentVersion,
+      ...(typeof raw.qualityScore === "number"
+        ? { qualityScore: raw.qualityScore }
         : {}),
-      ...((raw.semanticIndexStatus as string | null | undefined)
+      ...(raw.semanticIndexStatus
         ? {
-            semanticIndexStatus: (
-              raw.semanticIndexStatus as string
-            ).toLowerCase() as NonNullable<ContentAsset["semanticIndexStatus"]>,
+            semanticIndexStatus: raw.semanticIndexStatus.toLowerCase() as NonNullable<ContentAsset["semanticIndexStatus"]>,
           }
         : {}),
-      ...((raw.recommendationStatus as string | null | undefined)
+      ...(raw.recommendationStatus
         ? {
-            recommendationStatus: (
-              raw.recommendationStatus as string
-            ).toLowerCase() as NonNullable<ContentAsset["recommendationStatus"]>,
+            recommendationStatus: raw.recommendationStatus.toLowerCase() as NonNullable<ContentAsset["recommendationStatus"]>,
           }
         : {}),
-      ...(Array.isArray(raw.tags) ? { tags: raw.tags as string[] } : {}),
+      ...(Array.isArray(raw.tags)
+        ? { tags: raw.tags.filter((tag): tag is string => typeof tag === "string") }
+        : {}),
       targetGrades: Array.isArray(raw.targetGrades)
-        ? (raw.targetGrades as string[])
+        ? raw.targetGrades.filter((grade): grade is string => typeof grade === "string")
         : [],
-      ...((raw.difficultyLevel as string | null | undefined)
-        ? { difficultyLevel: raw.difficultyLevel as string }
+      ...(raw.difficultyLevel
+        ? { difficultyLevel: raw.difficultyLevel }
         : {}),
-      authorId: raw.authorId as string,
-      ...((raw.lastEditedBy as string | null | undefined)
-        ? { lastEditedBy: raw.lastEditedBy as string }
+      authorId: raw.authorId,
+      ...(raw.lastEditedBy
+        ? { lastEditedBy: raw.lastEditedBy }
         : {}),
       ...(raw.publishedAt
-        ? { publishedAt: (raw.publishedAt as Date).toISOString() }
+        ? { publishedAt: raw.publishedAt.toISOString() }
         : {}),
       createdAt: raw.createdAt
-        ? (raw.createdAt as Date).toISOString()
+        ? raw.createdAt.toISOString()
         : new Date().toISOString(),
       updatedAt: raw.updatedAt
-        ? (raw.updatedAt as Date).toISOString()
+        ? raw.updatedAt.toISOString()
         : new Date().toISOString(),
-      ...((raw.promptHash as string | null | undefined)
-        ? { promptHash: raw.promptHash as string }
+      ...(raw.promptHash
+        ? { promptHash: raw.promptHash }
         : {}),
       riskLevel: (
-        (raw.riskLevel as string | null | undefined) ?? "LOW"
+        raw.riskLevel ?? "LOW"
       ).toUpperCase() as ContentAsset["riskLevel"],
-      ...((raw.confidenceScore as number | null | undefined) !== undefined &&
-      raw.confidenceScore !== null
-        ? { confidenceScore: raw.confidenceScore as number }
+      ...(typeof raw.confidenceScore === "number"
+        ? { confidenceScore: raw.confidenceScore }
         : {}),
-      ...((raw.legacyModuleId as string | null | undefined)
-        ? { legacyModuleId: raw.legacyModuleId as string }
+      ...(raw.legacyModuleId
+        ? { legacyModuleId: raw.legacyModuleId }
         : {}),
-      ...((raw.legacyExperienceId as string | null | undefined)
-        ? { legacyExperienceId: raw.legacyExperienceId as string }
+      ...(raw.legacyExperienceId
+        ? { legacyExperienceId: raw.legacyExperienceId }
         : {}),
     };
   }

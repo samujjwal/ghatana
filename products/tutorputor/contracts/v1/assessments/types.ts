@@ -10,7 +10,12 @@
  * @doc.pattern Schema
  */
 
-import type { SimulationDomain, SimulationId, SimEntityId } from "../simulation";
+import type {
+  SimulationDomain,
+  SimulationId,
+  SimulationManifest,
+  SimEntityId,
+} from "../simulation";
 import type { AssessmentItemId, LearningObjective } from "../types";
 
 // =============================================================================
@@ -112,7 +117,7 @@ export interface CBMConfidenceLevel {
  */
 export interface CBMConfig {
   confidenceLevels: CBMConfidenceLevel[];
-  requireConfidence?: boolean;
+  requireConfidence: true;
 }
 
 /**
@@ -139,6 +144,7 @@ export interface SimulationRef {
   domain?: SimulationDomain;
   initialStateRef?: SimulationStateId;
   targetStateRef?: SimulationStateId;
+  manifestSnapshot?: SimulationManifest;
   stepRange?: {
     startStep: number;
     endStep: number;
@@ -226,6 +232,37 @@ export interface ExplanationOptions {
   }>;
 }
 
+export interface SimulationTargetState {
+  stateId: SimulationStateId;
+  description: string;
+}
+
+export interface SimulationScoringTolerance {
+  variableId: string;
+  tolerance: number;
+  toleranceType: "absolute" | "relative" | "percentage";
+}
+
+export interface SimulationProcessFeature {
+  featureId: string;
+  sourceEvent: "sim.control.change" | "sim.snapshot" | "sim.capture";
+  description: string;
+  weight: number;
+}
+
+export interface SimulationCaptureRule {
+  ruleId: string;
+  eventType: "sim.snapshot" | "sim.capture";
+  required: boolean;
+  minCount?: number;
+}
+
+export interface SimulationClaimEvidenceMapping {
+  claimId: string;
+  evidenceId: string;
+  taskId: string;
+}
+
 // =============================================================================
 // Hint and Feedback Types
 // =============================================================================
@@ -279,6 +316,18 @@ export interface SimulationAssessmentItem {
   points: number;
   /** Reference to simulation */
   simulationRef: SimulationRef;
+  /** Deterministic seed used for reproducible replay/scoring */
+  seed: number;
+  /** Expected target state for state/process scoring */
+  targetState: SimulationTargetState;
+  /** Tolerances used for reproducible scoring */
+  scoringTolerances: SimulationScoringTolerance[];
+  /** Process features captured during learner interaction */
+  processFeatures: SimulationProcessFeature[];
+  /** Required capture rules for telemetry evidence */
+  captureRules: SimulationCaptureRule[];
+  /** Claim/evidence/task mapping for mastery attribution */
+  claimEvidenceMappings: SimulationClaimEvidenceMapping[];
   /** Parameter constraints */
   parameterConstraints?: ParameterConstraint[];
   /** Entities to focus on */

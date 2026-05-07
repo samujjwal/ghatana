@@ -1,0 +1,68 @@
+# TutorPutor TODO Progress
+
+Last updated: 2026-05-06
+
+Status key:
+
+- Done: implemented with passing local verification in this branch
+- In progress: partly implemented; remaining work is explicit
+- Pending: not yet started in this branch
+
+| TODO | Status | Progress / Remaining Work |
+|---|---|---|
+| 1 | Done | Added `docs/TRACEABILITY_MATRIX.md` and CI traceability validation. |
+| 2 | Done | Added canonical target architecture and OpenAPI route-owner conformance map/gate. |
+| 3 | Done | Validator now blocks publish unless claims map to evidence, evidence maps to tasks, and tasks reference valid IDs; added focused unit tests. |
+| 4 | Pending | Wire persisted telemetry event streams into `ClaimMastery` golden fixtures and learner dashboard E2E. |
+| 5 | Pending | Replace generic learner dashboard state with claim mastery, remediation, review, spaced repetition, and offline-resume states. |
+| 6 | Done | Added canonical `publishReadiness` contract, core validator gates, and admin publish-readiness workflow tests for Draft -> Review -> QA -> Accessibility -> Publish with exact fix actions. |
+| 7 | Done | Moved learning-unit samples into explicit dev fixtures, added guarded dev-only fallback, and covered empty/unavailable backend states with admin API tests. |
+| 8 | Done | Added canonical content revision provenance/change-source contract, versioning workflow policy, backend tests for create/edit/AI-generate/review/publish/rollback/preview, and aligned admin `VersionHistory` with canonical rollback routes. |
+| 9 | Done | Removed stale duplicate Java request/generator classes from `libs/tutorputor-ai`, documented `libs/content-studio-agents` as canonical Java owner, and added CI guard for canonical ownership. |
+| 10 | Done | Added generated-content provenance contract to artifact manifests and platform policy/tests that reject AI-created artifacts without prompt/model/source/timestamp/confidence/validation/SME review/publish eligibility metadata. |
+| 11 | Done | Removed `fix_getters.sh`, added CI source-integrity validation, and added Java source snapshot coverage proving the generator compiles against canonical getter-based models without repair patching. |
+| 12 | Done | Added generated-content validation gate with deterministic math/science/business golden packages; generators now emit required simulation seed/bounds/expected-output metadata and comprehensive generation uses the validation report before CMS intake. |
+| 13 | Done | Added canonical simulation manifest metadata/types/schema, linked simulation assessment items to the manifest snapshot schema, hydrated every starter manifest with seed/bounds/outputs/failure states/telemetry/claim links/accessibility metadata, and added catalog conformance tests. |
+| 14 | Done | Removed retired auto-runtime and preset-compatibility exports from the production engine barrel, added an explicit `legacy-migration.ts` quarantine barrel, and added import-boundary tests. |
+| 15 | Done | Added starter correctness helpers and tests covering deterministic seeded golden outputs across Math/Physics/Biology/Medicine/CS/Econ/Engineering, boundary clamping, recoverable failure states, export metadata preservation, and accessibility metadata. |
+| 16 | Done | Added reusable simulation accessibility runtime helpers for ARIA app props, keyboard-adjustable controls, reduced-motion playback, chart text alternatives, visible focus classes, and non-visual state summaries; added domain-wide tests. |
+| 17 | Done | Added domain-owned `scoreScoredItem` CBM API, changed scored submissions without confidence to a `CBM_CONFIDENCE_REQUIRED` error, made simulation assessment CBM config require confidence, and added canonical low/medium/high correct/incorrect matrix tests. |
+| 18 | Done | Added deterministic 10% random viva sampling alongside anomaly triggers; workflow queue entries now include slots, rubric, recording URL, remediation task, and re-viva state; added platform workflow tests for anomaly scheduling and fail -> remediation -> re-viva. |
+| 19 | Done | Updated simulation assessment TypeScript/schema contracts to require deterministic seed, target state, scoring tolerances, process features, capture rules, and claim/evidence/task mappings; added contract tests. |
+| 20 | Done | Added canonical AI service/use-case/request/response contracts and CI dependency-boundary validation that blocks direct model-provider SDK usage outside `libs/tutorputor-ai`. |
+| 21 | Done | Added AI governance metadata to service and telemetry contracts, platform governance policy, sanitized audit payload builder, consent/safety rejection tests, and route provenance/audit integration without direct learner PII. |
+| 22 | Done | Added Socratic tutor grounding policy/tests, expanded tutor contract/runtime payloads to require module/claim/simulation/attempt/misconception/help-mode context at the API boundary, updated learner web tutor calls to send that context, and changed tutor prompts away from direct-answer behavior. |
+| 23 | Done | Consolidated learning telemetry vs operational platform events with typed simulation snapshot/capture, assessment answer, assist hint, AI interaction/governance telemetry, and privacy export/delete compliance events; added contract schema tests. |
+| 24 | Done | Added typed frontend learning telemetry batch emitter, backend learning telemetry batch validation/persistence, dashboard aggregation from persisted `LearningEvent` records, and privacy export/delete targeting by user/run/attempt with tests. |
+| 25 | Done | Added evidence-backed instructor analytics tiles for calibration gain, Brier score, mastery by claim, process-score distribution, viva queue, at-risk learners, and remediation completion; exposed the analytics route and added deterministic fixture tests. |
+| 26 | Done | Added `contracts/v1/openapi.ts` as the typed OpenAPI operation surface, bound every public OpenAPI operation to request/response/service/backend/client owners, and added a CI drift gate that verifies schema exports, service methods, platform ownership, gateway embedding, and typed client files. |
+| 27 | Done | Added CI tenant-scope validation for regulated Prisma models covering learner, content, assessment, telemetry, AI audit, credential/badge, compliance, LTI, and audit records; fixed class-dashboard lookup to require tenant-owned classroom access and added cross-tenant rejection coverage. |
+| 28 | Done | Added canonical API error envelope helpers, aligned shared Fastify error middleware/request context/OpenAPI contract with the envelope, deleted `fix-error-handling.js`, and added CI validation plus focused error-envelope tests for validation/auth/forbidden/missing content/AI/telemetry/LTI failures. |
+| 29 | Done | Added UI package/import boundary CI gate, documented shared UI/token usage boundaries, capped existing app-local style/primitive migration debt with a ratcheting baseline, and added Playwright visual-regression specs for learner dashboard, module page, assessment page, AI tutor, and admin authoring page. |
+| 30 | Done | Added concrete learner routes for onboarding, diagnostic, credentials, and privacy center; added web critical journey and offline-resume Playwright specs covering onboarding -> diagnostic -> pathway -> module -> simulation -> AI tutor -> assessment -> feedback/remediation -> mastery -> credential -> profile/privacy; updated Linux/Windows runners with web/admin/mobile parity and added CI coverage validation. |
+| 31 | Done | Added guided publish-readiness UI that summarizes missing claims, evidence, simulation settings, assessment coverage, accessibility metadata, and review status with exact fix actions; added assessment-editor readiness guidance and admin UX-state tests for incomplete and publish-ready module/assessment states. |
+| 32 | Done | Added axe-core Playwright gates and keyboard-only coverage for learner dashboard, module, assessment, simulation, AI tutor, and admin authoring; fixed critical unlabeled AI/admin icon buttons; added CI accessibility-gate validator and package scripts. |
+| 33 | Done | Added canonical offline sync conflict policy, local replay queue, service-worker offline mutation capture, telemetry queue fallback, mobile sync entity config, offline telemetry context, focused unit tests, offline-resume E2E markers, and CI validation. |
+| 34 | Done | Added first-class learning-unit localization contract/schema/declaration fields for content blocks, captions, transcripts, prompts, feedback, rubrics, and accessibility alternatives; added locale fixture tests and CI validation. |
+| 35 | Done | Added product-facing privacy center summary, export status/download, deletion request/status/cancel/process evidence, consent revocation, telemetry deletion/anonymization APIs; wired Privacy Center UI actions and added route tests plus CI validation. |
+| 36 | Done | Added canonical backend permission policy for student, parent, teacher, content author, SME reviewer, QA, admin, institution admin, and superadmin; wired representative privacy/admin export deletion checks to `requirePermission`; added permission matrix tests and CI validation. |
+| 37 | Done | Added canonical runtime consent policy for under-13 parental consent, AI, telemetry opt-out, voice/image, social, and personalization; wired AI governance and learning telemetry ingest to consent enforcement; Privacy Center already exposes revocation; added tests and CI validation. |
+| 38 | Done | Added evidence-backed LTI grade calculation from graded assessment attempts or claim mastery, wired route and bulk sync passback away from enrollment progress scoring, updated verification script to require evidence IDs, added focused route tests, and added CI validation. |
+| 39 | Done | Added evidence-based credential eligibility requiring mastered claims, valid assessment evidence, and no unresolved viva requirement; added issue-from-evidence, verify URL, revoke, and reissue flows with route/service tests and CI validation. |
+| 40 | Done | Added CI verification-gate validation for critical journey parity, remediation proof, content/social routes, LTI config/passback, GDPR deletion, and encryption checks; fixed stale content-route package filter and wired mandatory workflow gates. |
+| 41 | Done | Added production readiness validation for Helm templates/production values, Docker hardening, backup strictness, restore dry-run, rollback, health, and smoke-test commands; fixed stale Docker package paths, deployment root resolution, and restore script developer-local path. |
+| 42 | Done | Added TutorPutor-specific Prometheus metrics and alert validation for AI latency/cost/failures, simulation runtime errors, telemetry ingest failures, assessment scoring failures, LTI passback failures, content-generation validation failures, and privacy deletion failures; added focused metrics tests and CI observability gate. |
+| 43 | In progress | Tightened `audit-any-types.ts` into a runnable production-source ratchet, added CI validation for type-safety gates, removed a stale `@ts-nocheck` allowlist/comment hit, reduced the production `any` baseline from 410 to 307, and added typed cache/request-id metadata, gRPC callback `unknown` handling, observability/Redis health typing, sanitizer/rate-limit request typing, ABAC/analytics/capability/compliance-evidence route context typing, DOM export typing, grading quality metric records, Prisma-aligned capability tenant lookups, secure DB input/enum validation, typed audit-log queries, auth consent record narrowing, JSON-safe auto-revision payloads, typed content-evaluation grader interfaces, content service/recommendation/semantic mapper records, and guarded generated-content evaluation/materialization arrays. CI now ratchets at 307. Remaining: eliminate the production `any` baseline and remaining `@ts-nocheck` files rather than only preventing regressions. |
+| 44 | Pending | Stop committing manual `.d.ts` artifacts unless deterministically generated and validated. |
+| 45 | Pending | Replace repair scripts with source fixes and CI checks. |
+| 46 | Pending | Add dependency policy and bundle budget checks. |
+| 47 | Pending | Create role-complete critical journey E2E suite. |
+| 48 | Pending | Replace static test-result evidence with fresh CI reports/artifacts. |
+| 49 | Pending | Add golden-data semantic correctness tests across scoring, mastery, simulation, telemetry, generation, AI grading, dashboards. |
+| 50 | Pending | Enforce one unified TutorPutor quality gate across lint, typecheck, contracts, unit, integration, a11y, E2E, performance, security, placeholders. |
+
+## Current Focus
+
+1. Continue type-safety cleanup with TODO 43 by reducing the remaining production `any` baseline and `@ts-nocheck` files.
+2. Clean up platform type-check drift surfaced during validation: AI grounding call sites, compliance exact-optional arguments, legacy simulation compatibility imports, and strictness gaps.
+3. Track Gradle test repair as a later cleanup after the TypeScript contract/product gates stay green.

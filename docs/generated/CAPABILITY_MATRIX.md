@@ -36,7 +36,7 @@
 | `finance` | `products/finance` | Regulated Finance |
 | `digital-marketing` | `products/digital-marketing` | Customer Growth / Marketing Automation |
 | `flashit` | `products/flashit` | Personal Reflection / Moments |
-| `aep` | `products/aep` | AI/Agent Runtime |
+| `aep` | `products/data-cloud/planes/action` | AI/Agent Runtime |
 | `yappc` | `products/yappc` | Code Generation / DevOps |
 | `data-cloud` | `products/data-cloud` | Data Infrastructure |
 | `dcmaar` | `products/dcmaar` | Data-Cloud MAR |
@@ -145,7 +145,7 @@
 | platform-plugins | ✅ | ✅ | ✅ | ✅ | — |
 | products/phr | ✅ | ✅ | ✅ | ✅ | ✅ |
 | products/finance | ✅ | ✅ | ✅ | ✅ | — |
-| products/aep | ✅ | ✅ | ✅ | ✅ | — |
+| products/data-cloud/planes/action | ✅ | ✅ | ✅ | ✅ | — |
 
 ---
 

@@ -25,11 +25,15 @@ export const XAPI_VERBS = {
     'sim.goal.failed': 'http://adlnet.gov/expapi/verbs/failed',
     'sim.pause': 'http://adlnet.gov/expapi/verbs/suspended',
     'sim.resume': 'http://adlnet.gov/expapi/verbs/resumed',
+    'sim.snapshot': 'https://w3id.org/xapi/tutorputor/verbs/simulation-snapshot',
+    'sim.capture': 'https://w3id.org/xapi/tutorputor/verbs/simulation-capture',
 
     // Assessment Events
+    'assess.answer': 'http://adlnet.gov/expapi/verbs/answered',
     'assess.answer.submit': 'http://adlnet.gov/expapi/verbs/answered',
     'assess.confidence.submit': 'http://adlnet.gov/expapi/verbs/rated',
     'assess.hint.request': 'http://adlnet.gov/expapi/verbs/asked',
+    'assist.hint': 'http://adlnet.gov/expapi/verbs/asked',
 
     // Content Events
     'content.video.start': 'http://adlnet.gov/expapi/verbs/initialized',
@@ -41,6 +45,11 @@ export const XAPI_VERBS = {
     // Credential Events
     'credential.badge.issued': 'http://adlnet.gov/expapi/verbs/earned',
     'credential.skill.mastered': 'http://adlnet.gov/expapi/verbs/mastered',
+
+    // AI Interaction Events
+    'ai.tutor.response': 'https://w3id.org/xapi/tutorputor/verbs/ai-tutor-response',
+    'ai.generation.created': 'https://w3id.org/xapi/tutorputor/verbs/ai-generation-created',
+    'ai.governance.blocked': 'https://w3id.org/xapi/tutorputor/verbs/ai-governance-blocked',
 } as const;
 
 export type TelemetryEventType = keyof typeof XAPI_VERBS;
@@ -70,7 +79,16 @@ export interface BaseTelemetryEvent {
         claimId?: string;
         sessionId: string;
         platform: 'web' | 'mobile' | 'vr';
+        offlineSync?: OfflineSyncContext;
     };
+}
+
+export interface OfflineSyncContext {
+    clientMutationId: string;
+    syncStatus: 'online' | 'queued' | 'replayed' | 'conflict';
+    baseServerVersion?: number;
+    localVersion: number;
+    conflictPolicy: 'max-progress' | 'idempotent-hash' | 'submitted-attempt-lock' | 'most-restrictive-consent' | 'event-id-dedupe';
 }
 
 // ============================================================================
@@ -129,9 +147,60 @@ export interface SimGoalFailedEvent extends BaseTelemetryEvent {
     };
 }
 
+export interface SimSnapshotEvent extends BaseTelemetryEvent {
+    type: 'sim.snapshot';
+    object: {
+        simulationId: string;
+        runId: string;
+        seed: string;
+    };
+    result: {
+        state: Record<string, number | string | boolean>;
+        elapsedTimeMs: number;
+        deterministicHash: string;
+    };
+}
+
+export interface SimCaptureEvent extends BaseTelemetryEvent {
+    type: 'sim.capture';
+    object: {
+        simulationId: string;
+        runId: string;
+        captureId: string;
+        claimId: string;
+        evidenceId: string;
+        taskId: string;
+    };
+    result: {
+        processFeatures: Record<string, number | string | boolean>;
+        outputState: Record<string, number | string | boolean>;
+        validEvidence: boolean;
+    };
+}
+
 // ============================================================================
 // Assessment Events
 // ============================================================================
+
+export interface AssessAnswerEvent extends BaseTelemetryEvent {
+    type: 'assess.answer';
+    object: {
+        assessmentId: string;
+        attemptId: string;
+        itemId: string;
+        taskId: string;
+        claimId: string;
+        evidenceId: string;
+    };
+    result: {
+        response: string | string[] | number | boolean;
+        correct?: boolean;
+        score?: number;
+        maxScore?: number;
+        confidence: 'low' | 'medium' | 'high';
+        durationMs: number;
+    };
+}
 
 export interface AssessAnswerSubmitEvent extends BaseTelemetryEvent {
     type: 'assess.answer.submit';
@@ -196,6 +265,79 @@ export interface CredentialBadgeIssuedEvent extends BaseTelemetryEvent {
     };
 }
 
+export interface AssistHintEvent extends BaseTelemetryEvent {
+    type: 'assist.hint';
+    object: {
+        moduleId: string;
+        claimId: string;
+        taskId?: string;
+        hintId: string;
+    };
+    result: {
+        source: 'ai_tutor' | 'static_hint' | 'teacher';
+        level: 'nudge' | 'conceptual' | 'worked_step';
+        accepted: boolean;
+    };
+}
+
+// ============================================================================
+// AI Interaction Events
+// ============================================================================
+
+export interface AIInteractionTelemetryMetadata {
+    consentState: 'granted' | 'missing' | 'revoked' | 'not_required';
+    learnerContextScope: 'none' | 'module' | 'claim' | 'simulation' | 'assessment' | 'course';
+    promptVersion: string;
+    modelVersion: string;
+    retrievedContentIds: string[];
+    safetyFilterResult: 'passed' | 'blocked' | 'redacted' | 'human_review_required';
+    latencyMs: number;
+    tokenUsage?: {
+        inputTokens: number;
+        outputTokens: number;
+        totalTokens: number;
+    };
+    costUsd?: number;
+    confidence?: number;
+    humanReviewRequired: boolean;
+    containsDirectPii: false;
+}
+
+export interface AITutorResponseEvent extends BaseTelemetryEvent {
+    type: 'ai.tutor.response';
+    object: {
+        moduleId?: string;
+        claimIds: string[];
+        responseId: string;
+    };
+    result: AIInteractionTelemetryMetadata & {
+        blocked: false;
+    };
+}
+
+export interface AIGenerationCreatedEvent extends BaseTelemetryEvent {
+    type: 'ai.generation.created';
+    object: {
+        artifactId: string;
+        artifactType: 'lesson' | 'simulation' | 'assessment' | 'rubric' | 'explanation';
+    };
+    result: AIInteractionTelemetryMetadata & {
+        validationStatus: 'pending' | 'passed' | 'failed';
+        smeReviewStatus: 'pending' | 'approved' | 'rejected';
+    };
+}
+
+export interface AIGovernanceBlockedEvent extends BaseTelemetryEvent {
+    type: 'ai.governance.blocked';
+    object: {
+        useCase: 'tutor' | 'recommender' | 'grading' | 'content_generation' | 'analytics';
+    };
+    result: AIInteractionTelemetryMetadata & {
+        blocked: true;
+        reason: 'consent_missing' | 'consent_revoked' | 'safety_filter' | 'human_review_required';
+    };
+}
+
 // ============================================================================
 // Union Type for All Events
 // ============================================================================
@@ -205,8 +347,43 @@ export type TelemetryEvent =
     | SimControlChangeEvent
     | SimGoalAchievedEvent
     | SimGoalFailedEvent
+    | SimSnapshotEvent
+    | SimCaptureEvent
+    | AssessAnswerEvent
     | AssessAnswerSubmitEvent
     | AssessConfidenceSubmitEvent
+    | AssistHintEvent
+    | ContentVideoCompleteEvent
+    | CredentialBadgeIssuedEvent
+    | AITutorResponseEvent
+    | AIGenerationCreatedEvent
+    | AIGovernanceBlockedEvent;
+
+export type SimulationTelemetryEvent =
+    | SimStartEvent
+    | SimControlChangeEvent
+    | SimGoalAchievedEvent
+    | SimGoalFailedEvent
+    | SimSnapshotEvent
+    | SimCaptureEvent;
+
+export type AssessmentTelemetryEvent =
+    | AssessAnswerEvent
+    | AssessAnswerSubmitEvent
+    | AssessConfidenceSubmitEvent;
+
+export type AssistanceTelemetryEvent = AssistHintEvent;
+
+export type AITelemetryEvent =
+    | AITutorResponseEvent
+    | AIGenerationCreatedEvent
+    | AIGovernanceBlockedEvent;
+
+export type LearningTelemetryEvent =
+    | SimulationTelemetryEvent
+    | AssessmentTelemetryEvent
+    | AssistanceTelemetryEvent
+    | AITelemetryEvent
     | ContentVideoCompleteEvent
     | CredentialBadgeIssuedEvent;
 

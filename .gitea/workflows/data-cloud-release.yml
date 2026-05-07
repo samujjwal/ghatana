@@ -109,10 +109,10 @@ jobs:
 
       - name: Build release JAR
         run: |
-          ./gradlew :products:data-cloud:launcher:bootJar \
+          ./gradlew :products:data-cloud:delivery:launcher:bootJar \
             -Pversion=${{ needs.validate.outputs.version }} \
             --no-daemon || \
-          ./gradlew :products:data-cloud:launcher:jar \
+          ./gradlew :products:data-cloud:delivery:launcher:jar \
             -Pversion=${{ needs.validate.outputs.version }} \
             --no-daemon
 

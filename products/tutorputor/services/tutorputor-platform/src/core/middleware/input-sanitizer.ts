@@ -31,6 +31,10 @@ export interface SanitizerConfig {
     onDetection: 'reject' | 'strip';
 }
 
+type MutableBodyRequest = FastifyRequest & {
+    body: unknown;
+};
+
 const DEFAULT_CONFIG: SanitizerConfig = {
     maxInputLength: 10_000,
     detectPromptInjection: true,
@@ -287,7 +291,7 @@ export async function setupInputSanitizer(
 
             // Strip HTML if enabled (even if no injection detected)
             if (config.stripHtml) {
-                (request as any).body = stripObjectHtml(request.body);
+                (request as MutableBodyRequest).body = stripObjectHtml(request.body);
             }
         }
 

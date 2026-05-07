@@ -2136,6 +2136,7 @@ model AIAuditLog {
   createdAt   DateTime @default(now())
 
   @@index([tenantId, createdAt])
+  @@index([tenantId, userId, createdAt])
   @@index([userId, createdAt])
   @@index([modelId, createdAt])
   @@index([endpoint, createdAt])

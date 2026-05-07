@@ -193,7 +193,7 @@ schema:
           type: string
           required: true
         module:
-          type: string   # Gradle module path (e.g. "products:aep:platform")
+          type: string   # Gradle module path (e.g. "products:data-cloud:aep:engine")
 
       metadata:       # Arbitrary metadata
         author:

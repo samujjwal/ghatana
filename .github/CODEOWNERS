@@ -62,18 +62,18 @@
 /shared-services/infrastructure/    @ghatana/devops-team
 
 # ── Products ─────────────────────────────────────────────────────────────────
-/products/aep/                      @ghatana/aep-team
+/products/data-cloud/planes/action/                      @ghatana/aep-team
 /products/app-platform/             @ghatana/platform-team
 /products/audio-video/              @ghatana/av-team
 /products/aura/                     @ghatana/aura-team
 /products/data-cloud/               @ghatana/data-team
-/products/data-cloud/spi/           @ghatana/data-team @ghatana/platform-team
+/products/data-cloud/planes/shared-spi/           @ghatana/data-team @ghatana/platform-team
 /products/data-cloud/platform/      @ghatana/data-team
-/products/data-cloud/launcher/      @ghatana/data-team
-/products/data-cloud/agent-registry/ @ghatana/data-team @ghatana/agent-team
-/products/data-cloud/sdk/           @ghatana/data-team @ghatana/platform-team
-/products/data-cloud/ui/            @ghatana/data-team @ghatana/frontend-team
-/products/data-cloud/ui/src/api/    @ghatana/data-team @ghatana/frontend-team
+/products/data-cloud/delivery/launcher/      @ghatana/data-team
+/products/data-cloud/extensions/agent-registry/ @ghatana/data-team @ghatana/agent-team
+/products/data-cloud/delivery/sdk/           @ghatana/data-team @ghatana/platform-team
+/products/data-cloud/delivery/ui/            @ghatana/data-team @ghatana/frontend-team
+/products/data-cloud/delivery/ui/src/api/    @ghatana/data-team @ghatana/frontend-team
 /products/data-cloud/k8s/           @ghatana/data-team @ghatana/devops-team
 /products/data-cloud/helm/          @ghatana/data-team @ghatana/devops-team
 /products/data-cloud/terraform/     @ghatana/data-team @ghatana/devops-team

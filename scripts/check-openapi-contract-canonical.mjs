@@ -83,7 +83,7 @@ if (aepContractsSpec != null && aepServerSpec != null) {
   const normalizedServer = normalizeText(aepServerSpec);
   if (normalizedContracts !== normalizedServer) {
     violations.push(
-      'AEP canonical contract drift: products/aep/contracts/openapi.yaml and products/aep/server/src/main/resources/openapi.yaml differ.',
+      'AEP canonical contract drift: products/data-cloud/contracts/openapi/aep.yaml and products/data-cloud/planes/action/server/src/main/resources/openapi.yaml differ.',
     );
   }
 }

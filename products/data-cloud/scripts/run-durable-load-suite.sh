@@ -39,7 +39,7 @@ fi
 DATACLOUD_DURABLE_LOAD_ENABLED=true \
 TESTCONTAINERS_RYUK_DISABLED=true \
 TESTCONTAINERS_HOST_OVERRIDE=localhost \
-"${REPO_ROOT}/gradlew" -p "${REPO_ROOT}/products/data-cloud" :products:data-cloud:platform-plugins:test \
+"${REPO_ROOT}/gradlew" -p "${REPO_ROOT}/products/data-cloud" :products:data-cloud:extensions:plugins:test \
   --no-daemon \
   --no-parallel \
   --no-configuration-cache \

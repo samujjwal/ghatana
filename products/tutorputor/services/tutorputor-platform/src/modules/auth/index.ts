@@ -29,6 +29,10 @@ interface RefreshSessionRecord {
   jti: string;
 }
 
+type ConsentCategoryRecord = {
+  category: string;
+};
+
 type RedisLike = {
   get: (key: string) => Promise<string | null>;
   set: (
@@ -56,6 +60,21 @@ type SsoCallbackResultWithRedirect = {
   refreshToken?: string;
   redirectUri?: string;
 };
+
+function getConsentCategories(consents: unknown): string[] {
+  if (!Array.isArray(consents)) {
+    return [];
+  }
+
+  return consents
+    .filter((consent): consent is ConsentCategoryRecord =>
+      typeof consent === "object" &&
+      consent !== null &&
+      "category" in consent &&
+      typeof consent.category === "string",
+    )
+    .map((consent) => consent.category);
+}
 
 const REFRESH_SESSION_PREFIX = "auth:refresh-session:";
 const REFRESH_SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
@@ -531,7 +550,7 @@ export const authModule: FastifyPluginAsync = async (app) => {
         return reply.code(404).send({ error: "User not found" });
       }
 
-      const consentCategories = (userWithConsents.consents as any[]).map((c) => c.category) || [];
+      const consentCategories = getConsentCategories(userWithConsents.consents);
 
       const consentList = [
         {
@@ -587,7 +606,7 @@ export const authModule: FastifyPluginAsync = async (app) => {
         return reply.code(404).send({ error: "User not found" });
       }
 
-      const currentConsents = (user.consents as any[]).map((c) => c.category) || [];
+      const currentConsents = getConsentCategories(user.consents);
       let updatedConsents: string[];
 
       if (granted) {

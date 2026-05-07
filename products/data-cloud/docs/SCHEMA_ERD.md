@@ -217,7 +217,7 @@ CREATE POLICY tenant_isolation_event_log
 Migration contract tests run in CI via:
 
 ```bash
-./gradlew :products:data-cloud:platform-launcher:test \
+./gradlew :products:data-cloud:delivery:runtime-composition:test \
   --tests "com.ghatana.datacloud.migration.DatabaseMigrationContractTest" \
   --no-daemon
 ```

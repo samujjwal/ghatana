@@ -45,7 +45,7 @@ Status note (2026-04-11):
 
 | Product | Usage |
 |---------|-------|
-| `products/data-cloud/ui` | Data lineage visualisation |
+| `products/data-cloud/delivery/ui` | Data lineage visualisation |
 | `products/yappc/frontend/web` | Agent workflow canvas |
 | `products/yappc/frontend/libs/canvas/*` | Canvas feature extensions |
 | `products/yappc/frontend/apps/web` | Main YAPPC web app |

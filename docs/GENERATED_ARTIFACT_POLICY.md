@@ -86,10 +86,11 @@ See `platform/contracts/GENERATED_ARTIFACT_POLICY.md` for full detail.
 - Commit: Flyway `V*__*.sql` files — these are the schema source-of-truth.
 - Never commit: Schema dumps, generated DDL from ORM introspection.
 
-### 3.4 `products/data-cloud/docs-generated/`
+### 3.4 `products/data-cloud/docs/`
 
-- This directory is marked as generated. Contents are auto-produced and must not be edited
-  manually. See `products/data-cloud/docs-generated/OWNER.md` for policy.
+- Data Cloud no longer keeps product-generated narrative docs in a separate committed
+  `docs-generated` tree. Keep canonical product docs under `products/data-cloud/docs/`
+  and regenerate transient reports outside the source tree or under ignored build output.
 
 ---
 

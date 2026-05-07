@@ -1162,7 +1162,7 @@ public Promise<Void> onHandshake(WebSocketHandshakeContext ctx) {
 #### 6.2 — Activate Durable Audit Logging (1 day)
 
 ```
-[x] 6.2.1  Wire JdbcPersistentAuditService (from products/aep) into lifecycle service
+[x] 6.2.1  Wire JdbcPersistentAuditService (from products/data-cloud/planes/action) into lifecycle service
            (or implement standalone JdbcAuditService in backend/persistence if AEP dep adds too much)
 [x] 6.2.2  Replace AuditLogger.noop() binding in all service modules
 [ ] 6.2.3  Implement AuditQueryService: 
@@ -1310,7 +1310,7 @@ public class PhaseTransitionValidatorOperator extends UnifiedOperator {
 
 ```
 [x] 7.2.1  Add AEP dependency to yappc services/lifecycle gradle module
-           - DONE: implementation(project(":products:aep:platform"))
+           - DONE: implementation(project(":products:data-cloud:planes:action:server"))
            
 [x] 7.2.2  Implement YappcAepPipelineBootstrapper implementing Initializable:
            DONE: products/yappc/services/lifecycle/src/main/java/

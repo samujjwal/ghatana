@@ -92,7 +92,18 @@ export interface AIProxyService {
   handleTutorQuery(args: {
     tenantId: TenantId;
     userId: UserId;
-    moduleId?: ModuleId;
+    moduleId: ModuleId;
+    claimIds: string[];
+    currentSimulationState?: Record<string, unknown>;
+    recentAttempts: Array<{
+      attemptId: string;
+      taskId?: string;
+      correct?: boolean;
+      confidence?: "low" | "medium" | "high";
+      misconceptionId?: string;
+    }>;
+    misconceptions: string[];
+    allowedHelpMode: "hint" | "explain" | "socratic";
     question: string;
     locale?: string;
   }): Promise<TutorResponsePayload>;
@@ -119,6 +130,106 @@ export interface AIProxyService {
     tags?: string[];
     textSearch?: string;
   }>;
+}
+
+export type AIUseCase =
+  | "tutor"
+  | "recommender"
+  | "grading"
+  | "content_generation"
+  | "analytics";
+
+export type AISafetyFilterResult =
+  | "passed"
+  | "blocked"
+  | "redacted"
+  | "human_review_required";
+
+export interface AIInteractionGovernanceMetadata {
+  consentState: "granted" | "missing" | "revoked" | "not_required";
+  learnerContextScope:
+    | "none"
+    | "module"
+    | "claim"
+    | "simulation"
+    | "assessment"
+    | "course";
+  promptVersion: string;
+  modelVersion: string;
+  retrievedContentIds: string[];
+  safetyFilterResult: AISafetyFilterResult;
+  latencyMs?: number;
+  tokenUsage?: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  };
+  costUsd?: number;
+  confidence?: number;
+  humanReviewRequired: boolean;
+  humanReviewReason?: string;
+}
+
+export interface CanonicalAIRequest<TInput = unknown, TContext = unknown> {
+  tenantId: TenantId;
+  userId: UserId;
+  useCase: AIUseCase;
+  input: TInput;
+  context: TContext;
+  governance: AIInteractionGovernanceMetadata;
+}
+
+export interface CanonicalAIResponse<TOutput = unknown> {
+  output: TOutput;
+  governance: AIInteractionGovernanceMetadata;
+  provenance: {
+    provider: string;
+    modelId: string;
+    modelVersion: string;
+    promptVersion: string;
+    generatedAt: string;
+  };
+}
+
+/**
+ * Canonical AI boundary for all TutorPutor AI use cases.
+ * UI and platform modules should depend on this interface instead of provider
+ * SDKs or direct model clients. Provider calls live behind the AI package.
+ */
+export interface CanonicalAIService {
+  invoke<TInput = unknown, TContext = unknown, TOutput = unknown>(
+    request: CanonicalAIRequest<TInput, TContext>,
+  ): Promise<CanonicalAIResponse<TOutput>>;
+
+  tutor(
+    request: CanonicalAIRequest<
+      { question: string; locale?: string },
+      {
+        moduleId?: ModuleId;
+        claimIds?: string[];
+        simulationStateId?: string;
+        recentAttemptIds?: string[];
+        misconceptions?: string[];
+        allowedHelpMode?: "hint" | "explain" | "socratic";
+      }
+    >,
+  ): Promise<CanonicalAIResponse<TutorResponsePayload>>;
+
+  recommend<TOutput = unknown>(
+    request: CanonicalAIRequest<unknown, unknown>,
+  ): Promise<CanonicalAIResponse<TOutput>>;
+
+  grade<TOutput = unknown>(
+    request: CanonicalAIRequest<unknown, unknown>,
+  ): Promise<CanonicalAIResponse<TOutput>>;
+
+  generateContent<TOutput = unknown>(
+    request: CanonicalAIRequest<unknown, unknown>,
+  ): Promise<CanonicalAIResponse<TOutput>>;
+
+  analyze<TOutput = unknown>(
+    request: CanonicalAIRequest<unknown, unknown>,
+  ): Promise<CanonicalAIResponse<TOutput>>;
 }
 
 export interface AssessmentService {

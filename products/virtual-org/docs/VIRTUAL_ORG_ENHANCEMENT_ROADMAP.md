@@ -66,7 +66,7 @@ This is **PARTIALLY DONE** - `LLMGateway` exists. Need to:
 | `StateStore<K,V>` | `libs/java/state/StateStore.java` | ✅ EXISTS | General-purpose state store |
 | `StateStore<K,V>` | `libs/java/operator/state/StateStore.java` | ⚠️ DUPLICATE | Operator-specific duplicate |
 | `HybridStateStore` | `libs/java/state/HybridStateStore.java` | ✅ EXISTS | Local+central hybrid store |
-| `StorageCapability<K,V>` | `products/data-cloud/spi/StorageCapability.java` | ✅ EXISTS | Plugin storage SPI |
+| `StorageCapability<K,V>` | `products/data-cloud/planes/shared-spi/StorageCapability.java` | ✅ EXISTS | Plugin storage SPI |
 
 **🔴 CLEANUP REQUIRED:**
 - `libs/java/operator/state/StateStore.java` → **DELETE** (use `libs/java/state/StateStore.java`)
@@ -216,7 +216,7 @@ These findings reduce the roadmap effort significantly:
 | **Vector Storage** | `libs/java/ai-integration/vectorstore/VectorStore.java` | PgVector impl EXISTS |
 | **State Store** | `libs/java/state/StateStore.java` | HybridStateStore EXISTS |
 | **Events/Telemetry** | `products/data-cloud/event-cloud/` | EventCloud |
-| **Event Storage** | `products/data-cloud/spi/StorageCapability.java` | Plugin SPI |
+| **Event Storage** | `products/data-cloud/planes/shared-spi/StorageCapability.java` | Plugin SPI |
 | **Operator Catalog** | `libs/java/operator-catalog/OperatorCatalog.java` | Registration EXISTS |
 | **Pipelines** | `libs/java/operator/pipeline/Pipeline.java` | Pipeline abstraction EXISTS |
 | **Metrics** | `libs/java/observability/MetricsCollector.java` | Observability EXISTS |
@@ -2107,7 +2107,7 @@ spec:
 
 ### 1. Vector Search SPI (NEW)
 
-**Location:** `products/data-cloud/spi/src/main/java/com/ghatana/datacloud/spi/capability/`
+**Location:** `products/data-cloud/planes/shared-spi/src/main/java/com/ghatana/datacloud/spi/capability/`
 
 ```java
 /**
@@ -2189,7 +2189,7 @@ public class VectorSearchResult {
 **Implementation Files to Create:**
 
 ```
-products/data-cloud/spi/src/main/java/com/ghatana/datacloud/spi/capability/
+products/data-cloud/planes/shared-spi/src/main/java/com/ghatana/datacloud/spi/capability/
 ├── VectorSearchCapability.java          # SPI interface
 └── VectorSearchResult.java              # Result record
 
@@ -3230,7 +3230,7 @@ public class KafkaMessageTransport implements MessageTransport { ... }
 // products/virtual-org/build.gradle
 dependencies {
     // data-cloud core dependencies
-    implementation project(':products:data-cloud:spi')           // StateStore, StoragePlugin SPIs
+    implementation project(':products:data-cloud:planes:shared-spi')           // StateStore, StoragePlugin SPIs
     implementation project(':products:data-cloud:core')          // EventCloud core
     implementation project(':products:data-cloud:domain')        // HybridStateStore, StateAdapter
     implementation project(':products:data-cloud:event-cloud:common')

@@ -116,7 +116,55 @@ function inferBaseWeight(
   }
 }
 
-function summarizeTelemetry(events: any[]): {
+type RecommendationTelemetryEvent = {
+  eventType?: string | null;
+  feedbackLabel?: string | null;
+};
+
+type RawRecommendationAsset = {
+  id: string;
+  tenantId: string;
+  slug: string;
+  title: string;
+  assetType: string;
+  domain: string;
+  status: string;
+  currentVersion: number;
+  targetGrades?: unknown;
+  authorId: string;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
+  riskLevel?: string | null;
+  conceptId?: string | null;
+  qualityScore?: number | null;
+  semanticIndexStatus?: string | null;
+  recommendationStatus?: string | null;
+  tags?: unknown;
+  difficultyLevel?: string | null;
+  lastEditedBy?: string | null;
+  publishedAt?: Date | null;
+  promptHash?: string | null;
+  confidenceScore?: number | null;
+  legacyModuleId?: string | null;
+  legacyExperienceId?: string | null;
+  estimatedTimeMinutes?: number | null;
+};
+
+type RawRecommendationEdge = {
+  id: string;
+  sourceAssetId: string;
+  targetAssetId: string;
+  edgeType: string;
+  source: string;
+  weight: number;
+  confidence?: number | null;
+  reason?: string | null;
+  metadata?: unknown;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
+};
+
+function summarizeTelemetry(events: RecommendationTelemetryEvent[]): {
   impressions: number;
   clicks: number;
   completions: number;
@@ -814,7 +862,7 @@ export class RecommendationService {
     return "created";
   }
 
-  private mapAsset(raw: any): ContentAsset {
+  private mapAsset(raw: RawRecommendationAsset): ContentAsset {
     const asset: ContentAsset = {
       id: raw.id as string,
       tenantId: raw.tenantId as string,
@@ -824,9 +872,7 @@ export class RecommendationService {
       domain: raw.domain as string,
       status: (raw.status as string).toLowerCase() as ContentAsset["status"],
       currentVersion: raw.currentVersion as number,
-      targetGrades: Array.isArray(raw.targetGrades)
-        ? (raw.targetGrades as string[])
-        : [],
+      targetGrades: Array.isArray(raw.targetGrades) ? raw.targetGrades : [],
       authorId: raw.authorId as string,
       createdAt: raw.createdAt
         ? (raw.createdAt as Date).toISOString()
@@ -866,7 +912,7 @@ export class RecommendationService {
       }
     }
     if (Array.isArray(raw.tags)) {
-      asset.tags = raw.tags as string[];
+      asset.tags = raw.tags.filter((tag): tag is string => typeof tag === "string");
     }
     if (
       typeof raw.difficultyLevel === "string" &&
@@ -905,25 +951,32 @@ export class RecommendationService {
     return asset;
   }
 
-  private mapEdge(raw: any): RecommendationEdge {
-    return {
-      id: raw.id as string,
-      sourceAssetId: raw.sourceAssetId as string,
-      targetAssetId: raw.targetAssetId as string,
+  private mapEdge(raw: RawRecommendationEdge): RecommendationEdge {
+    const edge: RecommendationEdge = {
+      id: raw.id,
+      sourceAssetId: raw.sourceAssetId,
+      targetAssetId: raw.targetAssetId,
       edgeType: (
-        raw.edgeType as string
+        raw.edgeType
       ).toLowerCase() as RecommendationEdgeType,
-      source: (raw.source as string).toLowerCase() as RecommendationSource,
-      weight: raw.weight as number,
-      confidence: (raw.confidence as number) ?? undefined,
-      reason: (raw.reason as string) ?? undefined,
-      metadata: (raw.metadata as Record<string, unknown>) ?? undefined,
+      source: raw.source.toLowerCase() as RecommendationSource,
+      weight: raw.weight,
       createdAt: raw.createdAt
-        ? (raw.createdAt as Date).toISOString()
+        ? raw.createdAt.toISOString()
         : new Date().toISOString(),
       updatedAt: raw.updatedAt
-        ? (raw.updatedAt as Date).toISOString()
+        ? raw.updatedAt.toISOString()
         : new Date().toISOString(),
     };
+    if (typeof raw.confidence === "number") {
+      edge.confidence = raw.confidence;
+    }
+    if (typeof raw.reason === "string") {
+      edge.reason = raw.reason;
+    }
+    if (raw.metadata && typeof raw.metadata === "object" && !Array.isArray(raw.metadata)) {
+      edge.metadata = raw.metadata as Record<string, unknown>;
+    }
+    return edge;
   }
 }

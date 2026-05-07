@@ -5,7 +5,7 @@
  * @doc.pattern Service
  */
 
-import type { PrismaClient } from '@tutorputor/core/db';
+import type { Prisma, PrismaClient } from '@tutorputor/core/db';
 import type { TenantId, UserId, PaginatedResult } from '@tutorputor/contracts';
 
 // =============================================================================
@@ -21,7 +21,7 @@ export interface AuditLogEntry {
     action: string;
     resourceType: string;
     resourceId: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     ipAddress?: string;
     userAgent?: string;
 }
@@ -50,17 +50,33 @@ export interface AuditLogSummary {
     recentEvents: AuditLogEntry[];
 }
 
+const AUDIT_LOG_SORT_KEYS = new Set<keyof Prisma.AuditLogOrderByWithRelationInput>([
+    'id',
+    'tenantId',
+    'actorId',
+    'action',
+    'resourceType',
+    'resourceId',
+    'timestamp',
+]);
+
+function isAuditLogSortKey(
+    value: string,
+): value is keyof Prisma.AuditLogOrderByWithRelationInput {
+    return AUDIT_LOG_SORT_KEYS.has(value as keyof Prisma.AuditLogOrderByWithRelationInput);
+}
+
 export class AuditServiceImpl {
     constructor(private readonly prisma: PrismaClient) { }
 
-    private parseMetadata(metadata: string | null): Record<string, any> {
+    private parseMetadata(metadata: string | null): Record<string, unknown> {
         if (!metadata) {
             return {};
         }
 
         try {
             const parsed = JSON.parse(metadata);
-            return parsed && typeof parsed === 'object' ? parsed : {};
+            return parsed && typeof parsed === 'object' ? parsed as Record<string, unknown> : {};
         } catch {
             return {};
         }
@@ -114,8 +130,7 @@ export class AuditServiceImpl {
         const { cursor, limit = 50, sortBy, sortOrder } = pagination;
         const take = Math.min(limit, 200);
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const where: any = { tenantId: tenantId as string };
+        const where: Prisma.AuditLogWhereInput = { tenantId: tenantId as string };
 
         if (actorId) where.actorId = actorId as string;
         if (action) where.action = action;
@@ -128,15 +143,14 @@ export class AuditServiceImpl {
             if (endDate) where.timestamp.lte = new Date(endDate);
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const orderBy: any = {};
-        if (sortBy) {
+        const orderBy: Prisma.AuditLogOrderByWithRelationInput = {};
+        if (sortBy && isAuditLogSortKey(sortBy)) {
             orderBy[sortBy] = sortOrder ?? 'desc';
         } else {
             orderBy.timestamp = 'desc';
         }
 
-        const queryArgs: Record<string, unknown> = {
+        const queryArgs: Prisma.AuditLogFindManyArgs = {
             where,
             take: take + 1,
             skip: cursor ? 1 : 0,
@@ -147,7 +161,7 @@ export class AuditServiceImpl {
         }
 
         const [events, totalCount] = await Promise.all([
-            this.prisma.auditLog.findMany(queryArgs as any),
+            this.prisma.auditLog.findMany(queryArgs),
             this.prisma.auditLog.count({ where }),
         ]);
 
@@ -156,7 +170,7 @@ export class AuditServiceImpl {
         const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
 
         const result: PaginatedResult<AuditLogEntry> = {
-            items: items.map((e) => this.toAuditLogEntry(e as any)),
+            items: items.map((e) => this.toAuditLogEntry(e)),
             totalCount,
             hasMore,
         };
@@ -215,7 +229,7 @@ export class AuditServiceImpl {
                 resourceType: r.resourceType,
                 count: r._count.resourceType,
             })),
-            recentEvents: recent.map((e) => this.toAuditLogEntry(e as any)),
+            recentEvents: recent.map((e) => this.toAuditLogEntry(e)),
         };
     }
 

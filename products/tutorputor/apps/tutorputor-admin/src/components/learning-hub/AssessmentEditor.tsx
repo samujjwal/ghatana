@@ -7,6 +7,29 @@ interface AssessmentEditorProps {
 }
 
 export function AssessmentEditor({ assessment, onChange }: AssessmentEditorProps) {
+    const readinessChecks = [
+        {
+            label: 'Assessment coverage',
+            ready: Boolean(assessment.model),
+            fix: 'Connect this assessment to claims and evidence tasks.',
+        },
+        {
+            label: 'CBM confidence required',
+            ready: (assessment.confidenceLevels?.length ?? 0) >= 3,
+            fix: 'Add low, medium, and high confidence levels before publishing.',
+        },
+        {
+            label: 'Canonical scoring policy',
+            ready: Boolean(assessment.scoring),
+            fix: 'Configure the backend-owned CBM scoring matrix.',
+        },
+        {
+            label: 'Micro-viva anomaly path',
+            ready: Boolean(assessment.vivaTrigger?.conditions?.length),
+            fix: 'Enable viva triggers for overconfidence or process anomalies.',
+        },
+    ];
+
     const handleScoringChange = (field: keyof AssessmentConfig['scoring'], value: number) => {
         onChange({
             ...assessment,
@@ -35,6 +58,43 @@ export function AssessmentEditor({ assessment, onChange }: AssessmentEditorProps
 
     return (
         <div className="space-y-6">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                            Assessment Publish Readiness
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Resolve assessment blockers before the module can enter final review.
+                        </p>
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                        {readinessChecks.filter((check) => check.ready).length}/{readinessChecks.length} ready
+                    </span>
+                </div>
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {readinessChecks.map((check) => (
+                        <div
+                            key={check.label}
+                            className={`rounded-lg border px-3 py-3 text-sm ${
+                                check.ready
+                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                                    : 'border-amber-200 bg-amber-50 text-amber-900'
+                            }`}
+                        >
+                            <div className="font-medium">{check.label}</div>
+                            {!check.ready ? (
+                                <div className="mt-1">
+                                    <span>{check.fix}</span>
+                                </div>
+                            ) : (
+                                <div className="mt-1">Ready</div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+
             <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border border-indigo-100 dark:border-indigo-800">
                 <h3 className="text-lg font-medium text-indigo-900 dark:text-indigo-300 flex items-center gap-2">
                     <Brain className="w-5 h-5" />

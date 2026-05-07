@@ -20,6 +20,22 @@ import type {
     UserId,
 } from '@tutorputor/contracts';
 
+type ModuleTagRecord = {
+    label: string;
+};
+
+type ModuleSummaryRecord = {
+    id: string;
+    slug: string;
+    title: string;
+    domain: string;
+    difficulty: string;
+    estimatedTimeMinutes: number;
+    tags: ModuleTagRecord[];
+    status: string;
+    publishedAt?: Date | null;
+};
+
 export class CMSServiceImpl implements CMSService {
     constructor(
         private readonly prisma: PrismaClient,
@@ -285,18 +301,21 @@ export class CMSServiceImpl implements CMSService {
         return data;
     }
 
-    private mapModuleSummary(module: any): ModuleSummary {
-        return {
+    private mapModuleSummary(module: ModuleSummaryRecord): ModuleSummary {
+        const summary: ModuleSummary = {
             id: module.id as ModuleId,
             slug: module.slug,
             title: module.title,
             domain: module.domain as ModuleSummary['domain'],
             difficulty: module.difficulty as ModuleSummary['difficulty'],
             estimatedTimeMinutes: module.estimatedTimeMinutes,
-            tags: module.tags.map((tag: any) => tag.label),
+            tags: module.tags.map((tag) => tag.label),
             status: module.status as ModuleSummary['status'],
-            publishedAt: module.publishedAt?.toISOString(),
         };
+        if (module.publishedAt) {
+            summary.publishedAt = module.publishedAt.toISOString();
+        }
+        return summary;
     }
 
     private notFoundError(

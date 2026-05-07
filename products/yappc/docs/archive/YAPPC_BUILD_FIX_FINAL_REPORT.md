@@ -181,7 +181,7 @@ required.forEach(requiredArray::add);
 
 ```kotlin
 // AEP registry service for AgentRegistryService
-implementation(project(":products:aep:aep-registry"))
+implementation(project(":products:data-cloud:planes:action:registry"))
 
 // YAPPC API for domain classes
 implementation(project(":products:yappc:core:yappc-api"))

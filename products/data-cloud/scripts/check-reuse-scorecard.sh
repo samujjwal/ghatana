@@ -24,7 +24,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-LAUNCHER_SRC="$REPO_ROOT/products/data-cloud/launcher/src/main/java"
+LAUNCHER_SRC="$REPO_ROOT/products/data-cloud/delivery/launcher/src/main/java"
 WARN_ONLY=false
 [[ "${1:-}" == "--warn-only" ]] && WARN_ONLY=true
 

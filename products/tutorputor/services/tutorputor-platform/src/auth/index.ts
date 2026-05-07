@@ -22,6 +22,11 @@ const scrypt = promisify(crypto.scrypt);
 const SCRYPT_KEY_LENGTH = 64;
 const SCRYPT_SALT_LENGTH = 32;
 
+type RedisSessionClient = {
+  del(key: string): Promise<number>;
+  quit(): Promise<string>;
+};
+
 async function hashPassword(password: string): Promise<string> {
   const salt = crypto.randomBytes(SCRYPT_SALT_LENGTH).toString("hex");
   const derivedKey = (await scrypt(
@@ -733,10 +738,12 @@ export class AuthService {
       if (decoded.type === "refresh" && decoded.jti) {
         // Delete the refresh session from Redis
         const Redis = (await import("ioredis")).default;
-        const redisClient = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
-        await (redisClient as any).del(`auth:refresh-session:${decoded.jti}`);
-        await (redisClient as any).del(`auth:user-sessions:${decoded.tenantId}:${decoded.sub}`);
-        await (redisClient as any).quit();
+        const redisClient = new Redis(
+          process.env.REDIS_URL || "redis://localhost:6379",
+        ) as unknown as RedisSessionClient;
+        await redisClient.del(`auth:refresh-session:${decoded.jti}`);
+        await redisClient.del(`auth:user-sessions:${decoded.tenantId}:${decoded.sub}`);
+        await redisClient.quit();
       }
     } catch {
       // Logout stays idempotent - if token is invalid/expired, we still succeed

@@ -59,7 +59,7 @@ Feature libs (yappc-ui, yappc-chat, yappc-ai, etc.) — may depend on any lower 
 - `@yappc/core` must never import from other `@yappc/*` packages.
 - Feature-layer packages (`yappc-chat`, `yappc-development-ui`, etc.) must not
   import from each other — shared logic goes into `@yappc/core`.
-- No `@yappc/*` package may import from `products/aep/frontend/` or any other
+- No `@yappc/*` package may import from `products/data-cloud/planes/action/frontend/` or any other
   product frontend.
 
 ---

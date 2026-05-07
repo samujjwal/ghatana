@@ -597,7 +597,7 @@ Existing platform libraries:
 Existing signals from repo docs:
 
 - platform-library documents already describe `tokens`, `theme`, `ui`, `storybook`, `test-utils`, and `design-system`,
-- `products/aep/ui/DESIGN_SYSTEM_ADOPTION.md` shows downstream adoption pressure already exists,
+- `products/data-cloud/planes/action/ui/DESIGN_SYSTEM_ADOPTION.md` shows downstream adoption pressure already exists,
 - the repo uses workspace packages and shared governance scripts rather than isolated app tooling.
 
 ### 8.2 Important repo findings

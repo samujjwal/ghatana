@@ -11,7 +11,7 @@
  *   - Be reviewed and added to the allowlist when first needed
  *
  * Allowed SPI modules:
- *   :products:data-cloud:spi  — EventLogStore, TenantContext, EntityStore, EventView
+ *   :products:data-cloud:planes:shared-spi  — EventLogStore, TenantContext, EntityStore, EventView
  *                               Depends only on :platform:java:core and activej.promise
  *                               Audit plan (2026-03-24) directs platform modules to use this directly
  */
@@ -24,7 +24,7 @@ def checkPlatformBoundary() {
     // Cross-cutting SPI modules that contain ONLY pure interfaces/value-types and may
     // be used by platform modules. See header comment for the governance criteria.
     def CROSS_CUTTING_SPI_ALLOWLIST = [
-        ":products:data-cloud:spi"   // EventLogStore, TenantContext, EntityStore, EventView
+        ":products:data-cloud:planes:shared-spi"   // EventLogStore, TenantContext, EntityStore, EventView
     ] as Set
 
     println "Checking platform boundary for ${projectPath}"

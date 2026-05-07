@@ -41,6 +41,9 @@ function makePrisma() {
         assessmentAttempt: {
             findMany: vi.fn().mockResolvedValue([]),
         },
+        learnerMastery: {
+            findMany: vi.fn().mockResolvedValue([]),
+        },
     };
 }
 
@@ -179,6 +182,97 @@ describe("CredentialService", () => {
             expect(result?.simulationsCompleted).toBe(2);
             expect(result?.averageScore).toBe(90);
             expect(result?.perfectScoresCount).toBe(1);
+        });
+    });
+
+    describe("evidence-backed credentialing", () => {
+        beforeEach(() => {
+            prisma.learnerMastery.findMany.mockResolvedValue([
+                { conceptId: "claim-1", masteryProbability: 0.91, evidenceCount: 4 },
+            ]);
+            prisma.assessmentAttempt.findMany.mockResolvedValue([
+                { id: "attempt-1", scorePercent: 88, status: "GRADED" },
+            ]);
+            prisma.learningEvent.findMany.mockResolvedValue([]);
+        });
+
+        it("requires mastered claims and valid assessment evidence for eligibility", async () => {
+            const result = await service.evaluateEvidenceEligibility({
+                tenantId: "tenant-1",
+                userId: "user-1",
+                moduleId: "module-1",
+            });
+
+            expect(result.eligible).toBe(true);
+            expect(result.evidence.masteredClaims).toHaveLength(1);
+            expect(result.evidence.assessmentAttempts).toHaveLength(1);
+        });
+
+        it("blocks eligibility when a viva requirement is unresolved", async () => {
+            prisma.learningEvent.findMany.mockResolvedValue([
+                {
+                    eventType: "MICRO_VIVA_FAILED",
+                    payload: { moduleId: "module-1" },
+                },
+            ]);
+
+            const result = await service.evaluateEvidenceEligibility({
+                tenantId: "tenant-1",
+                userId: "user-1",
+                moduleId: "module-1",
+            });
+
+            expect(result.eligible).toBe(false);
+            expect(result.reasons).toContain("A micro-viva requirement is unresolved");
+        });
+
+        it("issues credentials with mastery evidence provenance", async () => {
+            const credential = await service.issueFromEvidence({
+                type: "certificate",
+                userId: "user-1",
+                tenantId: "tenant-1",
+                moduleId: "module-1",
+                name: "Motion Mastery",
+                description: "Issued from demonstrated claim mastery",
+                metadata: { category: "simulation_mastery" },
+                certificate: {
+                    courseId: "module-1",
+                    completionDate: new Date("2026-05-06"),
+                },
+            });
+
+            expect(credential.status).toBe("issued");
+            expect(credential.metadata.customData?.issuedFrom).toBe("mastery_evidence");
+            expect(credential.metadata.customData?.evidence).toMatchObject({
+                moduleId: "module-1",
+            });
+            expect(prisma.learningEvent.create).toHaveBeenCalled();
+        });
+
+        it("verifies, revokes, and reissues credential records", async () => {
+            const verified = await service.verifyCredential("cred-1");
+            expect(verified.valid).toBe(true);
+
+            const revoked = await service.revokeCredential("cred-1", "Academic integrity review");
+            expect(revoked?.status).toBe("revoked");
+
+            prisma.$queryRaw.mockResolvedValue([
+                {
+                    id: "event-1",
+                    payload: JSON.stringify(makeCredential({
+                        metadata: {
+                            category: "simulation_mastery",
+                            customData: {
+                                evidence: { moduleId: "module-1" },
+                            },
+                        },
+                    })),
+                },
+            ]);
+
+            const reissued = await service.reissueCredential("cred-1");
+            expect(reissued?.status).toBe("issued");
+            expect(reissued?.metadata.customData?.reissuedFrom).toBe("cred-1");
         });
     });
 });

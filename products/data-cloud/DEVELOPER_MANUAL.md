@@ -3,9 +3,9 @@
 This manual is the practical developer guide for working on and integrating with Data Cloud in this repository. It complements, but does not replace, the contract and operations docs:
 
 - `README.md` for the product overview
-- `REST_API_DOCUMENTATION.md` for the human-readable API inventory
-- `api/openapi.yaml` for the canonical REST contract
-- `RUNBOOK.md` for validated deployment and recovery paths
+- `docs/api/docs/api/REST_API_DOCUMENTATION.md` for the human-readable API inventory
+- `contracts/openapi/data-cloud.yaml` for the canonical REST contract
+- `docs/operations/docs/operations/RUNBOOK.md` for validated deployment and recovery paths
 
 ## 1. What Data Cloud Owns
 
@@ -27,18 +27,18 @@ Use these modules as the main starting points:
 
 | Path | Purpose |
 | --- | --- |
-| `launcher/` | ActiveJ HTTP server, route wiring, transport handlers |
-| `platform-launcher/` | runtime composition, profiles, embedded services |
-| `platform-entity/` | entity contracts, schema, and storage-facing types |
-| `platform-event/` | event-log abstractions and persistence contracts |
-| `platform-analytics/` | analytics and reporting services |
-| `platform-plugins/` | pluggable providers, lineage, vector search, durable stores |
-| `spi/` | stable SPI and client-facing contracts |
-| `sdk/` | generated Java, TypeScript, and Python SDKs |
-| `ui/` | React application |
-| `feature-store-ingest/` | real-time feature ingestion service |
+| `delivery/launcher/` | ActiveJ HTTP server, route wiring, transport handlers |
+| `delivery/runtime-composition/` | runtime composition, profiles, embedded services |
+| `planes/data/entity/` | entity contracts, schema, and storage-facing types |
+| `planes/event/core/` | event-log abstractions and persistence contracts |
+| `planes/intelligence/analytics/` | analytics and reporting services |
+| `extensions/plugins/` | pluggable providers, lineage, vector search, durable stores |
+| `planes/shared-spi/` | stable SPI and client-facing contracts |
+| `delivery/sdk/` | generated Java, TypeScript, and Python SDKs |
+| `delivery/ui/` | React application |
+| `planes/intelligence/feature-ingest/` | real-time feature ingestion service |
 | `scripts/` | smoke, load, verification, and recovery helpers |
-| `terraform/`, `helm/`, `k8s/` | deployment assets |
+| `deploy/terraform/`, `deploy/helm/`, `deploy/k8s/` | deployment assets |
 
 ## 3. Prerequisites
 
@@ -70,7 +70,7 @@ Run the server:
 ```bash
 DATACLOUD_PROFILE=local \
 DATACLOUD_HTTP_ENABLED=true \
-./gradlew :products:data-cloud:launcher:runLauncher
+./gradlew :products:data-cloud:delivery:launcher:runLauncher
 ```
 
 Default HTTP port: `8082`
@@ -83,7 +83,7 @@ Use this when you need embedded durability without external services.
 DATACLOUD_PROFILE=sovereign \
 DATACLOUD_HTTP_ENABLED=true \
 DATACLOUD_SOVEREIGN_DATA_DIR=$PWD/.data/datacloud \
-./gradlew :products:data-cloud:launcher:run
+./gradlew :products:data-cloud:delivery:launcher:run
 ```
 
 Use sovereign mode when you want restart persistence in a single-machine or air-gapped setup.
@@ -101,7 +101,7 @@ Typical variables:
 - `OPENAI_API_KEY` or `OLLAMA_HOST`
 - `TRINO_URL`
 
-See `RUNBOOK.md` for the durable provider expectations and failure signatures.
+See `docs/operations/docs/operations/RUNBOOK.md` for the durable provider expectations and failure signatures.
 
 ## 5. Running the Main Surfaces
 
@@ -110,7 +110,7 @@ See `RUNBOOK.md` for the durable provider expectations and failure signatures.
 ```bash
 DATACLOUD_PROFILE=local \
 DATACLOUD_HTTP_ENABLED=true \
-./gradlew :products:data-cloud:launcher:run
+./gradlew :products:data-cloud:delivery:launcher:run
 ```
 
 ### Backend and UI together
@@ -124,8 +124,8 @@ This launcher starts the backend on `http://localhost:8082`, starts the Vite UI 
 ### Frontend UI
 
 ```bash
-pnpm --dir products/data-cloud/ui install
-pnpm --dir products/data-cloud/ui dev
+pnpm --dir products/data-cloud/delivery/ui install
+pnpm --dir products/data-cloud/delivery/ui dev
 ```
 
 Use the UI against a local backend by pointing it at the running Data Cloud API endpoint configured for your local frontend environment.
@@ -133,22 +133,22 @@ Use the UI against a local backend by pointing it at the running Data Cloud API 
 ### SDK generation
 
 ```bash
-./gradlew :products:data-cloud:sdk:build
+./gradlew :products:data-cloud:delivery:sdk:build
 ```
 
 Generated outputs are written under:
 
-- `products/data-cloud/sdk/build/generated/sdk/java`
-- `products/data-cloud/sdk/build/generated/sdk/typescript`
-- `products/data-cloud/sdk/build/generated/sdk/python`
+- `products/data-cloud/delivery/sdk/build/generated/sdk/java`
+- `products/data-cloud/delivery/sdk/build/generated/sdk/typescript`
+- `products/data-cloud/delivery/sdk/build/generated/sdk/python`
 
 ## 6. Core Developer Workflows
 
 ### Add or update an HTTP endpoint
 
-1. Update the route and handler wiring in `launcher/`.
-2. Update `products/data-cloud/api/openapi.yaml` in the same change.
-3. Update `REST_API_DOCUMENTATION.md` if the endpoint should be visible in the human-readable inventory.
+1. Update the route and handler wiring in `delivery/launcher/`.
+2. Update `products/data-cloud/contracts/openapi/data-cloud.yaml` in the same change.
+3. Update `docs/api/docs/api/REST_API_DOCUMENTATION.md` if the endpoint should be visible in the human-readable inventory.
 4. Run drift and contract checks before considering the work done.
 
 Useful command:
@@ -161,9 +161,9 @@ products/data-cloud/scripts/check-openapi-drift.sh
 
 Start in:
 
-- `platform-entity/` for entity behavior
-- `platform-event/` for event primitives
-- `platform-plugins/` for durable provider implementations
+- `planes/data/entity/` for entity behavior
+- `planes/event/core/` for event primitives
+- `extensions/plugins/` for durable provider implementations
 
 Validate both the unit path and the durable integration path. If a provider uses Postgres or Kafka, assume Testcontainers-backed verification is required.
 
@@ -187,9 +187,9 @@ Current primary and role-aware routes include:
 
 If you are adding or updating plugin-backed functionality:
 
-1. keep the core contract in `spi/` or the appropriate platform module
-2. implement the provider in `platform-plugins/`
-3. expose only product-relevant transport behavior in `launcher/`
+1. keep the core contract in `planes/shared-spi/` or the appropriate platform module
+2. implement the provider in `extensions/plugins/`
+3. expose only product-relevant transport behavior in `delivery/launcher/`
 4. verify the plugin lifecycle and API surfaces together
 
 ### Work on Data Fabric admin UI
@@ -259,12 +259,12 @@ curl -sS -X POST http://localhost:8082/api/v1/data-products \
 Use these as your default safety net:
 
 ```bash
-./gradlew :products:data-cloud:launcher:test
+./gradlew :products:data-cloud:delivery:launcher:test
 ./gradlew :products:data-cloud:build
-./gradlew :products:data-cloud:sdk:build
-pnpm --dir products/data-cloud/ui type-check
-pnpm --dir products/data-cloud/ui lint
-pnpm --dir products/data-cloud/ui test
+./gradlew :products:data-cloud:delivery:sdk:build
+pnpm --dir products/data-cloud/delivery/ui type-check
+pnpm --dir products/data-cloud/delivery/ui lint
+pnpm --dir products/data-cloud/delivery/ui test
 ```
 
 Additional helpers:
@@ -309,7 +309,7 @@ Symptoms:
 Action:
 
 - verify `ui/src/routes.tsx`
-- verify `api/openapi.yaml`
+- verify `contracts/openapi/data-cloud.yaml`
 - rerun `products/data-cloud/scripts/check-openapi-drift.sh`
 
 ## 10. Documentation Map
@@ -320,5 +320,5 @@ Use this doc set in the following order:
 2. `DEVELOPER_MANUAL.md` for day-to-day development
 3. `TEST_MANUAL.md` for verification and CI-facing workflows
 4. `USER_MANUAL.md` for operator and consumer workflows
-5. `RUNBOOK.md` for validated deployment and recovery procedures
-6. `REST_API_DOCUMENTATION.md` and `api/openapi.yaml` for API work
+5. `docs/operations/docs/operations/RUNBOOK.md` for validated deployment and recovery procedures
+6. `docs/api/docs/api/REST_API_DOCUMENTATION.md` and `contracts/openapi/data-cloud.yaml` for API work

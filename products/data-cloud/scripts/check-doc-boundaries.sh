@@ -15,10 +15,10 @@ done
 CANONICAL_DOCS=(
   "${PRODUCT_DIR}/README.md"
   "${PRODUCT_DIR}/OWNER.md"
-  "${PRODUCT_DIR}/REST_API_DOCUMENTATION.md"
-  "${PRODUCT_DIR}/api/openapi.yaml"
-  "${PRODUCT_DIR}/feature-store-ingest/README.md"
-  "${PRODUCT_DIR}/docs-generated/07-architecture-decisions/adr-dc-001-module-ownership.md"
+  "${PRODUCT_DIR}/docs/api/REST_API_DOCUMENTATION.md"
+  "${PRODUCT_DIR}/contracts/openapi/data-cloud.yaml"
+  "${PRODUCT_DIR}/planes/intelligence/feature-ingest/README.md"
+  "${PRODUCT_DIR}/docs/architecture/PLANE_ARCHITECTURE.md"
 )
 
 for file in "${CANONICAL_DOCS[@]}"; do

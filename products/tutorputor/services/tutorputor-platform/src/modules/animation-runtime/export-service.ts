@@ -16,8 +16,8 @@ interface BrowserDocument {
   createElement(tagName: "canvas"): BrowserCanvas;
   createElement(tagName: "a"): BrowserAnchor;
   body: {
-    appendChild(node: any): void;
-    removeChild(node: any): void;
+    appendChild(node: BrowserCanvas | BrowserAnchor): void;
+    removeChild(node: BrowserCanvas | BrowserAnchor): void;
   };
 }
 

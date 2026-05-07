@@ -17,7 +17,7 @@ for candidate in \
   shared-services \
   products/audio-video \
   products/data-cloud \
-  products/aep \
+  products/data-cloud/planes/action \
   products/yappc; do
   if [ -d "$candidate" ]; then
     ROOTS+=("$candidate")

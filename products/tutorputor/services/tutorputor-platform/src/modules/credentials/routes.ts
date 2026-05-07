@@ -36,6 +36,14 @@ const simulationResultSchema = z.object({
   domainPackId: z.string().min(1).optional(),
 });
 
+const evidenceIssueSchema = IssueCredentialDTOSchema.omit({ tenantId: true }).extend({
+  moduleId: z.string().min(1),
+});
+
+const revokeCredentialSchema = z.object({
+  reason: z.string().min(1),
+});
+
 export async function credentialRoutes(
   fastify: FastifyInstance,
   options: { service: CredentialService },
@@ -225,6 +233,124 @@ export async function credentialRoutes(
     },
   );
 
+  // Issue credential from demonstrated mastery and assessment evidence.
+  fastify.post<{ Body: z.infer<typeof evidenceIssueSchema> }>(
+    "/credentials/issue-from-evidence",
+    async (request, reply) => {
+      const dtoResult = evidenceIssueSchema.safeParse(request.body);
+      if (!dtoResult.success) {
+        reply.code(400).send({
+          error: "Invalid credential evidence payload",
+          issues: dtoResult.error.issues,
+        });
+        return;
+      }
+
+      const dto = dtoResult.data;
+      const tenantId = getTenantId(request);
+      void getUserId(request);
+      requireRole(request, privilegedCredentialRoles);
+
+      try {
+        const credential = await service.issueFromEvidence({
+          ...dto,
+          tenantId,
+        });
+
+        reply.code(201).send({
+          data: credential,
+        });
+      } catch (error) {
+        const statusCode =
+          typeof (error as { statusCode?: unknown }).statusCode === "number"
+            ? (error as { statusCode: number }).statusCode
+            : 500;
+        const code =
+          typeof (error as { code?: unknown }).code === "string"
+            ? (error as { code: string }).code
+            : "CREDENTIAL_ISSUE_FAILED";
+        reply.code(statusCode).send({
+          error: {
+            code,
+            message: error instanceof Error ? error.message : "Credential issue failed",
+          },
+        });
+      }
+    },
+  );
+
+  fastify.get<{ Params: { credentialId: string } }>(
+    "/credentials/:credentialId/verify",
+    async (request, reply) => {
+      const result = await service.verifyCredential(request.params.credentialId);
+
+      if (!result.credential) {
+        reply.code(404).send({
+          error: "Credential not found",
+        });
+        return;
+      }
+
+      reply.send({
+        data: result,
+      });
+    },
+  );
+
+  fastify.post<{ Params: { credentialId: string }; Body: z.infer<typeof revokeCredentialSchema> }>(
+    "/credentials/:credentialId/revoke",
+    async (request, reply) => {
+      const bodyResult = revokeCredentialSchema.safeParse(request.body);
+      if (!bodyResult.success) {
+        reply.code(400).send({
+          error: "Invalid credential revoke payload",
+          issues: bodyResult.error.issues,
+        });
+        return;
+      }
+
+      void getTenantId(request);
+      requireRole(request, privilegedCredentialRoles);
+
+      const credential = await service.revokeCredential(
+        request.params.credentialId,
+        bodyResult.data.reason,
+      );
+
+      if (!credential) {
+        reply.code(404).send({
+          error: "Credential not found",
+        });
+        return;
+      }
+
+      reply.send({
+        data: credential,
+      });
+    },
+  );
+
+  fastify.post<{ Params: { credentialId: string } }>(
+    "/credentials/:credentialId/reissue",
+    async (request, reply) => {
+      void getTenantId(request);
+      requireRole(request, privilegedCredentialRoles);
+
+      const credential = await service.reissueCredential(request.params.credentialId);
+
+      if (!credential) {
+        reply.code(404).send({
+          error: "Credential not found",
+        });
+        return;
+      }
+
+      reply.code(201).send({
+        data: credential,
+      });
+    },
+  );
+
   // Evaluate simulation result and issue achievements
   fastify.post<{ Body: SimulationResult }>(
     "/credentials/evaluate",
@@ -321,6 +447,6 @@ export async function credentialRoutes(
     },
   );
 
-  // Note: 'getCredential' (by ID), 'verify', 'revoke' are omitted due to storage limitations
-  // (Cannot efficiently find by ID in event stream without user context or indexing).
+  // Credentials are event-sourced through LearningEvent and verified by ID through
+  // the credential lookup projection in CredentialService.
 }

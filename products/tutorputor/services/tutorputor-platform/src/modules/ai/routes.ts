@@ -27,6 +27,11 @@ import { aiQuerySchema } from "../../validation/validator.js";
 import { validateBody } from "../../validation/middleware/validation.js";
 import { createConsentEnforcement } from "../../core/middleware/consent-enforcement.js";
 import { AIAuditService } from "../audit/AIAuditService.js";
+import {
+  assertAIInteractionAllowed,
+  buildAIAuditPayload,
+  buildAIGovernanceMetadata,
+} from "./governance.js";
 
 type AiRegistryClient = typeof defaultAiRegistryClient;
 
@@ -170,9 +175,39 @@ export async function registerAIRoutes(
       const tenantId = getTenantId(req) as TenantId;
       const userId = getUserId(req) as UserId;
       const { moduleId, question, locale } = req.body as {
-        moduleId?: ModuleId;
+        moduleId: ModuleId;
         question: string;
+        claimIds: string[];
+        currentSimulationState: Record<string, unknown>;
+        recentAttempts: Array<{
+          attemptId: string;
+          taskId?: string;
+          correct?: boolean;
+          confidence?: "low" | "medium" | "high";
+          misconceptionId?: string;
+        }>;
+        misconceptions: string[];
+        allowedHelpMode: "hint" | "explain" | "socratic";
         locale?: string;
+      };
+      const {
+        claimIds,
+        currentSimulationState,
+        recentAttempts,
+        misconceptions,
+        allowedHelpMode,
+      } = req.body as {
+        claimIds: string[];
+        currentSimulationState: Record<string, unknown>;
+        recentAttempts: Array<{
+          attemptId: string;
+          taskId?: string;
+          correct?: boolean;
+          confidence?: "low" | "medium" | "high";
+          misconceptionId?: string;
+        }>;
+        misconceptions: string[];
+        allowedHelpMode: "hint" | "explain" | "socratic";
       };
       let modelId: string | undefined;
       let success = true;
@@ -210,15 +245,35 @@ export async function registerAIRoutes(
           }
         }
 
+        const governance = buildAIGovernanceMetadata({
+          consentState: "granted",
+          learnerContextScope: moduleId ? "module" : "none",
+          promptVersion: "tutorputor-tutor-query-v1",
+          modelVersion: modelId || "unknown",
+          retrievedContentIds: moduleId ? [String(moduleId)] : [],
+          safetyFilterResult: "passed",
+        });
+        assertAIInteractionAllowed(governance);
+
         app.log.info(
-          `[AI] Tutor query from user ${String(userId)}: ${question.substring(0, 50)}...`,
+          {
+            tenantId: String(tenantId),
+            userId: String(userId),
+            moduleId: moduleId ? String(moduleId) : undefined,
+          },
+          "[AI] Tutor query accepted",
         );
 
-        const response = await deps.aiProxyService.handleTutorQuery({
+        response = await deps.aiProxyService.handleTutorQuery({
           tenantId,
           userId,
           question,
-          ...(moduleId ? { moduleId } : {}),
+          moduleId,
+          claimIds,
+          currentSimulationState,
+          recentAttempts,
+          misconceptions,
+          allowedHelpMode,
           ...(locale ? { locale } : {}),
         });
 
@@ -229,6 +284,9 @@ export async function registerAIRoutes(
         // Add provenance metadata to response
         const provenance = {
           modelId: modelId || "unknown",
+          modelVersion: modelId || "unknown",
+          promptVersion: governance.promptVersion,
+          safetyFilterResult: governance.safetyFilterResult,
           timestamp: new Date().toISOString(),
           tenantId: String(tenantId),
           userId: String(userId),
@@ -248,12 +306,38 @@ export async function registerAIRoutes(
       } finally {
         // Log AI inference for audit
         const latencyMs = Date.now() - startTime;
+        const governance = buildAIGovernanceMetadata({
+          consentState: success ? "granted" : "missing",
+          learnerContextScope: moduleId ? "module" : "none",
+          promptVersion: "tutorputor-tutor-query-v1",
+          modelVersion: modelId || "unknown",
+          retrievedContentIds: moduleId ? [String(moduleId)] : [],
+          safetyFilterResult: success ? "passed" : "blocked",
+          latencyMs,
+        });
+        const auditPayload = buildAIAuditPayload({
+          endpoint: "tutor/query",
+          useCase: "tutor",
+          governance,
+          request: {
+            question,
+            moduleId,
+            claimIds,
+            currentSimulationState,
+            recentAttempts,
+            misconceptions,
+            allowedHelpMode,
+            locale,
+          },
+          ...(response ? { response: { modelId } } : {}),
+        });
         const auditEntry: any = {
           tenantId: String(tenantId),
           userId: String(userId),
           modelId: modelId || "unknown",
+          modelVersion: modelId || "unknown",
           endpoint: "tutor/query",
-          requestPayload: JSON.stringify({ question, moduleId, locale }),
+          requestPayload: auditPayload.requestPayload,
           policyDecision: success ? "allowed" : "blocked",
           latencyMs,
           success,
@@ -261,8 +345,8 @@ export async function registerAIRoutes(
           ipAddress: (req as any).ip,
           userAgent: (req as any).headers["user-agent"],
         };
-        if (success && response) {
-          auditEntry.responsePayload = JSON.stringify({ modelId });
+        if (auditPayload.responsePayload) {
+          auditEntry.responsePayload = auditPayload.responsePayload;
         }
         void aiAuditService.logInference(auditEntry);
       }

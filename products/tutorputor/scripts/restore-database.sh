@@ -17,8 +17,13 @@ set -e
 # Configuration
 ENVIRONMENT="${1:-development}"
 BACKUP_TIMESTAMP="${2:-latest}"
-BACKUP_ROOT="/var/backups/tutorputor"
-LOG_FILE="/var/log/tutorputor/restore_$(date +%Y%m%d_%H%M%S).log"
+DRY_RUN="${3:-${DRY_RUN:-false}}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+BACKUP_ROOT="${BACKUP_ROOT:-/var/backups/tutorputor}"
+LOG_DIR="${LOG_DIR:-/var/log/tutorputor}"
+mkdir -p "${LOG_DIR}"
+LOG_FILE="${LOG_DIR}/restore_$(date +%Y%m%d_%H%M%S).log"
 
 # Database configuration
 POSTGRES_HOST="${POSTGRES_HOST:-localhost}"
@@ -61,6 +66,13 @@ if [ ! -f "${POSTGRES_BACKUP}" ]; then
 fi
 
 log "Using PostgreSQL backup: ${POSTGRES_BACKUP}"
+
+if [ "${DRY_RUN}" == "true" ] || [ "${DRY_RUN}" == "--dry-run" ]; then
+    log "Running restore dry-run integrity check only"
+    pg_restore --list "${POSTGRES_BACKUP}" > /dev/null
+    log "Restore dry-run completed successfully"
+    exit 0
+fi
 
 # PostgreSQL restore
 log "Restoring PostgreSQL database..."
@@ -121,8 +133,8 @@ log "Restore completed successfully"
 
 # Run post-restore migrations
 log "Running post-restore database migrations..."
-cd /Users/samujjwal/Development/ghatana/products/tutorputor
-pnpm --filter @tutorputor/db run migrate
+cd "${PROJECT_ROOT}"
+pnpm --filter @tutorputor/core prisma:migrate:deploy
 
 log "All restore operations completed successfully"
 

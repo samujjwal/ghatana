@@ -146,6 +146,17 @@ export class OllamaAIProxyService implements AIProxyService {
     tenantId: TenantId;
     userId: UserId;
     moduleId?: ModuleId;
+    claimIds?: string[];
+    currentSimulationState?: Record<string, unknown>;
+    recentAttempts?: Array<{
+      attemptId: string;
+      taskId?: string;
+      correct?: boolean;
+      confidence?: "low" | "medium" | "high";
+      misconceptionId?: string;
+    }>;
+    misconceptions?: string[];
+    allowedHelpMode?: "hint" | "explain" | "socratic";
     question: string;
     locale?: string;
   }): Promise<TutorResponsePayload> {
@@ -153,23 +164,32 @@ export class OllamaAIProxyService implements AIProxyService {
       const systemPrompt = `You are TutorPutor, an AI tutor specializing in STEAM education (Science, Technology, Engineering, Arts, Mathematics).
 
 Guidelines:
-- Provide clear, accurate educational explanations
-- Use age-appropriate language based on the question context
-- Encourage critical thinking with follow-up questions
+- Teach Socratically: do not give direct final answers
+- Use the supplied module, claim, simulation state, recent attempts, and misconceptions as grounding
+- Stay within the allowed help mode
+- Give one targeted next-step hint or one guiding question
 - Cite educational sources when possible
-- Keep responses concise but thorough (2-4 paragraphs)
+- Keep responses concise
 - If unsure, acknowledge limitations honestly
 
 Format your response as:
-1. Direct answer to the question
-2. Brief explanation with examples if helpful
-3. 2-3 follow-up questions to deepen understanding`;
+1. Short acknowledgement
+2. One guiding question or hint
+3. Optional follow-up question`;
 
-      const userPrompt = `Student question: ${args.question}
+      const userPrompt = `Grounding:
+- moduleId: ${String(args.moduleId ?? "unscoped-module")}
+- claimIds: ${(args.claimIds ?? ["unscoped-claim"]).join(", ")}
+- currentSimulationState: ${JSON.stringify(args.currentSimulationState ?? {})}
+- recentAttempts: ${JSON.stringify(args.recentAttempts ?? [{ attemptId: "unscoped-attempt" }])}
+- misconceptions: ${(args.misconceptions ?? []).join(", ") || "none observed"}
+- allowedHelpMode: ${args.allowedHelpMode ?? "socratic"}
+
+Student question: ${args.question}
 
 ${args.locale && args.locale !== "en" ? `Respond in ${args.locale} language.` : ""}
 
-Provide a helpful educational response.`;
+Provide a Socratic, context-grounded response. If the learner asks for the answer, redirect to the next reasoning step.`;
 
       const result = await this.callOllama({
         model: this.model,

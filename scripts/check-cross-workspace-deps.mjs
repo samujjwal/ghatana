@@ -57,7 +57,7 @@ const PLATFORM_PREFIXES = [
 // Product root directories (sub-globs as declared in pnpm-workspace.yaml)
 const PRODUCT_ROOTS = [
   'products/data-cloud',
-  'products/aep',
+  'products/data-cloud/planes/action',
   'products/yappc',
   'products/audio-video',
   'products/flashit',

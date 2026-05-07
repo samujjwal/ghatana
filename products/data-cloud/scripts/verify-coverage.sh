@@ -109,7 +109,7 @@ done
 echo "Checking UI (Vitest) coverage..."
 echo ""
 
-UI_REPORT_PATH="products/data-cloud/ui/coverage/coverage-summary.json"
+UI_REPORT_PATH="products/data-cloud/delivery/ui/coverage/coverage-summary.json"
 
 if [ -f "$UI_REPORT_PATH" ]; then
   UI_LINES=$(cat "$UI_REPORT_PATH" | grep -o '"lines":{"total":[0-9]*,"covered":[0-9]*,"skipped":[0-9]*,"pct":[0-9.]*' | grep -o '"pct":[0-9.]*' | cut -d':' -f2)

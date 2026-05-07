@@ -273,40 +273,45 @@ if (isStandaloneBuild) {
     if (dataCloudRoot.exists()) {
         include("products:data-cloud")
         project(":products:data-cloud").projectDir = dataCloudRoot
-        includeNamedModules(
-            "products:data-cloud",
-            dataCloudRoot,
-            listOf(
-                "agent-registry",
-                "platform-analytics",
-                "platform-api",
-                "platform-config",
-                "platform-entity",
-                "platform-event",
-                "platform-launcher",
-                "platform-plugins",
-                "spi"
-            )
-        )
+        mapOf(
+            "products:data-cloud:planes:shared-spi" to "planes/shared-spi",
+            "products:data-cloud:planes:data:entity" to "planes/data/entity",
+            "products:data-cloud:planes:event:core" to "planes/event/core",
+            "products:data-cloud:planes:event:store" to "planes/event/store",
+            "products:data-cloud:planes:intelligence:analytics" to "planes/intelligence/analytics",
+            "products:data-cloud:planes:operations:config" to "planes/operations/config",
+            "products:data-cloud:delivery:api" to "delivery/api",
+            "products:data-cloud:delivery:runtime-composition" to "delivery/runtime-composition",
+            "products:data-cloud:extensions:agent-registry" to "extensions/agent-registry",
+            "products:data-cloud:extensions:plugins" to "extensions/plugins"
+        ).forEach { (modulePath, relativePath) ->
+            val moduleDir = File(dataCloudRoot, relativePath)
+            if (moduleDir.exists()) {
+                include(modulePath)
+                project(":$modulePath").projectDir = moduleDir
+            }
+        }
     }
 
-    val aepRoot = File(monorepoRoot, "products/aep")
-    if (aepRoot.exists()) {
-        include("products:aep")
-        project(":products:aep").projectDir = aepRoot
-        includeNamedModules(
-            "products:aep",
-            aepRoot,
-            listOf(
-                "aep-agent-runtime",
-                "aep-analytics",
-                "aep-engine",
-                "aep-operator-contracts",
-                "aep-registry",
-                "aep-security",
-                "orchestrator"
-            )
-        )
+    val actionPlaneRoot = File(monorepoRoot, "products/data-cloud/planes/action")
+    if (actionPlaneRoot.exists()) {
+        include("products:data-cloud:planes:action")
+        project(":products:data-cloud:planes:action").projectDir = actionPlaneRoot
+        listOf(
+            "agent-runtime",
+            "analytics",
+            "engine",
+            "operator-contracts",
+            "orchestrator",
+            "registry",
+            "security"
+        ).forEach { moduleName ->
+            val moduleDir = File(actionPlaneRoot, moduleName)
+            if (moduleDir.exists()) {
+                include("products:data-cloud:planes:action:$moduleName")
+                project(":products:data-cloud:planes:action:$moduleName").projectDir = moduleDir
+            }
+        }
     }
 
     val sharedServicesRoot = File(monorepoRoot, "shared-services")

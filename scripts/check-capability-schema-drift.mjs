@@ -3,7 +3,7 @@
  * Capability Schema Drift Check
  *
  * Verifies that the TypeScript `AepCapabilities` interface in
- * `products/aep/ui/src/hooks/useCapabilities.ts` stays aligned with the
+ * `products/data-cloud/planes/action/ui/src/hooks/useCapabilities.ts` stays aligned with the
  * canonical JSON schema at
  * `platform/contracts/capability-schema/aep-capabilities.v1.json`.
  *

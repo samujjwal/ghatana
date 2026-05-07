@@ -38,7 +38,7 @@ services:
     volumes:
       # Mount OpenAPI specs directory
       - ./products/tutorputor/api:/usr/share/nginx/html/specs/tutorputor:ro
-      - ./products/data-cloud/api:/usr/share/nginx/html/specs/data-cloud:ro
+      - ./products/data-cloud/delivery/api-contract-tests:/usr/share/nginx/html/specs/data-cloud:ro
       - ./products/yappc/api:/usr/share/nginx/html/specs/yappc:ro
       - ./docs/swagger-ui-index.html:/usr/share/nginx/html/index.html:ro
     networks:

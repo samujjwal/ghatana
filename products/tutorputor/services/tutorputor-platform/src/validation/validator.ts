@@ -67,7 +67,18 @@ export const paginationSchema = z.object({
  */
 export const aiQuerySchema = z.object({
   question: z.string().min(1, 'Question is required').max(1000, 'Question too long'),
-  moduleId: moduleIdSchema.optional(),
+  moduleId: moduleIdSchema,
+  claimIds: z.array(z.string().min(1)).min(1, 'At least one claim ID is required'),
+  currentSimulationState: z.record(z.string(), z.unknown()),
+  recentAttempts: z.array(z.object({
+    attemptId: z.string().min(1),
+    taskId: z.string().optional(),
+    correct: z.boolean().optional(),
+    confidence: z.enum(['low', 'medium', 'high']).optional(),
+    misconceptionId: z.string().optional(),
+  })).min(1, 'At least one recent attempt is required'),
+  misconceptions: z.array(z.string()),
+  allowedHelpMode: z.enum(['hint', 'explain', 'socratic']),
   locale: z.string().optional(),
 });
 

@@ -5,16 +5,24 @@ import {
 } from "fastify";
 import rateLimit from "@fastify/rate-limit";
 import type { Redis } from "ioredis";
+import type { RequestWithContext } from "../../utils/request-helpers.js";
+
+type RedisWithLuaCommands = Redis & {
+  defineCommand?: unknown;
+};
+
+function hasLuaCommandSupport(redis: Redis): redis is RedisWithLuaCommands {
+  return typeof (redis as RedisWithLuaCommands).defineCommand === "function";
+}
 
 export async function setupRateLimit(app: FastifyInstance) {
-  const redis = (app as any).redis as Redis;
+  const redis = app.redis;
   // Only use Redis store when the client supports defineCommand (real ioredis instance).
   // Falls back to in-memory store for test environments using mock redis clients.
-  const redisStore =
-    typeof (redis as any)?.defineCommand === "function" ? redis : undefined;
+  const redisStore = hasLuaCommandSupport(redis) ? redis : undefined;
 
   await app.register(
-    rateLimit as any,
+    rateLimit,
     {
       global: true,
       max: parseInt(process.env.RATE_LIMIT_MAX || "100", 10), // 100 requests
@@ -26,7 +34,11 @@ export async function setupRateLimit(app: FastifyInstance) {
       keyGenerator: (request: FastifyRequest) => {
         const tenantId =
           (request.headers["x-tenant-id"] as string) || "default";
-        const userId = (request as any).user?.id || request.ip;
+        const user = (request as RequestWithContext).user;
+        const userId =
+          user && typeof user === "object" && !Buffer.isBuffer(user) && "id" in user
+            ? String(user.id)
+            : request.ip;
         return `${tenantId}:${userId}`;
       },
 
@@ -46,10 +58,10 @@ export async function setupRateLimit(app: FastifyInstance) {
       },
 
       // Skip rate limiting for health checks
-      skip: (request: FastifyRequest) => {
+      allowList: (request: FastifyRequest) => {
         return request.url.startsWith("/health") || request.url === "/metrics";
       },
-    } as any,
+    },
   );
 
   // Add rate limit headers to responses

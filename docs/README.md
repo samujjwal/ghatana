@@ -36,7 +36,7 @@
 
 | Product | Docs |
 |---------|------|
-| AEP | `products/aep/docs/` |
+| AEP | `products/data-cloud/docs/aep/docs/` |
 | Data Cloud | `products/data-cloud/docs/` |
 | DCMAAR | `products/dcmaar/docs/` |
 | Flashit | `products/flashit/docs/` |

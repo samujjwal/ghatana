@@ -74,7 +74,7 @@ runSuite(
       },
       {
         // data-cloud importing its own lib → allowed
-        filename: "/repo/products/data-cloud/ui/src/page.ts",
+        filename: "/repo/products/data-cloud/delivery/ui/src/page.ts",
         code: `import { DataTable } from "@data-cloud/ui";`,
       },
     ],
@@ -87,13 +87,13 @@ runSuite(
       },
       {
         // data-cloud file importing from @yappc/* → cross-product → error
-        filename: "/repo/products/data-cloud/ui/src/page.ts",
+        filename: "/repo/products/data-cloud/delivery/ui/src/page.ts",
         code: `import { Widget } from "@yappc/canvas";`,
         errors: [{ messageId: "crossProductImport" }],
       },
       {
         // aep file importing from @audio-video/* → cross-product → error
-        filename: "/repo/products/aep/src/handler.ts",
+        filename: "/repo/products/data-cloud/planes/action/src/handler.ts",
         code: `import { AudioStream } from "@audio-video/sdk";`,
         errors: [{ messageId: "crossProductImport" }],
       },
@@ -314,7 +314,7 @@ runSuite("bans devAuth imports outside guard", "no-dev-auth-in-prod", {
       errors: [{ messageId: "devAuthImport" }],
     },
     {
-      filename: "/repo/products/aep/src/server.ts",
+      filename: "/repo/products/data-cloud/planes/action/src/server.ts",
       code: `import bypass from "../utils/dev-auth";`,
       errors: [{ messageId: "devAuthImport" }],
     },
@@ -360,7 +360,7 @@ runJsxSuite(
       },
       {
         // Using design-system Button — no raw control
-        filename: "/repo/products/aep/ui/src/components/MyWidget.tsx",
+        filename: "/repo/products/data-cloud/planes/action/ui/src/components/MyWidget.tsx",
         code: `
           import { Button } from "@ghatana/design-system";
           export const MyWidget = () => <Button onClick={() => {}}>Go</Button>;
@@ -370,7 +370,7 @@ runJsxSuite(
     invalid: [
       {
         // Raw button even when design-system is imported
-        filename: "/repo/products/aep/ui/src/components/MyWidget.tsx",
+        filename: "/repo/products/data-cloud/planes/action/ui/src/components/MyWidget.tsx",
         code: `
           import { Button } from "@ghatana/design-system";
           export const Mixed = () => <button type="button">raw</button>;
@@ -379,19 +379,19 @@ runJsxSuite(
       },
       {
         // Raw input — no design-system import
-        filename: "/repo/products/aep/ui/src/components/SearchBox.tsx",
+        filename: "/repo/products/data-cloud/planes/action/ui/src/components/SearchBox.tsx",
         code: `export const SearchBox = () => <input type="text" />;`,
         errors: [{ messageId: "rawPrimitive" }],
       },
       {
         // Raw select — no design-system import
-        filename: "/repo/products/aep/ui/src/components/LevelPicker.tsx",
+        filename: "/repo/products/data-cloud/planes/action/ui/src/components/LevelPicker.tsx",
         code: `export const LevelPicker = () => <select><option value="a">A</option></select>;`,
         errors: [{ messageId: "rawPrimitive" }],
       },
       {
         // Raw textarea — with design-system import (mixed file scenario)
-        filename: "/repo/products/aep/ui/src/components/NoteField.tsx",
+        filename: "/repo/products/data-cloud/planes/action/ui/src/components/NoteField.tsx",
         code: `
           import { TextField } from "@ghatana/design-system";
           export const NoteField = () => <textarea rows={3} />;

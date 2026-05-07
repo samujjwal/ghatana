@@ -7,9 +7,13 @@ set -euo pipefail
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 LOG_FILE="$PROJECT_ROOT/logs/deploy-$(date +%Y%m%d-%H%M%S).log"
 ENVIRONMENT="production"
+HELM_CHART="$PROJECT_ROOT/ci/deploy/helm/tutorputor"
+HELM_RELEASE="${HELM_RELEASE:-tutorputor}"
+HELM_NAMESPACE="${HELM_NAMESPACE:-tutorputor}"
+HELM_VALUES="${HELM_VALUES:-$HELM_CHART/values-production.yaml}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -44,7 +48,7 @@ check_prerequisites() {
     log_info "Checking prerequisites..."
     
     # Check if required tools are installed
-    local tools=("node" "npm" "docker" "docker-compose" "psql" "redis-cli")
+    local tools=("node" "pnpm" "docker" "helm" "kubectl" "psql" "redis-cli")
     for tool in "${tools[@]}"; do
         if ! command -v "$tool" &> /dev/null; then
             log_error "Required tool '$tool' is not installed"
@@ -101,21 +105,17 @@ build_application() {
     
     cd "$PROJECT_ROOT"
     
-    # Clean previous build
-    log_info "Cleaning previous build..."
-    npm run clean
-    
     # Install dependencies
     log_info "Installing dependencies..."
-    npm ci --production
+    pnpm install --frozen-lockfile --filter @tutorputor/platform...
     
     # Build application
     log_info "Building application..."
-    npm run build:production
+    pnpm --filter @tutorputor/platform build
     
     # Run tests
     log_info "Running tests..."
-    npm run test:production
+    pnpm --filter @tutorputor/platform test
     
     log_success "Application built successfully"
 }
@@ -129,14 +129,19 @@ deploy_application() {
     # Load production environment variables
     source .env.production
     
-    # Stop existing services
-    log_info "Stopping existing services..."
-    docker-compose -f docker-compose.prod.yml down || true
-    
-    # Build and start services
-    log_info "Starting production services..."
-    docker-compose -f docker-compose.prod.yml build
-    docker-compose -f docker-compose.prod.yml up -d
+    log_info "Rendering Helm chart before deployment..."
+    helm template "$HELM_RELEASE" "$HELM_CHART" \
+        --namespace "$HELM_NAMESPACE" \
+        --values "$HELM_VALUES" > /tmp/tutorputor-helm-rendered.yaml
+
+    log_info "Applying Helm deployment with atomic rollback enabled..."
+    helm upgrade --install "$HELM_RELEASE" "$HELM_CHART" \
+        --namespace "$HELM_NAMESPACE" \
+        --create-namespace \
+        --values "$HELM_VALUES" \
+        --atomic \
+        --wait \
+        --timeout "${HELM_TIMEOUT:-10m}"
     
     # Wait for services to be healthy
     log_info "Waiting for services to be healthy..."
@@ -271,6 +276,38 @@ deploy_static_assets() {
     fi
 }
 
+# Roll back a failed deployment and prove the service is healthy afterward.
+rollback_deployment() {
+    log_info "Rolling back Helm release..."
+    helm rollback "$HELM_RELEASE" "${ROLLBACK_REVISION:-0}" \
+        --namespace "$HELM_NAMESPACE" \
+        --wait \
+        --timeout "${HELM_TIMEOUT:-10m}"
+    run_health_checks
+    log_success "Rollback completed"
+}
+
+# Run non-destructive production readiness checks for CI and release reviews.
+dry_run_deployment() {
+    log_info "Running production deployment dry-run..."
+    cd "$PROJECT_ROOT"
+    mkdir -p logs
+    helm template "$HELM_RELEASE" "$HELM_CHART" \
+        --namespace "$HELM_NAMESPACE" \
+        --values "$HELM_VALUES" > /tmp/tutorputor-helm-rendered.yaml
+    docker build --file "$PROJECT_ROOT/services/tutorputor-platform/Dockerfile" "$PROJECT_ROOT/../.." --target runtime --pull=false --quiet > /dev/null
+    log_success "Production deployment dry-run completed"
+}
+
+# Run post-deploy smoke checks against the configured base URL.
+run_smoke_tests() {
+    log_info "Running smoke tests..."
+    local base_url="${BASE_URL:-http://localhost:3000}"
+    curl -fsS "$base_url/health" > /dev/null
+    curl -fsS "$base_url/api/v1/integration/lti/config/canvas" > /dev/null
+    log_success "Smoke tests passed"
+}
+
 # Send deployment notification
 send_notification() {
     log_info "Sending deployment notification..."
@@ -365,6 +402,15 @@ case "${1:-}" in
     "monitoring")
         setup_monitoring
         ;;
+    "dry-run")
+        dry_run_deployment
+        ;;
+    "rollback")
+        rollback_deployment
+        ;;
+    "smoke")
+        run_smoke_tests
+        ;;
     "cleanup")
         cleanup_old_deployments
         ;;
@@ -378,6 +424,9 @@ case "${1:-}" in
         echo "  health      - Run health checks only"
         echo "  backup      - Create backup only"
         echo "  monitoring   - Setup monitoring only"
+        echo "  dry-run     - Render Helm and build runtime image without deploying"
+        echo "  rollback    - Roll back Helm release and run health checks"
+        echo "  smoke       - Run post-deploy smoke checks"
         echo "  cleanup     - Clean up old deployments"
         echo "  help        - Show this help message"
         echo ""

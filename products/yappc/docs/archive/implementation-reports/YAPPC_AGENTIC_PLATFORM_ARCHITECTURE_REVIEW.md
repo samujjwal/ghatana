@@ -1,8 +1,8 @@
 # YAPPC AGENTIC PLATFORM — ARCHITECTURE REVIEW AND DESIGN
 
-**Review Date:** March 10, 2026  
-**Scope:** `products/yappc` · `platform/java` · `products/aep` · `products/data-cloud`  
-**Method:** Direct source code reading — all findings are grounded in actual runtime code, not docs or YAMLs alone.  
+**Review Date:** March 10, 2026
+**Scope:** `products/yappc` · `platform/java` · `products/data-cloud/planes/action` · `products/data-cloud`
+**Method:** Direct source code reading — all findings are grounded in actual runtime code, not docs or YAMLs alone.
 **Version:** 1.0.0
 
 ---
@@ -344,8 +344,8 @@ CREATE TABLE yappc.agent_registry (
 | `DurableWorkflowEngine` | `platform/java/workflow` | **Implemented** — provides durable, resumable workflow execution |
 | `DAGPipelineExecutor` | `platform/java/workflow` | **Implemented** — DAG-based parallel pipeline execution |
 | `canonical-workflows.yaml` | `config/workflows/` | **Declared** — not materialized |
-| AEP `Orchestrator` with `CheckpointAwareExecutionQueue` + PostgreSQL checkpoint store | `products/aep/platform` | **Implemented** — checkpoint recovery tested |
-| AEP `TriggerListener` | `products/aep/platform` | **Implemented** — event-driven trigger subscription |
+| AEP `Orchestrator` with `CheckpointAwareExecutionQueue` + PostgreSQL checkpoint store | `products/data-cloud/planes/action/platform` | **Implemented** — checkpoint recovery tested |
+| AEP `TriggerListener` | `products/data-cloud/planes/action/platform` | **Implemented** — event-driven trigger subscription |
 | `DurableWorkflowEngine` wiring in YAPPC | — | **Missing** |
 
 The `lifecycle-management-v1.yaml` pipeline config correctly declares `apiVersion: ghatana.aep/v1`. AEP's `PipelineMaterializer` can load this YAML and instantiate the pipeline. The operators referenced need to be implemented as `UnifiedOperator` subclasses.
@@ -403,7 +403,7 @@ The `lifecycle-management-v1.yaml` pipeline config correctly declares `apiVersio
 | Need | Mechanism | Source |
 |------|-----------|--------|
 | Multi-step artifact generation | `DurableWorkflowEngine` | `platform/java/workflow` |
-| Phase-to-phase lifecycle transitions | AEP pipeline + `PhaseTransitionValidator` operator | `products/aep/platform` |
+| Phase-to-phase lifecycle transitions | AEP pipeline + `PhaseTransitionValidator` operator | `products/data-cloud/planes/action/platform` |
 | Code scaffolding workflow | `PluginManager` + `DurableWorkflowEngine` | YAPPC `core/scaffold` + platform |
 | Human approval gating | `HumanApprovalGate` durable task | New — YAPPC product code |
 | Build/test/deploy automation | Currently unsafe `ProcessBuilder` → must move to sandboxed executor | YAPPC `core/scaffold` |
@@ -840,7 +840,7 @@ Plugin Registry (extends platform/java/plugin PluginRegistry)
 ║                │                                                                  ║
 ║  ORCHESTRATION LAYER                   [Reuse AEP; don't rebuild]                ║
 ║  ┌─────────────────────────────────────────────────────────────────────────┐     ║
-║  │  AEP Platform (products/aep/platform)                                    │     ║
+║  │  AEP Platform (products/data-cloud/planes/action/platform)                                    │     ║
 ║  │     TriggerListener ← phase.transition / task.completed events          │     ║
 ║  │     CheckpointAwareExecutionQueue (PostgreSQL checkpoint store)          │     ║
 ║  │     DAGPipelineExecutor ← lifecycle-management-v1.yaml                  │     ║

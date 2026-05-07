@@ -145,6 +145,11 @@ export const transitions = {
   default: `${properties.all} ${durations.normal}ms ${easings.easeInOut}`,
 
   /**
+   * Legacy duration alias for components that build transition strings manually.
+   */
+  fast: `${durations.fast}ms`,
+
+  /**
    * Hover state transition
    */
   hover: `${properties.colors} ${durations.fast}ms ${easings.easeOut}, ${properties.shadow} ${durations.fast}ms ${easings.easeOut}`,

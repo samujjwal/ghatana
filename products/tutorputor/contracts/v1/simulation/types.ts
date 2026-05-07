@@ -1038,6 +1038,61 @@ export interface ComplianceMetadata {
   auditLevel: "none" | "basic" | "full";
 }
 
+export interface SimulationParameterBound {
+  parameterId: string;
+  label: string;
+  min: number;
+  max: number;
+  defaultValue: number;
+  unit?: string;
+}
+
+export interface SimulationOutputSpec {
+  outputId: string;
+  label: string;
+  type: "numeric" | "categorical" | "state" | "chart";
+  unit?: string;
+  expectedValue?: number;
+  tolerance?: number;
+}
+
+export interface SimulationFailureState {
+  id: string;
+  condition: string;
+  learnerMessage: string;
+  recoverable: boolean;
+}
+
+export interface SimulationTelemetryEventSpec {
+  eventType:
+    | "sim.start"
+    | "sim.control.change"
+    | "sim.snapshot"
+    | "sim.capture"
+    | "sim.failure"
+    | "sim.complete";
+  required: boolean;
+}
+
+export interface SimulationClaimLink {
+  claimId: string;
+  evidenceIds: string[];
+  taskIds: string[];
+}
+
+/**
+ * Canonical metadata required by catalog, packaging, CMS, runtime,
+ * telemetry, and simulation-backed assessments.
+ */
+export interface CanonicalSimulationManifestMetadata {
+  seed: number;
+  parameterBounds: SimulationParameterBound[];
+  outputs: SimulationOutputSpec[];
+  failureStates: SimulationFailureState[];
+  telemetryEvents: SimulationTelemetryEventSpec[];
+  claimLinks: SimulationClaimLink[];
+}
+
 /**
  * The complete Simulation Manifest - the source of truth for any simulation.
  */
@@ -1094,6 +1149,9 @@ export interface SimulationManifest {
 
   // NEW: Compliance metadata
   compliance?: ComplianceMetadata;
+
+  // Canonical assessable/runtime metadata
+  canonical?: CanonicalSimulationManifestMetadata;
 
   // Timestamps
   createdAt: string;

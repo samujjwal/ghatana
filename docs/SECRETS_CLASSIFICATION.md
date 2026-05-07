@@ -52,7 +52,7 @@ or vault secrets at startup. Paths must point to a secure mount, not a relative 
 |--------|----------|---------|------|---------|
 | `platform/java/security/src/main/java/com/ghatana/platform/security/jwt/JwtKeyManager.java` | HMAC-SHA-256 (rotating ring) | Runtime — bootstrapped from `JWT_SIGNING_SECRET` env var; rotated in-process via `JwtKeyManager.rotate()` | T0 | Platform Security | 90 days scheduled; immediate on compromise |
 | `shared-services/auth-gateway` | HMAC-SHA-256 | Injected via `JWT_SECRET` env var; managed by `JwtKeyManager` | T0 | Auth Team | 90 days |
-| `products/aep` | Product-scoped JWT | Inherits platform JWT via token exchange endpoint | T1 | AEP Team | Inherits parent rotation |
+| `products/data-cloud/planes/action` | Product-scoped JWT | Inherits platform JWT via token exchange endpoint | T1 | AEP Team | Inherits parent rotation |
 | `products/data-cloud` | Product-scoped JWT | Inherits platform JWT via token exchange endpoint | T1 | Data Cloud Team | Inherits parent rotation |
 
 **Rule:** JWT signing secrets must be ≥ 256 bits (32 bytes). `JwtKeyManager` enforces this at
@@ -65,7 +65,7 @@ window to allow in-flight token validation.
 |--------|-------------|---------|------|---------|
 | `platform/java/database` | `DB_URL`, `DB_USER`, `DB_PASSWORD` | Environment variable injection; never in code | T0 | Platform DB Team | 90 days |
 | `products/data-cloud` | `DATACLOUD_DB_URL`, `DATACLOUD_DB_USER`, `DATACLOUD_DB_PASSWORD` | Environment injection | T0 | Data Cloud Team | 90 days |
-| `products/aep` | `AEP_DB_URL`, `AEP_DB_USER`, `AEP_DB_PASSWORD` | Environment injection | T0 | AEP Team | 90 days |
+| `products/data-cloud/planes/action` | `AEP_DB_URL`, `AEP_DB_USER`, `AEP_DB_PASSWORD` | Environment injection | T0 | AEP Team | 90 days |
 | `products/yappc` | `YAPPC_DB_URL`, `YAPPC_DB_USER`, `YAPPC_DB_PASSWORD` | Environment injection | T0 | YAPPC Team | 90 days |
 | `shared-services` | `SHARED_DB_URL`, `SHARED_DB_USER`, `SHARED_DB_PASSWORD` | Environment injection | T0 | Platform Team | 90 days |
 

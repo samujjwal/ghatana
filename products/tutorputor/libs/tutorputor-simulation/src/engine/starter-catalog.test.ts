@@ -116,4 +116,41 @@ describe("starter catalog", () => {
     expect(resolved?.starter.id).toBe("starter-newton-cart");
     expect(resolved?.matchedBy).toBe("legacy_preset");
   });
+
+  it("requires every starter to conform to the canonical simulation manifest contract", () => {
+    const starters = listSimulationStarters();
+
+    for (const starter of starters) {
+      const { accessibility, canonical, ecd } = starter.manifest;
+
+      expect(accessibility?.altText, starter.id).toBeTruthy();
+      expect(accessibility?.screenReaderNarration, starter.id).toBe(true);
+      expect(accessibility?.highContrast, starter.id).toBe(true);
+
+      expect(canonical?.seed, starter.id).toEqual(expect.any(Number));
+      expect(canonical?.parameterBounds.length, starter.id).toBeGreaterThan(0);
+      expect(canonical?.outputs.length, starter.id).toBeGreaterThan(0);
+      expect(canonical?.failureStates.length, starter.id).toBeGreaterThan(0);
+      expect(canonical?.telemetryEvents.map((event) => event.eventType)).toEqual(
+        expect.arrayContaining([
+          "sim.start",
+          "sim.control.change",
+          "sim.snapshot",
+          "sim.capture",
+          "sim.complete",
+        ]),
+      );
+      expect(canonical?.claimLinks.length, starter.id).toBeGreaterThan(0);
+
+      const claimIds = new Set(ecd?.claims.map((claim) => claim.id) ?? []);
+      const evidenceIds = new Set(ecd?.evidence.map((item) => item.id) ?? []);
+      const taskIds = new Set(ecd?.tasks.map((task) => task.id) ?? []);
+
+      for (const link of canonical?.claimLinks ?? []) {
+        expect(claimIds.has(link.claimId), starter.id).toBe(true);
+        expect(link.evidenceIds.every((id) => evidenceIds.has(id)), starter.id).toBe(true);
+        expect(link.taskIds.every((id) => taskIds.has(id)), starter.id).toBe(true);
+      }
+    }
+  });
 });

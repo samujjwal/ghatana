@@ -1,7 +1,7 @@
 /**
  * Plugin Policy - Safety and validation rules for plugin publishing.
  * 
- * Note: @ts-nocheck removed - file uses proper Zod schema types and is fully typed.
+ * Note: this file uses proper Zod schema types and is fully typed.
  *
  * @doc.type module
  * @doc.purpose Define and enforce plugin security and compatibility policies

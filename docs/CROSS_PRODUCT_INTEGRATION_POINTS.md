@@ -69,8 +69,8 @@ packages. They must not import from each other's product UI trees.
 |---|---|
 | `@ghatana/design-system` | `@ghatana/data-cloud-*` |
 | `@ghatana/platform-utils` | `@ghatana/aep-*` |
-| `@ghatana/api` | Any `products/data-cloud/ui/src/...` import |
-| `@ghatana/state` | Any `products/aep/ui/src/...` import |
+| `@ghatana/api` | Any `products/data-cloud/delivery/ui/src/...` import |
+| `@ghatana/state` | Any `products/data-cloud/planes/action/ui/src/...` import |
 
 ---
 
@@ -79,7 +79,7 @@ packages. They must not import from each other's product UI trees.
 1. **Direct package dependency** between product trees in `pnpm-workspace.yaml`
    (e.g., `aep-ui` declaring `workspace:*` on `data-cloud-ui`).
 2. **Java import crossing product boundary** (e.g.,
-   `import com.ghatana.datacloud.*` inside `products/aep/`).
+   `import com.ghatana.datacloud.*` inside `products/data-cloud/planes/action/`).
 3. **Shared in-process service objects** — no Data Cloud Spring/ActiveJ bean
    injected into an AEP bean or vice versa.
 4. **Shared database schema** — each product owns its own Postgres schema.

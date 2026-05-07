@@ -12,13 +12,17 @@ info:
     ```
     
     ## Error Handling
-    The API uses standard HTTP status codes and returns errors in the following format:
+    The API uses standard HTTP status codes and returns errors in the canonical envelope:
     ```json
     {
-      "error": "ERROR_CODE",
-      "message": "Human-readable error message",
-      "details": { "field": "Additional context" },
-      "traceId": "correlation-id-for-debugging"
+      "error": {
+        "code": "ERROR_CODE",
+        "message": "Human-readable error message",
+        "details": { "field": "Additional context" }
+      },
+      "traceId": "correlation-id-for-debugging",
+      "timestamp": "2026-05-06T00:00:00.000Z",
+      "statusCode": 400
     }
     ```
     
@@ -67,6 +71,13 @@ paths:
     post:
       summary: Generate educational content
       operationId: generateContent
+      x-tutorputor-contract:
+        requestType: ContentGenerationRequest
+        responseType: GeneratedContent
+        serviceInterface: TutorPutorOpenApiService
+        serviceMethod: generateContent
+        backendOwner: services/tutorputor-platform/src/modules/content/generation/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
       tags:
         - Content Generation
       description: |
@@ -119,11 +130,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
-                error: "INVALID_REQUEST"
-                message: "Topic is required"
-                details:
-                  topic: "Required field"
+                error:
+                  code: "INVALID_REQUEST"
+                  message: "Topic is required"
+                  details:
+                    topic: "Required field"
                 traceId: "trace-123456"
+                timestamp: "2026-05-06T00:00:00.000Z"
+                statusCode: 400
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '429':
@@ -169,6 +183,13 @@ paths:
     get:
       summary: Retrieve generated content
       operationId: getGeneratedContent
+      x-tutorputor-contract:
+        requestType: null
+        responseType: GeneratedContent
+        serviceInterface: TutorPutorOpenApiService
+        serviceMethod: getGeneratedContent
+        backendOwner: services/tutorputor-platform/src/modules/content/generation/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
       tags:
         - Content Generation
       parameters:
@@ -199,6 +220,13 @@ paths:
     get:
       summary: List content libraries
       operationId: listLibraries
+      x-tutorputor-contract:
+        requestType: ListLibrariesQuery
+        responseType: ListLibrariesResponse
+        serviceInterface: TutorPutorOpenApiService
+        serviceMethod: listLibraries
+        backendOwner: services/tutorputor-platform/src/modules/content/routes.ts
+        typedClient: apps/tutorputor-web/src/api/contentApi.ts
       tags:
         - Content Libraries
       parameters:
@@ -243,6 +271,13 @@ paths:
     post:
       summary: Create content library
       operationId: createLibrary
+      x-tutorputor-contract:
+        requestType: CreateLibraryRequest
+        responseType: ContentLibrary
+        serviceInterface: TutorPutorOpenApiService
+        serviceMethod: createLibrary
+        backendOwner: services/tutorputor-platform/src/modules/content/routes.ts
+        typedClient: apps/tutorputor-web/src/api/contentApi.ts
       tags:
         - Content Libraries
       requestBody:
@@ -271,6 +306,13 @@ paths:
     get:
       summary: Get user learning paths
       operationId: getUserLearningPaths
+      x-tutorputor-contract:
+        requestType: null
+        responseType: LearningPath
+        serviceInterface: TutorPutorOpenApiService
+        serviceMethod: getUserLearningPaths
+        backendOwner: services/tutorputor-platform/src/modules/learning/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
       tags:
         - Learning Paths
       parameters:
@@ -296,6 +338,13 @@ paths:
     post:
       summary: Create learning path for user
       operationId: createLearningPath
+      x-tutorputor-contract:
+        requestType: CreateLearningPathRequest
+        responseType: LearningPath
+        serviceInterface: TutorPutorOpenApiService
+        serviceMethod: createLearningPath
+        backendOwner: services/tutorputor-platform/src/modules/learning/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
       tags:
         - Learning Paths
       parameters:
@@ -546,23 +595,36 @@ components:
       type: object
       required:
         - error
-        - message
         - traceId
+        - timestamp
+        - statusCode
       properties:
         error:
-          type: string
-          description: Error code (snake_case)
-        message:
-          type: string
-          description: Human-readable error message
-        details:
           type: object
-          additionalProperties: true
-          description: Additional error context
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: Error code (snake_case)
+            message:
+              type: string
+              description: Human-readable error message
+            details:
+              type: object
+              additionalProperties: true
+              description: Additional error context
         traceId:
           type: string
-          format: uuid
           description: Correlation ID for support
+        timestamp:
+          type: string
+          format: date-time
+        statusCode:
+          type: integer
+          minimum: 400
+          maximum: 599
 
     RateLimitError:
       allOf:
@@ -581,9 +643,12 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
           example:
-            error: "UNAUTHORIZED"
-            message: "Missing or invalid authentication token"
+            error:
+              code: "UNAUTHORIZED"
+              message: "Missing or invalid authentication token"
             traceId: "trace-abc123"
+            timestamp: "2026-05-06T00:00:00.000Z"
+            statusCode: 401
 
     BadRequestError:
       description: Invalid request

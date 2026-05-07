@@ -6,7 +6,7 @@
 
 ## Decision
 
-**Keep `products/aep/gateway/` as a first-class BFF (Backend-for-Frontend) service.**
+**Keep `products/data-cloud/planes/action/gateway/` as a first-class BFF (Backend-for-Frontend) service.**
 
 ## Rationale
 
@@ -23,7 +23,7 @@
 ## Changes Made (P7-2e)
 
 - Removed stale `package-lock.json` (pnpm workspace manages deps via root `pnpm-lock.yaml`)
-- Fixed `pnpm-workspace.yaml`: corrected path from `products/aep/api` to `products/aep/gateway`
+- Fixed `pnpm-workspace.yaml`: corrected path from `products/data-cloud/planes/action/api` to `products/data-cloud/planes/action/gateway`
 - Renamed package from `@aep/api` to `@ghatana/aep-gateway` (monorepo naming convention)
 - Added description to `package.json`
 

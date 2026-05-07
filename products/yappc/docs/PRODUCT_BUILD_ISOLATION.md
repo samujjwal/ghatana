@@ -147,7 +147,7 @@ tasks {
 
 #### AEP Build
 ```kotlin
-// products/aep/build.gradle.kts
+// products/data-cloud/planes/action/build.gradle.kts
 plugins {
     id("com.ghatana.product-conventions")
 }
@@ -331,7 +331,7 @@ jobs:
               - 'products/yappc/**'
               - 'platform/**'
             aep:
-              - 'products/aep/**'
+              - 'products/data-cloud/planes/action/**'
               - 'platform/**'
             data-cloud:
               - 'products/data-cloud/**'
@@ -378,7 +378,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build AEP
-        run: ./gradlew :products:aep:build
+        run: ./gradlew :products:data-cloud:planes:action:build
 
   build-data-cloud:
     needs: [detect-changes, build-platform]

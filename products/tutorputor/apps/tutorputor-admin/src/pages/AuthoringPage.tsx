@@ -833,6 +833,7 @@ function AuthoringPageContent() {
               <div className="flex gap-1">
                 <button
                   onClick={() => setLibraryView("grid")}
+                  aria-label="Show content library as grid"
                   className={`p-1.5 rounded ${libraryView === "grid"
                     ? "bg-primary-100 text-primary-600"
                     : "text-gray-400 hover:bg-gray-100"
@@ -842,6 +843,7 @@ function AuthoringPageContent() {
                 </button>
                 <button
                   onClick={() => setLibraryView("list")}
+                  aria-label="Show content library as list"
                   className={`p-1.5 rounded ${libraryView === "list"
                     ? "bg-primary-100 text-primary-600"
                     : "text-gray-400 hover:bg-gray-100"
@@ -987,6 +989,7 @@ function AuthoringPageContent() {
               )}
               <button
                 onClick={() => setIsAICoPilotOpen(!isAICoPilotOpen)}
+                aria-label={isAICoPilotOpen ? "Close AI Co-Pilot" : "Open AI Co-Pilot"}
                 className={`p-2 rounded-lg transition-colors ${isAICoPilotOpen
                   ? "bg-purple-100 text-purple-600 dark:bg-purple-900/30"
                   : "text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -2418,6 +2421,7 @@ function AICoPilot({
         </div>
         <button
           onClick={onClose}
+          aria-label="Close AI Co-Pilot"
           className="p-1 text-gray-400 hover:text-gray-600 rounded"
         >
           <X className="w-4 h-4" />
@@ -2515,6 +2519,7 @@ function AICoPilot({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask AI for help..."
+            aria-label="Ask AI Co-Pilot for help"
             className="flex-1 px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -2526,6 +2531,7 @@ function AICoPilot({
           <button
             onClick={handleSend}
             disabled={!input.trim()}
+            aria-label="Send AI Co-Pilot message"
             className="p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
           >
             <Send className="w-4 h-4" />

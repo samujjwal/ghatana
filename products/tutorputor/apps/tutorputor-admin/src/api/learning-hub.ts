@@ -15,6 +15,7 @@ import {
   type SimulationBlueprintSeed,
   allSimulationManifests as allSimulations,
 } from "../data/simulationManifestSeedData";
+import { allLearningUnits as devLearningUnitSeeds } from "../fixtures/devLearningUnitSeeds";
 import { setAuthToken as setContentStudioAuthToken } from "../services/contentStudioApi";
 
 // Auth token store - sync with contentStudioApi
@@ -28,6 +29,9 @@ export function setAuthToken(token: string | null): void {
 /** Resolve the API base from env or fall back to same-origin. */
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const LEARNING = `${BASE_URL}/api/learning`;
+const USE_DEV_LEARNING_UNIT_SEEDS =
+  import.meta.env.DEV &&
+  import.meta.env.VITE_TUTORPUTOR_USE_DEV_LEARNING_UNIT_SEEDS === "true";
 
 function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
@@ -67,8 +71,14 @@ export const LearningHubApi = {
       );
       return result.data ?? [];
     } catch (error) {
-      // Fallback to seed data if backend is unavailable
-      console.warn("Backend unavailable, using seed data for learning units");
+      if (USE_DEV_LEARNING_UNIT_SEEDS) {
+        console.warn(
+          "Backend unavailable, using explicit dev learning-unit fixtures",
+        );
+        return structuredClone(devLearningUnitSeeds);
+      }
+
+      console.warn("Backend unavailable, returning empty learning-unit list");
       return [];
     }
   },

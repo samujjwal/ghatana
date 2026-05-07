@@ -20,7 +20,7 @@ const violations = [];
 
 // Check 1: README files in major product directories
 const productDirs = [
-  'products/aep',
+  'products/data-cloud/planes/action',
   'products/data-cloud',
   'products/yappc',
   'products/dcmaar',
@@ -57,9 +57,9 @@ for (const docPath of requiredArchDocs) {
 
 // Check 3: OpenAPI files exist in canonical locations
 const requiredOpenApiFiles = [
-  'products/data-cloud/api/openapi.yaml',
-  'products/aep/contracts/openapi.yaml',
-  'products/aep/server/src/main/resources/openapi.yaml',
+  'products/data-cloud/contracts/openapi/data-cloud.yaml',
+  'products/data-cloud/contracts/openapi/aep.yaml',
+  'products/data-cloud/planes/action/server/src/main/resources/openapi.yaml',
 ];
 
 for (const openapiPath of requiredOpenApiFiles) {

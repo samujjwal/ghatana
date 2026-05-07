@@ -82,7 +82,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Run npm audit
-        working-directory: ./products/data-cloud/ui
+        working-directory: ./products/data-cloud/delivery/ui
         run: |
           npm audit --audit-level=high --json > npm-audit-report.json || true
           npm audit --audit-level=high || true
@@ -92,7 +92,7 @@ jobs:
         if: always()
         with:
           name: npm-audit-report
-          path: ./products/data-cloud/ui/npm-audit-report.json
+          path: ./products/data-cloud/delivery/ui/npm-audit-report.json
 
   # ====================================================================================
   # Static Application Security Testing (SAST)
@@ -311,20 +311,20 @@ jobs:
         run: |
           tflint --init
           tflint -f json > tflint-report.json || true
-        working-directory: ./products/data-cloud/terraform
+        working-directory: ./products/data-cloud/deploy/terraform
 
       - name: Upload TFLint results
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: tflint-report
-          path: ./products/data-cloud/terraform/tflint-report.json
+          path: ./products/data-cloud/deploy/terraform/tflint-report.json
 
       # Kubeconform for Kubernetes manifests
       - name: Run Kubeconform
         run: |
           helm plugin install https://github.com/jtyr/kubeconform-helm || true
-          helm kubeconform ./products/data-cloud/helm/data-cloud \
+          helm kubeconform ./products/data-cloud/deploy/helm/data-cloud \
             --ignore-missing-schemas \
             --kubernetes-version 1.28.0 \
             --output json > kubeconform-report.json || true
@@ -377,7 +377,7 @@ jobs:
 
       # Generate frontend SBOM
       - name: Generate frontend SBOM
-        working-directory: ./products/data-cloud/ui
+        working-directory: ./products/data-cloud/delivery/ui
         run: |
           npm install -g @cyclonedx/cyclonedx-npm
           cyclonedx-npm --output-file sbom-frontend.json || true
@@ -387,7 +387,7 @@ jobs:
         if: always()
         with:
           name: sbom-frontend-report
-          path: ./products/data-cloud/ui/sbom-frontend.json
+          path: ./products/data-cloud/delivery/ui/sbom-frontend.json
 
       # FOSSA license and security scanning
       - name: Run FOSSA scan
@@ -412,7 +412,7 @@ jobs:
       # Validate security headers in API responses
       - name: Setup test environment
         run: |
-          ./gradlew :products:data-cloud:launcher:bootRun &
+          ./gradlew :products:data-cloud:delivery:launcher:bootRun &
           sleep 60  # Wait for application to start
 
       - name: Test security headers

@@ -2,7 +2,7 @@
  * Copyright (c) 2026 Ghatana Technologies
  * Consumer-driven contract tests for the Data-Cloud Platform API.
  *
- * Validates that the OpenAPI spec at products/data-cloud/api/openapi.yaml
+ * Validates that the OpenAPI spec at products/data-cloud/contracts/openapi/data-cloud.yaml
  * exposes the endpoints and schemas that consumers depend on.
  */
 package com.ghatana.contracts.openapi;

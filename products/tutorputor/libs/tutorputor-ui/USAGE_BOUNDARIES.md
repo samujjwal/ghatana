@@ -58,9 +58,12 @@ import { Button } from '@tutorputor/ui';
 ```
 
 ## Enforcement
-- ESLint rules can be added to prevent importing from app-specific UI folders when shared equivalents exist
-- Code review should check for violations of these boundaries
-- Periodic audits to identify drift
+- `scripts/validate-ui-boundaries.mjs` runs in CI and blocks:
+  - direct subpath imports from `@ghatana/ui`, `@ghatana/theme`, `@ghatana/tokens`, or `@tutorputor/ui/src`;
+  - new app-local copies of shared primitives already owned by `@tutorputor/ui`;
+  - increases in app-local hardcoded hex colors without reducing or updating the audited baseline.
+- `config/ui-boundary-baseline.json` records current migration debt. The count may only stay flat or go down unless a design-system owner explicitly updates this document and the baseline.
+- Shared primitive imports should go through `@tutorputor/ui` or the app's documented boundary facade while migration is in progress.
 
 ## Component Checklist
 When adding a new shared component:

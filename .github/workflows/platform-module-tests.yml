@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - 'platform/java/**'
-      - 'products/aep/**'
+      - 'products/data-cloud/planes/action/**'
       - 'products/data-cloud/**'
       - 'products/yappc/**'
       - 'products/virtual-org/**'
@@ -33,7 +33,7 @@ jobs:
             platform:
               - 'platform/java/**'
             aep:
-              - 'products/aep/**'
+              - 'products/data-cloud/planes/action/**'
             data-cloud:
               - 'products/data-cloud/**'
             yappc:
@@ -77,9 +77,9 @@ jobs:
       - name: Test AEP modules
         run: |
           ./gradlew \
-            :products:aep:aep-engine:test \
-            :products:aep:aep-runtime-core:test \
-            :products:aep:orchestrator:test \
+            :products:data-cloud:planes:action:engine:test \
+            :products:data-cloud:planes:action:agent-runtime:test \
+            :products:data-cloud:planes:action:orchestrator:test \
             --no-daemon --continue
 
   data-cloud-tests:
@@ -97,9 +97,9 @@ jobs:
       - name: Test data-cloud modules
         run: |
           ./gradlew \
-            :products:data-cloud:platform-entity:test \
-            :products:data-cloud:platform-event:test \
-            :products:data-cloud:platform-config:test \
+            :products:data-cloud:planes:data:entity:test \
+            :products:data-cloud:planes:event:core:test \
+            :products:data-cloud:planes:operations:config:test \
             --no-daemon --continue
 
   yappc-tests:

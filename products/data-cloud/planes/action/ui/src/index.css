@@ -1,0 +1,57 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Platform semantic tokens are injected by @ghatana/theme ThemeProvider.
+ * Local overrides below apply only to AEP-specific surface tokens.
+ */
+
+html.dark {
+  color-scheme: dark;
+}
+
+html:not(.dark) {
+  color-scheme: light;
+}
+
+/* Accessibility: Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Accessibility: Respect high-contrast preferences */
+@media (prefers-contrast: more) {
+  :root {
+    --color-text-primary: black;
+    --color-text-secondary: black;
+    --color-divider: black;
+  }
+  .dark {
+    --color-text-primary: white;
+    --color-text-secondary: white;
+    --color-divider: white;
+  }
+}
+
+/* Accessibility: Focus states for keyboard navigation */
+:focus-visible {
+  outline: 2px solid rgba(25, 118, 210, 0.6);
+  outline-offset: 2px;
+}
+
+@media (prefers-contrast: high) {
+  :focus-visible {
+    outline: 3px solid #0000ff;
+    outline-offset: 2px;
+  }
+}
+
+.dark :focus-visible {
+  outline: 2px solid rgba(56, 139, 253, 0.6);
+  outline-offset: 2px;
+}

@@ -31,7 +31,7 @@ const REPO_ROOT = resolve(__dirname, '..');
 const WORKSPACE_ROOTS = [
   'platform/typescript',
   'products/data-cloud',
-  'products/aep',
+  'products/data-cloud/planes/action',
   'products/yappc',
   'products/audio-video',
   'products/flashit',

@@ -338,7 +338,7 @@ export interface ValidateContentResponse {
 interface GrpcServiceClient {
   [method: string]: (
     request: unknown,
-    callback: (error: grpc.ServiceError | null, response: any) => void,
+    callback: (error: grpc.ServiceError | null, response: unknown) => void,
   ) => void;
 }
 

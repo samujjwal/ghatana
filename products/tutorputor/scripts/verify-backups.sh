@@ -8,8 +8,11 @@
 
 set -e
 
-BACKUP_ROOT="/var/backups/tutorputor"
-LOG_FILE="/var/log/tutorputor/backup_verification_$(date +%Y%m%d_%H%M%S).log"
+BACKUP_ROOT="${BACKUP_ROOT:-/var/backups/tutorputor}"
+LOG_DIR="${LOG_DIR:-/var/log/tutorputor}"
+STRICT_BACKUP_MIN_COUNT="${STRICT_BACKUP_MIN_COUNT:-7}"
+mkdir -p "${LOG_DIR}"
+LOG_FILE="${LOG_DIR}/backup_verification_$(date +%Y%m%d_%H%M%S).log"
 
 # Logging function
 log() {
@@ -29,8 +32,9 @@ log "Verifying PostgreSQL backups..."
 PG_BACKUPS=$(find "${BACKUP_ROOT}/postgres" -name "*.dump" -mtime -7)
 PG_COUNT=$(echo "${PG_BACKUPS}" | wc -l)
 
-if [ "${PG_COUNT}" -lt 7 ]; then
-    log "WARNING: Less than 7 PostgreSQL backups found in last 7 days (found: ${PG_COUNT})"
+if [ "${PG_COUNT}" -lt "${STRICT_BACKUP_MIN_COUNT}" ]; then
+    log "ERROR: Less than ${STRICT_BACKUP_MIN_COUNT} PostgreSQL backups found in last 7 days (found: ${PG_COUNT})"
+    exit 1
 else
     log "✓ PostgreSQL backups: ${PG_COUNT} backups in last 7 days"
 fi
@@ -44,10 +48,11 @@ if [ -n "${LATEST_PG}" ]; then
         log "✓ PostgreSQL backup integrity check passed"
     else
         log "ERROR: PostgreSQL backup integrity check failed"
-        # Send alert
+        exit 1
     fi
 else
     log "ERROR: No PostgreSQL backups found"
+    exit 1
 fi
 
 # Verify Redis backups
@@ -55,8 +60,9 @@ log "Verifying Redis backups..."
 REDIS_BACKUPS=$(find "${BACKUP_ROOT}/redis" -name "*.rdb" -mtime -7)
 REDIS_COUNT=$(echo "${REDIS_BACKUPS}" | wc -l)
 
-if [ "${REDIS_COUNT}" -lt 7 ]; then
-    log "WARNING: Less than 7 Redis backups found in last 7 days (found: ${REDIS_COUNT})"
+if [ "${REDIS_COUNT}" -lt "${STRICT_BACKUP_MIN_COUNT}" ]; then
+    log "ERROR: Less than ${STRICT_BACKUP_MIN_COUNT} Redis backups found in last 7 days (found: ${REDIS_COUNT})"
+    exit 1
 else
     log "✓ Redis backups: ${REDIS_COUNT} backups in last 7 days"
 fi
@@ -66,8 +72,9 @@ log "Verifying file system backups..."
 FILE_BACKUPS=$(find "${BACKUP_ROOT}/files" -name "*.tar.gz" -mtime -7)
 FILE_COUNT=$(echo "${FILE_BACKUPS}" | wc -l)
 
-if [ "${FILE_COUNT}" -lt 7 ]; then
-    log "WARNING: Less than 7 file backups found in last 7 days (found: ${FILE_COUNT})"
+if [ "${FILE_COUNT}" -lt "${STRICT_BACKUP_MIN_COUNT}" ]; then
+    log "ERROR: Less than ${STRICT_BACKUP_MIN_COUNT} file backups found in last 7 days (found: ${FILE_COUNT})"
+    exit 1
 else
     log "✓ File backups: ${FILE_COUNT} backups in last 7 days"
 fi

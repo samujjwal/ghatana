@@ -28,12 +28,14 @@ const PUBLISH_GATES = [
   "hasIntent",
   "hasMinimumClaims",
   "allClaimsHaveEvidence",
+  "allEvidenceHaveTasks",
   "hasMinimumTasks",
   "predictionsRequireConfidence",
   "explainersAreNotTerminal",
   "hasMinimumTelemetry",
   "hasAssessmentConfig",
   "hasMinimumArtifacts",
+  "hasPublishReadiness",
 ] as const;
 
 type PublishGate = (typeof PUBLISH_GATES)[number];
@@ -58,6 +60,7 @@ export class LearningUnitValidator {
     this.checkTelemetry(lu);
     this.checkAssessment(lu);
     this.checkCredential(lu);
+    this.checkPublishReadiness(lu);
 
     // Calculate score
     const totalGates = PUBLISH_GATES.length;
@@ -248,6 +251,19 @@ export class LearningUnitValidator {
 
     const claimIds = new Set(lu.claims.map((c) => c.id));
     const evidenceIds = new Set(lu.evidence.map((e) => e.id));
+    const taskEvidenceRefs = new Set(lu.tasks.map((task) => task.evidenceRef));
+    const evidenceWithoutTasks = [...evidenceIds].filter(
+      (evidenceId) => !taskEvidenceRefs.has(evidenceId),
+    );
+
+    if (evidenceWithoutTasks.length > 0) {
+      this.addError(
+        "tasks",
+        `Evidence without producing tasks: ${evidenceWithoutTasks.join(", ")}`,
+      );
+    } else {
+      this.gatesPassed.add("allEvidenceHaveTasks");
+    }
 
     let allPredictionsHaveConfidence = true;
 
@@ -431,6 +447,92 @@ export class LearningUnitValidator {
           "Credentials should have at least one skill tag",
         );
       }
+    }
+  }
+
+  private checkPublishReadiness(lu: LearningUnit): void {
+    if (!lu.publishReadiness) {
+      this.addError(
+        "publishReadiness",
+        "Publish readiness checklist is required",
+      );
+      return;
+    }
+
+    let passed = true;
+    const hasSimulationTask = lu.tasks.some((task) => task.type === "simulation");
+    const hasSimulationArtifact = lu.artifacts.some(
+      (artifact) => artifact.type === "simulation",
+    );
+
+    if (
+      !lu.publishReadiness.simulationConfigured ||
+      !hasSimulationTask ||
+      !hasSimulationArtifact
+    ) {
+      this.addError(
+        "publishReadiness.simulationConfigured",
+        "Simulation block must be configured, linked as an artifact, and assessed by at least one simulation task",
+      );
+      passed = false;
+    }
+
+    if (lu.publishReadiness.assessmentCoverage !== "complete") {
+      this.addError(
+        "publishReadiness.assessmentCoverage",
+        "Assessment coverage must be complete before publish",
+      );
+      passed = false;
+    }
+
+    if (
+      !lu.publishReadiness.accessibilityNotes ||
+      lu.publishReadiness.accessibilityNotes.trim().length < 10
+    ) {
+      this.addError(
+        "publishReadiness.accessibilityNotes",
+        "Accessibility notes are required before publish",
+      );
+      passed = false;
+    }
+
+    if (!lu.publishReadiness.telemetryEnabled) {
+      this.addError(
+        "publishReadiness.telemetryEnabled",
+        "Telemetry must be enabled before publish",
+      );
+      passed = false;
+    }
+
+    if (
+      lu.publishReadiness.aiUseDisclosure.required &&
+      !lu.publishReadiness.aiUseDisclosure.configured
+    ) {
+      this.addError(
+        "publishReadiness.aiUseDisclosure",
+        "AI-use disclosure must be configured before publish",
+      );
+      passed = false;
+    }
+
+    if (lu.publishReadiness.reviewStatus !== "complete") {
+      this.addError(
+        "publishReadiness.reviewStatus",
+        "Review status must be complete before publish",
+      );
+      passed = false;
+    }
+
+    if (lu.publishReadiness.unresolvedValidationErrors.length > 0) {
+      this.addError(
+        "publishReadiness.unresolvedValidationErrors",
+        "Unresolved validation errors block publish",
+      );
+      passed = false;
+    }
+
+    if (passed) {
+      this.gatesPassed.add("hasPublishReadiness");
     }
   }
 

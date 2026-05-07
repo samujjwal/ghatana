@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class GradleDependencyGuardTest {
 
     private static final String ALLOWED_PRODUCT_PREFIX = ":products:data-cloud:event-cloud:";
-    private static final String ALLOWED_DATACLOUD_SPI = ":products:data-cloud:spi";
+    private static final String ALLOWED_DATACLOUD_SPI = ":products:data-cloud:planes:shared-spi";
 
     @Test
     void libsShouldNotDependOnProductModulesInGradleBuildFiles() throws IOException { 

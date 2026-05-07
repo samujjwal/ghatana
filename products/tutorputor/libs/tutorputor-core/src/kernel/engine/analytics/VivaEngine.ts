@@ -150,6 +150,50 @@ export class VivaEngine {
     return candidates.sort((a, b) => a.priority - b.priority);
   }
 
+  identifyVivaCandidatesWithSampling(
+    predictions: PredictionRecord[],
+    simulations: SimulationRecord[],
+    explanations: ExplanationRecord[] = [],
+    samplingRate = 0.1,
+  ): VivaCandidate[] {
+    const anomalyCandidates = this.identifyVivaCandidates(
+      predictions,
+      simulations,
+      explanations,
+    );
+    const anomalyKeys = new Set(
+      anomalyCandidates.map(
+        (candidate) => `${candidate.learnerId}::${candidate.claimId}`,
+      ),
+    );
+    const eligibleKeys = [
+      ...new Set(
+        [...predictions, ...simulations, ...explanations].map(
+          (record) => `${record.learnerId}::${record.claimId}`,
+        ),
+      ),
+    ]
+      .filter((key) => !anomalyKeys.has(key))
+      .sort();
+    const sampleCount = Math.floor(eligibleKeys.length * samplingRate);
+    const sampled = eligibleKeys.slice(0, sampleCount).flatMap((key) => {
+      const [learnerId, claimId] = key.split("::");
+      if (!learnerId || !claimId) return [];
+      return [
+        {
+          learnerId,
+          claimId,
+          reason: "random_sampling" as const,
+          priority: PRIORITY.LOW,
+        },
+      ];
+    });
+
+    return [...anomalyCandidates, ...sampled].sort(
+      (a, b) => a.priority - b.priority,
+    );
+  }
+
   /**
    * Evaluate all viva conditions for a learner's data
    */

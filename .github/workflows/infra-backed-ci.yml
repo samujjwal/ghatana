@@ -212,14 +212,14 @@ jobs:
 
       - name: AEP server integration tests
         run: |
-          ./gradlew :products:aep:server:test \
+          ./gradlew :products:data-cloud:planes:action:server:test \
             -Pinfra.testcontainers=true \
             -PincludeTags="integration,infrastructure-backed" \
             --continue
 
       - name: AEP gateway integration tests
         run: |
-          ./gradlew :products:aep:gateway:test \
+          ./gradlew :products:data-cloud:planes:action:server:test \
             -Pinfra.testcontainers=true \
             -PincludeTags="integration,local-network" \
             --continue
@@ -229,7 +229,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: aep-infra-results
-          path: products/aep/**/build/test-results/
+          path: products/data-cloud/planes/action/**/build/test-results/
           retention-days: 7
 
   # ─────────────────────────────────────────────────────────────────────────

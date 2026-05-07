@@ -16,7 +16,7 @@ Product-owned deployment assets that have moved to canonical product paths shoul
 
 ```bash
 # Build AEP image
-cd products/aep
+cd products/data-cloud/planes/action
 docker build -t ghatana/aep:1.0.0-SNAPSHOT .
 
 # Build Data-Cloud image

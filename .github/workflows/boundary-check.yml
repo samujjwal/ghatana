@@ -41,7 +41,7 @@ jobs:
 
       - name: Verify Data-Cloud UI remains product-local
         run: |
-          if rg '@yappc/' products/data-cloud/ui/package.json --no-heading --line-number -n; then
+          if rg '@yappc/' products/data-cloud/delivery/ui/package.json --no-heading --line-number -n; then
             echo 'ERROR: Data-Cloud UI depends on YAPPC packages'
             exit 1
           fi

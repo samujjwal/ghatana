@@ -45,6 +45,16 @@ export const router = createBrowserRouter([
           loadNamedComponent(() => import("../pages/DashboardPage"), "DashboardPage"),
       },
       {
+        path: "onboarding",
+        lazy: async () =>
+          loadNamedComponent(() => import("../pages/OnboardingPage"), "OnboardingPage"),
+      },
+      {
+        path: "diagnostic",
+        lazy: async () =>
+          loadNamedComponent(() => import("../pages/DiagnosticPage"), "DiagnosticPage"),
+      },
+      {
         path: "home",
         element: <Navigate to="/dashboard" replace />,
       },
@@ -129,6 +139,11 @@ export const router = createBrowserRouter([
         path: "settings/privacy",
         lazy: async () =>
           loadNamedComponent(() => import("../pages/PrivacySettingsPage"), "PrivacySettingsPage"),
+      },
+      {
+        path: "credentials",
+        lazy: async () =>
+          loadNamedComponent(() => import("../pages/CredentialsPage"), "CredentialsPage"),
       },
 
       // === LEARNER FLOW ===

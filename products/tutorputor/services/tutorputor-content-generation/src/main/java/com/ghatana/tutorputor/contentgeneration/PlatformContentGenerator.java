@@ -182,7 +182,14 @@ public class PlatformContentGenerator implements UnifiedContentGenerator {
                         .domain(request.domain())
                         .configuration(Map.of(
                                 "interactionType", "PARAMETER_EXPLORATION",
-                                "claimId", claim.getId()
+                                "claimId", claim.getId(),
+                                "seed", 42,
+                                "parameterBounds", Map.of(
+                                        "input", List.of(0, 10)
+                                ),
+                                "expectedOutputs", Map.of(
+                                        "baseline", 5
+                                )
                         ))
                         .build())
                 .toList();
