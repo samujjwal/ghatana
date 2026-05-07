@@ -61,7 +61,7 @@ class PatientControllerTest {
     void createPatientRecordInvokesServiceWhenAuthorized() {
         when(securityManager.getCurrentContext()).thenReturn(securityContext);
         when(policyEnforcementPoint.enforce(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.same(securityContext)))
-            .thenReturn(PolicyEnforcementPoint.EnforcementDecision.allow());
+            .thenReturn(io.activej.promise.Promise.of(PolicyEnforcementPoint.EnforcementDecision.allow()));
 
         PatientController.Response response = controller.createPatientRecord(
             "patient-1",
@@ -78,7 +78,7 @@ class PatientControllerTest {
     void getPatientRecordsReturnsForbiddenWhenPolicyDenies() {
         when(securityManager.getCurrentContext()).thenReturn(securityContext);
         when(policyEnforcementPoint.enforce(any(), org.mockito.ArgumentMatchers.same(securityContext)))
-            .thenReturn(PolicyEnforcementPoint.EnforcementDecision.deny("Consent required"));
+            .thenReturn(io.activej.promise.Promise.of(PolicyEnforcementPoint.EnforcementDecision.deny("Consent required")));
 
         PatientController.Response response = controller.getPatientRecords("patient-1", "token");
 
@@ -91,7 +91,7 @@ class PatientControllerTest {
     void createPatientRecordSanitizesStructuredPayload() {
         when(securityManager.getCurrentContext()).thenReturn(securityContext);
         when(policyEnforcementPoint.enforce(any(), org.mockito.ArgumentMatchers.same(securityContext)))
-            .thenReturn(PolicyEnforcementPoint.EnforcementDecision.allow());
+            .thenReturn(io.activej.promise.Promise.of(PolicyEnforcementPoint.EnforcementDecision.allow()));
 
         controller.createPatientRecord(
             "patient-1",
@@ -119,7 +119,7 @@ class PatientControllerTest {
 
         when(securityManager.getCurrentContext()).thenReturn(securityContext);
         when(policyEnforcementPoint.enforce(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.same(securityContext)))
-            .thenReturn(PolicyEnforcementPoint.EnforcementDecision.allow());
+            .thenReturn(io.activej.promise.Promise.of(PolicyEnforcementPoint.EnforcementDecision.allow()));
         when(patientService.getRecords("patient-1")).thenReturn(records);
 
         PatientController.Response response = controller.getPatientRecords("patient-1", "token");
@@ -132,7 +132,7 @@ class PatientControllerTest {
     void createPatientRecordPropagatesServiceFailure() {
         when(securityManager.getCurrentContext()).thenReturn(securityContext);
         when(policyEnforcementPoint.enforce(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.same(securityContext)))
-            .thenReturn(PolicyEnforcementPoint.EnforcementDecision.allow());
+            .thenReturn(io.activej.promise.Promise.of(PolicyEnforcementPoint.EnforcementDecision.allow()));
         doThrow(new IllegalStateException("Failed to create patient record because audit logging failed"))
             .when(patientService)
             .createRecord("patient-1", Map.of("diagnosis", "Hypertension"));

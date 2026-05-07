@@ -6,6 +6,7 @@ package com.ghatana.digitalmarketing.domain.optimization;
  * @doc.type enum
  * @doc.purpose Defines the types of AI-generated next-best-action recommendations (P3-004)
  * @doc.layer product
+ * @doc.pattern ValueObject
  */
 public enum NextBestActionType {
     /** Increase budget for underperforming campaign with high potential */

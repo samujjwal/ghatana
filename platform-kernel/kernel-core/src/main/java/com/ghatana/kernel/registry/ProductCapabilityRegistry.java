@@ -8,18 +8,18 @@ import java.util.Set;
  * Generic product capability registry for UI route gating and feature flags.
  *
  * <p>Provides backend-authoritative capability keys for product UI route gating.
- * Products like DMOS can register their capability keys (e.g., dmos.campaigns, dmos.strategy)
+ * Products can register their capability keys (e.g., product.campaigns, product.strategy)
  * and check capabilities by tenant/workspace for authorization.</p>
  *
  * <p><b>Usage</b>
  * <pre>{@code
  * ProductCapabilityRegistry registry = ProductCapabilityRegistry.builder()
- *     .registerCapability("dmos.campaigns", "Campaign management")
- *     .registerCapability("dmos.strategy", "Strategy generation")
- *     .registerCapability("dmos.reporting", "Analytics reporting")
+ *     .registerCapability("product.campaigns", "Campaign management")
+ *     .registerCapability("product.strategy", "Strategy generation")
+ *     .registerCapability("product.reporting", "Analytics reporting")
  *     .build();
  *
- * boolean enabled = registry.isCapabilityEnabled("tenant-1", "workspace-1", "dmos.campaigns");
+ * boolean enabled = registry.isCapabilityEnabled("tenant-1", "workspace-1", "product.campaigns");
  * }</pre>
  *
  * @doc.type interface

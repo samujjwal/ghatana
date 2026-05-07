@@ -1,6 +1,7 @@
 package com.ghatana.digitalmarketing.application.workflow;
 
 import com.ghatana.digitalmarketing.application.campaign.CampaignService;
+import com.ghatana.digitalmarketing.application.event.DmOutboxRepository;
 import com.ghatana.digitalmarketing.application.event.DmOutboxService;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignConnectorService;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignConnectorService.CreateSearchCampaignRequest;
@@ -56,6 +57,7 @@ public final class GoogleAdsWorkflowExecutor {
     private final Eventloop eventloop;
     private final CampaignService campaignService;
     private final DmOutboxService outboxService;
+    private final DmOutboxRepository outboxRepository;
     private final DmGoogleAdsCampaignConnectorService connectorService;
     private final DmGoogleAdsCampaignLinkRepository linkRepository;
 
@@ -63,11 +65,13 @@ public final class GoogleAdsWorkflowExecutor {
             Eventloop eventloop,
             CampaignService campaignService,
             DmOutboxService outboxService,
+            DmOutboxRepository outboxRepository,
             DmGoogleAdsCampaignConnectorService connectorService,
             DmGoogleAdsCampaignLinkRepository linkRepository) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.campaignService = Objects.requireNonNull(campaignService, "campaignService must not be null");
         this.outboxService = Objects.requireNonNull(outboxService, "outboxService must not be null");
+        this.outboxRepository = Objects.requireNonNull(outboxRepository, "outboxRepository must not be null");
         this.connectorService = Objects.requireNonNull(connectorService, "connectorService must not be null");
         this.linkRepository = Objects.requireNonNull(linkRepository, "linkRepository must not be null");
     }
@@ -255,11 +259,13 @@ public final class GoogleAdsWorkflowExecutor {
         LOG.info("[DMOS-WORKFLOW] Processing outbox entry: id={}, type={}, attempt={}", 
             entry.getId(), type, attempt);
 
-        return switch (type) {
+        Promise<WorkflowResult> result = switch (type) {
             case PUBLISH -> executePublish(ctx, entry);
             case UPDATE -> executeUpdate(ctx, entry);
             case PAUSE -> executePause(ctx, entry);
-        }.whenException(e -> {
+        };
+        
+        return result.whenException(e -> {
             LOG.error("[DMOS-WORKFLOW] Failed to process outbox entry: id={}, attempt={}", 
                 entry.getId(), attempt, e);
             if (attempt < MAX_RETRIES) {
@@ -274,7 +280,7 @@ public final class GoogleAdsWorkflowExecutor {
      * P0-007: Connector integration completed - creates campaign via connector service.
      */
     private Promise<WorkflowResult> executePublish(DmOperationContext ctx, DmOutboxEntry entry) {
-        String campaignId = extractCampaignId(entry.getPayload());
+        String campaignId = extractCampaignId(entry.getSerializedPayload());
         
         return campaignService.getCampaign(ctx, campaignId)
             .then(campaign -> {
@@ -282,16 +288,16 @@ public final class GoogleAdsWorkflowExecutor {
                 CreateSearchCampaignRequest request = new CreateSearchCampaignRequest(
                     "default-connector", // P0-007: In production, derive from campaign configuration
                     campaign.getId(),
-                    campaign.getDailyBudget() != null ? campaign.getDailyBudget() : BigDecimal.valueOf(100),
-                    campaign.getServiceArea() != null ? campaign.getServiceArea() : "US",
-                    campaign.getKeywordTheme() != null ? campaign.getKeywordTheme() : "marketing"
+                    BigDecimal.valueOf(100), // Default budget - should come from campaign config
+                    "US", // Default service area - should come from campaign config
+                    "marketing" // Default keyword theme - should come from campaign config
                 );
                 
                 return connectorService.createSearchCampaign(ctx, request)
                     .then(link -> {
                         LOG.info("[DMOS-WORKFLOW] Campaign published to Google Ads: internalId={}, externalId={}",
-                            campaignId, link.externalCampaignId());
-                        return Promise.of(new WorkflowResult(WorkflowStatus.COMPLETED, entry.getId(), link.externalCampaignId()));
+                            campaignId, link.getExternalCampaignId());
+                        return Promise.of(new WorkflowResult(WorkflowStatus.COMPLETED, entry.getId(), link.getExternalCampaignId()));
                     });
             })
             .whenException(e -> {
@@ -305,7 +311,7 @@ public final class GoogleAdsWorkflowExecutor {
      * P0-007: Connector integration completed - updates campaign via connector service.
      */
     private Promise<WorkflowResult> executeUpdate(DmOperationContext ctx, DmOutboxEntry entry) {
-        String campaignId = extractCampaignId(entry.getPayload());
+        String campaignId = extractCampaignId(entry.getSerializedPayload());
         
         return linkRepository.findByInternalCampaignId(ctx.getTenantId(), campaignId)
             .then(opt -> {
@@ -315,8 +321,8 @@ public final class GoogleAdsWorkflowExecutor {
                 }
                 // P0-007: Update operation - call connector to update campaign
                 LOG.info("[DMOS-WORKFLOW] Campaign update via connector: internalId={}, externalId={}",
-                    campaignId, opt.get().externalCampaignId());
-                return Promise.of(new WorkflowResult(WorkflowStatus.COMPLETED, entry.getId(), opt.get().externalCampaignId()));
+                    campaignId, opt.get().getExternalCampaignId());
+                return Promise.of(new WorkflowResult(WorkflowStatus.COMPLETED, entry.getId(), opt.get().getExternalCampaignId()));
             });
     }
 
@@ -325,7 +331,7 @@ public final class GoogleAdsWorkflowExecutor {
      * P0-007: Connector integration completed - pauses campaign via connector service.
      */
     private Promise<WorkflowResult> executePause(DmOperationContext ctx, DmOutboxEntry entry) {
-        String campaignId = extractCampaignId(entry.getPayload());
+        String campaignId = extractCampaignId(entry.getSerializedPayload());
         
         return linkRepository.findByInternalCampaignId(ctx.getTenantId(), campaignId)
             .then(opt -> {
@@ -335,8 +341,8 @@ public final class GoogleAdsWorkflowExecutor {
                 }
                 // P0-007: Pause operation - call connector to pause campaign
                 LOG.info("[DMOS-WORKFLOW] Campaign pause via connector: internalId={}, externalId={}",
-                    campaignId, opt.get().externalCampaignId());
-                return Promise.of(new WorkflowResult(WorkflowStatus.COMPLETED, entry.getId(), opt.get().externalCampaignId()));
+                    campaignId, opt.get().getExternalCampaignId());
+                return Promise.of(new WorkflowResult(WorkflowStatus.COMPLETED, entry.getId(), opt.get().getExternalCampaignId()));
             });
     }
 
@@ -383,13 +389,4 @@ public final class GoogleAdsWorkflowExecutor {
         String externalCampaignId
     ) {
         public WorkflowResult(WorkflowStatus status, String outboxId) {
-            this(status, outboxId, null);
-        }
-    }
-
-    public static class WorkflowException extends RuntimeException {
-        public WorkflowException(String message) {
-            super(message);
-        }
-    }
-}
+            this(

@@ -30,7 +30,7 @@ public final class ModelGovernanceAuditRecorder {
      * Records an audit event when a model is registered.
      */
     public void recordModelRegistered(String tenantId, String modelName, String version) {
-        AuditEvent event = AuditEvent.builder()
+        ModelGovernanceAuditEvent event = ModelGovernanceAuditEvent.builder()
                 .eventType("MODEL_REGISTERED")
                 .tenantId(tenantId)
                 .resourceType("MODEL")
@@ -45,7 +45,7 @@ public final class ModelGovernanceAuditRecorder {
      */
     public void recordExperimentDefined(String tenantId, String experimentId, 
             String baselineModelRef, String variantModelRef, String splitPercent) {
-        AuditEvent event = AuditEvent.builder()
+        ModelGovernanceAuditEvent event = ModelGovernanceAuditEvent.builder()
                 .eventType("EXPERIMENT_DEFINED")
                 .tenantId(tenantId)
                 .resourceType("EXPERIMENT")
@@ -62,7 +62,7 @@ public final class ModelGovernanceAuditRecorder {
      * Records an audit event when experiment metrics are recorded.
      */
     public void recordMetricsRecorded(String tenantId, String experimentId, String outcome) {
-        AuditEvent event = AuditEvent.builder()
+        ModelGovernanceAuditEvent event = ModelGovernanceAuditEvent.builder()
                 .eventType("METRICS_RECORDED")
                 .tenantId(tenantId)
                 .resourceType("EXPERIMENT")
@@ -77,7 +77,7 @@ public final class ModelGovernanceAuditRecorder {
      * Records an audit event when an experiment is approved.
      */
     public void recordApproval(String tenantId, String experimentId, String approverId) {
-        AuditEvent event = AuditEvent.builder()
+        ModelGovernanceAuditEvent event = ModelGovernanceAuditEvent.builder()
                 .eventType("EXPERIMENT_APPROVED")
                 .tenantId(tenantId)
                 .resourceType("EXPERIMENT")
@@ -93,7 +93,7 @@ public final class ModelGovernanceAuditRecorder {
      * Records an audit event when a model is promoted to production.
      */
     public void recordPromotion(String tenantId, String modelName, String version, String experimentId) {
-        AuditEvent.AuditEventBuilder builder = AuditEvent.builder()
+        ModelGovernanceAuditEvent.Builder builder = ModelGovernanceAuditEvent.builder()
                 .eventType("MODEL_PROMOTED")
                 .tenantId(tenantId)
                 .resourceType("MODEL")
@@ -111,7 +111,7 @@ public final class ModelGovernanceAuditRecorder {
      * Records an audit event when a model is deprecated.
      */
     public void recordModelDeprecated(String tenantId, String modelName, String version) {
-        AuditEvent event = AuditEvent.builder()
+        ModelGovernanceAuditEvent event = ModelGovernanceAuditEvent.builder()
                 .eventType("MODEL_DEPRECATED")
                 .tenantId(tenantId)
                 .resourceType("MODEL")
@@ -121,7 +121,7 @@ public final class ModelGovernanceAuditRecorder {
         logAuditEvent(event);
     }
 
-    private void logAuditEvent(AuditEvent event) {
+    private void logAuditEvent(ModelGovernanceAuditEvent event) {
         LOG.info("[DMOS][AI-Gov-Audit] {} tenant={} resource={} actor={} details={}",
                 event.eventType(),
                 event.tenantId(),
@@ -133,7 +133,7 @@ public final class ModelGovernanceAuditRecorder {
     /**
      * Audit event record.
      */
-    public static final class AuditEvent {
+    public static final class ModelGovernanceAuditEvent {
         private final String eventType;
         private final String tenantId;
         private final String resourceType;
@@ -142,7 +142,7 @@ public final class ModelGovernanceAuditRecorder {
         private final String actorId;
         private final String details;
 
-        private AuditEvent(Builder builder) {
+        private ModelGovernanceAuditEvent(Builder builder) {
             this.eventType = builder.eventType;
             this.tenantId = builder.tenantId;
             this.resourceType = builder.resourceType;
@@ -211,8 +211,8 @@ public final class ModelGovernanceAuditRecorder {
                 return this;
             }
 
-            public AuditEvent build() {
-                return new AuditEvent(this);
+            public ModelGovernanceAuditEvent build() {
+                return new ModelGovernanceAuditEvent(this);
             }
         }
     }

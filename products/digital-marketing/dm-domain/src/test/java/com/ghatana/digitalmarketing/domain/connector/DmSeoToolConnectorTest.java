@@ -107,7 +107,7 @@ class DmSeoToolConnectorTest {
             .updatedAt(now)
             .build();
 
-        DmSeoToolConnector failed = connector.markAuthFailed("Invalid credentials");
+        DmSeoToolConnector failed = connector.markFailed("Invalid credentials");
 
         assertEquals(DmSeoToolConnectorStatus.FAILED, failed.getStatus());
         assertEquals("Invalid credentials", failed.getFailureReason());

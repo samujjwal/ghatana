@@ -6,6 +6,7 @@ package com.ghatana.digitalmarketing.domain.optimization;
  * @doc.type enum
  * @doc.purpose Defines the severity levels for anomaly detection results (P3-004)
  * @doc.layer product
+ * @doc.pattern ValueObject
  */
 public enum AnomalySeverity {
     /** Low severity: minor deviation, informational only */

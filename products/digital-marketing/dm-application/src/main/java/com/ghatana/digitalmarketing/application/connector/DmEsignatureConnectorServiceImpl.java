@@ -7,6 +7,7 @@ import com.ghatana.digitalmarketing.domain.connector.DmEsignatureConnectorStatus
 import io.activej.promise.Promise;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
@@ -119,7 +120,7 @@ public final class DmEsignatureConnectorServiceImpl implements DmEsignatureConne
                     new SecurityException("Not authorized to update e-signature connectors"));
                 return loadOwned(ctx, id);
             })
-            .then(c -> connectorRepository.update(c.markAuthFailed(reason)));
+            .then(c -> connectorRepository.update(c.markFailed(reason)));
     }
 
     @Override

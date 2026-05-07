@@ -35,8 +35,8 @@ public class DemoWorkspaceServiceImpl implements DemoWorkspaceService {
 
         DemoWorkspace workspace = DemoWorkspace.builder()
             .id(workspaceId)
-            .tenantId(ctx.tenantId().getValue())
-            .workspaceId(ctx.workspaceId().getValue())
+            .tenantId(ctx.getTenantId().getValue())
+            .workspaceId(ctx.getWorkspaceId().getValue())
             .leadId(command.leadId())
             .templateId(command.templateId())
             .status(DemoWorkspaceStatus.PROVISIONED)
@@ -99,6 +99,6 @@ public class DemoWorkspaceServiceImpl implements DemoWorkspaceService {
 
     @Override
     public Promise<java.util.List<DemoWorkspace>> list(DmOperationContext ctx) {
-        return repository.listByTenant(ctx.tenantId().getValue());
+        return repository.listByTenant(ctx.getTenantId().getValue());
     }
 }

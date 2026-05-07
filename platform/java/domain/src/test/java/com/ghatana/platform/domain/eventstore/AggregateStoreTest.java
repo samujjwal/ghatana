@@ -1,6 +1,7 @@
 package com.ghatana.platform.domain.eventstore;
 
-import com.ghatana.core.eventloop.EventloopTestBase;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.platform.domain.eventstore.AggregateStore.AggregateEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

@@ -10,7 +10,7 @@ import java.util.Optional;
  *
  * <p>Manages consent, data classification, data residency requirements,
  * PII encryption/redaction, and DSAR compliance for privacy compliance
- * with applicable regulatory frameworks (GDPR, CCPA, etc.).</p>
+ * with applicable regulatory frameworks (privacy regulations, etc.).</p>
  *
  * @doc.type interface
  * @doc.purpose Privacy and consent management with PII/DSAR support (KERNEL-P1)
@@ -64,7 +64,7 @@ public interface PrivacyManager {
      * @param tenantId the tenant identifier
      * @return Promise containing the privacy policy
      */
-    Promise<Optional<Policy>> getPrivacyPolicy(String tenantId);
+    Promise<Optional<PrivacyPolicy>> getPrivacyPolicy(String tenantId);
 
     /**
      * Encrypts PII data using tenant-specific encryption.
@@ -195,14 +195,14 @@ public interface PrivacyManager {
     /**
      * Privacy policy for a tenant.
      */
-    record Policy(
+    record PrivacyPolicy(
         String tenantId,
         String version,
         Map<String, Boolean> consentPurposes,
         DataRetention retention,
         String effectiveDate
     ) {
-        public Policy {
+        public PrivacyPolicy {
             if (tenantId == null || tenantId.isBlank()) {
                 throw new IllegalArgumentException("tenantId must not be blank");
             }

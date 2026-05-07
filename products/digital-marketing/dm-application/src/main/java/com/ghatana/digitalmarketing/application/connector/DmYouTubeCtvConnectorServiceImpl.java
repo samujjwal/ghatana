@@ -118,7 +118,7 @@ public final class DmYouTubeCtvConnectorServiceImpl implements DmYouTubeCtvConne
                     new SecurityException("Not authorized to update YouTube/CTV connectors"));
                 return loadOwned(ctx, id);
             })
-            .then(c -> connectorRepository.update(c.markAuthFailed(reason)));
+            .then(c -> connectorRepository.update(c.markFailed(reason)));
     }
 
     @Override

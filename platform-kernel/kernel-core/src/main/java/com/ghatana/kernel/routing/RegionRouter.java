@@ -1,6 +1,5 @@
 package com.ghatana.kernel.routing;
 
-import com.ghatana.kernel.context.KernelContext;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,23 +93,6 @@ public final class RegionRouter {
         return Promise.of(endpoint);
     }
 
-    /**
-     * Resolves the API base {@link URI} for the given context, using the supplied
-     * {@code regionHint}. Falls back to the primary region if {@code regionHint} is
-     * {@code null}, blank, or not in the endpoint registry.
-     *
-     * @param context kernel context containing tenant and workspace
-     * @param regionHint preferred region code, may be {@code null}
-     * @return Promise of the resolved base URI
-     */
-    public Promise<URI> resolveEndpoint(KernelContext context, String regionHint) {
-        Objects.requireNonNull(context, "context required");
-        return resolveEndpoint(
-            context.getTenantId().getValue(),
-            context.getWorkspaceId().getValue(),
-            regionHint
-        );
-    }
 
     /**
      * Returns all registered region codes, ordered alphabetically.

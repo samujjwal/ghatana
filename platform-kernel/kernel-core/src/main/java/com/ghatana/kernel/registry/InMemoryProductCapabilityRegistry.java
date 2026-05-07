@@ -75,7 +75,7 @@ public final class InMemoryProductCapabilityRegistry implements ProductCapabilit
 
         String key = workspaceKey(tenantId, workspaceId);
         workspaceCapabilities.computeIfAbsent(tenantId, k -> new ConcurrentHashMap<>())
-            .computeIfAbsent(workspaceId, k -> new ConcurrentHashMap<>())
+            .computeIfAbsent(workspaceId, k -> ConcurrentHashMap.newKeySet())
             .add(capabilityKey);
     }
 
@@ -151,7 +151,7 @@ public final class InMemoryProductCapabilityRegistry implements ProductCapabilit
             throw new IllegalArgumentException("Capability not registered: " + capabilityKey);
         }
 
-        tenantCapabilities.computeIfAbsent(tenantId, k -> new ConcurrentHashMap<>())
+        tenantCapabilities.computeIfAbsent(tenantId, k -> ConcurrentHashMap.newKeySet())
             .add(capabilityKey);
     }
 

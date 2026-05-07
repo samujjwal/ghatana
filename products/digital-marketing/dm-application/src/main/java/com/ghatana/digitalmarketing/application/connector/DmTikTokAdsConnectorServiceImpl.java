@@ -118,7 +118,7 @@ public final class DmTikTokAdsConnectorServiceImpl implements DmTikTokAdsConnect
                     new SecurityException("Not authorized to update TikTok Ads connectors"));
                 return loadOwned(ctx, id);
             })
-            .then(c -> connectorRepository.update(c.markAuthFailed(reason)));
+            .then(c -> connectorRepository.update(c.markFailed(reason)));
     }
 
     @Override

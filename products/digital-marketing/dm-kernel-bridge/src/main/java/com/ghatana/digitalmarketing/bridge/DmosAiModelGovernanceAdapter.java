@@ -5,6 +5,7 @@ import com.ghatana.aiplatform.registry.DeploymentStatus;
 import com.ghatana.aiplatform.registry.ModelMetadata;
 import com.ghatana.aiplatform.registry.ModelRegistryPort;
 import com.ghatana.digitalmarketing.bridge.governance.AiExperimentConfig;
+import com.ghatana.digitalmarketing.bridge.governance.ModelGovernanceAuditRecorder;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;

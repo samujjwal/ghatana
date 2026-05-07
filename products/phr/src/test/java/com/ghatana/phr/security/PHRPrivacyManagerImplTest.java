@@ -48,7 +48,7 @@ class PHRPrivacyManagerImplTest {
                 java.util.Map.of("patient_id", "patient-1")
             ),
             "tenant-1"
-        );
+        ).toCompletableFuture().join();
 
         assertEquals(PrivacyManager.ConsentStatus.GRANTED, status);
     }
@@ -74,7 +74,7 @@ class PHRPrivacyManagerImplTest {
                 java.util.Map.of("patient_id", "patient-1")
             ),
             "tenant-1"
-        );
+        ).toCompletableFuture().join();
 
         assertEquals(PrivacyManager.ConsentStatus.EXPIRED, status);
     }
@@ -100,7 +100,7 @@ class PHRPrivacyManagerImplTest {
                 Map.of("patient_id", "patient-1")
             ),
             "tenant-1"
-        );
+        ).toCompletableFuture().join();
 
         assertEquals(PrivacyManager.ConsentStatus.NOT_REQUIRED, status);
     }
@@ -126,7 +126,7 @@ class PHRPrivacyManagerImplTest {
                 Map.of("patient_id", "patient-1")
             ),
             "tenant-1"
-        );
+        ).toCompletableFuture().join();
 
         assertEquals(PrivacyManager.ConsentStatus.PENDING, status);
     }

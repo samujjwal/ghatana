@@ -6,6 +6,7 @@ package com.ghatana.digitalmarketing.domain.optimization;
  * @doc.type enum
  * @doc.purpose Defines the lifecycle states of budget reallocation proposals (P3-004)
  * @doc.layer product
+ * @doc.pattern ValueObject
  */
 public enum BudgetReallocationStatus {
     /** Proposal generated and awaiting human review */

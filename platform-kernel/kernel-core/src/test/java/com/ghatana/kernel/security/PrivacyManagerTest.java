@@ -1,6 +1,6 @@
 package com.ghatana.kernel.security;
 
-import com.ghatana.core.eventloop.EventloopTestBase;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +31,7 @@ class PrivacyManagerTest extends EventloopTestBase {
         String userId = "user-1";
         String purpose = "marketing";
 
-        ConsentStatus before = runPromise(() -> manager.checkConsent(
+        PrivacyManager.ConsentStatus before = runPromise(() -> manager.checkConsent(
             new PrivacyManager.DataRequest(userId, "email", purpose, Map.of()),
             tenantId
         ));
@@ -39,7 +39,7 @@ class PrivacyManagerTest extends EventloopTestBase {
 
         runPromise(() -> manager.recordConsent(tenantId, userId, purpose, true));
 
-        ConsentStatus after = runPromise(() -> manager.checkConsent(
+        PrivacyManager.ConsentStatus after = runPromise(() -> manager.checkConsent(
             new PrivacyManager.DataRequest(userId, "email", purpose, Map.of()),
             tenantId
         ));
@@ -200,11 +200,11 @@ class PrivacyManagerTest extends EventloopTestBase {
     void shouldGetPrivacyPolicy() {
         String tenantId = "tenant-1";
 
-        Optional<PrivacyManager.Policy> before = runPromise(() -> manager.getPrivacyPolicy(tenantId));
+        Optional<PrivacyManager.PrivacyPolicy> before = runPromise(() -> manager.getPrivacyPolicy(tenantId));
         assertThat(before).isEmpty();
 
         PrivacyManager.DataRetention retention = new PrivacyManager.DataRetention(365, 2555, 90);
-        PrivacyManager.Policy policy = new PrivacyManager.Policy(
+        PrivacyManager.PrivacyPolicy policy = new PrivacyManager.PrivacyPolicy(
             tenantId,
             "1.0.0",
             Map.of("marketing", true, "analytics", false),
@@ -212,6 +212,6 @@ class PrivacyManagerTest extends EventloopTestBase {
             "2026-01-01"
         );
 
-        PrivacyManager.Policy storedPolicy = runPromise(() -> manager.getPrivacyPolicy(tenantId).orElseThrow());
+        Optional<PrivacyManager.PrivacyPolicy> storedPolicy = runPromise(() -> manager.getPrivacyPolicy(tenantId));
     }
 }

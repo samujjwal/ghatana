@@ -1,5 +1,7 @@
 package com.ghatana.kernel.security;
 
+import io.activej.promise.Promise;
+
 import java.util.Objects;
 
 /**
@@ -32,13 +34,13 @@ public class PolicyEnforcementPoint {
      * @param context the security context
      * @return enforcement decision
      */
-    public EnforcementDecision enforce(Request request, SecurityContext context) {
+    public Promise<EnforcementDecision> enforce(Request request, SecurityContext context) {
         Objects.requireNonNull(request, "request cannot be null");
         Objects.requireNonNull(context, "context cannot be null");
 
         // Check authentication
         if (!context.isAuthenticated()) {
-            return EnforcementDecision.deny("Not authenticated");
+            return Promise.of(EnforcementDecision.deny("Not authenticated"));
         }
 
         // Check authorization
@@ -49,7 +51,7 @@ public class PolicyEnforcementPoint {
         );
 
         if (!securityManager.authorizeAction(action, context)) {
-            return EnforcementDecision.deny("Not authorized for action: " + action);
+            return Promise.of(EnforcementDecision.deny("Not authorized for action: " + action));
         }
 
         // Check privacy consent if required
@@ -61,16 +63,17 @@ public class PolicyEnforcementPoint {
                 request.getMetadata()
             );
 
-            PrivacyManager.ConsentStatus consentStatus =
-                privacyManager.checkConsent(dataRequest, context.getTenantId());
-
-            if (consentStatus != PrivacyManager.ConsentStatus.GRANTED &&
-                consentStatus != PrivacyManager.ConsentStatus.NOT_REQUIRED) {
-                return EnforcementDecision.deny("Consent not granted: " + consentStatus);
-            }
+            return privacyManager.checkConsent(dataRequest, context.getTenantId())
+                .then(consentStatus -> {
+                    if (consentStatus != PrivacyManager.ConsentStatus.GRANTED &&
+                        consentStatus != PrivacyManager.ConsentStatus.NOT_REQUIRED) {
+                        return Promise.of(EnforcementDecision.deny("Consent not granted: " + consentStatus));
+                    }
+                    return Promise.of(EnforcementDecision.allow());
+                });
         }
 
-        return EnforcementDecision.allow();
+        return Promise.of(EnforcementDecision.allow());
     }
 
     /**

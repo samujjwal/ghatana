@@ -7,6 +7,7 @@ import com.ghatana.digitalmarketing.domain.connector.DmCmsConnectorStatus;
 import io.activej.promise.Promise;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
@@ -119,7 +120,7 @@ public final class DmCmsConnectorServiceImpl implements DmCmsConnectorService {
                     new SecurityException("Not authorized to update CMS connectors"));
                 return loadOwned(ctx, id);
             })
-            .then(c -> connectorRepository.update(c.markAuthFailed(reason)));
+            .then(c -> connectorRepository.update(c.markFailed(reason)));
     }
 
     @Override

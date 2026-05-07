@@ -6,6 +6,7 @@ package com.ghatana.digitalmarketing.domain.optimization;
  * @doc.type enum
  * @doc.purpose Defines the lifecycle states of next-best-action recommendations (P3-004)
  * @doc.layer product
+ * @doc.pattern ValueObject
  */
 public enum NextBestActionStatus {
     /** Recommendation generated and awaiting human review */

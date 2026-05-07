@@ -6,6 +6,7 @@ package com.ghatana.kernel.workflow;
  * @doc.type enum
  * @doc.purpose Command lifecycle states (KERNEL-P0)
  * @doc.layer core
+ * @doc.pattern ValueObject
  */
 public enum CommandStatus {
     /**

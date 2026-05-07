@@ -93,7 +93,8 @@ class PHRSecurityIntegrationTest {
             .build();
 
         PolicyEnforcementPoint.EnforcementDecision decision =
-            policyEnforcementPoint.enforce(request, context);
+            policyEnforcementPoint.enforce(request, context)
+                .toCompletableFuture().join();
 
         assertTrue(decision.isAllowed(), "Access should be allowed with valid consent");
     }
@@ -113,7 +114,8 @@ class PHRSecurityIntegrationTest {
             .build();
 
         PolicyEnforcementPoint.EnforcementDecision decision =
-            policyEnforcementPoint.enforce(request, context);
+            policyEnforcementPoint.enforce(request, context)
+                .toCompletableFuture().join();
 
         assertFalse(decision.isAllowed(), "Access should be denied without consent");
         assertTrue(decision.getReason().contains("Consent not granted"),
@@ -135,7 +137,8 @@ class PHRSecurityIntegrationTest {
             .build();
 
         PolicyEnforcementPoint.EnforcementDecision decision =
-            policyEnforcementPoint.enforce(request, unauthContext);
+            policyEnforcementPoint.enforce(request, unauthContext)
+                .toCompletableFuture().join();
 
         assertFalse(decision.isAllowed(), "Access should be denied for unauthenticated user");
         assertEquals("Not authenticated", decision.getReason());

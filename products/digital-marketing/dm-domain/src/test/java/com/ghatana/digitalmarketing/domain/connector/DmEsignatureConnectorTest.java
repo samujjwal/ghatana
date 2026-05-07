@@ -107,7 +107,7 @@ class DmEsignatureConnectorTest {
             .updatedAt(now)
             .build();
 
-        DmEsignatureConnector failed = connector.markAuthFailed("Invalid credentials");
+        DmEsignatureConnector failed = connector.markFailed("Invalid credentials");
 
         assertEquals(DmEsignatureConnectorStatus.FAILED, failed.getStatus());
         assertEquals("Invalid credentials", failed.getFailureReason());

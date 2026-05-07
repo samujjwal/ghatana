@@ -6,6 +6,7 @@ package com.ghatana.digitalmarketing.domain.optimization;
  * @doc.type enum
  * @doc.purpose Defines the lifecycle states of experiment suggestions (P3-004)
  * @doc.layer product
+ * @doc.pattern ValueObject
  */
 public enum ExperimentSuggestionStatus {
     /** Suggestion generated and awaiting review */

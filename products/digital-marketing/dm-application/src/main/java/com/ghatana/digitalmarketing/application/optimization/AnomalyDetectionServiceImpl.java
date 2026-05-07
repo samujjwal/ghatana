@@ -3,6 +3,7 @@ package com.ghatana.digitalmarketing.application.optimization;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.optimization.AnomalyDetectionResult;
+import com.ghatana.digitalmarketing.domain.optimization.AnomalySeverity;
 import com.ghatana.digitalmarketing.domain.optimization.AnomalyStatus;
 import io.activej.promise.Promise;
 

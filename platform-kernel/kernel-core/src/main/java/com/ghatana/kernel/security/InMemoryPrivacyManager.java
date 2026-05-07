@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,7 +27,7 @@ public final class InMemoryPrivacyManager implements PrivacyManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(InMemoryPrivacyManager.class);
 
-    private final Map<String, Policy> policies = new ConcurrentHashMap<>();
+    private final Map<String, PrivacyPolicy> policies = new ConcurrentHashMap<>();
     private final Map<String, Map<String, Boolean>> consents = new ConcurrentHashMap<>();
     private final Map<String, String> encryptionKeys = new ConcurrentHashMap<>();
     private final Executor executor;
@@ -85,7 +86,7 @@ public final class InMemoryPrivacyManager implements PrivacyManager {
         Objects.requireNonNull(tenantId, "tenantId must not be null");
 
         return Promise.ofBlocking(executor, () -> {
-            Policy policy = policies.get(tenantId);
+            PrivacyPolicy policy = policies.get(tenantId);
             if (policy == null) {
                 LOG.info("[PRIVACY-MANAGER] No policy for tenant {}, residency check defaults to true", tenantId);
                 return true;
@@ -111,7 +112,7 @@ public final class InMemoryPrivacyManager implements PrivacyManager {
     }
 
     @Override
-    public Promise<Optional<Policy>> getPrivacyPolicy(String tenantId) {
+    public Promise<Optional<PrivacyPolicy>> getPrivacyPolicy(String tenantId) {
         Objects.requireNonNull(tenantId, "tenantId must not be null");
 
         return Promise.ofBlocking(executor, () -> Optional.ofNullable(policies.get(tenantId)));

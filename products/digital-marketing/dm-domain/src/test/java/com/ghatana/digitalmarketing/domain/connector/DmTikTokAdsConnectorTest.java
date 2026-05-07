@@ -101,7 +101,7 @@ class DmTikTokAdsConnectorTest {
             .updatedAt(now)
             .build();
 
-        DmTikTokAdsConnector failed = connector.markAuthFailed("Invalid credentials");
+        DmTikTokAdsConnector failed = connector.markFailed("Invalid credentials");
 
         assertEquals(DmTikTokAdsConnectorStatus.FAILED, failed.getStatus());
         assertEquals("Invalid credentials", failed.getFailureReason());

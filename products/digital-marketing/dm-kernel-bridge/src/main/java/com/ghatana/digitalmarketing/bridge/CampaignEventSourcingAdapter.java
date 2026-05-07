@@ -3,7 +3,14 @@ package com.ghatana.digitalmarketing.bridge;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ghatana.digitalmarketing.bridge.event.BaseCampaignEvent;
+import com.ghatana.digitalmarketing.bridge.event.CampaignArchived;
+import com.ghatana.digitalmarketing.bridge.event.CampaignCompleted;
+import com.ghatana.digitalmarketing.bridge.event.CampaignCreated;
 import com.ghatana.digitalmarketing.bridge.event.CampaignEventPayload;
+import com.ghatana.digitalmarketing.bridge.event.CampaignLaunched;
+import com.ghatana.digitalmarketing.bridge.event.CampaignPaused;
+import com.ghatana.digitalmarketing.bridge.event.CampaignRolledBack;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignStatus;
@@ -115,9 +122,9 @@ public final class CampaignEventSourcingAdapter {
      */
     public Promise<Offset> publishRolledBack(
             DmOperationContext ctx, Campaign campaign, CampaignStatus previousStatus) {
-        CampaignEventPayload.BaseCampaignEvent base = toBaseEvent(campaign);
-        CampaignEventPayload.CampaignRolledBack payload = 
-                CampaignEventPayload.CampaignRolledBack.from(base, previousStatus.name());
+        BaseCampaignEvent base = toBaseEvent(campaign);
+        CampaignRolledBack payload = 
+                CampaignRolledBack.from(base, previousStatus.name());
         return appendEntry(ctx, campaign.getId(), EVT_CAMPAIGN_ROLLED_BACK, payload);
     }
 
@@ -149,13 +156,13 @@ public final class CampaignEventSourcingAdapter {
 
     private Promise<Offset> publish(
             DmOperationContext ctx, Campaign campaign, String eventType) {
-        CampaignEventPayload.BaseCampaignEvent base = toBaseEvent(campaign);
+        BaseCampaignEvent base = toBaseEvent(campaign);
         CampaignEventPayload payload = switch (eventType) {
-            case EVT_CAMPAIGN_CREATED -> CampaignEventPayload.CampaignCreated.from(base);
-            case EVT_CAMPAIGN_LAUNCHED -> CampaignEventPayload.CampaignLaunched.from(base);
-            case EVT_CAMPAIGN_PAUSED -> CampaignEventPayload.CampaignPaused.from(base);
-            case EVT_CAMPAIGN_COMPLETED -> CampaignEventPayload.CampaignCompleted.from(base);
-            case EVT_CAMPAIGN_ARCHIVED -> CampaignEventPayload.CampaignArchived.from(base);
+            case EVT_CAMPAIGN_CREATED -> CampaignCreated.from(base);
+            case EVT_CAMPAIGN_LAUNCHED -> CampaignLaunched.from(base);
+            case EVT_CAMPAIGN_PAUSED -> CampaignPaused.from(base);
+            case EVT_CAMPAIGN_COMPLETED -> CampaignCompleted.from(base);
+            case EVT_CAMPAIGN_ARCHIVED -> CampaignArchived.from(base);
             default -> throw new IllegalArgumentException("Unknown event type: " + eventType);
         };
         return appendEntry(ctx, campaign.getId(), eventType, payload);
@@ -204,8 +211,8 @@ public final class CampaignEventSourcingAdapter {
         }
     }
 
-    private static CampaignEventPayload.BaseCampaignEvent toBaseEvent(Campaign campaign) {
-        return new CampaignEventPayload.BaseCampaignEvent(
+    private static BaseCampaignEvent toBaseEvent(Campaign campaign) {
+        return new BaseCampaignEvent(
                 campaign.getId(),
                 campaign.getWorkspaceId().getValue(),
                 campaign.getName(),

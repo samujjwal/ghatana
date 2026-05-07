@@ -101,7 +101,7 @@ class DmYouTubeCtvConnectorTest {
             .updatedAt(now)
             .build();
 
-        DmYouTubeCtvConnector failed = connector.markAuthFailed("Invalid credentials");
+        DmYouTubeCtvConnector failed = connector.markFailed("Invalid credentials");
 
         assertEquals(DmYouTubeCtvConnectorStatus.FAILED, failed.getStatus());
         assertEquals("Invalid credentials", failed.getFailureReason());

@@ -3,6 +3,7 @@ package com.ghatana.digitalmarketing.application.optimization;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.optimization.NextBestActionRecommendation;
 import com.ghatana.digitalmarketing.domain.optimization.NextBestActionStatus;
+import com.ghatana.digitalmarketing.domain.optimization.NextBestActionType;
 import io.activej.promise.Promise;
 
 import java.time.Instant;

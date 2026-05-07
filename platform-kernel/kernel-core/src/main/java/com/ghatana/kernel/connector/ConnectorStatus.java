@@ -6,6 +6,7 @@ package com.ghatana.kernel.connector;
  * @doc.type enum
  * @doc.purpose Connector lifecycle states (KERNEL-P1)
  * @doc.layer core
+ * @doc.pattern ValueObject
  */
 public enum ConnectorStatus {
     /**

@@ -6,6 +6,7 @@ import com.ghatana.kernel.security.SecurityContext;
 import com.ghatana.phr.kernel.service.PhrInputSanitizationUtils;
 import com.ghatana.phr.model.PatientRecords;
 import com.ghatana.phr.service.PatientService;
+import io.activej.promise.Promise;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -50,7 +51,7 @@ public class PatientController {
             .build();
 
         PolicyEnforcementPoint.EnforcementDecision decision =
-            policyEnforcementPoint.enforce(request, context);
+            policyEnforcementPoint.enforce(request, context).toCompletableFuture().join();
 
         if (!decision.isAllowed()) {
             return Response.error(403, decision.getReason());
@@ -80,7 +81,7 @@ public class PatientController {
             .build();
 
         PolicyEnforcementPoint.EnforcementDecision decision =
-            policyEnforcementPoint.enforce(request, context);
+            policyEnforcementPoint.enforce(request, context).toCompletableFuture().join();
 
         if (!decision.isAllowed()) {
             return Response.error(403, decision.getReason());

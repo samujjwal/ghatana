@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,15 +37,16 @@ public final class InMemoryDurableCommandRuntime implements DurableCommandRuntim
         Objects.requireNonNull(command, "command must not be null");
 
         return Promise.ofBlocking(executor, () -> {
-            String commandId = command.getId();
+            Command finalCommand = command;
+            String commandId = finalCommand.getId();
             if (commandId == null || commandId.isBlank()) {
                 commandId = UUID.randomUUID().toString();
-                command = command.toBuilder().id(commandId).build();
+                finalCommand = finalCommand.toBuilder().id(commandId).build();
             }
 
-            commands.put(commandId, command);
+            commands.put(commandId, finalCommand);
             LOG.info("[COMMAND-RUNTIME] Submitted command commandId={} type={} tenant={}", 
-                commandId, command.getCommandType(), command.getTenantId());
+                commandId, finalCommand.getCommandType(), finalCommand.getTenantId());
             return commandId;
         });
     }

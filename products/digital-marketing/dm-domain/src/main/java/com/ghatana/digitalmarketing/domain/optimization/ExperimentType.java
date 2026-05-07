@@ -6,6 +6,7 @@ package com.ghatana.digitalmarketing.domain.optimization;
  * @doc.type enum
  * @doc.purpose Defines the types of AI-generated experiment suggestions (P3-004)
  * @doc.layer product
+ * @doc.pattern ValueObject
  */
 public enum ExperimentType {
     /** Test different creative assets (images, videos, ad copy) */

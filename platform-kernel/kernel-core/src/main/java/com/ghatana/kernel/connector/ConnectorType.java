@@ -6,6 +6,7 @@ package com.ghatana.kernel.connector;
  * @doc.type enum
  * @doc.purpose Supported connector types for external platforms (KERNEL-P1)
  * @doc.layer core
+ * @doc.pattern ValueObject
  */
 public enum ConnectorType {
     /**

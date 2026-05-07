@@ -107,7 +107,7 @@ class DmCmsConnectorTest {
             .updatedAt(now)
             .build();
 
-        DmCmsConnector failed = connector.markAuthFailed("Invalid credentials");
+        DmCmsConnector failed = connector.markFailed("Invalid credentials");
 
         assertEquals(DmCmsConnectorStatus.FAILED, failed.getStatus());
         assertEquals("Invalid credentials", failed.getFailureReason());

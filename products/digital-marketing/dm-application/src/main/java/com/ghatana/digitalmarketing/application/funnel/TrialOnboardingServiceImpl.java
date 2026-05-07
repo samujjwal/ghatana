@@ -35,8 +35,8 @@ public class TrialOnboardingServiceImpl implements TrialOnboardingService {
 
         TrialOnboarding onboarding = TrialOnboarding.builder()
             .id(onboardingId)
-            .tenantId(ctx.tenantId().getValue())
-            .workspaceId(ctx.workspaceId().getValue())
+            .tenantId(ctx.getTenantId().getValue())
+            .workspaceId(ctx.getWorkspaceId().getValue())
             .leadId(command.leadId())
             .demoWorkspaceId(command.demoWorkspaceId())
             .status(TrialOnboardingStatus.PENDING)
@@ -113,6 +113,6 @@ public class TrialOnboardingServiceImpl implements TrialOnboardingService {
 
     @Override
     public Promise<java.util.List<TrialOnboarding>> list(DmOperationContext ctx) {
-        return repository.listByTenant(ctx.tenantId().getValue());
+        return repository.listByTenant(ctx.getTenantId().getValue());
     }
 }

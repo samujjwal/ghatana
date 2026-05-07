@@ -1,11 +1,13 @@
 package com.ghatana.kernel.test.integration;
 
 import com.ghatana.kernel.security.*;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -73,7 +75,8 @@ class SecurityFrameworkIntegrationTest {
             "user-1", "domain-data", "treatment", Map.of()
         );
 
-        PrivacyManager.ConsentStatus status = privacyManager.checkConsent(request, "tenant-1"); 
+        PrivacyManager.ConsentStatus status = privacyManager.checkConsent(request, "tenant-1")
+            .toCompletableFuture().join(); 
 
         assertNotNull(status); 
         assertEquals(PrivacyManager.ConsentStatus.GRANTED, status); 
@@ -97,7 +100,8 @@ class SecurityFrameworkIntegrationTest {
             "us-east-1", "USA", "datacenter-1"
         );
 
-        boolean compliant = privacyManager.enforceResidency(location, "tenant-1"); 
+        boolean compliant = privacyManager.enforceResidency(location, "tenant-1")
+            .toCompletableFuture().join(); 
 
         assertTrue(compliant); 
     }
@@ -113,7 +117,8 @@ class SecurityFrameworkIntegrationTest {
             .build(); 
 
         PolicyEnforcementPoint.EnforcementDecision decision =
-            policyEnforcementPoint.enforce(request, context); 
+            policyEnforcementPoint.enforce(request, context)
+                .toCompletableFuture().join(); 
 
         assertTrue(decision.isAllowed()); 
     }
@@ -129,7 +134,8 @@ class SecurityFrameworkIntegrationTest {
             .build(); 
 
         PolicyEnforcementPoint.EnforcementDecision decision =
-            policyEnforcementPoint.enforce(request, context); 
+            policyEnforcementPoint.enforce(request, context)
+                .toCompletableFuture().join(); 
 
         assertFalse(decision.isAllowed()); 
         assertEquals("Not authenticated", decision.getReason()); 
@@ -149,7 +155,8 @@ class SecurityFrameworkIntegrationTest {
             .build(); 
 
         PolicyEnforcementPoint.EnforcementDecision decision =
-            policyEnforcementPoint.enforce(request, context); 
+            policyEnforcementPoint.enforce(request, context)
+                .toCompletableFuture().join(); 
 
         assertTrue(decision.isAllowed()); 
     }
@@ -194,8 +201,8 @@ class SecurityFrameworkIntegrationTest {
 
     private static class MockPrivacyManager implements PrivacyManager {
         @Override
-        public ConsentStatus checkConsent(DataRequest request, String tenantId) { 
-            return ConsentStatus.GRANTED;
+        public Promise<ConsentStatus> checkConsent(DataRequest request, String tenantId) { 
+            return Promise.of(ConsentStatus.GRANTED);
         }
 
         @Override
@@ -204,17 +211,65 @@ class SecurityFrameworkIntegrationTest {
         }
 
         @Override
-        public boolean enforceResidency(DataLocation location, String tenantId) { 
-            return true;
+        public Promise<Boolean> enforceResidency(DataLocation location, String tenantId) { 
+            return Promise.of(true);
         }
 
         @Override
-        public void recordConsent(String tenantId, String userId, String purpose, boolean granted) { 
+        public Promise<Void> recordConsent(String tenantId, String userId, String purpose, boolean granted) { 
+            return Promise.of(null);
         }
 
         @Override
-        public Policy getPrivacyPolicy(String tenantId) { 
-            return new MockPolicy("privacy-policy", Policy.PolicyType.DATA_ACCESS); 
+        public Promise<Optional<PrivacyPolicy>> getPrivacyPolicy(String tenantId) { 
+            return Promise.of(Optional.of(new PrivacyPolicy(
+                tenantId,
+                "1.0",
+                Map.of(),
+                new DataRetention(365, 2555, 90),
+                "2026-01-01"
+            )));
+        }
+
+        @Override
+        public Promise<String> encryptPII(String tenantId, String pii) {
+            return Promise.of(pii);
+        }
+
+        @Override
+        public Promise<String> decryptPII(String tenantId, String encryptedPii) {
+            return Promise.of(encryptedPii);
+        }
+
+        @Override
+        public Promise<String> hashPIIIdentifier(String tenantId, String identifier) {
+            return Promise.of(identifier);
+        }
+
+        @Override
+        public String redactPII(String data, DataClassification classification) {
+            return data;
+        }
+
+        @Override
+        public Promise<DSarResult> processDSAR(DSARRequest request) {
+            return Promise.of(new DSarResult(
+                request.requestId(),
+                DSARStatus.COMPLETED,
+                Map.of(),
+                "Done",
+                java.time.Instant.now()
+            ));
+        }
+
+        @Override
+        public Promise<Void> deleteSubjectData(String tenantId, String subjectId) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Map<String, Object>> exportSubjectData(String tenantId, String subjectId) {
+            return Promise.of(Map.of());
         }
     }
 

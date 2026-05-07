@@ -3,12 +3,14 @@ package com.ghatana.kernel.test.performance;
 import com.ghatana.kernel.security.*;
 import com.ghatana.kernel.observability.*;
 import com.ghatana.kernel.ai.*;
+import io.activej.promise.Promise;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -71,7 +73,8 @@ public class KernelPerformanceBenchmark {
             .scope("domain-alpha")
             .build();
 
-        return policyEnforcementPoint.enforce(request, securityContext);
+        return policyEnforcementPoint.enforce(request, securityContext)
+            .toCompletableFuture().join();
     }
 
     @Benchmark
@@ -79,7 +82,8 @@ public class KernelPerformanceBenchmark {
         PrivacyManager.DataRequest request = new PrivacyManager.DataRequest(
             "user-1", "domain-data", "treatment", Map.of()
         );
-        return privacyManager.checkConsent(request, "tenant-1");
+        return privacyManager.checkConsent(request, "tenant-1")
+            .toCompletableFuture().join();
     }
 
     @Benchmark
@@ -154,8 +158,8 @@ public class KernelPerformanceBenchmark {
 
     private static class MockPrivacyManager implements PrivacyManager {
         @Override
-        public ConsentStatus checkConsent(DataRequest request, String tenantId) { 
-            return ConsentStatus.GRANTED;
+        public Promise<ConsentStatus> checkConsent(DataRequest request, String tenantId) { 
+            return Promise.of(ConsentStatus.GRANTED);
         }
 
         @Override
@@ -164,17 +168,65 @@ public class KernelPerformanceBenchmark {
         }
 
         @Override
-        public boolean enforceResidency(DataLocation location, String tenantId) { 
-            return true;
+        public Promise<Boolean> enforceResidency(DataLocation location, String tenantId) { 
+            return Promise.of(true);
         }
 
         @Override
-        public void recordConsent(String tenantId, String userId, String purpose, boolean granted) { 
+        public Promise<Void> recordConsent(String tenantId, String userId, String purpose, boolean granted) { 
+            return Promise.of(null);
         }
 
         @Override
-        public Policy getPrivacyPolicy(String tenantId) { 
-            return null;
+        public Promise<Optional<PrivacyPolicy>> getPrivacyPolicy(String tenantId) { 
+            return Promise.of(Optional.of(new PrivacyPolicy(
+                tenantId,
+                "1.0",
+                Map.of(),
+                new DataRetention(365, 2555, 90),
+                "2026-01-01"
+            )));
+        }
+
+        @Override
+        public Promise<String> encryptPII(String tenantId, String pii) {
+            return Promise.of(pii);
+        }
+
+        @Override
+        public Promise<String> decryptPII(String tenantId, String encryptedPii) {
+            return Promise.of(encryptedPii);
+        }
+
+        @Override
+        public Promise<String> hashPIIIdentifier(String tenantId, String identifier) {
+            return Promise.of(identifier);
+        }
+
+        @Override
+        public String redactPII(String data, DataClassification classification) {
+            return data;
+        }
+
+        @Override
+        public Promise<DSarResult> processDSAR(DSARRequest request) {
+            return Promise.of(new DSarResult(
+                request.requestId(),
+                DSARStatus.COMPLETED,
+                Map.of(),
+                "Done",
+                java.time.Instant.now()
+            ));
+        }
+
+        @Override
+        public Promise<Void> deleteSubjectData(String tenantId, String subjectId) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Map<String, Object>> exportSubjectData(String tenantId, String subjectId) {
+            return Promise.of(Map.of());
         }
     }
 
