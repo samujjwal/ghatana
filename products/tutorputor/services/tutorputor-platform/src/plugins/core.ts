@@ -21,6 +21,10 @@ interface CorePluginsOptions {
   redis?: unknown;
 }
 
+interface RedisHealthClient {
+  ping(): Promise<unknown>;
+}
+
 /**
  * Core infrastructure plugin.
  * Sets up Prisma, Redis, JWT, error handling, rate limiting, consent enforcement, input sanitization, and standard error responses.
@@ -86,7 +90,7 @@ export const setupCorePlugins: FastifyPluginAsync<CorePluginsOptions> = async (
       await app.prisma.$queryRaw`SELECT 1`;
 
       // Check Redis connection
-      await (app.redis as any).ping();
+      await (app.redis as unknown as RedisHealthClient).ping();
 
       return reply.send({
         status: "ok",
@@ -143,7 +147,7 @@ export const setupCorePlugins: FastifyPluginAsync<CorePluginsOptions> = async (
   app.get("/ready", async (request, reply) => {
     try {
       await app.prisma.$queryRaw`SELECT 1`;
-      await (app.redis as any).ping();
+      await (app.redis as unknown as RedisHealthClient).ping();
       return reply.send({ status: "ready" });
     } catch {
       return reply.status(503).send({ status: "not ready" });

@@ -16,7 +16,7 @@
  */
 
 import * as crypto from 'crypto';
-import type { PrismaClient } from '@tutorputor/core/db';
+import { Prisma, type PrismaClient } from '@tutorputor/core/db';
 import { Logger } from 'pino';
 
 /**
@@ -60,6 +60,60 @@ export interface SeedConfig {
   seedSource: SeedSource;
 }
 
+interface GenerationReplayManifestRecord {
+  id: string;
+  generationJobId: string;
+  seed: string;
+  seedSource: SeedSource;
+  jobType: string;
+  inputParams: unknown;
+  outputData?: unknown;
+  generatedAt: Date;
+  replayable: boolean;
+}
+
+interface GenerationReplayManifestDelegate {
+  create(args: {
+    data: {
+      id: string;
+      generationJobId: string;
+      seed: string;
+      seedSource: SeedSource;
+      jobType: string;
+      inputParams: Prisma.InputJsonValue;
+      generatedAt: Date;
+      replayable: boolean;
+    };
+  }): Promise<GenerationReplayManifestRecord>;
+  update(args: {
+    where: { id: string };
+    data: {
+      outputData: Prisma.InputJsonValue;
+      replayable: boolean;
+    };
+  }): Promise<GenerationReplayManifestRecord>;
+  findFirst(args: {
+    where: { generationJobId: string };
+  }): Promise<GenerationReplayManifestRecord | null>;
+  findMany(args: {
+    where: { generationJob: { tenantId: string } };
+  }): Promise<GenerationReplayManifestRecord[]>;
+}
+
+type ReplayPrismaClient = PrismaClient & {
+  generationReplayManifest: GenerationReplayManifestDelegate;
+};
+
+function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
+  return value as Prisma.InputJsonValue;
+}
+
+function toRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object'
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
 /**
  * Seeded replay harness service.
  */
@@ -69,6 +123,10 @@ export class SeededReplayHarness {
     private logger: Logger,
     private defaultSeedSource: SeedSource = 'deterministic'
   ) {}
+
+  private get replayPrisma(): ReplayPrismaClient {
+    return this.prisma as unknown as ReplayPrismaClient;
+  }
 
   /**
    * Generate a deterministic seed for a generation job.
@@ -152,14 +210,14 @@ export class SeededReplayHarness {
 
     // Store manifest in database for audit trail
     try {
-      await (this.prisma as any).generationReplayManifest.create({
+      await this.replayPrisma.generationReplayManifest.create({
         data: {
           id: manifest.manifestId,
           generationJobId,
           seed,
           seedSource,
           jobType,
-          inputParams: inputParams as any,
+          inputParams: toInputJsonValue(inputParams),
           generatedAt: new Date(manifest.generatedAt),
           replayable: true,
         },
@@ -190,10 +248,10 @@ export class SeededReplayHarness {
     const { manifestId, outputData, success } = params;
 
     try {
-      await (this.prisma as any).generationReplayManifest.update({
+      await this.replayPrisma.generationReplayManifest.update({
         where: { id: manifestId },
         data: {
-          outputData: outputData as any,
+          outputData: toInputJsonValue(outputData),
           replayable: success,
         },
       });
@@ -220,7 +278,7 @@ export class SeededReplayHarness {
 
     try {
       // Find the original manifest
-      const originalManifest = await (this.prisma as any).generationReplayManifest.findFirst({
+      const originalManifest = await this.replayPrisma.generationReplayManifest.findFirst({
         where: { generationJobId: originalGenerationJobId },
       });
 
@@ -248,8 +306,10 @@ export class SeededReplayHarness {
         seed: originalManifest.seed,
         seedSource: originalManifest.seedSource as SeedSource,
         jobType: originalManifest.jobType,
-        inputParams: originalManifest.inputParams as Record<string, unknown>,
-        outputData: (originalManifest.outputData as Record<string, unknown> | undefined) || undefined,
+        inputParams: toRecord(originalManifest.inputParams),
+        outputData: originalManifest.outputData
+          ? toRecord(originalManifest.outputData)
+          : undefined,
         generatedAt: originalManifest.generatedAt.toISOString(),
         replayable: originalManifest.replayable,
       };
@@ -277,7 +337,7 @@ export class SeededReplayHarness {
     const { originalGenerationJobId, replayOutputData, tolerance = 0.95 } = params;
 
     try {
-      const originalManifest = await (this.prisma as any).generationReplayManifest.findFirst({
+      const originalManifest = await this.replayPrisma.generationReplayManifest.findFirst({
         where: { generationJobId: originalGenerationJobId },
       });
 
@@ -289,7 +349,7 @@ export class SeededReplayHarness {
         };
       }
 
-      const originalOutput = originalManifest.outputData as Record<string, unknown>;
+      const originalOutput = toRecord(originalManifest.outputData);
       const differences: string[] = [];
       let totalFields = 0;
       let matchingFields = 0;
@@ -351,7 +411,7 @@ export class SeededReplayHarness {
     const { tenantId } = params;
 
     try {
-      const manifests = await (this.prisma as any).generationReplayManifest.findMany({
+      const manifests = await this.replayPrisma.generationReplayManifest.findMany({
         where: {
           generationJob: {
             tenantId,
@@ -359,10 +419,10 @@ export class SeededReplayHarness {
         },
       });
 
-      const deterministicSeeds = manifests.filter((m: any) => m.seedSource === 'deterministic').length;
-      const randomSeeds = manifests.filter((m: any) => m.seedSource === 'random').length;
-      const providedSeeds = manifests.filter((m: any) => m.seedSource === 'provided').length;
-      const replayableCount = manifests.filter((m: any) => m.replayable).length;
+      const deterministicSeeds = manifests.filter((m) => m.seedSource === 'deterministic').length;
+      const randomSeeds = manifests.filter((m) => m.seedSource === 'random').length;
+      const providedSeeds = manifests.filter((m) => m.seedSource === 'provided').length;
+      const replayableCount = manifests.filter((m) => m.replayable).length;
 
       return {
         totalManifests: manifests.length,

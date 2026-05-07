@@ -7,6 +7,7 @@
  * @doc.pattern Routes
  */
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { PrismaClient } from "@tutorputor/core/db";
 import type { AIProxyService } from "@tutorputor/contracts/v1/services";
 import type {
   ModuleId,
@@ -26,7 +27,10 @@ import { aiRegistryClient as defaultAiRegistryClient } from "../../clients/ai-re
 import { aiQuerySchema } from "../../validation/validator.js";
 import { validateBody } from "../../validation/middleware/validation.js";
 import { createConsentEnforcement } from "../../core/middleware/consent-enforcement.js";
-import { AIAuditService } from "../audit/AIAuditService.js";
+import {
+  AIAuditService,
+  type AIAuditLogEntry,
+} from "../audit/AIAuditService.js";
 import {
   assertAIInteractionAllowed,
   buildAIAuditPayload,
@@ -37,7 +41,6 @@ type AiRegistryClient = typeof defaultAiRegistryClient;
 
 interface AIRouteDeps {
   aiProxyService: AIProxyService & {
-    [key: string]: unknown;
     generateQuestionsFromContent?: (args: {
       tenantId: string;
       moduleId: string;
@@ -58,6 +61,45 @@ interface AIRouteDeps {
 
 const DEFAULT_AI_RATE_LIMIT_MAX = 30;
 const DEFAULT_AI_RATE_LIMIT_WINDOW_SECONDS = 60;
+
+function requestAuditMetadata(
+  req: FastifyRequest,
+): Pick<AIAuditLogEntry, "ipAddress" | "userAgent"> {
+  const userAgent = req.headers["user-agent"];
+  return {
+    ipAddress: req.ip,
+    ...(typeof userAgent === "string" ? { userAgent } : {}),
+  };
+}
+
+function buildAuditEntry(args: {
+  req: FastifyRequest;
+  tenantId: TenantId;
+  userId: UserId;
+  modelId: string;
+  modelVersion?: string;
+  endpoint: string;
+  requestPayload: string;
+  responsePayload?: string;
+  success: boolean;
+  errorMessage?: string;
+  latencyMs: number;
+}): AIAuditLogEntry {
+  return {
+    tenantId: String(args.tenantId),
+    userId: String(args.userId),
+    modelId: args.modelId,
+    endpoint: args.endpoint,
+    requestPayload: args.requestPayload,
+    policyDecision: args.success ? "allowed" : "blocked",
+    latencyMs: args.latencyMs,
+    success: args.success,
+    ...requestAuditMetadata(args.req),
+    ...(args.modelVersion ? { modelVersion: args.modelVersion } : {}),
+    ...(args.responsePayload ? { responsePayload: args.responsePayload } : {}),
+    ...(args.errorMessage ? { errorMessage: args.errorMessage } : {}),
+  };
+}
 
 async function enforceAiTenantRateLimit(
   app: FastifyInstance,
@@ -134,12 +176,12 @@ export async function registerAIRoutes(
   deps: AIRouteDeps,
 ): Promise<void> {
   const aiContentService = new AIContentGenerationService(deps.aiProxyService);
-  const aiAuditService = new AIAuditService(app.prisma as any);
+  const aiAuditService = new AIAuditService(app.prisma as PrismaClient);
 
   // Create consent enforcement middleware for AI routes
   // AI processing requires explicit user consent for data processing
   const consentEnforcement = createConsentEnforcement({
-    prisma: app.prisma as any,
+    prisma: app.prisma as PrismaClient,
   });
 
   function sendRequestContextError(
@@ -212,7 +254,7 @@ export async function registerAIRoutes(
       let modelId: string | undefined;
       let success = true;
       let errorMessage: string | undefined;
-      let response: any = null;
+      let response: unknown = null;
 
       try {
         if (!(await enforceAiTenantRateLimit(app, req, reply, "tutor-query"))) {
@@ -331,23 +373,21 @@ export async function registerAIRoutes(
           },
           ...(response ? { response: { modelId } } : {}),
         });
-        const auditEntry: any = {
-          tenantId: String(tenantId),
-          userId: String(userId),
+        const auditEntry = buildAuditEntry({
+          req,
+          tenantId,
+          userId,
           modelId: modelId || "unknown",
           modelVersion: modelId || "unknown",
           endpoint: "tutor/query",
           requestPayload: auditPayload.requestPayload,
-          policyDecision: success ? "allowed" : "blocked",
           latencyMs,
           success,
-          errorMessage,
-          ipAddress: (req as any).ip,
-          userAgent: (req as any).headers["user-agent"],
-        };
-        if (auditPayload.responsePayload) {
-          auditEntry.responsePayload = auditPayload.responsePayload;
-        }
+          ...(errorMessage ? { errorMessage } : {}),
+          ...(auditPayload.responsePayload
+            ? { responsePayload: auditPayload.responsePayload }
+            : {}),
+        });
         void aiAuditService.logInference(auditEntry);
       }
     },
@@ -373,7 +413,7 @@ export async function registerAIRoutes(
       };
       let success = true;
       let errorMessage: string | undefined;
-      let response: any = null;
+      let response: unknown = null;
 
       try {
         requireRole(req, ["teacher", "admin", "superadmin"]);
@@ -458,22 +498,20 @@ export async function registerAIRoutes(
       } finally {
         // Log AI inference for audit
         const latencyMs = Date.now() - startTime;
-        const auditEntry: any = {
-          tenantId: String(tenantId),
-          userId: String(userId),
+        const auditEntry = buildAuditEntry({
+          req,
+          tenantId,
+          userId,
           modelId: "unknown",
           endpoint: "generate-questions",
           requestPayload: JSON.stringify({ moduleId, count, difficulty }),
-          policyDecision: success ? "allowed" : "blocked",
           latencyMs,
           success,
-          errorMessage,
-          ipAddress: (req as any).ip,
-          userAgent: (req as any).headers["user-agent"],
-        };
-        if (success && response) {
-          auditEntry.responsePayload = JSON.stringify(response);
-        }
+          ...(errorMessage ? { errorMessage } : {}),
+          ...(success && response
+            ? { responsePayload: JSON.stringify(response) }
+            : {}),
+        });
         void aiAuditService.logInference(auditEntry);
       }
     },
@@ -493,7 +531,7 @@ export async function registerAIRoutes(
       };
       let success = true;
       let errorMessage: string | undefined;
-      let response: any = null;
+      let response: unknown = null;
 
       try {
         if (
@@ -552,22 +590,20 @@ export async function registerAIRoutes(
       } finally {
         // Log AI inference for audit
         const latencyMs = Date.now() - startTime;
-        const auditEntry: any = {
-          tenantId: String(tenantId),
-          userId: String(userId),
+        const auditEntry = buildAuditEntry({
+          req,
+          tenantId,
+          userId,
           modelId: "unknown",
           endpoint: "generate-concept",
           requestPayload: JSON.stringify({ conceptName, domain }),
-          policyDecision: success ? "allowed" : "blocked",
           latencyMs,
           success,
-          errorMessage,
-          ipAddress: (req as any).ip,
-          userAgent: (req as any).headers["user-agent"],
-        };
-        if (success && response) {
-          auditEntry.responsePayload = JSON.stringify(response);
-        }
+          ...(errorMessage ? { errorMessage } : {}),
+          ...(success && response
+            ? { responsePayload: JSON.stringify(response) }
+            : {}),
+        });
         void aiAuditService.logInference(auditEntry);
       }
     },
@@ -588,7 +624,7 @@ export async function registerAIRoutes(
       };
       let success = true;
       let errorMessage: string | undefined;
-      let response: any = null;
+      let response: unknown = null;
 
       try {
         if (
@@ -648,22 +684,20 @@ export async function registerAIRoutes(
       } finally {
         // Log AI inference for audit
         const latencyMs = Date.now() - startTime;
-        const auditEntry: any = {
-          tenantId: String(tenantId),
-          userId: String(userId),
+        const auditEntry = buildAuditEntry({
+          req,
+          tenantId,
+          userId,
           modelId: "unknown",
           endpoint: "generate-simulation",
           requestPayload: JSON.stringify({ description, conceptName, domain }),
-          policyDecision: success ? "allowed" : "blocked",
           latencyMs,
           success,
-          errorMessage,
-          ipAddress: (req as any).ip,
-          userAgent: (req as any).headers["user-agent"],
-        };
-        if (success && response) {
-          auditEntry.responsePayload = JSON.stringify(response);
-        }
+          ...(errorMessage ? { errorMessage } : {}),
+          ...(success && response
+            ? { responsePayload: JSON.stringify(response) }
+            : {}),
+        });
         void aiAuditService.logInference(auditEntry);
       }
     },

@@ -402,17 +402,19 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
     );
   }
 
-  private mapToVRMultiplayerSession(session: any): VRMultiplayerSession {
+  private mapToVRMultiplayerSession(
+    session: Record<string, unknown>,
+  ): VRMultiplayerSession {
     return {
-      id: session.id,
-      labId: session.labId,
-      hostUserId: session.hostUserId,
-      participants: session.participants,
-      maxParticipants: session.maxParticipants,
-      voiceChatEnabled: session.voiceChatEnabled,
-      spatialAudioEnabled: session.spatialAudioEnabled,
-      status: session.status,
-      createdAt: session.createdAt.toISOString(),
+      id: session.id as string,
+      labId: session.labId as string,
+      hostUserId: session.hostUserId as string,
+      participants: session.participants as VRParticipant[],
+      maxParticipants: session.maxParticipants as number,
+      voiceChatEnabled: session.voiceChatEnabled as boolean,
+      spatialAudioEnabled: session.spatialAudioEnabled as boolean,
+      status: session.status as VRMultiplayerSession["status"],
+      createdAt: (session.createdAt as Date).toISOString(),
     };
   }
 }

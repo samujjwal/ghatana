@@ -26,6 +26,44 @@ import type {
   UpdateVRSessionRequest,
 } from "@tutorputor/contracts/v1";
 
+type MutableVRProgress = {
+  completedObjectives: string[];
+  currentObjectiveId?: string;
+  totalPoints: number;
+  maxPoints: number;
+  scenesVisited: string[];
+  interactionsLog: VRInteractionLog[];
+};
+
+function asVRProgress(value: unknown): MutableVRProgress {
+  const record =
+    value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  return {
+    completedObjectives: Array.isArray(record.completedObjectives)
+      ? (record.completedObjectives as string[])
+      : [],
+    currentObjectiveId:
+      typeof record.currentObjectiveId === "string"
+        ? record.currentObjectiveId
+        : undefined,
+    totalPoints:
+      typeof record.totalPoints === "number" ? record.totalPoints : 0,
+    maxPoints: typeof record.maxPoints === "number" ? record.maxPoints : 0,
+    scenesVisited: Array.isArray(record.scenesVisited)
+      ? (record.scenesVisited as string[])
+      : [],
+    interactionsLog: Array.isArray(record.interactionsLog)
+      ? (record.interactionsLog as VRInteractionLog[])
+      : [],
+  };
+}
+
+function asPerformanceMetrics(value: unknown): Partial<VRPerformanceMetrics> {
+  return value && typeof value === "object"
+    ? (value as Partial<VRPerformanceMetrics>)
+    : {};
+}
+
 export class VRSessionServiceImpl implements VRSessionService {
   constructor(private prisma: TutorPrismaClient) {}
 
@@ -125,7 +163,7 @@ export class VRSessionServiceImpl implements VRSessionService {
       throw new Error("Session not found");
     }
 
-    const progress = current.progress as any;
+    const progress = asVRProgress(current.progress);
 
     // Update scene visits if changing scene
     if (
@@ -152,7 +190,7 @@ export class VRSessionServiceImpl implements VRSessionService {
         ),
         ...(data.performanceMetrics && {
           performanceMetrics: {
-            ...(current.performanceMetrics as any),
+            ...asPerformanceMetrics(current.performanceMetrics),
             ...data.performanceMetrics,
           },
         }),
@@ -233,7 +271,7 @@ export class VRSessionServiceImpl implements VRSessionService {
       throw new Error("Session not found");
     }
 
-    const progress = session.progress as any;
+    const progress = asVRProgress(session.progress);
     progress.interactionsLog.push(log);
 
     await this.prisma.vRSession.update({
@@ -261,7 +299,7 @@ export class VRSessionServiceImpl implements VRSessionService {
       throw new Error("Session not found");
     }
 
-    const progress = session.progress as any;
+    const progress = asVRProgress(session.progress);
 
     // Don't double-complete objectives
     if (progress.completedObjectives.includes(objectiveId)) {
@@ -297,7 +335,7 @@ export class VRSessionServiceImpl implements VRSessionService {
       throw new Error("Session not found");
     }
 
-    const currentMetrics = session.performanceMetrics as any;
+    const currentMetrics = asPerformanceMetrics(session.performanceMetrics);
 
     await this.prisma.vRSession.update({
       where: { id: sessionId },
@@ -338,7 +376,7 @@ export class VRSessionServiceImpl implements VRSessionService {
       include: { objectives: true },
     });
 
-    const progress = session.progress as any;
+    const progress = asVRProgress(session.progress);
     const maxPoints =
       lab?.objectives.reduce((sum, o) => sum + o.points, 0) || 0;
     const completionRate = maxPoints > 0 ? progress.totalPoints / maxPoints : 0;
@@ -365,7 +403,7 @@ export class VRSessionServiceImpl implements VRSessionService {
   // Private helper methods
   // ============================================
 
-  private mapToVRSession(session: any): VRSession {
+  private mapToVRSession(session: Record<string, unknown>): VRSession {
     return {
       id: session.id as string,
       userId: session.userId as string,

@@ -8,7 +8,7 @@
  */
 
 import { Job } from 'bullmq';
-import { PrismaClient } from '@tutorputor/core/db';
+import { Prisma, PrismaClient } from '@tutorputor/core/db';
 import { Logger } from 'pino';
 import { RealContentGenerationClient } from '../grpc/RealContentGenerationClient';
 import * as crypto from 'crypto';
@@ -16,6 +16,37 @@ import {
     type CorrelatedGenerationJobData,
     ContentWorkerTelemetryPublisher,
 } from '../generation-telemetry';
+
+type SimulationDomainValue =
+    | 'CS_DISCRETE'
+    | 'PHYSICS'
+    | 'CHEMISTRY'
+    | 'BIOLOGY'
+    | 'MEDICINE'
+    | 'ECONOMICS'
+    | 'ENGINEERING'
+    | 'MATHEMATICS';
+
+function toSimulationDomain(value: string): SimulationDomainValue {
+    const normalized = value.trim().toUpperCase();
+    switch (normalized) {
+        case 'CS_DISCRETE':
+        case 'PHYSICS':
+        case 'CHEMISTRY':
+        case 'BIOLOGY':
+        case 'MEDICINE':
+        case 'ECONOMICS':
+        case 'ENGINEERING':
+        case 'MATHEMATICS':
+            return normalized;
+        default:
+            return 'PHYSICS';
+    }
+}
+
+function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
+    return value as Prisma.InputJsonValue;
+}
 
 export interface SimulationGenerationJobData extends CorrelatedGenerationJobData {
     experienceId: string;
@@ -92,6 +123,8 @@ export class SimulationGenerationProcessor {
             // model SimulationManifest {
             //   id          String           @id // Stable manifest ID generated from concept
             const manifestId = response.manifest.manifest_id || crypto.randomUUID();
+            const persistedDomain = toSimulationDomain(domain);
+            const persistedManifest = toInputJsonValue(response.manifest);
 
             const manifest = await this.prisma.simulationManifest.upsert({
                 where: { id: manifestId },
@@ -101,9 +134,9 @@ export class SimulationGenerationProcessor {
                     title: response.manifest.name, // Mapped name -> title
                     description: response.manifest.description,
                     version: '1.0.0',
-                    domain: domain as any, // Enum cast
+                    domain: persistedDomain,
                     // gradeLevel: removed as not in schema
-                    manifest: response.manifest as any, // Store full manifest as JSON
+                    manifest: persistedManifest,
                     // status: 'DRAFT', // status not in schema for SimulationManifest?
                     // Schema has `status SimulationTemplateStatus` for Template, but Manifest?
                     // Manifest has `title`, `description`, `domain`, `version`. No `status`.
@@ -112,8 +145,8 @@ export class SimulationGenerationProcessor {
                     title: response.manifest.name,
                     description: response.manifest.description,
                     version: '1.0.0',
-                    domain: domain as any,
-                    manifest: response.manifest as any,
+                    domain: persistedDomain,
+                    manifest: persistedManifest,
                 },
             });
 

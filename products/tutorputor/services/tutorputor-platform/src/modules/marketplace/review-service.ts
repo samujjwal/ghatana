@@ -15,6 +15,16 @@ import type { PrismaClient } from "@tutorputor/core/db";
 
 const logger = createStandaloneLogger({ component: "MarketplaceReviewService" });
 
+type KernelPluginUpdateArgs = Parameters<PrismaClient["kernelPlugin"]["update"]>[0];
+
+interface MarketplaceReviewHistoryRecord {
+  reviewerId: string | null;
+  status: string;
+  submittedAt: Date;
+  completedAt: Date | null;
+  comments: string | null;
+}
+
 /**
  * Review status
  */
@@ -242,7 +252,7 @@ export class MarketplaceReviewService {
       where: { id: kernelId },
       data: {
         publishedAt: new Date(),
-      } as any, // publishedAt field may not exist in generated types yet
+      } as unknown as KernelPluginUpdateArgs["data"],
     });
   }
 
@@ -261,12 +271,12 @@ export class MarketplaceReviewService {
       orderBy: { submittedAt: "desc" },
     });
 
-    return reviews.map((review: any) => ({
+    return (reviews as MarketplaceReviewHistoryRecord[]).map((review) => ({
       reviewerId: review.reviewerId || "unknown",
       status: review.status as ReviewStatus,
       submittedAt: review.submittedAt,
-      completedAt: review.completedAt || undefined,
-      comments: review.comments || undefined,
+      ...(review.completedAt ? { completedAt: review.completedAt } : {}),
+      ...(review.comments ? { comments: review.comments } : {}),
     }));
   }
 }

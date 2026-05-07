@@ -321,19 +321,19 @@ export class VRAssetServiceImpl implements VRAssetService {
     return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
   }
 
-  private mapToVRAsset(asset: any): VRAsset {
+  private mapToVRAsset(asset: Record<string, unknown>): VRAsset {
     return {
-      id: asset.id,
-      name: asset.name,
-      type: asset.type,
-      url: asset.url,
-      size: asset.size,
-      format: asset.format,
-      thumbnailUrl: asset.thumbnailUrl,
-      tags: asset.tags,
-      isPublic: asset.isPublic,
-      createdAt: asset.createdAt.toISOString(),
-      createdBy: asset.createdBy,
+      id: asset.id as string,
+      name: asset.name as string,
+      type: asset.type as VRAssetType,
+      url: asset.url as string,
+      size: asset.size as number,
+      format: asset.format as string,
+      thumbnailUrl: asset.thumbnailUrl as string | undefined,
+      tags: asset.tags as string[],
+      isPublic: asset.isPublic as boolean,
+      createdAt: (asset.createdAt as Date).toISOString(),
+      createdBy: asset.createdBy as string,
     };
   }
 }

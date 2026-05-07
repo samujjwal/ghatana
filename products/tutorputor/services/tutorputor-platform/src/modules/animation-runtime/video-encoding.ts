@@ -5,13 +5,51 @@
  * @doc.pattern Media Processing Service
  */
 
-import type { AnimationSpec } from "./service";
+import type { AnimationKeyframe, AnimationSpec } from "./service";
+
+interface FFmpegEncodingClient {
+  load(): Promise<void>;
+  FS(
+    operation: "writeFile",
+    fileName: string,
+    data: Uint8Array,
+  ): void;
+  FS(operation: "readFile", fileName: string): Uint8Array;
+  FS(operation: "unlink", fileName: string): void;
+  run(...args: string[]): Promise<void>;
+  setProgress(callback: (progress: { ratio: number }) => void): void;
+}
+
+interface FFmpegFactory {
+  (options: { log: boolean; corePath: string }): FFmpegEncodingClient;
+}
+
+interface GifEncodingClient {
+  on(event: "progress", callback: (progress: number) => void): void;
+  on(event: "finished", callback: (blob: Blob) => void): void;
+  on(event: "error", callback: (error: Error) => void): void;
+  addFrame(canvas: OffscreenCanvas, options: { delay: number }): void;
+  render(): void;
+}
+
+interface GifFactory {
+  new (options: {
+    workers: number;
+    quality: number;
+    width: number;
+    height: number;
+    workerScript?: string;
+    repeat?: number;
+  }): GifEncodingClient;
+}
+
+type AnimationPropertyMap = Record<string, string | number>;
 
 // Browser API declarations for encoding libraries
 declare global {
   interface Window {
-    createFFmpeg: any;
-    GIF: any;
+    createFFmpeg?: FFmpegFactory;
+    GIF?: GifFactory;
   }
 }
 
@@ -38,8 +76,8 @@ export interface EncodingProgress {
  * Handles video and GIF encoding using ffmpeg.wasm and gif.js
  */
 export class VideoEncodingService {
-  private ffmpeg: any = null;
-  private gifEncoder: any = null;
+  private ffmpeg: FFmpegEncodingClient | null = null;
+  private gifEncoder: GifEncodingClient | null = null;
   private isInitialized = false;
 
   /**
@@ -165,10 +203,18 @@ export class VideoEncodingService {
   /**
    * Find keyframe for current time
    */
-  private findKeyframe(animation: AnimationSpec, currentTime: number): any {
+  private findKeyframe(
+    animation: AnimationSpec,
+    currentTime: number,
+  ): AnimationKeyframe {
     const keyframes = animation.keyframes;
     if (keyframes.length === 0) {
-      return { timeMs: 0, properties: {}, easing: "linear" };
+      return {
+        timeMs: 0,
+        description: "Default encoding keyframe",
+        properties: {},
+        easing: "linear",
+      };
     }
 
     for (let i = keyframes.length - 1; i >= 0; i--) {
@@ -178,7 +224,14 @@ export class VideoEncodingService {
       }
     }
 
-    return keyframes[0] ?? { timeMs: 0, properties: {}, easing: "linear" };
+    return (
+      keyframes[0] ?? {
+        timeMs: 0,
+        description: "Default encoding keyframe",
+        properties: {},
+        easing: "linear",
+      }
+    );
   }
 
   /**
@@ -187,7 +240,7 @@ export class VideoEncodingService {
   private interpolateProperties(
     animation: AnimationSpec,
     currentTime: number,
-  ): Record<string, any> {
+  ): AnimationPropertyMap {
     const keyframes = animation.keyframes;
     const previousKeyframe = this.findKeyframe(animation, currentTime);
     const nextKeyframe = keyframes.find((kf) => kf.timeMs > currentTime);
@@ -204,7 +257,7 @@ export class VideoEncodingService {
       previousKeyframe.easing || "linear",
     );
 
-    const interpolated: Record<string, any> = {};
+    const interpolated: AnimationPropertyMap = {};
 
     for (const [key, value] of Object.entries(previousKeyframe.properties)) {
       const nextValue = nextKeyframe.properties[key];
@@ -217,6 +270,16 @@ export class VideoEncodingService {
     }
 
     return interpolated;
+  }
+
+  private toNumber(value: string | number | undefined, fallback: number): number {
+    return typeof value === "number" && Number.isFinite(value)
+      ? value
+      : fallback;
+  }
+
+  private toCssColor(value: string | number | undefined, fallback: string): string {
+    return typeof value === "string" ? value : fallback;
   }
 
   /**
@@ -256,19 +319,17 @@ export class VideoEncodingService {
    */
   private render2DFrame(
     ctx: OffscreenCanvasRenderingContext2D,
-    properties: Record<string, any>,
+    properties: AnimationPropertyMap,
     _options: VideoEncodingOptions,
   ): void {
-    const {
-      x = 0,
-      y = 0,
-      width = 100,
-      height = 100,
-      rotation = 0,
-      scale = 1,
-      opacity = 1,
-      color = "#000000",
-    } = properties;
+    const x = this.toNumber(properties.x, 0);
+    const y = this.toNumber(properties.y, 0);
+    const width = this.toNumber(properties.width, 100);
+    const height = this.toNumber(properties.height, 100);
+    const rotation = this.toNumber(properties.rotation, 0);
+    const scale = this.toNumber(properties.scale, 1);
+    const opacity = this.toNumber(properties.opacity, 1);
+    const color = this.toCssColor(properties.color, "#000000");
 
     ctx.save();
 
@@ -290,21 +351,19 @@ export class VideoEncodingService {
    */
   private render3DFrame(
     ctx: OffscreenCanvasRenderingContext2D,
-    properties: Record<string, any>,
+    properties: AnimationPropertyMap,
     _options: VideoEncodingOptions,
   ): void {
     // Simplified 3D rendering using 2D canvas
-    const {
-      x = 0,
-      y = 0,
-      z = 0,
-      width = 100,
-      height = 100,
-      rotationZ = 0,
-      scale = 1,
-      opacity = 1,
-      color = "#000000",
-    } = properties;
+    const x = this.toNumber(properties.x, 0);
+    const y = this.toNumber(properties.y, 0);
+    const z = this.toNumber(properties.z, 0);
+    const width = this.toNumber(properties.width, 100);
+    const height = this.toNumber(properties.height, 100);
+    const rotationZ = this.toNumber(properties.rotationZ, 0);
+    const scale = this.toNumber(properties.scale, 1);
+    const opacity = this.toNumber(properties.opacity, 1);
+    const color = this.toCssColor(properties.color, "#000000");
 
     ctx.save();
 
@@ -450,7 +509,7 @@ export class VideoEncodingService {
       const outputName = `output.${options.format}`;
       const command = this.buildFFmpegCommand(frameFiles, outputName, options);
 
-      this.ffmpeg.setProgress((progress: any) => {
+      this.ffmpeg.setProgress((progress: { ratio: number }) => {
         if (onProgress && startTime) {
           onProgress({
             stage: "encoding",
@@ -468,7 +527,7 @@ export class VideoEncodingService {
 
       // Get output file
       const outputData = this.ffmpeg.FS("readFile", outputName);
-      const blob = new Blob([outputData.buffer], {
+      const blob = new Blob([outputData.slice()], {
         type: `video/${options.format}`,
       });
 

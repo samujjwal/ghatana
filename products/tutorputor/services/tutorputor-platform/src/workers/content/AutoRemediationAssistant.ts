@@ -57,6 +57,35 @@ export interface AutoRemediationConfig {
   enableComplexityReduction: boolean;
 }
 
+interface RemediationJobData {
+  maxClaims?: number;
+  count?: number;
+  experienceId?: string;
+  tenantId?: string;
+  domain?: string;
+  gradeLevel?: string;
+  topic?: string;
+  claimRef?: string;
+  claimText?: string;
+}
+
+function getRemediationJobData(job: Job): RemediationJobData {
+  return job.data && typeof job.data === 'object'
+    ? (job.data as RemediationJobData)
+    : {};
+}
+
+function requireJobString(
+  data: RemediationJobData,
+  key: keyof RemediationJobData,
+): string {
+  const value = data[key];
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new Error(`Missing required remediation job field: ${key}`);
+  }
+  return value;
+}
+
 /**
  * Auto-remediation assistant for content generation failures.
  */
@@ -267,7 +296,7 @@ export class AutoRemediationAssistant {
     }
 
     try {
-      const data = job.data as any;
+      const data = getRemediationJobData(job);
 
       // Reduce max claims/examples count
       if (data.maxClaims && data.maxClaims > 5) {
@@ -317,8 +346,11 @@ export class AutoRemediationAssistant {
     }
 
     try {
-      const data = job.data as any;
-      const { experienceId, tenantId, domain, gradeLevel } = data;
+      const data = getRemediationJobData(job);
+      const experienceId = requireJobString(data, 'experienceId');
+      const tenantId = requireJobString(data, 'tenantId');
+      const domain = requireJobString(data, 'domain');
+      const gradeLevel = requireJobString(data, 'gradeLevel');
 
       this.logger.info(
         { jobId: job.id, jobType, experienceId },
@@ -327,9 +359,22 @@ export class AutoRemediationAssistant {
 
       // Generate deterministic content based on domain
       if (jobType === 'claim') {
-        await this.generateDeterministicClaims(experienceId, tenantId, domain, gradeLevel, data.topic);
+        await this.generateDeterministicClaims(
+          experienceId,
+          tenantId,
+          domain,
+          gradeLevel,
+          requireJobString(data, 'topic'),
+        );
       } else if (jobType === 'example') {
-        await this.generateDeterministicExample(experienceId, tenantId, domain, gradeLevel, data.claimRef, data.claimText);
+        await this.generateDeterministicExample(
+          experienceId,
+          tenantId,
+          domain,
+          gradeLevel,
+          requireJobString(data, 'claimRef'),
+          requireJobString(data, 'claimText'),
+        );
       }
 
       return {
@@ -358,8 +403,9 @@ export class AutoRemediationAssistant {
     classification: FailureClassification
   ): Promise<RemediationActionResult> {
     try {
-      const data = job.data as any;
-      const { experienceId, tenantId } = data;
+      const data = getRemediationJobData(job);
+      const experienceId = requireJobString(data, 'experienceId');
+      const tenantId = requireJobString(data, 'tenantId');
 
       // Record escalation in database using existing model
       // Log escalation for now - can be extended with dedicated model later
@@ -460,7 +506,7 @@ export class AutoRemediationAssistant {
           text: claim.text,
           bloomLevel: claim.bloomLevel,
           orderIndex: claim.orderIndex,
-          contentNeeds: claim.contentNeeds as any,
+          contentNeeds: claim.contentNeeds,
         },
       });
     }

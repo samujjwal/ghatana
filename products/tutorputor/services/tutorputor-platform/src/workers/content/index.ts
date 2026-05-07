@@ -10,11 +10,26 @@ import { PrismaClient } from "@tutorputor/core/db";
 import Redis from "ioredis";
 import { Logger } from "pino";
 import { RealContentGenerationClient } from "./grpc/RealContentGenerationClient";
-import { ClaimGenerationProcessor } from "./processors/ClaimGenerationProcessor";
-import { ExampleGenerationProcessor } from "./processors/ExampleGenerationProcessor";
-import { SimulationGenerationProcessor } from "./processors/SimulationGenerationProcessor";
-import { AnimationGenerationProcessor } from "./processors/AnimationGenerationProcessor";
-import { ContentValidationProcessor } from "./processors/ContentValidationProcessor";
+import {
+  ClaimGenerationProcessor,
+  type ClaimGenerationJobData,
+} from "./processors/ClaimGenerationProcessor";
+import {
+  ExampleGenerationProcessor,
+  type ExampleGenerationJobData,
+} from "./processors/ExampleGenerationProcessor";
+import {
+  SimulationGenerationProcessor,
+  type SimulationGenerationJobData,
+} from "./processors/SimulationGenerationProcessor";
+import {
+  AnimationGenerationProcessor,
+  type AnimationGenerationJobData,
+} from "./processors/AnimationGenerationProcessor";
+import {
+  ContentValidationProcessor,
+  type ContentValidationJobData,
+} from "./processors/ContentValidationProcessor";
 import { GenerationRequestJobProcessor } from "./processors/GenerationRequestJobProcessor";
 import {
   DeadLetterQueueManager,
@@ -24,6 +39,20 @@ import { JobDeduplicator } from "../../utils/job-deduplication";
 import { ContentWorkerTelemetryPublisher } from "./generation-telemetry";
 import { GenerationExecutionService } from "../../modules/content/generation/execution-service";
 import { GenerationQueueDispatcher } from "../../modules/content/generation/queue-dispatcher";
+import type { GenerationRequestExecutionJobData } from "../../modules/content/generation/queue-dispatcher";
+
+type BullConnection = NonNullable<ConstructorParameters<typeof Queue>[1]>["connection"];
+type ContentWorkerJobData =
+  | ClaimGenerationJobData
+  | ExampleGenerationJobData
+  | SimulationGenerationJobData
+  | ContentValidationJobData
+  | AnimationGenerationJobData
+  | GenerationRequestExecutionJobData;
+
+function asTypedJob<T extends ContentWorkerJobData>(job: Job): Job<T> {
+  return job as unknown as Job<T>;
+}
 
 export interface ContentWorkerConfig {
   redis: {
@@ -100,7 +129,7 @@ export class ContentWorkerService {
     );
 
     this.producerQueue = new Queue("content-generation", {
-      connection: this.redisConnection as any,
+      connection: this.redisConnection as unknown as BullConnection,
       defaultJobOptions: createQueueOptionsWithDLQ(3, 5000),
     });
     const generationExecutionService = new GenerationExecutionService(
@@ -193,27 +222,31 @@ export class ContentWorkerService {
           },
         );
         await this.jobDeduplicator.updateJobStatus(trackedJobId, "PROCESSING");
-        await this.telemetryPublisher.publishStarted(job as any);
+        await this.telemetryPublisher.publishStarted(
+          asTypedJob<ContentWorkerJobData>(job),
+        );
 
         try {
           switch (job.name) {
             case "generate-claims":
-              await this.claimProcessor.process(job as any);
+              await this.claimProcessor.process(asTypedJob<ClaimGenerationJobData>(job));
               break;
             case "generate-examples":
-              await this.exampleProcessor.process(job as any);
+              await this.exampleProcessor.process(asTypedJob<ExampleGenerationJobData>(job));
               break;
             case "generate-simulation":
-              await this.simulationProcessor.process(job as any);
+              await this.simulationProcessor.process(asTypedJob<SimulationGenerationJobData>(job));
               break;
             case "validate-content":
-              await this.validationProcessor.process(job as any);
+              await this.validationProcessor.process(asTypedJob<ContentValidationJobData>(job));
               break;
             case "generate-animation":
-              await this.animationProcessor.process(job as any);
+              await this.animationProcessor.process(asTypedJob<AnimationGenerationJobData>(job));
               break;
             case "execute-generation-job":
-              await this.generationRequestJobProcessor.process(job as any);
+              await this.generationRequestJobProcessor.process(
+                asTypedJob<GenerationRequestExecutionJobData>(job),
+              );
               break;
             default:
               this.logger.warn(
@@ -223,13 +256,16 @@ export class ContentWorkerService {
           }
 
           await this.jobDeduplicator.updateJobStatus(trackedJobId, "COMPLETED");
-          await this.telemetryPublisher.publishCompleted(job as any, {
-            deduplicationJobId: trackedJobId,
-          });
+          await this.telemetryPublisher.publishCompleted(
+            asTypedJob<ContentWorkerJobData>(job),
+            {
+              deduplicationJobId: trackedJobId,
+            },
+          );
         } catch (error: unknown) {
           await this.jobDeduplicator.updateJobStatus(trackedJobId, "FAILED");
           await this.telemetryPublisher.publishFailed(
-            job as any,
+            asTypedJob<ContentWorkerJobData>(job),
             error instanceof Error ? error : new Error(String(error)),
           );
           this.logger.error(
@@ -240,7 +276,7 @@ export class ContentWorkerService {
         }
       },
       {
-        connection: this.redisConnection as any,
+        connection: this.redisConnection as unknown as BullConnection,
         concurrency: config.concurrency || 5,
         removeOnComplete: { count: 100 },
         removeOnFail: { count: 500 },

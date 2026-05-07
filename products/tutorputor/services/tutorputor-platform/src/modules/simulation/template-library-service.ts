@@ -15,16 +15,18 @@ import { Prisma, type PrismaClient } from "@tutorputor/core/db";
 import type { SimulationManifest } from "@tutorputor/contracts/v1/simulation/types";
 import slugify from "slugify";
 import {
-  bootstrapCompatibleAutoPreset,
   createSimulationStarterManifest,
-  exportCompatibleAutoPreset,
   exportSimulationStarterPackage,
-  listCompatibleAutoPresets,
   listSimulationStarters,
-  resolveCompatibleAutoPreset,
   resolveSimulationStarterReference,
   validateManifest,
 } from "@tutorputor/simulation/engine";
+import {
+  bootstrapCompatibleAutoPreset,
+  exportCompatibleAutoPreset,
+  listCompatibleAutoPresets,
+  resolveCompatibleAutoPreset,
+} from "@tutorputor/simulation/engine/auto/preset-compatibility";
 
 type TemplateGovernanceStatus =
   | "draft"
@@ -1666,11 +1668,7 @@ export class SimulationTemplateLibraryService {
       manifestPayload,
     );
 
-    const baseIssues = Array.isArray((baseValidation as any).issues)
-      ? (baseValidation as any).issues
-      : Array.isArray((baseValidation as any).errors)
-        ? (baseValidation as any).errors
-        : [];
+    const baseIssues = extractValidationIssues(baseValidation);
 
     const allIssues = [
       ...baseIssues,
@@ -2643,6 +2641,20 @@ function toInputJsonValue(
   value: Record<string, unknown>,
 ): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
+}
+
+function extractValidationIssues(validation: unknown): string[] {
+  if (!validation || typeof validation !== "object") {
+    return [];
+  }
+  const record = validation as { issues?: unknown; errors?: unknown };
+  const issueSource = Array.isArray(record.issues)
+    ? record.issues
+    : Array.isArray(record.errors)
+      ? record.errors
+      : [];
+
+  return issueSource.map(String);
 }
 
 function toTemplateDifficulty(

@@ -41,6 +41,29 @@ interface ModuleSummary {
   recommendationReason?: string;
 }
 
+interface ClaimMasteryState {
+  claimId: string;
+  masteryScore: number;
+  evidenceCount: number;
+  status: "not_started" | "developing" | "proficient" | "mastered";
+}
+
+interface LearnerActionState {
+  currentClaimMastery?: ClaimMasteryState[];
+  nextBestLesson?: {
+    moduleId: string;
+    moduleSlug?: string;
+    moduleTitle: string;
+    reason: string;
+    targetClaimId?: string;
+  } | null;
+  unresolvedMisconceptions?: Array<{ description: string; claimId?: string }>;
+  overdueSpacedRepetitionItems?: Array<{ claimId: string; reason: string }>;
+  simulationAttemptsNeedingReview?: Array<{ reason: string; claimId?: string }>;
+  recommendedRemediation?: Array<{ title: string; reason: string; claimId?: string }>;
+  offlineResumeState?: { pendingItems: number; lastSyncedAt?: string } | null;
+}
+
 export function DashboardPage() {
   const navigate = useNavigate();
   const { data, isLoading, error } = useDashboard();
@@ -71,6 +94,7 @@ export function DashboardPage() {
   const recommendedModules = aiRecommendations?.modules ?? data.recommendedModules ?? [];
   const hasActiveEnrollments = currentEnrollments.length > 0;
   const topEnrollment = hasActiveEnrollments ? currentEnrollments[0] : null;
+  const actionState = data as LearnerActionState;
 
   const dashboardStats = {
     totalEnrollments: data.stats?.totalEnrollments ?? currentEnrollments.length,
@@ -127,6 +151,8 @@ export function DashboardPage() {
 
         {/* Engagement Insights Panel */}
         <LearnerInsightPanel className="mb-8" />
+
+        <ActionableLearnerStatePanel state={actionState} />
 
         {/* Primary CTA: Continue Learning */}
         {hasActiveEnrollments && topEnrollment && (
@@ -210,6 +236,90 @@ export function DashboardPage() {
 }
 
 // Components
+
+function ActionableLearnerStatePanel({ state }: { state: LearnerActionState }) {
+  const claimMastery = state.currentClaimMastery ?? [];
+  const weakestClaim = [...claimMastery].sort((a, b) => a.masteryScore - b.masteryScore)[0];
+  const nextLessonHref = state.nextBestLesson?.moduleSlug
+    ? `/modules/${state.nextBestLesson.moduleSlug}`
+    : "/modules";
+
+  return (
+    <section className="mb-8" aria-label="Actionable learner state">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className={cardStyles.base}>
+          <div className="p-5">
+            <h2 className={cn(textStyles.h3, "mb-3")}>Current Claim Mastery</h2>
+            {weakestClaim ? (
+              <div>
+                <p className="text-sm text-gray-600 mb-2">{weakestClaim.claimId}</p>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-emerald-600 h-2 rounded-full"
+                      style={{ width: `${Math.round(weakestClaim.masteryScore * 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-sm font-semibold">
+                    {Math.round(weakestClaim.masteryScore * 100)}%
+                  </span>
+                </div>
+                <p className="mt-2 text-xs text-gray-500">
+                  {weakestClaim.evidenceCount} evidence events, {weakestClaim.status}
+                </p>
+              </div>
+            ) : (
+              <p className={textStyles.muted}>No claim evidence yet.</p>
+            )}
+          </div>
+        </Card>
+
+        <Card className={cardStyles.base}>
+          <div className="p-5">
+            <h2 className={cn(textStyles.h3, "mb-3")}>Next Best Lesson</h2>
+            {state.nextBestLesson ? (
+              <>
+                <p className="font-medium text-gray-900">{state.nextBestLesson.moduleTitle}</p>
+                <p className="text-sm text-gray-600 mt-1">{state.nextBestLesson.reason}</p>
+                <Link className="inline-block mt-3 text-sm font-medium text-indigo-600" to={nextLessonHref}>
+                  Open lesson
+                </Link>
+              </>
+            ) : (
+              <p className={textStyles.muted}>Complete the diagnostic to unlock recommendations.</p>
+            )}
+          </div>
+        </Card>
+
+        <Card className={cardStyles.base}>
+          <div className="p-5">
+            <h2 className={cn(textStyles.h3, "mb-3")}>Learning Decisions</h2>
+            <dl className="grid grid-cols-2 gap-3 text-sm">
+              <DecisionMetric label="Misconceptions" value={state.unresolvedMisconceptions?.length ?? 0} />
+              <DecisionMetric label="Review Needed" value={state.simulationAttemptsNeedingReview?.length ?? 0} />
+              <DecisionMetric label="Spaced Review" value={state.overdueSpacedRepetitionItems?.length ?? 0} />
+              <DecisionMetric label="Remediation" value={state.recommendedRemediation?.length ?? 0} />
+            </dl>
+            {state.offlineResumeState && (
+              <p className="mt-3 text-xs text-gray-500">
+                Offline resumed with {state.offlineResumeState.pendingItems} pending sync items.
+              </p>
+            )}
+          </div>
+        </Card>
+      </div>
+    </section>
+  );
+}
+
+function DecisionMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <dt className="text-gray-500">{label}</dt>
+      <dd className="text-lg font-semibold text-gray-900">{value}</dd>
+    </div>
+  );
+}
 
 function ContinueLearningCard({ 
   enrollment, 

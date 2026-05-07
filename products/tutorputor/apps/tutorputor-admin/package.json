@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "bundle:check": "bash ../../scripts/analyze-bundle.sh apps/tutorputor-admin",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "lint": "../../../../node_modules/.bin/eslint . --ext ts,tsx --max-warnings 0",

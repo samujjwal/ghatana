@@ -13,6 +13,7 @@
  * @doc.pattern Module
  */
 import type { FastifyPluginAsync } from "fastify";
+import type { AIProxyService } from "@tutorputor/contracts/v1/services";
 import { registerAIRoutes } from "./routes.js";
 import { OllamaAIProxyService } from "./OllamaAIProxyService.js";
 import { AIHealthCheckService } from "./AIHealthCheckService.js";
@@ -70,7 +71,7 @@ export const aiModule: FastifyPluginAsync = async (app) => {
 
   // Register AI routes with the service and optional registry client
   await registerAIRoutes(app, {
-    aiProxyService: aiProxyService as any,
+    aiProxyService: aiProxyService as AIProxyService,
     aiRegistryClient,
   });
 

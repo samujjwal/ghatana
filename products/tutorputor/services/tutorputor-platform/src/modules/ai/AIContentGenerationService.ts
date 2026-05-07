@@ -15,6 +15,7 @@ import { createStandaloneLogger } from '@tutorputor/core/logger';
 
 const logger = createStandaloneLogger({ component: 'AIContentGenerationService' });
 import type {
+  ModuleId,
   TenantId,
   UserId,
   TutorResponsePayload,
@@ -101,7 +102,13 @@ export class AIContentGenerationService {
         const response = await this.aiProxyService.handleTutorQuery({
           tenantId: tenantId as TenantId,
           userId: "system" as UserId,
+          moduleId: "content-generation" as ModuleId,
           question: prompt,
+          claimIds: [],
+          currentSimulationState: {},
+          recentAttempts: [],
+          misconceptions: [],
+          allowedHelpMode: "explain",
           locale: "en",
         });
 
@@ -161,7 +168,13 @@ export class AIContentGenerationService {
       const response = await this.aiProxyService.handleTutorQuery({
         tenantId: tenantId as TenantId,
         userId: "system" as UserId,
+        moduleId: "content-generation" as ModuleId,
         question: prompt,
+        claimIds: [],
+        currentSimulationState: {},
+        recentAttempts: [],
+        misconceptions: [],
+        allowedHelpMode: "explain",
         locale: "en",
       });
 

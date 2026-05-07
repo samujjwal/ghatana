@@ -3,6 +3,11 @@ import { getConfig } from "../config/config.js";
 
 let redisClient: Redis | null = null;
 
+interface RedisLifecycleClient extends Redis {
+  on(event: "error", handler: (error: Error) => void): RedisLifecycleClient;
+  quit(): Promise<unknown>;
+}
+
 /**
  * Creates and returns a Redis client instance.
  * Reuses the existing client if already created.
@@ -22,7 +27,7 @@ export function getRedisClient(redisUrl?: string): Redis {
 
   redisClient = new Redis(url);
 
-  (redisClient as any).on("error", (err: any) => {
+  (redisClient as RedisLifecycleClient).on("error", (err: Error) => {
     console.error("Redis connection error:", err);
   });
 
@@ -39,7 +44,7 @@ export function getRedisClient(redisUrl?: string): Redis {
  */
 export async function closeRedisClient(): Promise<void> {
   if (redisClient) {
-    await (redisClient as any).quit();
+    await (redisClient as RedisLifecycleClient).quit();
     redisClient = null;
   }
 }

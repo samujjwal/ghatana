@@ -50,6 +50,29 @@ export interface RetentionSummary {
   errors: string[];
 }
 
+interface CountResult {
+  count: number;
+}
+
+interface DeleteManyDelegate {
+  deleteMany(args: {
+    where: { tenantId: string; createdAt: { lt: Date } };
+  }): Promise<CountResult>;
+}
+
+interface UpdateManyDelegate {
+  updateMany(args: {
+    where: { tenantId: string; createdAt: { lt: Date } };
+    data: Record<string, unknown>;
+  }): Promise<CountResult>;
+}
+
+type RetentionPrismaClient = PrismaClient & {
+  sessionEvent?: DeleteManyDelegate;
+  auditLog?: UpdateManyDelegate;
+  tempExport?: DeleteManyDelegate;
+};
+
 // =============================================================================
 // Default policies
 // =============================================================================
@@ -98,6 +121,10 @@ export class DataRetentionWorker {
   constructor(prisma: PrismaClient, options?: { batchSize?: number }) {
     this.prisma = prisma;
     this.batchSize = options?.batchSize ?? 500;
+  }
+
+  private get retentionPrisma(): RetentionPrismaClient {
+    return this.prisma as unknown as RetentionPrismaClient;
   }
 
   /**
@@ -272,7 +299,7 @@ export class DataRetentionWorker {
       session_data: {
         archive: async () => 0,
         delete: async (tenantId: string, cutoff: Date) => {
-          const result = await (this.prisma as any).sessionEvent?.deleteMany({
+          const result = await this.retentionPrisma.sessionEvent?.deleteMany({
             where: { tenantId, createdAt: { lt: cutoff } },
           });
           return result?.count ?? 0;
@@ -280,7 +307,7 @@ export class DataRetentionWorker {
       },
       audit_log: {
         archive: async (tenantId: string, cutoff: Date) => {
-          const result = await (this.prisma as any).auditLog?.updateMany({
+          const result = await this.retentionPrisma.auditLog?.updateMany({
             where: { tenantId, createdAt: { lt: cutoff } },
             data: { archivedAt: new Date() },
           });
@@ -291,7 +318,7 @@ export class DataRetentionWorker {
       temp_export: {
         archive: async () => 0,
         delete: async (tenantId: string, cutoff: Date) => {
-          const result = await (this.prisma as any).tempExport?.deleteMany({
+          const result = await this.retentionPrisma.tempExport?.deleteMany({
             where: { tenantId, createdAt: { lt: cutoff } },
           });
           return result?.count ?? 0;

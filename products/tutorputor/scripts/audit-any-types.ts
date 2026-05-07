@@ -20,7 +20,7 @@ const ROOT = path.resolve(
   process.cwd(),
   process.env.ANY_AUDIT_ROOT ?? "products/tutorputor/services/tutorputor-platform/src",
 );
-const THRESHOLD = Number.parseInt(process.env.ANY_TYPE_THRESHOLD ?? "176", 10);
+const THRESHOLD = Number.parseInt(process.env.ANY_TYPE_THRESHOLD ?? "0", 10);
 const INCLUDE_TESTS = process.env.ANY_AUDIT_INCLUDE_TESTS === "true";
 const EXCLUDED_PATH_PARTS = [
   `${path.sep}node_modules${path.sep}`,

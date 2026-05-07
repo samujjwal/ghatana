@@ -8,7 +8,8 @@
  * @doc.layer platform
  * @doc.pattern Module
  */
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyRequest } from "fastify";
+import type { PrismaClient } from "@tutorputor/core/db";
 import { PluginMarketplaceService } from "./PluginMarketplaceService.js";
 import { z } from "zod";
 
@@ -39,14 +40,48 @@ const updateConfigSchema = z.object({
   configuration: z.record(z.string(), z.unknown()),
 });
 
+interface PluginMarketplaceUser {
+  role?: string;
+}
+
+interface PluginMarketplaceRouteContext {
+  tenantId?: string;
+  user?: PluginMarketplaceUser;
+}
+
+type PluginMarketplaceRequest = FastifyRequest & PluginMarketplaceRouteContext;
+
+function getRouteContext(
+  request: FastifyRequest,
+): PluginMarketplaceRouteContext {
+  const authenticatedRequest = request as PluginMarketplaceRequest;
+  const context: PluginMarketplaceRouteContext = {};
+  if (authenticatedRequest.tenantId) {
+    context.tenantId = authenticatedRequest.tenantId;
+  }
+  if (
+    authenticatedRequest.user &&
+    typeof authenticatedRequest.user === "object" &&
+    !Buffer.isBuffer(authenticatedRequest.user)
+  ) {
+    context.user = authenticatedRequest.user;
+  }
+  return context;
+}
+
+function isAdmin(user: PluginMarketplaceUser): boolean {
+  return user.role === "admin" || user.role === "superadmin";
+}
+
 export const pluginMarketplaceModule: FastifyPluginAsync = async (app) => {
-  const marketplaceService = new PluginMarketplaceService(app.prisma as any);
+  const marketplaceService = new PluginMarketplaceService(
+    app.prisma as unknown as PrismaClient,
+  );
   app.decorate("pluginMarketplaceService", marketplaceService);
 
   // GET /api/v1/plugin-marketplace/plugins - Get available plugins
   app.get("/api/v1/plugin-marketplace/plugins", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -59,8 +94,7 @@ export const pluginMarketplaceModule: FastifyPluginAsync = async (app) => {
 
   // GET /api/v1/plugin-marketplace/plugins/:pluginId - Get plugin manifest
   app.get("/api/v1/plugin-marketplace/plugins/:pluginId", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
@@ -78,14 +112,13 @@ export const pluginMarketplaceModule: FastifyPluginAsync = async (app) => {
 
   // GET /api/v1/plugin-marketplace/installed - Get tenant installed plugins
   app.get("/api/v1/plugin-marketplace/installed", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
     }
 
-    if (user.role !== "admin" && user.role !== "superadmin") {
+    if (!isAdmin(user)) {
       return reply.code(403).send({ error: "Insufficient permissions" });
     }
 
@@ -96,14 +129,13 @@ export const pluginMarketplaceModule: FastifyPluginAsync = async (app) => {
 
   // POST /api/v1/plugin-marketplace/install - Install plugin for tenant
   app.post("/api/v1/plugin-marketplace/install", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
     }
 
-    if (user.role !== "admin" && user.role !== "superadmin") {
+    if (!isAdmin(user)) {
       return reply.code(403).send({ error: "Insufficient permissions" });
     }
 
@@ -115,14 +147,13 @@ export const pluginMarketplaceModule: FastifyPluginAsync = async (app) => {
 
   // POST /api/v1/plugin-marketplace/activate - Activate plugin for tenant
   app.post("/api/v1/plugin-marketplace/activate", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
     }
 
-    if (user.role !== "admin" && user.role !== "superadmin") {
+    if (!isAdmin(user)) {
       return reply.code(403).send({ error: "Insufficient permissions" });
     }
 
@@ -134,14 +165,13 @@ export const pluginMarketplaceModule: FastifyPluginAsync = async (app) => {
 
   // POST /api/v1/plugin-marketplace/deactivate - Deactivate plugin for tenant
   app.post("/api/v1/plugin-marketplace/deactivate", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
     }
 
-    if (user.role !== "admin" && user.role !== "superadmin") {
+    if (!isAdmin(user)) {
       return reply.code(403).send({ error: "Insufficient permissions" });
     }
 
@@ -153,14 +183,13 @@ export const pluginMarketplaceModule: FastifyPluginAsync = async (app) => {
 
   // POST /api/v1/plugin-marketplace/uninstall - Uninstall plugin for tenant
   app.post("/api/v1/plugin-marketplace/uninstall", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
     }
 
-    if (user.role !== "admin" && user.role !== "superadmin") {
+    if (!isAdmin(user)) {
       return reply.code(403).send({ error: "Insufficient permissions" });
     }
 
@@ -172,14 +201,13 @@ export const pluginMarketplaceModule: FastifyPluginAsync = async (app) => {
 
   // POST /api/v1/plugin-marketplace/migrate - Migrate plugin for tenant
   app.post("/api/v1/plugin-marketplace/migrate", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
     }
 
-    if (user.role !== "admin" && user.role !== "superadmin") {
+    if (!isAdmin(user)) {
       return reply.code(403).send({ error: "Insufficient permissions" });
     }
 
@@ -191,14 +219,13 @@ export const pluginMarketplaceModule: FastifyPluginAsync = async (app) => {
 
   // PUT /api/v1/plugin-marketplace/config - Update plugin configuration
   app.put("/api/v1/plugin-marketplace/config", async (request, reply) => {
-    const tenantId = (request as any).tenantId;
-    const user = (request as any).user;
+    const { tenantId, user } = getRouteContext(request);
 
     if (!tenantId || !user) {
       return reply.code(401).send({ error: "Authentication required" });
     }
 
-    if (user.role !== "admin" && user.role !== "superadmin") {
+    if (!isAdmin(user)) {
       return reply.code(403).send({ error: "Insufficient permissions" });
     }
 

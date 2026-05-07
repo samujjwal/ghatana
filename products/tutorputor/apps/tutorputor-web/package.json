@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:analyze": "VITE_BUNDLE_ANALYZE=1 vite build --mode production",
-    "bundle:check": "node scripts/check-bundle-size.mjs",
+    "bundle:check": "bash ../../scripts/analyze-bundle.sh apps/tutorputor-web",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "lint": "../../../../node_modules/.bin/eslint . --ext ts,tsx --max-warnings 0",

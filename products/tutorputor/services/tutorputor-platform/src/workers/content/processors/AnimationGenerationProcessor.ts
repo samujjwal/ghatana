@@ -8,7 +8,7 @@
  */
 
 import { Job } from "bullmq";
-import { PrismaClient } from "@tutorputor/core/db";
+import { Prisma, PrismaClient } from "@tutorputor/core/db";
 import { Logger } from "pino";
 import { RealContentGenerationClient } from "../grpc/RealContentGenerationClient";
 import * as crypto from "crypto";
@@ -16,6 +16,10 @@ import {
   type CorrelatedGenerationJobData,
   ContentWorkerTelemetryPublisher,
 } from "../generation-telemetry";
+
+function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
+  return value as Prisma.InputJsonValue;
+}
 
 export interface AnimationGenerationJobData extends CorrelatedGenerationJobData {
   experienceId: string;
@@ -120,7 +124,7 @@ export class AnimationGenerationProcessor {
         animation.title || `Animation for ${claimRef}`,
       );
       const persistedDescription = String(animation.description || "");
-      const persistedConfig = {
+      const persistedConfig = toInputJsonValue({
         animationId: animation.animation_id ?? animation.animationId ?? null,
         complexity: complexity ?? "medium",
         keyframes: Array.isArray(animation.keyframes)
@@ -128,7 +132,7 @@ export class AnimationGenerationProcessor {
           : [],
         metadata: response?.validation ?? null,
         raw: animation,
-      };
+      });
 
       await this.prisma.claimAnimation.upsert({
         where: {
@@ -149,7 +153,7 @@ export class AnimationGenerationProcessor {
           description: persistedDescription,
           type: persistedType,
           duration: persistedDuration,
-          config: persistedConfig as any,
+          config: persistedConfig,
         },
         update: {
           manifestId,
@@ -159,7 +163,7 @@ export class AnimationGenerationProcessor {
           description: persistedDescription,
           type: persistedType,
           duration: persistedDuration,
-          config: persistedConfig as any,
+          config: persistedConfig,
         },
       });
 

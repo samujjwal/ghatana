@@ -13,7 +13,10 @@ import type { FastifyInstance, FastifyReply } from "fastify";
 import type { HealthAwareLearningService } from "./service";
 import type { HealthAwarePathwaysService } from "./pathways-service";
 import type { HealthAwareAssessmentService } from "./assessment-service";
-import type { HealthAwareAnalyticsService } from "./analytics-service";
+import {
+  normalizeRiskLevel,
+  type HealthAwareAnalyticsService,
+} from "./analytics-service";
 import type { LearnerProfileService } from "./learner-profile-service";
 import type { SessionAdaptationEngine } from "../adaptation/session-engine.js";
 import type { ContentVariationService } from "../content/variation/service.js";
@@ -61,6 +64,12 @@ interface LearningRouteContext {
   learnerProfileService: LearnerProfileService;
   contentVariationService: ContentVariationService;
   sessionAdaptationEngine: SessionAdaptationEngine;
+}
+
+interface LearnerSummaryMetrics {
+  moduleCount?: number;
+  averageCompletionRate?: number;
+  averageTimeSpentMinutes?: number;
 }
 
 // =============================================================================
@@ -1220,13 +1229,14 @@ async function learningRoutes(
       if (role === "learner") {
         // Learner: own progress metrics only — no class-wide aggregates or PII
         const summary = await analyticsService.getSummary({ tenantId, moduleId: moduleId as ModuleId });
+        const learnerMetrics = summary as typeof summary & LearnerSummaryMetrics;
         return reply.send({
           role: "learner",
           userId,
-          moduleCount: (summary as any).moduleCount || 0,
+          moduleCount: learnerMetrics.moduleCount ?? 0,
           totalEvents: summary.totalEvents,
-          averageCompletionRate: (summary as any).averageCompletionRate || 0,
-          averageTimeSpentMinutes: (summary as any).averageTimeSpentMinutes || 0,
+          averageCompletionRate: learnerMetrics.averageCompletionRate ?? 0,
+          averageTimeSpentMinutes: learnerMetrics.averageTimeSpentMinutes ?? 0,
         });
       }
 
@@ -1288,7 +1298,7 @@ async function learningRoutes(
       const result = await analyticsService.getAtRiskStudents({
         tenantId,
         classroomId: classroomId as ClassroomId,
-        minRiskLevel: (minRiskLevel as RiskLevel | undefined) ?? "low",
+        minRiskLevel: normalizeRiskLevel(minRiskLevel),
       });
       return reply.send(result);
     },

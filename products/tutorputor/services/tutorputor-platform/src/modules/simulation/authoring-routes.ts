@@ -9,25 +9,27 @@
  * @doc.layer platform
  * @doc.pattern Routes
  */
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply } from "fastify";
 import { Prisma } from "@tutorputor/core/db";
 import {
   VRSimulationExporter,
-  bootstrapCompatibleAutoPreset,
   createSimulationStarterManifest,
-  exportCompatibleAutoPreset,
   exportSimulationStarterPackage,
-  getAutoPresetNormalizationSummary,
-  getLegacyAutoRuntimeSummary,
   getSimulationStarterCatalogSummary,
   getSimulationStarterById,
   getSimulationStarterByLegacyPresetId,
   listSimulationStarters,
+  resolveSimulationStarterReference,
+} from "@tutorputor/simulation/engine";
+import {
+  bootstrapCompatibleAutoPreset,
+  exportCompatibleAutoPreset,
+  getAutoPresetNormalizationSummary,
+  getLegacyAutoRuntimeSummary,
   listCompatibleAutoPresets,
   listLegacyRuntimePresetSummaries,
-  resolveSimulationStarterReference,
   resolveCompatibleAutoPreset,
-} from "@tutorputor/simulation/engine";
+} from "@tutorputor/simulation/engine/legacy-migration";
 import type {
   GenerateManifestRequest,
   GenerateManifestResult,
@@ -87,6 +89,33 @@ function toInputJsonValue(
   return value as Prisma.InputJsonValue;
 }
 
+function toSimulationDomain(value: unknown): SimulationDomain {
+  const normalized = typeof value === "string" ? value.toUpperCase() : "";
+  switch (normalized) {
+    case "CS_DISCRETE":
+    case "PHYSICS":
+    case "ECONOMICS":
+    case "CHEMISTRY":
+    case "BIOLOGY":
+    case "MEDICINE":
+    case "ENGINEERING":
+    case "MATHEMATICS":
+      return normalized;
+    default:
+      return "PHYSICS";
+  }
+}
+
+function formatGuardrailWarnings(
+  warnings: Array<{ parameterName?: string; field?: string; message: string }>,
+) {
+  return warnings.map((warning) => ({
+    parameter: warning.parameterName,
+    field: warning.field,
+    message: warning.message,
+  }));
+}
+
 export async function simulationAuthoringRoutes(app: FastifyInstance) {
   const vrExporter = new VRSimulationExporter();
   const templateLibrary = new SimulationTemplateLibraryService(app.prisma);
@@ -126,7 +155,7 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
   const service =
     config.providers.length > 0 ? await createAuthorService(app, config) : null;
 
-  const getAuthorService = (reply: Parameters<FastifyInstance["get"]>[1] extends never ? never : any) => {
+  const getAuthorService = (reply: FastifyReply) => {
     if (service) {
       return service;
     }
@@ -339,7 +368,7 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
         title: manifest.title,
         description: manifest.description ?? null,
         version: manifest.version,
-        domain: manifest.domain as any,
+        domain: toSimulationDomain(manifest.domain),
         manifest: toInputJsonValue(
           manifest as unknown as Record<string, unknown>,
         ),
@@ -480,7 +509,7 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
         title: manifest.title,
         description: manifest.description ?? null,
         version: manifest.version,
-        domain: manifest.domain as any,
+        domain: toSimulationDomain(manifest.domain),
         manifest: toInputJsonValue(
           manifest as unknown as Record<string, unknown>,
         ),
@@ -1353,7 +1382,7 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
           title,
           description,
           version,
-          domain: domain as any,
+          domain: toSimulationDomain(domain),
           manifest: toInputJsonValue(safeBody),
         },
       });
@@ -1364,11 +1393,7 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
         manifest: created.manifest,
         ...(guardrail.warnings && guardrail.warnings.length > 0
           ? {
-              warnings: guardrail.warnings.map((w: any) => ({
-                parameter: w.parameterName,
-                field: w.field,
-                message: w.message,
-              })),
+              warnings: formatGuardrailWarnings(guardrail.warnings),
             }
           : {}),
       });
@@ -1410,10 +1435,14 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
 
     const format = request.query.format ?? "webxr";
     if (format === "unity") {
-      return reply.send(vrExporter.exportToUnity(record.manifest as any));
+      return reply.send(
+        vrExporter.exportToUnity(record.manifest as unknown as SimulationManifest),
+      );
     }
 
-    return reply.send(vrExporter.exportToWebXR(record.manifest as any));
+    return reply.send(
+      vrExporter.exportToWebXR(record.manifest as unknown as SimulationManifest),
+    );
   });
 
   // Save / update manifest
@@ -1453,7 +1482,7 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
             ? { version: safeBody.version }
             : {}),
           ...(typeof safeBody.domain === "string" && safeBody.domain.length > 0
-            ? { domain: safeBody.domain as any }
+            ? { domain: toSimulationDomain(safeBody.domain) }
             : {}),
           manifest: toInputJsonValue(safeBody),
         },
@@ -1462,11 +1491,7 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
         success: true,
         ...(guardrail.warnings && guardrail.warnings.length > 0
           ? {
-              warnings: guardrail.warnings.map((w: any) => ({
-                parameter: w.parameterName,
-                field: w.field,
-                message: w.message,
-              })),
+              warnings: formatGuardrailWarnings(guardrail.warnings),
             }
           : {}),
       });

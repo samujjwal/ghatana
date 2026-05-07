@@ -11,7 +11,7 @@
  */
 
 import type { TenantId } from "@tutorputor/contracts/v1/types";
-import type { TutorPrismaClient } from "@tutorputor/core/db";
+import { Prisma, type TutorPrismaClient } from "@tutorputor/core/db";
 
 // =============================================================================
 // Domain Pack Types (In-Memory / Configuration)
@@ -201,9 +201,17 @@ export function createTenantService(prisma: TutorPrismaClient) {
         where: { tenantId },
         create: {
           tenantId,
-          ...DEFAULT_SETTINGS, // base defaults
-          ...data, // overrides
-        } as any,
+          allowPublicRegistration: DEFAULT_SETTINGS.allowPublicRegistration,
+          requireEmailVerification: DEFAULT_SETTINGS.requireEmailVerification,
+          defaultUserRole: DEFAULT_SETTINGS.defaultUserRole,
+          maxUsersPerClassroom: DEFAULT_SETTINGS.maxUsersPerClassroom,
+          enabledFeatures: JSON.stringify(DEFAULT_SETTINGS.enabledFeatures),
+          enabledDomainPacks: JSON.stringify(
+            DEFAULT_SETTINGS.enabledDomainPacks,
+          ),
+          simulationQuotas: JSON.stringify(DEFAULT_SETTINGS.simulationQuotas),
+          ...data,
+        } satisfies Prisma.TenantSettingsUncheckedCreateInput,
         update: data,
       });
 

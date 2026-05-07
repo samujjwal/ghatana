@@ -249,7 +249,7 @@ export class Bulkhead extends EventEmitter {
   private async executeImmediately<T>(
     operation: () => Promise<T>,
     resolve: (value: T) => void,
-    reject: (reason?: any) => void,
+    reject: (reason?: unknown) => void,
   ): Promise<void> {
     this.activeExecutions++;
     this.emit("execution_started", this.getMetrics());

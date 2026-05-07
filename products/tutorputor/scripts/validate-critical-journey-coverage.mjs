@@ -8,6 +8,7 @@ const root = path.resolve(process.cwd(), "products/tutorputor");
 const requiredFiles = [
   "apps/tutorputor-web/e2e/critical-learner-journey.spec.ts",
   "apps/tutorputor-web/e2e/offline-resume-critical-journey.spec.ts",
+  "apps/tutorputor-web/e2e/role-complete-critical-journey.spec.ts",
   "apps/tutorputor-web/src/pages/OnboardingPage.tsx",
   "apps/tutorputor-web/src/pages/DiagnosticPage.tsx",
   "apps/tutorputor-web/src/pages/CredentialsPage.tsx",
@@ -40,9 +41,23 @@ const requiredStages = [
   "offline",
 ];
 
+const requiredRoleStages = [
+  "learner onboarding -> pathway -> module -> simulation -> assessment -> feedback -> remediation -> mastery",
+  "instructor review",
+  "author publish",
+  "admin compliance export",
+  "LTI launch/passback",
+  "learner",
+  "instructor",
+  "author",
+  "admin",
+  "institution",
+];
+
 const requiredRunnerReferences = [
   "critical-learner-journey.spec.ts",
   "offline-resume-critical-journey.spec.ts",
+  "role-complete-critical-journey.spec.ts",
   "admin-core.spec.ts",
   "login.yaml",
   "dashboard.yaml",
@@ -67,13 +82,20 @@ const readIfExists = (relativePath) => {
 
 const webSpec = readIfExists("apps/tutorputor-web/e2e/critical-learner-journey.spec.ts");
 const offlineSpec = readIfExists("apps/tutorputor-web/e2e/offline-resume-critical-journey.spec.ts");
+const roleCompleteSpec = readIfExists("apps/tutorputor-web/e2e/role-complete-critical-journey.spec.ts");
 const psRunner = readIfExists("scripts/run-critical-journey-e2e.ps1");
 const shRunner = readIfExists("scripts/run-critical-journey-e2e.sh");
 
-const combinedSpec = `${webSpec}\n${offlineSpec}`;
+const combinedSpec = `${webSpec}\n${offlineSpec}\n${roleCompleteSpec}`;
 for (const stage of requiredStages) {
   if (!combinedSpec.toLowerCase().includes(stage.toLowerCase())) {
     errors.push(`Critical journey specs do not cover stage: ${stage}`);
+  }
+}
+
+for (const stage of requiredRoleStages) {
+  if (!roleCompleteSpec.toLowerCase().includes(stage.toLowerCase())) {
+    errors.push(`Role-complete critical journey spec does not cover: ${stage}`);
   }
 }
 
@@ -101,4 +123,4 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log("Critical learner journey coverage is mapped across web, admin, mobile, offline, and runners.");
+console.log("Critical learner journey coverage is mapped across learner, instructor, author, admin, institution, web, admin, mobile, offline, and runners.");

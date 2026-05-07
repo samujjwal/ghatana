@@ -60,6 +60,8 @@ export function assertAIInteractionAllowed(
   governance: AIInteractionGovernanceMetadata,
   learner?: { age?: number; parentalConsentGranted?: boolean },
 ): void {
+  const consentRevoked = governance.consentState === "revoked";
+
   if (governance.consentState === "missing") {
     throw new AIGovernanceError(
       "AI interaction blocked because consent is missing.",
@@ -77,9 +79,11 @@ export function assertAIInteractionAllowed(
   assertConsentAllowed({
     useCase: "ai_tutor",
     granted: governance.consentState === "granted" || governance.consentState === "not_required",
-    revoked: governance.consentState === "revoked",
-    learnerAge: learner?.age,
-    parentalConsentGranted: learner?.parentalConsentGranted,
+    revoked: consentRevoked,
+    ...(typeof learner?.age === "number" ? { learnerAge: learner.age } : {}),
+    ...(typeof learner?.parentalConsentGranted === "boolean"
+      ? { parentalConsentGranted: learner.parentalConsentGranted }
+      : {}),
   });
 
   if (governance.safetyFilterResult === "blocked") {

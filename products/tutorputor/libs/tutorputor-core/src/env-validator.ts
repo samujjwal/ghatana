@@ -131,13 +131,13 @@ export function validateEnvironment(): RequiredEnvVars {
     errors.push({
       variable: 'STRIPE_SECRET_KEY',
       reason: 'Required for payment processing',
-      example: 'STRIPE_SECRET_KEY=stripe_test_placeholder_secret',
+      example: 'STRIPE_SECRET_KEY=sk_live_<configured-in-secret-manager>',
     });
   } else if (!isValidStripeKey(stripeKey)) {
     errors.push({
       variable: 'STRIPE_SECRET_KEY',
       reason: 'Must be a valid Stripe API key (sk_test_* or sk_live_*)',
-      example: 'STRIPE_SECRET_KEY=stripe_test_placeholder_secret',
+      example: 'STRIPE_SECRET_KEY=sk_live_<configured-in-secret-manager>',
     });
   }
 

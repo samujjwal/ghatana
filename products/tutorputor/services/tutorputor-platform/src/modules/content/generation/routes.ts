@@ -28,6 +28,10 @@ import {
   type JobExecutionResult,
 } from "./execution-service.js";
 type GenerationRequestConfig = Record<string, unknown>;
+type GenerationExecutionSnapshotPayload = {
+  request: { id?: unknown; status?: unknown };
+  progress: { completionPercent?: unknown; terminal?: unknown };
+};
 import { GenerationQueueDispatcher } from "./queue-dispatcher.js";
 import { IntentInferenceService } from "./intent-service.js";
 import { buildSensitiveOperationAuditEntry } from "../../policy/resource-access-helpers.js";
@@ -418,7 +422,8 @@ export function registerGenerationRoutes(
         ) as GenerationExecutionStreamMessage;
 
         if (message.kind === "snapshot" && message.snapshot) {
-          const snapshot = message.snapshot as any;
+          const snapshot =
+            message.snapshot as unknown as GenerationExecutionSnapshotPayload;
           writeSseEvent(reply.raw, "snapshot", {
             request: snapshot.request,
             progress: snapshot.progress,

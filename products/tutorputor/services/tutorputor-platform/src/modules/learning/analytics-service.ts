@@ -40,6 +40,12 @@ export type HealthAwareAnalyticsService = AnalyticsService & {
   checkHealth: () => Promise<boolean>;
 };
 
+type CanonicalRiskLevel = "low" | "medium" | "high" | "critical";
+
+interface RedisStreamWriter {
+  xadd(...args: Array<string | number>): Promise<unknown>;
+}
+
 // =============================================================================
 // Implementation
 // =============================================================================
@@ -68,9 +74,8 @@ export function createAnalyticsService(
       if (redis) {
         try {
           // Add to Stream: learning:events:{tenantId}
-          // Redis.xadd() is not yet fully typed in ioredis type definitions
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (redis as any).xadd(
+          const streamWriter = redis as unknown as RedisStreamWriter;
+          await streamWriter.xadd(
             `learning:events:${tenantId}`,
             "MAXLEN",
             "~",
@@ -208,9 +213,6 @@ export function createAnalyticsService(
 
       const enrollments = await prisma.enrollment.findMany({
         where: enrollmentWhere,
-        include: {
-          user: { select: { id: true, email: true, displayName: true } },
-        } as any,
       });
 
       const riskIndicators: StudentRiskIndicator[] = [];
@@ -488,8 +490,25 @@ export function createAnalyticsService(
 // Helper Functions
 // =============================================================================
 
-function getRiskLevelThreshold(level: RiskLevel): number {
+export function normalizeRiskLevel(level: RiskLevel | string | undefined): CanonicalRiskLevel {
   switch (level) {
+    case "critical":
+      return "critical";
+    case "HIGH":
+    case "high":
+      return "high";
+    case "MEDIUM":
+    case "medium":
+      return "medium";
+    case "LOW":
+    case "low":
+    default:
+      return "low";
+  }
+}
+
+function getRiskLevelThreshold(level: RiskLevel): number {
+  switch (normalizeRiskLevel(level)) {
     case "critical":
       return 80;
     case "high":
@@ -501,7 +520,7 @@ function getRiskLevelThreshold(level: RiskLevel): number {
   }
 }
 
-function calculateRiskLevel(score: number): RiskLevel {
+function calculateRiskLevel(score: number): CanonicalRiskLevel {
   if (score >= 80) return "critical";
   if (score >= 60) return "high";
   if (score >= 30) return "medium";

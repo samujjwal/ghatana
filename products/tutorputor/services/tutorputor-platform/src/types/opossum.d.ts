@@ -14,11 +14,11 @@ declare module 'opossum' {
     volumeThreshold?: number;
   }
 
-  class CircuitBreaker<TI extends any[] = any[], TR = any> extends EventEmitter {
+  class CircuitBreaker<TI extends unknown[] = unknown[], TR = unknown> extends EventEmitter {
     constructor(action: (...args: TI) => Promise<TR>, options?: CircuitBreakerOptions);
     fire(...args: TI): Promise<TR>;
-    fallback(callback: (...args: any[]) => any): this;
-    on(event: string, listener: (...args: any[]) => void): this;
+    fallback(callback: (...args: unknown[]) => unknown): this;
+    on(event: string, listener: (...args: unknown[]) => void): this;
     opened: boolean;
     closed: boolean;
     halfOpen: boolean;

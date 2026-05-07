@@ -320,6 +320,63 @@ export interface DashboardSummary {
   user: UserSummary;
   currentEnrollments: Enrollment[];
   recommendedModules: ModuleSummary[];
+  currentClaimMastery?: LearnerClaimMasteryState[];
+  nextBestLesson?: LearnerNextBestLesson | null;
+  unresolvedMisconceptions?: LearnerMisconception[];
+  overdueSpacedRepetitionItems?: LearnerSpacedRepetitionItem[];
+  simulationAttemptsNeedingReview?: LearnerSimulationReviewItem[];
+  recommendedRemediation?: LearnerRemediationRecommendation[];
+  offlineResumeState?: LearnerOfflineResumeState | null;
+}
+
+export interface LearnerClaimMasteryState {
+  claimId: string;
+  masteryScore: number;
+  evidenceCount: number;
+  status: "not_started" | "developing" | "proficient" | "mastered";
+  lastEvidenceAt?: string;
+}
+
+export interface LearnerNextBestLesson {
+  moduleId: ModuleId;
+  moduleSlug?: string;
+  moduleTitle: string;
+  reason: string;
+  targetClaimId?: string;
+}
+
+export interface LearnerMisconception {
+  claimId?: string;
+  description: string;
+  sourceEventType: string;
+  observedAt?: string;
+}
+
+export interface LearnerSpacedRepetitionItem {
+  claimId: string;
+  dueAt: string;
+  reason: string;
+}
+
+export interface LearnerSimulationReviewItem {
+  runId?: string;
+  captureId?: string;
+  claimId?: string;
+  reason: string;
+  capturedAt?: string;
+}
+
+export interface LearnerRemediationRecommendation {
+  claimId?: string;
+  moduleId?: ModuleId;
+  title: string;
+  reason: string;
+}
+
+export interface LearnerOfflineResumeState {
+  pendingItems: number;
+  lastSyncedAt?: string;
+  resumedAt?: string;
 }
 
 export type AssessmentType = "QUIZ" | "PROJECT" | "SIMULATION";

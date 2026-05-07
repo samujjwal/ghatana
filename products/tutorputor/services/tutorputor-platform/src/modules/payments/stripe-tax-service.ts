@@ -16,6 +16,10 @@ import Stripe from "stripe";
 
 const logger = createStandaloneLogger({ component: "StripeTaxService" });
 
+interface TaxBreakdownWithEffectivePercentage {
+  effective_percentage?: number;
+}
+
 /**
  * Tax calculation configuration
  */
@@ -216,7 +220,7 @@ export class StripeTaxService {
       const taxRates = taxCalculation.tax_breakdown.map((breakdown) => ({
         id: breakdown.tax_rate_details?.tax_type || `rate-${breakdown.tax_rate_details?.tax_type || 'unknown'}`,
         displayName: breakdown.tax_rate_details?.tax_type || 'Tax',
-        percentage: (breakdown as any).effective_percentage ? (breakdown as any).effective_percentage / 100 : 0,
+        percentage: getEffectivePercentage(breakdown) / 100,
         jurisdiction: breakdown.tax_rate_details?.tax_type || country,
         inclusive: breakdown.inclusive || false,
       }));
@@ -303,7 +307,7 @@ export class StripeTaxService {
         company: {
           tax_id: taxId,
         },
-      } as any);
+      });
 
       logger.info({ accountId }, "Tax ID registered successfully");
     } catch (error) {
@@ -482,6 +486,12 @@ export class StripeTaxService {
       throw error;
     }
   }
+}
+
+function getEffectivePercentage(breakdown: unknown): number {
+  const value = (breakdown as TaxBreakdownWithEffectivePercentage)
+    .effective_percentage;
+  return typeof value === "number" ? value : 0;
 }
 
 /**

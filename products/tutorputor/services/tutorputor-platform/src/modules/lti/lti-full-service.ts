@@ -5,7 +5,7 @@
  * @doc.pattern Service
  */
 
-import type { PrismaClient } from "@tutorputor/core/db";
+import { Prisma, type PrismaClient } from "@tutorputor/core/db";
 import * as jose from "jose";
 import { randomUUID } from "node:crypto";
 import type {
@@ -57,7 +57,94 @@ const TOOL_CLIENT_ID = process.env.LTI_TOOL_CLIENT_ID ?? "tutorputor-lti-tool";
 type LtiKeyMaterial = CryptoKey | import("crypto").KeyObject;
 type RemoteJwkResolver = ReturnType<typeof jose.createRemoteJWKSet>;
 
-type LegacyLtiPrismaClient = PrismaClient & Record<string, any>;
+type LegacyLtiRow = Record<string, unknown> & {
+  id: string;
+  platformId: string;
+  deploymentId: string;
+  userId: string | null;
+  ltiUserId: string;
+  contextId: string;
+  resourceLinkId: string;
+  roles: unknown[];
+  targetModuleId: string | null;
+  launchData: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+  expiresAt: Date;
+  lineItemsUrl?: string | null;
+  membershipsUrl?: string | null;
+  scoreMaximum: number;
+  label: string;
+  resourceId?: string | null;
+  tag?: string | null;
+  startDateTime?: Date | null;
+  endDateTime?: Date | null;
+  ltiLineItemId: string;
+  email?: string | null;
+  name?: string | null;
+};
+
+type LegacyLtiDelegate = {
+  create: (args: unknown) => Promise<LegacyLtiRow>;
+  findFirst: (args: unknown) => Promise<LegacyLtiRow | null>;
+  findUnique: (args: unknown) => Promise<LegacyLtiRow | null>;
+  findMany: (args: unknown) => Promise<LegacyLtiRow[]>;
+  update: (args: unknown) => Promise<LegacyLtiRow>;
+  upsert: (args: unknown) => Promise<LegacyLtiRow>;
+};
+
+type LegacyLtiPrismaClient = PrismaClient & {
+  ltiSession: LegacyLtiDelegate;
+  ltiContext: LegacyLtiDelegate;
+  ltiUserMapping: LegacyLtiDelegate;
+  ltiLineItem: LegacyLtiDelegate;
+  ltiScore: LegacyLtiDelegate;
+};
+type LegacyLtiPlatformCreateInput = Prisma.LTIPlatformUncheckedCreateInput & {
+  deploymentId?: string;
+  publicKeyPem?: string;
+  isActive?: boolean;
+};
+type LegacyLtiPlatformUpdateInput = Prisma.LTIPlatformUncheckedUpdateInput & {
+  deploymentId?: string;
+  publicKeyPem?: string;
+  isActive?: boolean;
+};
+type LegacyLtiPlatformWhereInput = Prisma.LTIPlatformWhereInput & {
+  isActive?: boolean;
+};
+
+function asLegacyLtiPrismaClient(prisma: PrismaClient): LegacyLtiPrismaClient {
+  return prisma as unknown as LegacyLtiPrismaClient;
+}
+
+function toLtiActivityProgress(
+  value: unknown,
+): LtiScore["activityProgress"] {
+  const allowed: readonly LtiScore["activityProgress"][] = [
+    "Initialized",
+    "Started",
+    "InProgress",
+    "Submitted",
+    "Completed",
+  ];
+  return allowed.includes(value as LtiScore["activityProgress"])
+    ? (value as LtiScore["activityProgress"])
+    : "Submitted";
+}
+
+function toLtiGradingProgress(value: unknown): LtiScore["gradingProgress"] {
+  const allowed: readonly LtiScore["gradingProgress"][] = [
+    "FullyGraded",
+    "Pending",
+    "PendingManual",
+    "Failed",
+    "NotReady",
+  ];
+  return allowed.includes(value as LtiScore["gradingProgress"])
+    ? (value as LtiScore["gradingProgress"])
+    : "FullyGraded";
+}
 
 export function resolveLaunchTenantIdFromState(state: string): TenantId | null {
   return oidcStateStore.get(state)?.tenantId ?? null;
@@ -117,19 +204,20 @@ export class LtiPlatformServiceImpl implements LtiPlatformService {
     jwksUrl: string;
     publicKeyPem?: string;
   }): Promise<LtiPlatform> {
+    const data: LegacyLtiPlatformCreateInput = {
+      tenantId: args.tenantId,
+      platformName: args.name,
+      issuer: args.issuer,
+      clientId: args.clientId,
+      deploymentId: args.deploymentId,
+      authUrl: args.authLoginUrl,
+      tokenUrl: args.authTokenUrl,
+      jwksUrl: args.jwksUrl,
+      ...(args.publicKeyPem ? { publicKeyPem: args.publicKeyPem } : {}),
+      isActive: true,
+    };
     const platform = await this.prisma.lTIPlatform.create({
-      data: {
-        tenantId: args.tenantId,
-        platformName: args.name,
-        issuer: args.issuer,
-        clientId: args.clientId,
-        deploymentId: args.deploymentId,
-        authUrl: args.authLoginUrl,
-        tokenUrl: args.authTokenUrl,
-        jwksUrl: args.jwksUrl,
-        publicKeyPem: args.publicKeyPem,
-        isActive: true,
-      } as any,
+      data,
     });
 
     return this.mapToPlatform(platform);
@@ -142,20 +230,31 @@ export class LtiPlatformServiceImpl implements LtiPlatformService {
       Omit<LtiPlatform, "id" | "tenantId" | "createdAt" | "updatedAt">
     >;
   }): Promise<LtiPlatform> {
+    const data: LegacyLtiPlatformUpdateInput = {
+      ...(args.updates.name ? { platformName: args.updates.name } : {}),
+      ...(args.updates.issuer ? { issuer: args.updates.issuer } : {}),
+      ...(args.updates.clientId ? { clientId: args.updates.clientId } : {}),
+      ...(args.updates.deploymentId
+        ? { deploymentId: args.updates.deploymentId }
+        : {}),
+      ...(args.updates.authLoginUrl
+        ? { authUrl: args.updates.authLoginUrl }
+        : {}),
+      ...(args.updates.authTokenUrl
+        ? { tokenUrl: args.updates.authTokenUrl }
+        : {}),
+      ...(args.updates.jwksUrl ? { jwksUrl: args.updates.jwksUrl } : {}),
+      ...(args.updates.publicKeyPem
+        ? { publicKeyPem: args.updates.publicKeyPem }
+        : {}),
+      ...(typeof args.updates.isActive === "boolean"
+        ? { isActive: args.updates.isActive }
+        : {}),
+      updatedAt: new Date(),
+    };
     const platform = await this.prisma.lTIPlatform.update({
       where: { id: args.platformId },
-      data: {
-        platformName: args.updates.name,
-        issuer: args.updates.issuer,
-        clientId: args.updates.clientId,
-        deploymentId: args.updates.deploymentId,
-        authUrl: args.updates.authLoginUrl,
-        tokenUrl: args.updates.authTokenUrl,
-        jwksUrl: args.updates.jwksUrl,
-        publicKeyPem: args.updates.publicKeyPem,
-        isActive: args.updates.isActive,
-        updatedAt: new Date(),
-      } as any,
+      data,
     });
 
     return this.mapToPlatform(platform);
@@ -165,9 +264,13 @@ export class LtiPlatformServiceImpl implements LtiPlatformService {
     tenantId: TenantId;
     platformId: LtiPlatformId;
   }): Promise<void> {
+    const data: LegacyLtiPlatformUpdateInput = {
+      isActive: false,
+      updatedAt: new Date(),
+    };
     await this.prisma.lTIPlatform.update({
       where: { id: args.platformId },
-      data: { isActive: false, updatedAt: new Date() } as any,
+      data,
     });
   }
 
@@ -264,12 +367,13 @@ export class LtiLaunchServiceImpl implements LtiLaunchService {
     clientId: string;
   }): Promise<{ redirectUrl: string; state: string; nonce: string }> {
     // Find platform by issuer
-    const platform = await this.prisma.lTIPlatform.findFirst({
-      where: {
+    const where: LegacyLtiPlatformWhereInput = {
         tenantId: args.tenantId,
         issuer: args.issuer,
         isActive: true,
-      } as any,
+    };
+    const platform = await this.prisma.lTIPlatform.findFirst({
+      where,
     });
 
     if (!platform) {
@@ -966,10 +1070,16 @@ export class LtiGradeServiceImpl implements LtiGradeService {
       id: lineItem.id,
       scoreMaximum: lineItem.scoreMaximum,
       label: lineItem.label,
-      resourceId: lineItem.resourceId ?? undefined,
-      tag: lineItem.tag ?? undefined,
-      startDateTime: lineItem.startDateTime?.toISOString(),
-      endDateTime: lineItem.endDateTime?.toISOString(),
+      ...(typeof lineItem.resourceId === "string"
+        ? { resourceId: lineItem.resourceId }
+        : {}),
+      ...(typeof lineItem.tag === "string" ? { tag: lineItem.tag } : {}),
+      ...(lineItem.startDateTime
+        ? { startDateTime: lineItem.startDateTime.toISOString() }
+        : {}),
+      ...(lineItem.endDateTime
+        ? { endDateTime: lineItem.endDateTime.toISOString() }
+        : {}),
     };
   }
 
@@ -1277,8 +1387,8 @@ export class LtiGradeServiceImpl implements LtiGradeService {
         userId: String(s.ltiUserId),
         scoreGiven: Number(s.scoreGiven),
         scoreMaximum: Number(s.scoreMaximum),
-        activityProgress: String(s.activityProgress),
-        gradingProgress: String(s.gradingProgress),
+        activityProgress: toLtiActivityProgress(s.activityProgress),
+        gradingProgress: toLtiGradingProgress(s.gradingProgress),
         timestamp: submittedAt,
         ...(typeof s.comment === "string" ? { comment: s.comment } : {}),
       };
@@ -1602,12 +1712,12 @@ export class LtiRosterServiceImpl implements LtiRosterService {
             where: {
               classroomId_userId: {
                 classroomId: args.classroomId,
-                userId: mapping.userId,
+                userId: String(mapping.userId),
               },
             },
             create: {
               classroomId: args.classroomId,
-              userId: mapping.userId,
+              userId: String(mapping.userId),
               role: member.roles.some((r) => r.includes("Instructor"))
                 ? "instructor"
                 : "student",
@@ -1651,8 +1761,8 @@ export class LtiRosterServiceImpl implements LtiRosterService {
     return {
       userId: args.ltiUserId,
       roles: (session?.roles ?? []) as LtiRole[],
-      name: mapping.name ?? undefined,
-      email: mapping.email ?? undefined,
+      ...(typeof mapping.name === "string" ? { name: mapping.name } : {}),
+      ...(typeof mapping.email === "string" ? { email: mapping.email } : {}),
       status: "Active",
       ltiContextId: args.contextId,
     };
@@ -1688,11 +1798,19 @@ export async function createLtiServices(prisma: PrismaClient): Promise<{
 
   const keyPair = { publicKey, privateKey };
 
-  const platformService = new LtiPlatformServiceImpl(prisma, keyPair);
-  const launchService = new LtiLaunchServiceImpl(prisma, keyPair);
-  const deepLinkingService = new LtiDeepLinkingServiceImpl(prisma, keyPair);
-  const gradeService = new LtiGradeServiceImpl(prisma, keyPair);
-  const rosterService = new LtiRosterServiceImpl(prisma, keyPair, gradeService);
+  const legacyPrisma = asLegacyLtiPrismaClient(prisma);
+  const platformService = new LtiPlatformServiceImpl(legacyPrisma, keyPair);
+  const launchService = new LtiLaunchServiceImpl(legacyPrisma, keyPair);
+  const deepLinkingService = new LtiDeepLinkingServiceImpl(
+    legacyPrisma,
+    keyPair,
+  );
+  const gradeService = new LtiGradeServiceImpl(legacyPrisma, keyPair);
+  const rosterService = new LtiRosterServiceImpl(
+    legacyPrisma,
+    keyPair,
+    gradeService,
+  );
 
   return {
     platformService,

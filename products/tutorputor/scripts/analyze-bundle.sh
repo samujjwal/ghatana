@@ -3,12 +3,14 @@
 # Bundle Analysis Script
 # Usage: ./analyze-bundle.sh [app_path]
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PRODUCT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 APP_PATH=${1:-"apps/tutorputor-admin"}
 MAX_BUNDLE_SIZE=500 # KB
 
 echo "🔍 Starting Bundle Analysis for $APP_PATH..."
 
-cd $APP_PATH
+cd "$PRODUCT_ROOT/$APP_PATH"
 
 # 1. Build the project
 echo "📦 Building project..."

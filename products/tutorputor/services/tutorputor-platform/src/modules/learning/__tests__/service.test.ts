@@ -25,6 +25,7 @@ function makePrisma(
       update: vi.fn(),
     },
     module: { findFirst: vi.fn(), findMany: vi.fn() },
+    learningEvent: { findMany: vi.fn() },
     $transaction: vi.fn(),
     $queryRaw: vi.fn().mockResolvedValue([{ "1": 1 }]),
     ...overrides,
@@ -94,7 +95,9 @@ describe("createLearningService", () => {
 
     it("returns dashboard data when user exists", async () => {
       const user = makeUser();
-      const enrollment = makeEnrollment();
+      const enrollment = makeEnrollment({
+        module: { slug: "intro-math", title: "Intro to Math" },
+      });
       const module = {
         id: "mod-1",
         slug: "intro-math",
@@ -112,6 +115,7 @@ describe("createLearningService", () => {
         user,
         [enrollment],
         [module],
+        [],
       ]);
 
       const dashboard = await service.getDashboard(TENANT, USER);
@@ -123,6 +127,135 @@ describe("createLearningService", () => {
       expect(dashboard.currentEnrollments[0]?.moduleTitle).toBe("Intro to Math");
       expect(dashboard.recommendedModules).toHaveLength(1);
       expect(dashboard.recommendedModules[0]?.slug).toBe("intro-math");
+    });
+
+    it("builds actionable mastery state from assessment, simulation, hint, process, and offline telemetry", async () => {
+      const user = makeUser();
+      const enrollment = makeEnrollment({
+        module: { slug: "intro-motion", title: "Motion Evidence" },
+      });
+      const module = {
+        id: "mod-1",
+        slug: "intro-motion",
+        title: "Motion Evidence",
+        domain: "PHYSICS",
+        difficulty: "BEGINNER",
+        estimatedTimeMinutes: 30,
+        status: "PUBLISHED",
+        tenantId: TENANT,
+        tags: [],
+        enrollments: [{ progressPercent: 40 }],
+      };
+      const telemetry = [
+        {
+          eventType: "assess.answer",
+          timestamp: new Date("2026-05-06T10:00:00.000Z"),
+          payload: {
+            object: {
+              claimId: "claim-motion",
+              evidenceId: "evidence-prediction",
+            },
+            result: {
+              correct: false,
+              confidence: "high",
+              misconceptions: ["Velocity and acceleration are being conflated."],
+            },
+          },
+        },
+        {
+          eventType: "sim.capture",
+          timestamp: new Date("2026-05-06T10:05:00.000Z"),
+          payload: {
+            object: {
+              runId: "run-1",
+              captureId: "capture-1",
+              claimId: "claim-motion",
+              evidenceId: "evidence-sim",
+            },
+            result: {
+              validEvidence: false,
+              processFeatures: { processScore: 0.35 },
+            },
+          },
+        },
+        {
+          eventType: "sim.control.change",
+          timestamp: new Date("2026-05-06T10:06:00.000Z"),
+          payload: {
+            object: { claimId: "claim-motion" },
+            result: { processFeatures: { processScore: 0.5 } },
+          },
+        },
+        {
+          eventType: "assist.hint",
+          timestamp: new Date("2026-05-06T10:07:00.000Z"),
+          payload: {
+            object: { claimId: "claim-motion", hintId: "hint-1" },
+            result: { accepted: true },
+          },
+        },
+        {
+          eventType: "offline.sync.completed",
+          timestamp: new Date("2026-05-06T10:08:00.000Z"),
+          payload: {
+            offline: true,
+            pendingItems: 0,
+            lastSyncedAt: "2026-05-06T10:08:00.000Z",
+          },
+        },
+      ];
+
+      vi.mocked(prisma.$transaction).mockResolvedValue([
+        user,
+        [enrollment],
+        [module],
+        telemetry,
+      ]);
+
+      const dashboard = await service.getDashboard(TENANT, USER);
+
+      expect(dashboard.currentClaimMastery?.[0]).toEqual(
+        expect.objectContaining({
+          claimId: "claim-motion",
+          evidenceCount: 4,
+          status: "developing",
+        }),
+      );
+      expect(dashboard.currentClaimMastery?.[0]?.masteryScore).toBeLessThan(0.6);
+      expect(dashboard.nextBestLesson).toEqual(
+        expect.objectContaining({
+          moduleSlug: "intro-motion",
+          targetClaimId: "claim-motion",
+        }),
+      );
+      expect(dashboard.unresolvedMisconceptions).toEqual([
+        expect.objectContaining({
+          description: "Velocity and acceleration are being conflated.",
+          sourceEventType: "assess.answer",
+        }),
+      ]);
+      expect(dashboard.simulationAttemptsNeedingReview).toEqual([
+        expect.objectContaining({
+          runId: "run-1",
+          captureId: "capture-1",
+          reason: "Simulation capture did not produce valid evidence.",
+        }),
+      ]);
+      expect(dashboard.overdueSpacedRepetitionItems?.[0]).toEqual(
+        expect.objectContaining({ claimId: "claim-motion" }),
+      );
+      expect(dashboard.recommendedRemediation?.map((item) => item.title)).toEqual(
+        expect.arrayContaining([
+          "Resolve misconception",
+          "Practice targeted evidence task",
+        ]),
+      );
+      expect(dashboard.offlineResumeState).toEqual(
+        expect.objectContaining({
+          pendingItems: 0,
+          lastSyncedAt: "2026-05-06T10:08:00.000Z",
+        }),
+      );
     });
   });
 

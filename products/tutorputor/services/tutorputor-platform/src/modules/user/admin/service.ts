@@ -5,7 +5,7 @@
  * @doc.pattern Service
  */
 
-import type { PrismaClient } from "@tutorputor/core/db";
+import type { Prisma, PrismaClient } from "@tutorputor/core/db";
 import { createStandaloneLogger } from "@tutorputor/core/logger";
 
 const logger = createStandaloneLogger({ component: "InstitutionAdminService" });
@@ -81,6 +81,34 @@ function parseDateRange(input: unknown): DateRangeInput {
   };
 }
 
+function normalizeTenantSubscriptionTier(
+  value: string | null | undefined,
+): TenantSummary["subscriptionTier"] {
+  switch (value?.toLowerCase()) {
+    case "basic":
+      return "basic";
+    case "enterprise":
+      return "enterprise";
+    case "free":
+    default:
+      return "free";
+  }
+}
+
+function toUserSortField(
+  value: string | undefined,
+): keyof Prisma.UserOrderByWithRelationInput | undefined {
+  switch (value) {
+    case "displayName":
+    case "email":
+    case "role":
+    case "createdAt":
+      return value;
+    default:
+      return undefined;
+  }
+}
+
 export class InstitutionAdminServiceImpl implements InstitutionAdminService {
   private readonly config: ServiceConfig;
 
@@ -132,7 +160,9 @@ export class InstitutionAdminServiceImpl implements InstitutionAdminService {
       totalModules: moduleCounts,
       totalClassrooms: classroomCount,
       createdAt: tenant.createdAt.toISOString(),
-      subscriptionTier: (tenant as any).subscriptionTier ?? "free",
+      subscriptionTier: normalizeTenantSubscriptionTier(
+        tenant.subscriptionTier,
+      ),
     };
   }
 
@@ -152,7 +182,7 @@ export class InstitutionAdminServiceImpl implements InstitutionAdminService {
     } = parsedPagination;
     const take = Math.min(limit, this.config.maxPageSize);
 
-    const where: Record<string, unknown> = { tenantId };
+    const where: Prisma.UserWhereInput = { tenantId };
 
     if (role) {
       where.role = role;
@@ -165,14 +195,15 @@ export class InstitutionAdminServiceImpl implements InstitutionAdminService {
       ];
     }
 
-    const orderBy: Record<string, unknown> = {};
-    if (sortBy) {
-      orderBy[sortBy] = sortOrder ?? "asc";
+    const orderBy: Prisma.UserOrderByWithRelationInput = {};
+    const sortField = toUserSortField(sortBy);
+    if (sortField) {
+      orderBy[sortField] = sortOrder ?? "asc";
     } else {
       orderBy.displayName = "asc";
     }
 
-    const queryArgs: Record<string, unknown> = {
+    const queryArgs: Prisma.UserFindManyArgs = {
       where,
       take: take + 1,
       skip: cursor ? 1 : 0,
@@ -189,7 +220,7 @@ export class InstitutionAdminServiceImpl implements InstitutionAdminService {
     }
 
     const [users, totalCount] = await Promise.all([
-      this.prisma.user.findMany(queryArgs as any),
+      this.prisma.user.findMany(queryArgs),
       this.prisma.user.count({ where }),
     ]);
 

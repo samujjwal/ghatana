@@ -5,7 +5,7 @@
  * and queue-driven background content generation.
  */
 
-import type { PrismaClient } from "@tutorputor/core/db";
+import { Prisma, type PrismaClient } from "@tutorputor/core/db";
 import { createHttpError } from "../../../core/http/requestContext.js";
 import type {
   ContentStudioService,
@@ -15,11 +15,20 @@ import type {
   ExperienceValidationResult,
   LearningExperience,
   LearningClaim,
+  LearningEvidence,
+  ExperienceTask,
   AIGenerationResult,
   GradeAdaptation,
   ExperienceStatus as ContractExperienceStatus,
   ValidationCheck,
 } from "@tutorputor/contracts/v1/content-studio";
+import type {
+  BloomLevel,
+  ContentNeeds,
+  EvidenceType,
+  Observable,
+  TaskType,
+} from "@tutorputor/contracts/v1/learning-unit";
 import type { IndependentGeneratedContentValidator } from "../evaluation/independent-validator-service.js";
 import type { ClaimContradictionGrader } from "../evaluation/claim-contradiction-grader.js";
 import type { RubricBackedPillarGrader } from "../evaluation/rubric-backed-pillar-grader.js";
@@ -38,6 +47,16 @@ type GradeRange =
   | "undergraduate"
   | "graduate"
   | "professional";
+
+function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
+  return value as Prisma.InputJsonValue;
+}
+
+function toNullableInputJsonValue(
+  value: unknown,
+): Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue {
+  return value === null ? Prisma.JsonNull : toInputJsonValue(value);
+}
 
 type ExperienceStatus = ContractExperienceStatus;
 
@@ -231,24 +250,27 @@ export type HealthAwareContentStudioService = Omit<
     reason?: string,
   ) => Promise<LearningExperience | null>;
   archiveExperience: (id: string) => Promise<LearningExperience | null>;
-  addClaim: (id: string, claim: AddClaimInput) => Promise<any>;
+  addClaim: (
+    id: string,
+    claim: AddClaimInput,
+  ) => Promise<ContentStudioClaimRow>;
   updateClaim: (
     experienceId: string,
     claimId: string,
     data: UpdateClaimInput,
-  ) => Promise<any>;
+  ) => Promise<ContentStudioClaimRow>;
   deleteClaim: (experienceId: string, claimId: string) => Promise<void>;
   addTask: (
     experienceId: string,
     claimId: string,
     task: AddTaskInput,
-  ) => Promise<any>;
+  ) => Promise<ContentStudioTaskRow>;
   updateTask: (
     experienceId: string,
     claimId: string,
     taskId: string,
     data: UpdateTaskInput,
-  ) => Promise<any>;
+  ) => Promise<ContentStudioTaskRow>;
   deleteTask: (
     experienceId: string,
     claimId: string,
@@ -385,8 +407,8 @@ async function recordExperienceEvent(
       experienceId,
       eventType,
       actorId,
-      metadata: metadata ?? undefined,
-    } as any,
+      ...(metadata ? { metadata: toInputJsonValue(metadata) } : {}),
+    },
   });
 }
 
@@ -761,11 +783,122 @@ function safeJsonArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
-function bloomToContract(value: string): string {
-  return value.toLowerCase();
+type ContentStudioClaimRow = {
+  id: string;
+  claimRef?: string | null;
+  text?: string | null;
+  statement?: string | null;
+  bloomLevel?: string | null;
+  orderIndex?: number | null;
+  evidence?: unknown;
+  tasks?: unknown;
+  contentNeeds?: unknown;
+};
+
+type ContentStudioEvidenceRow = {
+  id: string;
+  evidenceRef?: string | null;
+  claimRef?: string | null;
+  type?: string | null;
+  description?: string | null;
+  observables?: unknown;
+  contentDelivery?: unknown;
+  minimumScore?: number | null;
+  weight?: number | null;
+};
+
+type ContentStudioTaskRow = {
+  id: string;
+  taskRef?: string | null;
+  claimRef?: string | null;
+  evidenceRef?: string | null;
+  evidenceType?: string | null;
+  evidenceIds?: unknown;
+  type?: string | null;
+  title?: string | null;
+  prompt?: string | null;
+  instructions?: string | null;
+  estimatedMinutes?: number | null;
+  orderIndex?: number | null;
+};
+
+function safeRowArray<T extends object>(value: unknown): T[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is T => typeof item === "object" && item !== null)
+    : [];
 }
 
-function bloomFromInput(value: string | undefined): string {
+function optionalContractObject<T extends object>(value: unknown): T | undefined {
+  return typeof value === "object" && value !== null ? (value as T) : undefined;
+}
+
+const bloomLevels: readonly BloomLevel[] = [
+  "remember",
+  "understand",
+  "apply",
+  "analyze",
+  "evaluate",
+  "create",
+];
+
+function bloomToContract(value: string): BloomLevel {
+  const normalized = value.toLowerCase();
+  return bloomLevels.includes(normalized as BloomLevel)
+    ? (normalized as BloomLevel)
+    : "understand";
+}
+
+const evidenceTypes: readonly EvidenceType[] = [
+  "prediction_vs_outcome",
+  "parameter_targeting",
+  "explanation_quality",
+  "construction_artifact",
+  "observation",
+  "diagnosis",
+];
+
+function evidenceTypeFromRow(value: string | null | undefined): EvidenceType {
+  return evidenceTypes.includes(value as EvidenceType)
+    ? (value as EvidenceType)
+    : "observation";
+}
+
+const taskTypes: readonly TaskType[] = [
+  "prediction",
+  "simulation",
+  "explanation",
+  "construction",
+];
+
+function taskTypeFromRow(value: string | null | undefined): TaskType {
+  return taskTypes.includes(value as TaskType)
+    ? (value as TaskType)
+    : "simulation";
+}
+
+function observablesFromRow(
+  primary: unknown,
+  fallback: unknown,
+): Observable[] {
+  return safeRowArray<Observable>(primary).length > 0
+    ? safeRowArray<Observable>(primary)
+    : safeRowArray<Observable>(fallback);
+}
+
+function evidenceIdsFromTask(task: ContentStudioTaskRow): string[] {
+  if (Array.isArray(task.evidenceIds)) {
+    return task.evidenceIds
+      .map((id) => (typeof id === "string" ? id : null))
+      .filter((id): id is string => Boolean(id));
+  }
+
+  const fallbackId = task.evidenceRef ?? task.evidenceType;
+  return fallbackId ? [fallbackId] : [];
+}
+
+function bloomFromInput(
+  value: string | undefined,
+): Prisma.LearningClaimUncheckedCreateInput["bloomLevel"] {
   if (!value) return "UNDERSTAND";
   const up = value.toUpperCase();
   const valid = [
@@ -776,7 +909,9 @@ function bloomFromInput(value: string | undefined): string {
     "EVALUATE",
     "CREATE",
   ];
-  return valid.includes(up) ? up : "UNDERSTAND";
+  return (
+    valid.includes(up) ? up : "UNDERSTAND"
+  ) as Prisma.LearningClaimUncheckedCreateInput["bloomLevel"];
 }
 
 function extractPrimaryGrade(experience: {
@@ -807,22 +942,28 @@ async function mapExperience(
   const gradeRange = extractPrimaryGrade(exp);
   const gradeAdaptations = safeJsonArray(exp.gradeAdaptations);
   const selectedGradeAdaptation =
-    gradeAdaptations[0] || defaultGradeAdaptation(gradeRange);
+    optionalContractObject<GradeAdaptation>(gradeAdaptations[0]) ||
+    defaultGradeAdaptation(gradeRange);
 
-  const claims: LearningClaim[] = (exp.claims || []).map((claim: any) => {
+  const experienceEvidence = safeRowArray<ContentStudioEvidenceRow>(exp.evidences);
+  const experienceTasks = safeRowArray<ContentStudioTaskRow>(exp.experienceTasks);
+  const claims: LearningClaim[] = (exp.claims as ContentStudioClaimRow[]).map((claim) => {
     const claimRef = claim.claimRef ?? claim.id;
     const claimId = claim.id ?? claim.claimRef;
     const claimText = claim.text ?? claim.statement ?? "";
     const bloomLevel = bloomToContract(claim.bloomLevel || "UNDERSTAND");
+    const contentNeeds = optionalContractObject<ContentNeeds>(claim.contentNeeds);
 
-    const evidences = Array.isArray(claim.evidence)
-      ? claim.evidence
-      : (exp.evidences || []).filter((e: any) => e.claimRef === claimRef);
-    const tasks = Array.isArray(claim.tasks)
-      ? claim.tasks
-      : (exp.experienceTasks || []).filter(
-          (task: any) => task.claimRef === claimRef,
-        );
+    const evidences = safeRowArray<ContentStudioEvidenceRow>(claim.evidence);
+    const mappedEvidence =
+      evidences.length > 0
+        ? evidences
+        : experienceEvidence.filter((e) => e.claimRef === claimRef);
+    const claimTasks = safeRowArray<ContentStudioTaskRow>(claim.tasks);
+    const mappedTasks =
+      claimTasks.length > 0
+        ? claimTasks
+        : experienceTasks.filter((task) => task.claimRef === claimRef);
 
     return {
       id: claimId,
@@ -832,23 +973,29 @@ async function mapExperience(
       experienceId: exp.id,
       orderIndex: claim.orderIndex ?? 0,
       masteryThreshold: 0.7,
-      evidenceRequirements: evidences.map((e: any) => ({
-        id: e.id ?? e.evidenceRef,
+      evidenceRequirements: mappedEvidence.map<LearningEvidence>((e) => ({
+        id: e.id ?? e.evidenceRef ?? `${claimId}-evidence`,
+        claimId,
         claimRef: e.claimRef ?? claimRef,
-        type: e.type,
-        description: e.description,
-        observables: e.observables ?? e.contentDelivery ?? [],
+        type: evidenceTypeFromRow(e.type),
+        description: e.description ?? "",
+        observables: observablesFromRow(e.observables, e.contentDelivery),
+        minimumScore: e.minimumScore ?? 0.7,
+        weight: e.weight ?? 1,
       })),
-      tasks: tasks.map((task: any) => ({
-        id: task.id ?? task.taskRef,
-        type: task.type,
-        claimRef: task.claimRef ?? claimRef,
-        evidenceRef: task.evidenceRef ?? task.evidenceType ?? null,
-        prompt: task.prompt,
+      tasks: mappedTasks.map<ExperienceTask>((task) => ({
+        id: task.id ?? task.taskRef ?? `${claimId}-task`,
+        claimId,
+        type: taskTypeFromRow(task.type),
+        title: task.title ?? task.prompt ?? task.instructions ?? "Learning task",
+        instructions: task.instructions ?? task.prompt ?? "",
+        evidenceIds: evidenceIdsFromTask(task),
+        estimatedMinutes: task.estimatedMinutes ?? 10,
+        orderIndex: task.orderIndex ?? 0,
       })),
-      contentNeeds: claim.contentNeeds || undefined,
+      ...(contentNeeds ? { contentNeeds } : {}),
     };
-  }) as any;
+  });
 
   return {
     id: exp.id,
@@ -862,12 +1009,12 @@ async function mapExperience(
     claims,
     estimatedTimeMinutes: exp.estimatedTimeMinutes,
     keywords: [],
-    moduleId: exp.moduleId || undefined,
-    simulationId: exp.simulationManifestId || undefined,
-    authorId: exp.createdBy,
+    ...(exp.moduleId ? { moduleId: exp.moduleId } : {}),
+    ...(exp.simulationManifestId ? { simulationId: exp.simulationManifestId } : {}),
+    ...(exp.createdBy ? { authorId: exp.createdBy } : {}),
     createdAt: exp.createdAt,
     updatedAt: exp.updatedAt,
-  } as any;
+  };
 }
 
 export function createContentStudioService(
@@ -963,8 +1110,8 @@ export function createContentStudioService(
           intentProblem: request.description,
           intentMotivation: request.description,
           intentMisconceptions: [],
-          targetGrades: [toGradeEnum(gradeRange)],
-          gradeAdaptations: [adaptation],
+          targetGrades: toInputJsonValue([toGradeEnum(gradeRange)]),
+          gradeAdaptations: toInputJsonValue([adaptation]),
           assessmentConfig: {
             passingThreshold: 0.7,
             minEvidencePerClaim: 1,
@@ -975,7 +1122,7 @@ export function createContentStudioService(
           estimatedTimeMinutes: 30,
           createdBy: request.authorId || "system",
           lastEditedBy: request.authorId || "system",
-        } as any,
+        } satisfies Prisma.LearningExperienceUncheckedCreateInput,
       });
 
       try {
@@ -1292,10 +1439,10 @@ export function createContentStudioService(
     const updated = await prisma.learningExperience.update({
       where: { id },
       data: {
-        targetGrades: [toGradeEnum(target)],
-        gradeAdaptations: [defaultGradeAdaptation(target)],
+        targetGrades: toInputJsonValue([toGradeEnum(target)]),
+        gradeAdaptations: toInputJsonValue([defaultGradeAdaptation(target)]),
         version: { increment: 1 },
-      } as any,
+      } satisfies Prisma.LearningExperienceUpdateInput,
     });
 
     await recordExperienceEvent(
@@ -1815,7 +1962,7 @@ export function createContentStudioService(
         suggestions: checks
           .filter((c) => c.suggestion)
           .map((c) => c.suggestion as string),
-      } as any,
+      } satisfies Prisma.ValidationRecordUncheckedCreateInput,
     });
 
     await recordExperienceEvent(prisma, id, "VALIDATED", "system", {
@@ -1842,7 +1989,7 @@ export function createContentStudioService(
         safety: safetyScore,
         technical: technicalScore,
         accessibility: accessibilityScore,
-      } as any,
+      },
       validatedAt: new Date(),
       ...(independentValidation ? { independentValidation } : {}),
     };
@@ -1976,7 +2123,10 @@ export function createContentStudioService(
     return mapExperience(prisma, id);
   }
 
-  async function addClaim(id: string, claim: AddClaimInput): Promise<any> {
+  async function addClaim(
+    id: string,
+    claim: AddClaimInput,
+  ): Promise<ContentStudioClaimRow> {
     const latest = await prisma.learningClaim.findFirst({
       where: { experienceId: id },
       orderBy: { orderIndex: "desc" },
@@ -1992,8 +2142,10 @@ export function createContentStudioService(
         text: claim?.text || claim?.statement || "New claim",
         bloomLevel: bloomFromInput(claim?.bloomLevel || claim?.bloom),
         orderIndex,
-        contentNeeds: claim?.contentNeeds || null,
-      } as any,
+        contentNeeds: claim?.contentNeeds
+          ? toInputJsonValue(claim.contentNeeds)
+          : Prisma.JsonNull,
+      } satisfies Prisma.LearningClaimUncheckedCreateInput,
     });
 
     await recordExperienceEvent(
@@ -2015,7 +2167,7 @@ export function createContentStudioService(
     experienceId: string,
     claimId: string,
     data: UpdateClaimInput,
-  ): Promise<any> {
+  ): Promise<ContentStudioClaimRow> {
     const claim = await prisma.learningClaim.findFirst({
       where: {
         experienceId,
@@ -2034,8 +2186,11 @@ export function createContentStudioService(
           data?.bloomLevel || data?.bloom
             ? bloomFromInput(data?.bloomLevel || data?.bloom)
             : claim.bloomLevel,
-        contentNeeds: data?.contentNeeds ?? claim.contentNeeds,
-      } as any,
+        contentNeeds:
+          data?.contentNeeds !== undefined
+            ? toInputJsonValue(data.contentNeeds)
+            : toNullableInputJsonValue(claim.contentNeeds),
+      } satisfies Prisma.LearningClaimUpdateInput,
     });
 
     await recordExperienceEvent(
@@ -2087,7 +2242,7 @@ export function createContentStudioService(
     experienceId: string,
     claimId: string,
     task: AddTaskInput,
-  ): Promise<any> {
+  ): Promise<ContentStudioTaskRow> {
     const claim = await prisma.learningClaim.findFirst({
       where: {
         experienceId,
@@ -2116,8 +2271,8 @@ export function createContentStudioService(
         evidenceRef,
         prompt: task?.prompt || task?.instructions || "",
         orderIndex,
-        config: task?.config || {},
-      } as any,
+        config: toInputJsonValue(task?.config || {}),
+      } satisfies Prisma.ExperienceTaskUncheckedCreateInput,
     });
 
     await recordExperienceEvent(
@@ -2141,7 +2296,7 @@ export function createContentStudioService(
     _claimId: string,
     taskId: string,
     data: UpdateTaskInput,
-  ): Promise<any> {
+  ): Promise<ContentStudioTaskRow> {
     const task = await prisma.experienceTask.findFirst({
       where: {
         experienceId,
@@ -2158,8 +2313,13 @@ export function createContentStudioService(
       data: {
         type: data?.type || task.type,
         prompt: data?.prompt || data?.instructions || task.prompt,
-        config: data?.config ?? task.config,
-      } as any,
+        config:
+          data?.config !== undefined
+            ? toInputJsonValue(data.config)
+            : task.config === null
+              ? Prisma.JsonNull
+              : toInputJsonValue(task.config),
+      } satisfies Prisma.ExperienceTaskUpdateInput,
     });
 
     await recordExperienceEvent(

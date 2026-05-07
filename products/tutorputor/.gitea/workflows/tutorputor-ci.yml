@@ -48,6 +48,12 @@ jobs:
       - name: Validate canonical error envelope
         run: node products/tutorputor/scripts/validate-error-envelope.mjs
 
+      - name: Validate repair scripts are removed
+        run: node products/tutorputor/scripts/validate-repair-scripts.mjs
+
+      - name: Validate frontend dependency policy
+        run: node products/tutorputor/scripts/validate-frontend-dependency-policy.mjs
+
       - name: Validate UI package boundaries
         run: node products/tutorputor/scripts/validate-ui-boundaries.mjs
 
@@ -104,6 +110,58 @@ jobs:
 
       - name: Validate type-safety gates
         run: node products/tutorputor/scripts/validate-type-safety-gates.mjs
+
+      - name: Validate golden-data semantic correctness gates
+        run: node products/tutorputor/scripts/validate-golden-correctness-gates.mjs
+
+      - name: Validate production placeholder scan
+        run: node products/tutorputor/scripts/validate-production-placeholder-scan.mjs
+
+      - name: Validate unified TutorPutor quality gate
+        run: node products/tutorputor/scripts/validate-unified-quality-gate.mjs
+
+      - name: Generate product gate report manifests
+        run: |
+          mkdir -p \
+            products/tutorputor/reports/e2e \
+            products/tutorputor/reports/accessibility \
+            products/tutorputor/reports/performance \
+            products/tutorputor/reports/resilience
+          node products/tutorputor/scripts/validate-critical-journey-coverage.mjs > products/tutorputor/reports/e2e/critical-journey-coverage.txt
+          node products/tutorputor/scripts/validate-accessibility-gates.mjs > products/tutorputor/reports/accessibility/accessibility-gates.txt
+          printf "Performance suite source: products/tutorputor/tests/performance/Benchmarks.test.ts\nCI gate: product-traceability + test report artifact policy\n" > products/tutorputor/reports/performance/performance-suite.txt
+          printf "Resilience suite source: products/tutorputor/tests/resilience/FailureScenarios.test.ts\nCI gate: product-traceability + test report artifact policy\n" > products/tutorputor/reports/resilience/resilience-suite.txt
+
+      - name: Upload E2E test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-report
+          path: products/tutorputor/reports/e2e/
+          if-no-files-found: error
+
+      - name: Upload accessibility test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-test-report
+          path: products/tutorputor/reports/accessibility/
+          if-no-files-found: error
+
+      - name: Upload performance test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-test-report
+          path: products/tutorputor/reports/performance/
+          if-no-files-found: error
+
+      - name: Upload resilience test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: resilience-test-report
+          path: products/tutorputor/reports/resilience/
+          if-no-files-found: error
+
+      - name: Validate test report artifact policy
+        run: node products/tutorputor/scripts/validate-test-report-policy.mjs
 
   # ─────────────────────────────────────────────────────────────────────────
   # 1. Shared Package Validation
@@ -201,16 +259,35 @@ jobs:
       - name: Audit production any usage
         run: node products/tutorputor/scripts/audit-any-types.ts
         env:
-          ANY_TYPE_THRESHOLD: "176"
+          ANY_TYPE_THRESHOLD: "0"
           ANY_AUDIT_INCLUDE_TESTS: "false"
 
+      - name: Validate generated contract declarations
+        run: |
+          pnpm --filter @tutorputor/contracts build
+          node products/tutorputor/scripts/validate-generated-contracts.mjs
+
       - name: Run tests
-        run: pnpm --filter @tutorputor/platform test:coverage
+        run: |
+          mkdir -p products/tutorputor/reports/unit
+          pnpm --filter @tutorputor/platform exec vitest run \
+            --coverage \
+            --reporter=default \
+            --reporter=junit \
+            --outputFile=../../reports/unit/platform-unit-results.xml
         env:
           NODE_ENV: test
           DATABASE_URL: postgresql://tutorputor:tutorputor@localhost:5432/tutorputor_test
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: test-secret-that-is-at-least-32-chars-long
+
+      - name: Upload unit test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-report
+          path: products/tutorputor/reports/unit/
+          if-no-files-found: error
 
       - name: Check coverage threshold (75%)
         run: |
@@ -227,6 +304,7 @@ jobs:
         with:
           name: coverage-report
           path: products/tutorputor/services/tutorputor-platform/coverage/
+          if-no-files-found: error
 
   # ─────────────────────────────────────────────────────────────────────────
   # 3. Content Worker Integration Tests (queue + worker canonical CI profile)
@@ -261,9 +339,12 @@ jobs:
 
       - name: Run content worker lifecycle tests
         run: |
+          mkdir -p products/tutorputor/reports/integration
           pnpm --filter @tutorputor/platform exec vitest run \
             src/__tests__/p0-4-e2e-worker-lifecycle.integration.test.ts \
-            --reporter=verbose
+            --reporter=verbose \
+            --reporter=junit \
+            --outputFile=../../reports/integration/content-worker-results.xml
         env:
           NODE_ENV: test
           REDIS_URL: redis://localhost:6379
@@ -273,6 +354,14 @@ jobs:
           # Content generation gRPC is mocked in tests — no real service required
           CONTENT_GENERATION_GRPC_HOST: localhost
           CONTENT_GENERATION_GRPC_PORT: "50051"
+
+      - name: Upload integration test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-report
+          path: products/tutorputor/reports/integration/
+          if-no-files-found: error
 
   # ─────────────────────────────────────────────────────────────────────────
   # 4. Simulation Domain Correctness Suites

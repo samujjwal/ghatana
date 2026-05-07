@@ -10,7 +10,7 @@
  */
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { ZodError } from 'zod';
+import { ZodError, type ZodType } from 'zod';
 import { createStandaloneLogger } from '@tutorputor/core/logger';
 
 const logger = createStandaloneLogger({ component: 'ValidationMiddleware' });
@@ -18,7 +18,7 @@ const logger = createStandaloneLogger({ component: 'ValidationMiddleware' });
 /**
  * Create a validation middleware for request body
  */
-export function validateBody<T>(schema: any) {
+export function validateBody<T>(schema: ZodType<T>) {
   return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
     try {
       request.body = schema.parse(request.body);
@@ -39,7 +39,7 @@ export function validateBody<T>(schema: any) {
 /**
  * Create a validation middleware for query parameters
  */
-export function validateQuery<T>(schema: any) {
+export function validateQuery<T>(schema: ZodType<T>) {
   return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
     try {
       request.query = schema.parse(request.query);
@@ -60,7 +60,7 @@ export function validateQuery<T>(schema: any) {
 /**
  * Create a validation middleware for path parameters
  */
-export function validateParams<T>(schema: any) {
+export function validateParams<T>(schema: ZodType<T>) {
   return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
     try {
       request.params = schema.parse(request.params);

@@ -48,6 +48,28 @@ export enum PayoutStatus {
   CANCELLED = "CANCELLED",
 }
 
+type StripePayoutScheduleConfig = NonNullable<
+  NonNullable<
+    NonNullable<Stripe.AccountUpdateParams["settings"]>["payouts"]
+  >["schedule"]
+>;
+type StripeWeeklyAnchor = NonNullable<
+  StripePayoutScheduleConfig["weekly_anchor"]
+>;
+type StripeMonthlyAnchor = NonNullable<
+  StripePayoutScheduleConfig["monthly_anchor"]
+>;
+
+interface PayoutRecord {
+  stripePayoutId: string;
+  amountCents: number;
+  currency: string;
+  status: string;
+  arrivalDate: Date | null;
+  createdAt: Date;
+  description: string | null;
+}
+
 /**
  * Payout Service
  */
@@ -86,7 +108,7 @@ export class PayoutService {
         payoutParams,
         {
           stripeAccount: config.accountId,
-        } as any,
+        },
       );
 
       const status = this.mapPayoutStatus(payout.status);
@@ -130,12 +152,19 @@ export class PayoutService {
     currency: string;
   }> {
     try {
-      const balance = await this.stripe.balance.retrieve({
-        stripeAccount: accountId,
-      } as any);
+      const balance = await this.stripe.balance.retrieve(
+        {},
+        { stripeAccount: accountId },
+      );
 
-      const available = balance.available.reduce((sum: number, bal: any) => sum + bal.amount, 0);
-      const pending = balance.pending.reduce((sum: number, bal: any) => sum + bal.amount, 0);
+      const available = balance.available.reduce(
+        (sum, bal) => sum + bal.amount,
+        0,
+      );
+      const pending = balance.pending.reduce(
+        (sum, bal) => sum + bal.amount,
+        0,
+      );
 
       return {
         available,
@@ -161,16 +190,18 @@ export class PayoutService {
     logger.info({ accountId, schedule }, "Configuring payout schedule");
 
     try {
-      const scheduleConfig: any = {
+      const scheduleConfig: StripePayoutScheduleConfig = {
         interval: schedule.interval,
       };
 
       if (schedule.weeklyAnchor !== undefined) {
-        scheduleConfig.weekly_anchor = schedule.weeklyAnchor;
+        scheduleConfig.weekly_anchor = toStripeWeeklyAnchor(
+          schedule.weeklyAnchor,
+        );
       }
 
       if (schedule.monthlyAnchor !== undefined) {
-        scheduleConfig.monthly_anchor = schedule.monthlyAnchor;
+        scheduleConfig.monthly_anchor = schedule.monthlyAnchor as StripeMonthlyAnchor;
       }
 
       await this.stripe.accounts.update(accountId, {
@@ -216,13 +247,13 @@ export class PayoutService {
         take: limit,
       });
 
-      return payouts.map((payout: any) => ({
+      return (payouts as PayoutRecord[]).map((payout) => ({
         id: payout.stripePayoutId,
         amount: payout.amountCents,
         currency: payout.currency,
         status: payout.status as PayoutStatus,
         arrivalDate: payout.arrivalDate || new Date(payout.createdAt),
-        description: payout.description ?? undefined,
+        ...(payout.description ? { description: payout.description } : {}),
       }));
     } catch (error) {
       logger.error(
@@ -242,9 +273,8 @@ export class PayoutService {
     try {
       await this.stripe.payouts.cancel(
         payoutId,
-        {
-          stripeAccount: accountId,
-        } as any,
+        {},
+        { stripeAccount: accountId },
       );
 
       // Update database record
@@ -325,6 +355,19 @@ export class PayoutService {
         return PayoutStatus.PENDING;
     }
   }
+}
+
+function toStripeWeeklyAnchor(day: number): StripeWeeklyAnchor {
+  const anchors: StripeWeeklyAnchor[] = [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+  ];
+  return anchors[Math.min(Math.max(day, 1), 7) - 1] ?? "monday";
 }
 
 /**

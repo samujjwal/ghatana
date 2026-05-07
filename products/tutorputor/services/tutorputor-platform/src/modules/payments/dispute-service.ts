@@ -134,8 +134,9 @@ export class DisputeService {
     try {
       const disputes = await this.stripe.disputes.list({
         limit,
+      }, {
         stripeAccount: accountId,
-      } as any);
+      });
 
       const filtered = status
         ? disputes.data.filter((d) => this.mapDisputeStatus(d.status) === status)
@@ -168,32 +169,19 @@ export class DisputeService {
     logger.info({ disputeId }, "Submitting dispute evidence");
 
     try {
-      // Upload file evidence first
-      const fileIds: string[] = [];
       const textEvidence: Partial<DisputeEvidence> = {};
 
-      for (const [key, value] of Object.entries(evidence)) {
-        if (value instanceof File) {
-          const file = await this.stripe.files.create({
-            file: {
-              data: value,
-              name: value.name,
-              type: value.type,
-            },
-            purpose: "dispute_evidence",
-          } as any);
-          fileIds.push(file.id);
-        } else if (typeof value === "string") {
-          (textEvidence as any)[key] = value;
+      for (const [key, value] of Object.entries(evidence) as Array<
+        [keyof DisputeEvidence, string | undefined]
+      >) {
+        if (typeof value === "string") {
+          textEvidence[key] = value;
         }
       }
 
       // Update dispute with evidence
       await this.stripe.disputes.update(disputeId, {
-        evidence: {
-          ...textEvidence,
-          ...(fileIds.length > 0 ? { access_activity_log: fileIds[0] } : {}),
-        },
+        evidence: textEvidence,
       });
 
       logger.info({ disputeId }, "Evidence submitted successfully");
@@ -304,14 +292,14 @@ export class DisputeService {
         product_description: paymentIntent.description || "Educational service",
       };
 
-      // Add customer email if available (note: field may differ in Stripe API)
-      if ((paymentIntent as any).receipt_email) {
-        (evidence as any).customer_email_address = (paymentIntent as any).receipt_email;
+      // Add customer email if available.
+      if (paymentIntent.receipt_email) {
+        evidence.customer_email_address = paymentIntent.receipt_email;
       }
 
       // Add customer IP if available (from metadata)
       if (paymentIntent.metadata?.customer_ip) {
-        (evidence as any).customer_purchase_ip = paymentIntent.metadata.customer_ip;
+        evidence.customer_purchase_ip = paymentIntent.metadata.customer_ip;
       }
 
       logger.info({ disputeId }, "Evidence auto-generated successfully");

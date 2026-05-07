@@ -13,6 +13,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import { Prisma } from "@tutorputor/core/db";
 import {
   getTenantId,
   getUserId,
@@ -39,6 +40,10 @@ type UpdateExperienceRequest = {
   gradeRange?: GradeRange;
   userId?: string;
 };
+
+function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
+  return value as Prisma.InputJsonValue;
+}
 
 type GenerateClaimRequest = {
   maxClaims?: number;
@@ -1070,14 +1075,14 @@ export function registerContentStudioRoutes(
           simulationManifestId,
           interactionType: interactionType ?? "parameter_exploration",
           goal: goal ?? "",
-          successCriteria: (successCriteria ?? {}) as any,
+          successCriteria: toInputJsonValue(successCriteria ?? {}),
           estimatedMinutes: estimatedMinutes ?? 10,
         },
         update: {
           simulationManifestId,
           interactionType: interactionType ?? "parameter_exploration",
           goal: goal ?? "",
-          successCriteria: (successCriteria ?? {}) as any,
+          successCriteria: toInputJsonValue(successCriteria ?? {}),
           estimatedMinutes: estimatedMinutes ?? 10,
         },
       });

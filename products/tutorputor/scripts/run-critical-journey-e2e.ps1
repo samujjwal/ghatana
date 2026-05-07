@@ -25,6 +25,8 @@ Push-Location $WebApp
 corepack pnpm exec playwright test `
   e2e/critical-learner-journey.spec.ts `
   e2e/offline-resume-critical-journey.spec.ts `
+  e2e/role-complete-critical-journey.spec.ts `
+  e2e/learner-dashboard-states.spec.ts `
   --reporter=line
 Pop-Location
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

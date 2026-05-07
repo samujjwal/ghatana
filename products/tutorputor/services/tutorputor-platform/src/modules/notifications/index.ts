@@ -12,6 +12,12 @@ import {
   respondWithErrors,
 } from "../../core/http/requestContext.js";
 
+interface NotificationPreferencesBody {
+  emailEnabled?: boolean;
+  pushEnabled?: boolean;
+  preferences?: unknown;
+}
+
 /**
  * Notification routes. Registered at prefix /api/v1/notifications.
  */
@@ -163,7 +169,7 @@ export const notificationRoutes = async (app: FastifyInstance) => {
   app.patch("/preferences", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
-    const body = (req.body ?? {}) as any;
+    const body = (req.body ?? {}) as NotificationPreferencesBody;
 
     await respondWithErrors(reply, () =>
       prisma.notificationPreference.upsert({

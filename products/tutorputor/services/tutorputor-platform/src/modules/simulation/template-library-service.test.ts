@@ -177,6 +177,93 @@ vi.mock("@tutorputor/simulation/engine", () => ({
   })),
 }));
 
+vi.mock("@tutorputor/simulation/engine/auto/preset-compatibility", () => ({
+  listCompatibleAutoPresets: vi.fn((input?: { source?: string; domain?: string }) =>
+    [
+      {
+        id: "preset-photosynthesis",
+        name: "Photosynthesis",
+        description: "Auto preset description",
+        domain: "biology",
+        source: "curated_starter",
+        starterId: "starter-photosynthesis-cycle",
+        audience: "undergraduate",
+        legacyAliases: ["preset-photosynthesis"],
+        bootstrapSupported: true,
+        exportFormats: ["manifest", "webxr", "unity"],
+      },
+      {
+        id: "preset-gas-laws",
+        name: "Gas Laws",
+        description: "Chemistry auto preset",
+        domain: "chemistry",
+        source: "curated_starter",
+        starterId: "starter-second",
+        audience: "undergraduate",
+        legacyAliases: ["preset-gas-laws"],
+        bootstrapSupported: true,
+        exportFormats: ["manifest", "webxr", "unity"],
+      },
+      {
+        id: "preset-conservation-energy",
+        name: "Conservation of Energy",
+        description: "Legacy physics preset",
+        domain: "physics",
+        source: "legacy_auto",
+        audience: "undergraduate",
+        legacyAliases: [],
+        bootstrapSupported: true,
+        exportFormats: ["manifest", "webxr", "unity"],
+      },
+    ].filter((preset) => (input?.source ? preset.source === input.source : true))
+      .filter((preset) => (input?.domain ? preset.domain === input.domain : true)),
+  ),
+  resolveCompatibleAutoPreset: vi.fn((presetId: string) =>
+    presetId === "preset-conservation-energy"
+      ? {
+          id: presetId,
+          name: "Conservation of Energy",
+          description: "Legacy physics preset",
+          domain: "physics",
+          source: "legacy_auto",
+          audience: "undergraduate",
+          legacyAliases: [],
+          bootstrapSupported: true,
+          exportFormats: ["manifest", "webxr", "unity"],
+        }
+      : {
+          id: presetId,
+          name: "Photosynthesis",
+          description: "Auto preset description",
+          domain: "biology",
+          source: "curated_starter",
+          starterId: "starter-photosynthesis-cycle",
+          audience: "undergraduate",
+          legacyAliases: ["preset-photosynthesis"],
+          bootstrapSupported: true,
+          exportFormats: ["manifest", "webxr", "unity"],
+        },
+  ),
+  bootstrapCompatibleAutoPreset: vi.fn(({ tenantId, authorId, title, description, presetRef }) =>
+    makeManifestPayload({
+      id: presetRef === "preset-conservation-energy" ? "legacy-manifest-1" : "auto-manifest-1",
+      domain: presetRef === "preset-conservation-energy" ? "PHYSICS" : "BIOLOGY",
+      ...(tenantId ? { tenantId } : {}),
+      ...(authorId ? { authorId } : {}),
+      ...(title ? { title } : {}),
+      ...(description ? { description } : {}),
+    }),
+  ),
+  exportCompatibleAutoPreset: vi.fn(({ presetRef, format }) => ({
+    presetId: presetRef,
+    source: presetRef === "preset-conservation-energy" ? "legacy_auto" : "curated_starter",
+    ...(presetRef === "preset-conservation-energy" ? {} : { starterId: presetRef }),
+    exportFormat: format ?? "manifest",
+    manifest: makeManifestPayload({ domain: "BIOLOGY" }),
+    packageData: { format: format ?? "manifest" },
+  })),
+}));
+
 function makeManifestPayload(overrides: Record<string, unknown> = {}) {
   return {
     id: "manifest-1",

@@ -511,7 +511,7 @@ export class VRLabServiceImpl implements VRLabService {
     );
   }
 
-  private mapToVRLab(lab: any): VRLab {
+  private mapToVRLab(lab: Record<string, unknown>): VRLab {
     const scenes =
       (lab.scenes as Array<Record<string, unknown>> | undefined) ?? [];
     const objectives =
@@ -542,7 +542,7 @@ export class VRLabServiceImpl implements VRLabService {
     };
   }
 
-  private mapToVRScene(scene: any): VRScene {
+  private mapToVRScene(scene: Record<string, unknown>): VRScene {
     const interactables =
       (scene.interactables as Array<Record<string, unknown>> | undefined) ?? [];
     return {
@@ -562,7 +562,9 @@ export class VRLabServiceImpl implements VRLabService {
     };
   }
 
-  private mapToVRInteractable(interactable: any): VRInteractable {
+  private mapToVRInteractable(
+    interactable: Record<string, unknown>,
+  ): VRInteractable {
     return {
       id: interactable.id as string,
       sceneId: interactable.sceneId as string,
@@ -584,7 +586,9 @@ export class VRLabServiceImpl implements VRLabService {
     };
   }
 
-  private mapToVRLabObjective(objective: any): VRLabObjective {
+  private mapToVRLabObjective(
+    objective: Record<string, unknown>,
+  ): VRLabObjective {
     return {
       id: objective.id as string,
       labId: objective.labId as string,

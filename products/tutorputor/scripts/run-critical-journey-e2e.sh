@@ -36,6 +36,8 @@ fi
 WEB_CRITICAL_SPECS=(
   "e2e/critical-learner-journey.spec.ts"
   "e2e/offline-resume-critical-journey.spec.ts"
+  "e2e/role-complete-critical-journey.spec.ts"
+  "e2e/learner-dashboard-states.spec.ts"
 )
 
 ADMIN_CRITICAL_SPECS=(

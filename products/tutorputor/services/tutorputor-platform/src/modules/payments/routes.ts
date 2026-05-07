@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type Stripe from "stripe";
 
-import type { TenantId } from "@tutorputor/contracts/v1/types";
+import type { PaymentMethodId, TenantId } from "@tutorputor/contracts/v1/types";
 import {
   getTenantId,
   respondWithErrors,
@@ -109,9 +109,9 @@ export async function paymentRoutes(
 
       const subscription = await service.createSubscription({
         tenantId,
-        planId: body.planId as any,
+        planId: body.planId,
         billingInterval: body.billingInterval,
-        ...(body.paymentMethodId ? { paymentMethodId: body.paymentMethodId as any } : {}),
+        ...(body.paymentMethodId ? { paymentMethodId: body.paymentMethodId as PaymentMethodId } : {}),
         ...(typeof body.trialDays === "number" ? { trialDays: body.trialDays } : {}),
       });
       return reply.code(201).send(subscription);

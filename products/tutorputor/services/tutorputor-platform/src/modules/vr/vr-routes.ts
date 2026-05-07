@@ -28,6 +28,14 @@ function asUserId(value: string): UserId {
   return value as UserId;
 }
 
+type StringQuery = Record<string, string | undefined>;
+
+function asStringQuery(query: unknown): StringQuery {
+  return query && typeof query === "object"
+    ? (query as StringQuery)
+    : {};
+}
+
 /**
  * VR module routes. Registered at prefix /api/v1/vr.
  */
@@ -65,7 +73,7 @@ export const vrRoutes = async (app: FastifyInstance) => {
    */
   app.get("/labs", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = asTenantId(getTenantId(req));
-    const query = (req.query ?? {}) as any;
+    const query = asStringQuery(req.query);
 
     await respondWithErrors(reply, () =>
       labService.listLabs({
@@ -186,7 +194,7 @@ export const vrRoutes = async (app: FastifyInstance) => {
           tenantId,
           userId,
           sceneId,
-          data: req.body as any,
+          data: req.body as Parameters<typeof labService.updateScene>[0]["data"],
         }),
       );
     },
@@ -249,7 +257,7 @@ export const vrRoutes = async (app: FastifyInstance) => {
       const session = await sessionService.startSession({
         tenantId,
         userId,
-        data: req.body as any,
+        data: req.body as Parameters<typeof sessionService.startSession>[0]["data"],
       });
       reply.code(201);
       return session;
@@ -264,7 +272,7 @@ export const vrRoutes = async (app: FastifyInstance) => {
   app.get("/sessions", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = asTenantId(getTenantId(req));
     const userId = asUserId(getUserId(req));
-    const query = (req.query ?? {}) as any;
+    const query = asStringQuery(req.query);
 
     await respondWithErrors(reply, () =>
       sessionService.listUserSessions({
@@ -325,7 +333,7 @@ export const vrRoutes = async (app: FastifyInstance) => {
           tenantId,
           userId,
           sessionId,
-          data: req.body as any,
+          data: req.body as Parameters<typeof sessionService.updateSession>[0]["data"],
         }),
       );
     },

@@ -26,7 +26,7 @@ export interface CircuitBreakerOptions {
 
 export interface ServiceWrapper<T> {
   name: string;
-  circuitBreaker: CircuitBreaker;
+  circuitBreaker: CircuitBreaker<unknown[], T>;
   execute: (...args: unknown[]) => Promise<T>;
   healthCheck: () => Promise<boolean>;
 }
@@ -49,7 +49,7 @@ export function createCircuitBreaker<T>(
 ): ServiceWrapper<T> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
 
-  const breakerOptions: Record<string, number> = {};
+  const breakerOptions: CircuitBreakerOptions = {};
   if (opts.resetTimeout !== undefined) {
     breakerOptions.resetTimeout = opts.resetTimeout;
   }
@@ -63,7 +63,7 @@ export function createCircuitBreaker<T>(
     breakerOptions.rollingCountBuckets = opts.rollingCountBuckets;
   }
 
-  const breaker = new CircuitBreaker(action, breakerOptions as any);
+  const breaker = new CircuitBreaker<unknown[], T>(action, breakerOptions);
 
   // Setup event listeners for monitoring
   if (logger) {
