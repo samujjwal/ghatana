@@ -21,7 +21,6 @@ import type {
   NameSuggestionResponseContract,
   ProjectResponseContract,
   ProjectSetupSuggestionContract,
-  ProjectsResponseContract,
   ProjectTypeContract,
   WorkspaceDetailResponseContract,
   WorkspaceListResponseContract,
@@ -242,20 +241,22 @@ async function fetchWorkspace(
 async function fetchProjects(
   workspaceId: string
 ): Promise<{ owned: Project[]; included: Project[] }> {
-  try {
-    const res = await fetch(`${API_BASE}/projects?workspaceId=${workspaceId}`);
-    const payload = (await parseJsonResponse(res)) as ProjectsResponseContract;
+  const payload = await yappcApi.projects.list(workspaceId);
+  if (Array.isArray(payload)) {
     return {
-      owned: (Array.isArray(payload.owned) ? payload.owned : []).map((project) =>
-        normalizeProjectAccess(project as Project, true)
-      ),
-      included: (Array.isArray(payload.included) ? payload.included : []).map((project) =>
-        normalizeProjectAccess(project as Project, false)
-      ),
+      owned: payload.map((project) => normalizeProjectAccess(project as unknown as Project, true)),
+      included: [],
     };
-  } catch (error) {
-    throw error;
   }
+
+  return {
+    owned: (Array.isArray(payload.owned) ? payload.owned : []).map((project) =>
+      normalizeProjectAccess(project as unknown as Project, true)
+    ),
+    included: (Array.isArray(payload.included) ? payload.included : []).map((project) =>
+      normalizeProjectAccess(project as unknown as Project, false)
+    ),
+  };
 }
 
 function emptyDashboardActions(workspaceId: string): ProjectDashboardActionsResponse {

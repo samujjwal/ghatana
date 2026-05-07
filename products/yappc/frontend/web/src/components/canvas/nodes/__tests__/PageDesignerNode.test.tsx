@@ -41,7 +41,17 @@ vi.mock('@/components/canvas/page/PageDesigner', () => ({
     phaseConfig,
     readOnlyReason,
   }: {
-    onDocumentChange?: (doc: unknown, validation: { valid: boolean; errors: unknown[]; warnings: unknown[] }) => void;
+    onDocumentChange?: (
+      doc: unknown,
+      validation: { valid: boolean; errors: unknown[]; warnings: unknown[] },
+      context?: {
+        operation: 'document-update' | 'undo-command' | 'redo-command';
+        summary: string;
+        commandId?: string;
+        commandType?: string;
+        changedNodeIds?: readonly string[];
+      },
+    ) => void;
     onImportArtifacts?: (artifacts: readonly unknown[]) => void;
     onAIChangeRecord?: (record: unknown) => void;
     onAIReviewDecision?: (actionId: string, decision: 'accepted' | 'rejected') => void;
@@ -79,6 +89,42 @@ vi.mock('@/components/canvas/page/PageDesigner', () => ({
               },
             },
             { valid: true, errors: [], warnings: [] },
+          )
+        }
+      />
+      <button
+        data-testid="trigger-undo-document-change"
+        onClick={() =>
+          onDocumentChange?.(
+            {
+              id: 'doc-undo',
+              version: '1',
+              name: 'Home Page',
+              designSystem: {
+                id: 'ds',
+                name: 'DS',
+                version: '1',
+                tokenSetIds: [],
+                componentContracts: [],
+                themeId: 'default',
+              },
+              rootNodes: [],
+              nodes: new Map(),
+              metadata: {
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                trustLevel: 'GENERATED_TRUSTED',
+                dataClassification: 'INTERNAL',
+              },
+            },
+            { valid: true, errors: [], warnings: [] },
+            {
+              operation: 'undo-command',
+              summary: 'Undid page-builder command insert-component.',
+              commandId: 'insert-1',
+              commandType: 'insert-component',
+              changedNodeIds: ['node-a'],
+            },
           )
         }
       />
@@ -383,6 +429,37 @@ describe('PageDesignerNode', () => {
       });
     });
 
+    it('records PageDesigner undo contexts in the artifact operation log', () => {
+      const pageDocument = createPageArtifactDocument({
+        artifactId: 'artifact-undo',
+        name: 'Home Page',
+        createdBy: 'tester',
+      });
+      const onDataChange = vi.fn();
+
+      render(<PageDesignerNode {...makeNodeProps({ expanded: true, pageDocument, onDataChange })} />);
+      fireEvent.click(screen.getByTestId('trigger-undo-document-change'));
+
+      expect(onDataChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pageDocument: expect.objectContaining({
+            operationLog: expect.arrayContaining([
+              expect.objectContaining({
+                operation: 'undo-command',
+                status: 'pending',
+                summary: 'Undid page-builder command insert-component.',
+                metadata: expect.objectContaining({
+                  commandId: 'insert-1',
+                  commandType: 'insert-component',
+                  changedNodeCount: 1,
+                }),
+              }),
+            ]),
+          }),
+        }),
+      );
+    });
+
     it('creates additional page-designer nodes for imported artifacts beyond the first one', () => {
       const pageDocument = createPageArtifactDocument({
         artifactId: 'artifact-main',
@@ -540,6 +617,105 @@ describe('PageDesignerNode', () => {
       });
       fireEvent.click(overwriteButton);
       expect(mockPersistenceSave).toHaveBeenCalled();
+    });
+
+    it('merges selected remote nodes with an audit trail instead of forcing overwrite', async () => {
+      const localBase = createPageArtifactDocument({
+        artifactId: 'artifact-main',
+        name: 'Home Page',
+        createdBy: 'tester',
+      });
+      const conflicted = {
+        ...localBase,
+        documentId: 'doc-local',
+        syncStatus: 'error' as const,
+        serializedBuilderDocument: {
+          ...localBase.serializedBuilderDocument,
+          rootNodes: ['node-a'],
+          nodes: {
+            'node-a': {
+              id: 'node-a',
+              contractName: 'Button',
+              props: { children: 'Local copy' },
+              slots: {},
+              metadata: { name: 'Local Button' },
+            },
+          },
+        },
+      };
+      const remoteBase = createPageArtifactDocument({
+        artifactId: 'artifact-main',
+        name: 'Home Page Remote',
+        createdBy: 'server',
+      });
+      const remote = {
+        ...remoteBase,
+        documentId: 'doc-remote',
+        syncStatus: 'synced' as const,
+        serializedBuilderDocument: {
+          ...remoteBase.serializedBuilderDocument,
+          rootNodes: ['node-a', 'node-b'],
+          nodes: {
+            'node-a': {
+              id: 'node-a',
+              contractName: 'Button',
+              props: { children: 'Remote copy' },
+              slots: {},
+              metadata: { name: 'Remote Button' },
+            },
+            'node-b': {
+              id: 'node-b',
+              contractName: 'Card',
+              props: {},
+              slots: {},
+              metadata: { name: 'Remote Card' },
+            },
+          },
+        },
+      };
+
+      mockPersistenceLoad.mockResolvedValue(remote);
+
+      render(<PageDesignerNode {...makeNodeProps({ expanded: true, pageDocument: conflicted })} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Compare remote' }));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('page-conflict-node-merge')).toBeTruthy();
+      });
+
+      fireEvent.click(screen.getByTestId('page-conflict-node-use-remote-node-a'));
+      fireEvent.change(screen.getByTestId('page-conflict-overwrite-reason'), {
+        target: { value: 'Merge selected reviewed remote nodes' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Merge selection' }));
+
+      await waitFor(() => {
+        expect(mockPersistenceSave).toHaveBeenCalled();
+      });
+      const savedDocument = mockPersistenceSave.mock.calls.at(-1)?.[0];
+      expect(savedDocument.serializedBuilderDocument.nodes['node-a'].props.children).toBe('Remote copy');
+      expect(savedDocument.serializedBuilderDocument.nodes['node-b'].metadata.name).toBe('Remote Card');
+
+      await waitFor(() => {
+        expect(mockExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: expect.objectContaining({
+              pageDocument: expect.objectContaining({
+                operationLog: expect.arrayContaining([
+                  expect.objectContaining({
+                    operation: 'merge-conflict',
+                    status: 'requires-review',
+                    metadata: expect.objectContaining({
+                      selectedRemoteNodeCount: 2,
+                      remoteDocumentId: 'doc-remote',
+                    }),
+                  }),
+                ]),
+              }),
+            }),
+          }),
+        );
+      });
     });
   });
 

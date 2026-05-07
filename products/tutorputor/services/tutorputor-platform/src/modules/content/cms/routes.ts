@@ -185,6 +185,35 @@ export function registerCMSRoutes(
   // =========================================================================
 
   /**
+   * Get a module by ID for editing.
+   * GET /api/v1/cms/modules/:moduleId
+   */
+  fastify.get<{
+    Params: { moduleId: string };
+  }>(`${prefix}/modules/:moduleId`, async (req, reply) => {
+    const tenantId = getTenantId(req) as TenantId;
+    const userId = getUserId(req) as UserId;
+    requireRole(req, ["teacher", "admin", "creator"]);
+
+    const paramsResult = moduleIdParamsSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return reply
+        .code(400)
+        .send(validationErrorResponse(paramsResult.error.issues));
+    }
+
+    const { moduleId } = paramsResult.data;
+
+    await respondWithErrors(reply, () =>
+      cmsService.getModuleForEditing({
+        tenantId,
+        moduleId: moduleId as ModuleId,
+        userId,
+      }),
+    );
+  });
+
+  /**
    * Update module draft.
    * PATCH /api/v1/cms/modules/:moduleId
    */

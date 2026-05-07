@@ -56,16 +56,16 @@ public final class DbPageArtifactRepository implements PageArtifactRepository, P
                 tenant_id, workspace_id, project_id, artifact_id, document_id,
                 name, created_by, created_at, updated_at,
                 sync_status, trust_level, data_classification, source,
-                builder_document, validation_summary, ai_change_records,
+                builder_document, validation_summary, ai_change_records, operation_log,
                 residual_island_count, round_trip_fidelity
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
     private static final String UPDATE_ARTIFACT = """
             UPDATE page_artifacts
             SET document_id = ?, name = ?, updated_at = ?,
                 sync_status = ?, trust_level = ?, data_classification = ?, source = ?,
-                builder_document = ?, validation_summary = ?, ai_change_records = ?,
+                builder_document = ?, validation_summary = ?, ai_change_records = ?, operation_log = ?,
                 residual_island_count = ?, round_trip_fidelity = ?
             WHERE tenant_id = ? AND workspace_id = ? AND project_id = ? AND artifact_id = ?
               AND document_id = ?
@@ -74,7 +74,7 @@ public final class DbPageArtifactRepository implements PageArtifactRepository, P
     private static final String SELECT_ARTIFACT = """
             SELECT artifact_id, document_id, name, created_by, created_at, updated_at,
                    sync_status, trust_level, data_classification, source,
-                   builder_document, validation_summary, ai_change_records,
+                   builder_document, validation_summary, ai_change_records, operation_log,
                    residual_island_count, round_trip_fidelity
             FROM page_artifacts
             WHERE tenant_id = ? AND workspace_id = ? AND project_id = ? AND artifact_id = ?
@@ -90,9 +90,9 @@ public final class DbPageArtifactRepository implements PageArtifactRepository, P
                 page_artifact_id, tenant_id, workspace_id, project_id, artifact_id, document_id,
                 name, created_by, created_at, updated_at,
                 sync_status, trust_level, data_classification, source,
-                builder_document, validation_summary, ai_change_records,
+                builder_document, validation_summary, ai_change_records, operation_log,
                 residual_island_count, round_trip_fidelity, version_created_at, version_reason
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
     private static final String INSERT_AUDIT_EVENT = """
@@ -255,7 +255,8 @@ public final class DbPageArtifactRepository implements PageArtifactRepository, P
                     fromJsonGovernanceRecords(rs.getString("ai_change_records")),
                     rs.getString("source"),
                     rs.getInt("residual_island_count"),
-                    rs.getDouble("round_trip_fidelity")
+                    rs.getDouble("round_trip_fidelity"),
+                    fromJsonOperationRecords(rs.getString("operation_log"))
             );
         } catch (Exception e) {
             LOG.error("Failed to map ResultSet to PageArtifactDocument", e);
@@ -309,6 +310,7 @@ public final class DbPageArtifactRepository implements PageArtifactRepository, P
                 toJson(document.builderDocument()),
                 toJson(document.validationSummary()),
                 toJson(document.aiChangeRecords()),
+                toJson(document.operationLog()),
                 document.residualIslandCount(),
                 document.roundTripFidelity()
             );
@@ -341,7 +343,8 @@ public final class DbPageArtifactRepository implements PageArtifactRepository, P
             document.aiChangeRecords(),
             document.source(),
             document.residualIslandCount(),
-            document.roundTripFidelity()
+            document.roundTripFidelity(),
+            document.operationLog()
         );
 
         long artifactId = getArtifactId(tx, tenantId, workspaceId, projectId, document.artifactId());
@@ -367,6 +370,7 @@ public final class DbPageArtifactRepository implements PageArtifactRepository, P
             toJson(persistedDocument.builderDocument()),
             toJson(persistedDocument.validationSummary()),
             toJson(persistedDocument.aiChangeRecords()),
+            toJson(persistedDocument.operationLog()),
             persistedDocument.residualIslandCount(),
             persistedDocument.roundTripFidelity(),
             tenantId,
@@ -417,6 +421,7 @@ public final class DbPageArtifactRepository implements PageArtifactRepository, P
                 toJson(document.builderDocument()),
                 toJson(document.validationSummary()),
                 toJson(document.aiChangeRecords()),
+                toJson(document.operationLog()),
                 document.residualIslandCount(),
                 document.roundTripFidelity(),
                 Instant.now(),
@@ -458,6 +463,13 @@ public final class DbPageArtifactRepository implements PageArtifactRepository, P
             return java.util.List.of();
         }
         return objectMapper.readValue(json, new TypeReference<java.util.List<PageArtifactDocument.GovernanceRecord>>() { });
+    }
+
+    private java.util.List<PageArtifactDocument.OperationRecord> fromJsonOperationRecords(String json) throws Exception {
+        if (json == null || json.isBlank()) {
+            return java.util.List.of();
+        }
+        return objectMapper.readValue(json, new TypeReference<java.util.List<PageArtifactDocument.OperationRecord>>() { });
     }
 
     private String nextDocumentId(String currentDocumentId) {

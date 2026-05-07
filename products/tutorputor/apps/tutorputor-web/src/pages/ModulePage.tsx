@@ -1,5 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Button, Card } from "@/components/ui";
+import { ContentBlocksList } from "./cms/components/ContentBlocksList";
+import { blockRendererRegistry } from "../components/content-blocks/BlockRendererRegistry";
+import type { ContentBlock } from "./cms/types";
 import { textStyles, badgeStyles, cn } from "../theme";
 import { useModuleBySlug } from "../hooks/useModuleBySlug";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,23 +11,6 @@ import { apiClient } from "../api/tutorputorClient";
 
 // Local type definition
 type ModuleId = string;
-
-// Match the content block shape used by the API client
-interface ContentBlock {
-  id: string;
-  blockType: "text" | "video" | "quiz" | "interactive" | "exercise";
-  payload?: {
-    markdown?: string;
-    prompt?: string;
-    videoUrl?: string;
-    questions?: Array<{
-      question: string;
-      options: string[];
-      correctIndex: number;
-    }>;
-    [key: string]: unknown;
-  };
-}
 
 // ---------------------------------------------------------------------------
 // F-004: Module Provenance Disclosure
@@ -308,38 +294,12 @@ function ContentBlockCard({
   block: ContentBlock;
   index: number;
 }) {
-  const renderContent = () => {
-    switch (block.blockType) {
-      case "text":
-        return (
-          <div className="prose max-w-none">
-            <p className="text-gray-700 dark:text-gray-200 whitespace-pre-wrap">
-              {block.payload?.markdown || ""}
-            </p>
-          </div>
-        );
-      case "exercise":
-        return (
-          <div className="border-l-4 border-green-500 pl-4">
-            <p className="font-medium text-gray-900 dark:text-white mb-2">Exercise</p>
-            <p className="text-gray-700 dark:text-gray-200">{block.payload?.prompt || ""}</p>
-          </div>
-        );
-      default:
-        return (
-          <div className="text-gray-500 dark:text-gray-400 italic">
-            {block.blockType} content (not yet rendered)
-          </div>
-        );
-    }
-  };
-
   return (
     <div className="border rounded-lg p-4">
       <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
         Block {index + 1} • {block.blockType}
       </div>
-      {renderContent()}
+      {blockRendererRegistry.render(block, index)}
     </div>
   );
 }

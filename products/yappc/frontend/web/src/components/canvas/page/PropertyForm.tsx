@@ -70,12 +70,29 @@ function hasMeaningfulValue(value: unknown): boolean {
   return value !== null && value !== undefined && value !== false;
 }
 
-function requiresPrivacyAcknowledgement(privacyLevel: string | undefined): boolean {
+function getPrivacyLevelLabel(privacyLevel: unknown): string | undefined {
   if (!privacyLevel) {
-    return false;
+    return undefined;
+  }
+  if (typeof privacyLevel === 'string') {
+    return privacyLevel;
+  }
+  if (typeof privacyLevel === 'object' && 'privacyGuidance' in privacyLevel) {
+    const guidance = (privacyLevel as { readonly privacyGuidance?: unknown }).privacyGuidance;
+    if (typeof guidance === 'string' && guidance.trim()) {
+      return guidance;
+    }
   }
 
-  const normalized = privacyLevel.trim().toLowerCase();
+  return 'governed';
+}
+
+function requiresPrivacyAcknowledgement(privacyLevel: unknown): boolean {
+  const label = getPrivacyLevelLabel(privacyLevel);
+  if (!label) {
+    return false;
+  }
+  const normalized = label.trim().toLowerCase();
   return normalized.length > 0 && normalized !== 'public' && normalized !== 'internal';
 }
 
@@ -265,9 +282,26 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
   const changedReviewRequiredProps = governance.reviewRequiredProps.filter(
     (propName) => draftProps[propName] !== initialPrimitiveProps[propName],
   );
+  const inspectorReviewRequiredReasons = [
+    stableStringify(responsiveVariant) !== stableStringify(initialResponsiveVariant)
+      ? 'responsive variant'
+      : null,
+    stableStringify(stateVariant) !== stableStringify(initialStateVariant)
+      ? 'state variant'
+      : null,
+    stableStringify(dataBinding) !== stableStringify(initialDataBinding)
+      ? 'data binding'
+      : null,
+    stableStringify(actionBinding) !== stableStringify(initialActionBinding)
+      ? 'action binding'
+      : null,
+  ].filter((reason): reason is string => reason !== null);
+  const reviewAcknowledgementRequired =
+    changedReviewRequiredProps.length > 0 || inspectorReviewRequiredReasons.length > 0;
   const missingA11yProps = governance.requiredA11yProps.filter(
     (propName) => !hasMeaningfulValue(draftProps[propName] ?? initialProps[propName]),
   );
+  const privacyLevelLabel = getPrivacyLevelLabel(governance.privacyLevel);
   const privacyAcknowledgementRequired = requiresPrivacyAcknowledgement(governance.privacyLevel);
   const canSubmit =
     !readOnly &&
@@ -275,7 +309,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
     !responsivePropsParse.error &&
     !stateVariantPropsParse.error &&
     missingA11yProps.length === 0 &&
-    (changedReviewRequiredProps.length === 0 || reviewAcknowledged) &&
+    (!reviewAcknowledgementRequired || reviewAcknowledged) &&
     (governance.telemetryEventNames.length === 0 || telemetryConsentAcknowledged) &&
     (!privacyAcknowledgementRequired || privacyAcknowledged);
 
@@ -568,7 +602,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
 
       {(governance.requiredA11yProps.length > 0 || governance.telemetryEventNames.length > 0) && (
         <Typography variant="caption" color="muted">
-          A11y required: {governance.requiredA11yProps.join(', ') || 'none'} | Telemetry: {governance.telemetryEventNames.join(', ') || 'none'} | Privacy: {governance.privacyLevel ?? 'none'}
+          A11y required: {governance.requiredA11yProps.join(', ') || 'none'} | Telemetry: {governance.telemetryEventNames.join(', ') || 'none'} | Privacy: {privacyLevelLabel ?? 'none'}
         </Typography>
       )}
 
@@ -578,10 +612,10 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         </Typography>
       )}
 
-      {changedReviewRequiredProps.length > 0 && (
+      {reviewAcknowledgementRequired && (
         <Box className="rounded-md border border-warning-border bg-warning-bg p-3">
           <Typography variant="caption" color="warning" style={{ display: 'block', marginBottom: 8 }}>
-            Review required before applying governed prop changes: {changedReviewRequiredProps.join(', ')}
+            Review required before applying governed inspector changes: {[...changedReviewRequiredProps, ...inspectorReviewRequiredReasons].join(', ')}
           </Typography>
           <FormControlLabel
             control={
@@ -617,7 +651,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
       {privacyAcknowledgementRequired && (
         <Box className="rounded-md border border-warning-border bg-warning-bg p-3">
           <Typography variant="caption" color="warning" style={{ display: 'block', marginBottom: 8 }}>
-            This component handles {governance.privacyLevel} data. Confirm the privacy classification and data handling policy before applying changes.
+            This component handles {privacyLevelLabel} data. Confirm the privacy classification and data handling policy before applying changes.
           </Typography>
           <FormControlLabel
             control={

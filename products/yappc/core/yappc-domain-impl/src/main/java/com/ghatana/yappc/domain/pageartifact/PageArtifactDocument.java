@@ -50,6 +50,7 @@ public final class PageArtifactDocument {
     private final Map<String, Object> builderDocument;
     private final ValidationSummary validationSummary;
     private final List<GovernanceRecord> aiChangeRecords;
+    private final List<OperationRecord> operationLog;
     private final String source;
     private final int residualIslandCount;
     private final double roundTripFidelity;
@@ -70,7 +71,8 @@ public final class PageArtifactDocument {
             @JsonProperty("aiChangeRecords") List<GovernanceRecord> aiChangeRecords,
             @JsonProperty("source") String source,
             @JsonProperty("residualIslandCount") int residualIslandCount,
-            @JsonProperty("roundTripFidelity") double roundTripFidelity
+            @JsonProperty("roundTripFidelity") double roundTripFidelity,
+            @JsonProperty("operationLog") List<OperationRecord> operationLog
     ) {
         this.artifactId = Objects.requireNonNull(artifactId, "artifactId is required");
         this.documentId = Objects.requireNonNull(documentId, "documentId is required");
@@ -84,9 +86,47 @@ public final class PageArtifactDocument {
         this.builderDocument = Objects.requireNonNull(builderDocument, "builderDocument is required");
         this.validationSummary = validationSummary;
         this.aiChangeRecords = aiChangeRecords != null ? aiChangeRecords : List.of();
+        this.operationLog = operationLog != null ? operationLog : List.of();
         this.source = source;
         this.residualIslandCount = residualIslandCount;
         this.roundTripFidelity = roundTripFidelity;
+    }
+
+    public PageArtifactDocument(
+            @NotNull String artifactId,
+            @NotNull String documentId,
+            @NotNull String name,
+            @NotNull String createdBy,
+            @NotNull Instant createdAt,
+            @NotNull Instant updatedAt,
+            @NotNull String syncStatus,
+            String trustLevel,
+            String dataClassification,
+            @NotNull Map<String, Object> builderDocument,
+            ValidationSummary validationSummary,
+            List<GovernanceRecord> aiChangeRecords,
+            String source,
+            int residualIslandCount,
+            double roundTripFidelity
+    ) {
+        this(
+                artifactId,
+                documentId,
+                name,
+                createdBy,
+                createdAt,
+                updatedAt,
+                syncStatus,
+                trustLevel,
+                dataClassification,
+                builderDocument,
+                validationSummary,
+                aiChangeRecords,
+                source,
+                residualIslandCount,
+                roundTripFidelity,
+                List.of()
+        );
     }
 
     @NotNull
@@ -157,6 +197,11 @@ public final class PageArtifactDocument {
         return aiChangeRecords;
     }
 
+    @JsonProperty("operationLog")
+    public List<OperationRecord> operationLog() {
+        return operationLog;
+    }
+
     @JsonProperty("source")
     public String source() {
         return source;
@@ -214,6 +259,63 @@ public final class PageArtifactDocument {
     ) {
         @JsonCreator
         public GovernanceLineage {
+        }
+    }
+
+    /**
+     * Page artifact operation record used for replay and audit export.
+     */
+    public record OperationRecord(
+            String id,
+            String artifactId,
+            String documentId,
+            String operation,
+            String status,
+            String actor,
+            String summary,
+            String createdAt,
+            String phase,
+            Map<String, Object> metadata
+    ) {
+        @JsonCreator
+        public OperationRecord {
+            metadata = metadata != null
+                    ? java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(metadata))
+                    : Map.of();
+        }
+    }
+
+    /**
+     * Deterministic replay/export view of the operation log.
+     */
+    public record OperationLogExport(
+            int schemaVersion,
+            String artifactId,
+            String documentId,
+            String exportedAt,
+            String replayCursor,
+            OperationLogSummary summary,
+            List<OperationRecord> records
+    ) {
+        @JsonCreator
+        public OperationLogExport {
+            records = records != null ? List.copyOf(records) : List.of();
+        }
+    }
+
+    /**
+     * Summary counts for a page artifact operation log export.
+     */
+    public record OperationLogSummary(
+            int total,
+            Map<String, Long> byOperation,
+            Map<String, Long> byStatus,
+            String latestOperationAt
+    ) {
+        @JsonCreator
+        public OperationLogSummary {
+            byOperation = byOperation != null ? Map.copyOf(byOperation) : Map.of();
+            byStatus = byStatus != null ? Map.copyOf(byStatus) : Map.of();
         }
     }
 

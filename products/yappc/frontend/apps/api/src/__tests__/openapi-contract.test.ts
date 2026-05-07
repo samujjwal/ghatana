@@ -6,12 +6,19 @@ import yaml from 'js-yaml';
 
 interface OpenApiDocument {
   openapi?: string;
-  paths?: Record<string, Record<string, unknown>>;
+  paths?: Record<string, Partial<Record<HttpMethod, unknown>>>;
   components?: {
     securitySchemes?: Record<string, unknown>;
     responses?: Record<string, unknown>;
     schemas?: Record<string, unknown>;
   };
+}
+
+type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete' | 'head' | 'options';
+
+interface ClientEndpoint {
+  readonly method: HttpMethod;
+  readonly path: string;
 }
 
 function readApiIndexSource(): string {
@@ -21,12 +28,106 @@ function readApiIndexSource(): string {
   return readFileSync(indexPath, 'utf8');
 }
 
+function readWebApiClientSource(): string {
+  const thisFile = fileURLToPath(import.meta.url);
+  const thisDir = path.dirname(thisFile);
+  const clientPath = path.resolve(thisDir, '../../../../web/src/lib/api/client.ts');
+  return readFileSync(clientPath, 'utf8');
+}
+
 function loadCanonicalOpenApi(): OpenApiDocument {
   const thisFile = fileURLToPath(import.meta.url);
   const thisDir = path.dirname(thisFile);
   const openApiPath = path.resolve(thisDir, '../../../../../docs/api/openapi.yaml');
   const raw = readFileSync(openApiPath, 'utf8');
   return yaml.load(raw) as OpenApiDocument;
+}
+
+function wrapperToMethod(wrapperName: string): HttpMethod | null {
+  if (wrapperName === 'get') return 'get';
+  if (wrapperName === 'patch') return 'patch';
+  if (wrapperName === 'del') return 'delete';
+  if (wrapperName === 'post' || wrapperName === 'postPossiblyEmpty' || wrapperName === 'postWithHeaders') return 'post';
+  return null;
+}
+
+function normalizeClientPath(pathLiteral: string): string {
+  return pathLiteral
+    .replace(/\$\{encodeQuery\([^)]*\)\}/g, '')
+    .replace(/\$\{qs\}/g, '')
+    .replace(/\?\$\{[^}]+\}/g, '')
+    .replace(/\$\{encodeURIComponent\(([^)]+)\)\}/g, (_match: string, expression: string) => {
+      const name = expression.match(/([A-Za-z][A-Za-z0-9_]*)$/)?.[1] ?? 'param';
+      return `{${name}}`;
+    })
+    .replace(/\$\{([A-Za-z][A-Za-z0-9_]*)\}/g, (_match: string, name: string) => `{${name}}`);
+}
+
+function expandDynamicEndpoint(endpoint: ClientEndpoint): readonly ClientEndpoint[] {
+  if (!endpoint.path.includes('{decision}')) {
+    return [endpoint];
+  }
+
+  return (['apply', 'reject', 'rollback'] as const).map((decision) => ({
+    method: endpoint.method,
+    path: endpoint.path.replace('{decision}', decision),
+  }));
+}
+
+function extractClientWrapperEndpoints(source: string): readonly ClientEndpoint[] {
+  const callPattern =
+    /\b(get|post|postPossiblyEmpty|postWithHeaders|patch|del)\s*(?:<[^()]*>)?\s*\(\s*(['`])([\s\S]*?)\2/g;
+  const endpoints: ClientEndpoint[] = [];
+
+  for (const match of source.matchAll(callPattern)) {
+    const method = wrapperToMethod(match[1] ?? '');
+    const rawPath = match[3];
+    if (!method || !rawPath || !rawPath.startsWith('/api')) {
+      continue;
+    }
+
+    endpoints.push(...expandDynamicEndpoint({ method, path: normalizeClientPath(rawPath) }));
+  }
+
+  return endpoints;
+}
+
+function extractDirectFetchEndpoints(source: string): readonly ClientEndpoint[] {
+  const fetchPattern = /\bfetch\(\s*(['`])([^'`]+)\1\s*,\s*\{[\s\S]*?method:\s*'([A-Z]+)'/g;
+  const endpoints: ClientEndpoint[] = [];
+
+  for (const match of source.matchAll(fetchPattern)) {
+    const rawPath = match[2];
+    const rawMethod = match[3]?.toLowerCase();
+    if (!rawPath?.startsWith('/api') || !rawMethod) {
+      continue;
+    }
+
+    endpoints.push({
+      method: rawMethod as HttpMethod,
+      path: normalizeClientPath(rawPath),
+    });
+  }
+
+  return endpoints;
+}
+
+function extractCanonicalClientEndpoints(source: string): readonly ClientEndpoint[] {
+  const endpointKeys = new Set<string>();
+  const endpoints: ClientEndpoint[] = [];
+
+  for (const endpoint of [...extractClientWrapperEndpoints(source), ...extractDirectFetchEndpoints(source)]) {
+    const key = `${endpoint.method.toUpperCase()} ${endpoint.path}`;
+    if (!endpointKeys.has(key)) {
+      endpointKeys.add(key);
+      endpoints.push(endpoint);
+    }
+  }
+
+  return endpoints.sort((left, right) => {
+    const pathComparison = left.path.localeCompare(right.path);
+    return pathComparison === 0 ? left.method.localeCompare(right.method) : pathComparison;
+  });
 }
 
 describe('OpenAPI Contract Compliance', () => {
@@ -94,6 +195,42 @@ describe('OpenAPI Contract Compliance', () => {
         ).toBeTruthy();
       }
     }
+  });
+
+  it('keeps the canonical frontend REST client covered by OpenAPI method/path contracts', () => {
+    const spec = loadCanonicalOpenApi();
+    const clientSource = readWebApiClientSource();
+    const clientEndpoints = extractCanonicalClientEndpoints(clientSource);
+
+    expect(clientEndpoints.length).toBeGreaterThan(0);
+
+    const missingEndpoints = clientEndpoints.filter((endpoint) => !spec.paths?.[endpoint.path]?.[endpoint.method]);
+
+    expect(
+      missingEndpoints.map((endpoint) => `${endpoint.method.toUpperCase()} ${endpoint.path}`),
+      'Every yappcApi REST method/path used by the frontend client must be documented in products/yappc/docs/api/openapi.yaml'
+    ).toEqual([]);
+  });
+
+  it('keeps frontend telemetry and audit schemas aligned with the active REST client', () => {
+    const spec = loadCanonicalOpenApi();
+    const schemas = spec.components?.schemas as Record<string, { required?: string[]; properties?: Record<string, unknown> }>;
+    const telemetryRoute = spec.paths?.['/api/telemetry/frontend-errors']?.post as {
+      responses?: Record<string, unknown>;
+    } | undefined;
+
+    expect(schemas.FrontendErrorReport?.required).toEqual(['message', 'url', 'userAgent']);
+    expect(schemas.FrontendErrorReport?.properties).toHaveProperty('componentName');
+    expect(schemas.FrontendErrorReport?.properties).toHaveProperty('dataClassification');
+    expect(schemas.FrontendErrorReport?.properties).toHaveProperty('tenantId');
+    expect(schemas.FrontendErrorReport?.properties).toHaveProperty('userId');
+    expect(schemas.FrontendErrorReport?.properties).not.toHaveProperty('level');
+    expect(telemetryRoute?.responses).toHaveProperty('202');
+
+    expect(spec.paths?.['/api/audit/events']?.post).toBeTruthy();
+    expect(schemas.AuditEventRequest?.required).toEqual(['type', 'userId', 'projectId', 'flowStage', 'phase', 'description']);
+    expect(schemas.AuditEventResponse?.properties).toHaveProperty('id');
+    expect(schemas.AuditEventResponse?.properties).toHaveProperty('timestamp');
   });
 
   it('registers workspace, project, and ai routes under all compatibility prefixes', () => {
@@ -183,6 +320,33 @@ describe('OpenAPI Contract Compliance', () => {
     expect(spec.components?.schemas).toHaveProperty('ProjectDashboardActionsResponse');
     expect(spec.components?.schemas).toHaveProperty('ExecuteProjectDashboardActionRequest');
     expect(spec.components?.schemas).toHaveProperty('ExecuteProjectDashboardActionResponse');
+  });
+
+  it('documents generated artifact and diff provenance for generation responses', () => {
+    const spec = loadCanonicalOpenApi();
+    const schemas = spec.components?.schemas as Record<string, {
+      required?: string[];
+      properties?: Record<string, unknown>;
+    }>;
+    const generateResponse = schemas.GenerateArtifactsResponse;
+    const regenerateResponse = schemas.RegenerateDiffResponse;
+    const provenance = schemas.GenerateArtifactProvenance;
+    const generatedFile = schemas.GeneratedFileDiff;
+    const diffRegion = schemas.GenerateDiffRegion;
+
+    expect(generateResponse?.properties).toHaveProperty('diff');
+    expect(regenerateResponse?.properties).toHaveProperty('diff');
+    expect(provenance?.required).toEqual([
+      'requirementId',
+      'phase',
+      'canvasNodeId',
+      'sourceArtifactId',
+      'confidence',
+      'approvingActorId',
+    ]);
+    expect(generatedFile?.required).toContain('provenance');
+    expect(generatedFile?.required).toContain('diffRegions');
+    expect(diffRegion?.required).toContain('provenance');
   });
 
   it('documents the mounted lifecycle enum with legacy compatibility aliases', () => {

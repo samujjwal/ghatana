@@ -2,12 +2,11 @@ package com.ghatana.tutorputor.contentgeneration.domain;
 
 /**
  * @doc.type enum
- * @doc.purpose Provides domain functionality.
+ * @doc.purpose Provides domain functionality aligned with TutorPutor's canonical taxonomy.
  * @doc.layer product
  * @doc.pattern Component
  */
 public enum Domain {
-    PHYSICS, CHEMISTRY, BIOLOGY, MATHEMATICS,
-    ECONOMICS, CS_DISCRETE, MEDICINE, ENGINEERING,
-    GENERAL
+    MATH, SCIENCE, TECH, ENGINEERING, MEDICINE, HEALTH,
+    BUSINESS, MANAGEMENT, ECONOMICS, COMPUTER_SCIENCE, INTERDISCIPLINARY
 }

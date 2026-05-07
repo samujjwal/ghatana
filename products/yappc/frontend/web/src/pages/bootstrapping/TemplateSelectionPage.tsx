@@ -147,7 +147,7 @@ const TEMPLATES: ProjectTemplate[] = [
     id: 'rest-api',
     name: 'REST API Starter',
     description:
-      'Production-ready REST API with authentication, validation, and documentation.',
+      'Deployment-oriented REST API starter with authentication, validation, and documentation.',
     category: 'api',
     icon: Server,
     techStack: ['Node.js', 'Express', 'TypeScript', 'Prisma', 'PostgreSQL'],

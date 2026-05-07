@@ -47,6 +47,9 @@ CREATE TABLE IF NOT EXISTS page_artifacts (
     -- Governance records (JSON array)
     ai_change_records JSONB,
 
+    -- Page document operation log used for replay/export
+    operation_log JSONB,
+
     -- Compiler/decompiler metrics
     residual_island_count INTEGER NOT NULL DEFAULT 0,
     round_trip_fidelity DOUBLE PRECISION NOT NULL DEFAULT 1.0,
@@ -94,6 +97,7 @@ CREATE TABLE IF NOT EXISTS page_artifact_versions (
     builder_document JSONB NOT NULL,
     validation_summary JSONB,
     ai_change_records JSONB,
+    operation_log JSONB,
     
     residual_island_count INTEGER NOT NULL,
     round_trip_fidelity DOUBLE PRECISION NOT NULL,

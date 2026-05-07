@@ -256,7 +256,7 @@ const createBuiltInCommands = ({
     commands.push({
       id: 'generate',
       label: 'Generate Code',
-      description: 'Generate production-ready code',
+      description: 'Generate reviewable code artifacts',
       category: 'Action',
       keywords: ['generate', 'code', 'build'],
       shortcut: 'Cmd+Shift+G',

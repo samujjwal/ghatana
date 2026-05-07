@@ -57,6 +57,16 @@ export class OpenStaxAdapter implements EvidenceSourceAdapter {
     domain: string,
     options?: { maxResults?: number; gradeBand?: string }
   ): Promise<EvidenceSearchResult[]> {
+    // Prevent mock generator in production
+    if (process.env.NODE_ENV === 'production') {
+      throw new EvidenceSourceError(
+        'Mock OpenStax adapter cannot be used in production. Configure real API credentials.',
+        'OPENSTAX',
+        'search',
+        new Error('PRODUCTION_GUARD_VIOLATION')
+      );
+    }
+
     try {
       await this.enforceRateLimit();
 
@@ -100,6 +110,16 @@ export class OpenStaxAdapter implements EvidenceSourceAdapter {
   }
 
   async retrieveContent(url: string): Promise<RetrievedContent | null> {
+    // Prevent mock generator in production
+    if (process.env.NODE_ENV === 'production') {
+      throw new EvidenceSourceError(
+        'Mock OpenStax adapter cannot be used in production. Configure real API credentials.',
+        'OPENSTAX',
+        'retrieve',
+        new Error('PRODUCTION_GUARD_VIOLATION')
+      );
+    }
+
     try {
       // Check cache first
       if (this.config.cacheEnabled) {

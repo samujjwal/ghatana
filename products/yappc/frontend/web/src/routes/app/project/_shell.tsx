@@ -35,7 +35,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
 import { IntentDrawer } from '../../../components/intent';
 import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
-import { parseJsonResourceResponse, parseJsonResponse } from '@/lib/http';
+import { parseJsonResponse } from '@/lib/http';
+import { yappcApi } from '@/lib/api';
 import { useLifecycleArtifacts } from '../../../services/canvas/lifecycle/LifecycleArtifactService';
 import { useLastOpenedProject } from '../../../hooks/useLastOpenedProject';
 import { useWorkspaceContext } from '../../../hooks/useWorkspaceData';
@@ -70,7 +71,7 @@ const BASE_PROJECT_TABS = [
     key: 'generate',
     label: 'Generate',
     icon: Zap,
-    tooltip: 'Guided code, test, and artefact generation',
+    tooltip: 'Guided code, test, and artifact generation',
   },
   {
     key: 'run',
@@ -116,13 +117,8 @@ export function Layout() {
   const { data: project, isLoading } = useQuery({
     queryKey: ['project', projectId],
     queryFn: async () => {
-      const response = await fetch(`/api/projects/${projectId}`);
-      if (!response.ok) return null;
-      return parseJsonResourceResponse<ProjectShellContract>(
-        response,
-        'project shell project query',
-        'project'
-      );
+      if (!projectId) return null;
+      return yappcApi.projects.get(projectId) as Promise<ProjectShellContract>;
     },
     enabled: !!projectId,
   });

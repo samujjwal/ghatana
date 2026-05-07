@@ -5,6 +5,9 @@
  * evaluation, review, and publish can operate on governed assets rather than
  * only raw execution payloads.
  *
+ * This service integrates with the generation-request API surface at
+ * /generation/requests to materialize job outputs into governed assets.
+ *
  * @doc.type class
  * @doc.purpose Materialize generation outputs into canonical content assets
  * @doc.layer product
@@ -72,6 +75,8 @@ interface MaterializationShape {
     generatedBy: "ai";
     isValid: boolean;
     validationErrors?: unknown[];
+    simulationManifestId?: string;
+    animationManifestId?: string;
   }>;
   snapshot: Record<string, unknown>;
 }
@@ -330,6 +335,10 @@ function buildSimulationShape(
       generatedBy: "ai",
       isValid:
         typeof simulation.id === "string" || typeof simulation.manifest_id === "string",
+      // Store manifest reference for first-class linking
+      ...(readString(simulation.manifest_id)
+        ? { simulationManifestId: readString(simulation.manifest_id) }
+        : {}),
     }),
   ) as MaterializationShape["manifests"];
 
@@ -383,6 +392,10 @@ function buildAnimationShape(
       ...(validation.violations.length > 0
         ? { validationErrors: validation.violations }
         : {}),
+      // Store manifest reference for first-class linking
+      ...(readString(animation.manifest_id)
+        ? { animationManifestId: readString(animation.manifest_id) }
+        : {}),
     }),
   ) as MaterializationShape["manifests"];
 
@@ -400,6 +413,7 @@ function buildAnimationShape(
           readString(animation.description)
           ?? readString(animation.narrative)
           ?? input.requestTitle,
+        manifestRef: readString(animation.manifest_id) ?? readString(animation.id),
         animation,
       },
     })),

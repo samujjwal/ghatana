@@ -5,12 +5,19 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+  deserializeDocument,
+  insertNode,
+  serializeDocument,
+  validateDocument,
+} from '@ghatana/ui-builder';
+import {
   componentDataToBuilderDocument,
   componentDataToBuilderProps,
   componentDataToInsertableInstance,
   builderDocumentToComponentData,
   isBuilderDocument,
 } from '../builder-document-adapter';
+import { getContractMap } from '../registry';
 import type { ComponentData } from '../schemas';
 
 describe('Builder Document Adapter', () => {
@@ -54,9 +61,9 @@ describe('Builder Document Adapter', () => {
       const node = document.nodes.get('button-1');
 
       expect(node?.props).toEqual({
-        variant: 'outlined',
+        variant: 'outline',
         color: 'secondary',
-        size: 'large',
+        size: 'lg',
         disabled: true,
         fullWidth: true,
         children: 'Test Button',
@@ -318,9 +325,9 @@ describe('Builder Document Adapter', () => {
 
       expect(instance.contractName).toBe('Button');
       expect(instance.props).toEqual({
-        variant: 'contained',
+        variant: 'solid',
         color: 'primary',
-        size: 'medium',
+        size: 'md',
         disabled: false,
         fullWidth: false,
         children: 'Click Me',
@@ -353,6 +360,95 @@ describe('Builder Document Adapter', () => {
         multiline: false,
         rows: 1,
       });
+    });
+  });
+
+  describe('real registry and ui-builder contract integration', () => {
+    it('validates adapter output with the real registry contracts and ui-builder validator', () => {
+      const document = componentDataToBuilderDocument([
+        {
+          id: 'button-1',
+          type: 'button',
+          text: 'Save',
+          variant: 'contained',
+          color: 'primary',
+          size: 'medium',
+          disabled: false,
+          fullWidth: false,
+        },
+        {
+          id: 'textfield-1',
+          type: 'textfield',
+          label: 'Email',
+          placeholder: 'name@example.com',
+          variant: 'outlined',
+          size: 'medium',
+          required: true,
+          disabled: false,
+          fullWidth: true,
+          multiline: false,
+          rows: 1,
+        },
+      ]);
+
+      const result = validateDocument(document, getContractMap());
+
+      expect(result.errors).toEqual([]);
+      expect(result.valid).toBe(true);
+      expect(document.designSystem.componentContracts.map((contract) => contract.name)).toEqual(
+        expect.arrayContaining(['Button', 'TextField']),
+      );
+    });
+
+    it('round-trips adapter documents through real ui-builder persistence helpers', () => {
+      const document = componentDataToBuilderDocument([
+        {
+          id: 'card-1',
+          type: 'card',
+          label: 'Profile card',
+          elevation: 2,
+          title: 'Profile',
+          subtitle: 'Active user',
+          content: 'Summary content',
+          showActions: true,
+        },
+      ]);
+
+      const restored = deserializeDocument(serializeDocument(document));
+
+      expect(restored.id).toBe(document.id);
+      expect(restored.nodes.get('card-1')?.contractName).toBe('Card');
+      const result = validateDocument(restored, getContractMap());
+      expect(result.errors).toEqual([]);
+      expect(result.valid).toBe(true);
+    });
+
+    it('inserts real registry-backed instances through ui-builder operations', () => {
+      const document = componentDataToBuilderDocument([]);
+      const insertable = componentDataToInsertableInstance({
+        id: 'button-1',
+        type: 'button',
+        text: 'Create',
+        variant: 'outlined',
+        color: 'success',
+        size: 'large',
+        disabled: false,
+        fullWidth: false,
+      });
+
+      const updated = insertNode(document, insertable);
+      const inserted = Array.from(updated.nodes.values()).find((node) => node.contractName === 'Button');
+
+      expect(inserted?.props).toMatchObject({
+        variant: 'outline',
+        color: 'success',
+        size: 'lg',
+        children: 'Create',
+      });
+      expect(updated.rootNodes).toHaveLength(1);
+      const result = validateDocument(updated, getContractMap());
+      expect(result.errors).toEqual([]);
+      expect(result.valid).toBe(true);
     });
   });
 });

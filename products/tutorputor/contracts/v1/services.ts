@@ -275,6 +275,12 @@ export interface CMSService {
     limit?: number;
   }): Promise<{ items: ModuleSummary[]; nextCursor?: ModuleId | null }>;
 
+  getModuleForEditing(args: {
+    tenantId: TenantId;
+    moduleId: ModuleId;
+    userId: UserId;
+  }): Promise<ModuleDetail>;
+
   createModuleDraft(args: {
     tenantId: TenantId;
     authorId: UserId;

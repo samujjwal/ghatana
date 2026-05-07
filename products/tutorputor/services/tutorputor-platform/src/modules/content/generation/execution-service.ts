@@ -31,6 +31,9 @@ import {
   type GenerationExecutionStreamMessage,
 } from "./execution-stream.js";
 import {
+  GenerationQueueDispatcher,
+} from "./queue-dispatcher.js";
+import {
   assertSameTenant,
   buildTenantScopedWhere,
 } from "../../policy/resource-access-helpers.js";
@@ -142,6 +145,7 @@ export class GenerationExecutionService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly redis?: Redis,
+    private readonly dispatcher?: GenerationQueueDispatcher,
   ) {}
 
   async getExecutionSnapshot(
@@ -228,11 +232,34 @@ export class GenerationExecutionService {
    *
    * Updates job status and output data, then checks if all jobs in
    * the request are finished to transition the request itself.
+   * Also dispatches any dependent jobs that become ready after this job completes.
+   *
+   * Requires tenant scoping and worker authentication to ensure only authorized
+   * workers can record results for jobs in their tenant.
    */
   async recordJobResult(
     requestId: string,
     result: JobExecutionResult,
+    tenantId: string,
+    workerId?: string,
   ): Promise<GenerationJob> {
+    // Verify job belongs to the tenant
+    const job = await this.prisma.generationJob.findFirst({
+      where: {
+        id: result.jobId,
+        requestId,
+      },
+      include: { request: { select: { tenantId: true } } },
+    });
+
+    if (!job) {
+      throw new Error(`Job ${result.jobId} not found in request ${requestId}`);
+    }
+
+    if (job.request.tenantId !== tenantId) {
+      throw new Error(`Tenant mismatch: job belongs to ${job.request.tenantId}, worker is from ${tenantId}`);
+    }
+
     const jobStatus = result.status === "completed" ? "COMPLETED" : "FAILED";
 
     const updatedJob = await this.prisma.generationJob.update({
@@ -244,7 +271,11 @@ export class GenerationExecutionService {
           ? { outputAssetId: result.outputAssetId }
           : {}),
         outputData: toNullableJsonValue(result.outputData),
-        diagnostics: toNullableJsonValue(result.diagnostics),
+        diagnostics: toNullableJsonValue({
+          ...asRecord(result.diagnostics),
+          ...(workerId ? { workerId } : {}),
+          recordedAt: new Date().toISOString(),
+        }),
         errorMessage: result.errorMessage ?? null,
         completedAt: new Date(),
       },
@@ -257,9 +288,14 @@ export class GenerationExecutionService {
         : { failedJobs: { increment: 1 } };
 
     await this.prisma.generationRequest.update({
-      where: { id: requestId },
+      where: { id: requestId, tenantId },
       data: increment,
     });
+
+    // Dispatch dependent jobs that are now ready
+    if (result.status === "completed" && this.dispatcher) {
+      await this.dispatcher.dispatchReadyJobs(tenantId, requestId);
+    }
 
     // Check if all jobs are done
     await this.maybeCompleteRequest(requestId);
@@ -275,15 +311,17 @@ export class GenerationExecutionService {
   async recordBatchResults(
     requestId: string,
     results: JobExecutionResult[],
+    tenantId: string,
+    workerId?: string,
   ): Promise<ExecutionSummary> {
     const startTime = Date.now();
 
     for (const result of results) {
-      await this.recordJobResult(requestId, result);
+      await this.recordJobResult(requestId, result, tenantId, workerId);
     }
 
     const request = await this.prisma.generationRequest.findFirst({
-      where: { id: requestId },
+      where: { id: requestId, tenantId },
     });
 
     if (!request) {

@@ -248,7 +248,7 @@ describe("GenerationExecutionService", () => {
         durationMs: 100,
       };
 
-      await service.recordJobResult("req-1", result);
+      await service.recordJobResult("req-1", result, "tenant-1", "worker-1");
 
       expect(prisma.generationJob.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -276,7 +276,7 @@ describe("GenerationExecutionService", () => {
         durationMs: 5000,
       };
 
-      await service.recordJobResult("req-1", result);
+      await service.recordJobResult("req-1", result, "tenant-1", "worker-1");
 
       expect(prisma.generationJob.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -300,7 +300,7 @@ describe("GenerationExecutionService", () => {
         jobId: "job-1",
         status: "completed",
         durationMs: 100,
-      });
+      }, "tenant-1", "worker-1");
 
       expect(prisma.generationRequest.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -324,7 +324,7 @@ describe("GenerationExecutionService", () => {
         outputAssetId: "asset-1",
         outputData: { assetId: "asset-1" },
         durationMs: 120,
-      });
+      }, "tenant-1", "worker-1");
 
       expect(prisma.generationJob.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -348,7 +348,7 @@ describe("GenerationExecutionService", () => {
         status: "failed",
         errorMessage: "Error",
         durationMs: 100,
-      });
+      }, "tenant-1", "worker-1");
 
       expect(prisma.generationRequest.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -373,7 +373,7 @@ describe("GenerationExecutionService", () => {
         jobId: "job-3",
         status: "completed",
         durationMs: 100,
-      });
+      }, "tenant-1", "worker-1");
 
       // Should call update twice: once for counter, once for completion
       const updateCalls = prisma.generationRequest.update.mock.calls;
@@ -399,7 +399,7 @@ describe("GenerationExecutionService", () => {
         jobId: "job-3",
         status: "completed",
         durationMs: 100,
-      });
+      }, "tenant-1", "worker-1");
 
       const updateCalls = prisma.generationRequest.update.mock.calls;
       const completionCall = updateCalls.find(
@@ -424,7 +424,7 @@ describe("GenerationExecutionService", () => {
         jobId: "job-1",
         status: "completed",
         durationMs: 100,
-      });
+      }, "tenant-1", "worker-1");
 
       const updateCalls = prisma.generationRequest.update.mock.calls;
       const completionCall = updateCalls.find(
@@ -460,7 +460,7 @@ describe("GenerationExecutionService", () => {
         jobId: "job-1",
         status: "completed",
         durationMs: 100,
-      });
+      }, "tenant-1", "worker-1");
 
       expect(prisma.publish).toHaveBeenNthCalledWith(
         1,
@@ -496,7 +496,7 @@ describe("GenerationExecutionService", () => {
         { jobId: "job-3", status: "completed", durationMs: 150 },
       ];
 
-      const summary = await service.recordBatchResults("req-1", results);
+      const summary = await service.recordBatchResults("req-1", results, "tenant-1", "worker-1");
 
       expect(summary.requestId).toBe("req-1");
       expect(summary.totalJobs).toBe(3);
@@ -525,7 +525,7 @@ describe("GenerationExecutionService", () => {
         },
       ];
 
-      const summary = await service.recordBatchResults("req-1", results);
+      const summary = await service.recordBatchResults("req-1", results, "tenant-1", "worker-1");
 
       expect(summary.completedJobs).toBe(1);
       expect(summary.failedJobs).toBe(1);

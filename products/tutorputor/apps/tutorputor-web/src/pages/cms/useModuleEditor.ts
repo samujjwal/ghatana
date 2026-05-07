@@ -74,25 +74,28 @@ export function useModuleEditor() {
                 learningObjectives: existingModule.learningObjectives || [],
                 contentBlocks: existingModule.contentBlocks || [],
             });
-        } else if (templateData) {
+        } else if (templateData && !isEditing) {
             setDraft((prev) => ({
                 ...prev,
                 title: templateData.title || prev.title,
                 description: templateData.description || prev.description,
-                contentBlocks: [
-                    {
-                        id: crypto.randomUUID(),
-                        orderIndex: 0,
-                        blockType: "simulation",
-                        payload: {
-                            templateId: templateData.id,
-                            config: templateData.defaultConfig || {},
+                contentBlocks: prev.contentBlocks.length === 0
+                    ? [
+                        {
+                            id: crypto.randomUUID(),
+                            orderIndex: 0,
+                            blockType: "simulation",
+                            payload: {
+                                templateId: templateData.id,
+                                config: templateData.defaultConfig || {},
+                            },
+                            schemaVersion: "1.0.0",
                         },
-                    },
-                ],
+                    ]
+                    : prev.contentBlocks,
             }));
         }
-    }, [existingModule]);
+    }, [existingModule, templateData, isEditing, templateId]);
 
     // Create mutation
     const createMutation = useMutation({
@@ -164,8 +167,12 @@ export function useModuleEditor() {
                     initialEntities: [],
                     steps: [],
                 },
-                display: { showControls: true, showTimeline: true },
+                display: {
+                    layout: "standard",
+                    interactive: true,
+                },
             } : blockType === "text" ? { markdown: "" } : {},
+            schemaVersion: "1.0.0",
         };
 
         setDraft((prev) => ({

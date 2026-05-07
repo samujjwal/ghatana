@@ -96,6 +96,40 @@ describe('PageBuilderCommands', () => {
     expect(redoResult.document.rootNodes).toHaveLength(1);
   });
 
+  it('emits audit and telemetry records with a shared command correlation id', async () => {
+    const initialDocument = createEmptyBuilderDocument('Audited Page', 'tester');
+    const { commands, onAudit, onTelemetry } = createCommands(initialDocument);
+
+    await commands.execute({
+      id: 'insert-correlated',
+      type: 'insert-component',
+      timestamp: new Date().toISOString(),
+      artifactId: 'artifact-1',
+      data: {
+        instance: makeInstance('Button'),
+      },
+    });
+
+    expect(onAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        commandId: 'insert-correlated',
+        correlationId: 'insert-correlated',
+        commandType: 'insert-component',
+        artifactId: 'artifact-1',
+      }),
+      expect.objectContaining({ success: true }),
+    );
+    expect(onTelemetry).toHaveBeenCalledWith(
+      'page_builder_command_executed',
+      expect.objectContaining({
+        correlationId: 'insert-correlated',
+        commandType: 'insert-component',
+        artifactId: 'artifact-1',
+        validationErrorCount: 0,
+      }),
+    );
+  });
+
   it('moves a component into a container slot and restores its original location on undo', async () => {
     const initialDocument = createEmptyBuilderDocument('Test Page', 'tester');
     const { commands } = createCommands(initialDocument);
@@ -537,6 +571,47 @@ describe('PageBuilderCommands', () => {
     expect(undone.document.nodes.get(nodeId)?.contractName).toBe('LegacyTextInput');
     expect(undone.document.nodes.get(nodeId)?.props.placeholder).toBeUndefined();
     expect(undone.document.nodes.get(nodeId)?.metadata.name).toBe('LegacyTextInput');
+  });
+
+  it('migrates legacy contract aliases when mapping a node to the design system', async () => {
+    const initialDocument = createEmptyBuilderDocument('Versioned Mapping Page', 'tester');
+    const { commands } = createCommands(initialDocument);
+
+    const inserted = await commands.execute({
+      id: 'insert-versioned-mapping-node',
+      type: 'insert-component',
+      timestamp: new Date().toISOString(),
+      data: {
+        instance: makeInstance('LegacyButton'),
+      },
+    });
+    const nodeId = inserted.document.rootNodes[0] as NodeId;
+
+    const mapped = await commands.execute({
+      id: 'map-legacy-button-to-ds',
+      type: 'map-component-to-design-system',
+      timestamp: new Date().toISOString(),
+      data: {
+        nodeId,
+        contractName: 'button',
+        props: {
+          variant: 'contained',
+          size: 'large',
+          color: 'error',
+          text: 'Save',
+        },
+        name: 'Save button',
+      },
+    });
+
+    expect(mapped.success).toBe(true);
+    expect(mapped.document.nodes.get(nodeId)?.contractName).toBe('Button');
+    expect(mapped.document.nodes.get(nodeId)?.props).toMatchObject({
+      variant: 'solid',
+      size: 'lg',
+      color: 'danger',
+      children: 'Save',
+    });
   });
 
   it('records residual island review status on node metadata and restores previous status on undo', async () => {

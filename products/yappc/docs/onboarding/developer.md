@@ -78,6 +78,14 @@ curl http://localhost:8082/health/readiness
 # → {"status":"UP"}
 ```
 
+### 4. Artifact compiler and synthesis runtime
+
+Governed page-builder source imports require the artifact analyzer runtime in addition to the web app. See `products/yappc/docs/guides/artifact-compiler-runtime.md` for the default `http://localhost:8080/api/v1/yappc/artifact` endpoint, health check URL, and Vite override variables.
+
+### 5. Canonical product and builder models
+
+Before adding a phase, component, import path, or generator, read `products/yappc/docs/architecture/YAPPC_CANONICAL_MODELS.md`. It defines the Project/Product/App distinction, Artifact model, mounted lifecycle, Page document/Builder document/Canvas node boundaries, preview trust model, and governance trace requirements.
+
 For topology questions, use `docs/START_HERE_ARCHITECTURE.md` and `docs/MODULE_CATALOG.md` instead of older greenfield planning documents.
 
 ---

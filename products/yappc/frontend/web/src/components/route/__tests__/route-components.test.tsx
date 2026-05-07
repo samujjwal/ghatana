@@ -10,7 +10,11 @@ import { HydrateFallback } from '../HydrateFallback';
 import { PlaceholderRoute } from '../PlaceholderRoute';
 import { ApiUnavailableFallback } from '../ApiUnavailableFallback';
 import { LazyFeatureUnavailable } from '../LazyFeatureUnavailable';
-import { LazyAIPanel } from '../../../routes/lazyRoutes';
+import {
+  LazyAIExplainability,
+  LazyAIPanel,
+  LazyBulkOperationsDialog,
+} from '../../../routes/lazyRoutes';
 
 vi.mock('@/services/rail/RailServiceClient', () => ({
   railService: {
@@ -189,5 +193,29 @@ describe('lazy route feature implementations', () => {
     expect(await screen.findByText('Recommended insights')).toBeTruthy();
     expect(screen.getByText('Select elements to get recommendations')).toBeTruthy();
     expect(screen.queryByTestId('lazy-guided-panel-unavailable')).toBeNull();
+  });
+
+  it('feature-gates lazy explainability with review workflow guidance', async () => {
+    render(
+      <Suspense fallback={<div>Loading explainability...</div>}>
+        <LazyAIExplainability />
+      </Suspense>,
+    );
+
+    expect(await screen.findByTestId('lazy-explainability-unavailable')).toBeTruthy();
+    expect(screen.getByText('Recommendation details unavailable')).toBeTruthy();
+    expect(screen.getByText(/Review and approval workflows remain available from the phase cockpit/)).toBeTruthy();
+  });
+
+  it('feature-gates lazy bulk operations with rollback control guidance', async () => {
+    render(
+      <Suspense fallback={<div>Loading bulk operations...</div>}>
+        <LazyBulkOperationsDialog />
+      </Suspense>,
+    );
+
+    expect(await screen.findByTestId('lazy-bulk-operations-unavailable')).toBeTruthy();
+    expect(screen.getByText('Bulk operations unavailable')).toBeTruthy();
+    expect(screen.getByText(/required review and rollback controls/)).toBeTruthy();
   });
 });

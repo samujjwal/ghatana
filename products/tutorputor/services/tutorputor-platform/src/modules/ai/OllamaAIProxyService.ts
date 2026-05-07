@@ -16,12 +16,15 @@
 
 import type { AIProxyService } from "@tutorputor/contracts/v1/services";
 import { createStandaloneLogger } from '@tutorputor/core/logger';
+import type { PrismaClient } from "@tutorputor/core/db";
+import type { TenantId, UserId } from "@tutorputor/contracts/v1/types";
+import https from 'https';
+import http from 'http';
+import { readFileSync } from 'fs';
 
 const logger = createStandaloneLogger({ component: 'OllamaAIProxyService' });
 
 import type {
-  TenantId,
-  UserId,
   ModuleId,
   TutorCitation,
   TutorResponsePayload,
@@ -35,6 +38,13 @@ import type {
 const DEFAULT_MODEL = process.env.OLLAMA_MODEL || "llama3.2";
 const DEFAULT_TIMEOUT_MS = 30000;
 const MAX_RETRIES = 2;
+
+// TLS configuration
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+const REQUIRE_TLS = process.env.AI_REQUIRE_TLS === "true" || IS_PRODUCTION;
+const MTLS_CERT_PATH = process.env.AI_MTLS_CERT_PATH;
+const MTLS_KEY_PATH = process.env.AI_MTLS_KEY_PATH;
+const MTLS_CA_PATH = process.env.AI_MTLS_CA_PATH;
 
 // Domain keywords for intent classification
 const DOMAIN_KEYWORDS: Record<string, string[]> = {
@@ -72,10 +82,87 @@ export class OllamaAIProxyService implements AIProxyService {
   private model: string;
   private timeoutMs: number;
 
-  constructor(baseUrl = "http://localhost:11434", model = DEFAULT_MODEL) {
+  constructor(
+    baseUrl = "http://localhost:11434",
+    model = DEFAULT_MODEL,
+    private readonly prisma?: PrismaClient,
+  ) {
+    // Enforce HTTPS in production
+    if (REQUIRE_TLS && !baseUrl.startsWith("https://")) {
+      throw new Error(
+        "AI calls require HTTPS in production. Configure AI_REQUIRE_TLS=false for development or use HTTPS endpoint.",
+      );
+    }
+
+    // Validate mTLS configuration if provided
+    if (MTLS_CERT_PATH && !MTLS_KEY_PATH) {
+      throw new Error("AI_MTLS_KEY_PATH must be provided when AI_MTLS_CERT_PATH is set.");
+    }
+    if (MTLS_KEY_PATH && !MTLS_CERT_PATH) {
+      throw new Error("AI_MTLS_CERT_PATH must be provided when AI_MTLS_KEY_PATH is set.");
+    }
+
     this.baseUrl = baseUrl;
     this.model = model;
     this.timeoutMs = DEFAULT_TIMEOUT_MS;
+  }
+
+  /**
+   * Fetch actual module context from database
+   */
+  private async getModuleContext(moduleId: ModuleId): Promise<{
+    title: string;
+    description: string | null;
+    domain: string | null;
+  } | null> {
+    if (!this.prisma || !moduleId) return null;
+
+    try {
+      const module = await this.prisma.contentAsset.findFirst({
+        where: { id: moduleId },
+        select: {
+          title: true,
+          searchableText: true,
+          difficultyLevel: true,
+        },
+      });
+
+      if (!module) return null;
+
+      return {
+        title: module.title,
+        description: module.searchableText as string | null,
+        domain: module.difficultyLevel as string | null,
+      };
+    } catch (error) {
+      logger.warn({ message: "Failed to fetch module context", moduleId, error });
+      return null;
+    }
+  }
+
+  /**
+   * Fetch actual claim context from database
+   */
+  private async getClaimsContext(claimIds: string[]): Promise<Array<{
+    id: string;
+    text: string | null;
+  }>> {
+    if (!this.prisma || !claimIds || claimIds.length === 0) return [];
+
+    try {
+      const claims = await this.prisma.learningClaim.findMany({
+        where: { id: { in: claimIds } },
+        select: { id: true, text: true },
+      });
+
+      return claims.map((claim) => ({
+        id: claim.id,
+        text: claim.text,
+      }));
+    } catch (error) {
+      logger.warn({ message: "Failed to fetch claims context", claimIds, error });
+      return [];
+    }
   }
 
   /**
@@ -86,21 +173,68 @@ export class OllamaAIProxyService implements AIProxyService {
     retries = MAX_RETRIES,
   ): Promise<OllamaGenerateResponse> {
     const url = `${this.baseUrl}/api/generate`;
+    const urlObj = new URL(url);
     
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
 
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        let response: Response;
+        
+        // Use custom https agent for mTLS if configured
+        if (MTLS_CERT_PATH && MTLS_KEY_PATH && urlObj.protocol === 'https:') {
+          const httpsAgent = new https.Agent({
+            cert: readFileSync(MTLS_CERT_PATH),
+            key: readFileSync(MTLS_KEY_PATH),
+            ...(MTLS_CA_PATH ? { ca: readFileSync(MTLS_CA_PATH) } : {}),
+            rejectUnauthorized: true,
+          });
+
+          const httpsRequest = https.request({
+            hostname: urlObj.hostname,
+            port: urlObj.port || 443,
+            path: urlObj.pathname + urlObj.search,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            agent: httpsAgent,
+            signal: controller.signal as any,
+          });
+
+          const requestBody = JSON.stringify({
             ...request,
             stream: false,
-          }),
-          signal: controller.signal,
-        });
+          });
+
+          httpsRequest.write(requestBody);
+          httpsRequest.end();
+
+          response = await new Promise((resolve, reject) => {
+            httpsRequest.on('response', (res) => {
+              let data = '';
+              res.on('data', (chunk) => data += chunk);
+              res.on('end', () => {
+                resolve(new Response(data, {
+                  status: res.statusCode || 500,
+                  statusText: res.statusMessage || 'Internal Server Error',
+                }) as Response);
+              });
+            });
+            httpsRequest.on('error', reject);
+          }) as Response;
+        } else {
+          response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...request,
+              stream: false,
+            }),
+            signal: controller.signal,
+          });
+        }
 
         clearTimeout(timeoutId);
 
@@ -161,6 +295,12 @@ export class OllamaAIProxyService implements AIProxyService {
     locale?: string;
   }): Promise<TutorResponsePayload> {
     try {
+      // Fetch actual context from database
+      const moduleContext = args.moduleId ? await this.getModuleContext(args.moduleId) : null;
+      const claimsContext = args.claimIds && args.claimIds.length > 0 
+        ? await this.getClaimsContext(args.claimIds) 
+        : [];
+
       const systemPrompt = `You are TutorPutor, an AI tutor specializing in STEAM education (Science, Technology, Engineering, Arts, Mathematics).
 
 Guidelines:
@@ -177,13 +317,40 @@ Format your response as:
 2. One guiding question or hint
 3. Optional follow-up question`;
 
+      // Build grounding with actual context
+      const groundingParts: string[] = [];
+      
+      if (moduleContext) {
+        groundingParts.push(`- Module: ${moduleContext.title} (${moduleContext.domain || 'general domain'})`);
+        if (moduleContext.description) {
+          groundingParts.push(`  Description: ${moduleContext.description.substring(0, 200)}...`);
+        }
+      } else if (args.moduleId) {
+        groundingParts.push(`- moduleId: ${args.moduleId} (context not available)`);
+      }
+
+      if (claimsContext.length > 0) {
+        groundingParts.push(`- Claims: ${claimsContext.map(c => c.text || c.id).join("; ")}`);
+      } else if (args.claimIds) {
+        groundingParts.push(`- claimIds: ${args.claimIds.join(", ")}`);
+      }
+
+      if (args.currentSimulationState) {
+        groundingParts.push(`- Current simulation state: ${JSON.stringify(args.currentSimulationState)}`);
+      }
+
+      if (args.recentAttempts && args.recentAttempts.length > 0) {
+        groundingParts.push(`- Recent attempts: ${args.recentAttempts.map(a => a.attemptId).join(", ")}`);
+      }
+
+      if (args.misconceptions && args.misconceptions.length > 0) {
+        groundingParts.push(`- Misconceptions: ${args.misconceptions.join(", ")}`);
+      }
+
+      groundingParts.push(`- Allowed help mode: ${args.allowedHelpMode ?? "socratic"}`);
+
       const userPrompt = `Grounding:
-- moduleId: ${String(args.moduleId ?? "unscoped-module")}
-- claimIds: ${(args.claimIds ?? ["unscoped-claim"]).join(", ")}
-- currentSimulationState: ${JSON.stringify(args.currentSimulationState ?? {})}
-- recentAttempts: ${JSON.stringify(args.recentAttempts ?? [{ attemptId: "unscoped-attempt" }])}
-- misconceptions: ${(args.misconceptions ?? []).join(", ") || "none observed"}
-- allowedHelpMode: ${args.allowedHelpMode ?? "socratic"}
+${groundingParts.join("\n")}
 
 Student question: ${args.question}
 

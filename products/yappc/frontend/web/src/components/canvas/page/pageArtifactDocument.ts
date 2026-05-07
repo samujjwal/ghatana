@@ -50,8 +50,11 @@ export type PageArtifactOperationKind =
   | 'persist-offline'
   | 'reload-remote'
   | 'overwrite-remote'
+  | 'merge-conflict'
   | 'import-page'
-  | 'governance-record';
+  | 'governance-record'
+  | 'undo-command'
+  | 'redo-command';
 
 export interface PageArtifactOperationRecord {
   readonly id: string;
@@ -344,8 +347,11 @@ const EMPTY_OPERATION_COUNTS: Readonly<Record<PageArtifactOperationKind, number>
   'persist-offline': 0,
   'reload-remote': 0,
   'overwrite-remote': 0,
+  'merge-conflict': 0,
   'import-page': 0,
   'governance-record': 0,
+  'undo-command': 0,
+  'redo-command': 0,
 };
 
 const EMPTY_STATUS_COUNTS: Readonly<Record<PageArtifactOperationStatus, number>> = {

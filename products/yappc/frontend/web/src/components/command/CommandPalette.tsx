@@ -97,6 +97,10 @@ function highlightMatches(text: string, query: string): React.ReactNode {
     ));
 }
 
+function getActionOptionId(actionId: string): string {
+    return `command-palette-option-${actionId.replace(/[^A-Za-z0-9_-]/g, '-')}`;
+}
+
 // ============================================================================
 // Main Component
 // ============================================================================
@@ -133,6 +137,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     const [query, setQuery] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = React.useRef<HTMLInputElement>(null);
+    const listboxId = React.useId();
 
     const { grouped, execute, formatShortcut } = useActions(state);
 
@@ -159,6 +164,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 .map(({ action }) => action);
     }, [flatActions, query]);
 
+    const selectedAction = filteredActions[selectedIndex];
+    const activeDescendant = selectedAction ? getActionOptionId(selectedAction.id) : undefined;
+
     // Keyboard navigation
     const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
         if (e.key === 'Escape') {
@@ -166,11 +174,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             setQuery('');
         } else if (e.key === 'ArrowDown') {
             e.preventDefault();
+            if (filteredActions.length === 0) return;
             setSelectedIndex(prev =>
                 prev < filteredActions.length - 1 ? prev + 1 : 0
             );
         } else if (e.key === 'ArrowUp') {
             e.preventDefault();
+            if (filteredActions.length === 0) return;
             setSelectedIndex(prev =>
                 prev > 0 ? prev - 1 : filteredActions.length - 1
             );
@@ -184,6 +194,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             }
         }
     }, [filteredActions, selectedIndex, execute]);
+
+    useEffect(() => {
+        if (filteredActions.length === 0) {
+            setSelectedIndex(0);
+            return;
+        }
+        setSelectedIndex((current) => Math.min(current, filteredActions.length - 1));
+    }, [filteredActions.length]);
 
     // Global keyboard listener
     useEffect(() => {
@@ -240,13 +258,20 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 maxWidth="sm"
                 fullWidth
                 className={className}
+                aria-label="Command palette"
             >
                 {/* Search Input */}
                 <Box className="border-b border-grey-200 dark:border-grey-700 p-4">
                     <Box className="flex items-center gap-2">
-                        <SearchIcon className="text-grey-400 w-5 h-5" />
+                        <SearchIcon className="text-grey-400 w-5 h-5" aria-hidden="true" />
                         <input
                             ref={inputRef}
+                            aria-label="Search actions"
+                            aria-controls={listboxId}
+                            aria-expanded={isOpen}
+                            aria-activedescendant={activeDescendant}
+                            aria-autocomplete="list"
+                            role="combobox"
                             placeholder="Search actions..."
                             value={query}
                             onChange={(e) => {
@@ -258,7 +283,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                             className="w-full bg-transparent text-lg outline-none"
                         />
                         <Chip
-                            icon={<KeyboardIcon className="w-3 h-3" />}
+                            icon={<KeyboardIcon className="w-3 h-3" aria-hidden="true" />}
                             label="ESC"
                             size="sm"
                             variant="outlined"
@@ -269,59 +294,68 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
                 {/* Actions List */}
                 {filteredActions.length > 0 ? (
-                    <List className="max-h-96 overflow-y-auto">
-                        {filteredActions.map((action: ActionDefinition, index: number) => (
-                            <ListItemButton
-                                key={action.id}
-                                selected={index === selectedIndex}
-                                onClick={() => {
-                                    execute(action.id);
-                                    setIsOpen(false);
-                                    setQuery('');
-                                    setSelectedIndex(0);
-                                }}
-                                onMouseEnter={() => setSelectedIndex(index)}
-                                className={`
-                                    px-4 py-3 transition-colors
-                                    ${index === selectedIndex
-                                        ? 'bg-info-bg dark:bg-info-bg/30'
-                                        : ''
-                                    }
-                                `}
-                            >
-                                <ListItemIcon className="min-w-fit mr-3">
-                                    <Box
-                                        className={`
-                                            w-8 h-8 rounded-lg flex items-center justify-center text-sm
-                                            ${action.isDangerous
-                                                ? 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive'
-                                                : 'bg-grey-100 text-grey-600 dark:bg-grey-800 dark:text-grey-400'
-                                            }
-                                        `}
-                                    >
-                                        {action.label.charAt(0).toUpperCase()}
-                                    </Box>
-                                </ListItemIcon>
-                                <ListItemText
-                                    primary={highlightMatches(action.label, query)}
-                                    secondary={
-                                        <span className="text-xs text-grey-500 dark:text-grey-400">
-                                            {action.description}
-                                        </span>
-                                    }
-                                />
-                                {action.shortcut && (
-                                    <Typography
-                                        className="ml-4 whitespace-nowrap text-xs text-grey-400 dark:text-grey-500"
-                                    >
-                                        {formatShortcut(action.shortcut)}
-                                    </Typography>
-                                )}
-                            </ListItemButton>
-                        ))}
-                    </List>
+                    <div
+                        id={listboxId}
+                        role="listbox"
+                        aria-label="Available command actions"
+                    >
+                        <List className="max-h-96 overflow-y-auto">
+                            {filteredActions.map((action: ActionDefinition, index: number) => (
+                                <ListItemButton
+                                    key={action.id}
+                                    id={getActionOptionId(action.id)}
+                                    role="option"
+                                    aria-selected={index === selectedIndex}
+                                    selected={index === selectedIndex}
+                                    onClick={() => {
+                                        execute(action.id);
+                                        setIsOpen(false);
+                                        setQuery('');
+                                        setSelectedIndex(0);
+                                    }}
+                                    onMouseEnter={() => setSelectedIndex(index)}
+                                    className={`
+                                        px-4 py-3 transition-colors
+                                        ${index === selectedIndex
+                                            ? 'bg-info-bg dark:bg-info-bg/30'
+                                            : ''
+                                        }
+                                    `}
+                                >
+                                    <ListItemIcon className="min-w-fit mr-3">
+                                        <Box
+                                            className={`
+                                                w-8 h-8 rounded-lg flex items-center justify-center text-sm
+                                                ${action.isDangerous
+                                                    ? 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive'
+                                                    : 'bg-grey-100 text-grey-600 dark:bg-grey-800 dark:text-grey-400'
+                                                }
+                                            `}
+                                        >
+                                            {action.label.charAt(0).toUpperCase()}
+                                        </Box>
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary={highlightMatches(action.label, query)}
+                                        secondary={
+                                            <span className="text-xs text-grey-500 dark:text-grey-400">
+                                                {action.description}
+                                            </span>
+                                        }
+                                    />
+                                    {action.shortcut && (
+                                        <Typography
+                                            className="ml-4 whitespace-nowrap text-xs text-grey-400 dark:text-grey-500"
+                                        >
+                                            {formatShortcut(action.shortcut)}
+                                        </Typography>
+                                    )}
+                                </ListItemButton>
+                            ))}
+                        </List>
+                    </div>
                 ) : (
-                    <Box className="p-8 text-center">
+                    <Box className="p-8 text-center" role="status" aria-live="polite">
                         <Typography color="text.secondary" className="text-sm">
                             No actions found for "{query}"
                         </Typography>

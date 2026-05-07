@@ -33,7 +33,7 @@ import { getPhaseCanvasConfig, type PhaseCanvasConfig } from '@/services/canvas/
 import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
 import { currentUserAtom } from '@/stores/user.store';
 
-import { PageDesigner } from '@/components/canvas/page/PageDesigner';
+import { PageDesigner, type PageDesignerDocumentChangeContext } from '@/components/canvas/page/PageDesigner';
 import { LivePreviewPanel } from '@/components/studio/LivePreviewPanel';
 import { AddNodeCommand, executeCommandAtom, UpdateNodeDataCommand } from '../workspace/canvasCommands';
 import {
@@ -114,6 +114,72 @@ function getPersistenceKey(pageDocument: PageArtifactDocument): string {
   ].join(':');
 }
 
+type ConflictMergeChoice = 'local' | 'remote';
+
+interface ConflictMergeRow {
+  readonly nodeId: string;
+  readonly status: 'local-only' | 'remote-only' | 'changed' | 'same';
+  readonly localLabel: string;
+  readonly remoteLabel: string;
+}
+
+function getSerializedNodes(pageDocument: PageArtifactDocument): Record<string, unknown> {
+  return pageDocument.serializedBuilderDocument.nodes as Record<string, unknown>;
+}
+
+function getSerializedRootNodes(pageDocument: PageArtifactDocument): readonly string[] {
+  return pageDocument.serializedBuilderDocument.rootNodes.map(String);
+}
+
+function getSerializedNodeLabel(node: unknown): string {
+  if (!node || typeof node !== 'object') {
+    return 'missing';
+  }
+
+  const candidate = node as {
+    readonly contractName?: unknown;
+    readonly metadata?: { readonly name?: unknown };
+  };
+  if (typeof candidate.metadata?.name === 'string' && candidate.metadata.name.trim()) {
+    return candidate.metadata.name;
+  }
+  if (typeof candidate.contractName === 'string' && candidate.contractName.trim()) {
+    return candidate.contractName;
+  }
+  return 'component';
+}
+
+function buildConflictMergeRows(
+  localDocument: PageArtifactDocument | undefined,
+  remoteDocument: PageArtifactDocument | null,
+): readonly ConflictMergeRow[] {
+  if (!localDocument || !remoteDocument) {
+    return [];
+  }
+
+  const localNodes = getSerializedNodes(localDocument);
+  const remoteNodes = getSerializedNodes(remoteDocument);
+  const nodeIds = Array.from(new Set([...Object.keys(localNodes), ...Object.keys(remoteNodes)])).sort();
+  return nodeIds.map((nodeId) => {
+    const localNode = localNodes[nodeId];
+    const remoteNode = remoteNodes[nodeId];
+    const status = !remoteNode
+      ? 'local-only'
+      : !localNode
+        ? 'remote-only'
+        : JSON.stringify(localNode) === JSON.stringify(remoteNode)
+          ? 'same'
+          : 'changed';
+
+    return {
+      nodeId,
+      status,
+      localLabel: getSerializedNodeLabel(localNode),
+      remoteLabel: getSerializedNodeLabel(remoteNode),
+    };
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -134,6 +200,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
   const [previewHoveredNodeId, setPreviewHoveredNodeId] = useState<string | null>(null);
   const [overwriteReason, setOverwriteReason] = useState<string>('');
   const [remoteConflictDocument, setRemoteConflictDocument] = useState<PageArtifactDocument | null>(null);
+  const [conflictMergeChoices, setConflictMergeChoices] = useState<Readonly<Record<string, ConflictMergeChoice>>>({});
   const { currentPhase } = usePhaseContext();
   const phaseConfig = useMemo(
     () => (currentPhase ? getPhaseCanvasConfig(currentPhase) : undefined),
@@ -195,6 +262,10 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
   );
 
   const nodeCount = getSerializedNodeCount(data.pageDocument);
+  const conflictMergeRows = useMemo(
+    () => buildConflictMergeRows(data.pageDocument, remoteConflictDocument),
+    [data.pageDocument, remoteConflictDocument],
+  );
   const operationActor = currentUser?.id ?? 'page-designer';
   const appendOperation = useCallback(
     (
@@ -332,6 +403,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
     if (data.pageDocument?.syncStatus !== 'error') {
       setRemoteConflictDocument(null);
       setOverwriteReason('');
+      setConflictMergeChoices({});
     }
   }, [data.pageDocument?.syncStatus]);
 
@@ -358,7 +430,12 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
   );
 
   const handleDocumentChange = useCallback(
-    (pageDocument: PageArtifactDocument, _document: BuilderDocument, validation: ValidationResult) => {
+    (
+      pageDocument: PageArtifactDocument,
+      _document: BuilderDocument,
+      validation: ValidationResult,
+      context?: PageDesignerDocumentChangeContext,
+    ) => {
       if (!canMutatePageDocument) {
         return;
       }
@@ -396,13 +473,16 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
       }
       const nextPageDocument = appendOperation(
         pageDocument,
-        'document-update',
+        context?.operation ?? 'document-update',
         validation.valid ? 'pending' : 'requires-review',
-        'Updated page builder document from in-canvas editor.',
+        context?.summary ?? 'Updated page builder document from in-canvas editor.',
         {
           valid: validation.valid,
           errorCount: validation.errors.length,
           warningCount: validation.warnings.length,
+          commandId: context?.commandId ?? null,
+          commandType: context?.commandType ?? null,
+          changedNodeCount: context?.changedNodeIds?.length ?? 0,
         },
       );
       updateNodeData(
@@ -420,7 +500,11 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
     },
     [appendOperation, canMutatePageDocument, data.pageDocument, data.validationSummary, persistDirtyDocument, updateNodeData],
   );
-  const handlePageDesignerDocumentChange = useCallback((document: BuilderDocument, validation: ValidationResult) => {
+  const handlePageDesignerDocumentChange = useCallback((
+    document: BuilderDocument,
+    validation: ValidationResult,
+    context?: PageDesignerDocumentChangeContext,
+  ) => {
     if (!data.pageDocument || !canMutatePageDocument) {
       return;
     }
@@ -436,7 +520,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
         warningCount: validation.warnings.length,
       },
     );
-    handleDocumentChange(pageDocument, document, validation);
+    handleDocumentChange(pageDocument, document, validation, context);
   }, [canMutatePageDocument, data.pageDocument, handleDocumentChange]);
 
   const handleImportArtifacts = useCallback(
@@ -548,6 +632,14 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
     }
 
     setRemoteConflictDocument(loaded);
+    setConflictMergeChoices(
+      Object.fromEntries(
+        buildConflictMergeRows(data.pageDocument, loaded).map((row) => [
+          row.nodeId,
+          row.status === 'remote-only' ? 'remote' : 'local',
+        ]),
+      ),
+    );
     return loaded;
   }, [canMutatePageDocument, data.pageDocument, pagePersistenceAdapter]);
 
@@ -626,7 +718,92 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
     );
     setOverwriteReason('');
     setRemoteConflictDocument(null);
+    setConflictMergeChoices({});
   }, [appendOperation, canMutatePageDocument, data.pageDocument, overwriteReason, pagePersistenceAdapter, remoteConflictDocument, updateNodeData]);
+
+  const handleMergeConflictDocument = useCallback(async () => {
+    if (!data.pageDocument || !remoteConflictDocument || !canMutatePageDocument) {
+      return;
+    }
+    const localDocument = data.pageDocument;
+    const remoteDocument = remoteConflictDocument;
+
+    const auditReason = overwriteReason.trim();
+    if (auditReason.length < 8) {
+      return;
+    }
+
+    const localNodes = getSerializedNodes(localDocument);
+    const remoteNodes = getSerializedNodes(remoteDocument);
+    const mergedNodes: Record<string, unknown> = { ...localNodes };
+    const selectedRemoteNodeIds: string[] = [];
+    for (const row of conflictMergeRows) {
+      const choice = conflictMergeChoices[row.nodeId] ?? (row.status === 'remote-only' ? 'remote' : 'local');
+      if (choice !== 'remote') {
+        continue;
+      }
+
+      selectedRemoteNodeIds.push(row.nodeId);
+      if (remoteNodes[row.nodeId]) {
+        mergedNodes[row.nodeId] = remoteNodes[row.nodeId];
+      } else {
+        delete mergedNodes[row.nodeId];
+      }
+    }
+
+    const mergedRootNodes = ([
+      ...getSerializedRootNodes(localDocument),
+      ...getSerializedRootNodes(remoteDocument).filter((nodeId) => !getSerializedRootNodes(localDocument).includes(nodeId)),
+    ].filter((nodeId, index, allNodeIds) => mergedNodes[nodeId] && allNodeIds.indexOf(nodeId) === index)) as unknown as PageArtifactDocument['serializedBuilderDocument']['rootNodes'];
+    const mergedDocument: PageArtifactDocument = {
+      ...localDocument,
+      documentId: `${localDocument.documentId}-merge-${Date.now()}`,
+      serializedBuilderDocument: {
+        ...localDocument.serializedBuilderDocument,
+        rootNodes: mergedRootNodes,
+        nodes: mergedNodes as PageArtifactDocument['serializedBuilderDocument']['nodes'],
+      },
+      syncStatus: 'dirty',
+    };
+
+    await pagePersistenceAdapter.save(mergedDocument);
+    updateNodeData(
+      { pageDocument: localDocument },
+      {
+        pageDocument: appendOperation(
+          {
+            ...mergedDocument,
+            syncStatus: 'synced',
+          },
+          'merge-conflict',
+          'requires-review',
+          'Merged selected remote page document nodes after conflict review.',
+          {
+            auditReason,
+            localDocumentId: localDocument.documentId,
+            remoteDocumentId: remoteDocument.documentId,
+            selectedRemoteNodeCount: selectedRemoteNodeIds.length,
+            localNodeCount: getSerializedNodeCount(localDocument),
+            remoteNodeCount: getSerializedNodeCount(remoteDocument),
+          },
+        ),
+      },
+      'Merge remote page document nodes with audit reason',
+    );
+    setOverwriteReason('');
+    setRemoteConflictDocument(null);
+    setConflictMergeChoices({});
+  }, [
+    appendOperation,
+    canMutatePageDocument,
+    conflictMergeChoices,
+    conflictMergeRows,
+    data.pageDocument,
+    overwriteReason,
+    pagePersistenceAdapter,
+    remoteConflictDocument,
+    updateNodeData,
+  ]);
 
   const borderColor = selected ? 'var(--color-primary-500, #6366f1)' : 'var(--color-border, #d1d5db)';
 
@@ -766,10 +943,60 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
                           Remote: not loaded yet
                         </Typography>
                       )}
-                    </Box>
-                    <TextArea
-                      value={overwriteReason}
-                      onChange={(event) => setOverwriteReason(event.target.value)}
+	                    </Box>
+	                    {remoteConflictDocument ? (
+	                      <Box
+	                        className="mb-2 rounded border border-destructive-border bg-surface p-2 text-xs"
+	                        data-testid="page-conflict-node-merge"
+	                      >
+	                        <Typography variant="caption" style={{ display: 'block', fontWeight: 600, marginBottom: 6 }}>
+	                          Node-level merge choices
+	                        </Typography>
+	                        {conflictMergeRows.map((row) => (
+	                          <Box
+	                            key={row.nodeId}
+	                            className="mb-1 grid grid-cols-[1fr_auto_auto] items-center gap-2"
+	                            data-testid={`page-conflict-node-row-${row.nodeId}`}
+	                          >
+	                            <Typography variant="caption">
+	                              {row.nodeId} · {row.status} · local {row.localLabel} / remote {row.remoteLabel}
+	                            </Typography>
+	                            <label>
+	                              <input
+	                                type="radio"
+	                                name={`page-conflict-choice-${row.nodeId}`}
+	                                checked={(conflictMergeChoices[row.nodeId] ?? (row.status === 'remote-only' ? 'remote' : 'local')) === 'local'}
+	                                onChange={() =>
+	                                  setConflictMergeChoices((current) => ({
+	                                    ...current,
+	                                    [row.nodeId]: 'local',
+	                                  }))
+	                                }
+	                              />
+	                              Local
+	                            </label>
+	                            <label>
+	                              <input
+	                                type="radio"
+	                                name={`page-conflict-choice-${row.nodeId}`}
+	                                checked={(conflictMergeChoices[row.nodeId] ?? (row.status === 'remote-only' ? 'remote' : 'local')) === 'remote'}
+	                                onChange={() =>
+	                                  setConflictMergeChoices((current) => ({
+	                                    ...current,
+	                                    [row.nodeId]: 'remote',
+	                                  }))
+	                                }
+	                                data-testid={`page-conflict-node-use-remote-${row.nodeId}`}
+	                              />
+	                              Remote
+	                            </label>
+	                          </Box>
+	                        ))}
+	                      </Box>
+	                    ) : null}
+	                    <TextArea
+	                      value={overwriteReason}
+	                      onChange={(event) => setOverwriteReason(event.target.value)}
                       disabled={!canMutatePageDocument}
                       rows={2}
                       aria-label="Overwrite audit reason"
@@ -795,12 +1022,21 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
                       >
                         Reload remote
                       </Button>
-                      <Button
-                        variant="solid"
-                        size="small"
-                        onClick={() => void handleOverwriteRemote()}
-                        disabled={overwriteReason.trim().length < 8 || !canMutatePageDocument}
-                        data-testid="page-conflict-overwrite-remote"
+	                      <Button
+	                        variant="solid"
+	                        size="small"
+	                        onClick={() => void handleMergeConflictDocument()}
+	                        disabled={!remoteConflictDocument || overwriteReason.trim().length < 8 || !canMutatePageDocument}
+	                        data-testid="page-conflict-merge-selection"
+	                      >
+	                        Merge selection
+	                      </Button>
+	                      <Button
+	                        variant="solid"
+	                        size="small"
+	                        onClick={() => void handleOverwriteRemote()}
+	                        disabled={overwriteReason.trim().length < 8 || !canMutatePageDocument}
+	                        data-testid="page-conflict-overwrite-remote"
                       >
                         Overwrite with reason
                       </Button>

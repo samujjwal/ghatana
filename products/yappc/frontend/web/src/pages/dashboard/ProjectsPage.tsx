@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { useAtomValue } from 'jotai';
+import { yappcApi, type Project as ApiProject } from '@/lib/api';
+import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
 
 interface ProjectSummary {
   id: string;
@@ -19,6 +21,17 @@ const STATUS_COLORS: Record<string, string> = {
   ARCHIVED: 'bg-surface text-fg-muted',
 };
 
+function toProjectSummary(project: ApiProject): ProjectSummary {
+  return {
+    id: project.id,
+    name: project.name,
+    key: project.id,
+    status: 'ACTIVE',
+    ...(project.description ? { description: project.description } : {}),
+    updatedAt: project.updatedAt,
+  };
+}
+
 /**
  * ProjectsPage — lists all projects in the current workspace.
  *
@@ -27,17 +40,20 @@ const STATUS_COLORS: Record<string, string> = {
  * @doc.layer product
  */
 const ProjectsPage: React.FC = () => {
+  const currentWorkspaceId = useAtomValue(currentWorkspaceIdAtom);
   const { data: projects, isLoading, error } = useQuery<ProjectSummary[]>({
-    queryKey: ['projects'],
+    queryKey: ['projects', currentWorkspaceId],
     queryFn: async () => {
-      const res = await fetch('/api/projects', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
-      });
-      if (!res.ok) {
-        throw new Error(await readErrorResponse(res, 'Failed to load projects'));
+      if (!currentWorkspaceId) {
+        return [];
       }
-      return parseJsonResponse<ProjectSummary[]>(res, 'dashboard projects');
+      const response = await yappcApi.projects.list(currentWorkspaceId);
+      const projectList = Array.isArray(response)
+        ? response
+        : [...response.owned, ...response.included];
+      return projectList.map(toProjectSummary);
     },
+    enabled: Boolean(currentWorkspaceId),
   });
 
   const sorted = useMemo(
@@ -68,6 +84,12 @@ const ProjectsPage: React.FC = () => {
 
       {/* Content */}
       <div className="mt-6">
+        {!currentWorkspaceId && (
+          <div className="rounded-md border border-warning-border bg-warning-bg/50 px-4 py-3 text-sm text-warning">
+            Select a workspace before loading projects.
+          </div>
+        )}
+
         {isLoading && (
           <div className="flex items-center justify-center py-16 text-fg-muted">
             Loading projects…

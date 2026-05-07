@@ -6,6 +6,16 @@ import {
   type BuilderPaletteEntry,
 } from '@ghatana/ds-registry';
 import type { ComponentContract } from '@ghatana/ds-schema';
+import {
+  getContractVersionProfile,
+  migrateContractInstance,
+  normalizeVersionedContractName,
+  resolveVersionedContract,
+  type ContractCompatibilityResult,
+  type ContractInstanceMigrationInput,
+  type ContractInstanceMigrationResult,
+  type ContractVersionProfile,
+} from './contractVersioning';
 
 registerStarterContracts(getRegistryStore());
 
@@ -46,14 +56,95 @@ export interface ConfiguratorGroup {
 
 export interface ContractGovernanceProfile {
   readonly reviewRequiredProps: readonly string[];
-  readonly privacyLevel?: string;
+  readonly privacyLevel?: ComponentContract['privacy'];
   readonly telemetryEventNames: readonly string[];
   readonly observabilityMarks: readonly string[];
   readonly requiredA11yProps: readonly string[];
 }
 
+export interface BuilderPaletteFilters {
+  readonly query?: string;
+  readonly category?: string;
+  readonly phaseMode?: 'design' | 'preview' | 'code' | 'validate';
+  readonly contextTags?: readonly string[];
+  readonly includeReadOnlyPhaseComponents?: boolean;
+}
+
 export function getBuilderPalette(): readonly BuilderPaletteEntry[] {
   return findBuilderComponents(getRegistryStore());
+}
+
+function matchesPaletteQuery(entry: BuilderPaletteEntry, query: string): boolean {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  const searchableText = [
+    entry.name,
+    entry.displayName,
+    entry.tooltip,
+    entry.group,
+    entry.subGroup,
+    ...entry.searchKeywords,
+  ]
+    .filter((value): value is string => typeof value === 'string')
+    .join(' ')
+    .toLowerCase();
+
+  return searchableText.includes(normalizedQuery);
+}
+
+function matchesPaletteContext(entry: BuilderPaletteEntry, contextTags: readonly string[]): boolean {
+  if (contextTags.length === 0) {
+    return true;
+  }
+
+  const normalizedTags = new Set(contextTags.map((tag) => tag.toLowerCase()));
+  const entryTags = [
+    entry.group,
+    entry.subGroup,
+    ...entry.searchKeywords,
+  ]
+    .filter((value): value is string => typeof value === 'string')
+    .map((value) => value.toLowerCase());
+
+  return entryTags.some((tag) => normalizedTags.has(tag));
+}
+
+export function getBuilderPaletteCategories(
+  entries: readonly BuilderPaletteEntry[] = getBuilderPalette()
+): readonly string[] {
+  return Array.from(new Set(entries.map((entry) => entry.group))).sort((a, b) => a.localeCompare(b));
+}
+
+export function getFilteredBuilderPalette(
+  filters: BuilderPaletteFilters = {},
+  entries: readonly BuilderPaletteEntry[] = getBuilderPalette()
+): readonly BuilderPaletteEntry[] {
+  const query = filters.query ?? '';
+  const contextTags = filters.contextTags ?? [];
+
+  return entries
+    .filter((entry) => !filters.category || entry.group === filters.category)
+    .filter((entry) => matchesPaletteQuery(entry, query))
+    .filter((entry) => matchesPaletteContext(entry, contextTags))
+    .filter(
+      () =>
+        filters.includeReadOnlyPhaseComponents ||
+        !filters.phaseMode ||
+        filters.phaseMode === 'design'
+    )
+    .sort((a, b) => {
+      if (a.featured !== b.featured) {
+        return a.featured ? -1 : 1;
+      }
+      const groupCmp = a.group.localeCompare(b.group);
+      if (groupCmp !== 0) return groupCmp;
+      const rankCmp = a.rank - b.rank;
+      if (rankCmp !== 0) return rankCmp;
+      return a.displayName.localeCompare(b.displayName);
+    });
 }
 
 export function getContractMap(): ReadonlyMap<string, ComponentContract> {
@@ -61,11 +152,11 @@ export function getContractMap(): ReadonlyMap<string, ComponentContract> {
 }
 
 export function getContractByName(contractName: string): ComponentContract | undefined {
-  return getContractMap().get(contractName);
+  return resolveVersionedContract(contractName);
 }
 
 export function normalizeContractName(typeOrName: string): string {
-  return LEGACY_TO_CONTRACT_NAME[typeOrName as LegacyComponentType] ?? typeOrName;
+  return LEGACY_TO_CONTRACT_NAME[typeOrName as LegacyComponentType] ?? normalizeVersionedContractName(typeOrName);
 }
 
 export function toLegacyComponentType(contractName: string): string {
@@ -105,7 +196,7 @@ export function getRegistryFields(contractName: string): readonly RegistryFieldD
       }
 
       const legacyType: RegistryFieldDescriptor['type'] =
-        control === 'number' ? 'number' : control === 'boolean' || control === 'toggle' ? 'boolean' : 'text';
+        control === 'number' ? 'number' : control === 'toggle' ? 'boolean' : 'text';
 
       return {
         name: prop.name,
@@ -147,6 +238,23 @@ export function getContractGovernanceProfile(contractName: string): ContractGove
     requiredA11yProps: contract?.builderA11y?.requiredA11yProps ?? [],
   };
 }
+
+export function getRegistryContractVersionProfile(contractName: string): ContractVersionProfile | undefined {
+  return getContractVersionProfile(contractName);
+}
+
+export function migrateRegistryContractInstance(
+  input: ContractInstanceMigrationInput
+): ContractInstanceMigrationResult {
+  return migrateContractInstance(input);
+}
+
+export type {
+  ContractCompatibilityResult,
+  ContractInstanceMigrationInput,
+  ContractInstanceMigrationResult,
+  ContractVersionProfile,
+};
 
 function mapPropType(propType: string): RegistryFieldDescriptor['type'] {
   if (propType === 'number') {

@@ -1,8 +1,35 @@
-import type {
-  AIInteractionGovernanceMetadata,
-  AIUseCase,
-} from "@tutorputor/contracts/v1/services";
 import { assertConsentAllowed } from "../compliance/consentPolicy.js";
+import type { PrismaClient } from "@tutorputor/core/db";
+import type { TenantId, UserId } from "@tutorputor/contracts/v1/types";
+
+// Local type definitions to avoid import issues
+type AIUseCase = "tutor_query" | "content_generation" | "intent_parsing" | "simulation_explanation" | "query_parsing";
+type AISafetyFilterResult = "passed" | "blocked" | "human_review_required" | "redacted";
+
+interface AIInteractionGovernanceMetadata {
+  consentState: "granted" | "missing" | "revoked" | "not_required";
+  learnerContextScope:
+    | "none"
+    | "module"
+    | "claim"
+    | "simulation"
+    | "assessment"
+    | "course";
+  promptVersion: string;
+  modelVersion: string;
+  retrievedContentIds: string[];
+  safetyFilterResult: AISafetyFilterResult;
+  latencyMs?: number;
+  tokenUsage?: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  };
+  costUsd?: number;
+  confidence?: number;
+  humanReviewRequired: boolean;
+  humanReviewReason?: string;
+}
 
 export class AIGovernanceError extends Error {
   constructor(
@@ -33,18 +60,92 @@ export interface BuildAIGovernanceMetadataArgs {
   humanReviewReason?: string;
   learnerAge?: number;
   parentalConsentGranted?: boolean;
+  tenantId?: TenantId;
+  userId?: UserId;
+  contentToFilter?: string;
 }
 
-export function buildAIGovernanceMetadata(
-  args: BuildAIGovernanceMetadataArgs,
-): AIInteractionGovernanceMetadata {
+/**
+ * Fetch actual consent state from database
+ */
+async function fetchActualConsentState(
+  prisma: PrismaClient,
+  tenantId: TenantId,
+  userId: UserId,
+): Promise<"granted" | "missing" | "revoked" | "not_required"> {
+  try {
+    const userConsent = await prisma.userConsent.findFirst({
+      where: {
+        userId,
+        category: "ai_processing",
+        tenantId,
+      },
+    });
+
+    if (!userConsent) {
+      return "missing";
+    }
+
+    return userConsent.granted ? "granted" : "revoked";
+  } catch (error) {
+    // Log error but default to missing to be safe
+    console.warn("Failed to fetch consent state, defaulting to missing", error);
+    return "missing";
+  }
+}
+
+/**
+ * Run actual safety filter check on content
+ */
+async function runSafetyFilter(
+  content: string,
+): Promise<"passed" | "blocked" | "human_review_required" | "redacted"> {
+  // Placeholder for actual safety filter implementation
+  // TODO: Integrate with real safety filter service
+  if (!content || content.length === 0) {
+    return "passed";
+  }
+  
+  // Basic heuristic checks (replace with actual safety filter)
+  const unsafePatterns = [
+    /password/i,
+    /credit card/i,
+    /ssn/i,
+    /social security/i,
+  ];
+  
+  for (const pattern of unsafePatterns) {
+    if (pattern.test(content)) {
+      return "blocked";
+    }
+  }
+  
+  return "passed";
+}
+
+export async function buildAIGovernanceMetadata(
+  args: BuildAIGovernanceMetadataArgs & { prisma?: PrismaClient },
+): Promise<AIInteractionGovernanceMetadata> {
+  let consentState = args.consentState ?? "granted";
+  let safetyFilterResult = args.safetyFilterResult ?? "passed";
+
+  // Fetch actual consent state if tenantId and userId are provided
+  if (args.prisma && args.tenantId && args.userId && !args.consentState) {
+    consentState = await fetchActualConsentState(args.prisma, args.tenantId, args.userId);
+  }
+
+  // Run safety filter if content is provided
+  if (args.contentToFilter && !args.safetyFilterResult) {
+    safetyFilterResult = await runSafetyFilter(args.contentToFilter);
+  }
+
   return {
-    consentState: args.consentState ?? "granted",
+    consentState,
     learnerContextScope: args.learnerContextScope,
     promptVersion: args.promptVersion ?? "tutorputor-ai-v1",
     modelVersion: args.modelVersion ?? "unknown",
     retrievedContentIds: args.retrievedContentIds ?? [],
-    safetyFilterResult: args.safetyFilterResult ?? "passed",
+    safetyFilterResult,
     ...(typeof args.latencyMs === "number" ? { latencyMs: args.latencyMs } : {}),
     ...(args.tokenUsage ? { tokenUsage: args.tokenUsage } : {}),
     ...(typeof args.costUsd === "number" ? { costUsd: args.costUsd } : {}),

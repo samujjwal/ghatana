@@ -123,6 +123,26 @@ export class CMSServiceImpl implements CMSService {
         };
     }
 
+    async getModuleForEditing(args: {
+        tenantId: TenantId;
+        moduleId: ModuleId;
+        userId: UserId;
+    }): Promise<ModuleDetail> {
+        const module = await this.prisma.module.findFirst({
+            where: { id: args.moduleId, tenantId: args.tenantId },
+            include: {
+                tags: true,
+                prerequisites: true,
+                learningObjectives: true,
+                contentBlocks: true,
+            },
+        });
+        if (!module) {
+            throw this.notFoundError('Module not found');
+        }
+        return this.fetchModuleDetailBySlug(args.tenantId, module.slug);
+    }
+
     async createModuleDraft(args: {
         tenantId: TenantId;
         authorId: UserId;

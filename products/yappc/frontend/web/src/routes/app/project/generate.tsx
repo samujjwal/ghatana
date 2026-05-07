@@ -1,5 +1,5 @@
 /**
- * Generate Phase — AI-powered artefact generation
+ * Generate Phase — AI-powered artifact generation
  *
  * Code, test, and documentation generation via the unified canvas.
  * The canvas carries all Epic 1–10 AI generation capabilities.

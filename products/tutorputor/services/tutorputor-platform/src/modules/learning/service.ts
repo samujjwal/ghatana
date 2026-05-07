@@ -261,16 +261,44 @@ export function createLearningService(
     }) {
       const enrollment = await prisma.enrollment.findFirst({
         where: { id: enrollmentId, tenantId, userId },
+        include: {
+          module: {
+            include: {
+              assessments: true,
+            },
+          },
+        },
       });
 
       if (!enrollment) {
         throw new NotFoundError("Enrollment", enrollmentId);
       }
 
-      const nextProgress = clampProgress(
-        enrollment.progressPercent,
-        progressPercent,
+      // Get assessment attempts for evidence-based calculation
+      const assessmentIds = enrollment.module.assessments.map(a => a.id);
+      const assessmentAttempts = await prisma.assessmentAttempt.findMany({
+        where: { 
+          userId,
+          assessmentId: { in: assessmentIds },
+          status: "GRADED" 
+        },
+      });
+
+      // Calculate evidence-based progress if not manually provided
+      const calculatedProgress = await calculateEvidenceBasedProgress(
+        prisma,
+        tenantId,
+        userId,
+        enrollment.moduleId as ModuleId,
+        enrollment,
+        assessmentAttempts,
       );
+
+      // Use calculated progress if no manual progress provided, otherwise validate manual update
+      const nextProgress = progressPercent !== undefined
+        ? clampProgress(enrollment.progressPercent, progressPercent)
+        : calculatedProgress;
+
       validateProgressUpdateConstraints({
         currentProgress: enrollment.progressPercent,
         requestedProgress: nextProgress,
@@ -279,7 +307,7 @@ export function createLearningService(
       });
       const totalTime = Math.max(
         0,
-        enrollment.timeSpentSeconds + timeSpentSecondsDelta,
+        enrollment.timeSpentSeconds + (timeSpentSecondsDelta ?? 0),
       );
       const isComplete = nextProgress >= 100;
       const completedAt =
@@ -311,6 +339,43 @@ export function createLearningService(
 // =============================================================================
 // Helpers
 // =============================================================================
+
+async function calculateEvidenceBasedProgress(
+  prisma: TutorPrismaClient,
+  tenantId: TenantId,
+  userId: UserId,
+  moduleId: ModuleId,
+  enrollment: any,
+  assessmentAttempts: any[],
+): Promise<number> {
+  // Calculate progress based on multiple evidence factors
+  let progress = 0;
+
+  // Factor 1: Assessment completion rate (50% weight)
+  const totalAssessments = enrollment.module.assessments.length || 1;
+  const completedAssessments = assessmentAttempts.length;
+  const assessmentProgress = (completedAssessments / totalAssessments) * 50;
+  progress += assessmentProgress;
+
+  // Factor 2: Average assessment score (40% weight)
+  if (completedAssessments > 0) {
+    const averageScore = assessmentAttempts.reduce(
+      (sum: number, attempt: any) => sum + (attempt.scorePercent || 0),
+      0,
+    ) / completedAssessments;
+    const scoreProgress = (averageScore / 100) * 40;
+    progress += scoreProgress;
+  }
+
+  // Factor 3: Time spent vs estimated time (10% weight)
+  const estimatedTimeMinutes = enrollment.module.estimatedTimeMinutes || 60;
+  const timeSpentMinutes = (enrollment.timeSpentSeconds || 0) / 60;
+  const timeRatio = Math.min(1, timeSpentMinutes / estimatedTimeMinutes);
+  progress += timeRatio * 10;
+
+  // Ensure progress is within bounds
+  return Math.max(0, Math.min(100, Math.round(progress)));
+}
 
 async function assertModuleExists(
   prisma: TutorPrismaClient,

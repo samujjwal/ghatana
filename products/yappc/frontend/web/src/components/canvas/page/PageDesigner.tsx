@@ -22,6 +22,8 @@ import {
 } from './builder-document-adapter';
 import {
   getBuilderPalette,
+  getBuilderPaletteCategories,
+  getFilteredBuilderPalette,
   getContractMap,
   getDefaultSlotName,
   isContainerContract,
@@ -32,12 +34,21 @@ import {
 import type { DropRequest, KeyboardMoveRequest } from './ComponentRenderer';
 import { importPageArtifactsFromCode } from './artifactCompilerBridge';
 import { AIActionLineageTracker, createAIChangeRecord } from './pageArtifactDocument';
-import type { PageArtifactAIChangeRecord } from './pageArtifactDocument';
+import type { PageArtifactAIChangeRecord, PageArtifactOperationKind } from './pageArtifactDocument';
 import { importSourceToPageArtifacts, type ImportSourceType } from '../../../services/compiler/ImportSourceWorkflow';
-import { PageBuilderCommands, type Command, type InsertComponentCommand, type MoveComponentCommand } from '../../../services/canvas/commands/PageBuilderCommands';
+import {
+  checkArtifactCompilerRuntimeHealth,
+  type ArtifactCompilerRuntimeHealth,
+} from '../../../services/compiler/ArtifactCompilerRuntimeHealth';
+import { PageBuilderCommands, type Command, type CommandResult, type InsertComponentCommand, type MoveComponentCommand } from '../../../services/canvas/commands/PageBuilderCommands';
 import { persistResidualIslandReview } from '../../../services/canvas/commands/ResidualIslandReviewService';
 import {
+  promoteResidualIslandToRegistryCandidate,
+  type RegistryCandidatePromotionResponse,
+} from '../../../services/canvas/commands/RegistryCandidatePromotionService';
+import {
   emitPageBuilderCommandAudit,
+  emitPageBuilderCommandTelemetry,
   type PageBuilderCommandAuditContext,
 } from '../../../services/canvas/commands/PageBuilderCommandAuditService';
 import type { PhaseCanvasConfig } from '../../../services/canvas/phase-config/PhaseCanvasConfig';
@@ -122,13 +133,74 @@ function isDescendant(document: BuilderDocument, ancestorId: NodeId, candidateId
 }
 
 type ImportWorkflowMode = 'semantic-model' | 'source';
-type ImportReviewDecision = 'applied' | 'skipped';
+type ImportReviewDecision = 'applied' | 'skipped' | 'promoted';
+
+interface ImportWizardTemplate {
+  readonly id: 'paste-code' | 'upload-zip' | 'connect-repo' | 'import-storybook' | 'import-route';
+  readonly label: string;
+  readonly description: string;
+  readonly mode: ImportWorkflowMode;
+  readonly sourceType?: ImportSourceType;
+  readonly placeholder: string;
+}
+
+const IMPORT_WIZARD_TEMPLATES = [
+  {
+    id: 'paste-code',
+    label: 'Paste code',
+    description: 'Paste a reviewed semantic page model when you already have generated JSON.',
+    mode: 'semantic-model',
+    placeholder: '{"pages": [{"name": "Home", "confidence": 0.92}]}',
+  },
+  {
+    id: 'upload-zip',
+    label: 'Upload zip',
+    description: 'Point to an HTTPS zip archive for governed server-side extraction.',
+    mode: 'source',
+    sourceType: 'zip',
+    placeholder: 'https://example.com/artifacts/app-pages.zip',
+  },
+  {
+    id: 'connect-repo',
+    label: 'Connect repo',
+    description: 'Use an HTTPS repository path that resolves to the route or component source.',
+    mode: 'source',
+    sourceType: 'route',
+    placeholder: 'https://github.com/org/repo/tree/main/apps/web/src/routes',
+  },
+  {
+    id: 'import-storybook',
+    label: 'Import Storybook',
+    description: 'Import a CSF story URL or artifact reference through the compiler runtime.',
+    mode: 'source',
+    sourceType: 'storybook',
+    placeholder: 'https://example.com/Button.stories.tsx#Primary',
+  },
+  {
+    id: 'import-route',
+    label: 'Import route',
+    description: 'Import a route file and decompile the page structure into a builder document.',
+    mode: 'source',
+    sourceType: 'route',
+    placeholder: 'https://example.com/routes/Home.tsx',
+  },
+] as const satisfies readonly ImportWizardTemplate[];
 
 interface ImportReviewQueueItem {
   readonly id: string;
   readonly kind: 'loss-point' | 'residual-island';
   readonly label: string;
   readonly details: string;
+}
+
+interface RegistryCandidateSummary {
+  readonly candidateId: string;
+  readonly artifactId: string;
+  readonly residualIslandId: string;
+  readonly proposedContractName: string;
+  readonly status: RegistryCandidatePromotionResponse['status'];
+  readonly auditRecordId: string;
+  readonly createdAt: string;
 }
 
 function buildImportReviewQueue(
@@ -151,6 +223,18 @@ function buildImportReviewQueue(
   return [...lossPointItems, ...residualItems];
 }
 
+function buildRegistryCandidateContractName(residualIslandId: string): string {
+  const segments = residualIslandId
+    .split(/[^a-zA-Z0-9]+/)
+    .map((segment) => segment.trim())
+    .filter((segment) => segment.length > 0);
+  const baseName = segments.length > 0
+    ? segments.map((segment) => `${segment.charAt(0).toUpperCase()}${segment.slice(1)}`).join('')
+    : 'ResidualIsland';
+
+  return `${baseName}Candidate`;
+}
+
 /**
  * @doc.type component
  * @doc.purpose Registry-driven YAPPC page designer using shared BuilderDocument contract from @ghatana/ui-builder
@@ -161,7 +245,11 @@ interface PageDesignerProps {
   readonly initialComponents?: ComponentData[] | BuilderDocument;
   readonly projectId?: string;
   readonly onComponentsChange?: (components: ComponentData[]) => void;
-  readonly onDocumentChange?: (document: BuilderDocument, validation: ValidationResult) => void;
+  readonly onDocumentChange?: (
+    document: BuilderDocument,
+    validation: ValidationResult,
+    context?: PageDesignerDocumentChangeContext,
+  ) => void;
   /** Called when the designer imports a decompiled model, producing one or more page artifacts */
   readonly onImportArtifacts?: (artifacts: readonly import('./pageArtifactDocument').PageArtifactDocument[]) => void;
   /** Called when an AI change is applied to the page (for audit/governance recording) */
@@ -182,6 +270,14 @@ interface PageDesignerProps {
   readonly readOnlyReason?: string;
   /** Scope used to persist immutable command audit records when available. */
   readonly auditContext?: PageBuilderCommandAuditContext;
+}
+
+export interface PageDesignerDocumentChangeContext {
+  readonly operation: Extract<PageArtifactOperationKind, 'document-update' | 'undo-command' | 'redo-command'>;
+  readonly summary: string;
+  readonly commandId?: string;
+  readonly commandType?: Command['type'];
+  readonly changedNodeIds?: readonly string[];
 }
 
 export const PageDesigner: React.FC<PageDesignerProps> = ({
@@ -205,6 +301,22 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   const canDelete = phaseConfig?.allowDelete ?? true;
   const contracts = useMemo(() => getContractMap(), []);
   const palette = useMemo(() => getBuilderPalette(), []);
+  const [paletteSearch, setPaletteSearch] = useState('');
+  const [paletteCategory, setPaletteCategory] = useState('');
+  const paletteCategories = useMemo(() => getBuilderPaletteCategories(palette), [palette]);
+  const filteredPalette = useMemo(
+    () =>
+      getFilteredBuilderPalette(
+        {
+          query: paletteSearch,
+          category: paletteCategory || undefined,
+          phaseMode: phaseConfig?.mode,
+          includeReadOnlyPhaseComponents: true,
+        },
+        palette
+      ),
+    [palette, paletteCategory, paletteSearch, phaseConfig?.mode]
+  );
   const [document, setDocument] = useState<BuilderDocument>(() => {
     if (isBuilderDocument(initialComponents)) {
       return initialComponents;
@@ -221,10 +333,14 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   const [importWorkflowMode, setImportWorkflowMode] = useState<ImportWorkflowMode>('semantic-model');
   const [guidedSourceType, setGuidedSourceType] = useState<ImportSourceType>('tsx');
   const [guidedSourceLocator, setGuidedSourceLocator] = useState('');
+  const [importTemplateId, setImportTemplateId] = useState<ImportWizardTemplate['id']>('paste-code');
   const [importError, setImportError] = useState<string | null>(null);
+  const [artifactRuntimeHealth, setArtifactRuntimeHealth] = useState<ArtifactCompilerRuntimeHealth | null>(null);
   const [importResiduals, setImportResiduals] = useState<readonly string[]>([]);
   const [importResidualArtifactId, setImportResidualArtifactId] = useState<string | null>(null);
   const [reviewingResidualId, setReviewingResidualId] = useState<string | null>(null);
+  const [promotingResidualId, setPromotingResidualId] = useState<string | null>(null);
+  const [registryCandidates, setRegistryCandidates] = useState<readonly RegistryCandidateSummary[]>([]);
   const [importReviewQueue, setImportReviewQueue] = useState<readonly ImportReviewQueueItem[]>([]);
   const [importReviewDecisions, setImportReviewDecisions] = useState<Readonly<Record<string, ImportReviewDecision>>>({});
   const [importFidelity, setImportFidelity] = useState<
@@ -232,6 +348,10 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   >(null);
   const [commandAuditWarning, setCommandAuditWarning] = useState<string | null>(null);
   const [dropFeedback, setDropFeedback] = useState<string | null>(null);
+  const [commandHistoryState, setCommandHistoryState] = useState({
+    canUndo: false,
+    canRedo: false,
+  });
   const importTextareaRef = useRef<HTMLTextAreaElement>(null);
   const auditContextRef = useRef<PageBuilderCommandAuditContext | undefined>(auditContext);
 
@@ -267,7 +387,19 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
             setCommandAuditWarning(`Command audit could not be persisted: ${message}`);
           });
       },
-      onTelemetry: () => undefined,
+      onTelemetry: (event, data) => {
+        const scopedAuditContext = auditContextRef.current;
+        if (!scopedAuditContext) {
+          return;
+        }
+
+        void emitPageBuilderCommandTelemetry(scopedAuditContext, event, data)
+          .then(() => setCommandAuditWarning(null))
+          .catch((error: unknown) => {
+            const message = error instanceof Error ? error.message : 'Command telemetry failed.';
+            setCommandAuditWarning(`Command telemetry could not be persisted: ${message}`);
+          });
+      },
       validate: (candidate) => validateDocument(candidate, contracts),
     });
   }
@@ -294,27 +426,102 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   const selectedInstance = selectedId ? document.nodes.get(selectedId as NodeId) : undefined;
   const effectiveHoveredNodeId = externalHoveredNodeId ?? hoveredId;
 
+  const refreshCommandHistoryState = useCallback((): void => {
+    const commandService = commandServiceRef.current;
+    setCommandHistoryState({
+      canUndo: commandService?.canUndo() ?? false,
+      canRedo: commandService?.canRedo() ?? false,
+    });
+  }, []);
+
   const publishDocument = useCallback(
-    (nextDocument: BuilderDocument) => {
+    (nextDocument: BuilderDocument, context?: PageDesignerDocumentChangeContext) => {
       setDocument(nextDocument);
       onComponentsChange?.(builderDocumentToComponentData(nextDocument));
-      onDocumentChange?.(nextDocument, validateDocument(nextDocument, contracts));
+      onDocumentChange?.(
+        nextDocument,
+        validateDocument(nextDocument, contracts),
+        context ?? {
+          operation: 'document-update',
+          summary: 'Updated page builder document from in-canvas editor.',
+        },
+      );
     },
     [contracts, onComponentsChange, onDocumentChange],
   );
 
-  const executeCommand = useCallback(
-    (command: Command): BuilderDocument | null => {
+  const executeCommandResult = useCallback(
+    (command: Command): CommandResult | null => {
       const result = commandServiceRef.current?.execute(command);
       if (!result?.success) {
         return null;
       }
 
-      publishDocument(result.document);
-      return result.document;
+      publishDocument(result.document, {
+        operation: 'document-update',
+        summary: `Executed page-builder command ${result.command.type}.`,
+        commandId: result.command.id,
+        commandType: result.command.type,
+        changedNodeIds: result.changedNodeIds.map(String),
+      });
+      refreshCommandHistoryState();
+      return result;
     },
-    [publishDocument],
+    [publishDocument, refreshCommandHistoryState],
   );
+
+  const executeCommand = useCallback(
+    (command: Command): BuilderDocument | null => executeCommandResult(command)?.document ?? null,
+    [executeCommandResult],
+  );
+
+  const handleUndoCommand = useCallback((): void => {
+    if (!canEdit) {
+      announceReadOnly();
+      return;
+    }
+
+    const result = commandServiceRef.current?.undo();
+    if (!result?.success) {
+      announceDropFeedback(result?.error ?? 'No page-builder command is available to undo.');
+      refreshCommandHistoryState();
+      return;
+    }
+
+    publishDocument(result.document, {
+      operation: 'undo-command',
+      summary: `Undid page-builder command ${result.command.type}.`,
+      commandId: result.command.id,
+      commandType: result.command.type,
+      changedNodeIds: result.changedNodeIds.map(String),
+    });
+    refreshCommandHistoryState();
+    setDropFeedback(null);
+  }, [announceDropFeedback, announceReadOnly, canEdit, publishDocument, refreshCommandHistoryState]);
+
+  const handleRedoCommand = useCallback((): void => {
+    if (!canEdit) {
+      announceReadOnly();
+      return;
+    }
+
+    const result = commandServiceRef.current?.redo();
+    if (!result?.success) {
+      announceDropFeedback(result?.error ?? 'No page-builder command is available to redo.');
+      refreshCommandHistoryState();
+      return;
+    }
+
+    publishDocument(result.document, {
+      operation: 'redo-command',
+      summary: `Redid page-builder command ${result.command.type}.`,
+      commandId: result.command.id,
+      commandType: result.command.type,
+      changedNodeIds: result.changedNodeIds.map(String),
+    });
+    refreshCommandHistoryState();
+    setDropFeedback(null);
+  }, [announceDropFeedback, announceReadOnly, canEdit, publishDocument, refreshCommandHistoryState]);
 
   /**
    * Records an AI-originated node mutation into the session lineage tracker
@@ -399,6 +606,13 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         return;
       }
 
+      const runtimeHealth = await checkArtifactCompilerRuntimeHealth();
+      setArtifactRuntimeHealth(runtimeHealth);
+      if (runtimeHealth.status !== 'available') {
+        setImportError(runtimeHealth.message);
+        return;
+      }
+
       const importFromSourceResult = await importSourceToPageArtifacts(
         {
           sourceType: sourceImportCommand.sourceType,
@@ -459,6 +673,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
     setImportFidelity(first.roundTripFidelity ?? null);
     setImportReviewQueue(buildImportReviewQueue(first.roundTripFidelity?.lossPoints, residuals));
     setImportReviewDecisions({});
+    setRegistryCandidates([]);
 
     const importedNodes = importedDocument.nodes;
     const affectedNodeIds: readonly string[] =
@@ -492,6 +707,25 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
     setImportInput('');
     setGuidedSourceLocator('');
   }, [announceReadOnly, auditContext?.tenantId, auditContext?.workspaceId, canAdd, canEdit, executeCommand, guidedSourceLocator, guidedSourceType, importInput, importWorkflowMode, onImportArtifacts, projectId, recordAIChange]);
+
+  const selectedImportTemplate = useMemo(
+    () => IMPORT_WIZARD_TEMPLATES.find((template) => template.id === importTemplateId) ?? IMPORT_WIZARD_TEMPLATES[0],
+    [importTemplateId],
+  );
+
+  const handleImportTemplateSelect = useCallback((template: ImportWizardTemplate) => {
+    setImportTemplateId(template.id);
+    setImportWorkflowMode(template.mode);
+    setImportError(null);
+
+    if (template.mode === 'source' && template.sourceType) {
+      setGuidedSourceType(template.sourceType);
+      setGuidedSourceLocator('');
+      return;
+    }
+
+    setImportInput('');
+  }, []);
 
   const handleResidualIslandReview = useCallback(
     async (residualIslandId: string, decision: 'ACCEPTED' | 'REJECTED') => {
@@ -534,6 +768,50 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
     [announceReadOnly, canEdit, importResidualArtifactId],
   );
 
+  const handlePromoteRegistryCandidate = useCallback(
+    async (residualIslandId: string) => {
+      if (!canEdit) {
+        announceReadOnly();
+        return;
+      }
+      if (!importResidualArtifactId) {
+        setImportError('Cannot promote residual island without an artifact id.');
+        return;
+      }
+
+      const proposedContractName = buildRegistryCandidateContractName(residualIslandId);
+      setPromotingResidualId(residualIslandId);
+      try {
+        const candidate = await promoteResidualIslandToRegistryCandidate({
+          artifactId: importResidualArtifactId,
+          residualIslandId,
+          proposedContractName,
+          source: 'decompiled-import',
+          notes: 'Promote decompiled residual island to reviewed registry candidate.',
+        });
+        setRegistryCandidates((current) => [
+          ...current.filter((item) => item.candidateId !== candidate.candidateId),
+          candidate,
+        ]);
+        setImportResiduals((current) => current.filter((id) => id !== residualIslandId));
+        setImportReviewDecisions((current) => ({
+          ...current,
+          [`residual-${residualIslandId}`]: 'promoted',
+        }));
+        setImportError(null);
+      } catch (error) {
+        setImportError(
+          error instanceof Error
+            ? error.message
+            : `Could not promote residual island ${residualIslandId} to a registry candidate.`,
+        );
+      } finally {
+        setPromotingResidualId(null);
+      }
+    },
+    [announceReadOnly, canEdit, importResidualArtifactId],
+  );
+
   const handleImportReviewDecision = useCallback(
     (reviewItemId: string, decision: ImportReviewDecision) => {
       setImportReviewDecisions((current) => ({
@@ -554,7 +832,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
       const legacyType = toLegacyComponentType(contractName) as LegacyComponentType;
       const newComponent = getDefaultComponentData(legacyType) as ComponentData;
       const target = resolveInsertionTarget();
-      const result = commandServiceRef.current?.execute({
+      const result = executeCommandResult({
         id: `insert-component-${Date.now()}`,
         type: 'insert-component',
         timestamp: new Date().toISOString(),
@@ -569,10 +847,9 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         return;
       }
 
-      publishDocument(result.document);
       setSelectedId((result.changedNodeIds[0] as string | undefined) ?? null);
     },
-    [announceReadOnly, canAdd, publishDocument, resolveInsertionTarget],
+    [announceReadOnly, canAdd, executeCommandResult, resolveInsertionTarget],
   );
 
   const handlePaletteDragStart = useCallback(
@@ -604,7 +881,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         const normalizedName = normalizeContractName(contractName);
         const legacyType = toLegacyComponentType(normalizedName) as LegacyComponentType;
         const newComponent = getDefaultComponentData(legacyType) as ComponentData;
-        const result = commandServiceRef.current?.execute({
+        const result = executeCommandResult({
           id: `insert-component-${Date.now()}`,
           type: 'insert-component',
           timestamp: new Date().toISOString(),
@@ -617,14 +894,13 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
           return;
         }
 
-        publishDocument(result.document);
         setSelectedId((result.changedNodeIds[0] as string | undefined) ?? null);
         return;
       }
 
       const draggedNodeId = event.dataTransfer.getData('application/x-page-node');
       if (draggedNodeId && document.nodes.has(draggedNodeId as NodeId)) {
-        const result = commandServiceRef.current?.execute({
+        const result = executeCommandResult({
           id: `move-component-${Date.now()}`,
           type: 'move-component',
           timestamp: new Date().toISOString(),
@@ -640,12 +916,11 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
           return;
         }
 
-        publishDocument(result.document);
         setDropFeedback(null);
         setSelectedId(draggedNodeId);
       }
     },
-    [announceDropFeedback, announceReadOnly, canAdd, canEdit, document, publishDocument],
+    [announceDropFeedback, announceReadOnly, canAdd, canEdit, document, executeCommandResult],
   );
 
   const handleRendererDropRequest = useCallback(
@@ -689,7 +964,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
             ? destinationChildren.length
             : (targetLocation?.index ?? destinationChildren.length) +
               (request.placement === 'after' ? 1 : 0);
-        const result = commandServiceRef.current?.execute({
+        const result = executeCommandResult({
           id: `insert-component-${Date.now()}`,
           type: 'insert-component',
           timestamp: new Date().toISOString(),
@@ -706,7 +981,6 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
           return;
         }
 
-        publishDocument(result.document);
         setDropFeedback(null);
         setSelectedId((result.changedNodeIds[0] as string | undefined) ?? null);
         return;
@@ -738,7 +1012,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
       ) {
         insertionIndex -= 1;
       }
-      const result = commandServiceRef.current?.execute({
+      const result = executeCommandResult({
         id: `move-component-${Date.now()}`,
         type: 'move-component',
         timestamp: new Date().toISOString(),
@@ -755,11 +1029,10 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         return;
       }
 
-      publishDocument(result.document);
       setDropFeedback(null);
       setSelectedId(sourceNodeId);
     },
-    [announceDropFeedback, announceReadOnly, canAdd, canEdit, document, publishDocument],
+    [announceDropFeedback, announceReadOnly, canAdd, canEdit, document, executeCommandResult],
   );
 
   const handleKeyboardMoveRequest = useCallback(
@@ -825,7 +1098,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         index = (parentLocation?.index ?? document.rootNodes.length - 1) + 1;
       }
 
-      const result = commandServiceRef.current?.execute({
+      const result = executeCommandResult({
         id: `move-component-${Date.now()}`,
         type: 'move-component',
         timestamp: new Date().toISOString(),
@@ -842,11 +1115,10 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         return;
       }
 
-      publishDocument(result.document);
       setDropFeedback(null);
       setSelectedId(request.nodeId);
     },
-    [announceDropFeedback, announceReadOnly, canEdit, document, publishDocument],
+    [announceDropFeedback, announceReadOnly, canEdit, document, executeCommandResult],
   );
 
   const handleDeleteComponent = useCallback(() => {
@@ -1031,6 +1303,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
               }
               setImportInput('');
               setGuidedSourceLocator('');
+              setImportTemplateId('paste-code');
               setImportError(null);
               setImportWorkflowMode('semantic-model');
               setImportPanelOpen(true);
@@ -1044,7 +1317,54 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
           </IconButton>
         </Box>
         <Stack spacing={1}>
-          {palette.map((entry) => (
+          <Box className="mb-2 flex gap-2" role="group" aria-label="Page builder command history">
+            <Button
+              type="button"
+              variant="outline"
+              size="small"
+              onClick={handleUndoCommand}
+              disabled={!canEdit || !commandHistoryState.canUndo}
+              data-testid="page-designer-undo-command"
+            >
+              Undo
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="small"
+              onClick={handleRedoCommand}
+              disabled={!canEdit || !commandHistoryState.canRedo}
+              data-testid="page-designer-redo-command"
+            >
+              Redo
+            </Button>
+          </Box>
+          <input
+            aria-label="Search registry components"
+            value={paletteSearch}
+            onChange={(event) => setPaletteSearch(event.target.value)}
+            placeholder="Search components"
+            className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+            data-testid="page-component-search"
+          />
+          <select
+            aria-label="Filter registry category"
+            value={paletteCategory}
+            onChange={(event) => setPaletteCategory(event.target.value)}
+            className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+            data-testid="page-component-category"
+          >
+            <option value="">All categories</option>
+            {paletteCategories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+          <Typography variant="caption" color="muted" data-testid="page-component-palette-summary">
+            {filteredPalette.length} of {palette.length} registry components shown
+          </Typography>
+          {filteredPalette.map((entry) => (
             <Button
               key={entry.id}
               variant="outline"
@@ -1057,9 +1377,14 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
               draggable={canAdd}
               onDragStart={(event) => handlePaletteDragStart(event, entry.name)}
             >
-              {entry.displayName}
+              {entry.featured ? `Recommended: ${entry.displayName}` : entry.displayName}
             </Button>
           ))}
+          {filteredPalette.length === 0 ? (
+            <Typography variant="caption" color="muted" data-testid="page-component-empty-filter">
+              No registry components match this search and category.
+            </Typography>
+          ) : null}
         </Stack>
 
         {/* Import panel — shown below palette when open */}
@@ -1083,11 +1408,35 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
             <Typography variant="caption" color="muted" style={{ display: 'block', marginBottom: 6 }}>
               Step 1: choose an import path. Step 2: review source details and confidence. Step 3: decompile and apply reviewed artifacts.
             </Typography>
+            <Box
+              className="mb-3 grid gap-2"
+              role="list"
+              aria-label="Import wizard templates"
+              data-testid="page-designer-import-templates"
+            >
+              {IMPORT_WIZARD_TEMPLATES.map((template) => (
+                <Button
+                  key={template.id}
+                  type="button"
+                  variant={importTemplateId === template.id ? 'solid' : 'outline'}
+                  size="small"
+                  className="justify-start text-left"
+                  onClick={() => handleImportTemplateSelect(template)}
+                  data-testid={`page-import-template-${template.id}`}
+                >
+                  <span>
+                    <span style={{ display: 'block', fontWeight: 600 }}>{template.label}</span>
+                    <span style={{ display: 'block', fontSize: '0.72rem', opacity: 0.8 }}>{template.description}</span>
+                  </span>
+                </Button>
+              ))}
+            </Box>
             <Box className="mb-2 flex gap-2" role="group" aria-label="Import workflow mode">
               <Button
                 variant={importWorkflowMode === 'semantic-model' ? 'solid' : 'outline'}
                 size="small"
                 onClick={() => {
+                  setImportTemplateId('paste-code');
                   setImportWorkflowMode('semantic-model');
                   setImportError(null);
                 }}
@@ -1099,6 +1448,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
                 variant={importWorkflowMode === 'source' ? 'solid' : 'outline'}
                 size="small"
                 onClick={() => {
+                  setImportTemplateId('import-route');
                   setImportWorkflowMode('source');
                   setImportError(null);
                 }}
@@ -1114,7 +1464,10 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
                 </Typography>
                 <select
                   value={guidedSourceType}
-                  onChange={(event) => setGuidedSourceType(event.target.value as ImportSourceType)}
+                  onChange={(event) => {
+                    setImportTemplateId('import-route');
+                    setGuidedSourceType(event.target.value as ImportSourceType);
+                  }}
                   aria-label="Source import type"
                   data-testid="page-designer-source-type"
                   className="mb-2 w-full rounded border border-border bg-surface px-2 py-1 text-xs"
@@ -1131,11 +1484,27 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
                     setGuidedSourceLocator(event.target.value);
                     setImportError(null);
                   }}
-                  placeholder="https://example.com/Page.tsx"
+                  placeholder={selectedImportTemplate.placeholder}
                   aria-label="Source locator"
                   data-testid="page-designer-source-locator"
                   className="w-full rounded border border-border bg-surface px-2 py-1 text-xs"
                 />
+                <Box
+                  className="mt-2 rounded border border-border bg-surface p-2 text-xs"
+                  data-testid="page-designer-artifact-runtime-status"
+                >
+                  <Typography variant="caption" style={{ display: 'block', fontWeight: 600 }}>
+                    Artifact compiler runtime
+                  </Typography>
+                  <Typography variant="caption" color="muted" style={{ display: 'block', marginTop: 2 }}>
+                    {artifactRuntimeHealth
+                      ? artifactRuntimeHealth.message
+                      : 'Required for governed source import. Health check runs before decompile.'}
+                  </Typography>
+                  <p className="sr-only" data-testid="import-trust-explanation">
+                    Preview trust level determines whether imported source can be rendered directly, rendered in a controlled runtime, or held for review before preview.
+                  </p>
+                </Box>
               </Box>
             ) : (
               <TextArea
@@ -1146,7 +1515,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
                   setImportError(null);
                 }}
                 rows={6}
-                placeholder='{"pages": [{"name": "Home", ...}]}'
+                placeholder={selectedImportTemplate.placeholder}
                 aria-label="Paste semantic model JSON"
                 data-testid="page-designer-import-textarea"
                 className="w-full font-mono text-xs"
@@ -1179,6 +1548,9 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
             <Typography variant="caption" style={{ fontWeight: 600, display: 'block', marginBottom: 4 }}>
               Import review queue: {Object.keys(importReviewDecisions).length}/{importReviewQueue.length} decided
             </Typography>
+            <p className="sr-only" data-testid="import-review-gate-explanation">
+              Import review gates identify decompile loss points and residual islands that need an explicit apply or skip decision before the imported artifact should be trusted.
+            </p>
             {importReviewQueue.map((item) => {
               const decision = importReviewDecisions[item.id];
               return (
@@ -1192,7 +1564,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
                   {decision ? (
                     <Typography
                       variant="caption"
-                      color={decision === 'applied' ? 'success' : 'warning'}
+                      color={decision === 'applied' || decision === 'promoted' ? 'success' : 'warning'}
                       data-testid={`page-designer-import-review-decision-${item.id}`}
                       style={{ display: 'block', marginTop: 6 }}
                     >
@@ -1226,6 +1598,37 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
           </Box>
         )}
 
+        {registryCandidates.length > 0 && (
+          <Box
+            className="mt-4 rounded-lg border border-success-border bg-success-bg p-3"
+            data-testid="page-designer-registry-candidates"
+          >
+            <Typography variant="caption" style={{ fontWeight: 600, display: 'block', marginBottom: 4 }}>
+              Registry candidates: {registryCandidates.length} awaiting review
+            </Typography>
+            <Typography variant="caption" color="muted" style={{ display: 'block', marginBottom: 6 }}>
+              Decompiled components promoted from residual islands are now queued for reviewed registry contract authoring.
+            </Typography>
+            {registryCandidates.map((candidate) => (
+              <Box
+                key={candidate.candidateId}
+                className="mt-2 rounded-md border border-success-border bg-white p-2"
+                data-testid={`page-designer-registry-candidate-${candidate.residualIslandId}`}
+              >
+                <Typography variant="caption" style={{ display: 'block', fontWeight: 600 }}>
+                  {candidate.proposedContractName}
+                </Typography>
+                <Typography variant="caption" color="muted" style={{ display: 'block', marginTop: 2 }}>
+                  Source residual: {candidate.residualIslandId} · Status: {candidate.status.toLowerCase().replace('_', ' ')}
+                </Typography>
+                <Typography variant="caption" color="muted" style={{ display: 'block', marginTop: 2 }}>
+                  Audit record: {candidate.auditRecordId}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        )}
+
         {/* Residual islands notice */}
         {importResiduals.length > 0 && (
           <Box
@@ -1235,12 +1638,27 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
             <Typography variant="caption" style={{ fontWeight: 600, display: 'block', marginBottom: 4 }}>
               {importResiduals.length} residual island{importResiduals.length !== 1 ? 's' : ''} (review required)
             </Typography>
+            <p className="sr-only" data-testid="residual-island-explanation">
+              Residual islands are imported elements that could not be mapped to a reviewed registry contract and must be accepted or rejected by an operator.
+            </p>
             {importResiduals.map((id) => (
               <Box key={id} className="mt-2 rounded-md border border-warning-border bg-white p-2">
                 <Typography variant="caption" style={{ display: 'block', fontFamily: 'monospace', fontSize: '0.7rem' }}>
                   {id}
                 </Typography>
                 <Box className="mt-2 flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="small"
+                    disabled={!canEdit || promotingResidualId === id}
+                    data-testid={`page-designer-residual-promote-${id}`}
+                    onClick={() => {
+                      void handlePromoteRegistryCandidate(id);
+                    }}
+                  >
+                    Promote to registry candidate
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"

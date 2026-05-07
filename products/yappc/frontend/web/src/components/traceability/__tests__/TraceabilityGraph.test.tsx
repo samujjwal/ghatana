@@ -26,7 +26,7 @@ describe('TraceabilityGraph (F-Y027)', () => {
     expect(screen.getByText('Evolve')).toBeInTheDocument();
   });
 
-  it('renders artefact entries for each phase', () => {
+  it('renders artifact entries for each phase', () => {
     render(<TraceabilityGraph projectId="proj-1" />);
     expect(screen.getByText('Idea Brief')).toBeInTheDocument();
     expect(screen.getByText('Threat Model')).toBeInTheDocument();

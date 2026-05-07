@@ -41,6 +41,8 @@ export interface PhaseCockpitLayoutProps {
   supportingTitle?: string;
   /** Label for the advanced tools disclosure */
   advancedToolsLabel?: string;
+  /** Helper text explaining when/why to open advanced tools */
+  advancedToolsDescription?: string;
   /** Additional content slots */
   children?: ReactNode;
   /** Custom className */
@@ -68,7 +70,8 @@ export const PhaseCockpitLayout: React.FC<PhaseCockpitLayoutProps> = ({
   governanceTrace,
   advancedTools,
   supportingTitle = 'Details',
-  advancedToolsLabel = 'Advanced details',
+  advancedToolsLabel = 'Open supporting workspace',
+  advancedToolsDescription = 'Open this panel only when the phase summary does not provide enough context for the next decision.',
   children,
   className = '',
   testId,
@@ -132,7 +135,7 @@ export const PhaseCockpitLayout: React.FC<PhaseCockpitLayoutProps> = ({
                       {supportingTitle}
                     </h2>
                     <p className="mt-2 text-sm text-fg-muted">
-                      Review the current phase summary before opening advanced details.
+                      Review the current phase summary first; open the supporting workspace only when you need deeper context.
                     </p>
                   </div>
                   {children}
@@ -183,6 +186,9 @@ export const PhaseCockpitLayout: React.FC<PhaseCockpitLayoutProps> = ({
               ▼
             </span>
           </Button>
+          <p className="mt-1 text-sm text-fg-muted" data-testid="advanced-tools-description">
+            {advancedToolsDescription}
+          </p>
           {advancedOpen && (
             <Card variant="outlined" className="mt-4">
               <CardContent className="p-4">{advancedTools}</CardContent>

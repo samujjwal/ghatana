@@ -83,7 +83,6 @@ import { useAuth } from '../../../hooks/useAuth';
 import { useUnifiedCanvas } from '../../../hooks/useUnifiedCanvas';
 import { useWorkspaceContext } from '../../../hooks/useWorkspaceData';
 import { yappcApi } from '@/lib/api/client';
-import { parseJsonResponse } from '@/lib/http';
 import type { AlignmentType, DistributionAxis } from '../../../lib/canvas/AlignmentEngine';
 import { getPhaseTheme, type LifecyclePhase } from '../../../theme/phaseTheme';
 import type { CanvasMode } from '../../../types/canvasMode';
@@ -140,12 +139,8 @@ function UnifiedCanvasInner() {
   const { data: project } = useQuery({
     queryKey: ['project', projectId],
     queryFn: async () => {
-      const response = await fetch(`/api/projects/${projectId}`);
-      if (!response.ok) return null;
-      return parseJsonResponse<CanvasProjectData>(
-        response,
-        'project canvas query'
-      );
+      if (!projectId) return null;
+      return yappcApi.projects.get(projectId) as Promise<CanvasProjectData>;
     },
     enabled: !!projectId,
   });

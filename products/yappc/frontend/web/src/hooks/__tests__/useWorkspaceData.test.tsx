@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { normalizeProjectAccess, useWorkspaces } from '../useWorkspaceData';
+import { normalizeProjectAccess, useProjects, useWorkspaces } from '../useWorkspaceData';
 import type { Project } from '../../state/atoms/workspaceAtom';
 
 function createWrapper(): React.ComponentType<{ children: React.ReactNode }> {
@@ -128,6 +128,60 @@ describe('useWorkspaceData failure handling', () => {
         name: 'Workspace One',
       }),
     ]);
+  });
+
+  it('loads owned and included projects through the scoped canonical projects client', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          owned: [
+            {
+              id: 'project-owned',
+              name: 'Owned Project',
+              workspaceId: 'ws-1',
+              createdAt: '2026-05-07T00:00:00.000Z',
+              updatedAt: '2026-05-07T00:00:00.000Z',
+            },
+          ],
+          included: [
+            {
+              id: 'project-included',
+              name: 'Included Project',
+              workspaceId: 'ws-2',
+              createdAt: '2026-05-07T00:00:00.000Z',
+              updatedAt: '2026-05-07T00:00:00.000Z',
+            },
+          ],
+        }),
+        {
+          status: 200,
+          headers: {
+            'content-type': 'application/json',
+          },
+        }
+      )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { result } = renderHook(() => useProjects('ws-1'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/projects?workspaceId=ws-1',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'same-origin',
+      }),
+    );
+    expect(result.current.data).toEqual({
+      owned: [expect.objectContaining({ id: 'project-owned', isOwned: true })],
+      included: [expect.objectContaining({ id: 'project-included', isIncluded: true, readOnly: true })],
+    });
   });
 
   it('normalizes missing project lifecycle and review fields from partial backend contracts', () => {

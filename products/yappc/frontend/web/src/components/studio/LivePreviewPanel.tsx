@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Button, Select } from '@ghatana/design-system';
+import { AlertTriangle, Eye, LockKeyhole } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   PreviewHostService,
@@ -372,7 +373,11 @@ export function LivePreviewPanel({
         {error || (validation && !validation.valid) ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <span className="text-4xl mb-2">⚠️</span>
+              <AlertTriangle
+                className="mx-auto mb-2 h-10 w-10 text-destructive"
+                role="img"
+                aria-label="Preview unavailable"
+              />
               <p className="text-sm text-destructive dark:text-destructive">
                 {error ?? 'Preview is paused until validation errors are resolved.'}
               </p>
@@ -389,14 +394,22 @@ export function LivePreviewPanel({
         ) : !document && !componentPath && !previewUrl && !previewContext ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-fg-muted dark:text-fg-muted">
-              <span className="text-4xl mb-2">👁️</span>
+              <Eye
+                className="mx-auto mb-2 h-10 w-10 text-fg-muted"
+                role="img"
+                aria-label="Preview empty"
+              />
               <p className="text-sm">Select a document or component to preview</p>
             </div>
           </div>
         ) : previewContext && !previewUrl && !resolvedPreviewUrl ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-fg-muted dark:text-fg-muted">
-              <span className="text-4xl mb-2">🔐</span>
+              <LockKeyhole
+                className="mx-auto mb-2 h-10 w-10 text-fg-muted"
+                role="img"
+                aria-label="Preparing secure preview"
+              />
               <p className="text-sm">Preparing secure preview session…</p>
             </div>
           </div>

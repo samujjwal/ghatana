@@ -10,7 +10,7 @@
  */
 
 import { Card, Text, Input, Select, Button } from "@/components/ui";
-import type { LearningObjective } from "../types";
+import type { LearningObjective, TaxonomyLevel } from "../types";
 
 interface LearningObjectivesEditorProps {
     objectives: LearningObjective[];
@@ -56,7 +56,7 @@ export function LearningObjectivesEditor({ objectives, onChange }: LearningObjec
                         />
                         <Select
                             value={objective.taxonomyLevel}
-                            onChange={(e) => handleUpdateObjective(index, { taxonomyLevel: e.target.value as any })}
+                            onChange={(e) => handleUpdateObjective(index, { taxonomyLevel: e.target.value as TaxonomyLevel })}
                             className="w-40"
                         >
                             <option value="REMEMBER">Remember</option>

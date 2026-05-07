@@ -204,6 +204,7 @@ class DbPageArtifactRepositoryIT extends EventloopTestBase {
                         builder_document CLOB NOT NULL,
                         validation_summary CLOB,
                         ai_change_records CLOB,
+                        operation_log CLOB,
                         residual_island_count INTEGER NOT NULL,
                         round_trip_fidelity DOUBLE PRECISION NOT NULL,
                         CONSTRAINT uq_page_artifact UNIQUE (tenant_id, workspace_id, project_id, artifact_id)
@@ -229,6 +230,7 @@ class DbPageArtifactRepositoryIT extends EventloopTestBase {
                         builder_document CLOB NOT NULL,
                         validation_summary CLOB,
                         ai_change_records CLOB,
+                        operation_log CLOB,
                         residual_island_count INTEGER NOT NULL,
                         round_trip_fidelity DOUBLE PRECISION NOT NULL,
                         version_created_at TIMESTAMP WITH TIME ZONE NOT NULL,

@@ -13,7 +13,7 @@ import type {
   ProjectActivityResponseContract,
   ProjectContract,
 } from '@/contracts/workspace-project';
-import { parseJsonResourceResponse } from '@/lib/http';
+import { yappcApi } from '@/lib/api';
 import {
   phaseTransitionAPI,
   type PhaseTransitionPreview,
@@ -107,16 +107,10 @@ export default function ProjectIndexRoute() {
   const projectQuery = useQuery<ProjectContract>({
     queryKey: ['project', projectId],
     queryFn: async () => {
-      const response = await fetch(`/api/projects/${projectId}`);
-      if (!response.ok) {
-        throw new Error('Failed to load project overview.');
+      if (!projectId) {
+        throw new Error('Project id is required to load project overview.');
       }
-
-      return parseJsonResourceResponse<ProjectContract>(
-        response,
-        'project overview',
-        'project'
-      );
+      return yappcApi.projects.get(projectId) as unknown as Promise<ProjectContract>;
     },
     enabled: Boolean(projectId),
   });
@@ -124,12 +118,10 @@ export default function ProjectIndexRoute() {
   const activityQuery = useQuery<ProjectActivityResponseContract>({
     queryKey: ['project-activity', projectId],
     queryFn: async () => {
-      const response = await fetch(`/api/projects/${projectId}/activity`);
-      if (!response.ok) {
-        throw new Error('Failed to load recent project activity.');
+      if (!projectId) {
+        throw new Error('Project id is required to load recent project activity.');
       }
-
-      return (await response.json()) as ProjectActivityResponseContract;
+      return yappcApi.projects.activity(projectId) as unknown as Promise<ProjectActivityResponseContract>;
     },
     enabled: Boolean(projectId),
   });

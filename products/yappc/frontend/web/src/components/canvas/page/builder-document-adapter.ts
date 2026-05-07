@@ -29,12 +29,37 @@ import type {
 } from './schemas';
 import {
   getContractMap,
-  normalizeContractName,
+  migrateRegistryContractInstance,
   toLegacyComponentType,
 } from './registry';
 
 const LEGACY_DOCUMENT_TAG = 'legacy-component-data-v1';
 const LEGACY_DOCUMENT_AUTHOR = 'yappc-page-designer-adapter';
+const DEFAULT_ADAPTER_TRUST_LEVEL =
+  'trusted-local' as NonNullable<BuilderDocument['metadata']['trustLevel']>;
+
+const CANONICAL_BUTTON_VARIANTS = {
+  solid: 'contained',
+  outline: 'outlined',
+  ghost: 'text',
+} as const satisfies Record<string, ButtonData['variant']>;
+
+const CANONICAL_BUTTON_SIZES = {
+  sm: 'small',
+  md: 'medium',
+  lg: 'large',
+} as const satisfies Record<string, ButtonData['size']>;
+
+const CANONICAL_BUTTON_COLORS = {
+  danger: 'error',
+} as const satisfies Partial<Record<string, ButtonData['color']>>;
+
+function mapRecordValue<TValue>(
+  mapping: Readonly<Record<string, TValue>>,
+  value: unknown
+): TValue | undefined {
+  return typeof value === 'string' ? mapping[value] : undefined;
+}
 
 interface BuilderDocumentAdapterOptions {
   readonly documentName?: string;
@@ -134,9 +159,18 @@ function mapInstanceToComponentData(instance: ComponentInstance): ComponentData 
         type: 'button',
         label: typeof instance.metadata.name === 'string' ? instance.metadata.name : undefined,
         text: typeof instance.props.children === 'string' ? instance.props.children : 'Button',
-        variant: (instance.props.variant as ButtonData['variant']) ?? 'contained',
-        color: (instance.props.color as ButtonData['color']) ?? 'primary',
-        size: (instance.props.size as ButtonData['size']) ?? 'medium',
+        variant:
+          mapRecordValue(CANONICAL_BUTTON_VARIANTS, instance.props.variant) ??
+          (instance.props.variant as ButtonData['variant']) ??
+          'contained',
+        color:
+          mapRecordValue(CANONICAL_BUTTON_COLORS, instance.props.color) ??
+          (instance.props.color as ButtonData['color']) ??
+          'primary',
+        size:
+          mapRecordValue(CANONICAL_BUTTON_SIZES, instance.props.size) ??
+          (instance.props.size as ButtonData['size']) ??
+          'medium',
         disabled: Boolean(instance.props.disabled),
         fullWidth: Boolean(instance.props.fullWidth),
       };
@@ -255,6 +289,8 @@ export function componentDataToBuilderDocument(
       createdAt,
       updatedAt,
       author: existingDocument?.metadata.author ?? LEGACY_DOCUMENT_AUTHOR,
+      dataClassification: existingDocument?.metadata.dataClassification ?? 'INTERNAL',
+      trustLevel: existingDocument?.metadata.trustLevel ?? DEFAULT_ADAPTER_TRUST_LEVEL,
       tags: Array.from(tags),
     },
   };
@@ -266,9 +302,14 @@ export function componentDataToBuilderDocument(
 export function componentDataToInsertableInstance(
   comp: ComponentData,
 ): Omit<ComponentInstance, 'id'> {
-  return {
-    contractName: normalizeContractName(comp.type),
+  const migrated = migrateRegistryContractInstance({
+    contractName: comp.type,
     props: toComponentProps(comp),
+  });
+
+  return {
+    contractName: migrated.contractName,
+    props: migrated.props,
     slots: {},
     bindings: [],
     metadata: {
@@ -284,7 +325,10 @@ export function componentDataToInsertableInstance(
 export function componentDataToBuilderProps(
   comp: ComponentData,
 ): Record<string, unknown> {
-  return toComponentProps(comp);
+  return migrateRegistryContractInstance({
+    contractName: comp.type,
+    props: toComponentProps(comp),
+  }).props;
 }
 
 /**
@@ -294,10 +338,15 @@ function componentDataToInstance(
   comp: ComponentData,
   existingInstance?: ComponentInstance,
 ): ComponentInstance {
+  const migrated = migrateRegistryContractInstance({
+    contractName: comp.type,
+    props: toComponentProps(comp),
+  });
+
   return {
     id: comp.id as NodeId,
-    contractName: normalizeContractName(comp.type),
-    props: toComponentProps(comp),
+    contractName: migrated.contractName,
+    props: migrated.props,
     slots: existingInstance?.slots ?? {},
     bindings: existingInstance?.bindings ?? [],
     metadata: {

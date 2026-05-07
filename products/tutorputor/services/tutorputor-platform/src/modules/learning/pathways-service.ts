@@ -4,8 +4,11 @@
  * AI-driven personalized learning paths.
  * Migrated from tutorputor-pathways/src/service.ts
  *
+ * DEPRECATED: Direct AI client usage is deprecated. Use the unified
+ * generation-request API surface at /generation/requests for content generation.
+ *
  * @doc.type service
- * @doc.purpose Personalized learning pathways
+ * @doc.purpose Personalized learning pathways with deprecated direct AI client
  * @doc.layer product
  * @doc.pattern Service
  */

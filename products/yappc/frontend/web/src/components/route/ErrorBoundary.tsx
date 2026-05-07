@@ -41,11 +41,11 @@ export function RouteErrorBoundary({
 }: RouteErrorBoundaryProps) {
     const error = useRouteError() as RouteErrorLike;
 
-    // Log error for monitoring (production-ready)
+    // Log error for the configured monitoring path when available.
     useEffect(() => {
         console.error("Route Error:", error);
 
-        // In production, send to monitoring service
+        // In production builds, send to the configured analytics sink when present.
         const analyticsWindow = window as AnalyticsWindow;
         if (import.meta.env.PROD && typeof analyticsWindow.gtag === "function") {
             analyticsWindow.gtag("event", "exception", {

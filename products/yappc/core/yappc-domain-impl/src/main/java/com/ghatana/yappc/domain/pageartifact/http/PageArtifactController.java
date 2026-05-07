@@ -33,7 +33,6 @@ import com.ghatana.yappc.domain.pageartifact.PageArtifactPermission;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactRepository;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactResourceScopeAuthorizer;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactValidator;
-import java.util.Set;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -43,10 +42,13 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.List;
-import java.time.Instant;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -73,6 +75,8 @@ public final class PageArtifactController {
             Pattern.compile("/api/v1/page-artifacts/([^/]+)/document");
     private static final Pattern REVIEW_DECISION_ARTIFACT_ID_PATTERN =
             Pattern.compile("/api/v1/page-artifacts/([^/]+)/review-decisions");
+    private static final Pattern OPERATION_LOG_EXPORT_ARTIFACT_ID_PATTERN =
+            Pattern.compile("/api/v1/page-artifacts/([^/]+)/operation-log/export");
 
     private final PageArtifactRepository repository;
     private final PageArtifactAuditRepository auditRepository;
@@ -403,6 +407,99 @@ public final class PageArtifactController {
     }
 
     /**
+     * GET /api/v1/page-artifacts/:artifactId/operation-log/export
+     * <p>
+     * Exports a deterministic replay snapshot for a page artifact operation log.
+     * Requires page_artifact.read permission.
+     */
+    @Traced(value = "page_artifact.operation_log_export", kind = Traced.SpanKind.SERVER)
+    public Promise<HttpResponse> exportOperationLog(HttpRequest request) {
+        String tenantId = TenantExtractor.fromHttp(request).orElse(null);
+        String workspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
+        String projectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
+        Principal principal = request.getAttachment(Principal.class);
+        String userId = principal != null ? principal.getName() : null;
+
+        try {
+            checkAuthorization(principal, PageArtifactPermission.READ);
+        } catch (AccessDeniedException e) {
+            LOG.warn("Authorization denied for exportOperationLog: {}", e.getMessage());
+            return Promise.of(forbidden(e.getMessage()));
+        }
+
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(badRequest("Missing required X-Tenant-ID header"));
+        }
+        if (!tenantId.equals(principal.getTenantId())) {
+            return Promise.of(forbidden("Tenant context mismatch between authenticated principal and request header"));
+        }
+        if (workspaceId == null || workspaceId.isBlank()) {
+            return Promise.of(badRequest("Missing required X-Workspace-ID header"));
+        }
+        if (projectId == null || projectId.isBlank()) {
+            return Promise.of(badRequest("Missing required X-Project-ID header"));
+        }
+
+        Optional<String> artifactIdOpt = extractOperationLogExportArtifactId(request.getPath());
+        if (artifactIdOpt.isEmpty()) {
+            return Promise.of(badRequest("Artifact ID is required"));
+        }
+        String artifactId = artifactIdOpt.get();
+
+        return authorizeResourceScope(userId, tenantId, workspaceId, projectId, artifactId, PageArtifactPermission.READ)
+                .then(() -> repository.load(tenantId, workspaceId, projectId, artifactId))
+                .then(document -> {
+                    if (document == null) {
+                        metrics.incrementCounter("yappc.page_artifact.not_found",
+                                "tenant_id", tenantId);
+                        return Promise.of(ResponseBuilder.notFound()
+                                .json(Map.of(
+                                        "error", "Not Found",
+                                        "message", "Page artifact not found: " + artifactId
+                                ))
+                                .build());
+                    }
+
+                    PageArtifactDocument.OperationLogExport export = buildOperationLogExport(document);
+                    metrics.incrementCounter(
+                            "yappc.page_artifact.operation_log_exported",
+                            "tenant_id", tenantId,
+                            "record_count", String.valueOf(export.records().size())
+                    );
+
+                    HttpResponse response = ResponseBuilder.ok()
+                            .header("ETag", document.documentId())
+                            .json(export)
+                            .build();
+                    return recordAuditEvent(
+                            "operation-log-exported",
+                            tenantId,
+                            workspaceId,
+                            projectId,
+                            artifactId,
+                            userId,
+                            "Operation log exported with " + export.records().size() + " record(s)"
+                    ).map($ -> response);
+                })
+                .then(
+                        response -> Promise.of(response),
+                        ex -> {
+                            if (ex instanceof AccessDeniedException accessDeniedException) {
+                                return Promise.of(forbidden(accessDeniedException.getMessage()));
+                            }
+                            LOG.error("Failed to export page artifact operation log", ex);
+                            metrics.recordError("yappc.page_artifact.operation_log_export_failed", toException(ex),
+                                    Map.of("tenant_id", tenantId));
+                            return Promise.of(ResponseBuilder.internalServerError()
+                                    .json(Map.of(
+                                            "error", "Internal Server Error",
+                                            "message", "Failed to export page artifact operation log"
+                                    ))
+                                    .build());
+                        });
+    }
+
+    /**
      * POST /api/v1/page-artifacts/:artifactId/review-decisions
      * <p>
      * Persists an automation/governance review decision against an existing
@@ -565,6 +662,47 @@ public final class PageArtifactController {
         return matcher.matches() ? Optional.of(matcher.group(1)) : Optional.empty();
     }
 
+    private Optional<String> extractOperationLogExportArtifactId(String path) {
+        Matcher matcher = OPERATION_LOG_EXPORT_ARTIFACT_ID_PATTERN.matcher(path);
+        return matcher.matches() ? Optional.of(matcher.group(1)) : Optional.empty();
+    }
+
+    private PageArtifactDocument.OperationLogExport buildOperationLogExport(PageArtifactDocument document) {
+        List<PageArtifactDocument.OperationRecord> records = document.operationLog().stream()
+                .sorted(Comparator.comparing(
+                        PageArtifactDocument.OperationRecord::createdAt,
+                        Comparator.nullsLast(String::compareTo)
+                ))
+                .toList();
+        Map<String, Long> byOperation = new LinkedHashMap<>();
+        Map<String, Long> byStatus = new LinkedHashMap<>();
+        for (PageArtifactDocument.OperationRecord record : records) {
+            incrementCount(byOperation, record.operation());
+            incrementCount(byStatus, record.status());
+        }
+
+        PageArtifactDocument.OperationRecord latest = records.isEmpty() ? null : records.get(records.size() - 1);
+        return new PageArtifactDocument.OperationLogExport(
+                1,
+                document.artifactId(),
+                document.documentId(),
+                Instant.now().toString(),
+                latest != null ? latest.id() : null,
+                new PageArtifactDocument.OperationLogSummary(
+                        records.size(),
+                        byOperation,
+                        byStatus,
+                        latest != null ? latest.createdAt() : null
+                ),
+                records
+        );
+    }
+
+    private void incrementCount(Map<String, Long> counts, String key) {
+        String safeKey = key == null || key.isBlank() ? "unknown" : key;
+        counts.merge(safeKey, 1L, Long::sum);
+    }
+
     private Optional<PageArtifactDocument.GovernanceLineage> findLineage(
             PageArtifactDocument document,
             String actionId
@@ -630,7 +768,8 @@ public final class PageArtifactController {
                 updatedRecords,
                 document.source(),
                 document.residualIslandCount(),
-                document.roundTripFidelity()
+                document.roundTripFidelity(),
+                document.operationLog()
         );
     }
 

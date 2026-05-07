@@ -391,7 +391,7 @@ export const CodeGenerationPanel: React.FC<CodeGenerationPanelProps> = ({
             <Box className="p-4 border-border dark:border-border border-b" >
                 <Typography variant="h6">Code Generation</Typography>
                 <Typography variant="caption" color="text.secondary">
-                    Generate production-ready code from your canvas design
+                    Generate reviewable code artifacts from your canvas design
                 </Typography>
             </Box>
 

@@ -29,6 +29,8 @@ import {
   type ValidationResult,
 } from '@ghatana/ui-builder';
 
+import { migrateRegistryContractInstance } from '@/components/canvas/page/registry';
+
 export type CommandType =
   | 'insert-component'
   | 'move-component'
@@ -141,6 +143,7 @@ export type MapComponentToDesignSystemCommand = BaseCommand<
   {
     readonly nodeId: NodeId;
     readonly contractName: string;
+    readonly contractVersion?: string;
     readonly props?: Record<string, unknown>;
     readonly name?: string;
   }
@@ -204,6 +207,7 @@ export interface CommandResult {
 
 export interface CommandAuditRecord {
   readonly commandId: string;
+  readonly correlationId: string;
   readonly commandType: CommandType;
   readonly artifactId?: string;
   readonly nodeId?: string;
@@ -317,6 +321,7 @@ export class PageBuilderCommands {
       this.options.onAudit(
         {
           commandId: command.id,
+          correlationId: command.id,
           commandType: command.type,
           artifactId: command.artifactId,
           nodeId: command.nodeId,
@@ -329,6 +334,7 @@ export class PageBuilderCommands {
       );
 
       this.options.onTelemetry('page_builder_command_executed', {
+        correlationId: command.id,
         commandType: command.type,
         artifactId: command.artifactId,
         nodeId: command.nodeId,
@@ -345,10 +351,12 @@ export class PageBuilderCommands {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.options.onTelemetry('page_builder_command_failed', {
+        correlationId: command.id,
         commandType: command.type,
         artifactId: command.artifactId,
         nodeId: command.nodeId,
         error: message,
+        durationMs: Date.now() - startTime,
       });
 
       return {
@@ -377,6 +385,7 @@ export class PageBuilderCommands {
     this.redoStack.push(entry);
 
     this.options.onTelemetry('page_builder_command_undone', {
+      correlationId: entry.command.id,
       commandType: entry.command.type,
       changedNodeIds: entry.changedNodeIds,
     });
@@ -406,6 +415,7 @@ export class PageBuilderCommands {
     this.undoStack.push(entry);
 
     this.options.onTelemetry('page_builder_command_redone', {
+      correlationId: entry.command.id,
       commandType: entry.command.type,
       changedNodeIds: entry.changedNodeIds,
     });
@@ -613,13 +623,23 @@ export class PageBuilderCommands {
       throw new Error(`Cannot map missing node '${command.data.nodeId}' to design-system contract.`);
     }
 
-    const mappedNode: ComponentInstance = {
-      ...node,
+    const migrated = migrateRegistryContractInstance({
       contractName: command.data.contractName,
+      version: command.data.contractVersion,
       props: {
         ...node.props,
         ...(command.data.props ?? {}),
       },
+    });
+
+    if (!migrated.compatibility.compatible) {
+      throw new Error(migrated.compatibility.errors.join(' '));
+    }
+
+    const mappedNode: ComponentInstance = {
+      ...node,
+      contractName: migrated.contractName,
+      props: migrated.props,
       metadata: {
         ...node.metadata,
         name: command.data.name ?? node.metadata.name,

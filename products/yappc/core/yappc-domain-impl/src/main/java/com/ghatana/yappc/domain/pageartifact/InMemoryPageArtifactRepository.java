@@ -84,7 +84,8 @@ public final class InMemoryPageArtifactRepository implements PageArtifactReposit
                         document.aiChangeRecords(),
                         document.source(),
                         document.residualIslandCount(),
-                        document.roundTripFidelity()
+                        document.roundTripFidelity(),
+                        document.operationLog()
                 );
 
         storage.put(key, persisted);

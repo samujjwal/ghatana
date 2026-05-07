@@ -83,7 +83,7 @@ const HELP_TIPS: Record<string, HelpTip> = {
         id: 'code-generation',
         phase: [LifecyclePhase.GENERATE],
         title: 'Generate Production Code',
-        message: 'Your design is validated and ready! Click "Gen" in the toolbar to generate production-ready code for your entire application.',
+        message: 'Your design is validated and ready for review. Click "Gen" in the toolbar to generate implementation artifacts for your application.',
         priority: 'high',
     },
 

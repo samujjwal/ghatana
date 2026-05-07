@@ -69,6 +69,80 @@ function getProjectNextActionTitles(project: ProjectWithOwnership): readonly str
     return [`Resume ${getCanonicalPhaseLabel(project.lifecyclePhase ?? 'INTENT').toLowerCase()} phase`];
 }
 
+interface DashboardDecisionBrief {
+    readonly headline: string;
+    readonly description: string;
+    readonly action: ProjectDashboardAction | null;
+    readonly ctaLabel: string | null;
+}
+
+function pluralize(count: number, singular: string, plural = `${singular}s`): string {
+    return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function buildDashboardDecisionBrief(
+    blockedWork: readonly ProjectDashboardAction[],
+    reviewRequired: readonly ProjectDashboardAction[],
+    safeToContinue: readonly ProjectDashboardAction[],
+    loading: boolean,
+    error: unknown,
+): DashboardDecisionBrief {
+    if (loading) {
+        return {
+            headline: 'Checking workspace action status',
+            description: 'Loading backed blocker, review, and continuation actions before recommending the next step.',
+            action: null,
+            ctaLabel: null,
+        };
+    }
+
+    if (error) {
+        return {
+            headline: 'Refresh backed action status',
+            description: 'The dashboard could not load backend-classified action status, so avoid assuming the workspace is clear.',
+            action: null,
+            ctaLabel: null,
+        };
+    }
+
+    const [firstBlocked] = blockedWork;
+    if (firstBlocked) {
+        return {
+            headline: `Do this first: ${firstBlocked.title}`,
+            description: `${firstBlocked.projectName} is blocked. Clear this before continuing lower-risk work.`,
+            action: firstBlocked,
+            ctaLabel: 'Open blocker',
+        };
+    }
+
+    const [firstReview] = reviewRequired;
+    if (firstReview) {
+        return {
+            headline: `Review next: ${firstReview.title}`,
+            description: `${firstReview.projectName} needs operator review before the workspace can be treated as clear.`,
+            action: firstReview,
+            ctaLabel: 'Open review',
+        };
+    }
+
+    const [firstSafeAction] = safeToContinue;
+    if (firstSafeAction) {
+        return {
+            headline: `Safe to continue: ${firstSafeAction.title}`,
+            description: `${firstSafeAction.projectName} has a backend-classified continuation action ready to execute.`,
+            action: firstSafeAction,
+            ctaLabel: 'Continue safely',
+        };
+    }
+
+    return {
+        headline: 'No backed action is waiting',
+        description: 'No blocker, review, or safe continuation action is currently reported for this workspace.',
+        action: null,
+        ctaLabel: null,
+    };
+}
+
 /**
  * Home Dashboard Component
  * 
@@ -112,6 +186,13 @@ export default function Component() {
     const blockedWork = dashboardActions?.blockedWork ?? [];
     const reviewRequired = dashboardActions?.reviewRequired ?? [];
     const safeToContinue = dashboardActions?.safeToContinue ?? [];
+    const dashboardDecisionBrief = buildDashboardDecisionBrief(
+        blockedWork,
+        reviewRequired,
+        safeToContinue,
+        dashboardActionsLoading === true,
+        dashboardActionsError,
+    );
     const executeDashboardAction = useMutation({
         mutationFn: async (action: ProjectDashboardAction) => {
             const workspaceId = currentWorkspace?.id ?? action.workspaceId;
@@ -359,6 +440,39 @@ export default function Component() {
                         />
                     </section>
                 )}
+
+                <section
+                    aria-label="Dashboard decision brief"
+                    className="rounded-2xl border border-divider bg-bg-paper p-5 shadow-sm"
+                >
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
+                                What to do next
+                            </p>
+                            <h2 className="mt-2 text-xl font-semibold text-text-primary">
+                                {dashboardDecisionBrief.headline}
+                            </h2>
+                            <p className="mt-2 max-w-3xl text-sm text-text-secondary">
+                                {dashboardDecisionBrief.description}
+                            </p>
+                            <p className="mt-3 text-xs font-medium uppercase tracking-[0.14em] text-text-secondary">
+                                {pluralize(blockedWork.length, 'blocked item')} · {pluralize(reviewRequired.length, 'review item')} · {pluralize(safeToContinue.length, 'safe continuation')}
+                            </p>
+                        </div>
+                        {dashboardDecisionBrief.action && dashboardDecisionBrief.ctaLabel && (
+                            <Button
+                                type="button"
+                                variant="solid"
+                                onClick={() => openDashboardAction(dashboardDecisionBrief.action)}
+                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-700"
+                            >
+                                {dashboardDecisionBrief.ctaLabel}
+                                <ArrowRight className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                </section>
 
                 <section className="grid gap-4 md:grid-cols-3" aria-label="Backed dashboard action status">
                     <DashboardActionStatusCard

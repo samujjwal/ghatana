@@ -1,8 +1,8 @@
 /**
  * Placeholder Components Export
  *
- * Components that provide full, production-quality implementations.
- * Originally stubs, now fully typed and production-ready.
+ * Components that provide typed, feature-gated implementations for mounted product surfaces.
+ * Originally stubs; keep maturity claims aligned with each backed capability.
  */
 
 export { SecurityDashboard } from './SecurityDashboard';

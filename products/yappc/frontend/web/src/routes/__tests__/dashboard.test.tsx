@@ -361,13 +361,76 @@ describe('DashboardRoute source-of-truth actions', () => {
     expect(screen.getByRole('heading', { name: /blocked work/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /review required/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /safe to continue/i })).toBeInTheDocument();
-    expect(screen.getByText(/resolve critical security blocker/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /do this first: resolve critical security blocker/i })).toBeInTheDocument();
+    expect(screen.getByText(/1 blocked item · 1 review item · 1 safe continuation/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/resolve critical security blocker/i).length).toBeGreaterThan(1);
     expect(screen.getByText(/review generated diff/i)).toBeInTheDocument();
     expect(screen.getAllByText(/resume shape phase/i).length).toBeGreaterThan(0);
 
-    await user.click(screen.getByRole('button', { name: /resolve critical security blocker/i }));
+    await user.click(screen.getByRole('button', { name: /open blocker/i }));
 
     expect(mockNavigate).toHaveBeenCalledWith('/p/project-blocked/run');
+  });
+
+  it('prioritizes review guidance when no blockers are reported', async () => {
+    const user = userEvent.setup();
+    mockUseWorkspaceContext.mockReturnValue({
+      ownedProjects: [buildProject({ id: 'project-review', lifecyclePhase: 'GENERATE' })],
+      includedProjects: [],
+      workspaces: [workspace],
+      currentWorkspace: workspace,
+      dashboardActions: {
+        workspaceId: 'ws-1',
+        blockedWork: [],
+        reviewRequired: [
+          {
+            id: 'review-1',
+            projectId: 'project-review',
+            projectName: 'Review Project',
+            workspaceId: 'ws-1',
+            lifecyclePhase: 'GENERATE',
+            routePhase: 'generate',
+            kind: 'review',
+            title: 'Review generated diff',
+            summary: 'Open generate cockpit for the backed project action.',
+            severity: 'warning',
+            source: 'project.aiNextActions',
+            requiresReview: true,
+            safeToRun: false,
+            updatedAt: '2026-05-07T00:00:00.000Z',
+          },
+        ],
+        safeToContinue: [
+          {
+            id: 'safe-1',
+            projectId: 'project-safe',
+            projectName: 'Safe Project',
+            workspaceId: 'ws-1',
+            lifecyclePhase: 'SHAPE',
+            routePhase: 'shape',
+            kind: 'safe-to-continue',
+            title: 'Resume shape phase',
+            summary: 'Continue from shape.',
+            severity: 'info',
+            source: 'project.lifecyclePhase',
+            requiresReview: false,
+            safeToRun: true,
+            updatedAt: '2026-05-07T00:00:00.000Z',
+          },
+        ],
+        generatedAt: '2026-05-07T00:00:00.000Z',
+      },
+      dashboardActionsLoading: false,
+      dashboardActionsError: null,
+      isLoading: false,
+    });
+
+    renderRoute();
+
+    expect(screen.getByRole('heading', { name: /review next: review generated diff/i })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /open review/i }));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/p/project-review/generate');
   });
 
   it('executes safe dashboard actions through the backend contract before navigation', async () => {

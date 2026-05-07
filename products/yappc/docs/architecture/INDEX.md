@@ -28,4 +28,5 @@ Examples of focused docs to live here:
 
 ## Current reference documents
 
+- `YAPPC_CANONICAL_MODELS.md` - Active contributor reference for the product, artifact, lifecycle, builder, preview trust, and governance trace models.
 - `YAPPC_STRUCTURE_SIMPLIFICATION_PLAN.md` - Comprehensive review of the current product structure, boundary problems, and the phased simplification plan.

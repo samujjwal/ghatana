@@ -42,7 +42,7 @@ export function ProjectCreationWizard({ onComplete }: ProjectCreationWizardProps
     const templates = [
         { id: 'minimal', name: 'Minimal', description: 'Basic setup with essentials' },
         { id: 'fullstack', name: 'Full Stack', description: 'Complete app with backend and frontend' },
-        { id: 'enterprise', name: 'Enterprise', description: 'Production-ready with all features' },
+        { id: 'enterprise', name: 'Enterprise', description: 'Deployment-oriented setup with governed features' },
         { id: 'custom', name: 'Custom', description: 'Build from scratch' }
     ];
 

@@ -11,11 +11,12 @@
  * @doc.pattern Route Module
  */
 
-import React, { Suspense } from 'react';
+import React from 'react';
 
 import { useCapabilityGate } from '../../../hooks/useCapabilityGate';
-import { RouteLoadingSpinner } from '../../../components/route/LoadingSpinner';
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
+
+const TEAMS_BACKEND_LIVE = false;
 
 // ── Coming-soon placeholder ────────────────────────────────────────────────────
 
@@ -48,18 +49,11 @@ function TeamsGate({ children }: { children: React.ReactNode }) {
     return <TeamsComingSoon reason={reason} />;
   }
 
+  if (!TEAMS_BACKEND_LIVE) {
+    return <TeamsComingSoon reason="backend-not-live" />;
+  }
+
   return <>{children}</>;
-}
-
-// ── Page (lazy-loaded when backend is live) ────────────────────────────────────
-
-/** Placeholder for the real TeamsPage — replace when teams API ships. */
-function TeamsPage() {
-  return (
-    <div className="p-6" data-testid="teams-page">
-      <h1 className="text-xl font-semibold text-text-primary">Team Management</h1>
-    </div>
-  );
 }
 
 // ── Route entry ───────────────────────────────────────────────────────────────
@@ -67,9 +61,7 @@ function TeamsPage() {
 export function Component() {
   return (
     <TeamsGate>
-      <Suspense fallback={<RouteLoadingSpinner />}>
-        <TeamsPage />
-      </Suspense>
+      <div className="p-6" data-testid="teams-page" />
     </TeamsGate>
   );
 }

@@ -24,11 +24,26 @@ export {
   isLineEditable,
   applyUserEdit,
 } from './CodegenPreview';
+export {
+  checkArtifactCompilerRuntimeHealth,
+  formatArtifactCompilerRuntimeUnavailableMessage,
+  getArtifactCompilerRuntimeRequirements,
+} from './ArtifactCompilerRuntimeHealth';
 
 export type {
   CodegenPreview,
+  CodegenPreviewOptions,
   OwnershipRegion,
   DiffRegion,
+  GeneratedArtifactProvenance,
+  GeneratedArtifactType,
+  GeneratedFilePreview,
   MergeConflict,
   MergeOptions,
 } from './CodegenPreview';
+export type {
+  ArtifactCompilerRuntimeHealth,
+  ArtifactCompilerRuntimeHealthOptions,
+  ArtifactCompilerRuntimeRequirement,
+  ArtifactCompilerRuntimeStatus,
+} from './ArtifactCompilerRuntimeHealth';

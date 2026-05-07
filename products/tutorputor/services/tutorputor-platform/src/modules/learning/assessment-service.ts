@@ -42,8 +42,12 @@ import {
   createSimulationAssessmentIntegration,
   scoreSimulationAssessmentResponse,
 } from "../assessment/simulation-integration/service.js";
+import { AIGradingService } from "../assessment/ai-grading/AIGradingService.js";
 
 const logger = createStandaloneLogger({ component: "AssessmentService" });
+
+// Initialize AI grading service
+const aiGradingService = new AIGradingService();
 
 // =============================================================================
 // Types
@@ -218,7 +222,12 @@ export function createAssessmentService(
         { tenantId, userId },
       );
 
-      const grading = gradeAttempt(attempt.assessment.items, responses);
+      const grading = await gradeAttempt(
+        attempt.assessment.items,
+        responses,
+        tenantId,
+        attempt.assessment.id,
+      );
       await syncLearnerSignals({
         prisma,
         learnerProfileService,
@@ -572,10 +581,12 @@ function parseFeedback(value: unknown): AssessmentFeedback[] | undefined {
   return undefined;
 }
 
-function gradeAttempt(
+async function gradeAttempt(
   items: Array<{ id: string; points: number; [key: string]: unknown }>,
   responses: AssessmentAttempt["responses"],
-): { scorePercent: number; feedback: AssessmentFeedback[] } {
+  tenantId: string,
+  assessmentId: string,
+): Promise<{ scorePercent: number; feedback: AssessmentFeedback[] }> {
   const normalizedResponses = responses ?? {};
   let totalPoints = 0;
   let earnedPoints = 0;
@@ -585,7 +596,9 @@ function gradeAttempt(
     totalPoints += item.points;
     const response =
       normalizedResponses[item.id as keyof typeof normalizedResponses];
-    const analysis = evaluateResponse(item, response);
+    
+    // Use AI grading for open-ended responses, keep structured grading for MCQ
+    const analysis = await evaluateResponse(item, response, tenantId, assessmentId);
     earnedPoints += analysis.earnedPoints;
     feedback.push(analysis.feedback);
   }
@@ -849,10 +862,12 @@ function mapThetaToDifficulty(
   return "INTERMEDIATE";
 }
 
-function evaluateResponse(
+async function evaluateResponse(
   item: AssessmentItemRecord,
   response: AssessmentResponse | undefined,
-): { earnedPoints: number; feedback: AssessmentFeedback } {
+  tenantId: string,
+  assessmentId: string,
+): Promise<{ earnedPoints: number; feedback: AssessmentFeedback }> {
   const defaultFeedback: AssessmentFeedback = {
     itemId: item.id as AssessmentItem["id"],
     scorePercent: 0,
@@ -880,16 +895,42 @@ function evaluateResponse(
       response.selectedChoiceIds.length === 1 &&
       correctIds.includes(response.selectedChoiceIds[0]!);
 
-    const scorePercent = isCorrect ? 100 : 0;
+    // Adjust scoring based on confidence
+    let scorePercent = isCorrect ? 100 : 0;
+    let needsReview = !isCorrect;
+    let comments = isCorrect
+      ? "Correct selection."
+      : "Review the concept and try again.";
+
+    // Confidence-based marking
+    if (response.confidence) {
+      if (isCorrect) {
+        // High confidence correct answers get full credit
+        if (response.confidence === "high") {
+          comments = "Correct! You demonstrated strong understanding.";
+        } else if (response.confidence === "low") {
+          comments = "Correct, but consider building more confidence in this area.";
+          scorePercent = 90; // Slightly reduced for low confidence correct answers
+        }
+      } else {
+        // High confidence incorrect answers indicate misconception
+        if (response.confidence === "high") {
+          comments = "Incorrect. Your high confidence suggests a misconception - review this concept carefully.";
+          needsReview = true;
+        } else if (response.confidence === "low") {
+          comments = "Incorrect. Good that you recognized uncertainty - review the concept.";
+          scorePercent = 10; // Partial credit for recognizing uncertainty
+        }
+      }
+    }
+
     return {
-      earnedPoints: isCorrect ? item.points : 0,
+      earnedPoints: (scorePercent / 100) * item.points,
       feedback: {
         itemId: item.id as AssessmentItem["id"],
         scorePercent,
-        needsReview: !isCorrect,
-        comments: isCorrect
-          ? "Correct selection."
-          : "Review the concept and try again.",
+        needsReview,
+        comments,
       },
     };
   }
@@ -914,7 +955,74 @@ function evaluateResponse(
     });
   }
 
-  // For short answer / free response types we flag for instructor review
+  // For short answer / free response types, use AI grading
+  if (item.itemType === "short_answer" && response.type === "free_response") {
+    try {
+      const freeResponse = response as Extract<AssessmentResponse, { type: "free_response" }>;
+      const context: {
+        domain?: string;
+        difficulty?: string;
+        learningObjectives?: string[];
+      } = {};
+      if (item.moduleId) context.domain = item.moduleId as string;
+      if (item.difficulty) context.difficulty = item.difficulty as string;
+
+      const aiResult = await aiGradingService.gradeOpenEndedResponse({
+        tenantId,
+        assessmentId,
+        itemId: item.id as string,
+        questionPrompt: item.prompt as string,
+        studentResponse: freeResponse.text,
+        context,
+      });
+
+      // Adjust scoring based on confidence
+      let scorePercent = aiResult.scorePercent;
+      let needsReview = aiResult.needsReview;
+      let comments = aiResult.feedback.comments;
+
+      if (freeResponse.confidence) {
+        if (scorePercent >= 70) {
+          // High confidence good answers
+          if (freeResponse.confidence === "high") {
+            comments += " Excellent confidence in your understanding.";
+          } else if (freeResponse.confidence === "low") {
+            comments += " You answered correctly despite low confidence - trust your knowledge!";
+            scorePercent = Math.min(100, scorePercent + 5); // Bonus for correct answer with low confidence
+          }
+        } else {
+          // Low confidence poor answers
+          if (freeResponse.confidence === "low") {
+            comments += " Your low confidence was appropriate - keep studying this area.";
+          } else if (freeResponse.confidence === "high") {
+            comments += " Your high confidence on this answer suggests a misconception - review carefully.";
+            needsReview = true;
+          }
+        }
+      }
+
+      return {
+        earnedPoints: (scorePercent / 100) * item.points,
+        feedback: {
+          itemId: item.id as AssessmentItem["id"],
+          scorePercent,
+          needsReview,
+          comments,
+        },
+      };
+    } catch (error) {
+      // Fallback to manual review if AI grading fails
+      return {
+        earnedPoints: 0,
+        feedback: {
+          ...defaultFeedback,
+          comments: "AI grading failed. Requires instructor review.",
+        },
+      };
+    }
+  }
+
+  // For other response types, flag for instructor review
   return {
     earnedPoints: 0,
     feedback: {

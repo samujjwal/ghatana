@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   HttpPageArtifactPersistenceAdapter,
@@ -22,6 +22,10 @@ const scope = {
   workspaceId: 'workspace-1',
   projectId: 'project-1',
 };
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('pageArtifactPersistence', () => {
   it('saves and loads with local storage adapter', async () => {
@@ -151,6 +155,38 @@ describe('pageArtifactPersistence — conflict detection', () => {
           'X-Project-ID': scope.projectId,
         }),
         credentials: 'include',
+      }),
+    );
+  });
+
+  it('HTTP adapter reads current tenant workspace and project scope from scope provider', async () => {
+    const document = buildDocument();
+    const fetchImpl = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    const dynamicScope = {
+      tenantId: 'tenant-dynamic',
+      workspaceId: 'workspace-dynamic',
+      projectId: 'project-dynamic',
+    };
+
+    const adapter = new HttpPageArtifactPersistenceAdapter({
+      baseUrl: '/api/v1/page-artifacts',
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      scopeProvider: () => dynamicScope,
+    });
+
+    await adapter.save(document);
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      '/api/v1/page-artifacts/artifact-1/document',
+      expect.objectContaining({
+        method: 'PUT',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          'X-Tenant-ID': dynamicScope.tenantId,
+          'X-Workspace-ID': dynamicScope.workspaceId,
+          'X-Project-ID': dynamicScope.projectId,
+          'If-Match': document.documentId,
+        }),
       }),
     );
   });
@@ -350,6 +386,26 @@ describe('pageArtifactPersistence — conflict detection', () => {
     ).rejects.toMatchObject({ kind: 'forbidden', status: 403 });
   });
 
+  it('HTTP adapter maps load validation failures to actionable 422 errors', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 422,
+      headers: { get: () => null },
+      text: async () => 'workspaceId is required',
+    });
+
+    const adapter = new HttpPageArtifactPersistenceAdapter({
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      scope,
+    });
+
+    await expect(adapter.load('artifact-1')).rejects.toMatchObject({
+      kind: 'validation',
+      status: 422,
+      message: expect.stringContaining('workspaceId is required'),
+    });
+  });
+
   it('local drafts reject sensitive artifacts by policy', async () => {
     const document = {
       ...buildDocument(),
@@ -359,6 +415,75 @@ describe('pageArtifactPersistence — conflict detection', () => {
 
     await expect(adapter.save(document)).rejects.toThrow(PageArtifactPersistenceError);
     expect(localStorage.getItem(`test:page-artifact:${document.artifactId}`)).toBeNull();
+  });
+
+  it('local drafts store explicit expiry metadata', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-07T12:00:00.000Z'));
+
+    const document = buildDocument();
+    const adapter = new LocalStoragePageArtifactPersistenceAdapter(
+      'test:page-artifact:',
+      { allowClassifications: new Set(['INTERNAL']), ttlMs: 60_000 },
+    );
+
+    await adapter.save(document);
+
+    const raw = localStorage.getItem(`test:page-artifact:${document.artifactId}`);
+    expect(raw).not.toBeNull();
+    const envelope = JSON.parse(String(raw)) as Record<string, unknown>;
+    expect(envelope).toMatchObject({
+      schemaVersion: 1,
+      savedAt: '2026-05-07T12:00:00.000Z',
+      expiresAt: '2026-05-07T12:01:00.000Z',
+      document: expect.objectContaining({
+        artifactId: document.artifactId,
+        dataClassification: 'INTERNAL',
+      }),
+    });
+
+    await expect(adapter.load(document.artifactId)).resolves.toMatchObject({
+      artifactId: document.artifactId,
+    });
+  });
+
+  it('local drafts remove expired envelope entries on load', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-07T12:00:00.000Z'));
+
+    const document = buildDocument();
+    const adapter = new LocalStoragePageArtifactPersistenceAdapter(
+      'test:page-artifact:',
+      { allowClassifications: new Set(['INTERNAL']), ttlMs: 1_000 },
+    );
+
+    await adapter.save(document);
+    vi.setSystemTime(new Date('2026-05-07T12:00:01.001Z'));
+
+    await expect(adapter.load(document.artifactId)).resolves.toBeNull();
+    expect(localStorage.getItem(`test:page-artifact:${document.artifactId}`)).toBeNull();
+  });
+
+  it('local drafts keep compatible legacy raw documents but purge restricted legacy drafts', async () => {
+    const document = buildDocument();
+    const restrictedDocument = {
+      ...document,
+      artifactId: 'artifact-sensitive',
+      dataClassification: 'SENSITIVE' as never,
+    };
+    const adapter = new LocalStoragePageArtifactPersistenceAdapter('test:page-artifact:');
+
+    localStorage.setItem(`test:page-artifact:${document.artifactId}`, JSON.stringify(document));
+    localStorage.setItem(
+      `test:page-artifact:${restrictedDocument.artifactId}`,
+      JSON.stringify(restrictedDocument),
+    );
+
+    await expect(adapter.load(document.artifactId)).resolves.toMatchObject({
+      artifactId: document.artifactId,
+    });
+    await expect(adapter.load(restrictedDocument.artifactId)).resolves.toBeNull();
+    expect(localStorage.getItem(`test:page-artifact:${restrictedDocument.artifactId}`)).toBeNull();
   });
 
   it('isConflictError correctly identifies conflict errors', () => {

@@ -80,10 +80,18 @@ export function ContentBlocksList({
                                 <Text className="font-medium text-gray-900">{blockType.label}</Text>
                                 <Text className="text-sm text-gray-500">
                                     {block.blockType === "simulation" && 
-                                        (block.payload as any)?.inlineManifest?.title || "Untitled Simulation"
+                                        (typeof block.payload === 'object' && block.payload !== null && 'inlineManifest' in block.payload && 
+                                            typeof (block.payload as { inlineManifest?: { title?: string } }).inlineManifest?.title === 'string'
+                                            ? (block.payload as { inlineManifest?: { title?: string } }).inlineManifest?.title ?? "Untitled Simulation"
+                                            : "Untitled Simulation"
+                                        )
                                     }
                                     {block.blockType === "text" && 
-                                        ((block.payload as any)?.markdown?.substring(0, 50) || "Empty text block") + "..."
+                                        (typeof block.payload === 'object' && block.payload !== null && 'markdown' in block.payload &&
+                                            typeof (block.payload as { markdown?: string }).markdown === 'string'
+                                            ? ((block.payload as { markdown?: string }).markdown?.substring(0, 50) || "Empty text block") + "..."
+                                            : "Empty text block..."
+                                        )
                                     }
                                     {block.blockType !== "simulation" && block.blockType !== "text" && 
                                         "Click to edit"

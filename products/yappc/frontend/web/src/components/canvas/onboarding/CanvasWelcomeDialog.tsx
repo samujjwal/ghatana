@@ -68,7 +68,7 @@ const DEFAULT_STEPS: OnboardingStep[] = [
         icon: LightbulbOutlined,
         tips: [
             'Design your application architecture on a visual canvas',
-            'Generate production-ready code automatically',
+            'Generate reviewable code artifacts with guided checks',
             'Get AI-powered suggestions and validations',
             'Deploy directly to your cloud provider',
         ],

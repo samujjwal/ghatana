@@ -26,6 +26,9 @@ Use this checklist before declaring a YAPPC release candidate ready. It referenc
 Run the current canonical checks:
 
 ```bash
+pnpm --filter @ghatana/yappc-web-app run verify:release-readiness
+pnpm --filter @ghatana/yappc-web-app run test:e2e:visual
+
 ./gradlew \
   :products:yappc:services:build \
   :products:yappc:core:services-platform:check \

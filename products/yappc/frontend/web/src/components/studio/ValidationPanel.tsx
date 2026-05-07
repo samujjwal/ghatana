@@ -1,4 +1,5 @@
 import React from 'react';
+import { AlertTriangle, CheckCircle2, Info, Lightbulb, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -35,14 +36,14 @@ export interface ValidationPanelProps {
 
 function SeverityIcon({ severity }: { severity: ValidationSeverity }) {
   const config = {
-    error: { icon: '❌', color: 'text-destructive' },
-    warning: { icon: '⚠️', color: 'text-warning-color' },
-    info: { icon: 'ℹ️', color: 'text-info-color' },
-    success: { icon: '✅', color: 'text-success-color' },
+    error: { Icon: XCircle, color: 'text-destructive', label: 'Error' },
+    warning: { Icon: AlertTriangle, color: 'text-warning-color', label: 'Warning' },
+    info: { Icon: Info, color: 'text-info-color', label: 'Information' },
+    success: { Icon: CheckCircle2, color: 'text-success-color', label: 'Passed' },
   };
 
-  const { icon, color } = config[severity];
-  return <span className={cn('text-sm', color)}>{icon}</span>;
+  const { Icon, color, label } = config[severity];
+  return <Icon className={cn('mt-0.5 h-4 w-4 shrink-0', color)} role="img" aria-label={label} />;
 }
 
 function ValidationIssueItem({
@@ -79,8 +80,9 @@ function ValidationIssueItem({
             {issue.message}
           </p>
           {issue.suggestion && (
-            <p className="text-xs text-info-color dark:text-info-color italic">
-              💡 {issue.suggestion}
+            <p className="flex items-start gap-1 text-xs text-info-color dark:text-info-color italic">
+              <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0" role="img" aria-label="Suggestion" />
+              <span>{issue.suggestion}</span>
             </p>
           )}
         </div>
@@ -166,7 +168,11 @@ export function ValidationPanel({
         {issues.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-fg-muted dark:text-fg-muted">
-              <span className="text-4xl mb-2">✅</span>
+              <CheckCircle2
+                className="mx-auto mb-2 h-10 w-10 text-success-color"
+                role="img"
+                aria-label="Validation passed"
+              />
               <p className="text-sm">No issues found</p>
             </div>
           </div>

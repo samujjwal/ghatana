@@ -57,6 +57,7 @@ import ShapeRoute from '../shape';
 import ValidateRoute from '../validate';
 import GenerateRoute from '../generate';
 import RunRoute from '../run';
+import ObserveRoute from '../observe';
 
 function renderRoute(node: React.ReactNode) {
   const queryClient = new QueryClient({
@@ -104,6 +105,17 @@ function mockPhaseBootstrap({
       comment: true,
     },
   },
+  activity = [
+    {
+      id: 'audit-1',
+      source: 'audit' as const,
+      action: 'PROJECT_UPDATED',
+      summary: 'Project updated',
+      timestamp: '2026-04-21T11:00:00.000Z',
+      actor: 'user-1',
+      success: true,
+    },
+  ],
 }: {
   readonly lifecyclePhase?: string;
   readonly nextPhase?: string;
@@ -124,6 +136,16 @@ function mockPhaseBootstrap({
       readonly comment?: boolean;
     };
   };
+  readonly activity?: readonly {
+    readonly id: string;
+    readonly source: 'lifecycle' | 'audit';
+    readonly action: string;
+    readonly summary: string;
+    readonly timestamp: string;
+    readonly actor: string | null;
+    readonly severity?: string | null;
+    readonly success?: boolean | null;
+  }[];
 } = {}) {
   vi.mocked(fetch)
     .mockResolvedValueOnce(
@@ -148,17 +170,7 @@ function mockPhaseBootstrap({
       new Response(
         JSON.stringify({
           projectId: 'proj-42',
-          activity: [
-            {
-              id: 'audit-1',
-              source: 'audit',
-              action: 'PROJECT_UPDATED',
-              summary: 'Project updated',
-              timestamp: '2026-04-21T11:00:00.000Z',
-              actor: 'user-1',
-              success: true,
-            },
-          ],
+          activity,
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } },
       ),
@@ -215,7 +227,11 @@ describe('phase cockpit routes', () => {
     expect(screen.getByTestId('intent-native-summary')).toBeInTheDocument();
     expect(screen.queryByTestId('project-overview-stub')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Intent exploration reference' }));
+    expect(screen.getByTestId('advanced-tools-description')).toHaveTextContent(
+      'Use this only when goals, users, or success criteria need more context than the cockpit summary shows.',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open intent notes workspace' }));
     expect(await screen.findByTestId('intent-advanced-panel')).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId('define-requirements'));
@@ -224,7 +240,14 @@ describe('phase cockpit routes', () => {
 
   it('mounts the shape cockpit route with the embedded canvas surface', async () => {
     mockPhaseBootstrap();
-    renderRoute(<ShapeRoute />);
+    renderRouteWithUser(<ShapeRoute />, {
+      id: 'designer-1',
+      email: 'designer@example.com',
+      name: 'Designer',
+      role: 'ADMIN',
+      tenantId: 'tenant-1',
+      workspaceIds: ['workspace-1'],
+    });
 
     expect(await screen.findByTestId('shape-cockpit')).toBeInTheDocument();
     expect(screen.getByTestId('shape-native-summary')).toBeInTheDocument();
@@ -236,8 +259,235 @@ describe('phase cockpit routes', () => {
     expect(screen.queryByTestId('canvas-container')).not.toBeInTheDocument();
     expect(screen.getByTestId('primary-next-action')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Shape configuration reference' }));
+    expect(screen.getByTestId('advanced-tools-description')).toHaveTextContent(
+      'Use this when you need direct canvas edits after reviewing shape readiness and blockers.',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open canvas editing workspace' }));
     expect(await screen.findByTestId('canvas-container')).toBeInTheDocument();
+
+    vi.mocked(fetch).mockImplementation((input) => {
+      const path = String(input);
+      if (path.includes('/api/audit/events')) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              id: 'audit-shape-1',
+              timestamp: '2026-05-07T12:00:00.000Z',
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          ),
+        );
+      }
+
+      if (path.includes('/api/projects/proj-42/activity')) {
+        return Promise.resolve(activityRefetchResponse());
+      }
+
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({ message: `Unexpected test request: ${path}` }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+    });
+
+    fireEvent.click(screen.getByTestId('add-components'));
+    await waitFor(() => expectFetchCalledWithPath('/api/audit/events'));
+    const auditCall = vi.mocked(fetch).mock.calls.find(([input]) => String(input).includes('/api/audit/events'));
+    expect(JSON.parse(String(auditCall?.[1]?.body))).toMatchObject({
+      type: 'phase.shape.builder_review_started',
+      userId: 'designer-1',
+      projectId: 'proj-42',
+      flowStage: 'shape',
+      phase: 'SHAPE',
+    });
+  });
+
+  it('mounts observe with preview runtime observability diagnostics from backed activity', async () => {
+    mockPhaseBootstrap({
+      lifecyclePhase: 'OBSERVE',
+      nextPhase: 'LEARN',
+      canAdvance: false,
+      readiness: 66,
+      requiredArtifacts: ['Preview health review'],
+      activity: [
+        {
+          id: 'runtime-1',
+          source: 'audit',
+          action: 'preview.runtime.error',
+          summary: 'ReferenceError surfaced in preview runtime.',
+          timestamp: '2026-04-21T11:04:00.000Z',
+          actor: null,
+          severity: 'error',
+          success: false,
+        },
+        {
+          id: 'console-1',
+          source: 'audit',
+          action: 'preview.console.warning',
+          summary: 'Console warning captured during Observe review.',
+          timestamp: '2026-04-21T11:03:00.000Z',
+          actor: null,
+          severity: 'warning',
+          success: true,
+        },
+        {
+          id: 'policy-1',
+          source: 'audit',
+          action: 'preview.policy.blocked',
+          summary: 'Preview policy blocked third-party script execution.',
+          timestamp: '2026-04-21T11:02:00.000Z',
+          actor: null,
+          severity: 'warning',
+          success: false,
+        },
+        {
+          id: 'load-1',
+          source: 'lifecycle',
+          action: 'preview.reload.completed',
+          summary: 'Preview reload completed in 615ms.',
+          timestamp: '2026-04-21T11:01:00.000Z',
+          actor: 'user-1',
+          severity: null,
+          success: true,
+        },
+      ],
+    });
+    renderRoute(<ObserveRoute />);
+
+    expect(await screen.findByTestId('observe-cockpit')).toBeInTheDocument();
+    expect(screen.getByTestId('observe-preview-diagnostics')).toBeInTheDocument();
+    expect(screen.getByTestId('observe-preview-health')).toHaveTextContent('Preview health: Down');
+    expect(screen.getByTestId('preview-runtime-error')).toHaveTextContent('ReferenceError');
+    expect(screen.getByTestId('preview-console-log')).toHaveTextContent('Console warning');
+    expect(screen.getByTestId('preview-policy-block')).toHaveTextContent('third-party script');
+    expect(screen.getByTestId('preview-load-latency')).toHaveTextContent('615ms');
+    expect(screen.getByTestId('preview-user-action')).toHaveTextContent('user-1');
+  });
+
+  it('keeps the cockpit usable when backed activity fails to load', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            project: {
+              id: 'proj-42',
+              name: 'Alpha Project',
+              description: 'Mounted cockpit route',
+              lifecyclePhase: 'SHAPE',
+              status: 'ACTIVE',
+              aiHealthScore: 80,
+              aiNextActions: ['Review the latest lifecycle evidence'],
+              updatedAt: '2026-04-21T10:00:00.000Z',
+              isOwned: true,
+              isIncluded: false,
+              readOnly: false,
+              role: 'EDITOR',
+              capabilities: {
+                read: true,
+                update: true,
+                create: true,
+                delete: false,
+                include: true,
+                comment: true,
+              },
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      )
+      .mockRejectedValueOnce(new Error('Activity service offline'))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            projectId: 'proj-42',
+            currentPhase: 'SHAPE',
+            nextPhase: 'VALIDATE',
+            canAdvance: true,
+            readiness: 92,
+            blockers: [],
+            requiredArtifacts: ['Requirements packet'],
+            completedArtifacts: ['Intent brief'],
+            estimatedReadyIn: 'Ready now',
+            estimatedReadyInHours: 0,
+            predictionConfidence: 0.8,
+            checkedAt: '2026-04-21T11:05:00.000Z',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+    renderRoute(<ShapeRoute />);
+
+    expect(await screen.findByTestId('shape-cockpit')).toBeInTheDocument();
+    expect(await screen.findByTestId('phase-data-recovery')).toHaveTextContent('Some cockpit data could not be refreshed.');
+    expect(screen.getByTestId('phase-data-warning-activity')).toHaveTextContent('Recent activity is temporarily unavailable');
+    expect(screen.getByRole('button', { name: 'Retry activity' })).toBeInTheDocument();
+    expect(screen.getByTestId('phase-contract-persisted')).toHaveTextContent('Alpha Project');
+    expect(screen.getByTestId('phase-contract-derived')).toHaveTextContent('evidence item');
+  });
+
+  it('keeps persisted project data visible when lifecycle readiness preview fails', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            project: {
+              id: 'proj-42',
+              name: 'Alpha Project',
+              description: 'Mounted cockpit route',
+              lifecyclePhase: 'VALIDATE',
+              status: 'ACTIVE',
+              aiHealthScore: 80,
+              aiNextActions: ['Review the latest lifecycle evidence'],
+              updatedAt: '2026-04-21T10:00:00.000Z',
+              isOwned: true,
+              isIncluded: false,
+              readOnly: false,
+              role: 'EDITOR',
+              capabilities: {
+                read: true,
+                update: true,
+                create: true,
+                delete: false,
+                include: true,
+                comment: true,
+              },
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            projectId: 'proj-42',
+            activity: [
+              {
+                id: 'audit-1',
+                source: 'audit',
+                action: 'PROJECT_UPDATED',
+                summary: 'Project updated',
+                timestamp: '2026-04-21T11:00:00.000Z',
+                actor: 'user-1',
+                success: true,
+              },
+            ],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      )
+      .mockRejectedValueOnce(new Error('Readiness preview timed out'));
+
+    renderRoute(<ValidateRoute />);
+
+    expect(await screen.findByTestId('validate-cockpit')).toBeInTheDocument();
+    expect(await screen.findByTestId('phase-data-recovery')).toHaveTextContent('Some cockpit data could not be refreshed.');
+    expect(screen.getByTestId('phase-data-warning-preview')).toHaveTextContent('Lifecycle readiness preview is temporarily unavailable');
+    expect(screen.getByRole('button', { name: 'Retry readiness' })).toBeInTheDocument();
+    expect(screen.getByTestId('phase-contract-persisted')).toHaveTextContent('Alpha Project');
+    expect(screen.getByTestId('phase-contract-suggested')).toHaveTextContent('Review the latest lifecycle evidence');
   });
 
   it('mounts the validate cockpit route with real gate summaries', async () => {
@@ -250,6 +500,46 @@ describe('phase cockpit routes', () => {
     });
     expect(screen.getByTestId('approval-gates')).toBeInTheDocument();
     expect(screen.getAllByTestId('required-approval').length).toBeGreaterThan(0);
+  });
+
+  it('approves validate transitions through the lifecycle backend', async () => {
+    mockPhaseBootstrap({ lifecyclePhase: 'VALIDATE', nextPhase: 'GENERATE' });
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ success: true, currentPhase: 'EXECUTE' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      )
+      .mockResolvedValueOnce(activityRefetchResponse());
+
+    const rendered = renderRouteWithUser(<ValidateRoute />, {
+      id: 'reviewer-1',
+      email: 'reviewer@example.com',
+      name: 'Reviewer',
+      role: 'ADMIN',
+      tenantId: 'tenant-1',
+      workspaceIds: ['workspace-1'],
+    });
+
+    expect(await screen.findByTestId('validate-cockpit')).toBeInTheDocument();
+    await rendered.user.click(screen.getByTestId('approve-changes'));
+
+    await waitFor(() => {
+      expect(
+        vi.mocked(fetch).mock.calls.some(
+          ([input, init]) =>
+            String(input) === '/api/v1/lifecycle/advance' &&
+            (init as RequestInit | undefined)?.body === JSON.stringify({
+              projectId: 'proj-42',
+              fromPhase: 'VALIDATE',
+              toPhase: 'GENERATE',
+              userId: 'reviewer-1',
+            }),
+        ),
+      ).toBe(true);
+    });
+    expect(await screen.findByText(/Lifecycle transition approved from VALIDATE to EXECUTE/i)).toBeInTheDocument();
   });
 
   it('starts backend generation and requests diff review from the generate cockpit CTA', async () => {

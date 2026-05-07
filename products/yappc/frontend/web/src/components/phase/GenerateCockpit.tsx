@@ -62,7 +62,7 @@ export const GenerateCockpit: React.FC<GenerateCockpitProps> = ({
   const primaryAction = (
     <PhasePrimaryActionCard
       title="Prepare Implementation"
-      description="Generate production-ready code based on your approved design and requirements."
+      description="Generate reviewable code artifacts based on your approved design and requirements."
       actionLabel="Generate Code"
       onAction={onGenerateCode}
       secondaryActionLabel="Preview Code"

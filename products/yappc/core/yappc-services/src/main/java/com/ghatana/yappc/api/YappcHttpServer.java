@@ -117,6 +117,10 @@ public class YappcHttpServer extends HttpServerLauncher {
                     authFilter.secure(pageArtifactController::saveDocument).serve(request))
                 .with(HttpMethod.GET, "/api/v1/page-artifacts/:artifactId/document", request ->
                     authFilter.secure(pageArtifactController::loadDocument).serve(request))
+                .with(HttpMethod.POST, "/api/v1/page-artifacts/:artifactId/review-decisions", request ->
+                    authFilter.secure(pageArtifactController::recordReviewDecision).serve(request))
+                .with(HttpMethod.GET, "/api/v1/page-artifacts/:artifactId/operation-log/export", request ->
+                    authFilter.secure(pageArtifactController::exportOperationLog).serve(request))
 
                 .build();
 

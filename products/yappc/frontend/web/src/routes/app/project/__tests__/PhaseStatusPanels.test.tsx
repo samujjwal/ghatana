@@ -130,6 +130,9 @@ describe('PhaseStatusPanels', () => {
 
     expect(screen.getByTestId('codegen-readiness-badge')).toHaveTextContent(/ready/i);
     expect(screen.getByTestId('codegen-readiness-score')).toHaveTextContent('100%');
+    expect(screen.getByTestId('readiness-accessibility-explanation')).toHaveTextContent(
+      /readiness is the lifecycle gate score/i,
+    );
     const files = screen.getAllByTestId('generated-file');
     expect(files).toHaveLength(2);
     expect(files[0]).toHaveTextContent('Dashboard.tsx');
@@ -184,5 +187,85 @@ describe('PhaseStatusPanels', () => {
     expect(events).toHaveLength(2);
     expect(events[0]).toHaveTextContent('Health check passed');
     expect(events[1]).toHaveTextContent('Error rate spike');
+  });
+
+  it('surfaces preview runtime diagnostics in the observe phase', () => {
+    render(
+      <PhaseStatusPanels
+        phase="observe"
+        preview={{
+          projectId: 'proj-1',
+          currentPhase: 'OBSERVE',
+          nextPhase: 'LEARN',
+          canAdvance: false,
+          readiness: 64,
+          blockers: ['Preview CSP policy denied asset load'],
+          requiredArtifacts: [],
+          completedArtifacts: [],
+          estimatedReadyIn: 'Needs review',
+          estimatedReadyInHours: 1,
+          predictionConfidence: 0.72,
+          checkedAt: '2026-05-04T10:00:00.000Z',
+        }}
+        blockers={[
+          {
+            id: 'policy-1',
+            title: 'Preview policy blocked request',
+            description: 'Sandbox policy denied https://tracker.example/script.js.',
+            severity: 'high',
+          },
+        ]}
+        activity={[
+          {
+            id: 'runtime-1',
+            source: 'audit',
+            action: 'preview.runtime.error',
+            summary: 'TypeError: Cannot read properties of undefined in live preview.',
+            timestamp: '2026-05-04T10:04:00.000Z',
+            actor: null,
+            severity: 'error',
+            success: false,
+          },
+          {
+            id: 'console-1',
+            source: 'audit',
+            action: 'preview.console.warning',
+            summary: 'Console warning: image missing alt text.',
+            timestamp: '2026-05-04T10:03:00.000Z',
+            actor: null,
+            severity: 'warning',
+            success: true,
+          },
+          {
+            id: 'load-1',
+            source: 'lifecycle',
+            action: 'preview.reload.completed',
+            summary: 'Preview reload completed in 842ms.',
+            timestamp: '2026-05-04T10:02:00.000Z',
+            actor: 'operator-1',
+            severity: null,
+            success: true,
+          },
+          {
+            id: 'action-1',
+            source: 'audit',
+            action: 'observe.preview.refresh',
+            summary: 'Operator refreshed preview after rollback.',
+            timestamp: '2026-05-04T10:01:00.000Z',
+            actor: 'operator-1',
+            severity: null,
+            success: true,
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByTestId('observe-preview-diagnostics')).toBeInTheDocument();
+    expect(screen.getByTestId('observe-preview-health')).toHaveTextContent('Preview health: Down');
+    expect(screen.getByTestId('preview-runtime-error')).toHaveTextContent('TypeError');
+    expect(screen.getByTestId('preview-console-log')).toHaveTextContent('Console warning');
+    expect(screen.getByTestId('preview-policy-block')).toHaveTextContent('Sandbox policy denied');
+    expect(screen.getByTestId('preview-load-latency')).toHaveTextContent('842ms');
+    expect(screen.getAllByTestId('preview-user-action')[0]).toHaveTextContent('operator-1');
   });
 });

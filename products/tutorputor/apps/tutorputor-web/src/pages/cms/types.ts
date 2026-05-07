@@ -35,6 +35,7 @@ export interface ContentBlock {
     orderIndex: number;
     blockType: ContentBlockType;
     payload: unknown;
+    schemaVersion: string;
 }
 
 /** Module draft input for create */

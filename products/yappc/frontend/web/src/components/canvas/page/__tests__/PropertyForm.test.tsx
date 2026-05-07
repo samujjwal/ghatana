@@ -59,7 +59,7 @@ describe('PropertyForm governance enforcement', () => {
       target: { value: 'outline' },
     });
 
-    expect(screen.getByText(/Review required before applying governed prop changes/)).toBeTruthy();
+    expect(screen.getByText(/Review required before applying governed inspector changes/)).toBeTruthy();
     const applyButton = screen.getByRole('button', { name: 'Apply' });
     expect(applyButton).toBeDisabled();
 
@@ -155,6 +155,9 @@ describe('PropertyForm governance enforcement', () => {
 
     fireEvent.click(screen.getByLabelText('Telemetry consent has been confirmed for this change'));
     fireEvent.click(screen.getByLabelText('Privacy classification has been reviewed for this change'));
+    expect(screen.getByText(/responsive variant/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
+    fireEvent.click(screen.getByLabelText('I have reviewed the governed change'));
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
 
     expect(onUpdate).toHaveBeenCalledWith({

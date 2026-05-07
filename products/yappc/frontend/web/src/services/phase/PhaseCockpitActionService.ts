@@ -3,12 +3,13 @@ import type { GenerateReviewDecision } from '@/lib/api/client';
 
 import type { MountedPhase, PhaseTransitionPreviewSnapshot } from './types';
 
-export type PhaseActionKind = 'navigate' | 'surface' | 'generate-review' | 'run-workflow';
+export type PhaseActionKind = 'navigate' | 'surface' | 'generate-review' | 'run-workflow' | 'lifecycle-transition';
 
 export interface ExecutePhaseActionParams {
   readonly phase: MountedPhase;
   readonly projectId: string;
   readonly tenantId?: string;
+  readonly actorId?: string;
   readonly preview: PhaseTransitionPreviewSnapshot | null;
 }
 
@@ -36,9 +37,41 @@ export interface PhaseActionResult {
   readonly runId?: string;
   readonly status?: string;
   readonly reviewRequired?: boolean;
+  readonly fromPhase?: string;
+  readonly toPhase?: string;
+  readonly auditEventId?: string;
 }
 
 const RUN_WORKFLOW_TEMPLATE_ID = 'yappc-run';
+
+interface SurfaceReviewActionConfig {
+  readonly auditType: string;
+  readonly description: string;
+  readonly resultMessage: string;
+}
+
+const SURFACE_REVIEW_ACTIONS: Partial<Record<MountedPhase, SurfaceReviewActionConfig>> = {
+  shape: {
+    auditType: 'phase.shape.builder_review_started',
+    description: 'Shape phase primary action opened the canvas and page-builder review workspace.',
+    resultMessage: 'Shape review started. The canvas and page-builder workspace is open for persisted component work.',
+  },
+  observe: {
+    auditType: 'phase.observe.metrics_review_started',
+    description: 'Observe phase primary action opened preview metrics and runtime diagnostic review.',
+    resultMessage: 'Observe review started. Preview metrics and runtime diagnostics are open for inspection.',
+  },
+  learn: {
+    auditType: 'phase.learn.retrospective_started',
+    description: 'Learn phase primary action opened the retrospective evidence capture flow.',
+    resultMessage: 'Learning capture started. Retrospective evidence is open for review.',
+  },
+  evolve: {
+    auditType: 'phase.evolve.next_cycle_planning_started',
+    description: 'Evolve phase primary action opened next-cycle planning from backed lifecycle evidence.',
+    resultMessage: 'Next-cycle planning started. Roadmap and backlog evidence is open for review.',
+  },
+};
 
 function getGeneratedRunId(response: { readonly runId?: string; readonly executionId?: string } | undefined): string | undefined {
   return response?.runId ?? response?.executionId;
@@ -71,8 +104,67 @@ export async function executePhasePrimaryAction({
   phase,
   projectId,
   tenantId,
+  actorId,
   preview,
 }: ExecutePhaseActionParams): Promise<PhaseActionResult> {
+  const surfaceReviewAction = SURFACE_REVIEW_ACTIONS[phase];
+  if (surfaceReviewAction) {
+    if (!actorId) {
+      throw new Error(`${phase} review requires an authenticated actor.`);
+    }
+
+    const auditEvent = await yappcApi.audit.emit({
+      type: surfaceReviewAction.auditType,
+      userId: actorId,
+      projectId,
+      flowStage: phase,
+      phase: phase.toUpperCase(),
+      description: surfaceReviewAction.description,
+      metadata: {
+        currentPhase: preview?.currentPhase ?? null,
+        nextPhase: preview?.nextPhase ?? null,
+        readiness: preview?.readiness ?? null,
+        canAdvance: preview?.canAdvance ?? null,
+        blockerCount: preview?.blockers.length ?? 0,
+      },
+    });
+
+    return {
+      kind: 'surface',
+      status: 'AUDIT_RECORDED',
+      auditEventId: auditEvent.id,
+      message: `${surfaceReviewAction.resultMessage} Audit event ${auditEvent.id} recorded.`,
+    };
+  }
+
+  if (phase === 'validate') {
+    requireReady(preview);
+
+    if (!actorId) {
+      throw new Error('Lifecycle approval requires an authenticated reviewer.');
+    }
+    if (!preview?.currentPhase || !preview.nextPhase) {
+      throw new Error('Lifecycle approval requires a current phase and next phase from the readiness preview.');
+    }
+
+    const transition = await yappcApi.lifecycle.advance({
+      projectId,
+      fromPhase: preview.currentPhase,
+      toPhase: preview.nextPhase,
+      userId: actorId,
+    });
+
+    return {
+      kind: 'lifecycle-transition',
+      status: transition.success ? 'APPROVED' : 'BLOCKED',
+      fromPhase: preview.currentPhase,
+      toPhase: transition.currentPhase ?? preview.nextPhase,
+      message: transition.success
+        ? `Lifecycle transition approved from ${preview.currentPhase} to ${transition.currentPhase ?? preview.nextPhase}.`
+        : `Lifecycle transition could not be approved: ${(transition.errors ?? ['Unknown lifecycle error']).join(', ')}`,
+    };
+  }
+
   if (phase === 'generate') {
     requireReady(preview);
 

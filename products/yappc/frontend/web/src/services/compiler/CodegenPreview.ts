@@ -13,12 +13,59 @@ export interface CodegenPreview {
   generatedCode: string;
   /** Original code */
   originalCode: string;
+  /** Generated file previews with provenance */
+  generatedFiles: GeneratedFilePreview[];
+  /** Provenance shared by the generated file and diff regions */
+  provenance: GeneratedArtifactProvenance;
   /** Ownership regions */
   ownershipRegions: OwnershipRegion[];
   /** Diff */
   diff: DiffRegion[];
   /** Merge conflicts */
   conflicts: MergeConflict[];
+}
+
+export type GeneratedArtifactType =
+  | 'source'
+  | 'test'
+  | 'config'
+  | 'documentation'
+  | 'schema'
+  | 'api'
+  | 'infrastructure';
+
+export interface GeneratedArtifactProvenance {
+  /** Requirement that justified this generated output */
+  requirementId: string;
+  /** Mounted lifecycle phase that produced the output */
+  phase: string;
+  /** Builder/canvas node that contributed the implementation context */
+  canvasNodeId: string;
+  /** Source artifact used as generation input */
+  sourceArtifactId: string;
+  /** Generation confidence in the output lineage, from 0 to 1 */
+  confidence: number;
+  /** Reviewer/actor who approved the generation context */
+  approvingActorId: string;
+  /** Optional approval timestamp */
+  approvedAt?: string;
+}
+
+export interface GeneratedFilePreview {
+  readonly id: string;
+  readonly path: string;
+  readonly content: string;
+  readonly language: string;
+  readonly artifactType: GeneratedArtifactType;
+  readonly provenance: GeneratedArtifactProvenance;
+  readonly diffRegionIds: readonly string[];
+}
+
+export interface CodegenPreviewOptions {
+  readonly generatedFilePath: string;
+  readonly language?: string;
+  readonly artifactType?: GeneratedArtifactType;
+  readonly provenance: GeneratedArtifactProvenance;
 }
 
 export interface OwnershipRegion {
@@ -53,6 +100,8 @@ export interface DiffRegion {
   newContent: string;
   /** Owner */
   owner: 'system' | 'user';
+  /** Requirement/artifact/canvas lineage for this diff */
+  provenance: GeneratedArtifactProvenance;
 }
 
 export interface MergeConflict {
@@ -86,19 +135,98 @@ export interface MergeOptions {
  */
 export function generateCodegenPreview(
   originalCode: string,
-  generatedCode: string
+  generatedCode: string,
+  options?: CodegenPreviewOptions,
 ): CodegenPreview {
   const ownershipRegions = identifyOwnershipRegions(generatedCode);
-  const diff = computeDiff(originalCode, generatedCode, ownershipRegions);
+  const provenance = resolveGeneratedArtifactProvenance(options?.provenance);
+  const diff = computeDiff(originalCode, generatedCode, ownershipRegions, provenance);
   const conflicts = detectMergeConflicts(originalCode, generatedCode, ownershipRegions);
+  const generatedFiles = createGeneratedFilePreviews(generatedCode, diff, options, provenance);
 
   return {
     generatedCode,
     originalCode,
+    generatedFiles,
+    provenance,
     ownershipRegions,
     diff,
     conflicts,
   };
+}
+
+function resolveGeneratedArtifactProvenance(
+  provenance?: GeneratedArtifactProvenance,
+): GeneratedArtifactProvenance {
+  if (!provenance) {
+    return {
+      requirementId: 'unattributed-requirement',
+      phase: 'generate',
+      canvasNodeId: 'unattributed-canvas-node',
+      sourceArtifactId: 'unattributed-source-artifact',
+      confidence: 0,
+      approvingActorId: 'unapproved',
+    };
+  }
+
+  const requiredFields = [
+    ['requirementId', provenance.requirementId],
+    ['phase', provenance.phase],
+    ['canvasNodeId', provenance.canvasNodeId],
+    ['sourceArtifactId', provenance.sourceArtifactId],
+    ['approvingActorId', provenance.approvingActorId],
+  ] as const;
+
+  const missingFields = requiredFields
+    .filter(([, value]) => value.trim().length === 0)
+    .map(([field]) => field);
+
+  if (missingFields.length > 0) {
+    throw new Error(`Codegen provenance missing required field(s): ${missingFields.join(', ')}`);
+  }
+
+  if (provenance.confidence < 0 || provenance.confidence > 1) {
+    throw new Error('Codegen provenance confidence must be between 0 and 1.');
+  }
+
+  return provenance;
+}
+
+function inferGeneratedFileLanguage(path: string): string {
+  if (path.endsWith('.tsx') || path.endsWith('.ts')) {
+    return 'typescript';
+  }
+  if (path.endsWith('.jsx') || path.endsWith('.js')) {
+    return 'javascript';
+  }
+  if (path.endsWith('.java')) {
+    return 'java';
+  }
+  if (path.endsWith('.json')) {
+    return 'json';
+  }
+  return 'text';
+}
+
+function createGeneratedFilePreviews(
+  generatedCode: string,
+  diff: readonly DiffRegion[],
+  options: CodegenPreviewOptions | undefined,
+  provenance: GeneratedArtifactProvenance,
+): GeneratedFilePreview[] {
+  const path = options?.generatedFilePath ?? 'generated://unattributed/generated-output';
+
+  return [
+    {
+      id: `generated-file-${path}`,
+      path,
+      content: generatedCode,
+      language: options?.language ?? inferGeneratedFileLanguage(path),
+      artifactType: options?.artifactType ?? 'source',
+      provenance,
+      diffRegionIds: diff.map((region) => region.id),
+    },
+  ];
 }
 
 /**
@@ -200,7 +328,8 @@ function detectRegionType(line: string, index: number, lines: string[]): Ownersh
 function computeDiff(
   originalCode: string,
   generatedCode: string,
-  ownershipRegions: OwnershipRegion[]
+  ownershipRegions: OwnershipRegion[],
+  provenance: GeneratedArtifactProvenance,
 ): DiffRegion[] {
   const diff: DiffRegion[] = [];
   const originalLines = originalCode.split('\n');
@@ -223,6 +352,7 @@ function computeDiff(
         originalContent: originalLine,
         newContent: generatedLine,
         owner: region?.owner || 'system',
+        provenance,
       });
     }
   }
@@ -304,6 +434,17 @@ export function mergeCode(
   return { mergedCode, conflicts: preview.conflicts };
 }
 
+function getPreviewRegenerationOptions(preview: CodegenPreview): CodegenPreviewOptions {
+  const generatedFile = preview.generatedFiles[0];
+
+  return {
+    generatedFilePath: generatedFile?.path ?? 'generated://unattributed/generated-output',
+    provenance: preview.provenance,
+    ...(generatedFile?.language ? { language: generatedFile.language } : {}),
+    ...(generatedFile?.artifactType ? { artifactType: generatedFile.artifactType } : {}),
+  };
+}
+
 /**
  * Apply user version to merged code
  */
@@ -364,7 +505,7 @@ export function applyUserEdit(
   const lines = preview.generatedCode.split('\n');
   lines[line - 1] = newContent;
 
-  return generateCodegenPreview(preview.originalCode, lines.join('\n'));
+  return generateCodegenPreview(preview.originalCode, lines.join('\n'), getPreviewRegenerationOptions(preview));
 }
 
 /**

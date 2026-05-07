@@ -224,6 +224,13 @@ export interface Project {
   name: string;
   description?: string;
   workspaceId: string;
+  ownerWorkspaceId?: string;
+  type?: string;
+  status?: string;
+  lifecyclePhase?: string;
+  isDefault?: boolean;
+  aiNextActions?: string[];
+  aiHealthScore?: number;
   role?: WorkspaceRole;
   isOwned?: boolean;
   isIncluded?: boolean;
@@ -245,6 +252,9 @@ export interface UpdateProjectRequest {
 export interface ProjectListResponse {
   readonly owned: Project[];
   readonly included: Project[];
+}
+interface ProjectResourceResponse {
+  readonly project: Project;
 }
 export interface ProjectActivityEvent {
   readonly id: string;
@@ -323,13 +333,33 @@ function encodeQuery(params: Readonly<Record<string, string | undefined>>): stri
   return encoded ? `?${encoded}` : '';
 }
 
+function unwrapProjectResource(response: Project | ProjectResourceResponse): Project {
+  if (
+    typeof response === 'object' &&
+    response !== null &&
+    'project' in response &&
+    typeof response.project === 'object' &&
+    response.project !== null
+  ) {
+    return response.project;
+  }
+
+  return response as Project;
+}
+
 export const projects = {
   list: (workspaceId: string) =>
     get<ProjectListResponse | Project[]>(
       `/api/projects${encodeQuery({ workspaceId })}`,
       'projects.list',
     ),
-  get: (projectId: string) => get<Project>(`/api/projects/${encodeURIComponent(projectId)}`, 'projects.get'),
+  get: async (projectId: string) =>
+    unwrapProjectResource(
+      await get<Project | ProjectResourceResponse>(
+        `/api/projects/${encodeURIComponent(projectId)}`,
+        'projects.get',
+      ),
+    ),
   create: (body: CreateProjectRequest) => post<CreateProjectRequest, Project>('/api/projects', body, 'projects.create'),
   update: (projectId: string, body: UpdateProjectRequest) =>
     patch<UpdateProjectRequest, Project>(`/api/projects/${encodeURIComponent(projectId)}`, body, 'projects.update'),
@@ -421,12 +451,42 @@ export interface GenerateArtifactsRequest {
   readonly techStack?: readonly string[];
   readonly options?: Record<string, never>;
 }
+export interface GenerateArtifactProvenance {
+  readonly requirementId: string;
+  readonly phase: string;
+  readonly canvasNodeId: string;
+  readonly sourceArtifactId: string;
+  readonly confidence: number;
+  readonly approvingActorId: string;
+  readonly approvedAt?: string;
+}
+export interface GenerateDiffRegion {
+  readonly id: string;
+  readonly type: 'addition' | 'deletion' | 'modification';
+  readonly startLine: number;
+  readonly endLine: number;
+  readonly originalContent: string;
+  readonly newContent: string;
+  readonly owner: 'system' | 'user';
+  readonly provenance: GenerateArtifactProvenance;
+}
+export interface GeneratedFileDiff {
+  readonly id: string;
+  readonly path: string;
+  readonly language: string;
+  readonly artifactType: 'source' | 'test' | 'config' | 'documentation' | 'schema' | 'api' | 'infrastructure';
+  readonly provenance: GenerateArtifactProvenance;
+  readonly diffRegions: readonly GenerateDiffRegion[];
+}
+export interface GenerateDiffReview {
+  readonly files: readonly GeneratedFileDiff[];
+}
 export interface GenerateArtifactsResponse {
   readonly runId?: string;
   readonly executionId?: string;
   readonly status?: string;
   readonly reviewRequired?: boolean;
-  readonly diff?: unknown;
+  readonly diff?: GenerateDiffReview;
 }
 export interface RegenerateDiffRequest {
   readonly runId: string;
@@ -435,7 +495,7 @@ export interface RegenerateDiffRequest {
 export interface RegenerateDiffResponse {
   readonly runId?: string;
   readonly status?: string;
-  readonly diff?: unknown;
+  readonly diff?: GenerateDiffReview;
   readonly reviewRequired?: boolean;
 }
 export type GenerateReviewDecision = 'apply' | 'reject' | 'rollback';
@@ -701,11 +761,84 @@ export interface FrontendErrorReport {
   componentName?: string;
   url: string;
   userAgent: string;
+  dataClassification?: TelemetryDataClassification;
+  tenantId?: string;
+  userId?: string;
+}
+
+export type TelemetryDataClassification =
+  | 'PUBLIC'
+  | 'INTERNAL'
+  | 'CONFIDENTIAL'
+  | 'RESTRICTED'
+  | 'SENSITIVE'
+  | 'CREDENTIALS'
+  | 'REGULATED';
+
+export interface TelemetryConsentContext {
+  readonly userTelemetryConsent: boolean;
+  readonly tenantTelemetryConsent: boolean;
+  readonly dataClassification: TelemetryDataClassification;
+  readonly allowSensitiveTelemetry?: boolean;
+  readonly tenantId?: string;
+  readonly userId?: string;
+}
+
+export interface TelemetryReportResult {
+  readonly accepted: boolean;
+  readonly blockedReason?: string;
+}
+
+const TELEMETRY_BLOCKED_CLASSIFICATIONS: ReadonlySet<TelemetryDataClassification> = new Set([
+  'SENSITIVE',
+  'CREDENTIALS',
+  'REGULATED',
+  'RESTRICTED',
+]);
+
+export function evaluateTelemetryConsent(context: TelemetryConsentContext): TelemetryReportResult {
+  if (!context.tenantTelemetryConsent) {
+    return { accepted: false, blockedReason: 'Tenant telemetry consent is not enabled.' };
+  }
+  if (!context.userTelemetryConsent) {
+    return { accepted: false, blockedReason: 'User telemetry consent is not enabled.' };
+  }
+  if (
+    TELEMETRY_BLOCKED_CLASSIFICATIONS.has(context.dataClassification) &&
+    context.allowSensitiveTelemetry !== true
+  ) {
+    return {
+      accepted: false,
+      blockedReason: `Telemetry blocked for ${context.dataClassification.toLowerCase()} data classification.`,
+    };
+  }
+
+  return { accepted: true };
 }
 
 export const telemetry = {
-  reportError: (body: FrontendErrorReport) =>
-    post<FrontendErrorReport, void>('/api/telemetry/frontend-errors', body, 'telemetry.reportError'),
+  reportError: async (
+    body: FrontendErrorReport,
+    consent: TelemetryConsentContext,
+  ): Promise<TelemetryReportResult> => {
+    const decision = evaluateTelemetryConsent(consent);
+    if (!decision.accepted) {
+      return decision;
+    }
+
+    const payload: FrontendErrorReport = {
+      ...body,
+      dataClassification: consent.dataClassification,
+      ...(consent.tenantId ? { tenantId: consent.tenantId } : {}),
+      ...(consent.userId ? { userId: consent.userId } : {}),
+    };
+
+    return post<FrontendErrorReport, TelemetryReportResult>(
+      '/api/telemetry/frontend-errors',
+      payload,
+      'telemetry.reportError',
+    );
+  },
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -82,6 +82,8 @@ export interface ModuleSummary {
   tags?: string[];
 }
 
+import type { ContentBlockType } from "../pages/cms/types";
+
 export interface LearningObjective {
   id: string;
   label: string;
@@ -90,16 +92,10 @@ export interface LearningObjective {
 
 export interface ContentBlock {
   id: string;
-  blockType: "text" | "video" | "quiz" | "interactive";
-  payload?: {
-    markdown?: string;
-    videoUrl?: string;
-    questions?: Array<{
-      question: string;
-      options: string[];
-      correctIndex: number;
-    }>;
-  };
+  blockType: ContentBlockType;
+  orderIndex: number;
+  payload: unknown;
+  schemaVersion: string;
 }
 
 export interface ModuleDetail {

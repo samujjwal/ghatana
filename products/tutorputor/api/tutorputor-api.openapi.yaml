@@ -67,154 +67,397 @@ tags:
     description: Manage topic-specific knowledge claims
 
 paths:
-  /content/generate:
+  /generation/requests:
     post:
-      summary: Generate educational content
-      operationId: generateContent
+      summary: Create a new generation request
+      operationId: createGenerationRequest
       x-tutorputor-contract:
-        requestType: ContentGenerationRequest
-        responseType: GeneratedContent
+        requestType: CreateGenerationRequestInput
+        responseType: GenerationRequest
         serviceInterface: TutorPutorOpenApiService
-        serviceMethod: generateContent
+        serviceMethod: createGenerationRequest
         backendOwner: services/tutorputor-platform/src/modules/content/generation/routes.ts
         typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
       tags:
         - Content Generation
       description: |
-        Generates comprehensive educational content for a given topic.
-        This is a long-running operation that may take 5-30 seconds.
+        Creates a new generation request in DRAFT status. This is the first step
+        in the generation-request lifecycle. After creation, the request must be
+        planned, then executed.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ContentGenerationRequest'
-            examples:
-              basic:
-                summary: Basic content generation
-                value:
-                  topic: "Photosynthesis"
-                  gradeLevel: "high-school"
-                  format: "markdown"
-              advanced:
-                summary: Advanced with custom parameters
-                value:
-                  topic: "Quantum Mechanics"
-                  gradeLevel: "undergraduate"
-                  format: "html"
-                  language: "en-US"
-                  includeExamples: true
-                  exampleCount: 5
-                  includeQuiz: true
+              $ref: '#/components/schemas/CreateGenerationRequestInput'
       responses:
-        '200':
-          description: Content generated successfully
-          headers:
-            X-Content-ID:
-              description: Unique identifier for generated content
-              schema:
-                type: string
-                format: uuid
-            X-Generation-Time-MS:
-              description: Time taken to generate content in milliseconds
-              schema:
-                type: integer
+        '201':
+          description: Generation request created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GeneratedContent'
+                $ref: '#/components/schemas/GenerationRequest'
         '400':
           description: Invalid request
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error:
-                  code: "INVALID_REQUEST"
-                  message: "Topic is required"
-                  details:
-                    topic: "Required field"
-                traceId: "trace-123456"
-                timestamp: "2026-05-06T00:00:00.000Z"
-                statusCode: 400
         '401':
           $ref: '#/components/responses/UnauthorizedError'
-        '429':
-          description: Rate limit exceeded
-          headers:
-            X-RateLimit-Reset:
-              schema:
-                type: integer
-                format: unix-time
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RateLimitError'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-      x-code-samples:
-        - lang: curl
-          source: |
-            curl -X POST https://api.tutorputor.io/v1/content/generate \
-              -H "Authorization: Bearer $TOKEN" \
-              -H "Content-Type: application/json" \
-              -d '{
-                "topic": "Photosynthesis",
-                "gradeLevel": "high-school",
-                "format": "markdown"
-              }'
-        - lang: python
-          source: |
-            import requests
-            
-            response = requests.post(
-              'https://api.tutorputor.io/v1/content/generate',
-              headers={'Authorization': f'Bearer {token}'},
-              json={
-                'topic': 'Photosynthesis',
-                'gradeLevel': 'high-school',
-                'format': 'markdown'
-              }
-            )
-            content = response.json()
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
 
-  /content/generate/{contentId}:
     get:
-      summary: Retrieve generated content
-      operationId: getGeneratedContent
+      summary: List generation requests
+      operationId: listGenerationRequests
       x-tutorputor-contract:
-        requestType: null
-        responseType: GeneratedContent
+        requestType: ListGenerationRequestsQuery
+        responseType: ListGenerationRequestsResponse
         serviceInterface: TutorPutorOpenApiService
-        serviceMethod: getGeneratedContent
+        serviceMethod: listGenerationRequests
         backendOwner: services/tutorputor-platform/src/modules/content/generation/routes.ts
         typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
       tags:
         - Content Generation
       parameters:
-        - name: contentId
-          in: path
-          required: true
-          description: Unique identifier of generated content
+        - name: status
+          in: query
+          required: false
           schema:
             type: string
-            format: uuid
+            enum: [DRAFT, PLANNING, PLANNED, EXECUTING, COMPLETED, FAILED, CANCELLED]
+          description: Filter by request status
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 500
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
       responses:
         '200':
-          description: Content retrieved
+          description: List of generation requests
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GeneratedContent'
+                $ref: '#/components/schemas/ListGenerationRequestsResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /generation/requests/{requestId}:
+    get:
+      summary: Get generation request with jobs
+      operationId: getGenerationRequest
+      x-tutorputor-contract:
+        requestType: null
+        responseType: GenerationRequestWithJobs
+        serviceInterface: TutorPutorOpenApiService
+        serviceMethod: getGenerationRequest
+        backendOwner: services/tutorputor-platform/src/modules/content/generation/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Content Generation
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Generation request retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationRequestWithJobs'
         '404':
-          description: Content not found
+          description: Generation request not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+
+  /generation/requests/{requestId}/plan:
+    post:
+      summary: Run planning phase
+      operationId: planGenerationRequest
+      x-tutorputor-contract:
+        requestType: null
+        responseType: PlanningResult
+        serviceInterface: TutorPutorOpenApiService
+        serviceMethod: planGenerationRequest
+        backendOwner: services/tutorputor-platform/src/modules/content/generation/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Content Generation
+      description: |
+        Runs the planning phase for a generation request. Determines which artifacts
+        to generate, risk assessment, review path, and cost estimation. Transitions
+        the request from DRAFT to PLANNED and creates GenerationJob records.
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Planning completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanningResult'
+        '400':
+          description: Planning failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Generation request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /generation/requests/{requestId}/execute:
+    post:
+      summary: Start execution
+      operationId: executeGenerationRequest
+      x-tutorputor-contract:
+        requestType: null
+        responseType: ExecutionStartResult
+        serviceInterface: TutorPutorOpenApiService
+        serviceMethod: executeGenerationRequest
+        backendOwner: services/tutorputor-platform/src/modules/content/generation/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Content Generation
+      description: |
+        Starts execution of a planned generation request. Dispatches ready jobs
+        to the queue and begins the generation lifecycle.
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Execution started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionStartResult'
+        '400':
+          description: Execution failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /generation/requests/{requestId}/cancel:
+    post:
+      summary: Cancel a request
+      operationId: cancelGenerationRequest
+      x-tutorputor-contract:
+        requestType: null
+        responseType: GenerationRequest
+        serviceInterface: TutorPutorOpenApiService
+        serviceMethod: cancelGenerationRequest
+        backendOwner: services/tutorputor-platform/src/modules/content/generation/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Content Generation
+      description: |
+        Cancels a generation request that hasn't completed yet. Cancels any
+        pending/running jobs.
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Request cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationRequest'
+        '400':
+          description: Cancellation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /generation/requests/{requestId}/stream:
+    get:
+      summary: Stream execution snapshot
+      operationId: streamGenerationExecution
+      x-tutorputor-contract:
+        requestType: StreamExecutionQuery
+        responseType: text/event-stream
+        serviceInterface: TutorPutorOpenApiService
+        serviceMethod: streamGenerationExecution
+        backendOwner: services/tutorputor-platform/src/modules/content/generation/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Content Generation
+      description: |
+        Server-sent events stream for generation execution. Emits snapshot, job_result,
+        telemetry, summary, and done events. Requires Redis for live updates.
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: includeOutput
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '404':
+          description: Generation request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /generation/requests/{requestId}/results:
+    post:
+      summary: Record batch results
+      operationId: recordGenerationResults
+      x-tutorputor-contract:
+        requestType: RecordResultsInput
+        responseType: RecordResultsSummary
+        serviceInterface: TutorPutorOpenApiService
+        serviceMethod: recordGenerationResults
+        backendOwner: services/tutorputor-platform/src/modules/content/generation/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Content Generation
+      description: |
+        Records batch job execution results. Called by workers to report completion
+        of generation jobs. Requires service authentication.
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordResultsInput'
+      responses:
+        '200':
+          description: Results recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordResultsSummary'
+        '400':
+          description: Recording failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /generation/infer-intent:
+    post:
+      summary: AI-powered intent inference
+      operationId: inferGenerationIntent
+      x-tutorputor-contract:
+        requestType: InferIntentInput
+        responseType: InferIntentResult
+        serviceInterface: TutorPutorOpenApiService
+        serviceMethod: inferGenerationIntent
+        backendOwner: services/tutorputor-platform/src/modules/content/generation/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Content Generation
+      description: |
+        Uses AI to infer generation intent from a topic. Suggests domain, difficulty,
+        target grades, and learning objectives.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InferIntentInput'
+      responses:
+        '200':
+          description: Intent inferred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InferIntentResult'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Intent inference failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /generation/notifications/stream:
+    get:
+      summary: SSE stream for job status updates
+      operationId: streamGenerationNotifications
+      x-tutorputor-contract:
+        requestType: null
+        responseType: text/event-stream
+        serviceInterface: TutorPutorOpenApiService
+        serviceMethod: streamGenerationNotifications
+        backendOwner: services/tutorputor-platform/src/modules/content/generation/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Content Generation
+      description: |
+        Server-sent events stream for generation job status notifications.
+        Currently emits connection and ping events.
+      responses:
+        '200':
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
 
   /libraries:
     get:
@@ -373,113 +616,386 @@ paths:
 
 components:
   schemas:
-    ContentGenerationRequest:
+    CreateGenerationRequestInput:
       type: object
       required:
-        - topic
-        - gradeLevel
-        - format
+        - title
+        - domain
       properties:
-        topic:
+        title:
           type: string
           minLength: 1
           maxLength: 500
-          description: Topic to generate content for
-          example: "Photosynthesis"
-        gradeLevel:
+          description: Title of the generation request
+          example: "Introduction to Newton's Laws"
+        description:
+          type: string
+          maxLength: 2000
+          description: Optional description
+        domain:
           type: string
           enum:
-            - elementary
-            - middle-school
-            - high-school
-            - undergraduate
-            - graduate
-          description: Target grade/education level
-          example: "high-school"
-        format:
+            - MATH
+            - SCIENCE
+            - TECH
+            - ENGINEERING
+            - MEDICINE
+            - HEALTH
+            - BUSINESS
+            - MANAGEMENT
+            - ECONOMICS
+            - COMPUTER_SCIENCE
+            - INTERDISCIPLINARY
+          description: Domain for the content
+        conceptId:
           type: string
-          enum:
-            - markdown
-            - html
-            - json
-            - plain-text
-          description: Output format
-          example: "markdown"
-        language:
-          type: string
-          pattern: '^[a-z]{2}-[A-Z]{2}$'
-          default: "en-US"
-          description: Output language (BCP 47 format)
-          example: "en-US"
-        includeExamples:
-          type: boolean
-          default: true
-          description: Include real-world examples
-        exampleCount:
-          type: integer
-          minimum: 1
-          maximum: 10
-          default: 3
-          description: Number of examples to include
-        includeQuiz:
-          type: boolean
-          default: false
-          description: Include quiz questions at end
+          description: Optional concept ID to link to
+        targetGrades:
+          type: array
+          items:
+            type: string
+          description: Target grade levels
+        requestConfig:
+          type: object
+          additionalProperties: true
+          description: Optional configuration for the generation
 
-    GeneratedContent:
+    GenerationRequest:
       type: object
       required:
         - id
-        - topic
-        - content
-        - format
+        - tenantId
+        - title
+        - domain
+        - status
+        - requestedBy
         - createdAt
-        - estimatedReadTime
       properties:
         id:
           type: string
           format: uuid
-          description: Unique content identifier
-        topic:
+        tenantId:
           type: string
-          description: Topic of generated content
-        content:
+        title:
           type: string
-          description: The actual generated content
-          minLength: 100
-        format:
+        description:
+          type: string
+        domain:
           type: string
           enum:
-            - markdown
-            - html
-            - json
-            - plain-text
-        gradeLevel:
+            - MATH
+            - SCIENCE
+            - TECH
+            - ENGINEERING
+            - MEDICINE
+            - HEALTH
+            - BUSINESS
+            - MANAGEMENT
+            - ECONOMICS
+            - COMPUTER_SCIENCE
+            - INTERDISCIPLINARY
+        conceptId:
+          type: string
+        targetGrades:
+          type: array
+          items:
+            type: string
+        requestedBy:
+          type: string
+        requestConfig:
+          type: object
+          additionalProperties: true
+        status:
           type: string
           enum:
-            - elementary
-            - middle-school
-            - high-school
-            - undergraduate
-            - graduate
+            - DRAFT
+            - PLANNING
+            - PLANNED
+            - EXECUTING
+            - COMPLETED
+            - FAILED
+            - CANCELLED
+        plannedAssets:
+          type: array
+          items:
+            type: object
+        artifactNeeds:
+          type: object
+          additionalProperties:
+            type: integer
+        riskLevel:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+            - critical
+        riskFactors:
+          type: array
+          items:
+            type: string
+        reviewPath:
+          type: string
+          enum:
+            - auto_publish
+            - human_review
+            - expert_review
+        estimatedCost:
+          type: object
+        routingDecision:
+          type: object
+        totalJobs:
+          type: integer
+        completedJobs:
+          type: integer
+        failedJobs:
+          type: integer
+        plannedAt:
+          type: string
+          format: date-time
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
         createdAt:
           type: string
           format: date-time
         updatedAt:
           type: string
           format: date-time
-        estimatedReadTime:
-          type: integer
-          description: Estimated reading time in minutes
-          minimum: 1
-        exampleCount:
+
+    GenerationJob:
+      type: object
+      required:
+        - id
+        - requestId
+        - jobType
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        requestId:
+          type: string
+        jobType:
+          type: string
+          enum:
+            - claim
+            - explainer
+            - worked_example
+            - simulation
+            - animation
+            - assessment
+            - evaluation
+        targetRef:
+          type: string
+        inputPrompt:
+          type: string
+        parameters:
+          type: object
+          additionalProperties: true
+        status:
+          type: string
+          enum:
+            - PENDING
+            - RUNNING
+            - COMPLETED
+            - FAILED
+            - CANCELLED
+        progress:
           type: integer
           minimum: 0
-        includesQuiz:
-          type: boolean
-        generationTimeMs:
+          maximum: 100
+        outputAssetId:
+          type: string
+        outputData:
+          type: object
+          additionalProperties: true
+        diagnostics:
+          type: object
+          additionalProperties: true
+        errorMessage:
+          type: string
+        retryCount:
           type: integer
-          description: Time taken to generate in milliseconds
+        maxRetries:
+          type: integer
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    GenerationRequestWithJobs:
+      allOf:
+        - $ref: '#/components/schemas/GenerationRequest'
+        - type: object
+          properties:
+            jobs:
+              type: array
+              items:
+                $ref: '#/components/schemas/GenerationJob'
+
+    ListGenerationRequestsResponse:
+      type: object
+      required:
+        - items
+        - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/GenerationRequest'
+        total:
+          type: integer
+
+    PlanningResult:
+      type: object
+      required:
+        - requestId
+        - plannedAssets
+        - artifactNeeds
+        - riskLevel
+        - reviewPath
+        - estimatedCost
+        - totalJobs
+      properties:
+        requestId:
+          type: string
+        plannedAssets:
+          type: array
+          items:
+            type: object
+        artifactNeeds:
+          type: object
+          additionalProperties:
+            type: integer
+        riskLevel:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+            - critical
+        riskFactors:
+          type: array
+          items:
+            type: string
+        reviewPath:
+          type: string
+          enum:
+            - auto_publish
+            - human_review
+            - expert_review
+        estimatedCost:
+          type: object
+        routingDecision:
+          type: object
+        totalJobs:
+          type: integer
+
+    ExecutionStartResult:
+      type: object
+      required:
+        - request
+        - dispatch
+      properties:
+        request:
+          $ref: '#/components/schemas/GenerationRequestWithJobs'
+        dispatch:
+          type: object
+          properties:
+            queuedJobs:
+              type: array
+              items:
+                type: string
+
+    RecordResultsInput:
+      type: object
+      required:
+        - results
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              jobId:
+                type: string
+              status:
+                type: string
+                enum:
+                  - completed
+                  - failed
+              outputAssetId:
+                type: string
+              outputData:
+                type: object
+                additionalProperties: true
+              diagnostics:
+                type: object
+                additionalProperties: true
+              errorMessage:
+                type: string
+              durationMs:
+                type: integer
+
+    RecordResultsSummary:
+      type: object
+      properties:
+        completed:
+          type: integer
+        failed:
+          type: integer
+        total:
+          type: integer
+
+    InferIntentInput:
+      type: object
+      required:
+        - topic
+      properties:
+        topic:
+          type: string
+          minLength: 1
+          maxLength: 200
+        preferredDomain:
+          type: string
+
+    InferIntentResult:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            domain:
+              type: string
+            difficulty:
+              type: string
+            targetGrades:
+              type: array
+              items:
+                type: string
+            learningObjectives:
+              type: array
+              items:
+                type: string
+
+    StreamExecutionQuery:
+      type: object
+      properties:
+        includeOutput:
+          type: boolean
+          default: true
 
     ContentLibrary:
       type: object
@@ -649,6 +1165,20 @@ components:
             traceId: "trace-abc123"
             timestamp: "2026-05-06T00:00:00.000Z"
             statusCode: 401
+
+    ForbiddenError:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: "FORBIDDEN"
+              message: "Insufficient permissions for this operation"
+            traceId: "trace-def456"
+            timestamp: "2026-05-06T00:00:00.000Z"
+            statusCode: 403
 
     BadRequestError:
       description: Invalid request

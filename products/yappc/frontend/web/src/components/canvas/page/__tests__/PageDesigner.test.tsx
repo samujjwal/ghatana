@@ -86,6 +86,21 @@ vi.mock('../registry', () => ({
       status: 'stable',
     },
     {
+      id: 'textfield',
+      name: 'TextField',
+      displayName: 'Text field',
+      tooltip: 'Capture customer email',
+      group: 'Inputs',
+      subGroup: 'Text',
+      rank: 3,
+      icon: undefined,
+      defaultProps: {},
+      featured: true,
+      searchKeywords: ['email', 'form'],
+      version: '1.0.0',
+      status: 'stable',
+    },
+    {
       id: 'card',
       name: 'Card',
       displayName: 'Card',
@@ -101,6 +116,33 @@ vi.mock('../registry', () => ({
       status: 'stable',
     },
   ],
+  getBuilderPaletteCategories: (entries: Array<{ group: string }>) =>
+    Array.from(new Set(entries.map((entry) => entry.group))).sort(),
+  getFilteredBuilderPalette: (
+    filters: { query?: string; category?: string },
+    entries: Array<{
+      name: string;
+      displayName: string;
+      tooltip: string;
+      group: string;
+      subGroup?: string;
+      searchKeywords: readonly string[];
+      featured: boolean;
+      rank: number;
+    }>
+  ) => {
+    const query = filters.query?.toLowerCase() ?? '';
+    return entries
+      .filter((entry) => !filters.category || entry.group === filters.category)
+      .filter((entry) =>
+        [entry.name, entry.displayName, entry.tooltip, entry.group, entry.subGroup, ...entry.searchKeywords]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+          .includes(query)
+      )
+      .sort((a, b) => Number(b.featured) - Number(a.featured) || a.rank - b.rank);
+  },
   getContractMap: () =>
     new Map([
       ['Button', { name: 'Button', props: [], slots: [], layout: { isContainer: false } }],
@@ -121,6 +163,25 @@ vi.mock('../registry', () => ({
     props: [],
     slots: contractName === 'Card' ? [{ name: 'default', isDefault: true }] : [],
     layout: { isContainer: contractName === 'Card' },
+  }),
+  migrateRegistryContractInstance: (input: { contractName: string; props: Record<string, unknown>; version?: string }) => ({
+    contractName:
+      input.contractName === 'textfield'
+        ? 'TextField'
+        : input.contractName === 'card'
+          ? 'Card'
+          : input.contractName === 'button'
+            ? 'Button'
+            : input.contractName,
+    version: input.version ?? '1.0.0',
+    props: input.props,
+    migrationsApplied: [],
+    compatibility: {
+      compatible: true,
+      requiresMigration: false,
+      warnings: [],
+      errors: [],
+    },
   }),
   toLegacyComponentType: (contractName: string) => contractName.toLowerCase(),
 }));
@@ -450,6 +511,34 @@ describe('PageDesigner', () => {
     expect(screen.getByText('Registry Components')).toBeInTheDocument();
     expect(screen.getByText('Button')).toBeInTheDocument();
     expect(screen.getByText('Card')).toBeInTheDocument();
+    expect(screen.getByText('Recommended: Text field')).toBeInTheDocument();
+    expect(screen.getByTestId('page-component-palette-summary')).toHaveTextContent(
+      '3 of 3 registry components shown'
+    );
+  });
+
+  it('filters the registry palette by search and category', () => {
+    render(<PageDesigner />);
+
+    fireEvent.change(screen.getByTestId('page-component-search'), {
+      target: { value: 'email' },
+    });
+
+    expect(screen.getByText('Recommended: Text field')).toBeInTheDocument();
+    expect(screen.queryByText('Button')).not.toBeInTheDocument();
+    expect(screen.getByTestId('page-component-palette-summary')).toHaveTextContent(
+      '1 of 3 registry components shown'
+    );
+
+    fireEvent.change(screen.getByTestId('page-component-search'), {
+      target: { value: '' },
+    });
+    fireEvent.change(screen.getByTestId('page-component-category'), {
+      target: { value: 'Layout' },
+    });
+
+    expect(screen.getByText('Card')).toBeInTheDocument();
+    expect(screen.queryByText('Button')).not.toBeInTheDocument();
   });
 
   it('renders the new empty state copy', () => {
@@ -518,10 +607,7 @@ describe('PageDesigner', () => {
     fireEvent.click(screen.getByText('Button'));
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith(
-        '/api/audit/events',
-        expect.objectContaining({ method: 'POST' }),
-      );
+      expect(vi.mocked(fetch).mock.calls.filter(([input]) => String(input).includes('/api/audit/events'))).toHaveLength(2);
     });
     const request = vi.mocked(fetch).mock.calls[0]?.[1];
     const body = JSON.parse(String(request?.body)) as {
@@ -539,7 +625,24 @@ describe('PageDesigner', () => {
       tenantId: 'tenant-1',
       workspaceId: 'workspace-1',
       commandType: 'insert-component',
+      correlationId: expect.any(String),
       success: true,
+    });
+    const telemetryRequest = vi.mocked(fetch).mock.calls[1]?.[1];
+    const telemetryBody = JSON.parse(String(telemetryRequest?.body)) as {
+      type: string;
+      flowStage: string;
+      metadata: Record<string, unknown>;
+    };
+    expect(telemetryBody.type).toBe('PAGE_BUILDER_TELEMETRY_PAGE_BUILDER_COMMAND_EXECUTED');
+    expect(telemetryBody.flowStage).toBe('BUILD_TELEMETRY');
+    expect(telemetryBody.metadata).toMatchObject({
+      tenantId: 'tenant-1',
+      workspaceId: 'workspace-1',
+      event: 'page_builder_command_executed',
+      commandType: 'insert-component',
+      validationErrorCount: 0,
+      correlationId: body.metadata.correlationId,
     });
   });
 
@@ -582,6 +685,10 @@ describe('PageDesigner', () => {
         nodes: expect.any(Map),
       }),
       expect.objectContaining({ valid: true }),
+      expect.objectContaining({
+        operation: 'document-update',
+        commandType: 'add-action-binding',
+      }),
     );
     const updatedDocument = onDocumentChangeForInspector.mock.calls.at(-1)?.[0];
     const updatedNode = updatedDocument.nodes.get('node-1');
@@ -621,6 +728,43 @@ describe('PageDesigner', () => {
     expect(onDocumentChange).toHaveBeenCalledWith(
       expect.objectContaining({ id: expect.any(String) }),
       expect.objectContaining({ valid: true }),
+      expect.objectContaining({
+        operation: 'document-update',
+        commandType: 'insert-component',
+      }),
+    );
+  });
+
+  it('emits semantic undo and redo document change contexts', () => {
+    render(<PageDesigner onDocumentChange={onDocumentChange} />);
+
+    expect(screen.getByTestId('page-designer-undo-command')).toBeDisabled();
+    expect(screen.getByTestId('page-designer-redo-command')).toBeDisabled();
+
+    fireEvent.click(screen.getByText('Button'));
+    expect(screen.getByTestId('page-designer-undo-command')).not.toBeDisabled();
+
+    fireEvent.click(screen.getByTestId('page-designer-undo-command'));
+    expect(onDocumentChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ rootNodes: [] }),
+      expect.objectContaining({ valid: true }),
+      expect.objectContaining({
+        operation: 'undo-command',
+        commandType: 'insert-component',
+        changedNodeIds: expect.any(Array),
+      }),
+    );
+    expect(screen.getByTestId('page-designer-redo-command')).not.toBeDisabled();
+
+    fireEvent.click(screen.getByTestId('page-designer-redo-command'));
+    expect(onDocumentChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ rootNodes: expect.arrayContaining([expect.any(String)]) }),
+      expect.objectContaining({ valid: true }),
+      expect.objectContaining({
+        operation: 'redo-command',
+        commandType: 'insert-component',
+        changedNodeIds: expect.any(Array),
+      }),
     );
   });
 
@@ -828,9 +972,11 @@ describe('PageDesigner', () => {
 const {
   importPageArtifactsFromCodeMock,
   importSourceToPageArtifactsMock,
+  checkArtifactCompilerRuntimeHealthMock,
 } = vi.hoisted(() => ({
   importPageArtifactsFromCodeMock: vi.fn(),
   importSourceToPageArtifactsMock: vi.fn(),
+  checkArtifactCompilerRuntimeHealthMock: vi.fn(),
 }));
 
 vi.mock('../artifactCompilerBridge', () => ({
@@ -841,11 +987,22 @@ vi.mock('../../../../services/compiler/ImportSourceWorkflow', () => ({
   importSourceToPageArtifacts: (...args: unknown[]) => importSourceToPageArtifactsMock(...args),
 }));
 
+vi.mock('../../../../services/compiler/ArtifactCompilerRuntimeHealth', () => ({
+  checkArtifactCompilerRuntimeHealth: (...args: unknown[]) => checkArtifactCompilerRuntimeHealthMock(...args),
+}));
+
 describe('PageDesigner — import panel', () => {
   const emptySerializedDocument = { id: 'doc-import', version: 1, nodes: {}, rootNodes: [] };
 
   beforeEach(() => {
     vi.clearAllMocks();
+    checkArtifactCompilerRuntimeHealthMock.mockResolvedValue({
+      status: 'available',
+      checkedAt: '2026-05-07T16:00:00.000Z',
+      requirements: [],
+      unavailableRequirements: [],
+      message: 'Artifact compiler runtime is available.',
+    });
     importPageArtifactsFromCodeMock.mockReturnValue([
       {
         artifactId: 'art-1',
@@ -916,6 +1073,42 @@ describe('PageDesigner — import panel', () => {
     expect(screen.getByTestId('page-designer-import-textarea')).toBeInTheDocument();
   });
 
+  it('shows import wizard templates for common source paths', () => {
+    render(<PageDesigner projectId="proj-1" />);
+    fireEvent.click(screen.getByTestId('page-designer-import-btn'));
+
+    expect(screen.getByTestId('page-import-template-paste-code')).toHaveTextContent('Paste code');
+    expect(screen.getByTestId('page-import-template-upload-zip')).toHaveTextContent('Upload zip');
+    expect(screen.getByTestId('page-import-template-connect-repo')).toHaveTextContent('Connect repo');
+    expect(screen.getByTestId('page-import-template-import-storybook')).toHaveTextContent('Import Storybook');
+    expect(screen.getByTestId('page-import-template-import-route')).toHaveTextContent('Import route');
+  });
+
+  it('preconfigures governed source fields from import wizard templates', () => {
+    render(<PageDesigner projectId="proj-1" />);
+    fireEvent.click(screen.getByTestId('page-designer-import-btn'));
+
+    fireEvent.click(screen.getByTestId('page-import-template-upload-zip'));
+    expect(screen.getByTestId('page-designer-source-type')).toHaveValue('zip');
+    expect(screen.getByTestId('page-designer-source-locator')).toHaveAttribute(
+      'placeholder',
+      'https://example.com/artifacts/app-pages.zip',
+    );
+
+    fireEvent.click(screen.getByTestId('page-import-template-import-storybook'));
+    expect(screen.getByTestId('page-designer-source-type')).toHaveValue('storybook');
+    expect(screen.getByTestId('page-designer-source-locator')).toHaveAttribute(
+      'placeholder',
+      'https://example.com/Button.stories.tsx#Primary',
+    );
+
+    fireEvent.click(screen.getByTestId('page-import-template-paste-code'));
+    expect(screen.getByTestId('page-designer-import-textarea')).toHaveAttribute(
+      'placeholder',
+      '{"pages": [{"name": "Home", "confidence": 0.92}]}',
+    );
+  });
+
   it('shows an error when confirm is clicked with empty input', () => {
     render(<PageDesigner />);
     fireEvent.click(screen.getByTestId('page-designer-import-btn'));
@@ -952,6 +1145,9 @@ describe('PageDesigner — import panel', () => {
     const residualsPanel = screen.getByTestId('page-designer-residuals');
     expect(residualsPanel).toBeInTheDocument();
     expect(within(residualsPanel).getByText(/island-a/i)).toBeInTheDocument();
+    expect(screen.getByTestId('residual-island-explanation')).toHaveTextContent(
+      /could not be mapped to a reviewed registry contract/i,
+    );
   });
 
   it('shows import review queue decisions for loss points and residuals', () => {
@@ -963,6 +1159,9 @@ describe('PageDesigner — import panel', () => {
 
     expect(screen.getByTestId('page-designer-import-review-queue')).toHaveTextContent(
       'Import review queue: 0/2 decided',
+    );
+    expect(screen.getByTestId('import-review-gate-explanation')).toHaveTextContent(
+      /need an explicit apply or skip decision/i,
     );
     expect(screen.getByText(/Hero animation could not be represented/)).toBeInTheDocument();
 
@@ -977,6 +1176,62 @@ describe('PageDesigner — import panel', () => {
     ).toHaveTextContent('Decision: skipped');
     expect(screen.getByTestId('page-designer-import-review-queue')).toHaveTextContent(
       'Import review queue: 1/2 decided',
+    );
+  });
+
+  it('promotes decompiled residual islands to registry candidates', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          candidateId: 'candidate-island-a',
+          artifactId: 'art-1',
+          residualIslandId: 'island-a',
+          proposedContractName: 'IslandACandidate',
+          status: 'NEEDS_REVIEW',
+          auditRecordId: 'audit-candidate-1',
+          createdAt: '2026-05-07T00:00:00.000Z',
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<PageDesigner projectId="proj-1" />);
+    fireEvent.click(screen.getByTestId('page-designer-import-btn'));
+    const textarea = screen.getByTestId('page-designer-import-textarea') as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: '{ "pages": [] }' } });
+    fireEvent.click(screen.getByTestId('page-designer-import-confirm'));
+
+    fireEvent.click(screen.getByTestId('page-designer-residual-promote-island-a'));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/v1/yappc/artifacts/art-1/residual-islands/island-a/registry-candidates',
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include',
+          body: JSON.stringify({
+            proposedContractName: 'IslandACandidate',
+            source: 'decompiled-import',
+            notes: 'Promote decompiled residual island to reviewed registry candidate.',
+          }),
+        }),
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId('page-designer-residuals')).not.toBeInTheDocument();
+    });
+    expect(screen.getByTestId('page-designer-registry-candidates')).toHaveTextContent(
+      'Registry candidates: 1 awaiting review',
+    );
+    expect(screen.getByTestId('page-designer-registry-candidate-island-a')).toHaveTextContent(
+      'IslandACandidate',
+    );
+    expect(screen.getByTestId('page-designer-import-review-decision-residual-island-a')).toHaveTextContent(
+      'Decision: promoted',
     );
   });
 
@@ -1035,6 +1290,10 @@ describe('PageDesigner — import panel', () => {
     expect(onDocumentChange).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'doc-import' }),
       expect.objectContaining({ valid: true }),
+      expect.objectContaining({
+        operation: 'document-update',
+        commandType: 'import-document',
+      }),
     );
   });
 
@@ -1068,6 +1327,9 @@ describe('PageDesigner — import panel', () => {
     fireEvent.click(screen.getByTestId('page-designer-import-btn'));
     expect(screen.getByText(/Step 1: choose an import path/i)).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('page-import-mode-source'));
+    expect(screen.getByTestId('import-trust-explanation')).toHaveTextContent(
+      /preview trust level determines/i,
+    );
     fireEvent.change(screen.getByTestId('page-designer-source-type'), {
       target: { value: 'route' },
     });
@@ -1087,6 +1349,58 @@ describe('PageDesigner — import panel', () => {
       );
     });
     expect(onImportArtifacts).toHaveBeenCalled();
+  });
+
+  it('blocks governed source import with an actionable runtime health message when compiler runtime is unavailable', async () => {
+    checkArtifactCompilerRuntimeHealthMock.mockResolvedValue({
+      status: 'unavailable',
+      checkedAt: '2026-05-07T16:00:00.000Z',
+      requirements: [
+        {
+          id: 'artifact-analyzer-http',
+          label: 'YAPPC artifact analyzer HTTP runtime',
+          required: true,
+          endpoint: 'http://localhost:8080/api/v1/yappc/artifact',
+          healthUrl: 'http://localhost:8080/health',
+          description: 'Required for governed source import.',
+        },
+      ],
+      unavailableRequirements: [
+        {
+          id: 'artifact-analyzer-http',
+          label: 'YAPPC artifact analyzer HTTP runtime',
+          required: true,
+          endpoint: 'http://localhost:8080/api/v1/yappc/artifact',
+          healthUrl: 'http://localhost:8080/health',
+          description: 'Required for governed source import.',
+        },
+      ],
+      message: 'Artifact compiler runtime unavailable. Start or configure: YAPPC artifact analyzer HTTP runtime (http://localhost:8080/health).',
+    });
+
+    render(
+      <PageDesigner
+        projectId="proj-1"
+        auditContext={{
+          userId: 'user-1',
+          tenantId: 'tenant-1',
+          workspaceId: 'workspace-1',
+          projectId: 'proj-1',
+          artifactId: 'artifact-1',
+          phase: 'SHAPE',
+        }}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('page-designer-import-btn'));
+    fireEvent.click(screen.getByTestId('page-import-mode-source'));
+    fireEvent.change(screen.getByTestId('page-designer-source-locator'), {
+      target: { value: 'https://example.com/routes/Home.tsx' },
+    });
+    fireEvent.click(screen.getByTestId('page-designer-import-confirm'));
+
+    expect(await screen.findAllByText(/Artifact compiler runtime unavailable/i)).toHaveLength(2);
+    expect(screen.getByTestId('page-designer-artifact-runtime-status')).toHaveTextContent('http://localhost:8080/health');
+    expect(importSourceToPageArtifactsMock).not.toHaveBeenCalled();
   });
 
   it('requires authenticated tenant and workspace context for guided source imports', async () => {

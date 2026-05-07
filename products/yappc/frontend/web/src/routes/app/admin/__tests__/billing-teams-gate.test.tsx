@@ -76,13 +76,15 @@ describe('Teams route (C-Y10)', () => {
     expect(screen.queryByTestId('teams-page')).not.toBeInTheDocument();
   });
 
-  it('renders teams page when granted', async () => {
+  it('does not render placeholder teams page even when the role gate is granted before backend ships', async () => {
     mockUseCapabilityGate.mockReturnValue({ granted: true, reason: undefined });
 
     const { Component } = await import('../teams');
     render(<Component />);
 
-    expect(screen.getByTestId('teams-page')).toBeInTheDocument();
+    expect(screen.getByTestId('teams-unavailable')).toBeInTheDocument();
+    expect(screen.queryByTestId('teams-page')).not.toBeInTheDocument();
+    expect(screen.getByText(/not yet available/i)).toBeInTheDocument();
   });
 });
 

@@ -32,6 +32,14 @@ export interface UsePhaseCockpitDataParams {
   readonly onSuggestionAction: () => void;
 }
 
+export interface PhaseCockpitDataWarning {
+  readonly source: 'activity' | 'preview';
+  readonly title: string;
+  readonly message: string;
+  readonly retryLabel: string;
+  readonly retry: () => void;
+}
+
 export interface UsePhaseCockpitDataResult {
   readonly config: ReturnType<typeof getPhaseCockpitConfig>;
   readonly projectQuery: ReturnType<typeof useQuery<PhaseProjectSnapshot>>;
@@ -46,6 +54,8 @@ export interface UsePhaseCockpitDataResult {
   readonly governance: ReturnType<typeof buildPhaseGovernanceRecords>;
   readonly suggestions: ReturnType<typeof buildPhaseSuggestedSteps>;
   readonly contract: PhaseCockpitContract | null;
+  readonly dataWarnings: readonly PhaseCockpitDataWarning[];
+  readonly hasPartialData: boolean;
 }
 
 const DEFAULT_ENABLED_PHASE_FLAGS: PhaseCockpitContext['enabledFlags'] = new Set([
@@ -53,6 +63,14 @@ const DEFAULT_ENABLED_PHASE_FLAGS: PhaseCockpitContext['enabledFlags'] = new Set
   'phase.run.preview.enabled',
   'phase.observe.enabled',
 ]);
+
+function describeQueryError(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return fallback;
+}
 
 export function usePhaseCockpitData({
   phase,
@@ -69,6 +87,7 @@ export function usePhaseCockpitData({
       return fetchProjectSnapshot(projectId);
     },
     enabled: Boolean(projectId),
+    retry: false,
   });
 
   const activityQuery = useQuery<PhaseActivityResponse>({
@@ -106,6 +125,42 @@ export function usePhaseCockpitData({
     [activityQuery.data],
   );
   const preview = previewQuery.data ?? null;
+  const dataWarnings = useMemo<readonly PhaseCockpitDataWarning[]>(() => {
+    const warnings: PhaseCockpitDataWarning[] = [];
+
+    if (activityQuery.isError) {
+      warnings.push({
+        source: 'activity',
+        title: 'Recent activity is temporarily unavailable',
+        message: describeQueryError(activityQuery.error, 'The cockpit is showing project data without the latest activity feed.'),
+        retryLabel: 'Retry activity',
+        retry: () => {
+          void activityQuery.refetch();
+        },
+      });
+    }
+
+    if (previewQuery.isError) {
+      warnings.push({
+        source: 'preview',
+        title: 'Lifecycle readiness preview is temporarily unavailable',
+        message: describeQueryError(previewQuery.error, 'The cockpit is showing project data without the latest lifecycle readiness preview.'),
+        retryLabel: 'Retry readiness',
+        retry: () => {
+          void previewQuery.refetch();
+        },
+      });
+    }
+
+    return warnings;
+  }, [
+    activityQuery.error,
+    activityQuery.isError,
+    activityQuery.refetch,
+    previewQuery.error,
+    previewQuery.isError,
+    previewQuery.refetch,
+  ]);
 
   const blockers = useMemo(
     () => (project ? buildPhaseBlockers(phase, project, preview) : []),
@@ -173,5 +228,7 @@ export function usePhaseCockpitData({
     governance,
     suggestions,
     contract,
+    dataWarnings,
+    hasPartialData: dataWarnings.length > 0,
   };
 }

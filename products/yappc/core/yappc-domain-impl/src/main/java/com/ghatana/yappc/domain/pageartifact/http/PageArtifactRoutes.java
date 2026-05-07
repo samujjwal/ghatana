@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
  *   <li>PUT  /api/v1/page-artifacts/:artifactId/document - Save page artifact document</li>
  *   <li>GET  /api/v1/page-artifacts/:artifactId/document - Load page artifact document</li>
  *   <li>POST /api/v1/page-artifacts/:artifactId/review-decisions - Persist a governance review decision</li>
+ *   <li>GET  /api/v1/page-artifacts/:artifactId/operation-log/export - Export replayable operation log</li>
  * </ul>
  * All routes require tenant/workspace/project scoping via headers and support
  * optimistic concurrency via If-Match header.
@@ -59,6 +60,7 @@ public final class PageArtifactRoutes {
         routing.addAsyncRoute(HttpMethod.PUT, "/api/v1/page-artifacts/:artifactId/document", controller::saveDocument);
         routing.addAsyncRoute(HttpMethod.GET, "/api/v1/page-artifacts/:artifactId/document", controller::loadDocument);
         routing.addAsyncRoute(HttpMethod.POST, "/api/v1/page-artifacts/:artifactId/review-decisions", controller::recordReviewDecision);
+        routing.addAsyncRoute(HttpMethod.GET, "/api/v1/page-artifacts/:artifactId/operation-log/export", controller::exportOperationLog);
 
         return routing;
     }

@@ -275,7 +275,7 @@ export const SVGExportExample = () => {
 
 /**
  * EXAMPLE 9: Complete Canvas with All Features
- * Production-ready canvas with persistence, history, and export
+ * Complete canvas example with persistence, history, and export
  */
 export const ProductionCanvasExample = () => {
     // State

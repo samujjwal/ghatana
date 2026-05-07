@@ -17,6 +17,167 @@ interface PhaseStatusPanelsProps {
   activity: PhaseActivityEvent[];
 }
 
+type ObservePreviewHealth = 'healthy' | 'degraded' | 'down' | 'unknown';
+type ObservePreviewDiagnosticKind =
+  | 'runtime-error'
+  | 'console-log'
+  | 'policy-block'
+  | 'load-timing'
+  | 'user-action';
+
+interface ObservePreviewDiagnostic {
+  readonly id: string;
+  readonly kind: ObservePreviewDiagnosticKind;
+  readonly title: string;
+  readonly detail: string;
+  readonly timestamp?: string;
+  readonly severity: 'info' | 'warning' | 'error';
+  readonly actor?: string | null;
+  readonly latencyMs?: number;
+}
+
+interface ObservePreviewDiagnostics {
+  readonly health: ObservePreviewHealth;
+  readonly runtimeErrors: readonly ObservePreviewDiagnostic[];
+  readonly consoleLogs: readonly ObservePreviewDiagnostic[];
+  readonly policyBlocks: readonly ObservePreviewDiagnostic[];
+  readonly loadTimings: readonly ObservePreviewDiagnostic[];
+  readonly userActionTrace: readonly ObservePreviewDiagnostic[];
+}
+
+const OBSERVE_HEALTH_LABEL: Record<ObservePreviewHealth, string> = {
+  healthy: 'Healthy',
+  degraded: 'Degraded',
+  down: 'Down',
+  unknown: 'Unknown',
+};
+
+function getObserveEventText(event: PhaseActivityEvent): string {
+  return `${event.action} ${event.summary}`.toLowerCase();
+}
+
+function eventSeverity(event: PhaseActivityEvent): ObservePreviewDiagnostic['severity'] {
+  if (event.success === false || event.severity === 'error' || event.severity === 'critical') {
+    return 'error';
+  }
+
+  if (event.severity === 'warning') {
+    return 'warning';
+  }
+
+  return 'info';
+}
+
+function extractLatencyMs(event: PhaseActivityEvent): number | null {
+  const latencyMatch = /(?:latency|load|loaded|reload|ready|mounted)[^\d]*(\d+(?:\.\d+)?)\s*ms/i.exec(event.summary);
+  if (!latencyMatch?.[1]) {
+    return null;
+  }
+
+  return Math.round(Number(latencyMatch[1]));
+}
+
+function activityDiagnostic(
+  event: PhaseActivityEvent,
+  kind: ObservePreviewDiagnosticKind,
+  title: string,
+  latencyMs?: number,
+): ObservePreviewDiagnostic {
+  return {
+    id: `${kind}-${event.id}`,
+    kind,
+    title,
+    detail: event.summary,
+    timestamp: event.timestamp,
+    severity: eventSeverity(event),
+    actor: event.actor,
+    latencyMs,
+  };
+}
+
+function buildObservePreviewDiagnostics(
+  activity: readonly PhaseActivityEvent[],
+  blockers: readonly Blocker[],
+  preview: PhaseTransitionPreviewSnapshot | null,
+): ObservePreviewDiagnostics {
+  const runtimeErrors: ObservePreviewDiagnostic[] = [];
+  const consoleLogs: ObservePreviewDiagnostic[] = [];
+  const policyBlocks: ObservePreviewDiagnostic[] = [];
+  const loadTimings: ObservePreviewDiagnostic[] = [];
+  const userActionTrace: ObservePreviewDiagnostic[] = [];
+
+  activity.forEach((event) => {
+    const eventText = getObserveEventText(event);
+
+    if (
+      eventText.includes('preview.runtime.error')
+      || (eventText.includes('preview') && eventText.includes('runtime') && eventText.includes('error'))
+    ) {
+      runtimeErrors.push(activityDiagnostic(event, 'runtime-error', 'Preview runtime error'));
+    }
+
+    if (eventText.includes('preview.console') || eventText.includes('console log') || eventText.includes('console warning')) {
+      consoleLogs.push(activityDiagnostic(event, 'console-log', 'Preview console log'));
+    }
+
+    if (
+      (eventText.includes('preview') || eventText.includes('sandbox') || eventText.includes('csp'))
+      && eventText.includes('policy')
+      && (eventText.includes('block') || eventText.includes('deny') || eventText.includes('refus'))
+    ) {
+      policyBlocks.push(activityDiagnostic(event, 'policy-block', 'Preview policy block'));
+    }
+
+    const latencyMs = extractLatencyMs(event);
+    if (
+      latencyMs != null
+      && eventText.includes('preview')
+      && (eventText.includes('load') || eventText.includes('reload') || eventText.includes('mount') || eventText.includes('ready'))
+    ) {
+      loadTimings.push(activityDiagnostic(event, 'load-timing', 'Preview load timing', latencyMs));
+    }
+
+    if (event.actor && event.actor !== 'system' && (eventText.includes('preview') || eventText.includes('observe'))) {
+      userActionTrace.push(activityDiagnostic(event, 'user-action', 'Preview user action'));
+    }
+  });
+
+  blockers.forEach((blocker) => {
+    const blockerText = `${blocker.title} ${blocker.description}`.toLowerCase();
+    if (
+      blockerText.includes('policy')
+      || blockerText.includes('sandbox')
+      || blockerText.includes('csp')
+      || blockerText.includes('preview block')
+    ) {
+      policyBlocks.push({
+        id: `policy-block-${blocker.id}`,
+        kind: 'policy-block',
+        title: blocker.title,
+        detail: blocker.description,
+        severity: blocker.severity === 'critical' || blocker.severity === 'high' ? 'error' : 'warning',
+      });
+    }
+  });
+
+  const health: ObservePreviewHealth = runtimeErrors.length > 0 || policyBlocks.some((item) => item.severity === 'error')
+    ? 'down'
+    : policyBlocks.length > 0 || consoleLogs.some((item) => item.severity !== 'info') || preview?.canAdvance === false
+      ? 'degraded'
+      : preview
+        ? 'healthy'
+        : 'unknown';
+
+  return {
+    health,
+    runtimeErrors,
+    consoleLogs,
+    policyBlocks,
+    loadTimings,
+    userActionTrace,
+  };
+}
+
 function StatusPanel({ testId, title, content }: { testId: string; title: string; content: React.ReactNode }) {
   return (
     <Card variant="outlined" data-testid={testId}>
@@ -182,6 +343,9 @@ export function PhaseStatusPanels({ phase, preview, blockers, activity }: PhaseS
                   Readiness score: <span className="font-medium text-fg">{preview.readiness}%</span>
                 </p>
               )}
+              <p className="sr-only" data-testid="readiness-accessibility-explanation">
+                Readiness is the lifecycle gate score for this phase. A lower score means blockers, missing artifacts, or review requirements still need attention before promotion.
+              </p>
             </CardContent>
           </Card>
           <Card variant="outlined" data-testid="generated-file-list">
@@ -261,6 +425,8 @@ export function PhaseStatusPanels({ phase, preview, blockers, activity }: PhaseS
 
   if (phase === 'observe') {
     const recentEvents = activity.slice(0, 5);
+    const previewDiagnostics = buildObservePreviewDiagnostics(activity, blockers, preview);
+    const latestLoadTiming = previewDiagnostics.loadTimings[0];
 
     return (
       <div className="space-y-4">
@@ -284,6 +450,104 @@ export function PhaseStatusPanels({ phase, preview, blockers, activity }: PhaseS
             }
           />
         </div>
+        <Card variant="outlined" data-testid="observe-preview-diagnostics">
+          <CardContent className="p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Preview runtime observability</p>
+                <p className="mt-2 text-sm text-fg-muted">
+                  Runtime errors, console output, policy refusals, reload timing, and user actions reported by backed Observe activity.
+                </p>
+              </div>
+              <Badge
+                variant={
+                  previewDiagnostics.health === 'healthy'
+                    ? 'success'
+                    : previewDiagnostics.health === 'down'
+                      ? 'destructive'
+                      : 'secondary'
+                }
+                data-testid="observe-preview-health"
+              >
+                Preview health: {OBSERVE_HEALTH_LABEL[previewDiagnostics.health]}
+              </Badge>
+            </div>
+            {preview?.checkedAt ? (
+              <p className="mt-2 text-xs text-fg-muted">
+                Readiness checked:{' '}
+                <time dateTime={preview.checkedAt}>{new Date(preview.checkedAt).toLocaleString()}</time>
+              </p>
+            ) : null}
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <div className="rounded-xl border border-border bg-surface p-3" data-testid="observe-runtime-errors">
+                <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Runtime errors</p>
+                {previewDiagnostics.runtimeErrors.length > 0 ? (
+                  <div className="mt-2 space-y-2">
+                    {previewDiagnostics.runtimeErrors.map((item) => (
+                      <p key={item.id} className="text-sm text-destructive" data-testid="preview-runtime-error">
+                        {item.detail}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-fg-muted">No preview runtime errors reported.</p>
+                )}
+              </div>
+              <div className="rounded-xl border border-border bg-surface p-3" data-testid="observe-console-logs">
+                <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Console logs</p>
+                {previewDiagnostics.consoleLogs.length > 0 ? (
+                  <div className="mt-2 space-y-2">
+                    {previewDiagnostics.consoleLogs.map((item) => (
+                      <p key={item.id} className="text-sm text-fg" data-testid="preview-console-log">
+                        {item.detail}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-fg-muted">No preview console output reported.</p>
+                )}
+              </div>
+              <div className="rounded-xl border border-border bg-surface p-3" data-testid="observe-policy-blocks">
+                <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Policy blocks</p>
+                {previewDiagnostics.policyBlocks.length > 0 ? (
+                  <div className="mt-2 space-y-2">
+                    {previewDiagnostics.policyBlocks.map((item) => (
+                      <p key={item.id} className="text-sm text-warning-color" data-testid="preview-policy-block">
+                        {item.detail}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-fg-muted">No preview policy blocks reported.</p>
+                )}
+              </div>
+              <div className="rounded-xl border border-border bg-surface p-3" data-testid="observe-load-timing">
+                <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Reload latency</p>
+                {latestLoadTiming?.latencyMs != null ? (
+                  <p className="mt-2 text-sm text-fg" data-testid="preview-load-latency">
+                    Latest preview reload completed in {latestLoadTiming.latencyMs}ms.
+                  </p>
+                ) : (
+                  <p className="mt-2 text-sm text-fg-muted">No preview reload timing has been reported yet.</p>
+                )}
+              </div>
+              <div className="rounded-xl border border-border bg-surface p-3 md:col-span-2" data-testid="observe-user-action-trace">
+                <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">User-action trace</p>
+                {previewDiagnostics.userActionTrace.length > 0 ? (
+                  <div className="mt-2 space-y-2">
+                    {previewDiagnostics.userActionTrace.map((item) => (
+                      <p key={item.id} className="text-sm text-fg" data-testid="preview-user-action">
+                        {item.actor}: {item.detail}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-fg-muted">No preview user actions have been reported yet.</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         {recentEvents.length > 0 && (
           <Card variant="outlined" data-testid="observe-signal-timeline">
             <CardContent className="p-4">

@@ -35,7 +35,7 @@ export interface ModuleSummary {
   id: ModuleId;
   slug: string;
   title: string;
-  domain: "MATH" | "SCIENCE" | "TECH";
+  domain: "MATH" | "SCIENCE" | "TECH" | "ENGINEERING" | "MEDICINE" | "HEALTH" | "BUSINESS" | "MANAGEMENT" | "ECONOMICS" | "COMPUTER_SCIENCE" | "INTERDISCIPLINARY";
   difficulty: Difficulty;
   estimatedTimeMinutes: number;
   tags: string[];
@@ -256,6 +256,7 @@ export interface ContentBlock {
   orderIndex: number;
   blockType: ContentBlockType;
   payload: unknown;
+  schemaVersion: string;
 }
 
 export interface LearningObjective {
@@ -438,10 +439,10 @@ export type AssessmentAttemptStatus =
   | "EXPIRED";
 
 export type AssessmentResponse =
-  | { type: "multiple_choice"; selectedChoiceIds: string[] }
-  | { type: "short_answer"; text: string }
-  | { type: "code"; language: string; source: string }
-  | { type: "free_response"; text: string }
+  | { type: "multiple_choice"; selectedChoiceIds: string[]; confidence?: "low" | "medium" | "high" }
+  | { type: "short_answer"; text: string; confidence?: "low" | "medium" | "high" }
+  | { type: "code"; language: string; source: string; confidence?: "low" | "medium" | "high" }
+  | { type: "free_response"; text: string; confidence?: "low" | "medium" | "high" }
   | {
       type: "simulation_interaction";
       trace: {
@@ -457,6 +458,7 @@ export type AssessmentResponse =
         durationMs?: number;
         summary?: string;
       };
+      confidence?: "low" | "medium" | "high";
     };
 
 export interface AssessmentFeedback {
@@ -513,6 +515,7 @@ export interface LearningEventInput {
   moduleId?: ModuleId;
   payload?: Record<string, unknown>;
   timestamp?: string;
+  schemaVersion: string;
 }
 
 export interface AnalyticsSummary {

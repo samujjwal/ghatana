@@ -3,6 +3,7 @@ import { useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Save } from 'lucide-react';
 import { parseJsonResourceResponse, readErrorResponse } from '@/lib/http';
+import { yappcApi } from '@/lib/api';
 import type {
     ProjectContract,
     ProjectTypeContract,
@@ -41,12 +42,11 @@ export default function Component() {
     const { data: project, isLoading } = useQuery<ProjectContract>({
         queryKey: ['project', projectId],
         queryFn: async () => {
-            const res = await fetch(`/api/projects/${projectId}`);
-            if (!res.ok) {
-                throw new Error('Failed to load project');
+            if (!projectId) {
+                throw new Error('Project id is required to load project settings');
             }
 
-            return parseJsonResourceResponse<ProjectContract>(res, 'project settings load', 'project');
+            return yappcApi.projects.get(projectId) as unknown as Promise<ProjectContract>;
         },
         enabled: Boolean(projectId),
     });

@@ -102,15 +102,88 @@ interface ArtifactGraphIngestRequest {
 
 export interface LocalDraftPolicy {
   readonly allowClassifications: ReadonlySet<string>;
+  /** Maximum age for locally stored drafts. Defaults to 24 hours. */
+  readonly ttlMs?: number;
 }
 
 const DEFAULT_STORAGE_PREFIX = '@ghatana/yappc:page-artifact:';
 const DEFAULT_LOCAL_DRAFT_POLICY: LocalDraftPolicy = {
   allowClassifications: new Set(['PUBLIC', 'INTERNAL']),
+  ttlMs: 24 * 60 * 60 * 1000,
 };
+
+interface LocalDraftEnvelope {
+  readonly schemaVersion: 1;
+  readonly savedAt: string;
+  readonly expiresAt: string | null;
+  readonly document: PageArtifactDocument;
+}
 
 function normalizeClassification(classification: string): string {
   return classification.trim().toUpperCase();
+}
+
+function isLocalDraftEnvelope(value: unknown): value is LocalDraftEnvelope {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  return (
+    candidate.schemaVersion === 1 &&
+    typeof candidate.savedAt === 'string' &&
+    (typeof candidate.expiresAt === 'string' || candidate.expiresAt === null) &&
+    typeof candidate.document === 'object' &&
+    candidate.document !== null
+  );
+}
+
+function isPageArtifactDocument(value: unknown): value is PageArtifactDocument {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.artifactId === 'string' &&
+    typeof candidate.documentId === 'string' &&
+    typeof candidate.dataClassification === 'string' &&
+    typeof candidate.syncStatus === 'string' &&
+    typeof candidate.serializedBuilderDocument === 'object' &&
+    candidate.serializedBuilderDocument !== null
+  );
+}
+
+function buildLocalDraftEnvelope(
+  document: PageArtifactDocument,
+  policy: LocalDraftPolicy,
+): LocalDraftEnvelope {
+  const savedAtDate = new Date();
+  const ttlMs = policy.ttlMs ?? DEFAULT_LOCAL_DRAFT_POLICY.ttlMs;
+  return {
+    schemaVersion: 1,
+    savedAt: savedAtDate.toISOString(),
+    expiresAt: typeof ttlMs === 'number' && ttlMs > 0
+      ? new Date(savedAtDate.getTime() + ttlMs).toISOString()
+      : null,
+    document,
+  };
+}
+
+function isLocalDraftExpired(envelope: LocalDraftEnvelope): boolean {
+  if (envelope.expiresAt === null) {
+    return false;
+  }
+
+  const expiresAt = Date.parse(envelope.expiresAt);
+  return Number.isNaN(expiresAt) || expiresAt <= Date.now();
+}
+
+function isLocalDraftAllowed(
+  document: PageArtifactDocument,
+  policy: LocalDraftPolicy,
+): boolean {
+  return policy.allowClassifications.has(normalizeClassification(document.dataClassification));
 }
 
 function validateScope(scope: PageArtifactScope | null | undefined): PageArtifactScope {
@@ -224,18 +297,49 @@ export class LocalStoragePageArtifactPersistenceAdapter
       );
     }
 
-    localStorage.setItem(this.prefix + document.artifactId, JSON.stringify(document));
+    localStorage.setItem(
+      this.prefix + document.artifactId,
+      JSON.stringify(buildLocalDraftEnvelope(document, this.policy)),
+    );
   }
 
   async load(artifactId: string): Promise<PageArtifactDocument | null> {
-    const raw = localStorage.getItem(this.prefix + artifactId);
+    const storageKey = this.prefix + artifactId;
+    const raw = localStorage.getItem(storageKey);
     if (!raw) {
       return null;
     }
 
     try {
-      return JSON.parse(raw) as PageArtifactDocument;
+      const parsed: unknown = JSON.parse(raw);
+
+      if (isLocalDraftEnvelope(parsed)) {
+        if (isLocalDraftExpired(parsed) || !isPageArtifactDocument(parsed.document)) {
+          localStorage.removeItem(storageKey);
+          return null;
+        }
+
+        if (!isLocalDraftAllowed(parsed.document, this.policy)) {
+          localStorage.removeItem(storageKey);
+          return null;
+        }
+
+        return parsed.document;
+      }
+
+      if (isPageArtifactDocument(parsed)) {
+        if (!isLocalDraftAllowed(parsed, this.policy)) {
+          localStorage.removeItem(storageKey);
+          return null;
+        }
+
+        return parsed;
+      }
+
+      localStorage.removeItem(storageKey);
+      return null;
     } catch {
+      localStorage.removeItem(storageKey);
       return null;
     }
   }

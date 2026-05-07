@@ -26,15 +26,19 @@ export const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
 /** Difficulty options */
 export const DIFFICULTY_OPTIONS = ["beginner", "intermediate", "advanced", "expert"] as const;
 
-/** Domain options */
+/** Domain options aligned with Prisma ModuleDomain enum */
 export const DOMAIN_OPTIONS = [
-    "computer_science",
-    "physics",
-    "chemistry",
-    "biology",
-    "mathematics",
-    "economics",
+    "math",
+    "science",
+    "tech",
     "engineering",
+    "medicine",
+    "health",
+    "business",
+    "management",
+    "economics",
+    "computer_science",
+    "interdisciplinary",
 ] as const;
 
 /** Initial draft state */

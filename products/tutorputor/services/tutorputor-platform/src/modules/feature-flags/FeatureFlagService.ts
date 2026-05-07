@@ -77,6 +77,18 @@ export class FeatureFlagService {
         rolloutPercentage: 5,
         environmentWhitelist: ['staging'],
       },
+      {
+        key: 'mobile_learner_flows',
+        enabled: false,
+        description: 'Enable mobile learner flows (disabled in production until mobile reaches parity)',
+        environmentWhitelist: ['development', 'staging'],
+      },
+      {
+        key: 'vr_webxr',
+        enabled: false,
+        description: 'Enable VR/WebXR features (deferred indefinitely)',
+        environmentWhitelist: [],
+      },
     ];
 
     defaultFlags.forEach(flag => {

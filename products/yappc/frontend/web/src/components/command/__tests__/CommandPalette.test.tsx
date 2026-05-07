@@ -96,6 +96,8 @@ describe('CommandPalette', () => {
         it('renders the search input when open', () => {
             renderPalette({ open: true });
             expect(screen.getByPlaceholderText('Search actions...')).toBeTruthy();
+            expect(screen.getByRole('combobox', { name: 'Search actions' })).toBeTruthy();
+            expect(screen.getByRole('listbox', { name: 'Available command actions' })).toBeTruthy();
         });
 
         it('does not render content when closed', () => {
@@ -144,6 +146,7 @@ describe('CommandPalette', () => {
             const input = screen.getByPlaceholderText('Search actions...');
             fireEvent.change(input, { target: { value: 'xyznotfound' } });
             expect(screen.getByText(/No actions found/i)).toBeTruthy();
+            expect(screen.getByRole('status')).toHaveTextContent('No actions found for "xyznotfound"');
         });
 
         it('hides footer when query is set', () => {
@@ -155,6 +158,32 @@ describe('CommandPalette', () => {
     });
 
     describe('keyboard navigation', () => {
+        it('exposes the selected command through aria-activedescendant and aria-selected', () => {
+            renderPalette({ open: true });
+            const input = screen.getByRole('combobox', { name: 'Search actions' });
+
+            expect(input).toHaveAttribute('aria-activedescendant', 'command-palette-option-edit-undo');
+            expect(screen.getByRole('option', { name: /Undo/i })).toHaveAttribute('aria-selected', 'true');
+
+            fireEvent.keyDown(input, { key: 'ArrowDown' });
+
+            expect(input).toHaveAttribute('aria-activedescendant', 'command-palette-option-edit-copy');
+            expect(screen.getByRole('option', { name: /Copy/i })).toHaveAttribute('aria-selected', 'true');
+        });
+
+        it('keeps keyboard navigation safe when no actions match', () => {
+            renderPalette({ open: true });
+            const input = screen.getByRole('combobox', { name: 'Search actions' });
+
+            fireEvent.change(input, { target: { value: 'xyznotfound' } });
+            fireEvent.keyDown(input, { key: 'ArrowDown' });
+            fireEvent.keyDown(input, { key: 'ArrowUp' });
+            fireEvent.keyDown(input, { key: 'Enter' });
+
+            expect(input).not.toHaveAttribute('aria-activedescendant');
+            expect(mockExecute).not.toHaveBeenCalled();
+        });
+
         it('calls execute when Enter is pressed on selected action', () => {
             renderPalette({ open: true });
             const input = screen.getByPlaceholderText('Search actions...');

@@ -176,7 +176,7 @@ const PHASE_GUIDANCE: Record<LifecyclePhase, Omit<GuidanceStep, 'completed' | 'c
     ],
     [LifecyclePhase.EXECUTE]: [
         { id: 'generate-1', title: 'Configure generation', description: 'Choose language, framework, and options' },
-        { id: 'generate-2', title: 'Prepare implementation', description: 'System will generate production-ready code' },
+        { id: 'generate-2', title: 'Prepare implementation', description: 'System will generate reviewable implementation artifacts' },
         { id: 'generate-3', title: 'Review output', description: 'Preview generated files and make adjustments' },
     ],
     [LifecyclePhase.VERIFY]: [

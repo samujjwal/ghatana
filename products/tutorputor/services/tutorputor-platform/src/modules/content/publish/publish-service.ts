@@ -118,7 +118,11 @@ export class PublishService {
         }
       : null;
 
-    if (!input.bypassEvaluationCheck) {
+    // Validate that there is a passing evaluation (mandatory in production)
+    const isProduction = process.env.NODE_ENV === "production";
+    const bypassAllowed = !isProduction && input.bypassEvaluationCheck === true;
+
+    if (!bypassAllowed) {
       if (!evaluationForProvenance) {
         return {
           assetId: input.assetId,

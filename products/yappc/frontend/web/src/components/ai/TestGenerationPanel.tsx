@@ -1,7 +1,7 @@
 /**
  * TestGenerationPanel — AI-Y13
  *
- * Requests AI-generated test cases for a generated code artefact,
+ * Requests AI-generated test cases for a generated code artifact,
  * showing the suggested test suite and letting users copy or accept them.
  *
  * ## Data contract

@@ -28,18 +28,48 @@ import { PhaseEmbeddedSurface } from './PhaseEmbeddedSurface';
 import { currentUserAtom } from '../../../stores/user.store';
 import type { PhaseActionResult } from '../../../services/phase';
 import type { PhaseCockpitContract } from '../../../services/phase/PhaseCockpitContractBuilder';
+import type { PhaseCockpitDataWarning } from '../../../services/phase/usePhaseCockpitData';
 
 
-/** Human-readable label for the advanced detail panel, per phase. */
-const PHASE_DETAIL_LABELS: Record<MountedPhase, string> = {
-  intent: 'Intent exploration reference',
-  shape: 'Shape configuration reference',
-  validate: 'Validation reference',
-  generate: 'Generation reference',
-  run: 'Run configuration reference',
-  observe: 'Observation signals reference',
-  learn: 'Retrospective reference',
-  evolve: 'Evolution planning reference',
+interface PhaseDetailCopy {
+  readonly label: string;
+  readonly description: string;
+}
+
+/** Human-readable disclosure copy for the supporting phase workspace. */
+const PHASE_DETAIL_COPY: Record<MountedPhase, PhaseDetailCopy> = {
+  intent: {
+    label: 'Open intent notes workspace',
+    description: 'Use this only when goals, users, or success criteria need more context than the cockpit summary shows.',
+  },
+  shape: {
+    label: 'Open canvas editing workspace',
+    description: 'Use this when you need direct canvas edits after reviewing shape readiness and blockers.',
+  },
+  validate: {
+    label: 'Open validation evidence workspace',
+    description: 'Use this when approval gates need deeper artifact, risk, or evidence review.',
+  },
+  generate: {
+    label: 'Open generation artifact workspace',
+    description: 'Use this when generated output needs artifact-level inspection or page-builder edits before review.',
+  },
+  run: {
+    label: 'Open run execution notes',
+    description: 'Use this when deployment posture or run handoff context needs more detail than the cockpit controls.',
+  },
+  observe: {
+    label: 'Open live preview verification',
+    description: 'Use this when preview behavior or runtime signals need direct visual verification.',
+  },
+  learn: {
+    label: 'Open retrospective notes workspace',
+    description: 'Use this when lessons, incidents, or reusable patterns need supporting notes.',
+  },
+  evolve: {
+    label: 'Open evolution planning workspace',
+    description: 'Use this when roadmap or backlog decisions need deeper planning context.',
+  },
 };
 
 function PhaseContractSummary({ contract }: { readonly contract: PhaseCockpitContract | null }) {
@@ -91,6 +121,39 @@ function PhaseContractSummary({ contract }: { readonly contract: PhaseCockpitCon
   );
 }
 
+function PhaseDataRecoveryPanel({ warnings }: { readonly warnings: readonly PhaseCockpitDataWarning[] }) {
+  if (warnings.length === 0) {
+    return null;
+  }
+
+  return (
+    <section
+      className="rounded-2xl border border-warning-border bg-warning-bg p-4 text-sm text-warning-color"
+      data-testid="phase-data-recovery"
+      aria-label="Phase cockpit partial data recovery"
+    >
+      <p className="font-semibold text-warning-color">Some cockpit data could not be refreshed.</p>
+      <div className="mt-3 space-y-3">
+        {warnings.map((warning) => (
+          <div key={warning.source} className="rounded-xl border border-warning-border/70 bg-surface/70 p-3">
+            <p className="font-medium text-fg" data-testid={`phase-data-warning-${warning.source}`}>
+              {warning.title}
+            </p>
+            <p className="mt-1 text-xs text-fg-muted">{warning.message}</p>
+            <button
+              type="button"
+              className="mt-2 rounded-lg border border-warning-border bg-warning-bg px-3 py-1.5 text-xs font-semibold text-warning-color"
+              onClick={warning.retry}
+            >
+              {warning.retryLabel}
+            </button>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
@@ -124,6 +187,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     governance,
     suggestions,
     contract,
+    dataWarnings,
   } = usePhaseCockpitData({
     phase,
     projectId,
@@ -193,27 +257,21 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
       return;
     }
 
-    if (phase === 'generate' || phase === 'run') {
-      actionMutation.mutate({
-        phase,
-        projectId,
-        tenantId: currentUser?.tenantId,
-        preview,
-      });
-      return;
-    }
-
-    setFeedback(config.actionFeedback);
-    scrollToSupportingSurface();
+    actionMutation.mutate({
+      phase,
+      projectId,
+      tenantId: currentUser?.tenantId,
+      actorId: currentUser?.id,
+      preview,
+    });
   }, [
     actionMutation,
-    config.actionFeedback,
     currentUser?.tenantId,
+    currentUser?.id,
     navigate,
     phase,
     preview,
     projectId,
-    scrollToSupportingSurface,
   ]);
 
   const handleSecondaryAction = () => {
@@ -256,6 +314,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   };
 
   const project = projectQuery.data;
+  const phaseDetailCopy = PHASE_DETAIL_COPY[phase];
 
   if (projectQuery.isLoading || !project) {
     return (
@@ -288,7 +347,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     >
       <div className="mb-4">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fg-muted">
-          {PHASE_DETAIL_LABELS[phase]}
+          {phaseDetailCopy.label}
         </p>
         <h2 className="mt-2 text-lg font-semibold text-fg">{config.supportingTitle}</h2>
         <p className="mt-1 text-sm text-fg-muted">
@@ -351,9 +410,11 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
         suggestedAutomation={<PhaseSuggestedNextStep steps={suggestions} />}
         governanceTrace={<PhaseGovernanceTrace records={governance} />}
         advancedTools={advancedDetails}
-        advancedToolsLabel={PHASE_DETAIL_LABELS[phase]}
+        advancedToolsLabel={phaseDetailCopy.label}
+        advancedToolsDescription={phaseDetailCopy.description}
       >
         <div className="space-y-4" data-testid={`${phase}-native-summary`}>
+          <PhaseDataRecoveryPanel warnings={dataWarnings} />
           <PhaseContractSummary contract={contract} />
           {feedback ? (
             <div className="rounded-xl border border-info-border bg-info-bg p-4 text-sm text-info-color">

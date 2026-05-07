@@ -267,6 +267,71 @@ class PageArtifactControllerTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("operation log export returns deterministic replay snapshot")
+    void exportOperationLog_returnsReplayableSnapshot() throws Exception {
+        List<PageArtifactDocument.OperationRecord> operationLog = List.of(
+                new PageArtifactDocument.OperationRecord(
+                        "op-2",
+                        "artifact-ops",
+                        "doc-ops",
+                        "update_node_props",
+                        "succeeded",
+                        USER_ID,
+                        "Updated CTA copy",
+                        "2026-01-01T00:00:02Z",
+                        "shape",
+                        java.util.Collections.singletonMap("nullable", null)
+                ),
+                new PageArtifactDocument.OperationRecord(
+                        "op-1",
+                        "artifact-ops",
+                        "doc-ops",
+                        "insert_node",
+                        "succeeded",
+                        USER_ID,
+                        "Inserted hero section",
+                        "2026-01-01T00:00:01Z",
+                        "shape",
+                        Map.of("nodeId", "hero")
+                )
+        );
+        PageArtifactDocument document = sampleDocumentWithOperationLog(
+                "artifact-ops",
+                "doc-ops",
+                "manual",
+                List.of(),
+                operationLog
+        );
+        runPromise(() -> repository.save(TENANT_ID, WORKSPACE_ID, PROJECT_ID, document));
+
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/page-artifacts/artifact-ops/operation-log/export")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
+                .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Workspace-IDs"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Project-IDs"), PROJECT_ID)
+                .build();
+
+        HttpResponse response = runPromise(() -> controller.exportOperationLog(attachPrincipal(request, "VIEWER")));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getHeader(HttpHeaders.of("ETag"))).isEqualTo("doc-ops");
+        JsonNode body = objectMapper.readTree(runPromise(response::loadBody).asString(StandardCharsets.UTF_8));
+        assertThat(body.get("schemaVersion").asInt()).isEqualTo(1);
+        assertThat(body.get("artifactId").asText()).isEqualTo("artifact-ops");
+        assertThat(body.get("documentId").asText()).isEqualTo("doc-ops");
+        assertThat(body.get("replayCursor").asText()).isEqualTo("op-2");
+        assertThat(body.get("summary").get("total").asInt()).isEqualTo(2);
+        assertThat(body.get("summary").get("latestOperationAt").asText()).isEqualTo("2026-01-01T00:00:02Z");
+        assertThat(body.get("summary").get("byOperation").get("insert_node").asLong()).isEqualTo(1L);
+        assertThat(body.get("summary").get("byOperation").get("update_node_props").asLong()).isEqualTo(1L);
+        assertThat(body.get("summary").get("byStatus").get("succeeded").asLong()).isEqualTo(2L);
+        assertThat(body.get("records").get(0).get("id").asText()).isEqualTo("op-1");
+        assertThat(body.get("records").get(1).get("id").asText()).isEqualTo("op-2");
+        assertThat(auditRepository.events).contains("operation-log-exported:artifact-ops:" + USER_ID);
+    }
+
+    @Test
     @DisplayName("review decision persists governance lineage and returns audit metadata")
     void recordReviewDecision_persistsGovernanceReviewState() throws Exception {
         PageArtifactDocument.GovernanceRecord pendingRecord = sampleGovernanceRecord(
@@ -479,6 +544,16 @@ class PageArtifactControllerTest extends EventloopTestBase {
             String source,
             List<PageArtifactDocument.GovernanceRecord> governanceRecords
     ) {
+        return sampleDocumentWithOperationLog(artifactId, documentId, source, governanceRecords, List.of());
+    }
+
+    private static PageArtifactDocument sampleDocumentWithOperationLog(
+            String artifactId,
+            String documentId,
+            String source,
+            List<PageArtifactDocument.GovernanceRecord> governanceRecords,
+            List<PageArtifactDocument.OperationRecord> operationLog
+    ) {
         return new PageArtifactDocument(
                 artifactId,
                 documentId,
@@ -504,7 +579,8 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 governanceRecords,
                 source,
                 0,
-                0.92
+                0.92,
+                operationLog
         );
     }
 

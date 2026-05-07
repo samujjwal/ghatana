@@ -62,14 +62,20 @@ const STANDARD_ARTIFACT_SET: GenerationJobType[] = [
 
 /**
  * Extended artifact set for domains that benefit from visual content.
+ * Updated to include all TutorPutor target domains for visual-first pedagogy.
  */
 const VISUAL_DOMAINS = new Set([
-  "physics",
-  "chemistry",
-  "biology",
-  "geometry",
-  "astronomy",
+  "math",
+  "science",
+  "tech",
   "engineering",
+  "medicine",
+  "health",
+  "business",
+  "management",
+  "economics",
+  "computer_science",
+  "interdisciplinary",
 ]);
 
 /**

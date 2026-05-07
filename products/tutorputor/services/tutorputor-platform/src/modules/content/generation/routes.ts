@@ -356,14 +356,30 @@ export function registerGenerationRoutes(
       reply.raw.setHeader("Content-Type", "text/event-stream");
       reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
       reply.raw.setHeader("Connection", "keep-alive");
+      reply.raw.setHeader("X-Accel-Buffering", "no");
+
+      // Support reconnection with Last-Event-ID
+      const lastEventId = request.headers["last-event-id"] as string | undefined;
+      let messageSequence = 0;
+
+      writeSseEvent(reply.raw, "connected", {
+        requestId,
+        at: new Date().toISOString(),
+        messageSequence: messageSequence++,
+        ...(lastEventId ? { resumedFrom: lastEventId } : {}),
+      });
 
       writeSseEvent(reply.raw, "snapshot", {
         request: snapshot.request,
         progress: snapshot.progress,
+        messageSequence: messageSequence++,
       });
 
       for (const event of snapshot.events) {
-        writeSseEvent(reply.raw, "event", event);
+        writeSseEvent(reply.raw, "event", {
+          ...event,
+          messageSequence: messageSequence++,
+        });
       }
 
       for (const job of snapshot.request.jobs) {
@@ -373,6 +389,7 @@ export function registerGenerationRoutes(
           status: job.status,
           progress: job.progress,
           targetRef: job.targetRef,
+          messageSequence: messageSequence++,
           ...(includeOutput
             ? {
                 outputData: job.outputData,
@@ -389,6 +406,7 @@ export function registerGenerationRoutes(
           status: snapshot.request.status,
           completionPercent: snapshot.progress.completionPercent,
           terminal: snapshot.progress.terminal,
+          messageSequence: messageSequence++,
         });
         reply.raw.end();
         return;
@@ -397,15 +415,34 @@ export function registerGenerationRoutes(
       const subscriber = ((deps.redis as Redis & { duplicate?: () => Redis }).duplicate?.() ??
         deps.redis) as RedisPubSubClient;
       const channel = getGenerationExecutionChannel(requestId);
+
+      // Heartbeat with sequence number for reconnection
       const heartbeat = setInterval(() => {
-        writeSseEvent(reply.raw, "heartbeat", {
-          requestId,
-          at: new Date().toISOString(),
-        });
+        try {
+          writeSseEvent(reply.raw, "heartbeat", {
+            requestId,
+            at: new Date().toISOString(),
+            messageSequence: messageSequence++,
+          });
+        } catch (error) {
+          clearInterval(heartbeat);
+          void cleanup();
+        }
       }, 15000);
+
+      // Connection health monitoring
+      let lastActivity = Date.now();
+      const activityCheck = setInterval(() => {
+        const idleTime = Date.now() - lastActivity;
+        if (idleTime > 60000) { // 1 minute of inactivity
+          void cleanup();
+          reply.raw.end();
+        }
+      }, 30000);
 
       const cleanup = async () => {
         clearInterval(heartbeat);
+        clearInterval(activityCheck);
         subscriber.removeAllListeners("message");
         await subscriber.unsubscribe(channel).catch(() => undefined);
         subscriber.disconnect();
@@ -415,49 +452,83 @@ export function registerGenerationRoutes(
         void cleanup();
       });
 
-      subscriber.on("message", async (...args: unknown[]) => {
-        const rawMessage = typeof args[1] === "string" ? args[1] : "";
-        const message = JSON.parse(
-          rawMessage,
-        ) as GenerationExecutionStreamMessage;
-
-        if (message.kind === "snapshot" && message.snapshot) {
-          const snapshot =
-            message.snapshot as unknown as GenerationExecutionSnapshotPayload;
-          writeSseEvent(reply.raw, "snapshot", {
-            request: snapshot.request,
-            progress: snapshot.progress,
-          });
-
-          if (snapshot.progress?.terminal) {
-            writeSseEvent(reply.raw, "done", {
-              requestId: snapshot.request?.id,
-              status: snapshot.request?.status,
-              completionPercent: snapshot.progress?.completionPercent,
-              terminal: true,
-            });
-            await cleanup();
-            reply.raw.end();
-          }
-          return;
-        }
-
-        if (message.kind === "job_result" && message.jobResult) {
-          writeSseEvent(reply.raw, "job_result", message.jobResult);
-          return;
-        }
-
-        if (message.kind === "telemetry" && message.telemetry) {
-          writeSseEvent(reply.raw, "telemetry", message.telemetry);
-          return;
-        }
-
-        if (message.kind === "summary" && message.summary) {
-          writeSseEvent(reply.raw, "summary", message.summary);
-        }
+      reply.raw.on("error", (error) => {
+        writeSseEvent(reply.raw, "error", {
+          message: "Stream error",
+          error: error instanceof Error ? error.message : String(error),
+          at: new Date().toISOString(),
+        });
+        void cleanup();
+        reply.raw.end();
       });
 
-      await subscriber.subscribe(channel);
+      subscriber.on("message", async (...args: unknown[]) => {
+        try {
+          lastActivity = Date.now();
+          const rawMessage = typeof args[1] === "string" ? args[1] : "";
+          const message = JSON.parse(
+            rawMessage,
+          ) as GenerationExecutionStreamMessage;
+
+          // Validate message structure
+          if (!message.kind || !message.requestId) {
+            writeSseEvent(reply.raw, "error", {
+              message: "Invalid message format",
+              at: new Date().toISOString(),
+            });
+            return;
+          }
+
+          if (message.requestId !== requestId) {
+            return; // Ignore messages for other requests
+          }
+
+          if (message.kind === "snapshot" && message.snapshot) {
+            const snapshot =
+              message.snapshot as unknown as GenerationExecutionSnapshotPayload;
+            writeSseEvent(reply.raw, "snapshot", {
+              request: snapshot.request,
+              progress: snapshot.progress,
+              messageSequence: messageSequence++,
+            });
+
+            if (snapshot.progress?.terminal) {
+              writeSseEvent(reply.raw, "done", {
+                requestId: snapshot.request?.id,
+                status: snapshot.request?.status,
+                completionPercent: snapshot.progress?.completionPercent,
+                terminal: snapshot.progress?.terminal,
+                messageSequence: messageSequence++,
+              });
+              void cleanup();
+              reply.raw.end();
+            }
+          } else if (message.kind === "job_result" && message.jobResult) {
+            writeSseEvent(reply.raw, "job_result", {
+              ...message.jobResult,
+              messageSequence: messageSequence++,
+            });
+          } else if (message.kind === "summary" && message.summary) {
+            writeSseEvent(reply.raw, "summary", {
+              ...message.summary,
+              messageSequence: messageSequence++,
+            });
+            void cleanup();
+            reply.raw.end();
+          } else if (message.kind === "telemetry" && message.telemetry) {
+            writeSseEvent(reply.raw, "telemetry", {
+              ...message.telemetry,
+              messageSequence: messageSequence++,
+            });
+          }
+        } catch (error) {
+          writeSseEvent(reply.raw, "error", {
+            message: "Failed to process message",
+            error: error instanceof Error ? error.message : String(error),
+            at: new Date().toISOString(),
+          });
+        }
+      });
     },
   );
 
@@ -648,6 +719,7 @@ export function registerGenerationRoutes(
     "/generation/requests/:requestId/results",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const tenantId = getTenantId(request);
       const paramsResult = requestIdParamsSchema.safeParse(request.params);
       if (!paramsResult.success) {
         return reply
@@ -669,6 +741,7 @@ export function registerGenerationRoutes(
         const summary = await executionService.recordBatchResults(
           requestId,
           toJobExecutionResults(results),
+          tenantId,
         );
         return reply.send(summary);
       } catch (err: unknown) {

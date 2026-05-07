@@ -9,7 +9,7 @@
  * @doc.layer product
  */
 
-import { LifecyclePhase } from '../../../types/lifecycle';
+import { LifecyclePhase } from '../../types/lifecycle';
 
 export interface ActionContext {
   /** Current lifecycle phase */
@@ -202,7 +202,7 @@ function generatePhaseActions(phase: LifecyclePhase, context: ActionContext): Su
       actions.push({
         id: 'generate-code',
         title: 'Generate code',
-        description: 'Generate production-ready code',
+        description: 'Generate reviewable implementation artifacts',
         type: 'generation',
         priority: 90,
         confidence: 0.9,
@@ -253,12 +253,12 @@ function generatePhaseActions(phase: LifecyclePhase, context: ActionContext): Su
         confidence: 0.85,
         requiredPermissions: ['edit:artifact'],
         requiredCapabilities: [],
-        targetPhase: LifecyclePhase.EVOLVE,
+        targetPhase: LifecyclePhase.INSTITUTIONALIZE,
         reasoning: ['Learn phase requires improvement application'],
       });
       break;
 
-    case LifecyclePhase.EVOLVE:
+    case LifecyclePhase.INSTITUTIONALIZE:
       actions.push({
         id: 'iterate-design',
         title: 'Iterate on design',

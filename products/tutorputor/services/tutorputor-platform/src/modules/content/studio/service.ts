@@ -1,8 +1,15 @@
 /**
  * Content Studio Service
  *
- * Implements core authoring workflows backed by LearningExperience schema
- * and queue-driven background content generation.
+ * Implements core authoring workflows backed by LearningExperience schema.
+ *
+ * DEPRECATED: The queue-driven background content generation is deprecated.
+ * Use the unified generation-request API surface at /generation/requests instead.
+ *
+ * @doc.type module
+ * @doc.purpose Content authoring workflows with deprecated queue-based generation
+ * @doc.layer product
+ * @doc.pattern Service
  */
 
 import { Prisma, type PrismaClient } from "@tutorputor/core/db";
@@ -36,6 +43,7 @@ import {
   getContentGenerationQueue,
   type ContentGenerationQueueLike,
 } from "../queue/content-generation-queue.js";
+import { GenerationPlannerService } from "../generation/planner-service.js";
 
 export type { ContentStudioService };
 
@@ -1022,6 +1030,7 @@ export function createContentStudioService(
   _config: ContentStudioConfig,
 ): HealthAwareContentStudioService {
   const queue: ContentGenerationQueueLike = getContentGenerationQueue();
+  const generationPlanner = new GenerationPlannerService(prisma);
   const independentValidator = _config.independentValidator;
   const contradictionGrader = _config.contradictionGrader;
   const rubricGrader = _config.rubricGrader;
@@ -1319,6 +1328,12 @@ export function createContentStudioService(
       typeof request?.maxClaims === "number" && request.maxClaims > 0
         ? request.maxClaims
         : 5;
+
+    // DEPRECATED: Use generation-request API surface instead of queue
+    // This is kept for backward compatibility during migration
+    console.warn(
+      "[DEPRECATED] generateClaims using queue is deprecated. Use /generation/requests API instead.",
+    );
 
     const job = await queue.add(
       "generate-claims",

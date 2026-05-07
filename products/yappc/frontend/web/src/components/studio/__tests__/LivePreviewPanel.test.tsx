@@ -98,6 +98,7 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
   describe('Component Rendering', () => {
     it('renders the empty state when no preview inputs are provided', () => {
       render(<LivePreviewPanel />);
+      expect(screen.getByLabelText('Preview empty')).toBeInTheDocument();
       expect(screen.getByText('Select a document or component to preview')).toBeInTheDocument();
     });
 
@@ -110,6 +111,7 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
       );
 
       expect(screen.getByText('Preparing secure preview session…')).toBeInTheDocument();
+      expect(screen.getByLabelText('Preparing secure preview')).toBeInTheDocument();
 
       const iframe = await screen.findByTitle('Live Preview');
       expect(iframe).toHaveAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms');
@@ -148,6 +150,7 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
 
       render(<LivePreviewPanel document={baseDocument} />);
 
+      expect(screen.getByLabelText('Preview unavailable')).toBeInTheDocument();
       expect(screen.getByText('Preview requires trusted workspace review.')).toBeInTheDocument();
       expect(mountDocumentMock).not.toHaveBeenCalled();
     });

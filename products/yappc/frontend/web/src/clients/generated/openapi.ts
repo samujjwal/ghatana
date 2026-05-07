@@ -359,7 +359,7 @@ export interface paths {
         put?: never;
         /**
          * Advance a project to the next lifecycle phase
-         * @description Runs all three gate checks (entry criteria, exit criteria, required artefacts).
+         * @description Runs all three gate checks (entry criteria, exit criteria, required artifacts).
          *     Returns 200 if the gate passes, 409 if any blocker is present.
          */
         post: operations["advancePhase"];
@@ -483,7 +483,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Generate project artefacts (code, config, CI) */
+        /** Generate project artifacts (code, config, CI) */
         post: operations["generateArtifacts"];
         delete?: never;
         options?: never;
@@ -500,7 +500,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Regenerate artefacts with a change diff */
+        /** Regenerate artifacts with a change diff */
         post: operations["regenerateWithDiff"];
         delete?: never;
         options?: never;
@@ -515,7 +515,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get generated artefacts for a run */
+        /** Get generated artifacts for a run */
         get: operations["getArtifacts"];
         put?: never;
         post?: never;
@@ -1925,7 +1925,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Artefacts generated */
+            /** @description Artifacts generated */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1968,7 +1968,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Artefact manifest */
+            /** @description Artifact manifest */
             200: {
                 headers: {
                     [name: string]: unknown;

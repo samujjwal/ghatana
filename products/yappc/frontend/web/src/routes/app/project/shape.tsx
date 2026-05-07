@@ -1,7 +1,7 @@
 /**
  * Shape Phase — Define the solution
  *
- * Requirements, user stories, and design artefacts.
+ * Requirements, user stories, and design artifacts.
  * Routes to the canvas with a focus on the Shape workflow
  * (requirement management, design constraints, acceptance criteria).
  *
