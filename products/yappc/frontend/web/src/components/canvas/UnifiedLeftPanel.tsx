@@ -28,6 +28,7 @@ import { AuditTimeline, type AuditEvent } from './audit/AuditTimeline';
 import { GovernancePanel } from './governance/GovernancePanel';
 import { GraphVisualizer } from './visualizer/GraphVisualizer';
 import { TRANSITIONS } from '../../styles/design-tokens';
+import type { CanvasAccessPolicy } from './canvasAccessPolicy';
 
 // ============================================================================
 // Types
@@ -42,6 +43,8 @@ export interface UnifiedLeftPanelProps {
   onCollapseChange?: (collapsed: boolean) => void;
   /** Component addition handler */
   onAddComponent: (component: object, position: { x: number; y: number }) => void;
+  /** Project/phase mutation policy for canvas tools */
+  canvasPolicy: CanvasAccessPolicy;
   /** Drag start handler */
   onDragStart?: (template: ArtifactTemplate) => void;
   /** Additional CSS classes */
@@ -63,6 +66,7 @@ export function UnifiedLeftPanel({
   collapsed: controlledCollapsed,
   onCollapseChange,
   onAddComponent,
+  canvasPolicy,
   onDragStart,
   nodes = [],
   edges = [],
@@ -117,6 +121,15 @@ export function UnifiedLeftPanel({
   const handleTabChange = useCallback((_event: React.SyntheticEvent, newValue: TabType) => {
     setActiveTab(newValue);
   }, []);
+
+  const mutationLockedNotice = (
+    <Box className="m-4 rounded-xl border border-border bg-surface-muted p-4">
+      <Typography className="text-sm font-semibold">{canvasPolicy.modeLabel}</Typography>
+      <Typography className="mt-2 text-sm text-fg-muted" color="text.secondary">
+        {canvasPolicy.readOnlyReason ?? 'Canvas edits are unavailable in this mode.'}
+      </Typography>
+    </Box>
+  );
 
   // Collapsed state - show only tab icons vertically
   if (isCollapsed) {
@@ -346,16 +359,24 @@ export function UnifiedLeftPanel({
           </Box>
         ) : activeTab === 'components' ? (
           <Box className="flex-1 overflow-auto">
-            <ComponentPalette onAddComponent={(component, position) => onAddComponent(component, position ?? { x: 400, y: 300 })} />
+            {canvasPolicy.canCreateArtifacts ? (
+              <ComponentPalette onAddComponent={(component, position) => onAddComponent(component, position ?? { x: 400, y: 300 })} />
+            ) : (
+              mutationLockedNotice
+            )}
           </Box>
         ) : activeTab === 'artifacts' ? (
           <Box className="flex-1 overflow-auto">
-            <ArtifactPalette
-              onDragStart={(template) => onDragStart?.(template)}
-              onQuickCreate={(template: ArtifactTemplate) => {
-                onAddComponent(template, { x: 400, y: 300 });
-              }}
-            />
+            {canvasPolicy.canCreateArtifacts ? (
+              <ArtifactPalette
+                onDragStart={(template) => onDragStart?.(template)}
+                onQuickCreate={(template: ArtifactTemplate) => {
+                  onAddComponent(template, { x: 400, y: 300 });
+                }}
+              />
+            ) : (
+              mutationLockedNotice
+            )}
           </Box>
         ) : activeTab === 'phases' ? (
           <Box className="flex-1 overflow-auto p-4">

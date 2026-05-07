@@ -1,8 +1,9 @@
 /**
  * Project Shell Layout
  *
- * Simplified project layout with essential tabs only.
- * AI-first approach: canvas, preview, deploy, settings.
+ * Simplified project layout with canonical phase tabs only.
+ * Compatibility-only routes such as canvas, preview, deploy, and lifecycle are
+ * retained for bookmarks but are not exposed as first-class project navigation.
  * Includes IntentDrawer for INTENT phase artifact creation.
  *
  * UI/UX Improvements:

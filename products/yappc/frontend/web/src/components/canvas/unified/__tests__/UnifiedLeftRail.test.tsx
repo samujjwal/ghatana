@@ -82,4 +82,30 @@ describe('UnifiedLeftRail', () => {
 
     expect(await screen.findByText('Test Infra')).toBeInTheDocument();
   });
+
+  it('surfaces externally hovered preview nodes in the Layers panel', async () => {
+    render(
+      <UnifiedLeftRail
+        context={mockContext}
+        nodes={[
+          {
+            id: 'node-preview-hover',
+            type: 'button',
+            data: { label: 'Preview CTA' },
+          },
+        ]}
+        selectedNodeIds={[]}
+        hoveredNodeId="node-preview-hover"
+      />,
+    );
+
+    fireEvent.click(screen.getByTitle('Layers'));
+    fireEvent.click(await screen.findByText('button'));
+
+    expect(await screen.findByTestId('layer-row-node-preview-hover')).toHaveAttribute(
+      'data-preview-hovered',
+      'true',
+    );
+    expect(screen.getByText('Preview CTA')).toBeInTheDocument();
+  });
 });

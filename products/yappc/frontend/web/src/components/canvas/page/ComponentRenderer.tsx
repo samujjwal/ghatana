@@ -37,7 +37,7 @@ export interface DropRequest {
   readonly slotName?: string;
 }
 
-export type KeyboardMoveDirection = 'previous' | 'next' | 'out';
+export type KeyboardMoveDirection = 'previous' | 'next' | 'out' | 'into';
 
 export interface KeyboardMoveRequest {
   readonly nodeId: NodeId;
@@ -227,7 +227,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
         draggable
         tabIndex={0}
         role="treeitem"
-        aria-label={`${instance.contractName} component. Use Alt+ArrowUp or Alt+ArrowDown to reorder, Alt+ArrowLeft to move out of a container.`}
+        aria-label={`${instance.contractName} component. Use Alt+ArrowUp or Alt+ArrowDown to reorder, Alt+ArrowRight to move into the previous container, Alt+ArrowLeft to move out of a container.`}
         onDragStart={(event) => {
           event.dataTransfer.setData(DND_NODE_MIME, nodeId);
           event.dataTransfer.effectAllowed = 'move';
@@ -253,6 +253,9 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
           } else if (event.key === 'ArrowLeft') {
             event.preventDefault();
             onKeyboardMoveRequest({ nodeId, direction: 'out' });
+          } else if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            onKeyboardMoveRequest({ nodeId, direction: 'into' });
           }
         }}
       >

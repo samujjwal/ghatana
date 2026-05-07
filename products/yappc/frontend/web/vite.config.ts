@@ -185,6 +185,11 @@ const staticRequestHandler = (): Plugin => ({
 });
 
 export default defineConfig({
+  define: {
+    'process.env.YAPPC_ARTIFACT_API_URL': JSON.stringify(
+      process.env.YAPPC_ARTIFACT_API_URL
+    ),
+  },
   // Optimize dependencies
   optimizeDeps: {
     include: [
@@ -237,6 +242,18 @@ export default defineConfig({
       'yappc-core': path.resolve(__dirname, '../libs/yappc-core/src'),
       'yappc-core/api': path.resolve(__dirname, '../libs/yappc-core/src/api'),
       'yappc-devsecops': path.resolve(__dirname, '../libs/yappc-devsecops/src'),
+      'yappc-product-theme/lifecycle-presets': path.resolve(
+        __dirname,
+        '../libs/yappc-product-theme/src/lifecycle-presets.ts'
+      ),
+      'yappc-product-theme/mui-bridge': path.resolve(
+        __dirname,
+        '../libs/yappc-product-theme/src/mui-bridge.tsx'
+      ),
+      'yappc-product-theme': path.resolve(
+        __dirname,
+        '../libs/yappc-product-theme/src/index.ts'
+      ),
       'yappc-auth/rbac': path.resolve(
         __dirname,
         '../libs/yappc-auth/dist/auth/rbac/index.js'

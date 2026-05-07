@@ -60,12 +60,20 @@ describe('OpenAPI Contract Compliance', () => {
       '/api/workspaces': ['get', 'post'],
       '/api/workspaces/{workspaceId}': ['get', 'patch', 'delete'],
       '/api/projects': ['get', 'post'],
+      '/api/projects/dashboard-actions': ['get'],
+      '/api/projects/{projectId}/dashboard-actions/execute': ['post'],
       '/api/projects/{projectId}': ['get', 'patch', 'delete'],
       '/api/v1/lifecycle/phases': ['get'],
       '/api/v1/lifecycle/advance': ['post'],
       '/api/v1/yappc/intent/capture': ['post'],
       '/api/v1/yappc/shape/derive': ['post'],
       '/api/v1/yappc/generate': ['post'],
+      '/api/v1/yappc/generate/runs/{runId}/apply': ['post'],
+      '/api/v1/yappc/generate/runs/{runId}/reject': ['post'],
+      '/api/v1/yappc/generate/runs/{runId}/rollback': ['post'],
+      '/api/v1/yappc/artifact/import-source': ['post'],
+      '/api/v1/yappc/run/rollback': ['post'],
+      '/api/v1/yappc/run/promote': ['post'],
       '/api/v1/yappc/validate': ['post'],
       '/api/v1/approvals/pending': ['get'],
       '/api/v1/projects/{projectId}/suggestions': ['post'],
@@ -91,9 +99,9 @@ describe('OpenAPI Contract Compliance', () => {
   it('registers workspace, project, and ai routes under all compatibility prefixes', () => {
     const source = readApiIndexSource();
 
-    expect(source).toContain("app.register(route, { prefix: '/api' });");
-    expect(source).toContain("app.register(route, { prefix: '/v1' });");
     expect(source).toContain("app.register(route, { prefix: '/api/v1' });");
+    expect(source).toContain("{ prefix: '/api' }");
+    expect(source).toContain("{ prefix: '/v1' }");
 
     expect(source).toContain('registerApiPrefixes(app, workspaceRoutes);');
     expect(source).toContain('registerApiPrefixes(app, projectRoutes);');
@@ -171,5 +179,51 @@ describe('OpenAPI Contract Compliance', () => {
     expect(spec.components?.schemas).toHaveProperty('ErrorResponse');
     expect(spec.components?.schemas).toHaveProperty('Workspace');
     expect(spec.components?.schemas).toHaveProperty('Project');
+    expect(spec.components?.schemas).toHaveProperty('ProjectDashboardAction');
+    expect(spec.components?.schemas).toHaveProperty('ProjectDashboardActionsResponse');
+    expect(spec.components?.schemas).toHaveProperty('ExecuteProjectDashboardActionRequest');
+    expect(spec.components?.schemas).toHaveProperty('ExecuteProjectDashboardActionResponse');
+  });
+
+  it('documents the mounted lifecycle enum with legacy compatibility aliases', () => {
+    const spec = loadCanonicalOpenApi();
+    const schemas = spec.components?.schemas as Record<string, { enum?: string[]; properties?: Record<string, unknown> }>;
+    const lifecycleSchema = schemas.ProjectLifecyclePhase;
+
+    expect(lifecycleSchema?.enum).toEqual([
+      'INTENT',
+      'SHAPE',
+      'CONTEXT',
+      'VALIDATE',
+      'PLAN',
+      'GENERATE',
+      'EXECUTE',
+      'RUN',
+      'VERIFY',
+      'OBSERVE',
+      'LEARN',
+      'IMPROVE',
+      'EVOLVE',
+      'INSTITUTIONALIZE',
+    ]);
+    expect(schemas.UpdateProjectRequest?.properties?.lifecyclePhase).toMatchObject({
+      $ref: '#/components/schemas/ProjectLifecyclePhase',
+    });
+  });
+
+  it('uses outcome-oriented wording for public recommendation operations', () => {
+    const spec = loadCanonicalOpenApi();
+    const paths = spec.paths as Record<string, Record<string, { summary?: string; responses?: Record<string, { description?: string }> }>>;
+    const tags = (spec as { tags?: Array<{ name: string; description: string }> }).tags ?? [];
+
+    expect(tags.find((tag) => tag.name === 'suggestions')?.description).toBe('Guided lifecycle recommendations');
+    expect(paths['/api/v1/projects/{projectId}/suggestions']?.post?.summary).toBe('Generate lifecycle recommendations');
+    expect(paths['/api/v1/projects/{projectId}/suggestions']?.post?.responses?.['200']?.description).toBe(
+      'Lifecycle recommendations'
+    );
+    expect(paths['/api/v1/yappc/intent/analyze']?.post?.summary).toBe('Analyze captured intent');
+    expect(paths['/api/devsecops/ai-insights']?.get?.summary).toBe('Get DevSecOps recommended insights');
+    expect(paths['/api/projects/{projectId}/refresh-ai']?.post?.summary).toBe('Refresh project recommendations');
+    expect(paths['/api/workspaces/{workspaceId}/refresh-ai']?.post?.summary).toBe('Refresh workspace recommendations');
   });
 });

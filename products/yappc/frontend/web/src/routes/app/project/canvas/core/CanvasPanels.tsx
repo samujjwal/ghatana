@@ -8,6 +8,7 @@ import {
   LayoutDialog,
   TemplateSaveDialog,
 } from '../components';
+import type { AutoLayoutPreview } from '../hooks/useCanvasLayout';
 import { VersionHistoryPanel } from '@/components/canvas/versioning/VersionHistoryPanel';
 import { PageDesigner } from '@/components/canvas/page/PageDesigner';
 import type { BuilderDocument } from '@ghatana/ui-builder';
@@ -67,6 +68,8 @@ export interface CanvasPanelsProps {
 
   layoutDialogOpen: boolean;
   setLayoutDialogOpen: (open: boolean) => void;
+  layoutPreview: AutoLayoutPreview | null;
+  previewAutoLayout: () => void;
 
   templateDialogOpen: boolean;
   setTemplateDialogOpen: (open: boolean) => void;
@@ -177,6 +180,8 @@ export function CanvasPanels({
   generateCode,
   layoutDialogOpen,
   setLayoutDialogOpen,
+  layoutPreview,
+  previewAutoLayout,
   applyAutoLayout,
   templateDialogOpen,
   templateName,
@@ -314,7 +319,9 @@ export function CanvasPanels({
       <LayoutDialog
         open={layoutDialogOpen}
         onClose={() => setLayoutDialogOpen(false)}
+        onPreview={previewAutoLayout}
         onApply={applyAutoLayout}
+        preview={layoutPreview}
       />
 
       <TemplateSaveDialog

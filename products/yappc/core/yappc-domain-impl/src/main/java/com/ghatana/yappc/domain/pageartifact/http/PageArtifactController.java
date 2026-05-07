@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.Optional;
 import java.util.List;
+import java.time.Instant;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -70,6 +71,8 @@ public final class PageArtifactController {
     private static final Logger LOG = LoggerFactory.getLogger(PageArtifactController.class);
     private static final Pattern ARTIFACT_ID_PATTERN =
             Pattern.compile("/api/v1/page-artifacts/([^/]+)/document");
+    private static final Pattern REVIEW_DECISION_ARTIFACT_ID_PATTERN =
+            Pattern.compile("/api/v1/page-artifacts/([^/]+)/review-decisions");
 
     private final PageArtifactRepository repository;
     private final PageArtifactAuditRepository auditRepository;
@@ -77,6 +80,13 @@ public final class PageArtifactController {
     private final SyncAuthorizationService authorizationService;
     private final MetricsCollector metrics;
     private final PageArtifactResourceScopeAuthorizer resourceScopeAuthorizer;
+
+    private record ReviewDecisionRequest(
+            String actionId,
+            String decision,
+            List<String> evidence
+    ) {
+    }
 
     /**
      * Creates a new PageArtifactController.
@@ -392,6 +402,155 @@ public final class PageArtifactController {
                         });
     }
 
+    /**
+     * POST /api/v1/page-artifacts/:artifactId/review-decisions
+     * <p>
+     * Persists an automation/governance review decision against an existing
+     * page artifact lineage record and writes the matching audit event through
+     * the atomic repository path.
+     */
+    @Traced(value = "page_artifact.review_decision", kind = Traced.SpanKind.SERVER)
+    public Promise<HttpResponse> recordReviewDecision(HttpRequest request) {
+        String tenantId = TenantExtractor.fromHttp(request).orElse(null);
+        String workspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
+        String projectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
+        Principal principal = request.getAttachment(Principal.class);
+        String userId = principal != null ? principal.getName() : null;
+
+        try {
+            checkAuthorization(principal, PageArtifactPermission.EDIT);
+        } catch (AccessDeniedException e) {
+            LOG.warn("Authorization denied for recordReviewDecision: {}", e.getMessage());
+            return Promise.of(forbidden(e.getMessage()));
+        }
+
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(badRequest("Missing required X-Tenant-ID header"));
+        }
+        if (!tenantId.equals(principal.getTenantId())) {
+            return Promise.of(forbidden("Tenant context mismatch between authenticated principal and request header"));
+        }
+        if (workspaceId == null || workspaceId.isBlank()) {
+            return Promise.of(badRequest("Missing required X-Workspace-ID header"));
+        }
+        if (projectId == null || projectId.isBlank()) {
+            return Promise.of(badRequest("Missing required X-Project-ID header"));
+        }
+
+        Optional<String> artifactIdOpt = extractReviewDecisionArtifactId(request.getPath());
+        if (artifactIdOpt.isEmpty()) {
+            return Promise.of(badRequest("Artifact ID is required"));
+        }
+        String artifactId = artifactIdOpt.get();
+
+        return authorizeResourceScope(userId, tenantId, workspaceId, projectId, artifactId, PageArtifactPermission.EDIT)
+                .then(() -> request.loadBody())
+                .then(body -> {
+                    try {
+                        ReviewDecisionRequest decisionRequest =
+                                objectMapper.readValue(body.asArray(), ReviewDecisionRequest.class);
+                        if (decisionRequest.actionId() == null || decisionRequest.actionId().isBlank()) {
+                            return Promise.of(badRequest("actionId is required"));
+                        }
+                        if (!"accepted".equals(decisionRequest.decision()) && !"rejected".equals(decisionRequest.decision())) {
+                            return Promise.of(badRequest("decision must be accepted or rejected"));
+                        }
+
+                        return repository.load(tenantId, workspaceId, projectId, artifactId)
+                                .then(document -> {
+                                    if (document == null) {
+                                        return Promise.of(ResponseBuilder.notFound()
+                                                .json(Map.of(
+                                                        "error", "Not Found",
+                                                        "message", "Page artifact not found: " + artifactId
+                                                ))
+                                                .build());
+                                    }
+
+                                    PageArtifactDocument updatedDocument =
+                                            withReviewDecision(document, decisionRequest.actionId(), decisionRequest.decision(), decisionRequest.evidence());
+                                    if (updatedDocument == document) {
+                                        return Promise.of(ResponseBuilder.notFound()
+                                                .json(Map.of(
+                                                        "error", "Not Found",
+                                                        "message", "Governance action not found: " + decisionRequest.actionId()
+                                                ))
+                                                .build());
+                                    }
+
+                                    String actor = userId == null || userId.isBlank() ? "system" : userId;
+                                    String summary = "Review decision " + decisionRequest.decision()
+                                            + " recorded for governance action " + decisionRequest.actionId();
+                                    PageArtifactAtomicMutationRepository atomicRepository =
+                                            (PageArtifactAtomicMutationRepository) repository;
+
+                                    return atomicRepository.saveWithAudit(
+                                                    tenantId,
+                                                    workspaceId,
+                                                    projectId,
+                                                    updatedDocument,
+                                                    "governance-review-decision",
+                                                    actor,
+                                                    summary
+                                            )
+                                            .map(persisted -> {
+                                                PageArtifactDocument.GovernanceLineage lineage =
+                                                        findLineage(persisted, decisionRequest.actionId()).orElseThrow();
+                                                Instant decidedAt = Instant.now();
+                                                metrics.incrementCounter(
+                                                        "yappc.page_artifact.review_decision",
+                                                        "tenant_id", tenantId,
+                                                        "decision", decisionRequest.decision()
+                                                );
+                                                LOG.info(
+                                                        "Recorded page artifact review decision: tenant={} workspace={} project={} artifact={} action={} decision={} actor={}",
+                                                        tenantId,
+                                                        workspaceId,
+                                                        projectId,
+                                                        artifactId,
+                                                        decisionRequest.actionId(),
+                                                        decisionRequest.decision(),
+                                                        actor
+                                                );
+                                                return ResponseBuilder.ok()
+                                                        .json(Map.of(
+                                                                "artifactId", artifactId,
+                                                                "documentId", persisted.documentId(),
+                                                                "actionId", decisionRequest.actionId(),
+                                                                "decision", decisionRequest.decision(),
+                                                                "actor", actor,
+                                                                "decidedAt", decidedAt.toString(),
+                                                                "confidence", lineage.confidence(),
+                                                                "changedNodeIds", lineage.affectedNodeIds(),
+                                                                "reversible", lineage.reversible(),
+                                                                "evidence", lineage.evidence()
+                                                        ))
+                                                        .build();
+                                            });
+                                });
+                    } catch (Exception e) {
+                        LOG.error("Failed to parse review decision request", e);
+                        return Promise.of(badRequest("Invalid request body: " + e.getMessage()));
+                    }
+                })
+                .then(
+                        response -> Promise.of(response),
+                        ex -> {
+                            if (ex instanceof AccessDeniedException accessDeniedException) {
+                                return Promise.of(forbidden(accessDeniedException.getMessage()));
+                            }
+                            LOG.error("Failed to record review decision", ex);
+                            metrics.recordError("yappc.page_artifact.review_decision_failed", toException(ex),
+                                    Map.of("tenant_id", tenantId));
+                            return Promise.of(ResponseBuilder.internalServerError()
+                                    .json(Map.of(
+                                            "error", "Internal Server Error",
+                                            "message", "Failed to record review decision"
+                                    ))
+                                    .build());
+                        });
+    }
+
     // -------------------------------------------------------------------------
     // Private Helpers
     // -------------------------------------------------------------------------
@@ -399,6 +558,80 @@ public final class PageArtifactController {
     private Optional<String> extractArtifactId(String path) {
         Matcher matcher = ARTIFACT_ID_PATTERN.matcher(path);
         return matcher.matches() ? Optional.of(matcher.group(1)) : Optional.empty();
+    }
+
+    private Optional<String> extractReviewDecisionArtifactId(String path) {
+        Matcher matcher = REVIEW_DECISION_ARTIFACT_ID_PATTERN.matcher(path);
+        return matcher.matches() ? Optional.of(matcher.group(1)) : Optional.empty();
+    }
+
+    private Optional<PageArtifactDocument.GovernanceLineage> findLineage(
+            PageArtifactDocument document,
+            String actionId
+    ) {
+        return document.aiChangeRecords().stream()
+                .map(PageArtifactDocument.GovernanceRecord::lineage)
+                .filter(lineage -> actionId.equals(lineage.actionId()))
+                .findFirst();
+    }
+
+    private PageArtifactDocument withReviewDecision(
+            PageArtifactDocument document,
+            String actionId,
+            String decision,
+            List<String> reviewEvidence
+    ) {
+        boolean[] changed = new boolean[] { false };
+        List<PageArtifactDocument.GovernanceRecord> updatedRecords = document.aiChangeRecords().stream()
+                .map(record -> {
+                    PageArtifactDocument.GovernanceLineage lineage = record.lineage();
+                    if (!actionId.equals(lineage.actionId())) {
+                        return record;
+                    }
+
+                    changed[0] = true;
+                    List<String> evidence = reviewEvidence == null || reviewEvidence.isEmpty()
+                            ? lineage.evidence()
+                            : List.copyOf(reviewEvidence);
+                    return new PageArtifactDocument.GovernanceRecord(
+                            record.artifactId(),
+                            record.documentId(),
+                            new PageArtifactDocument.GovernanceLineage(
+                                    lineage.actionId(),
+                                    lineage.hookKind(),
+                                    lineage.reason(),
+                                    lineage.confidence(),
+                                    lineage.reversible(),
+                                    decision,
+                                    lineage.affectedNodeIds(),
+                                    lineage.appliedAt(),
+                                    evidence
+                            )
+                    );
+                })
+                .toList();
+
+        if (!changed[0]) {
+            return document;
+        }
+
+        return new PageArtifactDocument(
+                document.artifactId(),
+                document.documentId(),
+                document.name(),
+                document.createdBy(),
+                document.createdAt(),
+                Instant.now(),
+                document.syncStatus(),
+                document.trustLevel(),
+                document.dataClassification(),
+                document.builderDocument(),
+                document.validationSummary(),
+                updatedRecords,
+                document.source(),
+                document.residualIslandCount(),
+                document.roundTripFidelity()
+        );
     }
 
     private HttpResponse badRequest(String message) {

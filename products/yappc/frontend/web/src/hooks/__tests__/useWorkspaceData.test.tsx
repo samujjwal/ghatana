@@ -3,7 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useWorkspaces } from '../useWorkspaceData';
+import { normalizeProjectAccess, useWorkspaces } from '../useWorkspaceData';
+import type { Project } from '../../state/atoms/workspaceAtom';
 
 function createWrapper(): React.ComponentType<{ children: React.ReactNode }> {
   const queryClient = new QueryClient({
@@ -127,5 +128,29 @@ describe('useWorkspaceData failure handling', () => {
         name: 'Workspace One',
       }),
     ]);
+  });
+
+  it('normalizes missing project lifecycle and review fields from partial backend contracts', () => {
+    const rawProject = {
+      id: 'proj-1',
+      name: 'Partial Project',
+      description: 'Backend payload is missing review fields',
+      ownerWorkspaceId: 'ws-1',
+      isDefault: false,
+      createdAt: '2026-04-20T10:00:00.000Z',
+      updatedAt: 'not-a-date',
+      lifecyclePhase: 'DESIGN',
+      aiNextActions: ['Review deployment blockers', 42, '', 'Approve release'],
+      aiHealthScore: 140,
+    } as unknown as Project;
+
+    const normalized = normalizeProjectAccess(rawProject, true);
+
+    expect(normalized.lifecyclePhase).toBe('INTENT');
+    expect(normalized.type).toBe('FULL_STACK');
+    expect(normalized.status).toBe('DRAFT');
+    expect(normalized.aiNextActions).toEqual(['Review deployment blockers', 'Approve release']);
+    expect(normalized.aiHealthScore).toBe(100);
+    expect(normalized.updatedAt).toBe('2026-04-20T10:00:00.000Z');
   });
 });

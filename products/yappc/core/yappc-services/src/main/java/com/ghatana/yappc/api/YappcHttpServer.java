@@ -65,6 +65,9 @@ public class YappcHttpServer extends HttpServerLauncher {
                 // Generation endpoints
                 .with(HttpMethod.POST, "/api/v1/yappc/generate", secureVersioned(authFilter, generationController::generateArtifacts, versionPolicy))
                 .with(HttpMethod.POST, "/api/v1/yappc/generate/diff", secureVersioned(authFilter, generationController::regenerateWithDiff, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/generate/runs/:runId/apply", secureVersioned(authFilter, generationController::applyReviewDecision, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/generate/runs/:runId/reject", secureVersioned(authFilter, generationController::rejectReviewDecision, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/generate/runs/:runId/rollback", secureVersioned(authFilter, generationController::rollbackReviewDecision, versionPolicy))
                 .with(HttpMethod.GET, "/api/v1/yappc/generate/artifacts/:id", secureVersioned(authFilter, generationController::getArtifacts, versionPolicy))
 
                 // Run endpoints

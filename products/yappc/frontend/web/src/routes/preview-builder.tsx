@@ -33,13 +33,60 @@ import type {
 import { PRESET_VIEWPORTS } from '@ghatana/ui-builder/preview';
 import { ComponentRenderer } from '../components/canvas/page/ComponentRenderer';
 import { validatePreviewSessionToken } from '../services/preview/PreviewSessionApi';
+import { cspConfigToHeader } from '../security/ContentSecurityPolicy';
 
 const PREVIEW_RUNTIME_VERSION = '1.1.0';
+export const PREVIEW_BUILDER_RESPONSE_HEADERS = {
+  'Content-Security-Policy': cspConfigToHeader({
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'"],
+    styleSrc: ["'self'", "'unsafe-inline'"],
+    imgSrc: ["'self'", 'data:', 'blob:'],
+    connectSrc: ["'self'"],
+    fontSrc: ["'self'", 'data:'],
+    objectSrc: ["'none'"],
+    mediaSrc: ["'none'"],
+    frameSrc: ["'none'"],
+    baseUri: ["'none'"],
+    formAction: ["'none'"],
+    frameAncestors: ["'self'"],
+  }),
+  'Cross-Origin-Resource-Policy': 'same-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+  'Referrer-Policy': 'no-referrer',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'SAMEORIGIN',
+} as const;
+
+export function headers(): HeadersInit {
+  return PREVIEW_BUILDER_RESPONSE_HEADERS;
+}
+
 const DEFAULT_PREVIEW_ENVIRONMENT = {
   viewport: PRESET_VIEWPORTS.desktop,
   theme: 'default',
   locale: 'en-US',
 } as const;
+
+const PREVIEW_THEME_PACKS = {
+  default: {
+    background: '#ffffff',
+    foreground: '#111827',
+    outline: '1px solid transparent',
+  },
+  contrast: {
+    background: '#000000',
+    foreground: '#ffffff',
+    outline: '2px solid #facc15',
+  },
+  editorial: {
+    background: '#f8f1e7',
+    foreground: '#2b2118',
+    outline: '1px solid #c08457',
+  },
+} as const;
+
+type PreviewThemeName = keyof typeof PREVIEW_THEME_PACKS;
 
 interface PreviewRuntimeEnvironment {
   readonly viewport: Viewport;
@@ -53,6 +100,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+function isPreviewThemeName(value: unknown): value is PreviewThemeName {
+  return isNonEmptyString(value) && value in PREVIEW_THEME_PACKS;
 }
 
 function isViewport(value: unknown): value is Viewport {
@@ -69,10 +120,10 @@ function isViewport(value: unknown): value is Viewport {
     isNonEmptyString(value.label);
 }
 
-function isPreviewSandboxProfile(value: unknown): value is { readonly viewport: Viewport; readonly theme: string; readonly locale: string } {
+function isPreviewSandboxProfile(value: unknown): value is { readonly viewport: Viewport; readonly theme: PreviewThemeName; readonly locale: string } {
   return isRecord(value) &&
     isViewport(value.viewport) &&
-    isNonEmptyString(value.theme) &&
+    isPreviewThemeName(value.theme) &&
     isNonEmptyString(value.locale);
 }
 
@@ -281,7 +332,7 @@ export default function BuilderPreviewRoute() {
       }
 
       case 'SET_THEME': {
-        if (!isNonEmptyString(message.theme)) {
+        if (!isPreviewThemeName(message.theme)) {
           sendPreviewError(message.correlationId, 'INVALID_PREVIEW_THEME', 'Preview theme failed runtime validation.');
           break;
         }
@@ -354,7 +405,7 @@ export default function BuilderPreviewRoute() {
     );
   }
 
-  const isHighContrast = runtimeEnvironment.theme === 'contrast';
+  const themePack = PREVIEW_THEME_PACKS[runtimeEnvironment.theme as PreviewThemeName] ?? PREVIEW_THEME_PACKS.default;
   const textDirection = /^(ar|fa|he|ur)(-|$)/i.test(runtimeEnvironment.locale) ? 'rtl' : 'ltr';
 
   return (
@@ -368,8 +419,8 @@ export default function BuilderPreviewRoute() {
       dir={textDirection}
       lang={runtimeEnvironment.locale}
       style={{
-        backgroundColor: isHighContrast ? '#000000' : '#ffffff',
-        color: isHighContrast ? '#ffffff' : '#111827',
+        backgroundColor: themePack.background,
+        color: themePack.foreground,
       }}
     >
       <div
@@ -378,7 +429,7 @@ export default function BuilderPreviewRoute() {
           marginInline: 'auto',
           maxWidth: `${runtimeEnvironment.viewport.width}px`,
           minHeight: `${runtimeEnvironment.viewport.height}px`,
-          outline: isHighContrast ? '2px solid #facc15' : '1px solid transparent',
+          outline: themePack.outline,
           width: '100%',
         }}
       >

@@ -16,6 +16,7 @@ import {
 import type { LifecyclePhase } from './PhaseCockpitDataService';
 import { buildPhaseSuggestedSteps } from './PhaseSuggestionBuilder';
 import { yappcApi } from '@/lib/api/client';
+import { projectGuidanceRole } from '@/services/workspace/accessControl';
 import type {
   MountedPhase,
   PhaseActivityEvent,
@@ -99,6 +100,7 @@ export function usePhaseCockpitData({
   });
 
   const project = projectQuery.data;
+  const projectRole = projectGuidanceRole(project);
   const activity = useMemo<PhaseActivityEvent[]>(
     () => activityQuery.data?.activity ?? [],
     [activityQuery.data],
@@ -123,10 +125,10 @@ export function usePhaseCockpitData({
         ? buildPhaseSuggestedSteps(phase, project, onSuggestionAction, {
             blockers,
             preview,
-            role: 'contributor',
+            role: projectRole === 'owner' ? 'owner' : projectRole === 'collaborator' ? 'contributor' : 'viewer',
           })
         : [],
-    [blockers, phase, preview, project, onSuggestionAction],
+    [blockers, phase, preview, project, projectRole, onSuggestionAction],
   );
   const contract = useMemo(
     () =>
@@ -147,14 +149,14 @@ export function usePhaseCockpitData({
   const config = useMemo(
     () =>
       getAdaptivePhaseCockpitConfig(phase, {
-        role: 'contributor',
+        role: projectRole === 'owner' ? 'owner' : projectRole === 'collaborator' ? 'contributor' : 'viewer',
         tier: 'starter',
         enabledFlags: DEFAULT_ENABLED_PHASE_FLAGS,
         hasBlockers: blockers.length > 0,
         gatesPassed: preview?.canAdvance ?? true,
         currentLifecyclePhase: phase,
       }),
-    [blockers.length, phase, preview?.canAdvance],
+    [blockers.length, phase, preview?.canAdvance, projectRole],
   );
 
   return {

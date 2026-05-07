@@ -15,6 +15,7 @@ import { requirePermission } from '../middleware/rbac.middleware';
 import {
   requireWorkspaceMember,
   requireWorkspaceOwner,
+  getWorkspaceCapabilities,
 } from '../middleware/resource-auth.middleware';
 
 // ============================================================================
@@ -40,6 +41,19 @@ interface UpdateWorkspaceBody {
 
 interface WorkspaceParams {
   workspaceId: string;
+}
+
+interface WorkspaceMemberAccess {
+  role: string;
+  isOwner: boolean;
+}
+
+interface WorkspaceListRow {
+  id: string;
+  name: string;
+  ownerId: string;
+  _count: { ownedProjects: number };
+  members: WorkspaceMemberAccess[];
 }
 
 // ============================================================================
@@ -182,6 +196,10 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
             },
           },
           include: {
+            members: {
+              where: { userId },
+              select: { role: true },
+            },
             _count: {
               select: { ownedProjects: true },
             },
@@ -192,10 +210,23 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
 
         const response = {
           workspaces: workspaces.map(
-            (ws: { _count: { ownedProjects: number } }) => ({
+            (ws: WorkspaceListRow) => {
+              const role = ws.members[0]?.role ?? 'VIEWER';
+              const isOwner = ws.ownerId === userId || role === 'OWNER';
+              return {
               ...ws,
               projectCount: ws._count.ownedProjects,
-            })
+              role,
+              isOwner,
+              capabilities: {
+                read: true,
+                create: role === 'EDITOR' || role === 'ADMIN' || isOwner,
+                update: role === 'ADMIN' || isOwner,
+                delete: isOwner,
+                comment: true,
+              },
+            };
+          }
           ),
         };
         return reply.send(response);
@@ -239,6 +270,10 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
         const workspace = await prisma.workspace.findUnique({
           where: { id: workspaceId },
           include: {
+            members: {
+              where: { userId: request.user?.userId },
+              select: { role: true },
+            },
             ownedProjects: {
               orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
             },
@@ -254,13 +289,49 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
           return reply.status(404).send({ error: 'Workspace not found' });
         }
 
+        const role = workspace.members[0]?.role ?? 'VIEWER';
+        const isOwner = Boolean(request.user?.userId && workspace.ownerId === request.user.userId) || role === 'OWNER';
+        const capabilities = request.user?.userId
+          ? await getWorkspaceCapabilities(request.user.userId, workspaceId)
+          : { read: false, create: false, update: false, delete: false };
+
         return reply.send({
           workspace: {
             ...workspace,
+            role,
+            isOwner,
+            capabilities,
+            ownedProjects: workspace.ownedProjects.map((project: Record<string, unknown>) => ({
+              ...project,
+              isOwned: true,
+              isIncluded: false,
+              readOnly: !capabilities.update,
+              role,
+              capabilities: {
+                read: capabilities.read,
+                create: capabilities.create,
+                update: capabilities.update,
+                delete: capabilities.delete,
+                include: capabilities.include,
+                comment: capabilities.comment,
+                reason: capabilities.reason,
+              },
+            })),
             includedProjects: workspace.includedProjects.map(
               (ip: { project: Record<string, unknown>; addedAt: Date }) => ({
                 ...ip.project,
                 isOwned: false,
+                isIncluded: true,
+                readOnly: true,
+                role: 'VIEWER',
+                capabilities: {
+                  read: true,
+                  create: false,
+                  update: false,
+                  delete: false,
+                  include: false,
+                  comment: true,
+                },
                 addedAt: ip.addedAt,
               })
             ),
@@ -447,4 +518,3 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
     }
   );
 }
-

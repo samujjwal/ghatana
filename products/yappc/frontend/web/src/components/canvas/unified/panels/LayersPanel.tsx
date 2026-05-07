@@ -52,6 +52,7 @@ function isCanvasNodeRecord(value: unknown): value is CanvasNodeRecord {
 export function LayersPanel({
   nodes = [],
   selectedNodeIds = [],
+  hoveredNodeId = null,
   onSelectNode,
   onDeleteNode,
   onToggleVisibility,
@@ -221,14 +222,16 @@ export function LayersPanel({
               <List className="pl-4">
                 {layers.map((layer) => {
                   const isSelected = selectedNodeIds.includes(layer.id);
-                  const isHovered = hoveredNode === layer.id;
+                  const isHovered = hoveredNode === layer.id || hoveredNodeId === layer.id;
 
                   return (
                     <ListItem
                       key={layer.id}
+                      data-testid={`layer-row-${layer.id}`}
+                      data-preview-hovered={hoveredNodeId === layer.id ? 'true' : undefined}
                       onMouseEnter={() => setHoveredNode(layer.id)}
                       onMouseLeave={() => setHoveredNode(null)}
-                      className={`rounded mb-1 border border-solid ${isSelected ? 'bg-surface-muted dark:bg-surface border-info-border' : 'bg-transparent border-transparent'}`}
+                      className={`rounded mb-1 border border-solid ${isSelected ? 'bg-surface-muted dark:bg-surface border-info-border' : isHovered ? 'bg-info-bg border-info-border' : 'bg-transparent border-transparent'}`}
                     >
                       <ListItemIcon className="min-w-[32px]">
                         <Box className="text-base">

@@ -66,6 +66,7 @@ import { SkipLink } from '../components/accessibility';
 import { useWebSocketContext } from '../contexts/WebSocketContext';
 import { useInsightStream } from '../hooks/useInsightStream';
 import { useCurrentUser } from '../providers/AuthProvider';
+import { workspaceIsOwner } from '../services/workspace/accessControl';
 
 /**
  * App Shell Component
@@ -257,7 +258,7 @@ function ShellContent({
     ? {
         id: currentWorkspace.id,
         name: currentWorkspace.name,
-        isOwner: true,
+        isOwner: workspaceIsOwner(currentWorkspace),
       }
     : undefined;
 
@@ -275,14 +276,14 @@ function ShellContent({
   const workspacesList = workspaces.map((ws) => ({
     id: ws.id,
     name: ws.name,
-    isOwner: true,
+    isOwner: workspaceIsOwner(ws),
   }));
 
   const projectsList = allProjects.map((p) => ({
     id: p.id,
     name: p.name,
-    workspaceId: currentWorkspace?.id || '',
-    isOwner: ownedProjects.some((op) => op.id === p.id),
+    workspaceId: p.ownerWorkspaceId || currentWorkspace?.id || '',
+    isOwner: p.isOwned === true,
   }));
 
   const headerContextActions = contextActions as unknown as Action[];

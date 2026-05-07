@@ -48,6 +48,7 @@ interface UnifiedLeftRailProps {
   /** Canvas state for layer panel */
   nodes?: unknown[];
   selectedNodeIds?: string[];
+  hoveredNodeId?: string | null;
   /** Event handlers */
   onInsertNode?: (nodeData: unknown, position?: { x: number; y: number }) => void;
   onSelectNode?: (nodeId: string) => void;
@@ -61,6 +62,7 @@ export function UnifiedLeftRail({
   context,
   nodes = [],
   selectedNodeIds = [],
+  hoveredNodeId = null,
   onInsertNode,
   onSelectNode,
   onUpdateNode,
@@ -96,6 +98,7 @@ export function UnifiedLeftRail({
       context,
       nodes,
       selectedNodeIds,
+      hoveredNodeId,
       onInsertNode,
       onSelectNode,
       onUpdateNode,
@@ -149,6 +152,7 @@ export function UnifiedLeftRail({
       context,
       nodes,
       selectedNodeIds,
+      hoveredNodeId,
       onInsertNode,
       onSelectNode,
       onUpdateNode,

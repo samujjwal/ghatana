@@ -4,6 +4,7 @@ import {
   appendPageArtifactOperationRecord,
   createAIChangeRecord,
   AIActionLineageTracker,
+  createPageArtifactOperationLogExport,
   createPageArtifactDocument,
 } from '../pageArtifactDocument';
 
@@ -183,5 +184,47 @@ describe('appendPageArtifactOperationRecord', () => {
 
     expect(withOperations.operationLog).toHaveLength(100);
     expect(withOperations.operationLog?.[0]?.summary).toBe('Persisted 5');
+  });
+
+  it('exports a deterministic replay snapshot with operation and status summaries', () => {
+    const doc = createPageArtifactDocument({ artifactId: 'art-export', name: 'Export Page', createdBy: 'dev' });
+    const withLaterOperation = appendPageArtifactOperationRecord(doc, {
+      operation: 'persist-success',
+      status: 'succeeded',
+      actor: 'sync',
+      summary: 'Persisted page',
+      createdAt: '2026-05-06T10:02:00.000Z',
+    });
+    const withOutOfOrderOperations = appendPageArtifactOperationRecord(withLaterOperation, {
+      operation: 'document-update',
+      status: 'pending',
+      actor: 'user-1',
+      summary: 'Edited page',
+      createdAt: '2026-05-06T10:01:00.000Z',
+    });
+
+    const exported = createPageArtifactOperationLogExport(withOutOfOrderOperations, {
+      exportedAt: '2026-05-06T10:03:00.000Z',
+    });
+
+    expect(exported).toMatchObject({
+      schemaVersion: 1,
+      artifactId: 'art-export',
+      documentId: doc.documentId,
+      exportedAt: '2026-05-06T10:03:00.000Z',
+      replayCursor: 'art-export:persist-success:2026-05-06T10:02:00.000Z',
+      summary: {
+        total: 2,
+        latestOperationAt: '2026-05-06T10:02:00.000Z',
+      },
+    });
+    expect(exported.summary.byOperation['document-update']).toBe(1);
+    expect(exported.summary.byOperation['persist-success']).toBe(1);
+    expect(exported.summary.byStatus.pending).toBe(1);
+    expect(exported.summary.byStatus.succeeded).toBe(1);
+    expect(exported.records.map((record) => record.createdAt)).toEqual([
+      '2026-05-06T10:01:00.000Z',
+      '2026-05-06T10:02:00.000Z',
+    ]);
   });
 });

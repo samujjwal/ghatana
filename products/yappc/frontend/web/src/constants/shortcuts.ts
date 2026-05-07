@@ -148,7 +148,7 @@ export const KEYBOARD_SHORTCUTS = {
         },
         TOGGLE_AI: {
             keys: ['Meta+Shift+A', 'Ctrl+Shift+A'],
-            description: 'Toggle AI Assistant'
+            description: 'Toggle Guided Assistant'
         },
         TOGGLE_VALIDATION: {
             keys: ['Meta+Shift+V', 'Ctrl+Shift+V'],
@@ -265,4 +265,3 @@ export function matchesShortcut(
         (hasShift ? event.shiftKey : !event.shiftKey)
     );
 }
-

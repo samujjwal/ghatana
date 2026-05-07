@@ -14,6 +14,7 @@ import {
   deserializeDocument,
   insertNode,
   moveNode,
+  removeBinding,
   setResponsiveVariant,
   serializeDocument,
   updateNodeProps,
@@ -564,7 +565,7 @@ export class PageBuilderCommands {
     }
 
     return {
-      document: addBinding(document, command.data.nodeId, command.data.binding),
+      document: replaceBinding(document, command.data.nodeId, command.data.binding),
       changedNodeIds: [command.data.nodeId],
     };
   }
@@ -575,7 +576,7 @@ export class PageBuilderCommands {
     }
 
     return {
-      document: addBinding(document, command.data.nodeId, command.data.binding),
+      document: replaceBinding(document, command.data.nodeId, command.data.binding),
       changedNodeIds: [command.data.nodeId],
     };
   }
@@ -858,6 +859,22 @@ function reorderIntoIndex(items: readonly NodeId[], nodeId: NodeId, targetIndex:
     nodeId,
     ...withoutNode.slice(clampedIndex),
   ];
+}
+
+function replaceBinding(
+  document: BuilderDocument,
+  nodeId: NodeId,
+  binding: Binding
+): BuilderDocument {
+  const node = document.nodes.get(nodeId);
+  const existingBinding = node?.bindings.find(
+    (candidate) => candidate.type === binding.type && candidate.target === binding.target,
+  );
+  const documentWithoutExisting = existingBinding
+    ? removeBinding(document, nodeId, existingBinding.id)
+    : document;
+
+  return addBinding(documentWithoutExisting, nodeId, binding);
 }
 
 function setStateVariant(

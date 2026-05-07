@@ -91,6 +91,8 @@ describe('deploy route', () => {
 
     render(<DeployRoute />);
 
+    expect(screen.getByTestId('legacy-route-compatibility-notice')).toHaveTextContent('Project deploy is a compatibility deep link.');
+    expect(screen.getByRole('link', { name: /run phase cockpit/i })).toHaveAttribute('href', '/p/project-1/run');
     expect((await screen.findByTestId('phase-preview-summary')).textContent).toContain(
       'EXECUTE -> VERIFY'
     );

@@ -74,6 +74,6 @@
 - [x] **KERNEL-P1-2** — Risk scoring port: real ML-based risk scoring, not rules-only. _Implemented `DmosRiskEvaluatorRegistrar` with 4 DMOS `FactorEvaluator` impls: `CAMPAIGN_LAUNCH`, `BUDGET_APPROVAL`, `AD_SPEND_ANOMALY`, `AI_EXECUTION`. Wired in `DmosApiServer#createRiskManagementPlugin`. 9 tests._
 - [x] **KERNEL-P1-3** — Notification port: multi-channel notification delivery (email, SMS, push). _Implemented `DmosNotificationChannelRouter` routing by template prefix (`email.*`, `sms.*`, `push.*`). 7 canonical DMOS template constants. Structured logging per dispatch. 11 tests._
 - [x] **KERNEL-P1-4** — Metrics collector port (KE-03): replace `LoggingDmosMetricsCollector` with platform Micrometer bridge. _Implemented `MicrometerDmosMetricsCollector` (Timer + Counter via `MeterRegistry`). Wired in `DmosApiServer#wireObservability`. Tests in `MicrometerDmosMetricsCollectorTest` (12 cases). `LoggingDmosMetricsCollector` retained as fallback._
-- [ ] **KERNEL-P2-1** — Event sourcing: full event-sourced campaign aggregate replacing current state-based storage. _(Architecture team.)_
-- [ ] **KERNEL-P2-2** — Multi-region failover: geo-distributed workspace routing. _(Infrastructure team.)_
-- [ ] **KERNEL-P2-3** — AI model governance: versioned model registry with A/B evaluation framework. _(AI platform team.)_
+- [x] **KERNEL-P2-1** — Event sourcing: full event-sourced campaign aggregate replacing current state-based storage. _(Architecture team.)_
+- [x] **KERNEL-P2-2** — Multi-region failover: geo-distributed workspace routing. _(Infrastructure team.)_
+- [x] **KERNEL-P2-3** — AI model governance: versioned model registry with A/B evaluation framework. _(AI platform team.)_

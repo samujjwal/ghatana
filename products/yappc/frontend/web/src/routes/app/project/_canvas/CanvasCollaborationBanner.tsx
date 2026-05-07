@@ -59,6 +59,7 @@ export const NODE_DEFAULT_SIZES: Record<string, { width: number; height: number 
   'sticky-note': { width: 200, height: 200 },
   text: { width: 300, height: 150 },
   task: { width: 250, height: 70 },
+  'page-designer': { width: 1240, height: 720 },
   default: { width: 150, height: 150 },
 };
 

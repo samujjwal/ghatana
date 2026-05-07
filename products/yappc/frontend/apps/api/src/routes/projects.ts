@@ -36,25 +36,10 @@ interface UpdateProjectBody {
   description?: string;
   type?: 'UI' | 'BACKEND' | 'MOBILE' | 'DESKTOP' | 'FULL_STACK';
   status?: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
-  lifecyclePhase?:
-    | 'INTENT'
-    | 'CONTEXT'
-    | 'PLAN'
-    | 'EXECUTE'
-    | 'VERIFY'
-    | 'LEARN'
-    | 'INSTITUTIONALIZE'
-    | 'SHAPE'
-    | 'VALIDATE'
-    | 'GENERATE'
-    | 'RUN'
-    | 'OBSERVE'
-    | 'IMPROVE';
+  lifecyclePhase?: LifecyclePhaseInput;
 }
 
-function normalizeLifecyclePhase(
-  lifecyclePhase?: UpdateProjectBody['lifecyclePhase']
-):
+type PersistedLifecyclePhase =
   | 'INTENT'
   | 'CONTEXT'
   | 'PLAN'
@@ -62,8 +47,13 @@ function normalizeLifecyclePhase(
   | 'VERIFY'
   | 'OBSERVE'
   | 'LEARN'
-  | 'INSTITUTIONALIZE'
-  | undefined {
+  | 'INSTITUTIONALIZE';
+
+type MountedLifecyclePhase = 'SHAPE' | 'VALIDATE' | 'GENERATE' | 'RUN' | 'IMPROVE' | 'EVOLVE';
+type LifecyclePhaseInput = PersistedLifecyclePhase | MountedLifecyclePhase;
+type MountedDashboardPhase = 'intent' | 'shape' | 'validate' | 'generate' | 'run' | 'observe' | 'learn' | 'evolve';
+
+function normalizeLifecyclePhase(lifecyclePhase?: LifecyclePhaseInput): PersistedLifecyclePhase | undefined {
   switch (lifecyclePhase) {
     case 'SHAPE':
       return 'CONTEXT';
@@ -75,6 +65,8 @@ function normalizeLifecyclePhase(
       return 'VERIFY';
     case 'IMPROVE':
       return 'LEARN';
+    case 'EVOLVE':
+      return 'INSTITUTIONALIZE';
     default:
       return lifecyclePhase;
   }
@@ -93,6 +85,40 @@ interface ProjectActivityEvent {
   actor: string | null;
   severity?: string | null;
   success?: boolean | null;
+}
+
+type DashboardActionKind = 'blocker' | 'review' | 'safe-to-continue';
+type DashboardActionSeverity = 'critical' | 'warning' | 'info';
+
+interface ProjectDashboardAction {
+  id: string;
+  projectId: string;
+  projectName: string;
+  workspaceId: string;
+  lifecyclePhase: string;
+  routePhase: MountedDashboardPhase;
+  kind: DashboardActionKind;
+  title: string;
+  summary: string;
+  severity: DashboardActionSeverity;
+  source: 'project.aiNextActions' | 'project.lifecyclePhase';
+  requiresReview: boolean;
+  safeToRun: boolean;
+  updatedAt: string;
+}
+
+interface ExecuteProjectDashboardActionBody {
+  workspaceId: string;
+  actionId: string;
+}
+
+interface ExecuteProjectDashboardActionResponse {
+  projectId: string;
+  actionId: string;
+  outcome: 'opened-phase-cockpit';
+  targetPhase: MountedDashboardPhase;
+  targetPath: string;
+  auditRecorded: boolean;
 }
 
 interface IncludeProjectBody {
@@ -134,6 +160,39 @@ interface ProjectSetupSuggestion {
   recommendations: string[];
   relatedProjects: RelatedProjectRecommendation[];
 }
+
+interface ProjectAccessMetadata {
+  isOwned: boolean;
+  isIncluded: boolean;
+  readOnly: boolean;
+  role: string;
+  capabilities: {
+    read: boolean;
+    create: boolean;
+    update: boolean;
+    delete: boolean;
+    include?: boolean;
+    comment?: boolean;
+    reason?: string;
+  };
+}
+
+const DASHBOARD_ROUTE_BY_PHASE: Readonly<Record<LifecyclePhaseInput, MountedDashboardPhase>> = {
+  INTENT: 'intent',
+  SHAPE: 'shape',
+  CONTEXT: 'shape',
+  VALIDATE: 'validate',
+  PLAN: 'validate',
+  GENERATE: 'generate',
+  EXECUTE: 'generate',
+  RUN: 'run',
+  VERIFY: 'run',
+  OBSERVE: 'observe',
+  LEARN: 'learn',
+  IMPROVE: 'learn',
+  EVOLVE: 'evolve',
+  INSTITUTIONALIZE: 'evolve',
+};
 
 // ============================================================================
 // Rule-based Assistance Helpers
@@ -178,6 +237,134 @@ function generateNextActions(project: {
   }
 
   return actions.slice(0, 3);
+}
+
+async function getWorkspaceRole(userId: string, workspaceId: string): Promise<string> {
+  const member = await prisma.workspaceMember.findUnique({
+    where: { userId_workspaceId: { userId, workspaceId } },
+    select: { role: true },
+  });
+
+  return member?.role ?? 'VIEWER';
+}
+
+function ownedProjectAccess(role: string): ProjectAccessMetadata {
+  const canAdmin = role === 'ADMIN' || role === 'OWNER';
+  const canWrite = role === 'EDITOR' || canAdmin;
+
+  return {
+    isOwned: true,
+    isIncluded: false,
+    readOnly: !canWrite,
+    role,
+    capabilities: {
+      read: true,
+      create: canWrite,
+      update: canWrite,
+      delete: canAdmin,
+      include: canWrite,
+      comment: true,
+    },
+  };
+}
+
+function includedProjectAccess(): ProjectAccessMetadata {
+  return {
+    isOwned: false,
+    isIncluded: true,
+    readOnly: true,
+    role: 'VIEWER',
+    capabilities: {
+      read: true,
+      create: false,
+      update: false,
+      delete: false,
+      include: false,
+      comment: true,
+    },
+  };
+}
+
+function normalizeDashboardRoutePhase(lifecyclePhase: unknown): MountedDashboardPhase {
+  return typeof lifecyclePhase === 'string' && lifecyclePhase in DASHBOARD_ROUTE_BY_PHASE
+    ? DASHBOARD_ROUTE_BY_PHASE[lifecyclePhase as LifecyclePhaseInput]
+    : 'intent';
+}
+
+function classifyDashboardAction(title: string): {
+  kind: DashboardActionKind;
+  severity: DashboardActionSeverity;
+  requiresReview: boolean;
+  safeToRun: boolean;
+} {
+  const normalized = title.toLowerCase();
+  const isBlocker =
+    /\b(block|blocked|blocker|failed|failure|error|risk|security|vulnerability|critical)\b/.test(normalized);
+  if (isBlocker) {
+    return {
+      kind: 'blocker',
+      severity: normalized.includes('critical') || normalized.includes('security') ? 'critical' : 'warning',
+      requiresReview: true,
+      safeToRun: false,
+    };
+  }
+
+  const isReview =
+    /\b(review|approve|approval|reject|rollback|diff|audit|sign[- ]?off|verify)\b/.test(normalized);
+  if (isReview) {
+    return {
+      kind: 'review',
+      severity: 'warning',
+      requiresReview: true,
+      safeToRun: false,
+    };
+  }
+
+  return {
+    kind: 'safe-to-continue',
+    severity: 'info',
+    requiresReview: false,
+    safeToRun: true,
+  };
+}
+
+function buildProjectDashboardActions(project: {
+  id: string;
+  name: string;
+  ownerWorkspaceId: string;
+  lifecyclePhase?: string | null;
+  aiNextActions?: string[] | null;
+  updatedAt: Date;
+}): ProjectDashboardAction[] {
+  const routePhase = normalizeDashboardRoutePhase(project.lifecyclePhase);
+  const lifecyclePhase = project.lifecyclePhase ?? 'INTENT';
+  const backedActions = Array.isArray(project.aiNextActions)
+    ? project.aiNextActions.filter((action) => typeof action === 'string' && action.trim().length > 0)
+    : [];
+  const titles = backedActions.length > 0 ? backedActions : [`Resume ${routePhase} phase`];
+
+  return titles.slice(0, 5).map((title, index) => {
+    const classification = classifyDashboardAction(title);
+    return {
+      id: `${project.id}-${classification.kind}-${index}`,
+      projectId: project.id,
+      projectName: project.name,
+      workspaceId: project.ownerWorkspaceId,
+      lifecyclePhase,
+      routePhase,
+      kind: classification.kind,
+      title,
+      summary:
+        classification.kind === 'safe-to-continue'
+          ? `Continue from ${routePhase}.`
+          : `Open ${routePhase} cockpit for the backed project action.`,
+      severity: classification.severity,
+      source: backedActions.length > 0 ? 'project.aiNextActions' : 'project.lifecyclePhase',
+      requiresReview: classification.requiresReview,
+      safeToRun: classification.safeToRun,
+      updatedAt: project.updatedAt.toISOString(),
+    };
+  });
 }
 
 /**
@@ -416,7 +603,13 @@ async function getCrossWorkspaceRecommendations(params: {
     take: 3,
   });
 
-  return relatedProjects.map((project) => ({
+  return relatedProjects.map((project: {
+    id: string;
+    name: string;
+    type: CreateProjectBody['type'];
+    ownerWorkspaceId: string;
+    ownerWorkspace: { name: string };
+  }) => ({
     id: project.id,
     name: project.name,
     type: project.type,
@@ -584,6 +777,14 @@ export default async function projectRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ error: 'workspaceId is required' });
       }
 
+      if (!request.user?.userId) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      const workspaceRole = await getWorkspaceRole(request.user.userId, workspaceId);
+      const ownedAccess = ownedProjectAccess(workspaceRole);
+      const includedAccess = includedProjectAccess();
+
       // Get owned projects
       const ownedProjects = await prisma.project.findMany({
         where: { ownerWorkspaceId: workspaceId },
@@ -598,18 +799,149 @@ export default async function projectRoutes(fastify: FastifyInstance) {
       });
 
       return reply.send({
-        owned: ownedProjects.map((p: unknown) => ({
-          ...(p as object),
-          isOwned: true,
+        owned: ownedProjects.map((project: Record<string, unknown>) => ({
+          ...project,
+          ...ownedAccess,
         })),
         included: includedProjects.map(
           (ip: { project: unknown; addedAt: Date }) => ({
             ...(ip.project as object),
-            isOwned: false,
+            ...includedAccess,
             addedAt: ip.addedAt,
           })
         ),
       });
+    }
+  );
+
+  /**
+   * GET /api/projects/dashboard-actions
+   * Return backend-owned blocker, review, and safe continuation cards for a workspace dashboard.
+   */
+  fastify.get<{ Querystring: { workspaceId: string } }>(
+    '/projects/dashboard-actions',
+    async (request, reply) => {
+      const { workspaceId } = request.query;
+
+      if (!workspaceId) {
+        return reply.status(400).send({ error: 'workspaceId is required' });
+      }
+
+      if (!request.user?.userId) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      const ownedProjects = await prisma.project.findMany({
+        where: { ownerWorkspaceId: workspaceId },
+        orderBy: [{ updatedAt: 'desc' }],
+        take: 10,
+      });
+      const includedProjects = await prisma.workspaceProject.findMany({
+        where: { workspaceId },
+        include: { project: true },
+        orderBy: { addedAt: 'desc' },
+        take: 10,
+      });
+
+      const projectActions = [
+        ...ownedProjects.flatMap(buildProjectDashboardActions),
+        ...includedProjects.flatMap((entry: { project: Parameters<typeof buildProjectDashboardActions>[0] }) =>
+          buildProjectDashboardActions(entry.project)
+        ),
+      ];
+
+      return reply.send({
+        workspaceId,
+        blockedWork: projectActions.filter((action) => action.kind === 'blocker').slice(0, 6),
+        reviewRequired: projectActions.filter((action) => action.kind === 'review').slice(0, 6),
+        safeToContinue: projectActions.filter((action) => action.kind === 'safe-to-continue').slice(0, 6),
+        generatedAt: new Date().toISOString(),
+      });
+    }
+  );
+
+  /**
+   * POST /api/projects/:projectId/dashboard-actions/execute
+   * Execute a safe dashboard action by recording the backend decision and returning the canonical phase target.
+   */
+  fastify.post<{
+    Params: ProjectParams;
+    Body: ExecuteProjectDashboardActionBody;
+  }>(
+    '/projects/:projectId/dashboard-actions/execute',
+    async (request, reply) => {
+      const { projectId } = request.params;
+      const { workspaceId, actionId } = request.body;
+
+      if (!workspaceId || !actionId) {
+        return reply.status(400).send({ error: 'workspaceId and actionId are required' });
+      }
+
+      if (!request.user?.userId) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+      });
+
+      if (!project) {
+        return reply.status(404).send({ error: 'Project not found' });
+      }
+
+      if (project.ownerWorkspaceId !== workspaceId) {
+        const inclusion = await prisma.workspaceProject.findUnique({
+          where: {
+            workspaceId_projectId: { workspaceId, projectId },
+          },
+        });
+        if (!inclusion) {
+          return reply.status(403).send({ error: 'Project is not visible in this workspace' });
+        }
+        return reply.status(403).send({
+          error: 'Included projects are read-only in this workspace',
+          reason: 'included_project_read_only',
+          projectId,
+          workspaceId,
+        });
+      }
+
+      const availableActions = buildProjectDashboardActions(project);
+      const action = availableActions.find((candidate) => candidate.id === actionId);
+      if (!action) {
+        return reply.status(404).send({ error: 'Dashboard action not found' });
+      }
+
+      if (!action.safeToRun) {
+        return reply.status(409).send({
+          error: 'Dashboard action requires review before execution',
+          action,
+        });
+      }
+
+      await logProjectLifecycleEvent({
+        request,
+        projectId,
+        action: 'DASHBOARD_ACTION_EXECUTED',
+        description: `Dashboard safe action executed: ${action.title}.`,
+        metadata: {
+          workspaceId,
+          actionId,
+          targetPhase: action.routePhase,
+          source: action.source,
+        },
+      });
+
+      const response: ExecuteProjectDashboardActionResponse = {
+        projectId,
+        actionId,
+        outcome: 'opened-phase-cockpit',
+        targetPhase: action.routePhase,
+        targetPath: `/p/${projectId}/${action.routePhase}`,
+        auditRecorded: true,
+      };
+
+      return reply.send(response);
     }
   );
 
@@ -640,11 +972,18 @@ export default async function projectRoutes(fastify: FastifyInstance) {
       const isOwned = workspaceId
         ? project.ownerWorkspaceId === workspaceId
         : true;
+      const access = isOwned
+        ? ownedProjectAccess(
+            workspaceId && request.user?.userId
+              ? await getWorkspaceRole(request.user.userId, workspaceId)
+              : 'OWNER'
+          )
+        : includedProjectAccess();
 
       return reply.send({
         project: {
           ...project,
-          isOwned,
+          ...access,
         },
       });
     }
@@ -768,11 +1107,12 @@ export default async function projectRoutes(fastify: FastifyInstance) {
         },
       });
 
+      const workspaceRole = await getWorkspaceRole(userId, workspaceId);
       return reply.status(201).send({
         project: {
           ...project,
           aiHealthScore: healthResult.score,
-          isOwned: true,
+          ...ownedProjectAccess(workspaceRole),
         },
       });
     }
@@ -1188,7 +1528,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
         take: 500,
       });
 
-      const succeededRuns = runs.filter((r) => r.status === 'SUCCEEDED');
+      const succeededRuns = runs.filter((run: { status: string }) => run.status === 'SUCCEEDED');
       const totalRuns = runs.length;
       const succeededCount = succeededRuns.length;
 
@@ -1219,4 +1559,3 @@ export default async function projectRoutes(fastify: FastifyInstance) {
     }
   );
 }
-

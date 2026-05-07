@@ -66,6 +66,21 @@ export interface PageArtifactOperationRecord {
   readonly metadata?: Record<string, string | number | boolean | null>;
 }
 
+export interface PageArtifactOperationLogExport {
+  readonly schemaVersion: 1;
+  readonly artifactId: string;
+  readonly documentId: string;
+  readonly exportedAt: string;
+  readonly replayCursor: string | null;
+  readonly summary: {
+    readonly total: number;
+    readonly byOperation: Readonly<Record<PageArtifactOperationKind, number>>;
+    readonly byStatus: Readonly<Record<PageArtifactOperationStatus, number>>;
+    readonly latestOperationAt: string | null;
+  };
+  readonly records: readonly PageArtifactOperationRecord[];
+}
+
 /**
  * Creates a new `AIChangeRecord` for a given artifact using the platform
  * `createLineageEntry` factory.
@@ -319,6 +334,59 @@ export function appendPageArtifactOperationRecord(
   return {
     ...pageDocument,
     operationLog: [...(pageDocument.operationLog ?? []), operationRecord].slice(-100),
+  };
+}
+
+const EMPTY_OPERATION_COUNTS: Readonly<Record<PageArtifactOperationKind, number>> = {
+  'document-update': 0,
+  'persist-success': 0,
+  'persist-conflict': 0,
+  'persist-offline': 0,
+  'reload-remote': 0,
+  'overwrite-remote': 0,
+  'import-page': 0,
+  'governance-record': 0,
+};
+
+const EMPTY_STATUS_COUNTS: Readonly<Record<PageArtifactOperationStatus, number>> = {
+  pending: 0,
+  succeeded: 0,
+  failed: 0,
+  'requires-review': 0,
+};
+
+export function createPageArtifactOperationLogExport(
+  pageDocument: PageArtifactDocument,
+  options?: {
+    readonly exportedAt?: string;
+  },
+): PageArtifactOperationLogExport {
+  const records = [...(pageDocument.operationLog ?? [])].sort((left, right) =>
+    left.createdAt.localeCompare(right.createdAt)
+  );
+  const byOperation: Record<PageArtifactOperationKind, number> = { ...EMPTY_OPERATION_COUNTS };
+  const byStatus: Record<PageArtifactOperationStatus, number> = { ...EMPTY_STATUS_COUNTS };
+
+  records.forEach((record) => {
+    byOperation[record.operation] += 1;
+    byStatus[record.status] += 1;
+  });
+
+  const latestRecord = records.at(-1);
+
+  return {
+    schemaVersion: 1,
+    artifactId: pageDocument.artifactId,
+    documentId: pageDocument.documentId,
+    exportedAt: options?.exportedAt ?? new Date().toISOString(),
+    replayCursor: latestRecord?.id ?? null,
+    summary: {
+      total: records.length,
+      byOperation,
+      byStatus,
+      latestOperationAt: latestRecord?.createdAt ?? null,
+    },
+    records,
   };
 }
 

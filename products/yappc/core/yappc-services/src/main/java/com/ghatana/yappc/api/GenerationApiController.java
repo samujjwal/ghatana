@@ -7,6 +7,8 @@ import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
 import com.ghatana.yappc.common.JsonMapper;
 import com.ghatana.yappc.domain.PhaseType;
 import com.ghatana.yappc.domain.generate.GeneratedArtifacts;
+import com.ghatana.yappc.domain.generate.GenerationReviewAction;
+import com.ghatana.yappc.domain.generate.GenerationReviewRequest;
 import com.ghatana.yappc.domain.generate.ValidatedSpec;
 import com.ghatana.yappc.services.generate.GenerationService;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
@@ -162,6 +164,30 @@ public class GenerationApiController {
                 .whenException(e -> log.error("Error retrieving artifacts: {}", artifactsId, e));
     }
 
+    /**
+     * POST /api/v1/yappc/generate/runs/{runId}/apply
+     * Applies an approved generated artifact run.
+     */
+    public Promise<HttpResponse> applyReviewDecision(HttpRequest request) {
+        return handleReviewDecision(request, GenerationReviewAction.APPLY);
+    }
+
+    /**
+     * POST /api/v1/yappc/generate/runs/{runId}/reject
+     * Rejects a generated artifact run without applying changes.
+     */
+    public Promise<HttpResponse> rejectReviewDecision(HttpRequest request) {
+        return handleReviewDecision(request, GenerationReviewAction.REJECT);
+    }
+
+    /**
+     * POST /api/v1/yappc/generate/runs/{runId}/rollback
+     * Rolls back a previously applied generated artifact run.
+     */
+    public Promise<HttpResponse> rollbackReviewDecision(HttpRequest request) {
+        return handleReviewDecision(request, GenerationReviewAction.ROLLBACK);
+    }
+
     private HttpResponse rateLimitResponseIfNeeded(HttpRequest request, String routeName) {
         String key = routeName + ":" + resolveRequesterKey(request);
         RateLimiter.AcquireResult acquireResult = generationRateLimiter.tryAcquire(key);
@@ -189,6 +215,60 @@ public class GenerationApiController {
             return (commaIndex > 0 ? forwardedFor.substring(0, commaIndex) : forwardedFor).trim();
         }
         return "anonymous";
+    }
+
+    private Promise<HttpResponse> handleReviewDecision(HttpRequest request, GenerationReviewAction action) {
+        HttpResponse throttled = rateLimitResponseIfNeeded(request, "generate-review-" + action.wireValue());
+        if (throttled != null) {
+            return Promise.of(throttled);
+        }
+
+        String runId = request.getPathParameter("runId");
+        if (runId == null || runId.isBlank()) {
+            return Promise.of(badRequest400("runId is required"));
+        }
+
+        return request.loadBody()
+            .then(body -> {
+                try {
+                    ReviewDecisionBody decisionBody = parseReviewDecisionBody(body.asString(UTF_8));
+                    if (decisionBody.projectId() == null || decisionBody.projectId().isBlank()) {
+                        throw new IllegalArgumentException("projectId is required");
+                    }
+                    if (decisionBody.actorId() == null || decisionBody.actorId().isBlank()) {
+                        throw new IllegalArgumentException("actorId is required");
+                    }
+
+                    GenerationReviewRequest reviewRequest = new GenerationReviewRequest(
+                        runId,
+                        decisionBody.projectId(),
+                        decisionBody.actorId(),
+                        decisionBody.reason(),
+                        action
+                    );
+
+                    return generationService.reviewDecision(reviewRequest)
+                        .map(result -> {
+                            try {
+                                return ok200Json(JsonMapper.toJson(result));
+                            } catch (JsonProcessingException e) {
+                                log.error("Error serializing review decision response", e);
+                                return error500("Internal server error");
+                            }
+                        });
+                } catch (JsonProcessingException | IllegalArgumentException e) {
+                    log.error("Error parsing review decision request", e);
+                    return Promise.of(badRequest400(e.getMessage() == null ? "Invalid review decision request" : e.getMessage()));
+                }
+            })
+            .whenException(e -> log.error("Generation review decision failed", e));
+    }
+
+    private ReviewDecisionBody parseReviewDecisionBody(String json) throws JsonProcessingException {
+        if (json == null || json.isBlank()) {
+            return new ReviewDecisionBody(null, null, null);
+        }
+        return JsonMapper.fromJson(json, ReviewDecisionBody.class);
     }
 
     private ValidatedSpec parseValidatedSpec(String json) throws JsonProcessingException {
@@ -228,5 +308,8 @@ public class GenerationApiController {
     }
 
     private record RegenerateDiffRequest(ValidatedSpec validatedSpec, GeneratedArtifacts existingArtifacts) {
+    }
+
+    private record ReviewDecisionBody(String projectId, String actorId, String reason) {
     }
 }

@@ -181,10 +181,10 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
         target: { value: 'mobile' },
       });
       fireEvent.change(screen.getByDisplayValue('Default theme'), {
-        target: { value: 'contrast' },
+        target: { value: 'editorial' },
       });
       fireEvent.change(screen.getByDisplayValue('en-US'), {
-        target: { value: 'en-GB' },
+        target: { value: 'ar-SA' },
       });
 
       await waitFor(() => {
@@ -197,16 +197,24 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
         expect(sendMock).toHaveBeenCalledWith(
           expect.objectContaining({
             type: 'SET_THEME',
-            theme: 'contrast',
+            theme: 'editorial',
           }),
         );
         expect(sendMock).toHaveBeenCalledWith(
           expect.objectContaining({
             type: 'SET_LOCALE',
-            locale: 'en-GB',
+            locale: 'ar-SA',
           }),
         );
       });
+    });
+
+    it('offers token theme packs and RTL locale fixtures in the preview controls', () => {
+      render(<LivePreviewPanel document={baseDocument} />);
+
+      expect(screen.getByText('Editorial warmth')).toBeInTheDocument();
+      expect(screen.getByText('ar-SA')).toBeInTheDocument();
+      expect(screen.getByText('he-IL')).toBeInTheDocument();
     });
   });
 

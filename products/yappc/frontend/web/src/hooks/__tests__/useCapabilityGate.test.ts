@@ -2,9 +2,12 @@
  * useCapabilityGate Hook Tests.
  */
 
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
+import { createStore, Provider } from 'jotai';
 import { useCapabilityGate } from '../useCapabilityGate';
+import { workspaceAtom, type WorkspaceState } from '../../state/atoms/workspaceAtom';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock useAuth
@@ -138,4 +141,74 @@ describe('useCapabilityGate', () => {
     expect(result.current).toMatchObject({ granted: false });
     expect(result.current.reason).toBeDefined();
   });
+
+  it('grants enabled admin capabilities from backend workspace admin access', () => {
+    mockUseAuth.isAuthenticated = true;
+    mockUseAuth.hasRole.mockReturnValue(false);
+
+    const { result } = renderHook(() => useCapabilityGate('admin:feature-flags'), {
+      wrapper: createWorkspaceWrapper({
+        role: 'ADMIN',
+        isOwner: false,
+        capabilities: {
+          read: true,
+          create: true,
+          update: true,
+          delete: false,
+          comment: true,
+        },
+      }),
+    });
+
+    expect(result.current).toEqual({ granted: true, reason: undefined });
+  });
+
+  it('does not let global roles override backend workspace role for admin capabilities', () => {
+    mockUseAuth.isAuthenticated = true;
+    mockUseAuth.hasRole.mockReturnValue(true);
+
+    const { result } = renderHook(() => useCapabilityGate('admin:feature-flags'), {
+      wrapper: createWorkspaceWrapper({
+        role: 'EDITOR',
+        isOwner: false,
+        capabilities: {
+          read: true,
+          create: true,
+          update: true,
+          delete: false,
+          comment: true,
+        },
+      }),
+    });
+
+    expect(result.current).toEqual({ granted: false, reason: 'insufficient-role' });
+  });
 });
+
+function createWorkspaceWrapper(
+  workspaceAccess: Pick<WorkspaceState['currentWorkspace'], 'role' | 'isOwner' | 'capabilities'>,
+): React.ComponentType<{ children: React.ReactNode }> {
+  const store = createStore();
+  store.set(workspaceAtom, {
+    currentWorkspace: {
+      id: 'workspace-1',
+      name: 'Workspace',
+      ownerId: 'owner-1',
+      isDefault: true,
+      aiTags: [],
+      createdAt: '2026-05-07T00:00:00.000Z',
+      updatedAt: '2026-05-07T00:00:00.000Z',
+      ...workspaceAccess,
+    },
+    availableWorkspaces: [],
+    ownedProjects: [],
+    includedProjects: [],
+    isLoading: false,
+    isCreating: false,
+    isSwitching: false,
+  });
+
+  return function WorkspaceWrapper({ children }: { children: React.ReactNode }) {
+    return React.createElement(Provider, { store }, children);
+  };
+}

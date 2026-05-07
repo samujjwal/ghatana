@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import BuilderPreviewRoute from '../preview-builder';
+import { PREVIEW_BUILDER_RESPONSE_HEADERS, headers } from '../preview-builder';
 import type { HostToPreviewMessage } from '@ghatana/ui-builder/preview';
 import { validatePreviewSessionToken } from '../../services/preview/PreviewSessionApi';
 
@@ -30,6 +31,18 @@ describe('BuilderPreviewRoute security', () => {
 
     const origins = postMessageSpy.mock.calls.map(([, origin]) => origin);
     expect(origins).not.toContain('*');
+  });
+
+  it('exports strict same-origin response headers for the preview document', () => {
+    expect(headers()).toBe(PREVIEW_BUILDER_RESPONSE_HEADERS);
+    expect(PREVIEW_BUILDER_RESPONSE_HEADERS['X-Frame-Options']).toBe('SAMEORIGIN');
+    expect(PREVIEW_BUILDER_RESPONSE_HEADERS['X-Content-Type-Options']).toBe('nosniff');
+    expect(PREVIEW_BUILDER_RESPONSE_HEADERS['Referrer-Policy']).toBe('no-referrer');
+    expect(PREVIEW_BUILDER_RESPONSE_HEADERS['Cross-Origin-Resource-Policy']).toBe('same-origin');
+    expect(PREVIEW_BUILDER_RESPONSE_HEADERS['Permissions-Policy']).toContain('camera=()');
+    expect(PREVIEW_BUILDER_RESPONSE_HEADERS['Content-Security-Policy']).toContain("frame-ancestors 'self'");
+    expect(PREVIEW_BUILDER_RESPONSE_HEADERS['Content-Security-Policy']).toContain("object-src 'none'");
+    expect(PREVIEW_BUILDER_RESPONSE_HEADERS['Content-Security-Policy']).not.toContain('unsafe-eval');
   });
 
   it('rejects spoofed origin messages', async () => {

@@ -12,12 +12,17 @@ export type { LifecyclePhase } from './PhaseCockpitDataService';
 export { getAllPhaseCockpitConfig, getPhaseCockpitConfig, getAdaptivePhaseCockpitConfig } from './PhaseCockpitConfigService';
 export {
   describePhaseActionError,
+  executeGenerateReviewDecision,
   executePhasePrimaryAction,
+  executeRunPostAction,
 } from './PhaseCockpitActionService';
 export type {
+  ExecuteGenerateReviewDecisionParams,
   ExecutePhaseActionParams,
+  ExecuteRunPostActionParams,
   PhaseActionKind,
   PhaseActionResult,
+  RunPostAction,
 } from './PhaseCockpitActionService';
 export {
   buildPhaseCockpitContract,

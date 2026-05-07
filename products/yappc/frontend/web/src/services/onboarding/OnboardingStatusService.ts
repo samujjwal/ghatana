@@ -46,6 +46,30 @@ const QUERY_KEY = ['onboarding-status'];
 // Track if server is known to be unavailable to avoid repeated failing requests
 let serverUnavailable = false;
 
+export function resetOnboardingStatusServerAvailabilityForTest(): void {
+  serverUnavailable = false;
+}
+
+export function normalizeOnboardingStatus(data: unknown): OnboardingStatus | null {
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+    return null;
+  }
+
+  const record = data as Record<string, unknown>;
+  if (typeof record.completed !== 'boolean') {
+    return null;
+  }
+
+  return {
+    completed: record.completed,
+    completedAt: typeof record.completedAt === 'string' ? record.completedAt : undefined,
+    primaryPersona: typeof record.primaryPersona === 'string' ? record.primaryPersona : undefined,
+    activePersonas: Array.isArray(record.activePersonas)
+      ? record.activePersonas.filter((p): p is string => typeof p === 'string')
+      : undefined,
+  };
+}
+
 // --------------------------------------------------------------------------
 // Server API
 // --------------------------------------------------------------------------
@@ -73,19 +97,12 @@ async function fetchOnboardingStatus(): Promise<OnboardingStatus | null> {
 
     const data = await res.json() as unknown;
 
-    // Validate shape
-    if (typeof data === 'object' && data !== null) {
-      const record = data as Record<string, unknown>;
-      return {
-        completed: record.completed === true,
-        completedAt: typeof record.completedAt === 'string' ? record.completedAt : undefined,
-        primaryPersona: typeof record.primaryPersona === 'string' ? record.primaryPersona : undefined,
-        activePersonas: Array.isArray(record.activePersonas)
-          ? record.activePersonas.filter((p): p is string => typeof p === 'string')
-          : undefined,
-      };
+    const status = normalizeOnboardingStatus(data);
+    if (status) {
+      return status;
     }
 
+    logger.warn('Server onboarding endpoint returned an invalid status contract; using localStorage fallback', 'onboarding');
     return null;
   } catch (error) {
     logger.warn('Onboarding status fetch failed; using localStorage fallback', 'onboarding', {
@@ -117,16 +134,12 @@ async function updateOnboardingStatus(request: UpdateOnboardingRequest): Promise
   }
 
   const data = await res.json() as unknown;
-  const record = typeof data === 'object' && data !== null ? (data as Record<string, unknown>) : {};
+  const status = normalizeOnboardingStatus(data);
+  if (!status) {
+    throw new Error('Server onboarding endpoint returned an invalid status contract');
+  }
 
-  return {
-    completed: record.completed === true,
-    completedAt: typeof record.completedAt === 'string' ? record.completedAt : undefined,
-    primaryPersona: typeof record.primaryPersona === 'string' ? record.primaryPersona : undefined,
-    activePersonas: Array.isArray(record.activePersonas)
-      ? record.activePersonas.filter((p): p is string => typeof p === 'string')
-      : undefined,
-  };
+  return status;
 }
 
 // --------------------------------------------------------------------------

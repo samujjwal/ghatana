@@ -9,6 +9,8 @@
  * @doc.pattern ValueObject
  */
 
+import type { CanvasSyncStatus as SharedCanvasSyncStatus } from '@/services/canvas/canvasSyncStatus';
+
 export type DrawingTool = 'pen' | 'pencil' | 'marker' | 'highlighter' | 'eraser';
 
 export interface NodeContextMenuState {
@@ -22,4 +24,4 @@ export interface Point {
   y: number;
 }
 
-export type CanvasSyncStatus = 'local-only' | 'syncing' | 'synced' | 'error';
+export type CanvasSyncStatus = SharedCanvasSyncStatus;

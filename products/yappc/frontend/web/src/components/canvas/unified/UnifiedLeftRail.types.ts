@@ -115,6 +115,8 @@ export interface RailPanelProps {
   nodes?: unknown[];
   /** Selected node IDs */
   selectedNodeIds?: string[];
+  /** Externally hovered node, e.g. from live preview sync. */
+  hoveredNodeId?: string | null;
   /** Canvas interaction handlers */
   onInsertNode?: (nodeData: unknown, position?: { x: number; y: number }) => void;
   onSelectNode?: (nodeId: string) => void;

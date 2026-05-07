@@ -17,6 +17,7 @@
     "inventory:routes:check": "node scripts/generate-route-inventory.mjs --check",
     "verify:tracker": "node scripts/verify-tracker.mjs",
     "test:ui": "vitest --ui",
+    "test:performance:budgets": "vitest run src/services/performance/__tests__/canvasPerformanceBudgets.test.ts",
     "test:unit:canvas": "jest --config jest.canvas.config.ts src/components/canvas/**/*.test.{ts,tsx}",
     "test:integration:canvas": "jest --config jest.canvas.config.ts src/components/canvas/__tests__/performance-integration.test.tsx",
     "test:performance:canvas": "jest --config jest.canvas.config.ts src/components/canvas/__tests__/edge-cases.test.tsx",

@@ -12,6 +12,7 @@
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 import type { LifecyclePhase } from '../../shared/types/lifecycle';
+import type { ResourceCapabilities, WorkspaceRole } from '../../services/workspace/accessControl';
 
 // ============================================================================
 // Types
@@ -25,6 +26,9 @@ export interface Workspace {
     name: string;
     description?: string;
     ownerId: string;
+    role?: WorkspaceRole;
+    isOwner?: boolean;
+    capabilities?: ResourceCapabilities;
     isDefault: boolean;
     projectCount?: number;
     memberCount?: number;
@@ -45,6 +49,11 @@ export interface Project {
     status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
     lifecyclePhase: LifecyclePhase;
     ownerWorkspaceId: string;
+    isOwned?: boolean;
+    role?: WorkspaceRole;
+    isIncluded?: boolean;
+    readOnly?: boolean;
+    capabilities?: ResourceCapabilities;
     isDefault: boolean;
     aiSummary?: string;
     aiNextActions: string[];
@@ -164,8 +173,9 @@ export const isProjectOwnedAtom = atom((get) => {
  */
 export const canEditProjectAtom = atom((get) => {
     return (projectId: string): boolean => {
-        const isOwned = get(isProjectOwnedAtom);
-        return isOwned(projectId);
+        const state = get(workspaceAtom);
+        const project = [...state.ownedProjects, ...state.includedProjects].find(p => p.id === projectId);
+        return project?.capabilities?.update === true && project.readOnly !== true;
     };
 });
 

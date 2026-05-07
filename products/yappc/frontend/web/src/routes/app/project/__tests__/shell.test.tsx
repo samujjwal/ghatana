@@ -112,7 +112,10 @@ describe('Project shell — navigation tabs', () => {
     for (const label of tabs) {
       expect(screen.getByText(label)).toBeDefined();
     }
+    expect(screen.queryByText('Canvas')).toBeNull();
     expect(screen.queryByText('Preview')).toBeNull();
+    expect(screen.queryByText('Deploy')).toBeNull();
+    expect(screen.queryByText('Lifecycle')).toBeNull();
   });
 
   it('renders an Intent tab linking to the intent route', () => {
@@ -148,19 +151,7 @@ describe('Project shell — navigation tabs', () => {
 
 describe('Project shell — non-canvas route tab visibility', () => {
   beforeEach(() => {
-    // Override to a non-canvas path so the tab bar is shown
-    vi.mock('react-router', async (importOriginal) => {
-      const actual = await importOriginal<typeof import('react-router')>();
-      return {
-        ...actual,
-        useParams: () => ({ projectId: 'proj-42' }),
-        useNavigate: () => vi.fn(),
-        useLocation: () => ({ pathname: '/p/proj-42/deploy' }),
-        Outlet: () => <div data-testid="outlet" />,
-        NavLink: ({ to, children, role }: { to: string; children: React.ReactNode; role?: string }) =>
-          React.createElement('a', { href: to, role }, children),
-      };
-    });
+    vi.clearAllMocks();
   });
 
   it('renders all default tabs on non-canvas routes', () => {

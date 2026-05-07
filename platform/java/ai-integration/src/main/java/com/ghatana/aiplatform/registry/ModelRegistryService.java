@@ -51,7 +51,7 @@ import java.util.*;
  * @doc.layer platform
  * @doc.pattern Service + Repository
  */
-public class ModelRegistryService {
+public class ModelRegistryService implements ModelRegistryPort {
 
     private static final Logger logger = LoggerFactory.getLogger(ModelRegistryService.class);
 

@@ -287,6 +287,7 @@ export function LivePreviewPanel({
 
   return (
     <div
+      data-testid="live-preview-panel"
       className={cn(
         'flex flex-col h-full bg-surface-muted dark:bg-surface',
         className
@@ -325,6 +326,7 @@ export function LivePreviewPanel({
             options={[
               { value: 'default', label: 'Default theme' },
               { value: 'contrast', label: 'High contrast' },
+              { value: 'editorial', label: 'Editorial warmth' },
             ]}
           />
           <Select
@@ -334,6 +336,8 @@ export function LivePreviewPanel({
             options={[
               { value: 'en-US', label: 'en-US' },
               { value: 'en-GB', label: 'en-GB' },
+              { value: 'ar-SA', label: 'ar-SA' },
+              { value: 'he-IL', label: 'he-IL' },
             ]}
           />
           <span className="text-xs text-fg-muted">
@@ -344,6 +348,7 @@ export function LivePreviewPanel({
             variant="outline"
             size="small"
             title="Refresh Preview"
+            data-testid="live-preview-refresh"
           >
             Refresh
           </Button>
@@ -401,6 +406,7 @@ export function LivePreviewPanel({
               ref={iframeRef}
               src={resolvedPreviewUrl ?? previewUrl ?? '/preview/builder'}
               title="Live Preview"
+              data-testid="live-preview-iframe"
               className="h-full max-w-full border-0 transition-[width,height] duration-200 ease-out"
               style={{
                 width: `${currentViewportSpec.width}px`,

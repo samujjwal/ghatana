@@ -28,6 +28,7 @@ import { useLifecycleArtifacts } from "../../../services/canvas/lifecycle/Lifecy
 import { usePhaseGates } from "../../../services/canvas/lifecycle/PhaseGateService";
 import type { TransitionResult } from '../../../services/canvas/lifecycle/PhaseGateService';
 import { phaseTransitionAPI, type PhaseTransitionPreview } from '@/services/lifecycle/phase-transition-api';
+import { LegacyRouteCompatibilityNotice } from './LegacyRouteCompatibilityNotice';
 
 function getReleasePlanningStatusView(
     preview: PhaseTransitionPreview | null,
@@ -350,6 +351,12 @@ export default function Component() {
 
     return (
         <div className="h-full flex flex-col">
+            <LegacyRouteCompatibilityNotice
+                projectId={projectId}
+                legacySurface="Project deploy"
+                canonicalPhase="run"
+                reason="Deployment planning and execution controls are now part of Run."
+            />
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-divider bg-bg-paper">
                 <div>

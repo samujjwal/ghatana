@@ -98,13 +98,13 @@ export function AIPanel({ context, selectedNodeIds = [] }: RailPanelProps) {
     >
       <Stack direction="row" gap={1} className="mb-4" alignItems="center">
         <Typography variant="subtitle2" fontWeight={600} className="flex-1">
-          ✨ AI Suggestions
+          Recommended insights
         </Typography>
       </Stack>
 
       {selectedNodeIds.length === 0 && (
         <Alert severity="info" className="mb-4">
-          Select elements to get AI suggestions
+          Select elements to get recommendations
         </Alert>
       )}
 

@@ -2,10 +2,18 @@ import fastify, { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
+  queryRawMock,
+  workspaceFindManyMock,
+  workspaceFindUniqueMock,
+  workspaceMemberFindUniqueMock,
   workspaceCountMock,
   workspaceCreateMock,
   projectCreateMock,
 } = vi.hoisted(() => ({
+  queryRawMock: vi.fn(),
+  workspaceFindManyMock: vi.fn(),
+  workspaceFindUniqueMock: vi.fn(),
+  workspaceMemberFindUniqueMock: vi.fn(),
   workspaceCountMock: vi.fn(),
   workspaceCreateMock: vi.fn(),
   projectCreateMock: vi.fn(),
@@ -13,9 +21,15 @@ const {
 
 vi.mock('../../db', () => ({
   default: {
+    $queryRaw: queryRawMock,
     workspace: {
+      findMany: workspaceFindManyMock,
+      findUnique: workspaceFindUniqueMock,
       count: workspaceCountMock,
       create: workspaceCreateMock,
+    },
+    workspaceMember: {
+      findUnique: workspaceMemberFindUniqueMock,
     },
     project: {
       create: projectCreateMock,
@@ -26,6 +40,16 @@ vi.mock('../../db', () => ({
 vi.mock('../../middleware/rbac.middleware', () => ({
   requirePermission: () => async () => undefined,
 }));
+
+vi.mock('../../middleware/resource-auth.middleware', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../middleware/resource-auth.middleware')>();
+
+  return {
+    ...actual,
+    requireWorkspaceMember: () => async () => undefined,
+    requireWorkspaceOwner: () => async () => undefined,
+  };
+});
 
 import workspaceRoutes from '../workspaces';
 
@@ -113,5 +137,46 @@ describe('workspaceRoutes bootstrap behavior', () => {
         }),
       })
     );
+  });
+
+  it('returns server-backed role and capabilities in the workspace list', async () => {
+    queryRawMock.mockResolvedValueOnce([{ ok: 1 }]);
+    workspaceFindManyMock.mockResolvedValueOnce([
+      {
+        id: 'ws-123',
+        name: 'Platform Workspace',
+        ownerId: 'owner-456',
+        isDefault: false,
+        aiTags: [],
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        updatedAt: new Date('2026-01-02T00:00:00.000Z'),
+        members: [{ role: 'VIEWER' }],
+        _count: { ownedProjects: 2 },
+      },
+    ]);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/workspaces',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      workspaces: [
+        {
+          id: 'ws-123',
+          role: 'VIEWER',
+          isOwner: false,
+          projectCount: 2,
+          capabilities: {
+            read: true,
+            create: false,
+            update: false,
+            delete: false,
+            comment: true,
+          },
+        },
+      ],
+    });
   });
 });

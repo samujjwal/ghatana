@@ -14,6 +14,7 @@ export { DraggableBox } from './DraggableBox';
 export { useCanvasKeyboardShortcuts } from './useCanvasKeyboardShortcuts';
 export { useCanvasDrawing } from './useCanvasDrawing';
 export { useCanvasExport } from './useCanvasExport';
+export type { CanvasImportAuditEvent, CanvasImportState } from './useCanvasExport';
 export { useCanvasRoleInfo } from './useCanvasRoleInfo';
 export { CanvasNodeContextMenu } from './CanvasNodeContextMenu';
 export { CanvasStatusBar } from './CanvasStatusBar';

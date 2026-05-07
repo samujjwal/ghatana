@@ -11,18 +11,23 @@ import { PhasePrimaryActionCard } from '../../../components/phase/PhasePrimaryAc
 import { PhaseSuggestedNextStep } from '../../../components/phase/PhaseSuggestedNextStep';
 import {
   describePhaseActionError,
+  executeGenerateReviewDecision,
   executePhasePrimaryAction,
+  executeRunPostAction,
   formatTimestamp,
   resolvePhaseIcon,
   usePhaseCockpitData,
 } from '../../../services/phase';
 import type {
   MountedPhase,
+  RunPostAction,
 } from '../../../services/phase';
+import type { GenerateReviewDecision } from '@/lib/api/client';
 import { PhaseStatusPanels } from './PhaseStatusPanels';
 import { PhaseEmbeddedSurface } from './PhaseEmbeddedSurface';
 import { currentUserAtom } from '../../../stores/user.store';
 import type { PhaseActionResult } from '../../../services/phase';
+import type { PhaseCockpitContract } from '../../../services/phase/PhaseCockpitContractBuilder';
 
 
 /** Human-readable label for the advanced detail panel, per phase. */
@@ -36,6 +41,55 @@ const PHASE_DETAIL_LABELS: Record<MountedPhase, string> = {
   learn: 'Retrospective reference',
   evolve: 'Evolution planning reference',
 };
+
+function PhaseContractSummary({ contract }: { readonly contract: PhaseCockpitContract | null }) {
+  if (!contract) {
+    return null;
+  }
+
+  const persistedActivityCount = contract.persisted.activity.length;
+  const blockerCount = contract.derived.blockers.length;
+  const evidenceCount = contract.derived.evidence.length;
+  const governanceCount = contract.derived.governance.length;
+  const suggestionCount = contract.suggested.actions.length;
+
+  return (
+    <section
+      className="grid gap-3 rounded-2xl border border-border bg-surface-raised p-4 text-sm shadow-sm md:grid-cols-4"
+      data-testid="phase-contract-summary"
+      aria-label="Canonical phase contract summary"
+    >
+      <div data-testid="phase-contract-persisted">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">Persisted</p>
+        <p className="mt-2 font-medium text-fg">{contract.persisted.project.name}</p>
+        <p className="mt-1 text-xs text-fg-muted">{persistedActivityCount} backed activity event(s)</p>
+      </div>
+      <div data-testid="phase-contract-derived">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">Derived</p>
+        <p className="mt-2 font-medium text-fg">
+          {blockerCount} blocker(s), {evidenceCount} evidence item(s)
+        </p>
+        <p className="mt-1 text-xs text-fg-muted">{governanceCount} governance trace record(s)</p>
+      </div>
+      <div data-testid="phase-contract-suggested">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">Suggested</p>
+        <p className="mt-2 font-medium text-fg">{suggestionCount} ranked action(s)</p>
+        <p className="mt-1 text-xs text-fg-muted">
+          {contract.suggested.actions[0]?.title ?? 'No backend suggestion surfaced'}
+        </p>
+      </div>
+      <div data-testid="phase-contract-review">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">Review</p>
+        <p className="mt-2 font-medium text-fg">
+          {contract.review.required ? 'Review required' : 'Ready without extra review'}
+        </p>
+        <p className="mt-1 text-xs text-fg-muted">
+          {contract.review.reason ?? (contract.review.canAdvance ? 'Lifecycle preview can advance.' : 'Lifecycle preview is not ready.')}
+        </p>
+      </div>
+    </section>
+  );
+}
 
 function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   const { projectId } = useParams<{ projectId: string }>();
@@ -69,6 +123,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     evidence,
     governance,
     suggestions,
+    contract,
   } = usePhaseCockpitData({
     phase,
     projectId,
@@ -92,6 +147,35 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
       if (preview && !preview.canAdvance) {
         scrollToBlockerPanel();
       }
+    },
+  });
+
+  const generateReviewMutation = useMutation({
+    mutationFn: executeGenerateReviewDecision,
+    onSuccess: (result) => {
+      setActionResult(result);
+      setActionError(null);
+      setFeedback(null);
+      void queryClient.invalidateQueries({ queryKey: ['project-activity', projectId] });
+    },
+    onError: (error) => {
+      setActionError(describePhaseActionError(error));
+    },
+  });
+
+  const runPostActionMutation = useMutation({
+    mutationFn: executeRunPostAction,
+    onSuccess: (result) => {
+      setActionResult(result);
+      setActionError(null);
+      setFeedback(null);
+      void queryClient.invalidateQueries({ queryKey: ['project-activity', projectId] });
+      if (result.kind === 'navigate' && projectId) {
+        void navigate(`/p/${projectId}/observe`);
+      }
+    },
+    onError: (error) => {
+      setActionError(describePhaseActionError(error));
     },
   });
 
@@ -137,6 +221,38 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     setActionError(null);
     setFeedback(`Reviewing ${config.supportingTitle.toLowerCase()} for ${config.name}.`);
     scrollToSupportingSurface();
+  };
+
+  const handleGenerateReviewDecision = (decision: GenerateReviewDecision) => {
+    if (!projectId || !actionResult?.runId) {
+      setActionError('Missing generation run context for review decision.');
+      return;
+    }
+    if (!currentUser?.id) {
+      setActionError('Generation review requires an authenticated reviewer.');
+      return;
+    }
+
+    generateReviewMutation.mutate({
+      projectId,
+      runId: actionResult.runId,
+      decision,
+      actorId: currentUser.id,
+      reason: `Reviewed from mounted Generate cockpit by ${currentUser.email ?? currentUser.id}.`,
+    });
+  };
+
+  const handleRunPostAction = (action: RunPostAction) => {
+    if (!projectId || !actionResult?.runId) {
+      setActionError('Missing run context for this action.');
+      return;
+    }
+
+    runPostActionMutation.mutate({
+      projectId,
+      runId: actionResult.runId,
+      action,
+    });
   };
 
   const project = projectQuery.data;
@@ -188,6 +304,15 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   );
 
   const isCtaDisabled = config.primaryLocked === true || actionMutation.isPending;
+  const showGenerateReviewActions = phase === 'generate'
+    && actionResult?.kind === 'generate-review'
+    && Boolean(actionResult.runId)
+    && actionResult.reviewRequired !== false;
+  const isGenerateReviewPending = generateReviewMutation.isPending;
+  const showRunPostActions = phase === 'run'
+    && actionResult?.kind === 'run-workflow'
+    && Boolean(actionResult.runId);
+  const isRunPostActionPending = runPostActionMutation.isPending;
   const disabledReason = actionMutation.isPending
     ? 'The phase action is running. Keep this page open while the backend responds.'
     : config.primaryLockedReason;
@@ -229,6 +354,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
         advancedToolsLabel={PHASE_DETAIL_LABELS[phase]}
       >
         <div className="space-y-4" data-testid={`${phase}-native-summary`}>
+          <PhaseContractSummary contract={contract} />
           {feedback ? (
             <div className="rounded-xl border border-info-border bg-info-bg p-4 text-sm text-info-color">
               {feedback}
@@ -240,6 +366,86 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
               data-testid="phase-action-result"
             >
               {actionResult.message}
+            </div>
+          ) : null}
+          {showGenerateReviewActions ? (
+            <div
+              className="rounded-xl border border-border bg-surface-raised p-4"
+              data-testid="generate-review-actions"
+            >
+              <p className="text-sm font-semibold text-fg">Review generated changes</p>
+              <p className="mt-1 text-xs text-fg-muted">
+                Apply approved diffs, reject unsafe changes, or roll back an already-applied generation run.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="rounded-lg border border-success-border bg-success-bg px-3 py-2 text-xs font-semibold text-success-color disabled:opacity-60"
+                  data-testid="generate-apply"
+                  disabled={isGenerateReviewPending}
+                  onClick={() => handleGenerateReviewDecision('apply')}
+                >
+                  Apply
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg border border-warning-border bg-warning-bg px-3 py-2 text-xs font-semibold text-warning-color disabled:opacity-60"
+                  data-testid="generate-reject"
+                  disabled={isGenerateReviewPending}
+                  onClick={() => handleGenerateReviewDecision('reject')}
+                >
+                  Reject
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg border border-destructive bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive disabled:opacity-60"
+                  data-testid="generate-rollback"
+                  disabled={isGenerateReviewPending}
+                  onClick={() => handleGenerateReviewDecision('rollback')}
+                >
+                  Roll back
+                </button>
+              </div>
+            </div>
+          ) : null}
+          {showRunPostActions ? (
+            <div
+              className="rounded-xl border border-border bg-surface-raised p-4"
+              data-testid="run-post-actions"
+            >
+              <p className="text-sm font-semibold text-fg">Post-run controls</p>
+              <p className="mt-1 text-xs text-fg-muted">
+                Promote a healthy run, roll back an unsafe deployment, or hand off the run to Observe for live signal review.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="rounded-lg border border-destructive bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive disabled:opacity-60"
+                  data-testid="run-rollback"
+                  disabled={isRunPostActionPending}
+                  onClick={() => handleRunPostAction('rollback')}
+                >
+                  Roll back
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg border border-success-border bg-success-bg px-3 py-2 text-xs font-semibold text-success-color disabled:opacity-60"
+                  data-testid="run-promote"
+                  disabled={isRunPostActionPending}
+                  onClick={() => handleRunPostAction('promote')}
+                >
+                  Promote
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg border border-info-border bg-info-bg px-3 py-2 text-xs font-semibold text-info-color disabled:opacity-60"
+                  data-testid="run-observe-handoff"
+                  disabled={isRunPostActionPending}
+                  onClick={() => handleRunPostAction('observe')}
+                >
+                  Hand off to Observe
+                </button>
+              </div>
             </div>
           ) : null}
           {actionError ? (

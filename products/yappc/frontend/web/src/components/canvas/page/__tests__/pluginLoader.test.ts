@@ -10,12 +10,15 @@
  * @doc.pattern Security Test
  */
 
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   ComponentPluginLoader,
   getCurrentPluginRuntimeEnvironment,
   type ComponentPackageManifest,
 } from '../pluginLoader';
+import { rendererManifestRegistry } from '../rendererManifest';
+import type { ComponentInstance } from '@ghatana/ui-builder';
 import type { BuilderRendererManifest } from '../rendererManifest';
 
 describe('ComponentPluginLoader', () => {
@@ -241,6 +244,30 @@ describe('ComponentPluginLoader', () => {
       expect(result.errors.some(e => e.includes('requires elevated permissions'))).toBe(true);
     });
 
+    it('should reject telemetry declarations without elevated permissions', () => {
+      const renderer: BuilderRendererManifest = {
+        contractName: 'TelemetryComponent',
+        render: () => null,
+      };
+
+      const manifest: ComponentPackageManifest = {
+        packageName: 'telemetry-package',
+        version: '1.0.0',
+        minBuilderVersion: '1.0.0',
+        renderers: [renderer],
+        securityPolicy: {
+          allowedTelemetryEvents: ['component.rendered'],
+        },
+      };
+
+      const result = loader.validatePackage(manifest);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        'Package telemetry-package declares telemetry events but does not request elevated permissions',
+      );
+    });
+
     it('should accept package requiring elevated permissions if allowed', () => {
       loader.allowPackage('secure-package');
 
@@ -379,6 +406,94 @@ describe('ComponentPluginLoader', () => {
       expect(globalThis.fetch).toBe(originalFetch);
       await expect(blockedRequest).rejects.toThrow('Plugin network request blocked');
       expect(originalFetch).not.toHaveBeenCalled();
+    });
+
+    it('restricts elevated plugin telemetry to declared events only', () => {
+      loader.allowPackage('telemetry-package');
+      const renderer: BuilderRendererManifest = {
+        contractName: 'TelemetryComponent',
+        render: () => null,
+      };
+
+      const manifest: ComponentPackageManifest = {
+        packageName: 'telemetry-package',
+        version: '1.0.0',
+        minBuilderVersion: '1.0.0',
+        renderers: [renderer],
+        securityPolicy: {
+          requiresElevatedPermissions: true,
+          allowedTelemetryEvents: ['component.rendered'],
+        },
+      };
+
+      expect(loader.loadPackage(manifest).isValid).toBe(true);
+      const runtime = loader.getRuntimeEnvironment('telemetry-package');
+
+      expect(runtime?.emitTelemetry('component.rendered', { contractName: 'TelemetryComponent' })).toBe(true);
+      expect(runtime?.emitTelemetry('component.secret-export')).toBe(false);
+      expect(runtime?.policy.telemetry.eventAllowlist).toEqual(['component.rendered']);
+    });
+
+    it('keeps elevated plugin telemetry disabled until events are explicitly declared', () => {
+      loader.allowPackage('silent-package');
+      const renderer: BuilderRendererManifest = {
+        contractName: 'SilentComponent',
+        render: () => null,
+      };
+
+      const manifest: ComponentPackageManifest = {
+        packageName: 'silent-package',
+        version: '1.0.0',
+        minBuilderVersion: '1.0.0',
+        renderers: [renderer],
+        securityPolicy: {
+          requiresElevatedPermissions: true,
+        },
+      };
+
+      expect(loader.loadPackage(manifest).isValid).toBe(true);
+      const runtime = loader.getRuntimeEnvironment('silent-package');
+
+      expect(runtime?.emitTelemetry('component.rendered')).toBe(false);
+      expect(runtime?.policy.telemetry.allowTelemetry).toBe(false);
+    });
+
+    it('falls back to the residual renderer after a plugin package is unloaded', () => {
+      const renderer: BuilderRendererManifest = {
+        contractName: 'PackageWidget',
+        render: () => 'Loaded package widget',
+      };
+      const manifest: ComponentPackageManifest = {
+        packageName: 'fallback-package',
+        version: '1.0.0',
+        minBuilderVersion: '1.0.0',
+        renderers: [renderer],
+      };
+
+      expect(loader.loadPackage(manifest).isValid).toBe(true);
+      expect(rendererManifestRegistry.get('PackageWidget')).toBe(renderer);
+
+      loader.unloadPackage('fallback-package');
+
+      expect(rendererManifestRegistry.get('PackageWidget')).toBeNull();
+      const fallback = rendererManifestRegistry.getFallbackRenderer();
+      const instance = {
+        id: 'package-widget',
+        contractName: 'PackageWidget',
+        props: {},
+        slots: {},
+        bindings: [],
+        metadata: {
+          residualReason: 'Plugin package was unloaded before render.',
+        },
+      } satisfies ComponentInstance;
+
+      expect(fallback).not.toBeNull();
+      render(fallback!.render(instance, { default: null, actions: null }, { mode: 'preview' }));
+
+      expect(screen.getByTestId('fallback-renderer-PackageWidget')).toHaveTextContent(
+        'Plugin package was unloaded before render.',
+      );
     });
   });
 

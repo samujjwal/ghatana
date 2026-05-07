@@ -93,6 +93,9 @@ export interface InspectorPanelProps {
     onAddBlocker: (artifactId: string, blocker: Omit<Blocker, 'id' | 'createdAt'>) => void;
     onAddComment: (artifactId: string, content: string) => void;
     onLinkArtifact: (artifactId: string, targetId: string) => void;
+    canEdit?: boolean;
+    canComment?: boolean;
+    readOnlyReason?: string;
 }
 
 const ARTIFACT_ICONS: Record<ArtifactType, string> = {
@@ -116,6 +119,9 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     onAddBlocker,
     onAddComment,
     onLinkArtifact,
+    canEdit = true,
+    canComment = true,
+    readOnlyReason,
 }) => {
     const [isEditing, setIsEditing] = React.useState(false);
     const [editedTitle, setEditedTitle] = React.useState('');
@@ -145,7 +151,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     }, [artifact]);
 
     const handleSave = () => {
-        if (artifact) {
+        if (artifact && canEdit) {
             onUpdate(artifact.id, {
                 title: editedTitle,
                 description: editedDescription,
@@ -155,7 +161,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     };
 
     const handleAddComment = () => {
-        if (artifact && newComment.trim()) {
+        if (artifact && newComment.trim() && canComment) {
             const mentions = parseMentions(newComment);
             onAddComment(artifact.id, newComment);
             console.log('Mentions detected:', mentions);
@@ -204,7 +210,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     };
 
     const handleAddBlocker = () => {
-        if (artifact && newBlocker.trim()) {
+        if (artifact && newBlocker.trim() && canEdit) {
             onAddBlocker(artifact.id, {
                 description: newBlocker,
                 severity: 'high',
@@ -268,6 +274,9 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                 variant="outlined"
                             />
                         )}
+                        {!canEdit && (
+                            <Chip label={readOnlyReason || 'Read-only'} size="sm" variant="outlined" />
+                        )}
                     </Stack>
                 </Box>
 
@@ -295,7 +304,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                     <Typography as="p" className="text-sm font-medium" color="text.secondary">
                                         Title
                                     </Typography>
-                                    {!isEditing && (
+                                    {!isEditing && canEdit && (
                                         <IconButton size="sm" onClick={() => setIsEditing(true)}>
                                             <EditIcon size={16} />
                                         </IconButton>
@@ -307,6 +316,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                         size="sm"
                                         value={editedTitle}
                                         onChange={(e) => setEditedTitle(e.target.value)}
+                                        disabled={!canEdit}
                                     />
                                 ) : (
                                     <Typography as="p">{artifact.title}</Typography>
@@ -326,6 +336,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                         value={editedDescription}
                                         onChange={(e) => setEditedDescription(e.target.value)}
                                         placeholder="Add a description..."
+                                        disabled={!canEdit}
                                     />
                                 ) : (
                                     <Typography as="p" className="text-sm" color="text.secondary">
@@ -386,9 +397,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                     value={newBlocker}
                                     onChange={(e) => setNewBlocker(e.target.value)}
                                     onKeyPress={(e) => e.key === 'Enter' && handleAddBlocker()}
+                                    disabled={!canEdit}
                                     InputProps={{
                                         endAdornment: (
-                                            <Button size="sm" onClick={handleAddBlocker} disabled={!newBlocker.trim()}>
+                                            <Button size="sm" onClick={handleAddBlocker} disabled={!newBlocker.trim() || !canEdit}>
                                                 Add
                                             </Button>
                                         ),
@@ -482,6 +494,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                 placeholder="Add a comment... (use @mention to tag someone)"
                                 value={newComment}
                                 onChange={handleCommentChange}
+                                disabled={!canComment}
                             />
 
                             {/* Mention Dropdown */}
@@ -515,7 +528,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                 variant="solid"
                                 size="sm"
                                 onClick={handleAddComment}
-                                disabled={!newComment.trim()}
+                                disabled={!newComment.trim() || !canComment}
                             >
                                 Add Comment
                             </Button>

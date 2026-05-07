@@ -135,12 +135,13 @@ export class BidirectionalPreviewSync {
   handlePreviewClick(previewElementId: string, canvasElementId?: string, userId?: string): void {
     if (!this.state.syncEnabled) return;
 
+    const resolvedCanvasElementId = canvasElementId || previewElementId;
     this.state.selectedPreviewElementId = previewElementId;
-    this.state.selectedCanvasElementId = canvasElementId || null;
+    this.state.selectedCanvasElementId = resolvedCanvasElementId;
 
     const event: PreviewSyncEvent = {
       type: 'click',
-      canvasElementId: canvasElementId || '',
+      canvasElementId: resolvedCanvasElementId,
       previewElementId,
       timestamp: new Date().toISOString(),
       userId,
@@ -149,7 +150,7 @@ export class BidirectionalPreviewSync {
     this.recordEvent(event);
     this.emitTelemetry({
       eventType: 'preview_click',
-      canvasElementId,
+      canvasElementId: resolvedCanvasElementId,
       previewElementId,
       timestamp: event.timestamp,
       userId,
@@ -162,12 +163,13 @@ export class BidirectionalPreviewSync {
   handlePreviewHover(previewElementId: string, canvasElementId?: string, userId?: string): void {
     if (!this.state.syncEnabled) return;
 
+    const resolvedCanvasElementId = canvasElementId || previewElementId;
     this.state.hoveredPreviewElementId = previewElementId;
-    this.state.hoveredCanvasElementId = canvasElementId || null;
+    this.state.hoveredCanvasElementId = resolvedCanvasElementId;
 
     const event: PreviewSyncEvent = {
       type: 'hover',
-      canvasElementId: canvasElementId || '',
+      canvasElementId: resolvedCanvasElementId,
       previewElementId,
       timestamp: new Date().toISOString(),
       userId,
@@ -176,7 +178,7 @@ export class BidirectionalPreviewSync {
     this.recordEvent(event);
     this.emitTelemetry({
       eventType: 'preview_hover',
-      canvasElementId,
+      canvasElementId: resolvedCanvasElementId,
       previewElementId,
       timestamp: event.timestamp,
       userId,

@@ -72,6 +72,8 @@ interface UseCanvasKeyboardShortcutsOptions {
   setShortcutLegendOpen: (v: boolean) => void;
   showToast: (message: string, severity?: 'success' | 'info' | 'warning' | 'error') => void;
   addNodeAtPosition: (type: string, position: { x: number; y: number }) => void;
+  canMutateCanvas?: boolean;
+  readOnlyReason?: string;
 }
 
 export function useCanvasKeyboardShortcuts({
@@ -99,10 +101,16 @@ export function useCanvasKeyboardShortcuts({
   setShortcutLegendOpen,
   showToast,
   addNodeAtPosition,
+  canMutateCanvas = true,
+  readOnlyReason,
 }: UseCanvasKeyboardShortcutsOptions): void {
   const reactFlowInstance = useReactFlow();
 
   useEffect(() => {
+    const warnReadOnly = (): void => {
+      showToast(readOnlyReason ?? 'Canvas edits are unavailable in this mode.', 'warning');
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
       const isMeta = e.metaKey || e.ctrlKey;
       const isShift = e.shiftKey;
@@ -120,18 +128,30 @@ export function useCanvasKeyboardShortcuts({
       // === UNDO/REDO ===
       if (isMeta && e.key === 'z' && !isShift) {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         canvas.undo();
         showToast('Undo', 'info');
         return;
       }
       if (isMeta && e.key === 'z' && isShift) {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         canvas.redo();
         showToast('Redo', 'info');
         return;
       }
       if (isMeta && e.key === 'y') {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         canvas.redo();
         showToast('Redo', 'info');
         return;
@@ -201,6 +221,10 @@ export function useCanvasKeyboardShortcuts({
       }
       if (isMeta && e.key === 'v') {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         if (copiedNodes.length > 0) {
           const newNodeIds: string[] = [];
           copiedNodes.forEach((node: CanvasNodeLike) => {
@@ -220,6 +244,10 @@ export function useCanvasKeyboardShortcuts({
       }
       if (isMeta && e.key === 'x') {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         const nodesToCut = canvas.nodes.filter((n: CanvasNodeLike) =>
           canvas.selectedNodeIds.includes(n.id)
         );
@@ -232,6 +260,10 @@ export function useCanvasKeyboardShortcuts({
       // === DELETE ===
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         canvas.selectedNodeIds.forEach((nodeId) => canvas.removeNode(nodeId));
         return;
       }
@@ -239,6 +271,10 @@ export function useCanvasKeyboardShortcuts({
       // === DUPLICATE ===
       if (isMeta && e.key === 'd' && isShift) {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         const newNodeIds: string[] = [];
         canvas.selectedNodeIds.forEach((nodeId) => {
           const newNode = canvas.duplicateNode(nodeId);
@@ -251,6 +287,10 @@ export function useCanvasKeyboardShortcuts({
       // === GROUPING ===
       if (isMeta && e.key === 'g' && !isShift) {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         if (canvas.selectedNodeIds.length > 1) {
           canvas.createGroup(canvas.selectedNodeIds, 'Group');
         }
@@ -258,6 +298,10 @@ export function useCanvasKeyboardShortcuts({
       }
       if (isMeta && e.key === 'g' && isShift) {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         const groupNodes = canvas.nodes.filter(
           (n: CanvasNodeLike) => canvas.selectedNodeIds.includes(n.id) && n.type === 'group'
         );
@@ -268,21 +312,37 @@ export function useCanvasKeyboardShortcuts({
       // === LAYER OPERATIONS ===
       if (e.key === ']' && !isMeta) {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         canvas.selectedNodeIds.forEach((id) => canvas.bringForward(id));
         return;
       }
       if (e.key === '[' && !isMeta) {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         canvas.selectedNodeIds.forEach((id) => canvas.sendBackward(id));
         return;
       }
       if (e.key === ']' && isMeta) {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         canvas.selectedNodeIds.forEach((id) => canvas.bringToFront(id));
         return;
       }
       if (e.key === '[' && isMeta) {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         canvas.selectedNodeIds.forEach((id) => canvas.sendToBack(id));
         return;
       }
@@ -307,12 +367,20 @@ export function useCanvasKeyboardShortcuts({
       }
       if (e.key === 'p' && !isMeta) {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         canvas.setActiveTool('draw');
         setDrawingTool('pen');
         return;
       }
       if (e.key === 'b' && !isMeta) {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         canvas.setActiveTool('draw');
         setDrawingTool('pencil');
         return;
@@ -348,21 +416,37 @@ export function useCanvasKeyboardShortcuts({
       // === ALIGNMENT SHORTCUTS ===
       if (isMeta && isShift && e.key === 'ArrowLeft') {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         if (hasMultipleSelection) canvas.alignNodes('left');
         return;
       }
       if (isMeta && isShift && e.key === 'ArrowRight') {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         if (hasMultipleSelection) canvas.alignNodes('right');
         return;
       }
       if (isMeta && isShift && e.key === 'ArrowUp') {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         if (hasMultipleSelection) canvas.alignNodes('top');
         return;
       }
       if (isMeta && isShift && e.key === 'ArrowDown') {
         e.preventDefault();
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         if (hasMultipleSelection) canvas.alignNodes('bottom');
         return;
       }
@@ -393,6 +477,7 @@ export function useCanvasKeyboardShortcuts({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
     canvas,
+    canMutateCanvas,
     calmMode,
     setCalmMode,
     leftRailVisible,
@@ -405,6 +490,7 @@ export function useCanvasKeyboardShortcuts({
     projectId,
     reactFlowInstance,
     showToast,
+    readOnlyReason,
     setCopiedNodeIds,
     setCopiedNodes,
     setDrawingTool,

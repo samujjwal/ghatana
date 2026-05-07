@@ -390,6 +390,9 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                 // ── Generation phase (Phase 3) ──────────────────────────────
                 .with(POST, "/api/v1/yappc/generate",               generationController::generateArtifacts)
                 .with(POST, "/api/v1/yappc/generate/diff",          generationController::regenerateWithDiff)
+                .with(POST, "/api/v1/yappc/generate/runs/:runId/apply", generationController::applyReviewDecision)
+                .with(POST, "/api/v1/yappc/generate/runs/:runId/reject", generationController::rejectReviewDecision)
+                .with(POST, "/api/v1/yappc/generate/runs/:runId/rollback", generationController::rollbackReviewDecision)
                 .with(GET,  "/api/v1/yappc/generate/artifacts/:id", generationController::getArtifacts)
 
                 // ── Validation phase (Phase 8) ──────────────────────────────

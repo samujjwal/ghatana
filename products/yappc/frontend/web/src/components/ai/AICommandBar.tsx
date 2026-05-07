@@ -141,9 +141,9 @@ export function AICommandBar({
     const contextPlaceholder = useMemo(() => {
         if (placeholder) return placeholder;
         if (currentPhase) {
-            return `Ask AI about ${PHASE_LABELS[currentPhase].toLowerCase()}...`;
+            return `Ask the guided assistant about ${PHASE_LABELS[currentPhase].toLowerCase()}...`;
         }
-        return `Ask AI anything... (or press / for commands)`;
+        return `Ask the guided assistant anything... (or press / for commands)`;
     }, [placeholder, currentPhase]);
 
     // Quick actions for current mode

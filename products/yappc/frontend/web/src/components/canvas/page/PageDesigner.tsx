@@ -35,6 +35,7 @@ import { AIActionLineageTracker, createAIChangeRecord } from './pageArtifactDocu
 import type { PageArtifactAIChangeRecord } from './pageArtifactDocument';
 import { importSourceToPageArtifacts, type ImportSourceType } from '../../../services/compiler/ImportSourceWorkflow';
 import { PageBuilderCommands, type Command, type InsertComponentCommand, type MoveComponentCommand } from '../../../services/canvas/commands/PageBuilderCommands';
+import { persistResidualIslandReview } from '../../../services/canvas/commands/ResidualIslandReviewService';
 import {
   emitPageBuilderCommandAudit,
   type PageBuilderCommandAuditContext,
@@ -46,7 +47,7 @@ import {
   validateDocument,
   deserializeDocument,
 } from '@ghatana/ui-builder';
-import type { BuilderDocument, NodeId, ValidationResult } from '@ghatana/ui-builder';
+import type { Binding, BuilderDocument, LossPoint, NodeId, ResponsiveVariant, StateVariant, ValidationResult } from '@ghatana/ui-builder';
 
 interface NodeLocation {
   readonly parentId: NodeId | null;
@@ -120,40 +121,34 @@ function isDescendant(document: BuilderDocument, ancestorId: NodeId, candidateId
   return false;
 }
 
-interface SourceImportCommand {
-  readonly sourceType: ImportSourceType;
-  readonly source: string;
+type ImportWorkflowMode = 'semantic-model' | 'source';
+type ImportReviewDecision = 'applied' | 'skipped';
+
+interface ImportReviewQueueItem {
+  readonly id: string;
+  readonly kind: 'loss-point' | 'residual-island';
+  readonly label: string;
+  readonly details: string;
 }
 
-type ImportWorkflowMode = 'semantic-model' | 'source';
+function buildImportReviewQueue(
+  lossPoints: readonly LossPoint[] | undefined,
+  residualIslandIds: readonly string[],
+): readonly ImportReviewQueueItem[] {
+  const lossPointItems = (lossPoints ?? []).map((lossPoint, index) => ({
+    id: `loss-${index}-${lossPoint.type}-${lossPoint.location ?? 'unknown'}`,
+    kind: 'loss-point' as const,
+    label: `${lossPoint.type}${lossPoint.location ? ` at ${lossPoint.location}` : ''}`,
+    details: lossPoint.description,
+  }));
+  const residualItems = residualIslandIds.map((residualIslandId) => ({
+    id: `residual-${residualIslandId}`,
+    kind: 'residual-island' as const,
+    label: residualIslandId,
+    details: 'Residual island requires an accept or reject decision before handoff.',
+  }));
 
-function parseSourceImportCommand(input: string): SourceImportCommand | null {
-  const trimmed = input.trim();
-  if (!trimmed.startsWith('source:')) {
-    return null;
-  }
-
-  const command = trimmed.slice('source:'.length);
-  const separatorIndex = command.indexOf(':');
-  if (separatorIndex <= 0) {
-    return null;
-  }
-
-  const sourceType = command.slice(0, separatorIndex) as ImportSourceType;
-  const source = command.slice(separatorIndex + 1).trim();
-  if (!source) {
-    return null;
-  }
-
-  const allowedSourceTypes: readonly ImportSourceType[] = ['tsx', 'route', 'storybook', 'artifact', 'zip'];
-  if (!allowedSourceTypes.includes(sourceType)) {
-    return null;
-  }
-
-  return {
-    sourceType,
-    source,
-  };
+  return [...lossPointItems, ...residualItems];
 }
 
 /**
@@ -183,6 +178,8 @@ interface PageDesignerProps {
   readonly externalHoveredNodeId?: string | null;
   /** Phase-aware canvas configuration controlling available tools and editing capabilities */
   readonly phaseConfig?: PhaseCanvasConfig;
+  /** Human-readable lock reason when the builder is in a read-only policy state. */
+  readonly readOnlyReason?: string;
   /** Scope used to persist immutable command audit records when available. */
   readonly auditContext?: PageBuilderCommandAuditContext;
 }
@@ -200,6 +197,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   externalSelectedNodeId,
   externalHoveredNodeId,
   phaseConfig,
+  readOnlyReason,
   auditContext,
 }) => {
   const canEdit = phaseConfig?.allowEditing ?? true;
@@ -225,6 +223,10 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   const [guidedSourceLocator, setGuidedSourceLocator] = useState('');
   const [importError, setImportError] = useState<string | null>(null);
   const [importResiduals, setImportResiduals] = useState<readonly string[]>([]);
+  const [importResidualArtifactId, setImportResidualArtifactId] = useState<string | null>(null);
+  const [reviewingResidualId, setReviewingResidualId] = useState<string | null>(null);
+  const [importReviewQueue, setImportReviewQueue] = useState<readonly ImportReviewQueueItem[]>([]);
+  const [importReviewDecisions, setImportReviewDecisions] = useState<Readonly<Record<string, ImportReviewDecision>>>({});
   const [importFidelity, setImportFidelity] = useState<
     import('./pageArtifactDocument').PageArtifactDocument['roundTripFidelity'] | null
   >(null);
@@ -241,6 +243,9 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   const announceDropFeedback = useCallback((message: string): void => {
     setDropFeedback(message);
   }, []);
+  const announceReadOnly = useCallback((): void => {
+    announceDropFeedback(readOnlyReason ?? 'Page builder edits are unavailable in this canvas mode.');
+  }, [announceDropFeedback, readOnlyReason]);
 
   useEffect(() => {
     auditContextRef.current = auditContext;
@@ -272,10 +277,6 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   }, []);
 
   useEffect(() => {
-    onDocumentChange?.(document, validation);
-  }, [document, onDocumentChange, validation]);
-
-  useEffect(() => {
     onSelectionChange?.(selectedId);
   }, [selectedId, onSelectionChange]);
 
@@ -297,8 +298,9 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
     (nextDocument: BuilderDocument) => {
       setDocument(nextDocument);
       onComponentsChange?.(builderDocumentToComponentData(nextDocument));
+      onDocumentChange?.(nextDocument, validateDocument(nextDocument, contracts));
     },
-    [onComponentsChange],
+    [contracts, onComponentsChange, onDocumentChange],
   );
 
   const executeCommand = useCallback(
@@ -332,11 +334,15 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
    */
   const handleAIActionReview = useCallback(
     (actionId: string, decision: 'accepted' | 'rejected') => {
+      if (!canEdit) {
+        announceReadOnly();
+        return;
+      }
       lineageTrackerRef.current.setReviewState(actionId, decision);
       setPendingAIActions(lineageTrackerRef.current.getPending());
       onAIReviewDecision?.(actionId, decision);
     },
-    [onAIReviewDecision],
+    [announceReadOnly, canEdit, onAIReviewDecision],
   );
 
   const resolveInsertionTarget = useCallback((): {
@@ -359,11 +365,19 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   }, [selectedInstance]);
 
   const handleImportConfirm = useCallback(async () => {
+    if (!canAdd || !canEdit) {
+      announceReadOnly();
+      return;
+    }
     setImportError(null);
     const trimmedInput = importInput.trim();
     const trimmedSourceLocator = guidedSourceLocator.trim();
     if (importWorkflowMode === 'semantic-model' && !trimmedInput) {
       setImportError('Paste a JSON semantic model to import.');
+      return;
+    }
+    if (importWorkflowMode === 'semantic-model' && trimmedInput.startsWith('source:')) {
+      setImportError('Source imports must use the governed source workflow. Choose Governed source instead of pasting source commands.');
       return;
     }
     if (importWorkflowMode === 'source' && !trimmedSourceLocator) {
@@ -374,7 +388,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
     let artifacts: readonly import('./pageArtifactDocument').PageArtifactDocument[];
     const sourceImportCommand = importWorkflowMode === 'source'
       ? { sourceType: guidedSourceType, source: trimmedSourceLocator }
-      : parseSourceImportCommand(trimmedInput);
+      : null;
     if (sourceImportCommand) {
       if (!projectId) {
         setImportError('Source imports require an active project context.');
@@ -441,7 +455,10 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
     // Surface residual islands if any
     const residuals = first.residualIslandIds ?? [];
     setImportResiduals(residuals);
+    setImportResidualArtifactId(first.artifactId);
     setImportFidelity(first.roundTripFidelity ?? null);
+    setImportReviewQueue(buildImportReviewQueue(first.roundTripFidelity?.lossPoints, residuals));
+    setImportReviewDecisions({});
 
     const importedNodes = importedDocument.nodes;
     const affectedNodeIds: readonly string[] =
@@ -474,10 +491,65 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
     setImportPanelOpen(false);
     setImportInput('');
     setGuidedSourceLocator('');
-  }, [auditContext?.tenantId, auditContext?.workspaceId, executeCommand, guidedSourceLocator, guidedSourceType, importInput, importWorkflowMode, onImportArtifacts, projectId, recordAIChange]);
+  }, [announceReadOnly, auditContext?.tenantId, auditContext?.workspaceId, canAdd, canEdit, executeCommand, guidedSourceLocator, guidedSourceType, importInput, importWorkflowMode, onImportArtifacts, projectId, recordAIChange]);
+
+  const handleResidualIslandReview = useCallback(
+    async (residualIslandId: string, decision: 'ACCEPTED' | 'REJECTED') => {
+      if (!canEdit) {
+        announceReadOnly();
+        return;
+      }
+      if (!importResidualArtifactId) {
+        setImportError('Cannot persist residual island review without an artifact id.');
+        return;
+      }
+
+      setReviewingResidualId(residualIslandId);
+      try {
+        await persistResidualIslandReview({
+          artifactId: importResidualArtifactId,
+          residualIslandId,
+          decision,
+          notes:
+            decision === 'ACCEPTED'
+              ? 'Residual island accepted during PageDesigner import review.'
+              : 'Residual island rejected during PageDesigner import review.',
+        });
+        setImportResiduals((current) => current.filter((id) => id !== residualIslandId));
+        setImportReviewDecisions((current) => ({
+          ...current,
+          [`residual-${residualIslandId}`]: decision === 'ACCEPTED' ? 'applied' : 'skipped',
+        }));
+        setImportError(null);
+      } catch (error) {
+        setImportError(
+          error instanceof Error
+            ? error.message
+            : `Could not persist residual island review for ${residualIslandId}.`,
+        );
+      } finally {
+        setReviewingResidualId(null);
+      }
+    },
+    [announceReadOnly, canEdit, importResidualArtifactId],
+  );
+
+  const handleImportReviewDecision = useCallback(
+    (reviewItemId: string, decision: ImportReviewDecision) => {
+      setImportReviewDecisions((current) => ({
+        ...current,
+        [reviewItemId]: decision,
+      }));
+    },
+    [],
+  );
 
   const handleAddComponent = useCallback(
     (contractOrType: string) => {
+      if (!canAdd) {
+        announceReadOnly();
+        return;
+      }
       const contractName = normalizeContractName(contractOrType);
       const legacyType = toLegacyComponentType(contractName) as LegacyComponentType;
       const newComponent = getDefaultComponentData(legacyType) as ComponentData;
@@ -500,22 +572,35 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
       publishDocument(result.document);
       setSelectedId((result.changedNodeIds[0] as string | undefined) ?? null);
     },
-    [publishDocument, resolveInsertionTarget],
+    [announceReadOnly, canAdd, publishDocument, resolveInsertionTarget],
   );
 
   const handlePaletteDragStart = useCallback(
     (event: React.DragEvent<HTMLButtonElement>, contractName: string) => {
+      if (!canAdd) {
+        event.preventDefault();
+        announceReadOnly();
+        return;
+      }
       event.dataTransfer.setData('application/x-page-component', contractName);
       event.dataTransfer.effectAllowed = 'copy';
     },
-    [],
+    [announceReadOnly, canAdd],
   );
 
   const handleDesignAreaDrop = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
+      if (!canEdit) {
+        announceReadOnly();
+        return;
+      }
       const contractName = event.dataTransfer.getData('application/x-page-component');
       if (contractName) {
+        if (!canAdd) {
+          announceReadOnly();
+          return;
+        }
         const normalizedName = normalizeContractName(contractName);
         const legacyType = toLegacyComponentType(normalizedName) as LegacyComponentType;
         const newComponent = getDefaultComponentData(legacyType) as ComponentData;
@@ -560,11 +645,15 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         setSelectedId(draggedNodeId);
       }
     },
-    [announceDropFeedback, document, publishDocument],
+    [announceDropFeedback, announceReadOnly, canAdd, canEdit, document, publishDocument],
   );
 
   const handleRendererDropRequest = useCallback(
     (request: DropRequest) => {
+      if (!canEdit) {
+        announceReadOnly();
+        return;
+      }
       if (request.source.kind === 'node' && request.source.nodeId === request.targetNodeId) {
         announceDropFeedback('Cannot drop a component onto itself.');
         return;
@@ -587,6 +676,10 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         request.placement === 'slot' ? request.slotName : targetLocation?.slotName;
 
       if (request.source.kind === 'palette') {
+        if (!canAdd) {
+          announceReadOnly();
+          return;
+        }
         const normalizedName = normalizeContractName(request.source.contractName);
         const legacyType = toLegacyComponentType(normalizedName) as LegacyComponentType;
         const newComponent = getDefaultComponentData(legacyType) as ComponentData;
@@ -666,11 +759,15 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
       setDropFeedback(null);
       setSelectedId(sourceNodeId);
     },
-    [announceDropFeedback, document, publishDocument],
+    [announceDropFeedback, announceReadOnly, canAdd, canEdit, document, publishDocument],
   );
 
   const handleKeyboardMoveRequest = useCallback(
     (request: KeyboardMoveRequest) => {
+      if (!canEdit) {
+        announceReadOnly();
+        return;
+      }
       const sourceLocation = findNodeLocation(document, request.nodeId);
       if (!sourceLocation) {
         announceDropFeedback('Cannot move a component that is no longer in the document.');
@@ -694,6 +791,28 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
           return;
         }
         index = sourceLocation.index + 1;
+      } else if (request.direction === 'into') {
+        const previousSiblingId = siblings[sourceLocation.index - 1];
+        if (!previousSiblingId) {
+          announceDropFeedback('Cannot move into a container because there is no previous component.');
+          return;
+        }
+
+        const previousSibling = document.nodes.get(previousSiblingId);
+        const slotName = previousSibling ? getDefaultSlotName(previousSibling.contractName) : undefined;
+        if (!previousSibling || !isContainerContract(previousSibling.contractName) || !slotName) {
+          announceDropFeedback('Cannot move into the previous component because it is not a container.');
+          return;
+        }
+
+        if (isDescendant(document, request.nodeId, previousSiblingId)) {
+          announceDropFeedback('Cannot move a component into one of its own descendants.');
+          return;
+        }
+
+        newParentId = previousSiblingId;
+        newSlotName = slotName;
+        index = getNodeChildren(document, previousSiblingId, slotName).length;
       } else {
         if (!sourceLocation.parentId) {
           announceDropFeedback('Component is already at the top level.');
@@ -727,10 +846,14 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
       setDropFeedback(null);
       setSelectedId(request.nodeId);
     },
-    [announceDropFeedback, document, publishDocument],
+    [announceDropFeedback, announceReadOnly, canEdit, document, publishDocument],
   );
 
   const handleDeleteComponent = useCallback(() => {
+    if (!canDelete) {
+      announceReadOnly();
+      return;
+    }
     if (!selectedId) {
       return;
     }
@@ -748,15 +871,26 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
     }
 
     setSelectedId(null);
-  }, [executeCommand, selectedId]);
+  }, [announceReadOnly, canDelete, executeCommand, selectedId]);
 
   const handleUpdateComponent = useCallback(
-    (payload: { readonly props: Record<string, unknown>; readonly name?: string }) => {
+    (payload: {
+      readonly props: Record<string, unknown>;
+      readonly name?: string;
+      readonly responsiveVariant?: ResponsiveVariant;
+      readonly stateVariant?: StateVariant;
+      readonly dataBinding?: Binding;
+      readonly actionBinding?: Binding;
+    }) => {
+      if (!canEdit) {
+        announceReadOnly();
+        return;
+      }
       if (!selectedInstance) {
         return;
       }
 
-      const nextDocument = executeCommand({
+      let nextDocument = executeCommand({
         id: `update-props-${Date.now()}`,
         type: 'update-props',
         timestamp: new Date().toISOString(),
@@ -770,13 +904,69 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         return;
       }
 
+      if (payload.responsiveVariant) {
+        nextDocument = executeCommand({
+          id: `set-responsive-variant-${Date.now()}`,
+          type: 'set-responsive-variant',
+          timestamp: new Date().toISOString(),
+          data: {
+            nodeId: selectedInstance.id,
+            variant: payload.responsiveVariant,
+          },
+        });
+      }
+
+      if (nextDocument && payload.stateVariant) {
+        nextDocument = executeCommand({
+          id: `set-state-variant-${Date.now()}`,
+          type: 'set-state-variant',
+          timestamp: new Date().toISOString(),
+          data: {
+            nodeId: selectedInstance.id,
+            variant: payload.stateVariant,
+          },
+        });
+      }
+
+      if (nextDocument && payload.dataBinding) {
+        nextDocument = executeCommand({
+          id: `add-data-binding-${Date.now()}`,
+          type: 'add-data-binding',
+          timestamp: new Date().toISOString(),
+          data: {
+            nodeId: selectedInstance.id,
+            binding: payload.dataBinding,
+          },
+        });
+      }
+
+      if (nextDocument && payload.actionBinding) {
+        nextDocument = executeCommand({
+          id: `add-action-binding-${Date.now()}`,
+          type: 'add-action-binding',
+          timestamp: new Date().toISOString(),
+          data: {
+            nodeId: selectedInstance.id,
+            binding: payload.actionBinding,
+          },
+        });
+      }
+
+      if (!nextDocument) {
+        return;
+      }
+
       setDrawerOpen(false);
       setEditingId(null);
     },
-    [executeCommand, selectedInstance],
+    [announceReadOnly, canEdit, executeCommand, selectedInstance],
   );
 
   const handleNestSelectedIntoParent = useCallback(() => {
+    if (!canEdit) {
+      announceReadOnly();
+      return;
+    }
     if (!selectedId || !selectedInstance) {
       return;
     }
@@ -813,7 +1003,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
     if (!nextDocument) {
       return;
     }
-  }, [document, executeCommand, selectedId, selectedInstance]);
+  }, [announceReadOnly, canEdit, document, executeCommand, selectedId, selectedInstance]);
 
   const topLevelNodes = useMemo(
     () =>
@@ -835,6 +1025,10 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
           <IconButton
             size="small"
             onClick={() => {
+              if (!canAdd || !canEdit) {
+                announceReadOnly();
+                return;
+              }
               setImportInput('');
               setGuidedSourceLocator('');
               setImportError(null);
@@ -844,6 +1038,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
             title="Import from code / Decompile"
             aria-label="Import from code"
             data-testid="page-designer-import-btn"
+            disabled={!canAdd || !canEdit}
           >
             <Upload size={14} />
           </IconButton>
@@ -859,7 +1054,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
               title={entry.tooltip}
               data-testid={`page-component-${entry.name.toLowerCase()}`}
               disabled={!canAdd}
-              draggable
+              draggable={canAdd}
               onDragStart={(event) => handlePaletteDragStart(event, entry.name)}
             >
               {entry.displayName}
@@ -969,9 +1164,65 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
               fullWidth
               style={{ marginTop: 8 }}
               data-testid="page-designer-import-confirm"
+              disabled={!canAdd || !canEdit}
             >
               Decompile &amp; load
             </Button>
+          </Box>
+        )}
+
+        {importReviewQueue.length > 0 && (
+          <Box
+            className="mt-4 rounded-lg border border-info-border bg-info-bg p-3"
+            data-testid="page-designer-import-review-queue"
+          >
+            <Typography variant="caption" style={{ fontWeight: 600, display: 'block', marginBottom: 4 }}>
+              Import review queue: {Object.keys(importReviewDecisions).length}/{importReviewQueue.length} decided
+            </Typography>
+            {importReviewQueue.map((item) => {
+              const decision = importReviewDecisions[item.id];
+              return (
+                <Box key={item.id} className="mt-2 rounded-md border border-info-border bg-white p-2">
+                  <Typography variant="caption" style={{ display: 'block', fontWeight: 600 }}>
+                    {item.kind === 'loss-point' ? 'Loss point' : 'Residual island'}: {item.label}
+                  </Typography>
+                  <Typography variant="caption" color="muted" style={{ display: 'block', marginTop: 2 }}>
+                    {item.details}
+                  </Typography>
+                  {decision ? (
+                    <Typography
+                      variant="caption"
+                      color={decision === 'applied' ? 'success' : 'warning'}
+                      data-testid={`page-designer-import-review-decision-${item.id}`}
+                      style={{ display: 'block', marginTop: 6 }}
+                    >
+                      Decision: {decision}
+                    </Typography>
+                  ) : (
+                    <Box className="mt-2 flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="small"
+                        data-testid={`page-designer-import-review-apply-${item.id}`}
+                        onClick={() => handleImportReviewDecision(item.id, 'applied')}
+                      >
+                        Apply item
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="small"
+                        data-testid={`page-designer-import-review-skip-${item.id}`}
+                        onClick={() => handleImportReviewDecision(item.id, 'skipped')}
+                      >
+                        Skip item
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
+              );
+            })}
           </Box>
         )}
 
@@ -985,9 +1236,37 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
               {importResiduals.length} residual island{importResiduals.length !== 1 ? 's' : ''} (review required)
             </Typography>
             {importResiduals.map((id) => (
-              <Typography key={id} variant="caption" style={{ display: 'block', fontFamily: 'monospace', fontSize: '0.7rem' }}>
-                {id}
-              </Typography>
+              <Box key={id} className="mt-2 rounded-md border border-warning-border bg-white p-2">
+                <Typography variant="caption" style={{ display: 'block', fontFamily: 'monospace', fontSize: '0.7rem' }}>
+                  {id}
+                </Typography>
+                <Box className="mt-2 flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="small"
+                    disabled={!canEdit || reviewingResidualId === id}
+                    data-testid={`page-designer-residual-accept-${id}`}
+                    onClick={() => {
+                      void handleResidualIslandReview(id, 'ACCEPTED');
+                    }}
+                  >
+                    Accept residual
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="small"
+                    disabled={!canEdit || reviewingResidualId === id}
+                    data-testid={`page-designer-residual-reject-${id}`}
+                    onClick={() => {
+                      void handleResidualIslandReview(id, 'REJECTED');
+                    }}
+                  >
+                    Reject residual
+                  </Button>
+                </Box>
+              </Box>
             ))}
           </Box>
         )}
@@ -1092,7 +1371,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
               <DeleteIcon size={16} />
             </IconButton>
             {document.rootNodes.includes(selectedInstance.id) ? (
-              <Button variant="outline" size="small" onClick={handleNestSelectedIntoParent}>
+              <Button variant="outline" size="small" onClick={handleNestSelectedIntoParent} disabled={!canEdit}>
                 Nest
               </Button>
             ) : null}
@@ -1151,7 +1430,12 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
             contractName={editingInstance.contractName}
             instanceName={editingInstance.metadata.name}
             initialProps={editingInstance.props}
+            initialBindings={editingInstance.bindings}
+            initialResponsiveVariants={editingInstance.metadata.responsiveVariants}
+            initialStateVariants={editingInstance.metadata.stateVariants}
             onUpdate={handleUpdateComponent}
+            readOnly={!canEdit}
+            readOnlyReason={readOnlyReason}
             onCancel={() => {
               setDrawerOpen(false);
               setEditingId(null);
@@ -1195,6 +1479,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
                     size="small"
                     onClick={() => handleAIActionReview(action.actionId, 'accepted')}
                     data-testid={`ai-action-accept-${action.actionId}`}
+                    disabled={!canEdit}
                   >
                     Accept
                   </Button>
@@ -1203,6 +1488,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
                     size="small"
                     onClick={() => handleAIActionReview(action.actionId, 'rejected')}
                     data-testid={`ai-action-reject-${action.actionId}`}
+                    disabled={!canEdit}
                   >
                     Reject
                   </Button>

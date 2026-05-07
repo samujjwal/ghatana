@@ -138,7 +138,7 @@ const CATEGORY_CONFIG: Record<
   selection: { label: 'Selection', order: 5 },
   interface: { label: 'Interface', order: 6 },
   connection: { label: 'Connection', order: 7 },
-  ai: { label: 'AI', order: 8 },
+  ai: { label: 'Guided Assistant', order: 8 },
   navigation: { label: 'Navigation', order: 9 },
   project: { label: 'Project', order: 10 },
   deploy: { label: 'Deploy', order: 11 },
@@ -591,8 +591,8 @@ export function registerDefaultActions(handlers: {
     // AI actions
     {
       id: 'ai.open',
-      label: 'Ask AI',
-      description: 'Open AI assistant',
+      label: 'Open Guided Assistant',
+      description: 'Open the guided assistant panel',
       icon: 'autoAwesome',
       category: 'ai',
       shortcut: 'mod+k',
@@ -918,7 +918,7 @@ export function registerAIActions(handlers: {
     {
       id: 'ai.explain',
       label: '/explain - Explain Selection',
-      description: 'Get AI explanation of selected element',
+      description: 'Explain the selected element',
       icon: 'lightbulb',
       category: 'ai',
       shortcut: 'mod+shift+e',
@@ -929,7 +929,7 @@ export function registerAIActions(handlers: {
     {
       id: 'ai.improve',
       label: '/improve - Suggest Improvements',
-      description: 'Get AI suggestions for improvements',
+      description: 'Review suggested improvements',
       icon: 'trending_up',
       category: 'ai',
       shortcut: 'mod+shift+i',
@@ -940,7 +940,7 @@ export function registerAIActions(handlers: {
     {
       id: 'ai.fix',
       label: '/fix - Fix Issues',
-      description: 'AI fix for identified issues',
+      description: 'Suggest a fix for identified issues',
       icon: 'build',
       category: 'ai',
       context: { requiresSelection: true },
@@ -969,8 +969,8 @@ export function registerAIActions(handlers: {
     },
     {
       id: 'ai.chat',
-      label: 'Open AI Chat',
-      description: 'Open full AI assistant panel',
+      label: 'Open Guided Assistant',
+      description: 'Open the full guided assistant panel',
       icon: 'chat',
       category: 'ai',
       shortcut: 'mod+j',

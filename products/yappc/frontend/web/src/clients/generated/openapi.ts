@@ -396,8 +396,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * AI-analyse captured intent
-         * @description Sends the captured intent through the LLM pipeline for enrichment and decomposition.
+         * Analyze captured intent
+         * @description Sends the captured intent through the guided enrichment pipeline for decomposition and review.
          */
         post: operations["analyzeIntent"];
         delete?: never;
@@ -637,10 +637,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Generate AI lifecycle suggestions
-         * @description Calls `AISuggestionService` with the current project phase and context,
-         *     returning up to 5 typed suggestions.  The AI model is selected by the
-         *     `AIModelRouter` based on `TaskType.REASONING`.
+         * Generate lifecycle recommendations
+         * @description Calls the recommendation service with the current project phase and context,
+         *     returning up to 5 typed suggestions. Internal model routing and provenance
+         *     remain available in the response lineage where applicable.
          */
         post: operations["generateSuggestions"];
         delete?: never;

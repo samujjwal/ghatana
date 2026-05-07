@@ -1,3 +1,5 @@
+import type { ProjectAccessFields } from '@/services/workspace/accessControl';
+
 export type MountedPhase =
   | 'intent'
   | 'shape'
@@ -89,7 +91,7 @@ export interface PhaseCockpitContext {
   readonly currentLifecyclePhase: MountedPhase;
 }
 
-export interface PhaseProjectSnapshot {
+export interface PhaseProjectSnapshot extends ProjectAccessFields {
   name?: string;
   description?: string | null;
   lifecyclePhase?: string;

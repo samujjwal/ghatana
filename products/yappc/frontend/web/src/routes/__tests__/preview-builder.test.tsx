@@ -315,4 +315,62 @@ describe('BuilderPreviewRoute', () => {
       outline: '2px solid #facc15',
     });
   });
+
+  it('applies named token theme packs and rejects unknown preview themes', async () => {
+    const postMessageSpy = vi.spyOn(window, 'postMessage');
+    render(<BuilderPreviewRoute />);
+    await waitForPreviewReady(postMessageSpy);
+
+    await act(async () => {
+      dispatchFromParent({
+        type: 'MOUNT_DOCUMENT',
+        document: makeDocument(['node-abc']),
+        sandbox: {
+          id: 'test-sandbox',
+          name: 'Test',
+          viewport: { width: 1440, height: 900, devicePixelRatio: 1, label: 'Desktop' },
+          theme: 'default',
+          locale: 'en-US',
+          featureFlags: {},
+          trustedOrigins: [window.location.origin],
+        },
+        correlationId: 'corr-theme',
+      });
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      dispatchFromParent({
+        type: 'SET_THEME',
+        theme: 'editorial',
+        correlationId: 'theme-editorial',
+      });
+      await Promise.resolve();
+    });
+
+    const shell = screen.getByTestId('preview-runtime-shell');
+    const viewport = screen.getByTestId('preview-runtime-viewport');
+    expect(shell).toHaveAttribute('data-preview-theme', 'editorial');
+    expect(shell).toHaveStyle({ backgroundColor: 'rgb(248, 241, 231)' });
+    expect(viewport).toHaveStyle({ outline: '1px solid #c08457' });
+
+    await act(async () => {
+      dispatchFromParent({
+        type: 'SET_THEME',
+        theme: 'unknown-theme',
+        correlationId: 'theme-invalid',
+      });
+      await Promise.resolve();
+    });
+
+    expect(postMessageSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'ERROR',
+        correlationId: 'theme-invalid',
+        code: 'INVALID_PREVIEW_THEME',
+      }),
+      expectedOrigin,
+    );
+    expect(shell).toHaveAttribute('data-preview-theme', 'editorial');
+  });
 });

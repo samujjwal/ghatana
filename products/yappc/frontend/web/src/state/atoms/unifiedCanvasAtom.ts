@@ -33,6 +33,7 @@ export interface CanvasState {
     connections: Connection[];
     drawings: DrawingStroke[];
     selectedNodeIds: string[];
+    hoveredNodeId: string | null;
     clipboard: HierarchicalNode[];
     viewport: ViewportState;
     layers: Layer[];
@@ -44,6 +45,7 @@ export const canvasAtom = atom<CanvasState>({
     connections: [],
     drawings: [],
     selectedNodeIds: [],
+    hoveredNodeId: null,
     clipboard: [],
     viewport: { x: 0, y: 0, zoom: 0.5 },  // Default 50% zoom
     layers: [],
@@ -434,6 +436,7 @@ export const historyAtom = atom<HistoryState>({
         connections: [],
         drawings: [],
         selectedNodeIds: [],
+        hoveredNodeId: null,
         clipboard: [],
         viewport: { x: 0, y: 0, zoom: 0.5 },
         layers: [],

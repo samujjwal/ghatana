@@ -9,7 +9,7 @@
 
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { createPageArtifactDocument } from '../../page/pageArtifactDocument';
 
 // --------------------------------------------------------------------------
@@ -38,13 +38,21 @@ vi.mock('@/components/canvas/page/PageDesigner', () => ({
     onImportArtifacts,
     onAIChangeRecord,
     onAIReviewDecision,
+    phaseConfig,
+    readOnlyReason,
   }: {
     onDocumentChange?: (doc: unknown, validation: { valid: boolean; errors: unknown[]; warnings: unknown[] }) => void;
     onImportArtifacts?: (artifacts: readonly unknown[]) => void;
     onAIChangeRecord?: (record: unknown) => void;
     onAIReviewDecision?: (actionId: string, decision: 'accepted' | 'rejected') => void;
+    phaseConfig?: { allowEditing: boolean };
+    readOnlyReason?: string;
   }) => (
-    <div>
+    <div
+      data-testid="page-designer-policy"
+      data-allow-editing={String(phaseConfig?.allowEditing ?? true)}
+      data-read-only-reason={readOnlyReason ?? ''}
+    >
       <button
         data-testid="page-designer-full"
         onClick={() =>
@@ -349,6 +357,32 @@ describe('PageDesignerNode', () => {
       expect(mockExecuteCommand).toHaveBeenCalledTimes(1);
     });
 
+    it('uses the route host onDataChange bridge instead of workspace commands', () => {
+      const pageDocument = createPageArtifactDocument({
+        artifactId: 'artifact-1',
+        name: 'Home Page',
+        createdBy: 'tester',
+      });
+      const onDataChange = vi.fn();
+
+      render(<PageDesignerNode {...makeNodeProps({ expanded: true, pageDocument, onDataChange })} />);
+      fireEvent.click(screen.getByTestId('page-designer-full'));
+
+      expect(mockExecuteCommand).not.toHaveBeenCalled();
+      expect(onDataChange).toHaveBeenCalledTimes(1);
+      expect(onDataChange.mock.calls[0]?.[0]).toMatchObject({
+        pageDocument: {
+          artifactId: 'artifact-1',
+          syncStatus: 'dirty',
+        },
+        validationSummary: {
+          valid: true,
+          errorCount: 0,
+          warningCount: 0,
+        },
+      });
+    });
+
     it('creates additional page-designer nodes for imported artifacts beyond the first one', () => {
       const pageDocument = createPageArtifactDocument({
         artifactId: 'artifact-main',
@@ -419,9 +453,63 @@ describe('PageDesignerNode', () => {
         },
       });
     });
+
+    it('blocks page document mutations when canvas policy marks the node read-only', () => {
+      const pageDocument = createPageArtifactDocument({
+        artifactId: 'artifact-main',
+        name: 'Home Page',
+        createdBy: 'tester',
+      });
+
+      render(
+        <PageDesignerNode
+          {...makeNodeProps({
+            expanded: true,
+            pageDocument,
+            readOnly: true,
+            readOnlyReason: 'Included project is view-only.',
+          })}
+        />,
+      );
+
+      expect(screen.getByTestId('page-designer-policy')).toHaveAttribute('data-allow-editing', 'false');
+      expect(screen.getByTestId('page-designer-policy')).toHaveAttribute('data-read-only-reason', 'Included project is view-only.');
+
+      fireEvent.click(screen.getByTestId('page-designer-full'));
+      fireEvent.click(screen.getByTestId('trigger-import-artifacts'));
+      fireEvent.click(screen.getByTestId('trigger-ai-record'));
+      fireEvent.click(screen.getByTestId('trigger-ai-review-accept'));
+
+      expect(mockExecuteCommand).not.toHaveBeenCalled();
+    });
   });
 
   describe('conflict resolution', () => {
+    it('loads and displays a remote comparison before the user chooses reload or overwrite', async () => {
+      const conflicted = {
+        ...createPageArtifactDocument({ artifactId: 'artifact-main', name: 'Home Page', createdBy: 'tester' }),
+        documentId: 'doc-local',
+        syncStatus: 'error' as const,
+      };
+      const remote = {
+        ...createPageArtifactDocument({ artifactId: 'artifact-main', name: 'Home Page Remote', createdBy: 'server' }),
+        documentId: 'doc-remote',
+        syncStatus: 'synced' as const,
+      };
+
+      mockPersistenceLoad.mockResolvedValue(remote);
+
+      render(<PageDesignerNode {...makeNodeProps({ expanded: true, pageDocument: conflicted })} />);
+
+      expect(screen.getByText(/Remote: not loaded yet/i)).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'Compare remote' }));
+
+      await waitFor(() => {
+        expect(mockPersistenceLoad).toHaveBeenCalledWith('artifact-main');
+        expect(screen.getByTestId('page-conflict-remote-summary')).toHaveTextContent('Remote: doc-remote');
+      });
+    });
+
     it('shows conflict controls and reloads from server when Reload is clicked', async () => {
       const conflicted = {
         ...createPageArtifactDocument({ artifactId: 'artifact-main', name: 'Home Page', createdBy: 'tester' }),

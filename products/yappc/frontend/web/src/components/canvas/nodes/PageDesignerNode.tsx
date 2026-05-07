@@ -29,7 +29,7 @@ import { Maximize2 as ExpandIcon, Minimize2 as CollapseIcon, Layout as PageIcon 
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useParams } from 'react-router';
 import { usePhaseContext } from '@/context';
-import { getPhaseCanvasConfig } from '@/services/canvas/phase-config/PhaseCanvasConfig';
+import { getPhaseCanvasConfig, type PhaseCanvasConfig } from '@/services/canvas/phase-config/PhaseCanvasConfig';
 import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
 import { currentUserAtom } from '@/stores/user.store';
 
@@ -71,6 +71,12 @@ export interface PageDesignerNodeData extends Record<string, unknown> {
   expanded?: boolean;
   /** Latest validation summary for inline governance badges */
   validationSummary?: PageArtifactDocument['validationSummary'];
+  /** Backend/canvas policy lock propagated from the parent canvas surface. */
+  readOnly?: boolean;
+  /** Human-readable reason shown when page-builder mutations are locked. */
+  readOnlyReason?: string;
+  /** Runtime bridge for canvas hosts that do not use workspace command atoms. */
+  onDataChange?: (updates: Partial<PageDesignerNodeData>) => void;
 }
 
 export type PageDesignerCanvasNode = Node<PageDesignerNodeData, 'page-designer'>;
@@ -83,6 +89,30 @@ const COLLAPSED_WIDTH = 220;
 const COLLAPSED_HEIGHT = 90;
 const EXPANDED_WIDTH = 880;
 const EXPANDED_HEIGHT = 640;
+
+function hasSameSerializedDocument(left: PageArtifactDocument, right: PageArtifactDocument): boolean {
+  return JSON.stringify(left.serializedBuilderDocument) === JSON.stringify(right.serializedBuilderDocument);
+}
+
+function hasSameValidationSummary(
+  current: PageDesignerNodeData['validationSummary'],
+  next: NonNullable<PageDesignerNodeData['validationSummary']>,
+): boolean {
+  return (
+    current?.valid === next.valid &&
+    current?.errorCount === next.errorCount &&
+    current?.warningCount === next.warningCount
+  );
+}
+
+function getPersistenceKey(pageDocument: PageArtifactDocument): string {
+  return [
+    pageDocument.artifactId,
+    pageDocument.documentId,
+    pageDocument.updatedAt,
+    pageDocument.syncStatus,
+  ].join(':');
+}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -103,14 +133,46 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
   const [previewSelectedNodeId, setPreviewSelectedNodeId] = useState<string | null>(null);
   const [previewHoveredNodeId, setPreviewHoveredNodeId] = useState<string | null>(null);
   const [overwriteReason, setOverwriteReason] = useState<string>('');
+  const [remoteConflictDocument, setRemoteConflictDocument] = useState<PageArtifactDocument | null>(null);
   const { currentPhase } = usePhaseContext();
   const phaseConfig = useMemo(
     () => (currentPhase ? getPhaseCanvasConfig(currentPhase) : undefined),
     [currentPhase],
   );
+  const isPolicyReadOnly = data.readOnly === true;
+  const effectivePhaseConfig = useMemo<PhaseCanvasConfig | undefined>(() => {
+    if (!phaseConfig && isPolicyReadOnly) {
+      return {
+        mode: 'validate',
+        visibleTools: ['select', 'inspect', 'preview'],
+        defaultTool: 'inspect',
+        allowEditing: false,
+        allowAddComponent: false,
+        allowDelete: false,
+        allowEdgeManipulation: false,
+        enableValidation: true,
+        enablePreview: true,
+      };
+    }
+
+    if (!phaseConfig || !isPolicyReadOnly) {
+      return phaseConfig;
+    }
+
+    return {
+      ...phaseConfig,
+      allowEditing: false,
+      allowAddComponent: false,
+      allowDelete: false,
+      allowEdgeManipulation: false,
+    };
+  }, [isPolicyReadOnly, phaseConfig]);
+  const canMutatePageDocument = effectivePhaseConfig?.allowEditing ?? !isPolicyReadOnly;
+  const pageBuilderReadOnlyReason = data.readOnlyReason ?? 'Page builder edits are unavailable in this canvas mode.';
   const builderDocument = useMemo(() => getBuilderDocument(data.pageDocument), [data.pageDocument]);
   const latestPageDocumentRef = useRef<PageArtifactDocument | undefined>(data.pageDocument);
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onDataChangeRef = useRef<PageDesignerNodeData['onDataChange']>(data.onDataChange);
+  const persistingDocumentKeyRef = useRef<string | null>(null);
   const pagePersistenceAdapter = useMemo(
     () =>
       new ResilientPageArtifactPersistenceAdapter(
@@ -152,66 +214,74 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
       }),
     [currentPhase, operationActor],
   );
-
-  useEffect(() => {
-    latestPageDocumentRef.current = data.pageDocument;
-  }, [data.pageDocument]);
-
-  useEffect(() => {
-    return () => {
-      if (saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current);
-        saveTimerRef.current = null;
+  const updateNodeData = useCallback(
+    (
+      from: Partial<PageDesignerNodeData>,
+      to: Partial<PageDesignerNodeData>,
+      label: string,
+    ) => {
+      if (to.pageDocument) {
+        latestPageDocumentRef.current = to.pageDocument;
       }
-    };
-  }, []);
 
-  useEffect(() => {
-    if (!data.pageDocument || data.pageDocument.syncStatus !== 'dirty') {
-      return;
-    }
-
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = null;
-    }
-
-    saveTimerRef.current = setTimeout(() => {
-      const pending = latestPageDocumentRef.current;
-      if (!pending || pending.syncStatus !== 'dirty') {
+      if (onDataChangeRef.current) {
+        onDataChangeRef.current(to);
         return;
       }
+
+      executeCommand(
+        new UpdateNodeDataCommand(
+          id,
+          from as Record<string, unknown>,
+          to as Record<string, unknown>,
+          label,
+        ),
+      );
+    },
+    [executeCommand, id],
+  );
+
+  const persistDirtyDocument = useCallback(
+    (pending: PageArtifactDocument) => {
+      if (pending.syncStatus !== 'dirty' || !canMutatePageDocument) {
+        return;
+      }
+
+      const pendingKey = getPersistenceKey(pending);
+      if (persistingDocumentKeyRef.current === pendingKey) {
+        return;
+      }
+
+      persistingDocumentKeyRef.current = pendingKey;
+      latestPageDocumentRef.current = pending;
 
       void pagePersistenceAdapter
         .save(pending)
         .then(() => {
           const latest = latestPageDocumentRef.current;
-          if (!latest || latest.syncStatus !== 'dirty') {
+          if (!latest || latest.syncStatus !== 'dirty' || getPersistenceKey(latest) !== pendingKey) {
             return;
           }
 
-          executeCommand(
-            new UpdateNodeDataCommand(
-              id,
-              { pageDocument: latest } as Record<string, unknown>,
-              {
-                pageDocument: appendOperation(
-                  {
-                    ...latest,
-                    syncStatus: 'synced',
-                  },
-                  'persist-success',
-                  'succeeded',
-                  'Persisted page document to the scoped artifact store.',
-                ),
-              } as Record<string, unknown>,
-              'Persist page document',
-            ),
+          updateNodeData(
+            { pageDocument: latest },
+            {
+              pageDocument: appendOperation(
+                {
+                  ...latest,
+                  syncStatus: 'synced',
+                },
+                'persist-success',
+                'succeeded',
+                'Persisted page document to the scoped artifact store.',
+              ),
+            },
+            'Persist page document',
           );
         })
         .catch((err: unknown) => {
           const latest = latestPageDocumentRef.current;
-          if (!latest || latest.syncStatus !== 'dirty') {
+          if (!latest || latest.syncStatus !== 'dirty' || getPersistenceKey(latest) !== pendingKey) {
             return;
           }
 
@@ -220,93 +290,160 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
           const nextStatus = conflict ? 'error' : 'offline';
           const errorMessage = err instanceof Error ? err.message : 'Unknown persistence error';
 
-          executeCommand(
-            new UpdateNodeDataCommand(
-              id,
-              { pageDocument: latest } as Record<string, unknown>,
-              {
-                pageDocument: appendOperation(
-                  {
-                    ...latest,
-                    syncStatus: nextStatus,
-                  },
-                  conflict ? 'persist-conflict' : 'persist-offline',
-                  conflict ? 'requires-review' : 'failed',
-                  conflict
-                    ? 'Detected a newer remote page document version during persistence.'
-                    : 'Page document could not be persisted to the server and remains local/offline.',
-                  { errorMessage },
-                ),
-              } as Record<string, unknown>,
-              conflict
-                ? 'Persist page document (conflict — remote version newer)'
-                : 'Persist page document (offline fallback)',
-            ),
+          updateNodeData(
+            { pageDocument: latest },
+            {
+              pageDocument: appendOperation(
+                {
+                  ...latest,
+                  syncStatus: nextStatus,
+                },
+                conflict ? 'persist-conflict' : 'persist-offline',
+                conflict ? 'requires-review' : 'failed',
+                conflict
+                  ? 'Detected a newer remote page document version during persistence.'
+                  : 'Page document could not be persisted to the server and remains local/offline.',
+                { errorMessage },
+              ),
+            },
+            conflict
+              ? 'Persist page document (conflict - remote version newer)'
+              : 'Persist page document (offline fallback)',
           );
+        })
+        .finally(() => {
+          if (persistingDocumentKeyRef.current === pendingKey) {
+            persistingDocumentKeyRef.current = null;
+          }
         });
-    }, 700);
+    },
+    [appendOperation, canMutatePageDocument, pagePersistenceAdapter, updateNodeData],
+  );
 
-    return () => {
-      if (saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current);
-        saveTimerRef.current = null;
-      }
-    };
-  }, [appendOperation, data.pageDocument, executeCommand, id, pagePersistenceAdapter]);
+  useEffect(() => {
+    onDataChangeRef.current = data.onDataChange;
+  }, [data.onDataChange]);
+
+  useEffect(() => {
+    latestPageDocumentRef.current = data.pageDocument;
+  }, [data.pageDocument]);
+
+  useEffect(() => {
+    if (data.pageDocument?.syncStatus !== 'error') {
+      setRemoteConflictDocument(null);
+      setOverwriteReason('');
+    }
+  }, [data.pageDocument?.syncStatus]);
+
+  useEffect(() => {
+    if (!data.pageDocument || data.pageDocument.syncStatus !== 'dirty' || !canMutatePageDocument) {
+      return;
+    }
+
+    persistDirtyDocument(data.pageDocument);
+  }, [canMutatePageDocument, data.pageDocument, persistDirtyDocument]);
 
   const handleToggleExpand = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
       const next = !isExpanded;
       setIsExpanded(next);
-      executeCommand(
-        new UpdateNodeDataCommand(
-          id,
-          { expanded: data.expanded } as Record<string, unknown>,
-          { expanded: next } as Record<string, unknown>,
-          next ? 'Expand page designer' : 'Collapse page designer',
-        ),
+      updateNodeData(
+        { expanded: data.expanded },
+        { expanded: next },
+        next ? 'Expand page designer' : 'Collapse page designer',
       );
     },
-    [data.expanded, executeCommand, id, isExpanded],
+    [data.expanded, isExpanded, updateNodeData],
   );
 
   const handleDocumentChange = useCallback(
     (pageDocument: PageArtifactDocument, _document: BuilderDocument, validation: ValidationResult) => {
-      executeCommand(
-        new UpdateNodeDataCommand(
-          id,
+      if (!canMutatePageDocument) {
+        return;
+      }
+      const currentPageDocument = latestPageDocumentRef.current ?? data.pageDocument;
+      const nextValidationSummary = {
+        valid: validation.valid,
+        errorCount: validation.errors.length,
+        warningCount: validation.warnings.length,
+      };
+      const hasSameDocument =
+        currentPageDocument && hasSameSerializedDocument(currentPageDocument, pageDocument);
+      if (hasSameDocument) {
+        if (hasSameValidationSummary(data.validationSummary, nextValidationSummary)) {
+          return;
+        }
+
+        updateNodeData(
           {
-            pageDocument: data.pageDocument,
             validationSummary: data.validationSummary,
-          } as Record<string, unknown>,
+          },
           {
-              pageDocument: appendOperation(
-                pageDocument,
-                'document-update',
-                validation.valid ? 'pending' : 'requires-review',
-                'Updated page builder document from in-canvas editor.',
-                {
-                  valid: validation.valid,
-                  errorCount: validation.errors.length,
-                  warningCount: validation.warnings.length,
-                },
-              ),
-            validationSummary: {
-              valid: validation.valid,
-              errorCount: validation.errors.length,
-              warningCount: validation.warnings.length,
-            },
-          } as Record<string, unknown>,
-          'Update page document',
-        ),
+            validationSummary: nextValidationSummary,
+          },
+          'Update page validation summary',
+        );
+        return;
+      }
+
+      if (
+        currentPageDocument &&
+        hasSameSerializedDocument(currentPageDocument, pageDocument) &&
+        hasSameValidationSummary(data.validationSummary, nextValidationSummary)
+      ) {
+        return;
+      }
+      const nextPageDocument = appendOperation(
+        pageDocument,
+        'document-update',
+        validation.valid ? 'pending' : 'requires-review',
+        'Updated page builder document from in-canvas editor.',
+        {
+          valid: validation.valid,
+          errorCount: validation.errors.length,
+          warningCount: validation.warnings.length,
+        },
       );
+      updateNodeData(
+        {
+          pageDocument: currentPageDocument,
+          validationSummary: data.validationSummary,
+        },
+        {
+          pageDocument: nextPageDocument,
+          validationSummary: nextValidationSummary,
+        },
+        'Update page document',
+      );
+      persistDirtyDocument(nextPageDocument);
     },
-    [appendOperation, data.pageDocument, data.validationSummary, executeCommand, id],
+    [appendOperation, canMutatePageDocument, data.pageDocument, data.validationSummary, persistDirtyDocument, updateNodeData],
   );
+  const handlePageDesignerDocumentChange = useCallback((document: BuilderDocument, validation: ValidationResult) => {
+    if (!data.pageDocument || !canMutatePageDocument) {
+      return;
+    }
+
+    const pageDocument: PageArtifactDocument = updatePageArtifactDocument(
+      data.pageDocument,
+      document,
+      'page-designer',
+      'dirty',
+      {
+        valid: validation.valid,
+        errorCount: validation.errors.length,
+        warningCount: validation.warnings.length,
+      },
+    );
+    handleDocumentChange(pageDocument, document, validation);
+  }, [canMutatePageDocument, data.pageDocument, handleDocumentChange]);
 
   const handleImportArtifacts = useCallback(
     (artifacts: readonly PageArtifactDocument[]) => {
+      if (!canMutatePageDocument) {
+        return;
+      }
       const additional = artifacts.slice(1);
       if (additional.length === 0) {
         return;
@@ -339,17 +476,21 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
         executeCommand(new AddNodeCommand(newNode));
       });
     },
-    [executeCommand, positionAbsoluteX, positionAbsoluteY],
+    [appendOperation, canMutatePageDocument, executeCommand, positionAbsoluteX, positionAbsoluteY],
   );
 
   const handleAIChangeRecord = useCallback(
     (record: PageArtifactAIChangeRecord) => {
-      if (!data.pageDocument) {
+      const basePageDocument = latestPageDocumentRef.current ?? data.pageDocument;
+      if (!basePageDocument || !canMutatePageDocument) {
+        return;
+      }
+      if (data.onDataChange && record.artifactId !== basePageDocument.artifactId) {
         return;
       }
 
       const updatedPageDocument = appendOperation(
-        appendAIChangeRecord(data.pageDocument, record),
+        appendAIChangeRecord(basePageDocument, record),
         'governance-record',
         record.lineage.reviewState === 'pending' ? 'requires-review' : 'succeeded',
         'Recorded page builder governance lineage for an assisted document change.',
@@ -358,21 +499,18 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
           affectedNodeCount: record.lineage.affectedNodeIds.length,
         },
       );
-      executeCommand(
-        new UpdateNodeDataCommand(
-          id,
-          { pageDocument: data.pageDocument } as Record<string, unknown>,
-          { pageDocument: updatedPageDocument } as Record<string, unknown>,
-          'Record governance event',
-        ),
+      updateNodeData(
+        { pageDocument: basePageDocument },
+        { pageDocument: updatedPageDocument },
+        'Record governance event',
       );
     },
-    [appendOperation, data.pageDocument, executeCommand, id],
+    [appendOperation, canMutatePageDocument, data.pageDocument, updateNodeData],
   );
 
   const handleAIReviewDecision = useCallback(
     (actionId: string, decision: 'accepted' | 'rejected') => {
-      if (!data.pageDocument) {
+      if (!data.pageDocument || !canMutatePageDocument) {
         return;
       }
 
@@ -390,50 +528,65 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
         },
       );
 
-      executeCommand(
-        new UpdateNodeDataCommand(
-          id,
-          { pageDocument: data.pageDocument } as Record<string, unknown>,
-          { pageDocument: updatedPageDocument } as Record<string, unknown>,
-          'Record automation review decision',
-        ),
+      updateNodeData(
+        { pageDocument: data.pageDocument },
+        { pageDocument: updatedPageDocument },
+        'Record automation review decision',
       );
     },
-    [appendOperation, data.pageDocument, executeCommand, id],
+    [appendOperation, canMutatePageDocument, data.pageDocument, updateNodeData],
   );
 
-  const handleReloadFromServer = useCallback(async () => {
-    if (!data.pageDocument) {
-      return;
+  const loadRemoteConflictDocument = useCallback(async (): Promise<PageArtifactDocument | null> => {
+    if (!data.pageDocument || !canMutatePageDocument) {
+      return null;
     }
 
     const loaded = await pagePersistenceAdapter.load(data.pageDocument.artifactId);
     if (!loaded) {
+      return null;
+    }
+
+    setRemoteConflictDocument(loaded);
+    return loaded;
+  }, [canMutatePageDocument, data.pageDocument, pagePersistenceAdapter]);
+
+  const handleReloadFromServer = useCallback(async () => {
+    if (!data.pageDocument || !canMutatePageDocument) {
       return;
     }
 
-    executeCommand(
-      new UpdateNodeDataCommand(
-        id,
-        { pageDocument: data.pageDocument } as Record<string, unknown>,
-        {
-            pageDocument: appendOperation(
-              {
-                ...loaded,
-                syncStatus: 'synced',
-              },
-              'reload-remote',
-              'succeeded',
-              'Reloaded the remote page document to resolve local conflict state.',
-            ),
-        } as Record<string, unknown>,
-        'Reload page document from server',
-      ),
+    const loaded = remoteConflictDocument ?? (await loadRemoteConflictDocument());
+    if (!loaded) {
+      return;
+    }
+
+    updateNodeData(
+      { pageDocument: data.pageDocument },
+      {
+        pageDocument: appendOperation(
+          {
+            ...loaded,
+            syncStatus: 'synced',
+          },
+          'reload-remote',
+          'succeeded',
+          'Reloaded the remote page document to resolve local conflict state.',
+          {
+            discardedLocalDocumentId: data.pageDocument.documentId,
+            remoteDocumentId: loaded.documentId,
+            localNodeCount: getSerializedNodeCount(data.pageDocument),
+            remoteNodeCount: getSerializedNodeCount(loaded),
+          },
+        ),
+      },
+      'Reload page document from server',
     );
-  }, [appendOperation, data.pageDocument, executeCommand, id, pagePersistenceAdapter]);
+    setRemoteConflictDocument(null);
+  }, [appendOperation, canMutatePageDocument, data.pageDocument, loadRemoteConflictDocument, remoteConflictDocument, updateNodeData]);
 
   const handleOverwriteRemote = useCallback(async () => {
-    if (!data.pageDocument) {
+    if (!data.pageDocument || !canMutatePageDocument) {
       return;
     }
 
@@ -449,27 +602,31 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
     };
 
     await pagePersistenceAdapter.save(forceDocument);
-    executeCommand(
-      new UpdateNodeDataCommand(
-        id,
-        { pageDocument: data.pageDocument } as Record<string, unknown>,
-        {
-          pageDocument: appendOperation(
-            {
-              ...forceDocument,
-              syncStatus: 'synced',
-            },
-            'overwrite-remote',
-            'requires-review',
-            'Overwrote remote page document after an explicit conflict action.',
-            { auditReason },
-          ),
-        } as Record<string, unknown>,
-        'Overwrite remote page document with audit reason',
-      ),
+    updateNodeData(
+      { pageDocument: data.pageDocument },
+      {
+        pageDocument: appendOperation(
+          {
+            ...forceDocument,
+            syncStatus: 'synced',
+          },
+          'overwrite-remote',
+          'requires-review',
+          'Overwrote remote page document after an explicit conflict action.',
+          {
+            auditReason,
+            localDocumentId: data.pageDocument.documentId,
+            remoteDocumentId: remoteConflictDocument?.documentId ?? null,
+            localNodeCount: getSerializedNodeCount(data.pageDocument),
+            remoteNodeCount: remoteConflictDocument ? getSerializedNodeCount(remoteConflictDocument) : null,
+          },
+        ),
+      },
+      'Overwrite remote page document with audit reason',
     );
     setOverwriteReason('');
-  }, [appendOperation, data.pageDocument, executeCommand, id, overwriteReason, pagePersistenceAdapter]);
+    setRemoteConflictDocument(null);
+  }, [appendOperation, canMutatePageDocument, data.pageDocument, overwriteReason, pagePersistenceAdapter, remoteConflictDocument, updateNodeData]);
 
   const borderColor = selected ? 'var(--color-primary-500, #6366f1)' : 'var(--color-border, #d1d5db)';
 
@@ -522,17 +679,32 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
 
           {/* Sync status badge */}
           {data.pageDocument?.syncStatus === 'dirty' && (
-            <Typography variant="caption" style={{ color: '#f59e0b', flexShrink: 0 }} title="Unsaved changes">
+            <Typography
+              variant="caption"
+              style={{ color: '#f59e0b', flexShrink: 0 }}
+              title="Unsaved changes"
+              data-testid="page-node-sync-status"
+            >
               ●
             </Typography>
           )}
           {data.pageDocument?.syncStatus === 'offline' && (
-            <Typography variant="caption" style={{ color: '#6b7280', flexShrink: 0 }} title="Saved locally — not synced to server">
+            <Typography
+              variant="caption"
+              style={{ color: '#6b7280', flexShrink: 0 }}
+              title="Saved locally — not synced to server"
+              data-testid="page-node-sync-status"
+            >
               ⚡
             </Typography>
           )}
           {data.pageDocument?.syncStatus === 'error' && (
-            <Typography variant="caption" style={{ color: '#ef4444', flexShrink: 0 }} title="Conflict — remote version is newer. Reload to resolve.">
+            <Typography
+              variant="caption"
+              style={{ color: '#ef4444', flexShrink: 0 }}
+              title="Conflict — remote version is newer. Reload to resolve."
+              data-testid="page-node-sync-status"
+            >
               ⚠ conflict
             </Typography>
           )}
@@ -575,11 +747,30 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
               {data.pageDocument?.syncStatus === 'error' ? (
                 <Box className="m-3 rounded-lg border border-destructive-border bg-destructive-bg p-3">
                     <Typography variant="caption" style={{ display: 'block', marginBottom: 8 }}>
-                      Save conflict detected. The remote version is newer. Reload the remote version, or provide an audit reason before overwriting it.
+                      Save conflict detected. The remote version is newer. Compare the versions before reloading the remote document or overwriting it with an audit reason.
                     </Typography>
+                    <Box className="mb-2 rounded border border-destructive-border bg-surface p-2 text-xs">
+                      <Typography variant="caption" style={{ display: 'block' }}>
+                        Local: {data.pageDocument.documentId} · {getSerializedNodeCount(data.pageDocument)} component{getSerializedNodeCount(data.pageDocument) === 1 ? '' : 's'}
+                      </Typography>
+                      {remoteConflictDocument ? (
+                        <Typography
+                          variant="caption"
+                          style={{ display: 'block' }}
+                          data-testid="page-conflict-remote-summary"
+                        >
+                          Remote: {remoteConflictDocument.documentId} · {getSerializedNodeCount(remoteConflictDocument)} component{getSerializedNodeCount(remoteConflictDocument) === 1 ? '' : 's'}
+                        </Typography>
+                      ) : (
+                        <Typography variant="caption" style={{ display: 'block' }}>
+                          Remote: not loaded yet
+                        </Typography>
+                      )}
+                    </Box>
                     <TextArea
                       value={overwriteReason}
                       onChange={(event) => setOverwriteReason(event.target.value)}
+                      disabled={!canMutatePageDocument}
                       rows={2}
                       aria-label="Overwrite audit reason"
                       placeholder="Why is overwriting the remote version safe?"
@@ -587,14 +778,29 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
                       className="mb-2 w-full text-xs"
                     />
                     <Box className="flex gap-2">
-                      <Button variant="outline" size="small" onClick={() => void handleReloadFromServer()}>
+                      <Button
+                        variant="outline"
+                        size="small"
+                        onClick={() => void loadRemoteConflictDocument()}
+                        disabled={!canMutatePageDocument}
+                        data-testid="page-conflict-compare-remote"
+                      >
+                        Compare remote
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="small"
+                        onClick={() => void handleReloadFromServer()}
+                        data-testid="page-conflict-reload-remote"
+                      >
                         Reload remote
                       </Button>
                       <Button
                         variant="solid"
                         size="small"
                         onClick={() => void handleOverwriteRemote()}
-                        disabled={overwriteReason.trim().length < 8}
+                        disabled={overwriteReason.trim().length < 8 || !canMutatePageDocument}
+                        data-testid="page-conflict-overwrite-remote"
                       >
                         Overwrite with reason
                       </Button>
@@ -611,7 +817,8 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
                 onAIReviewDecision={handleAIReviewDecision}
                 onSelectionChange={setPreviewSelectedNodeId}
                 onHoverChange={setPreviewHoveredNodeId}
-                phaseConfig={phaseConfig}
+                phaseConfig={effectivePhaseConfig}
+                readOnlyReason={isPolicyReadOnly ? pageBuilderReadOnlyReason : undefined}
                 auditContext={
                   currentUser?.id && currentUser.tenantId && currentWorkspaceId && projectId
                     ? {
@@ -624,24 +831,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
                       }
                     : undefined
                 }
-                onDocumentChange={(document, validation) => {
-                  if (!data.pageDocument) {
-                    return;
-                  }
-
-                  const pageDocument: PageArtifactDocument = updatePageArtifactDocument(
-                    data.pageDocument,
-                    document,
-                    'page-designer',
-                    'dirty',
-                    {
-                      valid: validation.valid,
-                      errorCount: validation.errors.length,
-                      warningCount: validation.warnings.length,
-                    },
-                  );
-                  handleDocumentChange(pageDocument, document, validation);
-                }}
+                onDocumentChange={handlePageDesignerDocumentChange}
               />
             </Box>
             <Box className="w-[360px] border-l border-border">
@@ -727,7 +917,9 @@ export const PageDesignerNode = memo(PageDesignerNodeInner, (prev, next) => {
     prev.data.label === next.data.label &&
     prev.data.expanded === next.data.expanded &&
     prev.data.pageDocument === next.data.pageDocument &&
-    prev.data.validationSummary === next.data.validationSummary
+    prev.data.validationSummary === next.data.validationSummary &&
+    prev.data.readOnly === next.data.readOnly &&
+    prev.data.readOnlyReason === next.data.readOnlyReason
   );
 });
 

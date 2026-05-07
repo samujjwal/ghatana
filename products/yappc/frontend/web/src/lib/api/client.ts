@@ -20,6 +20,7 @@
  */
 
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import type { ResourceCapabilities, WorkspaceRole } from '@/services/workspace/accessControl';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Domain types (kept lean — callers own the full domain model imports)
@@ -223,6 +224,11 @@ export interface Project {
   name: string;
   description?: string;
   workspaceId: string;
+  role?: WorkspaceRole;
+  isOwned?: boolean;
+  isIncluded?: boolean;
+  readOnly?: boolean;
+  capabilities?: ResourceCapabilities;
   currentPhase?: string;
   createdAt: string;
   updatedAt: string;
@@ -253,6 +259,43 @@ export interface ProjectActivityEvent {
 export interface ProjectActivityResponse {
   readonly projectId: string;
   readonly activity: ProjectActivityEvent[];
+}
+export type ProjectDashboardActionKind = 'blocker' | 'review' | 'safe-to-continue';
+export type ProjectDashboardActionSeverity = 'critical' | 'warning' | 'info';
+export interface ProjectDashboardAction {
+  readonly id: string;
+  readonly projectId: string;
+  readonly projectName: string;
+  readonly workspaceId: string;
+  readonly lifecyclePhase: string;
+  readonly routePhase: string;
+  readonly kind: ProjectDashboardActionKind;
+  readonly title: string;
+  readonly summary: string;
+  readonly severity: ProjectDashboardActionSeverity;
+  readonly source: 'project.aiNextActions' | 'project.lifecyclePhase';
+  readonly requiresReview: boolean;
+  readonly safeToRun: boolean;
+  readonly updatedAt: string;
+}
+export interface ProjectDashboardActionsResponse {
+  readonly workspaceId: string;
+  readonly blockedWork: ProjectDashboardAction[];
+  readonly reviewRequired: ProjectDashboardAction[];
+  readonly safeToContinue: ProjectDashboardAction[];
+  readonly generatedAt: string;
+}
+export interface ExecuteProjectDashboardActionRequest {
+  readonly workspaceId: string;
+  readonly actionId: string;
+}
+export interface ExecuteProjectDashboardActionResponse {
+  readonly projectId: string;
+  readonly actionId: string;
+  readonly outcome: 'opened-phase-cockpit';
+  readonly targetPhase: string;
+  readonly targetPath: string;
+  readonly auditRecorded: boolean;
 }
 export interface PhaseTransitionPreviewResponse {
   readonly projectId: string;
@@ -298,6 +341,17 @@ export const projects = {
     get<Project>(`/api/projects/${encodeURIComponent(projectId)}/current`, 'projects.current'),
   activity: (projectId: string) =>
     get<ProjectActivityResponse>(`/api/projects/${encodeURIComponent(projectId)}/activity`, 'projects.activity'),
+  dashboardActions: (workspaceId: string) =>
+    get<ProjectDashboardActionsResponse>(
+      `/api/projects/dashboard-actions${encodeQuery({ workspaceId })}`,
+      'projects.dashboardActions',
+    ),
+  executeDashboardAction: (projectId: string, body: ExecuteProjectDashboardActionRequest) =>
+    post<ExecuteProjectDashboardActionRequest, ExecuteProjectDashboardActionResponse>(
+      `/api/projects/${encodeURIComponent(projectId)}/dashboard-actions/execute`,
+      body,
+      'projects.executeDashboardAction',
+    ),
   aiCost: (projectId: string) =>
     get<{ totalCostUsd: number; breakdown: unknown[] }>(`/api/projects/${encodeURIComponent(projectId)}/ai-cost`, 'projects.aiCost'),
   capabilities: (projectId: string) =>
@@ -384,12 +438,35 @@ export interface RegenerateDiffResponse {
   readonly diff?: unknown;
   readonly reviewRequired?: boolean;
 }
+export type GenerateReviewDecision = 'apply' | 'reject' | 'rollback';
+export interface GenerateReviewDecisionRequest {
+  readonly projectId: string;
+  readonly actorId: string;
+  readonly reason?: string;
+}
+export interface GenerateReviewDecisionResponse {
+  readonly runId?: string;
+  readonly projectId?: string;
+  readonly decision?: GenerateReviewDecision;
+  readonly status?: string;
+  readonly reviewRequired?: boolean;
+  readonly actorId?: string;
+  readonly decidedAt?: string;
+  readonly auditEvent?: string;
+  readonly message?: string;
+}
 
 export const generate = {
   run: (body: GenerateArtifactsRequest) =>
     postPossiblyEmpty<GenerateArtifactsRequest, GenerateArtifactsResponse>('/api/v1/yappc/generate', body, 'generate.run'),
   diff: (body: RegenerateDiffRequest) =>
     postPossiblyEmpty<RegenerateDiffRequest, RegenerateDiffResponse>('/api/v1/yappc/generate/diff', body, 'generate.diff'),
+  review: (runId: string, decision: GenerateReviewDecision, body: GenerateReviewDecisionRequest) =>
+    postPossiblyEmpty<GenerateReviewDecisionRequest, GenerateReviewDecisionResponse>(
+      `/api/v1/yappc/generate/runs/${encodeURIComponent(runId)}/${decision}`,
+      body,
+      `generate.review.${decision}`,
+    ),
   artifact: (id: string) =>
     get<{ id: string; content: unknown }>(`/api/v1/yappc/generate/artifacts/${encodeURIComponent(id)}`, 'generate.artifact'),
 } as const;
@@ -426,6 +503,34 @@ export const workflows = {
     ),
   status: (runId: string) =>
     get<WorkflowStatus>(`/api/v1/workflows/${encodeURIComponent(runId)}/status`, 'workflows.status'),
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Run phase operations  (/api/v1/yappc/run/*)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface RunOperationResponse {
+  readonly id?: string;
+  readonly runSpecRef?: string;
+  readonly status?: string;
+  readonly metadata?: Record<string, string>;
+}
+
+export interface RunRollbackRequest {
+  readonly deploymentId: string;
+  readonly targetVersion: string;
+}
+
+export interface RunPromoteRequest {
+  readonly deploymentId: string;
+  readonly targetEnvironment: string;
+}
+
+export const run = {
+  rollback: (body: RunRollbackRequest) =>
+    postPossiblyEmpty<RunRollbackRequest, RunOperationResponse>('/api/v1/yappc/run/rollback', body, 'run.rollback'),
+  promote: (body: RunPromoteRequest) =>
+    postPossiblyEmpty<RunPromoteRequest, RunOperationResponse>('/api/v1/yappc/run/promote', body, 'run.promote'),
 } as const;
 
 export const validate = {
@@ -503,6 +608,16 @@ export interface SourceImportResponse {
     readonly totalSize: number;
   };
   readonly extractedComponents?: readonly unknown[];
+  readonly job?: {
+    readonly id?: string;
+    readonly status?: string;
+    readonly reason?: string;
+    readonly tenantId?: string;
+    readonly workspaceId?: string;
+    readonly projectId?: string;
+    readonly createdAt?: string;
+    readonly auditRecorded?: boolean;
+  };
 }
 
 export const sourceImports = {
@@ -708,6 +823,7 @@ export const yappcApi = {
   shape,
   generate,
   workflows,
+  run,
   validate,
   artifacts,
   sourceImports,

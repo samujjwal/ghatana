@@ -1,6 +1,6 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 const {
   validateDocumentMock,
@@ -19,10 +19,10 @@ vi.mock('@ghatana/design-system', () => ({
     React.createElement('div', props, children),
   Typography: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
     React.createElement('p', props, children),
-  IconButton: ({ children, onClick, title, 'data-testid': testId }: React.PropsWithChildren<{ onClick?: () => void; title?: string; 'data-testid'?: string }>) =>
-    React.createElement('button', { onClick, title, 'data-testid': testId }, children),
-  Button: ({ children, onClick, title, 'data-testid': testId }: React.PropsWithChildren<{ onClick?: () => void; title?: string; 'data-testid'?: string }>) =>
-    React.createElement('button', { onClick, title, 'data-testid': testId }, children),
+  IconButton: ({ children, onClick, title, disabled, 'data-testid': testId }: React.PropsWithChildren<{ onClick?: () => void; title?: string; disabled?: boolean; 'data-testid'?: string }>) =>
+    React.createElement('button', { onClick, title, disabled, 'data-testid': testId }, children),
+  Button: ({ children, onClick, title, disabled, draggable, onDragStart, 'data-testid': testId }: React.PropsWithChildren<{ onClick?: () => void; title?: string; disabled?: boolean; draggable?: boolean; onDragStart?: (event: React.DragEvent<HTMLButtonElement>) => void; 'data-testid'?: string }>) =>
+    React.createElement('button', { onClick, title, disabled, draggable, onDragStart, 'data-testid': testId }, children),
   TextArea: React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
     (props, ref) => React.createElement('textarea', { ...props, ref }),
   ),
@@ -39,14 +39,30 @@ vi.mock('@ghatana/design-system', () => ({
 }));
 
 vi.mock('../PropertyForm', () => ({
-  PropertyForm: ({ onUpdate, onCancel }: {
-    onUpdate: (payload: { props: Record<string, unknown>; name?: string }) => void;
+  PropertyForm: ({ onUpdate, onCancel, readOnly }: {
+    onUpdate: (payload: {
+      props: Record<string, unknown>;
+      name?: string;
+      responsiveVariant?: { breakpoint: string; props?: Record<string, unknown> };
+      stateVariant?: { state: 'hover'; props?: Record<string, unknown> };
+      dataBinding?: { id: string; type: 'data'; source: string; target: string };
+      actionBinding?: { id: string; type: 'event'; source: string; target: string };
+    }) => void;
     onCancel: () => void;
+    readOnly?: boolean;
   }) =>
     React.createElement('div', { 'data-testid': 'property-form' },
       React.createElement('button', {
         'data-testid': 'save-property',
-        onClick: () => onUpdate({ props: { children: 'Updated Button' }, name: 'Updated' }),
+        disabled: readOnly,
+        onClick: () => onUpdate({
+          props: { children: 'Updated Button' },
+          name: 'Updated',
+          responsiveVariant: { breakpoint: 'md', props: { size: 'lg' } },
+          stateVariant: { state: 'hover', props: { variant: 'outline' } },
+          dataBinding: { id: 'binding-data', type: 'data', source: 'dataSource.orders', target: 'children' },
+          actionBinding: { id: 'binding-action', type: 'event', source: 'onClick', target: 'navigate:/orders' },
+        }),
       }, 'Save'),
       React.createElement('button', { 'data-testid': 'cancel-property', onClick: onCancel }, 'Cancel'),
     ),
@@ -235,6 +251,57 @@ vi.mock('@ghatana/ui-builder', () => ({
       nodes: nextNodes,
     };
   }),
+  addBinding: vi.fn((document: {
+    nodes: Map<string, { id: string; contractName: string; props: Record<string, unknown>; slots: Record<string, string[]>; bindings: unknown[]; metadata: Record<string, unknown> }>;
+  }, nodeId: string, binding: unknown) => {
+    const nextNodes = new Map(document.nodes);
+    const current = nextNodes.get(nodeId);
+    if (current) {
+      nextNodes.set(nodeId, {
+        ...current,
+        bindings: [...current.bindings, binding],
+      });
+    }
+    return {
+      ...document,
+      nodes: nextNodes,
+    };
+  }),
+  removeBinding: vi.fn((document: {
+    nodes: Map<string, { id: string; contractName: string; props: Record<string, unknown>; slots: Record<string, string[]>; bindings: Array<{ id?: string }>; metadata: Record<string, unknown> }>;
+  }, nodeId: string, bindingId: string) => {
+    const nextNodes = new Map(document.nodes);
+    const current = nextNodes.get(nodeId);
+    if (current) {
+      nextNodes.set(nodeId, {
+        ...current,
+        bindings: current.bindings.filter((binding) => binding.id !== bindingId),
+      });
+    }
+    return {
+      ...document,
+      nodes: nextNodes,
+    };
+  }),
+  setResponsiveVariant: vi.fn((document: {
+    nodes: Map<string, { id: string; contractName: string; props: Record<string, unknown>; slots: Record<string, string[]>; bindings: unknown[]; metadata: Record<string, unknown> }>;
+  }, nodeId: string, variant: unknown) => {
+    const nextNodes = new Map(document.nodes);
+    const current = nextNodes.get(nodeId);
+    if (current) {
+      nextNodes.set(nodeId, {
+        ...current,
+        metadata: {
+          ...current.metadata,
+          responsiveVariants: [variant],
+        },
+      });
+    }
+    return {
+      ...document,
+      nodes: nextNodes,
+    };
+  }),
   validateDocument: (...args: unknown[]) => validateDocumentMock(...args),
   serializeDocument: vi.fn((document: unknown) => document),
   deserializeDocument: vi.fn((doc: unknown) => {
@@ -354,6 +421,18 @@ function makeSingleNodeDocument(nodeId = 'node-preview-hover') {
   };
 }
 
+const readOnlyPhaseConfig: import('../../../../services/canvas/phase-config/PhaseCanvasConfig').PhaseCanvasConfig = {
+  mode: 'validate',
+  visibleTools: ['select', 'inspect', 'preview'],
+  defaultTool: 'inspect',
+  allowEditing: false,
+  allowAddComponent: false,
+  allowDelete: false,
+  allowEdgeManipulation: false,
+  enableValidation: true,
+  enablePreview: true,
+};
+
 describe('PageDesigner', () => {
   const onComponentsChange = vi.fn();
   const onDocumentChange = vi.fn();
@@ -382,6 +461,25 @@ describe('PageDesigner', () => {
     render(<PageDesigner onComponentsChange={onComponentsChange} />);
     fireEvent.click(screen.getByText('Button'));
     expect(onComponentsChange).toHaveBeenCalled();
+  });
+
+  it('blocks palette inserts and imports when the builder is read-only', () => {
+    render(
+      <PageDesigner
+        onComponentsChange={onComponentsChange}
+        phaseConfig={readOnlyPhaseConfig}
+        readOnlyReason="Included projects are view-only."
+      />,
+    );
+
+    fireEvent.click(screen.getByText('Button'));
+    fireEvent.click(screen.getByTestId('page-designer-import-btn'));
+
+    expect(screen.getByTestId('page-component-button')).toBeDisabled();
+    expect(screen.getByTestId('page-designer-import-btn')).toBeDisabled();
+    expect(onComponentsChange).not.toHaveBeenCalled();
+    expect(insertNodeMock).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('page-designer-import-panel')).not.toBeInTheDocument();
   });
 
   it('persists scoped command audit records when audit context is available', async () => {
@@ -463,6 +561,58 @@ describe('PageDesigner', () => {
     fireEvent.click(screen.getByTitle('Edit Properties'));
     expect(screen.getByTestId('property-drawer')).toBeInTheDocument();
     expect(screen.getByTestId('property-form')).toBeInTheDocument();
+  });
+
+  it('applies inspector variants and bindings through builder commands', () => {
+    const onDocumentChangeForInspector = vi.fn();
+
+    render(
+      <PageDesigner
+        initialComponents={makeSingleNodeDocument('node-1')}
+        onDocumentChange={onDocumentChangeForInspector}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('page-button'));
+    fireEvent.click(screen.getByTitle('Edit Properties'));
+    fireEvent.click(screen.getByTestId('save-property'));
+
+    expect(onDocumentChangeForInspector).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        nodes: expect.any(Map),
+      }),
+      expect.objectContaining({ valid: true }),
+    );
+    const updatedDocument = onDocumentChangeForInspector.mock.calls.at(-1)?.[0];
+    const updatedNode = updatedDocument.nodes.get('node-1');
+    expect(updatedNode.props.children).toBe('Updated Button');
+    expect(updatedNode.metadata.name).toBe('Updated');
+    expect(updatedNode.metadata.responsiveVariants).toEqual([
+      { breakpoint: 'md', props: { size: 'lg' } },
+    ]);
+    expect(updatedNode.metadata.stateVariants).toEqual([
+      { state: 'hover', props: { variant: 'outline' } },
+    ]);
+    expect(updatedNode.bindings).toEqual([
+      { id: 'binding-data', type: 'data', source: 'dataSource.orders', target: 'children' },
+      { id: 'binding-action', type: 'event', source: 'onClick', target: 'navigate:/orders' },
+    ]);
+  });
+
+  it('blocks property updates when the builder is read-only', () => {
+    render(
+      <PageDesigner
+        initialComponents={makeSingleNodeDocument('node-1')}
+        onDocumentChange={onDocumentChange}
+        phaseConfig={readOnlyPhaseConfig}
+        readOnlyReason="Canvas edits are paused during validation review."
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('page-button'));
+
+    expect(screen.getByTitle('Edit Properties')).toBeDisabled();
+    expect(screen.queryByTestId('property-form')).not.toBeInTheDocument();
   });
 
   it('emits document changes with validation payloads', () => {
@@ -597,6 +747,78 @@ describe('PageDesigner', () => {
 
     expect(moveNodeMock).toHaveBeenCalled();
   });
+
+  it('supports keyboard nesting into the previous container with Alt+ArrowRight', () => {
+    render(
+      <PageDesigner
+        initialComponents={{
+          id: 'doc-keyboard',
+          version: '1',
+          name: 'Keyboard Fixture',
+          designSystem: {
+            id: 'ds',
+            name: 'DS',
+            version: '1',
+            tokenSetIds: [],
+            componentContracts: [],
+            themeId: 'default',
+          },
+          rootNodes: ['node-1', 'node-2'],
+          nodes: new Map([
+            [
+              'node-1',
+              {
+                id: 'node-1',
+                contractName: 'Card',
+                props: {},
+                slots: { default: [] },
+                bindings: [],
+                metadata: {},
+              },
+            ],
+            [
+              'node-2',
+              {
+                id: 'node-2',
+                contractName: 'Button',
+                props: {},
+                slots: {},
+                bindings: [],
+                metadata: {},
+              },
+            ],
+          ]),
+          metadata: {
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            trustLevel: 'GENERATED_TRUSTED',
+            dataClassification: 'INTERNAL',
+          },
+        }}
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByTestId('page-button'), {
+      key: 'ArrowRight',
+      altKey: true,
+    });
+
+    expect(moveNodeMock).toHaveBeenCalledWith(expect.anything(), 'node-2', 'node-1', 'default');
+  });
+
+  it('announces when keyboard nesting has no previous container target', () => {
+    render(<PageDesigner />);
+    fireEvent.click(screen.getByText('Button'));
+
+    fireEvent.keyDown(screen.getByTestId('page-button'), {
+      key: 'ArrowRight',
+      altKey: true,
+    });
+
+    expect(screen.getByTestId('page-drop-feedback')).toHaveTextContent(
+      'Cannot move into a container because there is no previous component.',
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -633,7 +855,13 @@ describe('PageDesigner — import panel', () => {
         roundTripFidelity: {
           canRoundTrip: false,
           confidence: 0.72,
-          lossPoints: [{ type: 'unsupported-pattern', location: 'section.hero' }],
+          lossPoints: [
+            {
+              type: 'unsupported-pattern',
+              location: 'section.hero',
+              description: 'Hero animation could not be represented as a canonical component.',
+            },
+          ],
         },
         syncStatus: 'dirty',
         trustLevel: 'low',
@@ -721,49 +949,104 @@ describe('PageDesigner — import panel', () => {
     expect(onImportArtifacts).toHaveBeenCalledWith(
       expect.arrayContaining([expect.objectContaining({ artifactId: 'art-1' })]),
     );
-    expect(screen.getByTestId('page-designer-residuals')).toBeInTheDocument();
-    expect(screen.getByText(/island-a/i)).toBeInTheDocument();
+    const residualsPanel = screen.getByTestId('page-designer-residuals');
+    expect(residualsPanel).toBeInTheDocument();
+    expect(within(residualsPanel).getByText(/island-a/i)).toBeInTheDocument();
   });
 
-  it('imports from source command syntax and emits imported artifacts', async () => {
-    const onImportArtifacts = vi.fn();
-    render(
-      <PageDesigner
-        projectId="proj-1"
-        auditContext={{
-          userId: 'user-1',
-          tenantId: 'tenant-1',
-          workspaceId: 'workspace-1',
-          projectId: 'proj-1',
-          artifactId: 'artifact-1',
-          phase: 'SHAPE',
-        }}
-        onImportArtifacts={onImportArtifacts}
-      />,
+  it('shows import review queue decisions for loss points and residuals', () => {
+    render(<PageDesigner projectId="proj-1" />);
+    fireEvent.click(screen.getByTestId('page-designer-import-btn'));
+    const textarea = screen.getByTestId('page-designer-import-textarea') as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: '{ "pages": [] }' } });
+    fireEvent.click(screen.getByTestId('page-designer-import-confirm'));
+
+    expect(screen.getByTestId('page-designer-import-review-queue')).toHaveTextContent(
+      'Import review queue: 0/2 decided',
     );
+    expect(screen.getByText(/Hero animation could not be represented/)).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByTestId(
+        'page-designer-import-review-skip-loss-0-unsupported-pattern-section.hero',
+      ),
+    );
+
+    expect(
+      screen.getByTestId('page-designer-import-review-decision-loss-0-unsupported-pattern-section.hero'),
+    ).toHaveTextContent('Decision: skipped');
+    expect(screen.getByTestId('page-designer-import-review-queue')).toHaveTextContent(
+      'Import review queue: 1/2 decided',
+    );
+  });
+
+  it('persists residual island review decisions before clearing pending islands', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          artifactId: 'art-1',
+          residualIslandId: 'island-a',
+          decision: 'ACCEPTED',
+          auditRecordId: 'audit-residual-1',
+          reviewedAt: '2026-05-07T00:00:00.000Z',
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<PageDesigner projectId="proj-1" />);
+    fireEvent.click(screen.getByTestId('page-designer-import-btn'));
+    const textarea = screen.getByTestId('page-designer-import-textarea') as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: '{ "pages": [] }' } });
+    fireEvent.click(screen.getByTestId('page-designer-import-confirm'));
+
+    fireEvent.click(screen.getByTestId('page-designer-residual-accept-island-a'));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/v1/yappc/artifacts/art-1/residual-islands/island-a/review',
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include',
+          body: JSON.stringify({
+            decision: 'ACCEPTED',
+            notes: 'Residual island accepted during PageDesigner import review.',
+          }),
+        }),
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId('page-designer-residuals')).not.toBeInTheDocument();
+    });
+  });
+
+  it('notifies the parent document observer after a successful import', () => {
+    const onDocumentChange = vi.fn();
+    render(<PageDesigner projectId="proj-1" onDocumentChange={onDocumentChange} />);
+    fireEvent.click(screen.getByTestId('page-designer-import-btn'));
+    const textarea = screen.getByTestId('page-designer-import-textarea') as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: '{ "pages": [] }' } });
+    fireEvent.click(screen.getByTestId('page-designer-import-confirm'));
+
+    expect(onDocumentChange).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'doc-import' }),
+      expect.objectContaining({ valid: true }),
+    );
+  });
+
+  it('rejects legacy source command syntax in the semantic import textarea', async () => {
+    render(<PageDesigner projectId="proj-1" />);
     fireEvent.click(screen.getByTestId('page-designer-import-btn'));
     const textarea = screen.getByTestId('page-designer-import-textarea') as HTMLTextAreaElement;
     fireEvent.change(textarea, { target: { value: 'source:tsx:https://example.com/Page.tsx' } });
     fireEvent.click(screen.getByTestId('page-designer-import-confirm'));
 
-    await waitFor(() => {
-      expect(importSourceToPageArtifactsMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          projectId: 'proj-1',
-          options: expect.objectContaining({
-            requireServerImport: true,
-            tenantId: 'tenant-1',
-            workspaceId: 'workspace-1',
-          }),
-        }),
-        'import',
-      );
-    });
-    expect(onImportArtifacts).toHaveBeenCalledWith(
-      expect.arrayContaining([
-        expect.objectContaining({ artifactId: 'imported-project-imported-remote-page' }),
-      ]),
-    );
+    expect(await screen.findByText(/Source imports must use the governed source workflow/i)).toBeInTheDocument();
+    expect(importSourceToPageArtifactsMock).not.toHaveBeenCalled();
   });
 
   it('imports from guided source fields without requiring command syntax', async () => {
@@ -806,22 +1089,26 @@ describe('PageDesigner — import panel', () => {
     expect(onImportArtifacts).toHaveBeenCalled();
   });
 
-  it('requires authenticated tenant and workspace context for source command imports', async () => {
+  it('requires authenticated tenant and workspace context for guided source imports', async () => {
     render(<PageDesigner projectId="proj-1" />);
     fireEvent.click(screen.getByTestId('page-designer-import-btn'));
-    const textarea = screen.getByTestId('page-designer-import-textarea') as HTMLTextAreaElement;
-    fireEvent.change(textarea, { target: { value: 'source:tsx:https://example.com/Page.tsx' } });
+    fireEvent.click(screen.getByTestId('page-import-mode-source'));
+    fireEvent.change(screen.getByTestId('page-designer-source-locator'), {
+      target: { value: 'https://example.com/Page.tsx' },
+    });
     fireEvent.click(screen.getByTestId('page-designer-import-confirm'));
 
     expect(await screen.findByText(/authenticated tenant and workspace context/i)).toBeInTheDocument();
     expect(importSourceToPageArtifactsMock).not.toHaveBeenCalled();
   });
 
-  it('requires active project context for source command imports', async () => {
+  it('requires active project context for guided source imports', async () => {
     render(<PageDesigner />);
     fireEvent.click(screen.getByTestId('page-designer-import-btn'));
-    const textarea = screen.getByTestId('page-designer-import-textarea') as HTMLTextAreaElement;
-    fireEvent.change(textarea, { target: { value: 'source:tsx:https://example.com/Page.tsx' } });
+    fireEvent.click(screen.getByTestId('page-import-mode-source'));
+    fireEvent.change(screen.getByTestId('page-designer-source-locator'), {
+      target: { value: 'https://example.com/Page.tsx' },
+    });
     fireEvent.click(screen.getByTestId('page-designer-import-confirm'));
 
     expect(await screen.findByText(/active project context/i)).toBeInTheDocument();

@@ -39,6 +39,7 @@ import { migrateData } from '@/lib/canvas/migrationRules';
 import { getZonePlacementPosition } from '../workspace/SpatialZones';
 import type { GhostNodeTemplate } from '../workspace';
 import { createPageArtifactDocument } from '../page/pageArtifactDocument';
+import type { CanvasAccessPolicy } from '../canvasAccessPolicy';
 
 export interface UseCanvasHandlersConfig {
     projectId: string;
@@ -48,10 +49,11 @@ export interface UseCanvasHandlersConfig {
     artifacts: Array<{ id: string; type: string; title: string; description?: string; status: string; createdBy?: string; phase: LifecyclePhase; linkedArtifacts?: string[]; data?: Record<string, unknown> }> | undefined;
     userId: string | null;
     reactFlowInstance: ReactFlowInstance | null;
+    canvasPolicy: CanvasAccessPolicy;
 }
 
 export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
-    const { projectId, currentPhase, flowStage, personaName, artifacts, userId, reactFlowInstance } = config;
+    const { projectId, currentPhase, flowStage, personaName, artifacts, userId, reactFlowInstance, canvasPolicy } = config;
 
     const nodes = useAtomValue(nodesAtom);
     const edges = useAtomValue(edgesAtom);
@@ -81,9 +83,17 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
         [announce]
     );
 
+    const announceReadOnly = useCallback((): void => {
+        announce(canvasPolicy.readOnlyReason ?? 'Canvas edits are unavailable in this mode.');
+    }, [announce, canvasPolicy.readOnlyReason]);
+
     // --- Create Artifact ---
     const handleCreateArtifact = useCallback(
         async (template: ArtifactTemplate, position: { x: number; y: number }) => {
+            if (!canvasPolicy.canCreateArtifacts) {
+                announceReadOnly();
+                return;
+            }
             const newId = `artifact-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             const title = template.defaultTitle || template.label || 'New Artifact';
             const isPageDesignerArtifact = template.type === 'mockup';
@@ -139,7 +149,7 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
                 announce('Failed to save artifact to server');
             }
         },
-        [personaName, currentPhase, setNodesAtom, setSelectedNodes, setIsInspectorOpen, createArtifact, announce, executeCommand]
+        [announceReadOnly, canvasPolicy.canCreateArtifacts, personaName, currentPhase, setNodesAtom, setSelectedNodes, setIsInspectorOpen, createArtifact, announce, executeCommand]
     );
 
     // --- Copy Nodes ---
@@ -148,6 +158,10 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
 
     // --- Paste Nodes ---
     const handlePasteNodes = useCallback(() => {
+        if (!canvasPolicy.canCreateArtifacts) {
+            announceReadOnly();
+            return;
+        }
         if (copiedNodes.length === 0) return;
         const newNodes: Node<ArtifactNodeData>[] = copiedNodes.map((node, index) => ({
             ...node,
@@ -160,10 +174,14 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
         }));
         executeCommand(new PasteNodesCommand(newNodes));
         announce(`Pasted ${newNodes.length} nodes`);
-    }, [copiedNodes, executeCommand, announce]);
+    }, [announceReadOnly, canvasPolicy.canCreateArtifacts, copiedNodes, executeCommand, announce]);
 
     // --- Delete Selected Nodes ---
     const handleDeleteSelected = useCallback(() => {
+        if (!canvasPolicy.canMutateArtifacts) {
+            announceReadOnly();
+            return;
+        }
         if (selectedNodes.length === 0) return;
         // ✅ Read directly from atom value — no setter-as-getter antipattern.
         // RemoveNodesCommand stores only the deleted nodes (O(deleted)), not
@@ -176,7 +194,7 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
         executeCommand(new RemoveNodesCommand(deletedNodes, deletedEdges));
         setSelectedNodes([]);
         announce(`Deleted ${selectedNodes.length} node${selectedNodes.length > 1 ? 's' : ''}`);
-    }, [selectedNodes, nodes, edges, executeCommand, setSelectedNodes, announce]);
+    }, [announceReadOnly, canvasPolicy.canMutateArtifacts, selectedNodes, nodes, edges, executeCommand, setSelectedNodes, announce]);
 
     // --- Select All ---
     const handleSelectAll = useCallback(() => {
@@ -187,6 +205,10 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
     // --- Update Artifact ---
     const handleUpdateArtifact = useCallback(
         (id: string, updates: Partial<InspectorArtifact>) => {
+            if (!canvasPolicy.canMutateArtifacts) {
+                announceReadOnly();
+                return;
+            }
             // ✅ Read current node data directly — no setter-as-getter antipattern.
             const node = nodes.find((n) => n.id === id);
             const currentData = node ? { ...(node.data as Record<string, unknown>) } : {};
@@ -201,12 +223,16 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
                 'Failed to update artifact'
             );
         },
-        [nodes, executeCommand, updateArtifact, runMutationWithAnnouncement]
+        [announceReadOnly, canvasPolicy.canMutateArtifacts, nodes, executeCommand, updateArtifact, runMutationWithAnnouncement]
     );
 
     // --- Add Blocker ---
     const handleAddBlocker = useCallback(
         (artifactId: string, blocker: Record<string, unknown>) => {
+            if (!canvasPolicy.canMutateArtifacts) {
+                announceReadOnly();
+                return;
+            }
             void runMutationWithAnnouncement(
                 updateArtifact({
                     artifactId,
@@ -215,12 +241,16 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
                 'Failed to add blocker'
             );
         },
-        [updateArtifact, runMutationWithAnnouncement]
+        [announceReadOnly, canvasPolicy.canMutateArtifacts, updateArtifact, runMutationWithAnnouncement]
     );
 
     // --- Add Comment ---
     const handleAddComment = useCallback(
         (artifactId: string, content: string) => {
+            if (!canvasPolicy.canComment) {
+                announce(canvasPolicy.readOnlyReason ?? 'Comments are unavailable for this project.');
+                return;
+            }
             void runMutationWithAnnouncement(
                 updateArtifact({
                     artifactId,
@@ -231,12 +261,16 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
                 'Failed to add comment'
             );
         },
-        [updateArtifact, userId, runMutationWithAnnouncement]
+        [announce, canvasPolicy.canComment, canvasPolicy.readOnlyReason, updateArtifact, userId, runMutationWithAnnouncement]
     );
 
     // --- Link Artifacts ---
     const handleLinkArtifact = useCallback(
         (artifactId: string, targetId: string) => {
+            if (!canvasPolicy.canMutateArtifacts) {
+                announceReadOnly();
+                return;
+            }
             const artifact = artifacts?.find((a) => a.id === artifactId);
             const existingLinks = artifact?.linkedArtifacts || [];
             if (existingLinks.includes(targetId)) return;
@@ -258,11 +292,15 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
             };
             executeCommand(new AddEdgeCommand(newEdge));
         },
-        [artifacts, updateArtifact, executeCommand, runMutationWithAnnouncement]
+        [announceReadOnly, artifacts, canvasPolicy.canMutateArtifacts, updateArtifact, executeCommand, runMutationWithAnnouncement]
     );
 
     // --- Ghost Node Handlers ---
     const handleAcceptGhost = useCallback(async (ghostId: string) => {
+        if (!canvasPolicy.canCreateArtifacts) {
+            announceReadOnly();
+            return;
+        }
         let acceptedGhost: Node<ArtifactNodeData> | undefined;
 
         setGhostNodes((prev) => {
@@ -290,7 +328,7 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
             }),
             'Failed to create artifact from suggestion'
         );
-    }, [createArtifact, currentPhase, personaName, setGhostNodes, runMutationWithAnnouncement]);
+    }, [announceReadOnly, canvasPolicy.canCreateArtifacts, createArtifact, currentPhase, personaName, setGhostNodes, runMutationWithAnnouncement]);
 
     const handleRejectGhost = useCallback((ghostId: string) => {
         setGhostNodes((prev) => prev.filter((g) => g.id !== ghostId));
@@ -298,6 +336,10 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
 
     // --- Ghost Node Create ---
     const handleGhostNodeCreate = useCallback((template: GhostNodeTemplate) => {
+        if (!canvasPolicy.canCreateArtifacts) {
+            announceReadOnly();
+            return;
+        }
         const artifactTemplate: ArtifactTemplate = {
             type: template.id.replace('ghost-', '') as unknown as import('../workspace').ArtifactType,
             icon: '',
@@ -308,10 +350,14 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
         };
         const position = getZonePlacementPosition(template.phase, 0);
         handleCreateArtifact(artifactTemplate, position);
-    }, [handleCreateArtifact]);
+    }, [announceReadOnly, canvasPolicy.canCreateArtifacts, handleCreateArtifact]);
 
     // --- Type Change ---
     const handleTypeChange = useCallback((artifactId: string, newType: ArtifactType) => {
+        if (!canvasPolicy.canMutateArtifacts) {
+            announceReadOnly();
+            return;
+        }
         const artifact = artifacts?.find((a) => a.id === artifactId);
         if (!artifact) return;
         const migratedData = migrateData(artifact.data || {}, artifact.type, newType);
@@ -329,10 +375,14 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
             }
             return node;
         }));
-    }, [artifacts, setNodesAtom, updateArtifact, runMutationWithAnnouncement]);
+    }, [announceReadOnly, artifacts, canvasPolicy.canMutateArtifacts, setNodesAtom, updateArtifact, runMutationWithAnnouncement]);
 
     // --- Phase Transition ---
     const handleProceedToNext = useCallback(() => {
+        if (!canvasPolicy.canMutateArtifacts) {
+            announceReadOnly();
+            return;
+        }
         const phases = [LifecyclePhase.INTENT, LifecyclePhase.SHAPE, LifecyclePhase.VALIDATE, LifecyclePhase.GENERATE, LifecyclePhase.RUN, LifecyclePhase.OBSERVE, LifecyclePhase.IMPROVE];
         const index = phases.indexOf(currentPhase);
         const nextPhase = index >= 0 && index < phases.length - 1 ? phases[index + 1] : undefined;
@@ -347,10 +397,14 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
                 'Phase transition failed'
             );
         }
-    }, [currentPhase, projectId, transitionStage, runMutationWithAnnouncement]);
+    }, [announceReadOnly, canvasPolicy.canMutateArtifacts, currentPhase, projectId, transitionStage, runMutationWithAnnouncement]);
 
     // --- Move Nodes (keyboard accessibility) ---
     const handleMoveSelectedNodes = useCallback((dx: number, dy: number) => {
+        if (!canvasPolicy.canMoveNodes) {
+            announceReadOnly();
+            return;
+        }
         if (selectedNodes.length === 0) return;
         const moveFrom: Record<string, { x: number; y: number }> = {};
         const moveTo: Record<string, { x: number; y: number }> = {};
@@ -363,7 +417,7 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
         });
         if (Object.keys(moveTo).length === 0) return;
         executeCommand(new MoveNodesCommand(selectedNodes, moveFrom, moveTo));
-    }, [selectedNodes, nodes, executeCommand]);
+    }, [announceReadOnly, canvasPolicy.canMoveNodes, selectedNodes, nodes, executeCommand]);
     // Note: setNodesAtom kept because it's used elsewhere in the hook (handleCreateArtifact, etc.)
 
     return {

@@ -90,12 +90,40 @@ function mockPhaseBootstrap({
   canAdvance = true,
   readiness = 92,
   requiredArtifacts = ['Requirements packet'],
+  projectAccess = {
+    isOwned: true,
+    isIncluded: false,
+    readOnly: false,
+    role: 'EDITOR',
+    capabilities: {
+      read: true,
+      update: true,
+      create: true,
+      delete: false,
+      include: true,
+      comment: true,
+    },
+  },
 }: {
   readonly lifecyclePhase?: string;
   readonly nextPhase?: string;
   readonly canAdvance?: boolean;
   readonly readiness?: number;
   readonly requiredArtifacts?: readonly string[];
+  readonly projectAccess?: {
+    readonly isOwned?: boolean;
+    readonly isIncluded?: boolean;
+    readonly readOnly?: boolean;
+    readonly role?: string;
+    readonly capabilities?: {
+      readonly read?: boolean;
+      readonly update?: boolean;
+      readonly create?: boolean;
+      readonly delete?: boolean;
+      readonly include?: boolean;
+      readonly comment?: boolean;
+    };
+  };
 } = {}) {
   vi.mocked(fetch)
     .mockResolvedValueOnce(
@@ -110,6 +138,7 @@ function mockPhaseBootstrap({
             aiHealthScore: 80,
             aiNextActions: ['Review the latest lifecycle evidence'],
             updatedAt: '2026-04-21T10:00:00.000Z',
+            ...projectAccess,
           },
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } },
@@ -161,6 +190,16 @@ function expectFetchCalledWithPath(path: string) {
   ).toBe(true);
 }
 
+function activityRefetchResponse() {
+  return new Response(
+    JSON.stringify({
+      projectId: 'proj-42',
+      activity: [],
+    }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } },
+  );
+}
+
 describe('phase cockpit routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -189,6 +228,11 @@ describe('phase cockpit routes', () => {
 
     expect(await screen.findByTestId('shape-cockpit')).toBeInTheDocument();
     expect(screen.getByTestId('shape-native-summary')).toBeInTheDocument();
+    expect(screen.getByTestId('phase-contract-summary')).toBeInTheDocument();
+    expect(screen.getByTestId('phase-contract-persisted')).toHaveTextContent('Alpha Project');
+    expect(screen.getByTestId('phase-contract-derived')).toHaveTextContent('evidence item');
+    expect(screen.getByTestId('phase-contract-suggested')).toHaveTextContent('Review the latest lifecycle evidence');
+    expect(screen.getByTestId('phase-contract-review')).toHaveTextContent('Ready without extra review');
     expect(screen.queryByTestId('canvas-container')).not.toBeInTheDocument();
     expect(screen.getByTestId('primary-next-action')).toBeInTheDocument();
 
@@ -238,6 +282,75 @@ describe('phase cockpit routes', () => {
     expectFetchCalledWithPath('/api/v1/yappc/generate/diff');
   });
 
+  it('surfaces generate apply reject and rollback review decisions from the cockpit', async () => {
+    mockPhaseBootstrap({
+      lifecyclePhase: 'GENERATE',
+      nextPhase: 'RUN',
+      requiredArtifacts: ['Generated React page', 'Generated tests'],
+    });
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ runId: 'gen-run-1', status: 'RUNNING', reviewRequired: true }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ runId: 'gen-run-1', status: 'PENDING', diff: { files: [] }, reviewRequired: true }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      )
+      .mockResolvedValueOnce(activityRefetchResponse());
+
+    const rendered = renderRouteWithUser(<GenerateRoute />, {
+      id: 'user-1',
+      email: 'operator@example.com',
+      name: 'Operator',
+      role: 'ADMIN',
+      tenantId: 'tenant-1',
+      workspaceIds: ['workspace-1'],
+    });
+
+    expect(await screen.findByTestId('generate-cockpit')).toBeInTheDocument();
+    await rendered.user.click(screen.getByTestId('generate-code'));
+    expect(await screen.findByTestId('generate-review-actions')).toBeInTheDocument();
+    expect(screen.getByTestId('generate-apply')).not.toBeDisabled();
+    expect(screen.getByTestId('generate-reject')).not.toBeDisabled();
+    expect(screen.getByTestId('generate-rollback')).not.toBeDisabled();
+  });
+
+  it('keeps generate mutations disabled for read-only included projects', async () => {
+    mockPhaseBootstrap({
+      lifecyclePhase: 'GENERATE',
+      nextPhase: 'RUN',
+      requiredArtifacts: ['Generated React page', 'Generated tests'],
+      projectAccess: {
+        isOwned: false,
+        isIncluded: true,
+        readOnly: true,
+        role: 'VIEWER',
+        capabilities: {
+          read: true,
+          update: false,
+          create: false,
+          delete: false,
+          include: false,
+          comment: true,
+        },
+      },
+    });
+
+    renderRoute(<GenerateRoute />);
+
+    expect(await screen.findByTestId('generate-cockpit')).toBeInTheDocument();
+    expect(screen.getByTestId('generate-code')).toBeDisabled();
+    expect(screen.getByText('You have view-only access to this project.')).toBeInTheDocument();
+    expect(
+      vi.mocked(fetch).mock.calls.some(([input]) => String(input).includes('/api/v1/yappc/generate')),
+    ).toBe(false);
+  });
+
   it('starts the run workflow with tenant context and checks workflow status', async () => {
     mockPhaseBootstrap({
       lifecyclePhase: 'RUN',
@@ -272,6 +385,10 @@ describe('phase cockpit routes', () => {
 
     await waitFor(() => expectFetchCalledWithPath('/api/v1/workflows/yappc-run/start'));
     expect(await screen.findByTestId('phase-action-result')).toHaveTextContent('workflow-run-1');
+    expect(await screen.findByTestId('run-post-actions')).toBeInTheDocument();
+    expect(screen.getByTestId('run-rollback')).not.toBeDisabled();
+    expect(screen.getByTestId('run-promote')).not.toBeDisabled();
+    expect(screen.getByTestId('run-observe-handoff')).not.toBeDisabled();
     expectFetchCalledWithPath('/api/v1/workflows/workflow-run-1/status');
     await waitFor(() => {
       const startCall = vi.mocked(fetch).mock.calls.find(([input]) => String(input).includes('/api/v1/workflows/yappc-run/start'));

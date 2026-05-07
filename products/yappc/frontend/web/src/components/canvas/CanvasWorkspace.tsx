@@ -64,6 +64,8 @@ import { useCanvasAccessibility } from './hooks/useCanvasAccessibility';
 import { useWorkspacePanels } from './hooks/useWorkspacePanels';
 import { CanvasReactFlowSurface } from './CanvasReactFlowSurface';
 import { CanvasOverlays } from './CanvasOverlays';
+import { deriveCanvasAccessPolicy } from './canvasAccessPolicy';
+import type { ProjectAccessFields } from '@/services/workspace/accessControl';
 
 // ============================================================================
 // Types
@@ -73,6 +75,7 @@ export interface CanvasWorkspaceProps {
     projectId: string;
     currentPhase: LifecyclePhase;
     flowStage: FOWStage;
+    projectAccess?: ProjectAccessFields;
 }
 
 const ARTIFACT_TEMPLATE_TYPES: ArtifactTemplate['type'][] = [
@@ -107,6 +110,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     projectId,
     currentPhase,
     flowStage,
+    projectAccess,
 }) => {
     // ── Jotai atoms (UI state only – no domain logic) ──────────────────
     const [activePersona, setActivePersona] = useAtom(activePersonaAtom);
@@ -246,6 +250,10 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     const { data: artifacts } = useArtifacts(projectId);
     const userRole = useAtomValue(userRoleAtom);
     const userId = useAtomValue(userIdAtom);
+    const canvasPolicy = useMemo(
+        () => deriveCanvasAccessPolicy(currentPhase, projectAccess),
+        [currentPhase, projectAccess],
+    );
 
     // ── Extracted hooks ────────────────────────────────────────────────
     const handlers = useCanvasHandlers({
@@ -256,6 +264,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         artifacts,
         userId,
         reactFlowInstance,
+        canvasPolicy,
     });
 
     // Batch-load code associations for all nodes — single request, no N+1
@@ -269,6 +278,8 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         reactFlowInstance,
         interactionMode,
         onCreateArtifact: handlers.handleCreateArtifact,
+        canDropArtifacts: canvasPolicy.canCreateArtifacts,
+        readOnlyReason: canvasPolicy.readOnlyReason,
     });
 
     const zoom = useCanvasZoom({ reactFlowInstance, currentPhase });
@@ -278,10 +289,18 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     // ── Keyboard shortcuts (single handler) ────────────────────────────
     useCanvasShortcuts({
         enabled: true,
-        canUndo,
-        canRedo,
-        onUndo: undo,
-        onRedo: redo,
+        canUndo: canUndo && canvasPolicy.canMutateArtifacts,
+        canRedo: canRedo && canvasPolicy.canMutateArtifacts,
+        onUndo: () => {
+            if (canvasPolicy.canMutateArtifacts) {
+                undo();
+            }
+        },
+        onRedo: () => {
+            if (canvasPolicy.canMutateArtifacts) {
+                redo();
+            }
+        },
         onCopy: () => {
             if (selectedNodes.length > 0) {
                 const toCopy = nodes.filter(n => selectedNodes.includes(n.id));
@@ -313,22 +332,32 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     // ── ReactFlow change handlers ──────────────────────────────────────
     const onNodesChange = useCallback(
         (changes: NodeChange[]) => {
-            // Allow ALL changes through — including position changes during drag.
-            // Previously we filtered dragging:true position changes, which broke
-            // real-time guide updates and incremental spatial index diffs.
-            setNodesAtom(nds => applyNodeChanges(changes, nds) as typeof nds);
+            const safeChanges = canvasPolicy.canMutateArtifacts
+                ? changes
+                : changes.filter((change) => change.type !== 'position' && change.type !== 'remove');
+            // Editable canvases allow live position changes; locked review modes
+            // still allow selection/focus changes but reject structural mutations.
+            setNodesAtom(nds => applyNodeChanges(safeChanges, nds) as typeof nds);
         },
-        [setNodesAtom],
+        [canvasPolicy.canMutateArtifacts, setNodesAtom],
     );
 
     const onEdgesChange = useCallback(
-        (changes: EdgeChange[]) => setEdgesAtom(eds => applyEdgeChanges(changes, eds) as typeof eds),
-        [setEdgesAtom],
+        (changes: EdgeChange[]) => {
+            const safeChanges = canvasPolicy.canMutateArtifacts
+                ? changes
+                : changes.filter((change) => change.type !== 'remove');
+            setEdgesAtom(eds => applyEdgeChanges(safeChanges, eds) as typeof eds);
+        },
+        [canvasPolicy.canMutateArtifacts, setEdgesAtom],
     );
 
     const onConnect = useCallback(
         (connection: Connection) => {
             if (interactionMode !== 'navigate') return;
+            if (!canvasPolicy.canMutateArtifacts) {
+                return;
+            }
             const newEdge: Edge<DependencyEdgeDataR> = {
                 id: `edge-${connection.source}-${connection.target}`,
                 source: connection.source!,
@@ -339,7 +368,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
             };
             executeCommand(new AddEdgeCommand(newEdge));
         },
-        [executeCommand, interactionMode],
+        [canvasPolicy.canMutateArtifacts, executeCommand, interactionMode],
     );
 
     // ── Derived data ───────────────────────────────────────────────────
@@ -450,6 +479,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
             .filter(node => visibleIds.has(node.id))
             .map(node => ({
             ...node,
+            draggable: canvasPolicy.canMoveNodes,
             style: {
                 ...node.style,
                 opacity: computedView.dimmedNodeIds.has(node.id) ? 0.4 : 1,
@@ -462,12 +492,14 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
             },
             data: {
                 ...node.data,
+                readOnly: !canvasPolicy.canMutateArtifacts,
+                readOnlyReason: canvasPolicy.readOnlyReason,
                 isLocked: computedView.lockedNodeIds.has(node.id),
                 isBlocked: computedView.blockedNodeIds.has(node.id),
                 outgoingEdgeTargets: (edgeTargetMap.get(node.id) ?? []).join(' ') || undefined,
             },
         }));
-    }, [computedView, edgeTargetMap, visibleIds]);
+    }, [canvasPolicy.canMoveNodes, computedView, edgeTargetMap, visibleIds]);
 
     // ── Event handlers (thin wrappers) ─────────────────────────────────
     const handleNodeClick = useCallback(
@@ -511,8 +543,11 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     );
 
     const handleCanvasDoubleClick = useCallback((event: React.MouseEvent) => {
+        if (!canvasPolicy.canCreateArtifacts) {
+            return;
+        }
         setQuickCreateMenuPosition({ x: event.clientX, y: event.clientY });
-    }, [setQuickCreateMenuPosition]);
+    }, [canvasPolicy.canCreateArtifacts, setQuickCreateMenuPosition]);
 
     const handleStartTask = useCallback(() => {
         if (!nextTask) return;
@@ -635,8 +670,17 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                 <CanvasErrorBoundary label="Left Panel">
                     <UnifiedLeftPanel
                         projectId={projectId}
-                        onDragStart={(template) => dragDrop.setDraggedTemplate(template)}
+                        canvasPolicy={canvasPolicy}
+                        onDragStart={(template) => {
+                            if (!canvasPolicy.canCreateArtifacts) {
+                                return;
+                            }
+                            dragDrop.setDraggedTemplate(template);
+                        }}
                         onAddComponent={(template) => {
+                            if (!canvasPolicy.canCreateArtifacts) {
+                                return;
+                            }
                             let position = { x: 400, y: 300 };
                             if (reactFlowInstance) {
                                 const center = reactFlowInstance.screenToFlowPosition({
@@ -714,6 +758,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                 setNodeContextMenu={setNodeContextMenu}
                 setSelectedNodes={setSelectedNodes}
                 handlers={handlers}
+                canvasPolicy={canvasPolicy}
             />
         </Box>
         </ReactFlowProvider>

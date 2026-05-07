@@ -12,9 +12,9 @@
  */
 
 import { logger } from '../../utils/Logger';
-import type { SaveSyncStatusContract } from '@/contracts/workspace-project';
+import type { CanvasSyncStatus } from './canvasSyncStatus';
 
-export type CanvasSyncState = SaveSyncStatusContract;
+export type CanvasSyncState = CanvasSyncStatus;
 
 export interface SyncHistoryEntry {
   id: string;

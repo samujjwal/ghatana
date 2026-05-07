@@ -4,6 +4,7 @@ import { useParams } from 'react-router';
 import { CanvasWorkspaceProvider } from '@/components/canvas/CanvasWorkspaceProvider';
 import { useCanvasLifecycle } from '@/services/canvas/lifecycle/CanvasLifecycle';
 import { getFOWStageForPhase } from '@/types/fow-stages';
+import { useWorkspaceContext } from '@/hooks/useWorkspaceData';
 
 /**
  * Canvas Route - Main entry point for production canvas
@@ -16,12 +17,18 @@ export const CanvasRoute: React.FC = () => {
   // Get lifecycle state
   const { currentPhase } = useCanvasLifecycle();
   const flowStage = getFOWStageForPhase(currentPhase);
+  const { ownedProjects, includedProjects } = useWorkspaceContext();
+  const projectAccess = React.useMemo(
+    () => [...ownedProjects, ...includedProjects].find((project) => project.id === projectId),
+    [includedProjects, ownedProjects, projectId]
+  );
 
   return (
     <CanvasWorkspaceProvider
       projectId={projectId}
       currentPhase={currentPhase}
       flowStage={flowStage}
+      projectAccess={projectAccess}
     />
   );
 };
@@ -29,5 +36,4 @@ export const CanvasRoute: React.FC = () => {
 // Export for React Router v7 lazy loading
 export { CanvasRoute as Component };
 export default CanvasRoute;
-
 

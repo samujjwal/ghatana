@@ -3,7 +3,8 @@
  * Re-exports MUI components as Ghatana Design System components
  */
 
-import type { ReactNode } from 'react';
+import { createElement, forwardRef } from 'react';
+import type { ReactNode, TextareaHTMLAttributes } from 'react';
 
 export {
   Accordion,
@@ -111,6 +112,19 @@ export const useToast = () => ({ show: () => {}, hide: () => {} });
 
 // Utility
 export const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
+
+export const TextArea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(
+  ({ className, ...props }, ref) =>
+    createElement('textarea', {
+      ...props,
+      ref,
+      className: cn(
+        'rounded-md border border-border bg-bg-paper px-3 py-2 text-sm text-text-primary outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60',
+        className,
+      ),
+    }),
+);
+TextArea.displayName = 'TextArea';
 
 export type DesignSystemChildren = ReactNode;
 export type OperationState = 'idle' | 'loading' | 'success' | 'error';

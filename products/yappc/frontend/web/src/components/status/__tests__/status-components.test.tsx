@@ -70,10 +70,10 @@ describe('SaveSyncStatusBadge', () => {
     expect(screen.getByText('Sync conflict detected')).toBeTruthy();
   });
 
-  it('applies blue color classes for syncing status', () => {
+  it('applies info token classes for syncing status', () => {
     render(<SaveSyncStatusBadge status="syncing" />);
     const badge = screen.getByText('Syncing remote draft');
-    expect(badge.className).toContain('blue');
+    expect(badge.className).toContain('info');
   });
 
   it('applies green color classes for remote-saved status', () => {
@@ -82,22 +82,22 @@ describe('SaveSyncStatusBadge', () => {
     expect(badge.className).toContain('emerald');
   });
 
-  it('applies red color classes for remote-failed status', () => {
+  it('applies destructive token classes for remote-failed status', () => {
     render(<SaveSyncStatusBadge status="remote-failed" />);
     const badge = screen.getByText('Remote sync failed');
-    expect(badge.className).toContain('red');
+    expect(badge.className).toContain('destructive');
   });
 
-  it('applies purple color classes for conflict status', () => {
+  it('applies info token classes for conflict status', () => {
     render(<SaveSyncStatusBadge status="conflict" />);
     const badge = screen.getByText('Sync conflict detected');
-    expect(badge.className).toContain('purple');
+    expect(badge.className).toContain('info');
   });
 
-  it('applies amber color classes for stale status', () => {
+  it('applies warning token classes for stale status', () => {
     render(<SaveSyncStatusBadge status="stale" />);
     const badge = screen.getByText('Remote draft stale');
-    expect(badge.className).toContain('amber');
+    expect(badge.className).toContain('warning');
   });
 
   it('passes extra HTML attributes to span', () => {

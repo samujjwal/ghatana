@@ -27,6 +27,8 @@ describe('preview route', () => {
     render(<PreviewRoute />);
 
     expect(screen.getByTestId('preview-status-badge')).toHaveTextContent('Preview unavailable');
+    expect(screen.getByTestId('legacy-route-compatibility-notice')).toHaveTextContent('Project preview is a compatibility deep link.');
+    expect(screen.getByRole('link', { name: /observe phase cockpit/i })).toHaveAttribute('href', '/p/proj-42/observe');
     expect(screen.getByText('Preview Not Available')).toBeDefined();
     expect(screen.getByText('A preview host must be configured before this screen can expose a live preview.')).toBeDefined();
   });

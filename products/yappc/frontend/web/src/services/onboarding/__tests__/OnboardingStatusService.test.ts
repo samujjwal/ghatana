@@ -1,22 +1,57 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getOnboardingStatus, setOnboardingStatus } from '../OnboardingStatusService';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import {
+  getOnboardingStatus,
+  normalizeOnboardingStatus,
+  resetOnboardingStatusServerAvailabilityForTest,
+  setOnboardingStatus,
+} from '../OnboardingStatusService';
 
 describe('OnboardingStatusService', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
+    resetOnboardingStatusServerAvailabilityForTest();
   });
 
   afterEach(() => {
     localStorage.clear();
+    vi.unstubAllGlobals();
+  });
+
+  describe('contract normalization', () => {
+    it('accepts a valid server-backed onboarding status contract', () => {
+      expect(
+        normalizeOnboardingStatus({
+          completed: true,
+          completedAt: '2026-05-06T10:00:00.000Z',
+          primaryPersona: 'builder',
+          activePersonas: ['builder', 42, 'reviewer'],
+        })
+      ).toEqual({
+        completed: true,
+        completedAt: '2026-05-06T10:00:00.000Z',
+        primaryPersona: 'builder',
+        activePersonas: ['builder', 'reviewer'],
+      });
+    });
+
+    it('rejects missing or malformed completion flags so callers can use the local fallback', () => {
+      expect(normalizeOnboardingStatus({ primaryPersona: 'builder' })).toBeNull();
+      expect(normalizeOnboardingStatus({ completed: 'true' })).toBeNull();
+      expect(normalizeOnboardingStatus(null)).toBeNull();
+    });
   });
 
   describe('getOnboardingStatus', () => {
     it('returns localStorage status when server returns 404', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-        status: 404,
-        ok: false,
-      }));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          status: 404,
+          ok: false,
+        })
+      );
 
       localStorage.setItem('onboarding_complete', JSON.stringify('true'));
       localStorage.setItem('yappc_primary_persona', JSON.stringify('developer'));
@@ -38,6 +73,26 @@ describe('OnboardingStatusService', () => {
       expect(status.primaryPersona).toBeUndefined();
       expect(status.activePersonas).toBeUndefined();
     });
+
+    it('falls back to localStorage when the server status contract is malformed', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          new Response(JSON.stringify({ primaryPersona: 'server-builder' }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          })
+        )
+      );
+
+      localStorage.setItem('onboarding_complete', JSON.stringify('true'));
+      localStorage.setItem('yappc_primary_persona', JSON.stringify('local-builder'));
+
+      const status = await getOnboardingStatus();
+
+      expect(status.completed).toBe(true);
+      expect(status.primaryPersona).toBe('local-builder');
+    });
   });
 
   describe('setOnboardingStatus', () => {
@@ -58,10 +113,13 @@ describe('OnboardingStatusService', () => {
     });
 
     it('handles server 501 gracefully and falls back to localStorage', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-        status: 501,
-        ok: false,
-      }));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          status: 501,
+          ok: false,
+        })
+      );
 
       const result = await setOnboardingStatus({
         completed: true,
@@ -71,6 +129,30 @@ describe('OnboardingStatusService', () => {
       expect(result.completed).toBe(true);
       expect(result.primaryPersona).toBe('product-owner');
       expect(localStorage.getItem('onboarding_complete')).toBe(JSON.stringify('true'));
+    });
+
+    it('keeps the local write when a server update response is malformed', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          new Response(JSON.stringify({ completed: 'yes' }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          })
+        )
+      );
+
+      const result = await setOnboardingStatus({
+        completed: true,
+        primaryPersona: 'builder',
+      });
+
+      expect(result).toEqual(expect.objectContaining({
+        completed: true,
+        primaryPersona: 'builder',
+      }));
+      expect(localStorage.getItem('onboarding_complete')).toBe(JSON.stringify('true'));
+      expect(localStorage.getItem('yappc_primary_persona')).toBe(JSON.stringify('builder'));
     });
   });
 });

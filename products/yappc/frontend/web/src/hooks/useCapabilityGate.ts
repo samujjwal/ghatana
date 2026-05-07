@@ -31,8 +31,11 @@
  */
 
 import { useMemo } from 'react';
+import { useAtomValue } from 'jotai';
 
 import { useAuth } from './useAuth';
+import { workspaceAtom } from '../state/atoms/workspaceAtom';
+import { normalizeWorkspaceRole, workspaceIsOwner } from '../services/workspace/accessControl';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -141,6 +144,7 @@ const CAPABILITY_REGISTRY: Readonly<Record<CapabilityName, CapabilityConfig>> = 
  */
 export function useCapabilityGate(capability: CapabilityName): CapabilityGateResult {
   const { isAuthenticated, hasRole } = useAuth();
+  const workspaceState = useAtomValue(workspaceAtom);
 
   return useMemo((): CapabilityGateResult => {
     if (!isAuthenticated) {
@@ -153,11 +157,25 @@ export function useCapabilityGate(capability: CapabilityName): CapabilityGateRes
       return { granted: false, reason: 'backend-not-live' };
     }
 
-    const roleGranted = config.requiredRoles.some((role) => hasRole(role));
+    const currentWorkspace = workspaceState.currentWorkspace;
+    const workspaceRole = currentWorkspace
+      ? normalizeWorkspaceRole(currentWorkspace.role, workspaceIsOwner(currentWorkspace))
+      : undefined;
+    const isAdminCapability = capability.startsWith('admin:');
+    const workspaceCanAdmin =
+      currentWorkspace != null &&
+      currentWorkspace.capabilities?.update === true &&
+      (workspaceRole === 'OWNER' || workspaceRole === 'ADMIN');
+    const roleGranted = isAdminCapability
+      ? workspaceRole != null && config.requiredRoles.includes(workspaceRole)
+      : config.requiredRoles.some((role) => hasRole(role) || role === workspaceRole);
+    if (isAdminCapability && !workspaceCanAdmin) {
+      return { granted: false, reason: 'insufficient-role' };
+    }
     if (!roleGranted) {
       return { granted: false, reason: 'insufficient-role' };
     }
 
     return { granted: true, reason: undefined };
-  }, [capability, isAuthenticated, hasRole]);
+  }, [capability, isAuthenticated, hasRole, workspaceState.currentWorkspace]);
 }

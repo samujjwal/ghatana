@@ -155,6 +155,157 @@ describe('pageArtifactPersistence — conflict detection', () => {
     );
   });
 
+  it('HTTP adapter ingests artifact graph snapshots after document save', async () => {
+    const document = {
+      ...buildDocument(),
+      artifactGraph: {
+        graphId: 'artifact-1:graph',
+        projectId: scope.projectId,
+        sourceType: 'tsx',
+        source: 'src/pages/Landing.tsx',
+        importedAt: '2026-05-07T00:00:00.000Z',
+        nodes: [
+          {
+            id: 'artifact-1:page',
+            kind: 'page',
+            label: 'Landing',
+          },
+          {
+            id: 'artifact-1:source',
+            kind: 'source',
+            label: 'src/pages/Landing.tsx',
+            sourceLocation: {
+              filePath: 'src/pages/Landing.tsx',
+              startLine: 1,
+              startColumn: 1,
+              endLine: 20,
+              endColumn: 1,
+            },
+            metadata: {
+              sourceType: 'tsx',
+            },
+          },
+        ],
+        edges: [
+          {
+            id: 'artifact-1:page-derived-from-source',
+            from: 'artifact-1:page',
+            to: 'artifact-1:source',
+            kind: 'derived-from',
+          },
+        ],
+        provenance: {
+          createdBy: 'tester',
+          compiler: 'yappc-artifact-compiler',
+          confidence: 0.91,
+          residualIslandIds: [],
+        },
+      },
+    };
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, status: 200 })
+      .mockResolvedValueOnce({ ok: true, status: 200 });
+
+    const adapter = new HttpPageArtifactPersistenceAdapter({
+      baseUrl: '/api/v1/page-artifacts',
+      artifactGraphBaseUrl: '/api/v1/yappc/artifact/graph',
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      scope,
+    });
+
+    await adapter.save(document);
+
+    expect(fetchImpl).toHaveBeenNthCalledWith(
+      2,
+      '/api/v1/yappc/artifact/graph/ingest',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          'Content-Type': 'application/json',
+          'X-Tenant-ID': scope.tenantId,
+          'X-Workspace-ID': scope.workspaceId,
+          'X-Project-ID': scope.projectId,
+        }),
+      }),
+    );
+
+    const graphRequest = JSON.parse(String(fetchImpl.mock.calls[1]?.[1]?.body));
+    expect(graphRequest).toMatchObject({
+      productId: 'artifact-1:graph',
+      tenantId: scope.tenantId,
+      nodes: expect.arrayContaining([
+        expect.objectContaining({
+          id: 'artifact-1:page',
+          type: 'page',
+          projectId: scope.projectId,
+          tenantId: scope.tenantId,
+        }),
+      ]),
+      edges: expect.arrayContaining([
+        expect.objectContaining({
+          sourceNodeId: 'artifact-1:page',
+          targetNodeId: 'artifact-1:source',
+          relationshipType: 'derived-from',
+        }),
+      ]),
+    });
+    expect(graphRequest.nodes[1].properties).toMatchObject({
+      artifactId: document.artifactId,
+      graphId: 'artifact-1:graph',
+      sourceLocationFilePath: 'src/pages/Landing.tsx',
+      confidence: 0.91,
+    });
+  });
+
+  it('HTTP adapter surfaces artifact graph ingest failures without local fallback masking', async () => {
+    const document = {
+      ...buildDocument(),
+      artifactGraph: {
+        graphId: 'artifact-1:graph',
+        projectId: scope.projectId,
+        sourceType: 'semantic-model',
+        source: 'semantic-model',
+        importedAt: '2026-05-07T00:00:00.000Z',
+        nodes: [{ id: 'artifact-1:page', kind: 'page' as const, label: 'Landing' }],
+        edges: [],
+        provenance: {
+          createdBy: 'tester',
+          compiler: 'yappc-artifact-compiler' as const,
+          confidence: 0.8,
+          residualIslandIds: [],
+        },
+      },
+    };
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, status: 200 })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        text: async () => 'graph store unavailable',
+      });
+    const fallback = {
+      save: vi.fn().mockResolvedValue(undefined),
+      load: vi.fn(),
+    };
+
+    const adapter = new ResilientPageArtifactPersistenceAdapter(
+      new HttpPageArtifactPersistenceAdapter({
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+        scope,
+      }),
+      fallback,
+    );
+
+    await expect(adapter.save(document)).rejects.toMatchObject({
+      kind: 'artifact-graph',
+      status: 503,
+    });
+    expect(fallback.save).not.toHaveBeenCalled();
+  });
+
   it('HTTP adapter fails actionably when scope is missing', async () => {
     const document = buildDocument();
     const fetchImpl = vi.fn();

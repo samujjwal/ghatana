@@ -44,9 +44,9 @@ vi.mock('../../../services/ActionRegistry', async (importOriginal) => {
                 },
                 {
                     category: 'ai',
-                    label: 'AI',
+                    label: 'Guided Assistant',
                     actions: [
-                        makeAction('ai.open', 'Ask AI', { description: 'Open AI assistant' }),
+                        makeAction('ai.open', 'Open Guided Assistant', { description: 'Open the guided assistant panel' }),
                     ],
                 },
             ],
@@ -109,12 +109,12 @@ describe('CommandPalette', () => {
             renderPalette({ open: true });
             expect(screen.getByText('Undo')).toBeTruthy();
             expect(screen.getByText('Copy')).toBeTruthy();
-            expect(screen.getByText('Ask AI')).toBeTruthy();
+            expect(screen.getByText('Open Guided Assistant')).toBeTruthy();
         });
 
         it('renders action descriptions', () => {
             renderPalette({ open: true });
-            expect(screen.getByText('Open AI assistant')).toBeTruthy();
+            expect(screen.getByText('Open the guided assistant panel')).toBeTruthy();
         });
 
         it('renders shortcut for actions that have one', () => {

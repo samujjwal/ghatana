@@ -7,6 +7,8 @@ import {
   rankNextActions,
   buildPhaseSuggestedSteps,
   buildPhaseCockpitContract,
+  executeGenerateReviewDecision,
+  executeRunPostAction,
   getPhaseCockpitConfig,
   getCanonicalPhaseLabel,
   getNextCanonicalPhase,
@@ -189,5 +191,118 @@ describe('phase services', () => {
       canAdvance: false,
     });
     expect(contract.review.reason).toContain('blocker');
+  });
+
+  it('records generate review decisions through the canonical backend contract', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    for (const decision of ['apply', 'reject', 'rollback'] as const) {
+      fetchMock.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            runId: 'gen-run-1',
+            projectId: 'proj-42',
+            decision,
+            status: decision === 'rollback' ? 'ROLLED_BACK' : decision.toUpperCase(),
+            reviewRequired: false,
+            message: `Generation run gen-run-1 ${decision} decision recorded.`,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const result = await executeGenerateReviewDecision({
+        projectId: 'proj-42',
+        runId: 'gen-run-1',
+        decision,
+        actorId: 'user-1',
+        reason: 'Approved generated diff',
+      });
+
+      expect(result).toMatchObject({
+        kind: 'generate-review',
+        runId: 'gen-run-1',
+        reviewRequired: false,
+        message: `Generation run gen-run-1 ${decision} decision recorded.`,
+      });
+    }
+
+    for (const decision of ['apply', 'reject', 'rollback'] as const) {
+      expect(fetchMock).toHaveBeenCalledWith(
+        `/api/v1/yappc/generate/runs/gen-run-1/${decision}`,
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            projectId: 'proj-42',
+            actorId: 'user-1',
+            reason: 'Approved generated diff',
+          }),
+        }),
+      );
+    }
+  });
+
+  it('records run rollback and promote through the canonical backend contract and hands off observe locally', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    fetchMock
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ id: 'rollback-1', runSpecRef: 'workflow-run-1', status: 'SUCCESS' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ id: 'promote-1', runSpecRef: 'workflow-run-1', status: 'SUCCESS' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+    const rollback = await executeRunPostAction({
+      projectId: 'proj-42',
+      runId: 'workflow-run-1',
+      action: 'rollback',
+    });
+    const promote = await executeRunPostAction({
+      projectId: 'proj-42',
+      runId: 'workflow-run-1',
+      action: 'promote',
+      targetEnvironment: 'production',
+    });
+    const observe = await executeRunPostAction({
+      projectId: 'proj-42',
+      runId: 'workflow-run-1',
+      action: 'observe',
+    });
+
+    expect(rollback.message).toContain('rollback requested');
+    expect(promote.message).toContain('promotion requested');
+    expect(observe).toMatchObject({
+      kind: 'navigate',
+      status: 'OBSERVATION_HANDOFF',
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/yappc/run/rollback',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          deploymentId: 'workflow-run-1',
+          targetVersion: 'previous-stable',
+        }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/yappc/run/promote',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          deploymentId: 'workflow-run-1',
+          targetEnvironment: 'production',
+        }),
+      }),
+    );
   });
 });

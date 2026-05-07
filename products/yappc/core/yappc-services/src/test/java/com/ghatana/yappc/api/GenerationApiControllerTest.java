@@ -4,6 +4,8 @@ import com.ghatana.yappc.common.JsonMapper;
 import com.ghatana.yappc.domain.generate.Artifact;
 import com.ghatana.yappc.domain.generate.DiffResult;
 import com.ghatana.yappc.domain.generate.GeneratedArtifacts;
+import com.ghatana.yappc.domain.generate.GenerationReviewRequest;
+import com.ghatana.yappc.domain.generate.GenerationReviewResult;
 import com.ghatana.yappc.domain.generate.ValidatedSpec;
 import com.ghatana.yappc.domain.shape.ShapeSpec;
 import com.ghatana.yappc.domain.validate.LifecycleValidationResult;
@@ -12,8 +14,11 @@ import com.ghatana.yappc.storage.ArtifactStore;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.bytebuf.ByteBuf;
+import io.activej.http.AsyncServlet;
+import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
+import io.activej.http.RoutingServlet;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -93,12 +98,57 @@ class GenerationApiControllerTest extends EventloopTestBase {
         assertThat(generationService.getRegenerateWithDiffCallCount()).isEqualTo(1);
     }
 
+    @Test
+    @DisplayName("generation review decisions require actor scope and record apply reject rollback decisions")
+    void reviewDecisionsAreExplicitAndAudited() throws Exception {
+        String body = JsonMapper.toJson(new ReviewDecisionBody("proj-42", "user-1", "reviewed in cockpit"));
+
+        HttpResponse applyResponse = serveReviewDecision("/api/v1/yappc/generate/runs/run-1/apply", body);
+        HttpResponse rejectResponse = serveReviewDecision("/api/v1/yappc/generate/runs/run-2/reject", body);
+        HttpResponse rollbackResponse = serveReviewDecision("/api/v1/yappc/generate/runs/run-3/rollback", body);
+
+        assertThat(applyResponse.getCode()).isEqualTo(200);
+        assertThat(rejectResponse.getCode()).isEqualTo(200);
+        assertThat(rollbackResponse.getCode()).isEqualTo(200);
+        assertThat(generationService.getReviewDecisionCallCount()).isEqualTo(3);
+        assertThat(generationService.getReviewActions()).containsExactly("apply", "reject", "rollback");
+        assertThat(applyResponse.getBody().asString(StandardCharsets.UTF_8)).contains("apply");
+    }
+
+    @Test
+    @DisplayName("generation review decisions reject missing actor scope")
+    void reviewDecisionRejectsMissingActor() throws Exception {
+        String body = JsonMapper.toJson(new ReviewDecisionBody("proj-42", "", "missing actor"));
+
+        HttpResponse response = serveReviewDecision("/api/v1/yappc/generate/runs/run-1/apply", body);
+
+        assertThat(response.getCode()).isEqualTo(400);
+        assertThat(generationService.getReviewDecisionCallCount()).isEqualTo(0);
+    }
+
+    private HttpResponse serveReviewDecision(String path, String body) {
+        AsyncServlet servlet = RoutingServlet.builder(eventloop())
+            .with(HttpMethod.POST, "/api/v1/yappc/generate/runs/:runId/apply", controller::applyReviewDecision)
+            .with(HttpMethod.POST, "/api/v1/yappc/generate/runs/:runId/reject", controller::rejectReviewDecision)
+            .with(HttpMethod.POST, "/api/v1/yappc/generate/runs/:runId/rollback", controller::rollbackReviewDecision)
+            .build();
+        HttpRequest request = HttpRequest.post("http://localhost" + path)
+            .withBody(ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8)))
+            .build();
+        return runPromise(() -> servlet.serve(request));
+    }
+
     private record DiffEnvelope(ValidatedSpec validatedSpec, GeneratedArtifacts existingArtifacts) {
+    }
+
+    private record ReviewDecisionBody(String projectId, String actorId, String reason) {
     }
 
     private static final class InMemoryGenerationService implements GenerationService {
         private int generateCallCount = 0;
         private int regenerateWithDiffCallCount = 0;
+        private int reviewDecisionCallCount = 0;
+        private final java.util.ArrayList<String> reviewActions = new java.util.ArrayList<>();
         private DiffResult regenerateWithDiffResult = null;
 
         void setRegenerateWithDiffResult(DiffResult result) {
@@ -113,6 +163,14 @@ class GenerationApiControllerTest extends EventloopTestBase {
             return regenerateWithDiffCallCount;
         }
 
+        int getReviewDecisionCallCount() {
+            return reviewDecisionCallCount;
+        }
+
+        List<String> getReviewActions() {
+            return reviewActions;
+        }
+
         @Override
         public Promise<GeneratedArtifacts> generate(ValidatedSpec spec) {
             generateCallCount++;
@@ -123,6 +181,24 @@ class GenerationApiControllerTest extends EventloopTestBase {
         public Promise<DiffResult> regenerateWithDiff(ValidatedSpec spec, GeneratedArtifacts existing) {
             regenerateWithDiffCallCount++;
             return Promise.of(regenerateWithDiffResult);
+        }
+
+        @Override
+        public Promise<GenerationReviewResult> reviewDecision(GenerationReviewRequest request) {
+            reviewDecisionCallCount++;
+            reviewActions.add(request.action().wireValue());
+            return Promise.of(new GenerationReviewResult(
+                request.runId(),
+                request.projectId(),
+                request.action().wireValue(),
+                request.action().status(),
+                false,
+                request.actorId(),
+                java.time.Instant.parse("2026-04-21T11:10:00Z"),
+                "generate.review." + request.action().wireValue(),
+                "reviewed",
+                Map.of("reason", request.reason())
+            ));
         }
     }
 

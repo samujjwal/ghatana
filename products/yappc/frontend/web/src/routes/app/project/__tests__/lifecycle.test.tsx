@@ -247,6 +247,8 @@ describe('Lifecycle route', () => {
   it('renders the lifecycle explorer and learn/evolve insight surface', () => {
     renderRoute();
 
+    expect(screen.getByTestId('legacy-route-compatibility-notice')).toHaveTextContent('Lifecycle explorer is a compatibility deep link.');
+    expect(screen.getByRole('link', { name: /learn phase cockpit/i })).toHaveAttribute('href', '/p/proj-42/learn');
     expect(screen.getByTestId('lifecycle-explorer')).toBeDefined();
     expect(screen.getByTestId('lifecycle-insights-section')).toBeDefined();
     expect(screen.getByTestId('lifecycle-summary-status-card')).toBeDefined();

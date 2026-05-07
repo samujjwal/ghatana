@@ -52,6 +52,8 @@ export interface ComponentSecurityPolicy {
   readonly requiresElevatedPermissions?: boolean;
   /** Allowed network domains (if any) */
   readonly allowedDomains?: readonly string[];
+  /** Explicit telemetry events this package is allowed to emit when elevated. */
+  readonly allowedTelemetryEvents?: readonly string[];
   /** Whether this package can access browser APIs */
   readonly allowBrowserAPIs?: boolean;
   /** Whether this package can access localStorage */
@@ -182,6 +184,19 @@ export class ComponentPluginLoader {
     if (manifest.securityPolicy?.requiresElevatedPermissions && !this.isPackageAllowed(manifest.packageName)) {
       errors.push(`Package ${manifest.packageName} requires elevated permissions but is not in allowlist`);
     }
+    if (
+      manifest.securityPolicy?.allowedTelemetryEvents?.length &&
+      !manifest.securityPolicy.requiresElevatedPermissions
+    ) {
+      errors.push(
+        `Package ${manifest.packageName} declares telemetry events but does not request elevated permissions`,
+      );
+    }
+    manifest.securityPolicy?.allowedTelemetryEvents?.forEach((eventName, index) => {
+      if (!eventName.trim()) {
+        errors.push(`Telemetry event at index ${index} is empty`);
+      }
+    });
 
     return {
       isValid: errors.length === 0,
@@ -405,11 +420,21 @@ export class ComponentPluginLoader {
     const policy = hasElevatedAccess
       ? createTrustedPluginRuntimePolicy(manifest.packageName, manifest.version)
       : createDefaultPluginRuntimePolicy(manifest.packageName, manifest.version);
+    policy.network = { ...policy.network };
+    policy.storage = { ...policy.storage };
+    policy.browserAPI = { ...policy.browserAPI };
+    policy.telemetry = { ...policy.telemetry };
 
     if (manifest.securityPolicy?.allowedDomains) {
       policy.network.allowNetworkRequests = manifest.securityPolicy.allowedDomains.length > 0;
       policy.network.allowedDomains = [...manifest.securityPolicy.allowedDomains];
     }
+
+    const telemetryAllowlist = manifest.securityPolicy?.allowedTelemetryEvents ?? [];
+    policy.telemetry.allowTelemetry = hasElevatedAccess && telemetryAllowlist.length > 0;
+    policy.telemetry.eventAllowlist = [...telemetryAllowlist];
+    policy.telemetry.requireConsent = !hasElevatedAccess;
+    policy.telemetry.samplingRate = policy.telemetry.allowTelemetry ? 1 : 0;
 
     if (manifest.securityPolicy?.allowBrowserAPIs) {
       policy.browserAPI.allowClipboard = true;

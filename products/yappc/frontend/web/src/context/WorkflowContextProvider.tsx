@@ -18,6 +18,7 @@ import { atomWithStorage } from 'jotai/utils';
 import { LifecyclePhase, PHASE_LABELS, getOperationsForPhase } from '../types/lifecycle';
 import { useWorkspaceContext } from '../hooks/useWorkspaceData';
 import { rankNextActions } from '../services/phase';
+import { projectCanEdit, projectGuidanceRole } from '../services/workspace/accessControl';
 
 // ============================================================================
 // Types
@@ -413,9 +414,11 @@ export function WorkflowContextProvider({ children }: WorkflowContextProviderPro
 
     const capabilitiesContext = useMemo<CapabilitiesContext>(() => {
         const phase = routeContext.phase || projectContext.phase;
+        const activeProject = [...ownedProjects, ...includedProjects].find((project) => project.id === projectContext.id);
+        const canEditProject = activeProject ? projectCanEdit(activeProject) : true;
         if (!phase) {
             return {
-                canEdit: true,
+                canEdit: canEditProject,
                 canValidate: false,
                 canGenerate: false,
                 canDeploy: false,
@@ -424,8 +427,15 @@ export function WorkflowContextProvider({ children }: WorkflowContextProviderPro
             };
         }
 
-        return getOperationsForPhase(phase);
-    }, [routeContext.phase, projectContext.phase]);
+        const phaseOperations = getOperationsForPhase(phase);
+        return {
+            ...phaseOperations,
+            canEdit: phaseOperations.canEdit && canEditProject,
+            canValidate: phaseOperations.canValidate && canEditProject,
+            canGenerate: phaseOperations.canGenerate && canEditProject,
+            canDeploy: phaseOperations.canDeploy && canEditProject,
+        };
+    }, [routeContext.phase, projectContext.phase, projectContext.id, ownedProjects, includedProjects]);
 
     // ========================================================================
     // Derived: Guidance Context
@@ -451,7 +461,7 @@ export function WorkflowContextProvider({ children }: WorkflowContextProviderPro
         const activeTips = phaseTips.filter((_, i) => !dismissedTips.includes(`${phase}-tip-${i}`));
 
         const activeProject = [...ownedProjects, ...includedProjects].find((project) => project.id === projectContext.id);
-        const role = ownedProjects.some((project) => project.id === projectContext.id) ? 'owner' : 'collaborator';
+        const role = projectGuidanceRole(activeProject);
         const phaseIndex = PHASE_ORDER.indexOf(phase);
         const nextActions = rankNextActions({
             phase,

@@ -16,10 +16,14 @@ import {
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
 
+import type { AutoLayoutPreview } from '../hooks/useCanvasLayout';
+
 interface LayoutDialogProps {
   open: boolean;
   onClose: () => void;
+  onPreview: () => void;
   onApply: () => void;
+  preview: AutoLayoutPreview | null;
 }
 
 /**
@@ -28,19 +32,36 @@ interface LayoutDialogProps {
 export const LayoutDialog: React.FC<LayoutDialogProps> = ({
   open,
   onClose,
+  onPreview,
   onApply,
+  preview,
 }) => {
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>Auto Layout</DialogTitle>
       <DialogContent>
         <Typography variant="body2">
-          Arrange canvas nodes into a tidy grid layout. Existing positions will be replaced.
+          Preview the tidy grid layout before applying it. The applied layout is undoable.
         </Typography>
+        {preview ? (
+          <Typography variant="body2" className="mt-3" data-testid="layout-preview-summary">
+            {preview.moves.length} elements will move. First change:{' '}
+            {preview.moves[0]
+              ? `${preview.moves[0].elementId} (${preview.moves[0].from.x}, ${preview.moves[0].from.y}) -> (${preview.moves[0].to.x}, ${preview.moves[0].to.y})`
+              : 'no position changes required.'}
+          </Typography>
+        ) : (
+          <Typography variant="body2" className="mt-3" data-testid="layout-preview-empty">
+            Generate a preview to review the position diff before any canvas nodes move.
+          </Typography>
+        )}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={onApply} data-testid="apply-layout">
+        <Button onClick={onPreview} data-testid="preview-layout">
+          Preview Layout
+        </Button>
+        <Button onClick={onApply} data-testid="apply-layout" disabled={!preview}>
           Apply Layout
         </Button>
       </DialogActions>

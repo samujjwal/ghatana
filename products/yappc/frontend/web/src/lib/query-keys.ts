@@ -40,6 +40,8 @@ export const projectQueryKeys = {
   detail: (id: string) => [...projectQueryKeys.details(), id] as const,
   available: (workspaceId: string) =>
     [...projectQueryKeys.all, 'available', workspaceId] as const,
+  dashboardActions: (workspaceId: string) =>
+    [...projectQueryKeys.all, 'dashboard-actions', workspaceId] as const,
 };
 
 // ─── Requirements ─────────────────────────────────────────────────────────────

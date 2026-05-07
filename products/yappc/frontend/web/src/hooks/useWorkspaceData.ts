@@ -37,6 +37,14 @@ import {
   type Project,
   type ProjectWithOwnership,
 } from '@/state/atoms/workspaceAtom';
+import {
+  deriveCapabilities,
+  normalizeWorkspaceRole,
+  projectCanEdit,
+  workspaceIsOwner,
+} from '@/services/workspace/accessControl';
+import { isLifecyclePhase } from '@/shared/types/lifecycle';
+import { yappcApi, type ProjectDashboardActionsResponse } from '@/lib/api';
 
 export type ProjectSetupSuggestion = ProjectSetupSuggestionContract;
 export type CreateWorkspaceRequest = CreateWorkspaceRequestContract & {
@@ -93,6 +101,80 @@ async function parseJsonResponse(res: Response): Promise<unknown> {
   }
 }
 
+function normalizeWorkspaceAccess(workspace: Workspace): Workspace {
+  const isOwner = workspaceIsOwner(workspace);
+  const role = normalizeWorkspaceRole(workspace.role, isOwner);
+  return {
+    ...workspace,
+    role,
+    isOwner,
+    capabilities: deriveCapabilities(workspace),
+  };
+}
+
+const PROJECT_TYPES = ['UI', 'BACKEND', 'MOBILE', 'DESKTOP', 'FULL_STACK'] as const;
+const PROJECT_STATUSES = ['DRAFT', 'ACTIVE', 'COMPLETED', 'ARCHIVED'] as const;
+
+function isProjectType(value: unknown): value is Project['type'] {
+  return typeof value === 'string' && (PROJECT_TYPES as readonly string[]).includes(value);
+}
+
+function isProjectStatus(value: unknown): value is Project['status'] {
+  return typeof value === 'string' && (PROJECT_STATUSES as readonly string[]).includes(value);
+}
+
+function normalizeStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    : [];
+}
+
+function normalizeIsoTimestamp(value: unknown, fallback: string): string {
+  return typeof value === 'string' && !Number.isNaN(Date.parse(value)) ? value : fallback;
+}
+
+export function normalizeProjectAccess(project: Project, isOwnedFallback: boolean): ProjectWithOwnership {
+  const rawProject = project as Project & Record<string, unknown>;
+  const createdAt = normalizeIsoTimestamp(rawProject.createdAt, new Date(0).toISOString());
+  const updatedAt = normalizeIsoTimestamp(rawProject.updatedAt, createdAt);
+  const isOwned = project.isOwned ?? isOwnedFallback;
+  const role = normalizeWorkspaceRole(project.role);
+  const capabilities = deriveCapabilities(project, {
+    read: true,
+    create: false,
+    update: false,
+    delete: false,
+    include: false,
+    comment: true,
+  });
+  const normalized: ProjectWithOwnership = {
+    ...project,
+    type: isProjectType(rawProject.type) ? rawProject.type : 'FULL_STACK',
+    status: isProjectStatus(rawProject.status) ? rawProject.status : 'DRAFT',
+    lifecyclePhase:
+      typeof rawProject.lifecyclePhase === 'string' && isLifecyclePhase(rawProject.lifecyclePhase)
+        ? rawProject.lifecyclePhase
+        : 'INTENT',
+    aiNextActions: normalizeStringArray(rawProject.aiNextActions).slice(0, 10),
+    aiHealthScore:
+      typeof rawProject.aiHealthScore === 'number' && Number.isFinite(rawProject.aiHealthScore)
+        ? Math.max(0, Math.min(100, rawProject.aiHealthScore))
+        : undefined,
+    createdAt,
+    updatedAt,
+    role,
+    isOwned,
+    isIncluded: project.isIncluded ?? !isOwned,
+    readOnly: project.readOnly ?? !capabilities.update,
+    capabilities,
+  };
+
+  return {
+    ...normalized,
+    readOnly: normalized.readOnly || !projectCanEdit(normalized),
+  };
+}
+
 async function fetchWorkspaces(): Promise<Workspace[]> {
   try {
     const res = await fetch(`${API_BASE}/workspaces`);
@@ -100,10 +182,10 @@ async function fetchWorkspaces(): Promise<Workspace[]> {
     const data = await parseJsonResponse(res);
 
     // Accept either the raw array or the wrapped form { workspaces: [...] }
-    if (Array.isArray(data)) return data as Workspace[];
+    if (Array.isArray(data)) return (data as Workspace[]).map(normalizeWorkspaceAccess);
     if (isRecord(data) && Array.isArray(data.workspaces)) {
       const response = data as WorkspaceListResponseContract;
-      return response.workspaces as Workspace[];
+      return (response.workspaces as Workspace[]).map(normalizeWorkspaceAccess);
     }
 
     throw new Error('Unexpected response shape for workspaces');
@@ -126,14 +208,24 @@ async function fetchWorkspace(
     // Accept either raw workspace or wrapped form { workspace: {...} }
     if (isRecord(data) && isRecord(data.workspace)) {
       const response = data as WorkspaceDetailResponseContract;
-      return response.workspace as unknown as Workspace & {
-        ownedProjects: Project[];
-        includedProjects: Project[];
+      const workspace = response.workspace as unknown as Workspace & {
+        ownedProjects?: Project[];
+        includedProjects?: Project[];
+      };
+      return {
+        ...normalizeWorkspaceAccess(workspace),
+        ownedProjects: (workspace.ownedProjects ?? []).map((project) => normalizeProjectAccess(project, true)),
+        includedProjects: (workspace.includedProjects ?? []).map((project) => normalizeProjectAccess(project, false)),
       };
     }
-    return data as Workspace & {
-      ownedProjects: Project[];
-      includedProjects: Project[];
+    const workspace = data as Workspace & {
+      ownedProjects?: Project[];
+      includedProjects?: Project[];
+    };
+    return {
+      ...normalizeWorkspaceAccess(workspace),
+      ownedProjects: (workspace.ownedProjects ?? []).map((project) => normalizeProjectAccess(project, true)),
+      includedProjects: (workspace.includedProjects ?? []).map((project) => normalizeProjectAccess(project, false)),
     };
   } catch (error) {
     // If the backend explicitly returned 404, surface the error so the
@@ -154,12 +246,30 @@ async function fetchProjects(
     const res = await fetch(`${API_BASE}/projects?workspaceId=${workspaceId}`);
     const payload = (await parseJsonResponse(res)) as ProjectsResponseContract;
     return {
-      owned: payload.owned as Project[],
-      included: payload.included as Project[],
+      owned: (Array.isArray(payload.owned) ? payload.owned : []).map((project) =>
+        normalizeProjectAccess(project as Project, true)
+      ),
+      included: (Array.isArray(payload.included) ? payload.included : []).map((project) =>
+        normalizeProjectAccess(project as Project, false)
+      ),
     };
   } catch (error) {
     throw error;
   }
+}
+
+function emptyDashboardActions(workspaceId: string): ProjectDashboardActionsResponse {
+  return {
+    workspaceId,
+    blockedWork: [],
+    reviewRequired: [],
+    safeToContinue: [],
+    generatedAt: new Date(0).toISOString(),
+  };
+}
+
+async function fetchDashboardActions(workspaceId: string): Promise<ProjectDashboardActionsResponse> {
+  return yappcApi.projects.dashboardActions(workspaceId);
 }
 
 async function createWorkspaceApi(
@@ -460,6 +570,15 @@ export function useProjects(workspaceId: string | null) {
   return query;
 }
 
+export function useProjectDashboardActions(workspaceId: string | null) {
+  return useQuery({
+    queryKey: projectKeys.dashboardActions(workspaceId ?? ''),
+    queryFn: () => fetchDashboardActions(workspaceId!),
+    enabled: !!workspaceId,
+    staleTime: 60 * 1000,
+  });
+}
+
 /**
  * Hook to fetch projects available for inclusion
  */
@@ -752,6 +871,7 @@ export function useWorkspaceContext() {
 
   const workspacesQuery = useWorkspaces();
   const workspaceQuery = useWorkspace(currentWorkspaceId);
+  const dashboardActionsQuery = useProjectDashboardActions(currentWorkspaceId);
 
   // Auto-select workspace on first load or if current workspace no longer exists
   useEffect(() => {
@@ -830,12 +950,16 @@ export function useWorkspaceContext() {
     currentWorkspaceId,
     ownedProjects: workspaceState.ownedProjects,
     includedProjects: workspaceState.includedProjects,
+    dashboardActions: dashboardActionsQuery.data ?? (currentWorkspaceId ? emptyDashboardActions(currentWorkspaceId) : null),
+    dashboardActionsLoading: dashboardActionsQuery.isLoading,
+    dashboardActionsError: dashboardActionsQuery.error,
     isLoading: workspacesQuery.isLoading,
     error: combinedError,
     switchWorkspace,
     refetch: () => {
       workspacesQuery.refetch();
       workspaceQuery.refetch();
+      dashboardActionsQuery.refetch();
     },
   };
 }

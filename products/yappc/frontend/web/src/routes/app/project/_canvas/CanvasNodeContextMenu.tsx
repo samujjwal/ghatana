@@ -39,6 +39,7 @@ interface CanvasNodeContextMenuProps {
   currentMode: string;
   codePanelVisible: boolean;
   toggleCodePanel: () => void;
+  canMutateCanvas?: boolean;
 }
 
 export function CanvasNodeContextMenu({
@@ -48,6 +49,7 @@ export function CanvasNodeContextMenu({
   currentMode,
   codePanelVisible,
   toggleCodePanel,
+  canMutateCanvas = true,
 }: CanvasNodeContextMenuProps) {
   const withNode = useCallback(
     (action: (nodeId: string) => void) => {
@@ -66,37 +68,41 @@ export function CanvasNodeContextMenu({
       className="absolute z-50 min-w-[220px] rounded-md border border-border bg-white p-1 shadow-lg dark:border-border dark:bg-surface"
       style={{ top: nodeContextMenu.y, left: nodeContextMenu.x }}
     >
-      <Button
-        variant="ghost"
-        className="flex w-full items-center justify-between"
-        onClick={() => withNode((id) => canvas.duplicateNode(id))}
-      >
-        <Box className="flex items-center gap-2">
-          <ContentCopy size={16} />
-          <span>Duplicate</span>
-        </Box>
-        <Typography variant="caption" color="text.secondary">
-          ⌘⇧D
-        </Typography>
-      </Button>
-      <Button
-        variant="ghost"
-        className="flex w-full items-center justify-between text-destructive"
-        onClick={() => withNode((id) => canvas.removeNode(id))}
-      >
-        <Box className="flex items-center gap-2">
-          <Delete size={16} className="text-destructive" />
-          <span>Delete</span>
-        </Box>
-        <Typography variant="caption" color="text.secondary">
-          Del
-        </Typography>
-      </Button>
+      {canMutateCanvas && (
+        <>
+          <Button
+            variant="ghost"
+            className="flex w-full items-center justify-between"
+            onClick={() => withNode((id) => canvas.duplicateNode(id))}
+          >
+            <Box className="flex items-center gap-2">
+              <ContentCopy size={16} />
+              <span>Duplicate</span>
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              ⌘⇧D
+            </Typography>
+          </Button>
+          <Button
+            variant="ghost"
+            className="flex w-full items-center justify-between text-destructive"
+            onClick={() => withNode((id) => canvas.removeNode(id))}
+          >
+            <Box className="flex items-center gap-2">
+              <Delete size={16} className="text-destructive" />
+              <span>Delete</span>
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              Del
+            </Typography>
+          </Button>
+        </>
+      )}
 
       <Divider />
 
       {/* Designer Persona Actions */}
-      {currentMode === 'design' && (
+      {currentMode === 'design' && canMutateCanvas && (
         <Box>
           <Button
             variant="ghost"

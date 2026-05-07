@@ -36,6 +36,7 @@ import { type AbstractionLevel } from '../../types/abstractionLevel';
 import { type Task } from '@/services/lifecycle/api';
 import { type CanvasCommandAction } from './workspace';
 import { type CanvasInteractionMode } from './workspace/canvasSharedState';
+import type { CanvasAccessPolicy } from './canvasAccessPolicy';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -96,6 +97,7 @@ export interface CanvasOverlaysProps {
     setSelectedNodes: (ids: string[]) => void;
     // ── Shared handlers ──────────────────────────────────────────────────
     handlers: OverlayHandlers;
+    canvasPolicy: CanvasAccessPolicy;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────
@@ -130,6 +132,7 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
     setNodeContextMenu,
     setSelectedNodes,
     handlers,
+    canvasPolicy,
 }) => (
     <>
         {/* Next Best Task card */}
@@ -162,13 +165,15 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
             onSubmit={handleAIQuery}
         />
 
-        <QuickCreateMenu
-            open={quickCreateMenuPosition !== null}
-            anchorPosition={quickCreateMenuPosition}
-            currentPhase={currentPhase}
-            onClose={() => setQuickCreateMenuPosition(null)}
-            onCreate={handlers.handleCreateArtifact as Parameters<typeof QuickCreateMenu>[0]['onCreate']}
-        />
+        {canvasPolicy.canCreateArtifacts && (
+            <QuickCreateMenu
+                open={quickCreateMenuPosition !== null}
+                anchorPosition={quickCreateMenuPosition}
+                currentPhase={currentPhase}
+                onClose={() => setQuickCreateMenuPosition(null)}
+                onCreate={handlers.handleCreateArtifact as Parameters<typeof QuickCreateMenu>[0]['onCreate']}
+            />
+        )}
 
         <CanvasErrorBoundary label="Inspector Panel">
             <InspectorPanel
@@ -179,6 +184,9 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
                 onAddBlocker={handlers.handleAddBlocker as Parameters<typeof InspectorPanel>[0]['onAddBlocker']}
                 onAddComment={handlers.handleAddComment as Parameters<typeof InspectorPanel>[0]['onAddComment']}
                 onLinkArtifact={handlers.handleLinkArtifact as Parameters<typeof InspectorPanel>[0]['onLinkArtifact']}
+                canEdit={canvasPolicy.canMutateArtifacts}
+                canComment={canvasPolicy.canComment}
+                readOnlyReason={canvasPolicy.readOnlyReason}
             />
         </CanvasErrorBoundary>
 
@@ -228,30 +236,34 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
                 >
                     Edit in Inspector
                 </button>
-                <button
-                    type="button"
-                    className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-surface-muted dark:hover:bg-surface"
-                    onClick={() => {
-                        handlers.handleCopyNodes?.();
-                        handlers.handlePasteNodes?.();
-                        setNodeContextMenu(null);
-                    }}
-                >
-                    <DuplicateIcon size={14} className="mr-2" />
-                    Duplicate
-                </button>
-                <button
-                    type="button"
-                    className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-destructive hover:bg-surface-muted dark:text-destructive dark:hover:bg-surface"
-                    onClick={() => {
-                        setSelectedNodes([nodeContextMenu.nodeId]);
-                        handlers.handleDeleteSelected();
-                        setNodeContextMenu(null);
-                    }}
-                >
-                    <TrashIcon size={14} className="mr-2" />
-                    Delete
-                </button>
+                {canvasPolicy.canCreateArtifacts && (
+                    <button
+                        type="button"
+                        className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-surface-muted dark:hover:bg-surface"
+                        onClick={() => {
+                            handlers.handleCopyNodes?.();
+                            handlers.handlePasteNodes?.();
+                            setNodeContextMenu(null);
+                        }}
+                    >
+                        <DuplicateIcon size={14} className="mr-2" />
+                        Duplicate
+                    </button>
+                )}
+                {canvasPolicy.canMutateArtifacts && (
+                    <button
+                        type="button"
+                        className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-destructive hover:bg-surface-muted dark:text-destructive dark:hover:bg-surface"
+                        onClick={() => {
+                            setSelectedNodes([nodeContextMenu.nodeId]);
+                            handlers.handleDeleteSelected();
+                            setNodeContextMenu(null);
+                        }}
+                    >
+                        <TrashIcon size={14} className="mr-2" />
+                        Delete
+                    </button>
+                )}
             </Box>
         )}
     </>

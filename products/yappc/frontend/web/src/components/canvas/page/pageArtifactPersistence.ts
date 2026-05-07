@@ -1,4 +1,9 @@
-import type { PageArtifactDocument } from './pageArtifactDocument';
+import type {
+  PageArtifactDocument,
+  PageArtifactGraphEdge,
+  PageArtifactGraphNode,
+  PageArtifactGraphSnapshot,
+} from './pageArtifactDocument';
 
 export interface PageArtifactDocumentPersistenceAdapter {
   save(document: PageArtifactDocument): Promise<void>;
@@ -16,6 +21,7 @@ export type PageArtifactPersistenceErrorKind =
   | 'unauthenticated'
   | 'forbidden'
   | 'validation'
+  | 'artifact-graph'
   | 'http';
 
 export class PageArtifactPersistenceError extends Error {
@@ -55,15 +61,43 @@ export function isNonFallbackPersistenceError(err: unknown): boolean {
     (err.kind === 'missing-scope' ||
       err.kind === 'unauthenticated' ||
       err.kind === 'forbidden' ||
+      err.kind === 'artifact-graph' ||
       err.kind === 'validation')
   );
 }
 
 interface HttpPersistenceOptions {
   readonly baseUrl?: string;
+  readonly artifactGraphBaseUrl?: string;
   readonly fetchImpl?: typeof fetch;
   readonly scope?: PageArtifactScope;
   readonly scopeProvider?: () => PageArtifactScope | null;
+}
+
+interface ArtifactGraphIngestNodeDto {
+  readonly id: string;
+  readonly type: string;
+  readonly name: string;
+  readonly filePath: string;
+  readonly content: string;
+  readonly properties: Record<string, string | number | boolean | null>;
+  readonly tags: readonly string[];
+  readonly tenantId: string;
+  readonly projectId: string;
+}
+
+interface ArtifactGraphIngestEdgeDto {
+  readonly sourceNodeId: string;
+  readonly targetNodeId: string;
+  readonly relationshipType: string;
+  readonly properties: Record<string, string | number | boolean | null>;
+}
+
+interface ArtifactGraphIngestRequest {
+  readonly productId: string;
+  readonly tenantId: string;
+  readonly nodes: readonly ArtifactGraphIngestNodeDto[];
+  readonly edges: readonly ArtifactGraphIngestEdgeDto[];
 }
 
 export interface LocalDraftPolicy {
@@ -98,6 +132,73 @@ async function readErrorMessage(response: Response, fallback: string): Promise<s
   } catch {
     return fallback;
   }
+}
+
+function buildGraphNodeProperties(
+  graph: PageArtifactGraphSnapshot,
+  node: PageArtifactGraphNode,
+  artifactId: string,
+): Record<string, string | number | boolean | null> {
+  return {
+    artifactId,
+    graphId: graph.graphId,
+    sourceType: graph.sourceType,
+    importedAt: graph.importedAt,
+    sourceLocationFilePath: node.sourceLocation?.filePath ?? null,
+    sourceLocationStartLine: node.sourceLocation?.startLine ?? null,
+    sourceLocationStartColumn: node.sourceLocation?.startColumn ?? null,
+    sourceLocationEndLine: node.sourceLocation?.endLine ?? null,
+    sourceLocationEndColumn: node.sourceLocation?.endColumn ?? null,
+    confidence: graph.provenance.confidence,
+    residualIslandCount: graph.provenance.residualIslandIds.length,
+    ...node.metadata,
+  };
+}
+
+function buildGraphEdgeProperties(
+  graph: PageArtifactGraphSnapshot,
+  edge: PageArtifactGraphEdge,
+  artifactId: string,
+): Record<string, string | number | boolean | null> {
+  return {
+    artifactId,
+    edgeId: edge.id,
+    graphId: graph.graphId,
+    projectId: graph.projectId,
+    importedAt: graph.importedAt,
+  };
+}
+
+function buildArtifactGraphIngestRequest(
+  document: PageArtifactDocument,
+  graph: PageArtifactGraphSnapshot,
+  scope: PageArtifactScope,
+): ArtifactGraphIngestRequest {
+  return {
+    productId: graph.graphId,
+    tenantId: scope.tenantId,
+    nodes: graph.nodes.map((node) => ({
+      id: node.id,
+      type: node.kind,
+      name: node.label,
+      filePath: node.sourceLocation?.filePath ?? graph.source,
+      content: JSON.stringify({
+        source: graph.source,
+        sourceType: graph.sourceType,
+        nodeKind: node.kind,
+      }),
+      properties: buildGraphNodeProperties(graph, node, document.artifactId),
+      tags: [node.kind, graph.sourceType, graph.provenance.compiler],
+      tenantId: scope.tenantId,
+      projectId: graph.projectId,
+    })),
+    edges: graph.edges.map((edge) => ({
+      sourceNodeId: edge.from,
+      targetNodeId: edge.to,
+      relationshipType: edge.kind,
+      properties: buildGraphEdgeProperties(graph, edge, document.artifactId),
+    })),
+  };
 }
 
 export class LocalStoragePageArtifactPersistenceAdapter
@@ -143,12 +244,14 @@ export class LocalStoragePageArtifactPersistenceAdapter
 export class HttpPageArtifactPersistenceAdapter
   implements PageArtifactDocumentPersistenceAdapter {
   private readonly baseUrl: string;
+  private readonly artifactGraphBaseUrl: string;
   private readonly fetchImpl: typeof fetch;
   private readonly scope?: PageArtifactScope;
   private readonly scopeProvider?: () => PageArtifactScope | null;
 
   constructor(options: HttpPersistenceOptions = {}) {
     this.baseUrl = options.baseUrl ?? '/api/v1/page-artifacts';
+    this.artifactGraphBaseUrl = options.artifactGraphBaseUrl ?? '/api/v1/yappc/artifact/graph';
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.scope = options.scope;
     this.scopeProvider = options.scopeProvider;
@@ -185,6 +288,30 @@ export class HttpPageArtifactPersistenceAdapter
     throw new PageArtifactPersistenceError('http', message, response.status);
   }
 
+  private async ingestArtifactGraph(document: PageArtifactDocument): Promise<void> {
+    if (!document.artifactGraph) {
+      return;
+    }
+
+    const scope = this.getScope();
+    const response = await this.fetchImpl(`${this.artifactGraphBaseUrl}/ingest`, {
+      method: 'POST',
+      headers: this.buildHeaders({
+        'Content-Type': 'application/json',
+      }),
+      credentials: 'include',
+      body: JSON.stringify(buildArtifactGraphIngestRequest(document, document.artifactGraph, scope)),
+    });
+
+    if (!response.ok) {
+      const message = await readErrorMessage(
+        response,
+        `Failed to ingest artifact graph for page artifact "${document.artifactId}" (${response.status})`,
+      );
+      throw new PageArtifactPersistenceError('artifact-graph', message, response.status);
+    }
+  }
+
   async save(document: PageArtifactDocument): Promise<void> {
     const response = await this.fetchImpl(
       `${this.baseUrl}/${encodeURIComponent(document.artifactId)}/document`,
@@ -210,6 +337,8 @@ export class HttpPageArtifactPersistenceAdapter
     if (!response.ok) {
       await this.throwForResponse(response, 'save');
     }
+
+    await this.ingestArtifactGraph(document);
   }
 
   async load(artifactId: string): Promise<PageArtifactDocument | null> {

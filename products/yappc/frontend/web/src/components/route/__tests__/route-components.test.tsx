@@ -2,6 +2,7 @@
  * Tests for route/ components:
  * LoadingSpinner, RouteLoadingSpinner, HydrateFallback, PlaceholderRoute, ApiUnavailableFallback
  */
+import { Suspense } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { LoadingSpinner, RouteLoadingSpinner } from '../LoadingSpinner';
@@ -9,6 +10,13 @@ import { HydrateFallback } from '../HydrateFallback';
 import { PlaceholderRoute } from '../PlaceholderRoute';
 import { ApiUnavailableFallback } from '../ApiUnavailableFallback';
 import { LazyFeatureUnavailable } from '../LazyFeatureUnavailable';
+import { LazyAIPanel } from '../../../routes/lazyRoutes';
+
+vi.mock('@/services/rail/RailServiceClient', () => ({
+  railService: {
+    getSuggestions: vi.fn().mockResolvedValue([]),
+  },
+}));
 
 // ─── LoadingSpinner ───────────────────────────────────────────────────────────
 
@@ -165,5 +173,21 @@ describe('LazyFeatureUnavailable', () => {
     expect(screen.getByRole('status')).toBeTruthy();
     expect(screen.getByText('Guided assistant unavailable')).toBeTruthy();
     expect(screen.getByText('This workspace has not enabled the guided canvas assistant yet.')).toBeTruthy();
+  });
+});
+
+// ─── Lazy feature implementations ───────────────────────────────────────────
+
+describe('lazy route feature implementations', () => {
+  it('loads the real guided canvas panel instead of the unavailable placeholder', async () => {
+    render(
+      <Suspense fallback={<div>Loading lazy panel...</div>}>
+        <LazyAIPanel context={{ mode: 'diagram' }} selectedNodeIds={[]} />
+      </Suspense>,
+    );
+
+    expect(await screen.findByText('Recommended insights')).toBeTruthy();
+    expect(screen.getByText('Select elements to get recommendations')).toBeTruthy();
+    expect(screen.queryByTestId('lazy-guided-panel-unavailable')).toBeNull();
   });
 });

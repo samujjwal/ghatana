@@ -92,6 +92,40 @@ public class GenerationServiceImpl implements GenerationService {
                 });
     }
 
+    @Override
+    public Promise<GenerationReviewResult> reviewDecision(GenerationReviewRequest request) {
+        long startTime = System.currentTimeMillis();
+        if (request == null || request.action() == null) {
+            return Promise.ofException(new IllegalArgumentException("review action is required"));
+        }
+
+        String metricName = "yappc.generate.review." + request.action().wireValue();
+        Instant decidedAt = Instant.now();
+        GenerationReviewResult result = new GenerationReviewResult(
+            request.runId(),
+            request.projectId(),
+            request.action().wireValue(),
+            request.action().status(),
+            false,
+            request.actorId(),
+            decidedAt,
+            "generate.review." + request.action().wireValue(),
+            "Generation run " + request.runId() + " was " + request.action().status().toLowerCase().replace('_', ' ') + ".",
+            Map.of("reason", request.reason() == null ? "" : request.reason())
+        );
+
+        Map<String, String> tags = Map.of("decision", request.action().wireValue());
+        metrics.recordTimer(metricName, System.currentTimeMillis() - startTime, tags);
+        ServiceObservability.incrementSuccess(metrics, metricName, tags);
+
+        return auditLogger.log(ServiceObservability.auditEvent(result.auditEvent(), request, result))
+            .map(v -> result)
+            .whenException(e -> {
+                log.error("Generation review decision failed", e);
+                ServiceObservability.incrementFailure(metrics, metricName, e, tags);
+            });
+    }
+
     private Promise<GeneratedArtifacts> generateArtifactsWithAI(ValidatedSpec spec) {
         List<Promise<Artifact>> artifactPromises = new ArrayList<>();
 

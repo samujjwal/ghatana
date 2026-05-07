@@ -48,6 +48,7 @@ import {
 } from '../lib/canvas/ViewportCulling';
 import { type CanvasExporter } from '../lib/canvas/CanvasExporter';
 import { type MindMapEngine } from '../lib/canvas/MindMapEngine';
+import { shouldUseCanvasViewportCulling } from '../services/performance/canvasPerformanceBudgets';
 import { useCanvasManagers } from './useCanvasManagers';
 import { useCanvasNodeOps } from './useCanvasNodeOps';
 import { useCanvasDrawing } from './useCanvasDrawing';
@@ -59,6 +60,7 @@ export interface UseUnifiedCanvasReturn {
   connections: Connection[];
   drawings: DrawingStroke[];
   selectedNodeIds: string[];
+  hoveredNodeId: string | null;
   viewport: { x: number; y: number; zoom: number };
   activeTool: Tool;
 
@@ -84,6 +86,7 @@ export interface UseUnifiedCanvasReturn {
   // Selection
   selectNode: (nodeId: string, addToSelection?: boolean) => void;
   selectNodes: (nodeIds: string[]) => void;
+  hoverNode: (nodeId: string | null) => void;
   deselectAll: () => void;
 
   // Hierarchy
@@ -168,6 +171,7 @@ export function useUnifiedCanvas(projectId?: string): UseUnifiedCanvasReturn {
   const nodes = canvasState.nodes || [];
   const connections = canvasState.connections || [];
   const selectedNodeIds = canvasState.selectedNodeIds || [];
+  const hoveredNodeId = canvasState.hoveredNodeId ?? null;
   const viewport = canvasState.viewport || { x: 0, y: 0, zoom: 0.5 };
 
   // Viewport culling for large canvases
@@ -179,7 +183,7 @@ export function useUnifiedCanvas(projectId?: string): UseUnifiedCanvasReturn {
       'total, viewport:',
       viewport
     );
-    if (nodes.length < 50) {
+    if (!shouldUseCanvasViewportCulling(nodes.length)) {
       console.log(
         '[useUnifiedCanvas] Skipping culling (< 50 nodes), returning all nodes'
       );
@@ -206,6 +210,15 @@ export function useUnifiedCanvas(projectId?: string): UseUnifiedCanvasReturn {
   const managers = useCanvasManagers();
   const nodeOps = useCanvasNodeOps(managers, selectedNodeIds);
   const drawingOps = useCanvasDrawing(managers.drawingManager, nodeOps.addNode);
+  const hoverNode = useCallback(
+    (nodeId: string | null) => {
+      setCanvasState((prev) => ({
+        ...prev,
+        hoveredNodeId: nodeId,
+      }));
+    },
+    [setCanvasState],
+  );
 
   // History operations — delegate to command-pattern atoms
   const undo = useCallback(() => {
@@ -227,6 +240,7 @@ export function useUnifiedCanvas(projectId?: string): UseUnifiedCanvasReturn {
     connections,
     drawings: canvasState.drawings || [],
     selectedNodeIds,
+    hoveredNodeId,
     viewport,
     activeTool,
 
@@ -245,6 +259,7 @@ export function useUnifiedCanvas(projectId?: string): UseUnifiedCanvasReturn {
 
     // Node operations
     ...nodeOps,
+    hoverNode,
 
     // Tools
     setActiveTool,

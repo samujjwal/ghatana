@@ -37,6 +37,7 @@ import lifecycleExecutionRoutes from './routes/lifecycle-execution';
 import telemetryRoutes from './routes/telemetry';
 import aiRoutes from './routes/ai';
 import planningRoutes from './routes/planning';
+import sourceImportRoutes from './routes/source-imports';
 import { devAuthBypass } from './middleware/devAuth';
 import {
   assertDevAuthBypassAllowed,
@@ -485,6 +486,7 @@ export async function createApp(
   registerApiPrefixes(app, lifecycleExecutionRoutes);
   registerApiPrefixes(app, telemetryRoutes);
   registerApiPrefixes(app, aiRoutes);
+  registerApiPrefixes(app, sourceImportRoutes);
   registerApiPrefixes(app, planningRoutes);
 
 async function readResponseText(response: Response): Promise<string> {

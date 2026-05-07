@@ -64,7 +64,7 @@ const phaseNavItems: PhaseNavItem[] = [
     label: 'Bootstrap',
     icon: <Sparkles className="w-5 h-5" />,
     path: (id) => ROUTES.bootstrap.root(id),
-    description: 'AI-powered project scaffolding',
+    description: 'Guided project scaffolding',
   },
   {
     id: 'setup',
@@ -109,7 +109,7 @@ const phaseNavItems: PhaseNavItem[] = [
 
 const phaseSubNavItems: Record<string, { label: string; path: (id: string) => string }[]> = {
   bootstrap: [
-    { label: 'AI Chat', path: (id) => ROUTES.bootstrap.root(id) },
+    { label: 'Guided Assistant', path: (id) => ROUTES.bootstrap.root(id) },
     { label: 'Preview', path: (id) => ROUTES.bootstrap.preview(id) },
   ],
   setup: [

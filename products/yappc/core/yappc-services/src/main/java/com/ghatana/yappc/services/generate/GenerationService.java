@@ -2,6 +2,8 @@ package com.ghatana.yappc.services.generate;
 
 import com.ghatana.yappc.domain.generate.DiffResult;
 import com.ghatana.yappc.domain.generate.GeneratedArtifacts;
+import com.ghatana.yappc.domain.generate.GenerationReviewRequest;
+import com.ghatana.yappc.domain.generate.GenerationReviewResult;
 import com.ghatana.yappc.domain.generate.ValidatedSpec;
 import io.activej.promise.Promise;
 
@@ -28,4 +30,14 @@ public interface GenerationService {
      * @return Promise of diff result
      */
     Promise<DiffResult> regenerateWithDiff(ValidatedSpec spec, GeneratedArtifacts existing);
+
+    /**
+     * Records an explicit human review decision for a generated artifact run.
+     *
+     * @param request Review decision request
+     * @return Promise of auditable decision result
+     */
+    default Promise<GenerationReviewResult> reviewDecision(GenerationReviewRequest request) {
+        return Promise.ofException(new UnsupportedOperationException("Generation review decisions are not supported by this service"));
+    }
 }

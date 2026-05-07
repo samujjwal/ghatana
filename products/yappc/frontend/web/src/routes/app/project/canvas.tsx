@@ -72,13 +72,17 @@ import { CanvasErrorBoundary } from '../../../components/canvas/unified/CanvasEr
 import { UnifiedLeftRail } from '../../../components/canvas/unified/UnifiedLeftRail';
 import { UnifiedRightPanel } from '../../../components/canvas/unified/UnifiedRightPanel';
 import { UnifiedToolbar } from '../../../components/canvas/unified/UnifiedToolbar';
+import { createPageArtifactDocument } from '../../../components/canvas/page/pageArtifactDocument';
 import { type CanvasMode as NavCanvasMode } from '../../../components/navigation';
 import { useKeyboardShortcuts } from '../../../components/keyboard/KeyboardShortcutsManager';
 import { useStudioMode } from '../../../components/studio/StudioLayout';
 import { useAIStatusBar } from '../../../components/ai/AIStatusBar';
+import { deriveCanvasAccessPolicy, normalizeCanvasPolicyPhase } from '../../../components/canvas/canvasAccessPolicy';
 import { useCanvasMode } from '../../../hooks/useCanvasMode';
+import { useAuth } from '../../../hooks/useAuth';
 import { useUnifiedCanvas } from '../../../hooks/useUnifiedCanvas';
 import { useWorkspaceContext } from '../../../hooks/useWorkspaceData';
+import { yappcApi } from '@/lib/api/client';
 import { parseJsonResponse } from '@/lib/http';
 import type { AlignmentType, DistributionAxis } from '../../../lib/canvas/AlignmentEngine';
 import { getPhaseTheme, type LifecyclePhase } from '../../../theme/phaseTheme';
@@ -89,6 +93,7 @@ import {
   CanvasNodeContextMenu,
   CanvasOutlinePanel,
   CanvasStatusBar,
+  type CanvasImportAuditEvent,
   type CanvasSyncStatus,
   DraggableBox,
   type NodeContextMenuState,
@@ -97,6 +102,7 @@ import {
   useCanvasKeyboardShortcuts,
   useCanvasRoleInfo,
 } from './_canvas';
+import { LegacyRouteCompatibilityNotice } from './LegacyRouteCompatibilityNotice';
 
 const edgeTypes = {
   dependency: DependencyEdge,
@@ -116,6 +122,7 @@ function UnifiedCanvasInner() {
   const navigate = useNavigate();
   const reactFlowInstance = useReactFlow();
   const { currentMode, setMode } = useCanvasMode();
+  const { currentUser } = useAuth();
 
   // Canvas header configuration atoms
   const setHeaderActionContext = useSetAtom(headerActionContextAtom);
@@ -127,7 +134,7 @@ function UnifiedCanvasInner() {
   const setHeaderRoleInfo = useSetAtom(headerRoleInfoAtom);
 
   // Workspace context
-  useWorkspaceContext();
+  const { currentWorkspaceId, ownedProjects, includedProjects } = useWorkspaceContext();
 
   // Fetch project data
   const { data: project } = useQuery({
@@ -174,12 +181,26 @@ function UnifiedCanvasInner() {
 
   // Feature hooks
   const { currentPhase } = useAIStatusBar();
+  const projectAccess = useMemo(
+    () => [...ownedProjects, ...includedProjects].find((candidate) => candidate.id === projectId),
+    [includedProjects, ownedProjects, projectId]
+  );
+  const canvasPolicyPhase = useMemo(
+    () => normalizeCanvasPolicyPhase(project?.currentPhase ?? currentPhase),
+    [currentPhase, project?.currentPhase]
+  );
+  const canvasPolicy = useMemo(
+    () => deriveCanvasAccessPolicy(canvasPolicyPhase, projectAccess),
+    [canvasPolicyPhase, projectAccess]
+  );
+  const canMutateCanvas = canvasPolicy.canMutateArtifacts;
   const lifecycleZones = useLifecycleZones(1200, 800, [
     'INTENT', 'SHAPE', 'VALIDATE', 'GENERATE', 'BUILD', 'RUN', 'IMPROVE',
   ]);
   const { isVisible: codePanelVisible, handleToggle: toggleCodePanel } = useInlineCodePanel();
   const { isStudioMode, toggleStudioMode } = useStudioMode();
   const { isHelpOpen, closeHelp } = useKeyboardShortcuts();
+  const e2ePageDesignerSeededRef = useRef(false);
 
   useCanvasTelemetry();
   useCanvasCommands();
@@ -189,6 +210,43 @@ function UnifiedCanvasInner() {
   // =========================================================================
 
   const canvas = useUnifiedCanvas(projectId || '');
+
+  useEffect(() => {
+    if (
+      !import.meta.env.DEV ||
+      !projectId ||
+      e2ePageDesignerSeededRef.current ||
+      window.localStorage.getItem('yappc:e2e:seed-page-designer') !== projectId
+    ) {
+      return;
+    }
+
+    e2ePageDesignerSeededRef.current = true;
+    if (canvas.nodes.some((node) => node.type === 'page-designer')) {
+      return;
+    }
+
+    const pageDocument = createPageArtifactDocument({
+      artifactId: `artifact-${projectId}-page-designer-e2e`,
+      name: 'E2E Page Designer',
+      createdBy: 'page-designer-e2e',
+    });
+
+    canvas.addNode({
+      id: `page-designer-${projectId}-e2e`,
+      type: 'page-designer',
+      position: { x: 80, y: 80 },
+      size: { width: 1240, height: 720 },
+      data: {
+        label: 'E2E Page Designer',
+        expanded: true,
+        pageDocument: {
+          ...pageDocument,
+          syncStatus: 'synced',
+        },
+      },
+    });
+  }, [canvas, projectId]);
 
   // Sync zoom to chrome atom
   const [, setZoomLevel] = useAtom(chromeZoomLevelAtom);
@@ -228,6 +286,36 @@ function UnifiedCanvasInner() {
       setToastOpen(true);
     },
     []
+  );
+  const warnReadOnly = useCallback(() => {
+    showToast(canvasPolicy.readOnlyReason ?? 'Canvas edits are unavailable in this mode.', 'warning');
+  }, [canvasPolicy.readOnlyReason, showToast]);
+  const recordCanvasImportAudit = useCallback(
+    async (event: CanvasImportAuditEvent): Promise<void> => {
+      if (!currentUser?.id || !projectId || !currentWorkspaceId) {
+        return;
+      }
+
+      await yappcApi.audit.emit({
+        type: event.outcome === 'success' ? 'CANVAS_IMPORT_COMPLETED' : 'CANVAS_IMPORT_FAILED',
+        userId: currentUser.id,
+        projectId,
+        flowStage: 'BUILD',
+        phase: canvasPolicyPhase,
+        description: event.message,
+        metadata: {
+          workspaceId: currentWorkspaceId,
+          sourceName: event.sourceName,
+          outcome: event.outcome,
+          nodeCount: event.nodeCount,
+          connectionCount: event.connectionCount,
+          drawingCount: event.drawingCount,
+          migratedFromVersion: event.migratedFromVersion,
+          failureReason: event.failureReason,
+        },
+      });
+    },
+    [canvasPolicyPhase, currentUser?.id, currentWorkspaceId, projectId]
   );
 
   // =========================================================================
@@ -292,12 +380,22 @@ function UnifiedCanvasInner() {
     }
   }, [calmMode, leftRailVisible, canvas.nodes.length, setLeftRailVisible]);
 
+  useEffect(() => {
+    if (!canMutateCanvas && canvas.activeTool !== 'select' && canvas.activeTool !== 'pan') {
+      canvas.setActiveTool('select');
+    }
+  }, [canMutateCanvas, canvas]);
+
   // =========================================================================
   // NODE CREATION
   // =========================================================================
 
   const addNodeAtPosition = useCallback(
     (type: string, position: { x: number; y: number }) => {
+      if (!canvasPolicy.canCreateArtifacts) {
+        warnReadOnly();
+        return;
+      }
       const nodeDefaults: Record<string, unknown> = {
         'sticky-note': { type: 'sticky-note', data: { text: 'New note', color: '#fef3c7' } },
         text: { type: 'text', data: { text: 'Enter text here' } },
@@ -314,7 +412,7 @@ function UnifiedCanvasInner() {
       canvas.addNode({ ...nodeData, position, id: `node-${Date.now()}` });
       setContextMenu(null);
     },
-    [canvas]
+    [canvas, canvasPolicy.canCreateArtifacts, warnReadOnly]
   );
 
   // =========================================================================
@@ -337,6 +435,8 @@ function UnifiedCanvasInner() {
       projectId,
       canvasRef,
       setExportMenuAnchor: () => setExportMenuAnchor(null),
+      showFeedback: showToast,
+      recordImportAudit: recordCanvasImportAudit,
     });
 
   // =========================================================================
@@ -368,6 +468,8 @@ function UnifiedCanvasInner() {
     setShortcutLegendOpen,
     showToast,
     addNodeAtPosition,
+    canMutateCanvas,
+    readOnlyReason: canvasPolicy.readOnlyReason,
   });
 
   // =========================================================================
@@ -387,22 +489,43 @@ function UnifiedCanvasInner() {
       position: node.position,
       data: {
         ...node.data,
+        readOnly: !canMutateCanvas,
+        readOnlyReason: canvasPolicy.readOnlyReason,
         onLabelChange: (label: string) => {
+          if (!canMutateCanvas) {
+            warnReadOnly();
+            return;
+          }
           canvas.updateNode(node.id, { data: { ...node.data, label } });
         },
         onTextChange: (text: string) => {
+          if (!canMutateCanvas) {
+            warnReadOnly();
+            return;
+          }
           canvas.updateNode(node.id, { data: { ...node.data, text } });
         },
         onStatusChange: (completed: boolean) => {
+          if (!canMutateCanvas) {
+            warnReadOnly();
+            return;
+          }
           canvas.updateNode(node.id, { data: { ...node.data, completed } });
+        },
+        onDataChange: (updates: Record<string, unknown>) => {
+          if (!canMutateCanvas) {
+            warnReadOnly();
+            return;
+          }
+          canvas.updateNode(node.id, { data: { ...node.data, ...updates } });
         },
       },
       selected: canvas.selectedNodeIds.includes(node.id),
-      draggable: true,
-      deletable: true,
+      draggable: canMutateCanvas,
+      deletable: canMutateCanvas,
       style: getNodeSize(node.type),
     })) as Node[];
-  }, [canvas.nodes, canvas.selectedNodeIds, canvas]);
+  }, [canMutateCanvas, canvas.nodes, canvas.selectedNodeIds, canvas, warnReadOnly]);
 
   const reactFlowEdges = useMemo<Edge[]>(() => {
     return canvas.connections.map((connection) => ({
@@ -422,6 +545,7 @@ function UnifiedCanvasInner() {
     (changes: NodeChange[]) => {
       changes.forEach((change) => {
         if (change.type === 'position' && 'position' in change && change.position) {
+          if (!canMutateCanvas) return;
           canvas.updateNode(change.id, { position: change.position });
         } else if (change.type === 'select' && 'selected' in change) {
           if (change.selected) {
@@ -430,29 +554,34 @@ function UnifiedCanvasInner() {
             canvas.selectNodes(canvas.selectedNodeIds.filter((id) => id !== change.id));
           }
         } else if (change.type === 'remove') {
+          if (!canMutateCanvas) return;
           canvas.removeNode(change.id);
         }
       });
     },
-    [canvas]
+    [canMutateCanvas, canvas]
   );
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
       changes.forEach((change) => {
-        if (change.type === 'remove') canvas.removeConnection(change.id);
+        if (change.type === 'remove' && canMutateCanvas) canvas.removeConnection(change.id);
       });
     },
-    [canvas]
+    [canMutateCanvas, canvas]
   );
 
   const onConnect = useCallback(
     (connection: RFConnection) => {
+      if (!canMutateCanvas) {
+        warnReadOnly();
+        return;
+      }
       if (connection.source && connection.target) {
         canvas.createConnection(connection.source, connection.target);
       }
     },
-    [canvas]
+    [canMutateCanvas, canvas, warnReadOnly]
   );
 
   // =========================================================================
@@ -490,6 +619,10 @@ function UnifiedCanvasInner() {
 
       const creationTools = ['rectangle', 'ellipse', 'diamond', 'text', 'sticky', 'frame', 'image', 'code', 'circle'];
       if (creationTools.includes(canvas.activeTool)) {
+        if (!canvasPolicy.canCreateArtifacts) {
+          warnReadOnly();
+          return;
+        }
         const position = reactFlowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
         let finalType: string = canvas.activeTool;
         if (finalType === 'sticky') finalType = 'sticky-note';
@@ -497,7 +630,7 @@ function UnifiedCanvasInner() {
         addNodeAtPosition(finalType, position);
       }
     },
-    [canvas.activeTool, reactFlowInstance, addNodeAtPosition, canvas]
+    [canvas.activeTool, canvasPolicy.canCreateArtifacts, reactFlowInstance, addNodeAtPosition, warnReadOnly, canvas]
   );
 
   const handleNodeClick = useCallback((_event: MouseEvent | React.MouseEvent<Element>, _node: Node) => {
@@ -512,18 +645,28 @@ function UnifiedCanvasInner() {
 
   const handleAlign = useCallback(
     (alignment: AlignmentType) => {
+      if (!canMutateCanvas) {
+        warnReadOnly();
+        setAlignMenuAnchor(null);
+        return;
+      }
       if (canvas.selectedNodeIds.length >= 2) canvas.alignNodes(alignment);
       setAlignMenuAnchor(null);
     },
-    [canvas]
+    [canMutateCanvas, canvas, warnReadOnly]
   );
 
   const handleDistribute = useCallback(
     (axis: DistributionAxis) => {
+      if (!canMutateCanvas) {
+        warnReadOnly();
+        setAlignMenuAnchor(null);
+        return;
+      }
       if (canvas.selectedNodeIds.length >= 3) canvas.distributeNodes(axis);
       setAlignMenuAnchor(null);
     },
-    [canvas]
+    [canMutateCanvas, canvas, warnReadOnly]
   );
 
   // =========================================================================
@@ -539,7 +682,12 @@ function UnifiedCanvasInner() {
       }}
       nodes={canvas.nodes}
       selectedNodeIds={canvas.selectedNodeIds}
+      hoveredNodeId={canvas.hoveredNodeId}
       onInsertNode={(nodeData, position) => {
+        if (!canvasPolicy.canCreateArtifacts) {
+          warnReadOnly();
+          return;
+        }
         let pos = position;
         if (!pos) {
           const center = reactFlowInstance.getViewport();
@@ -550,6 +698,10 @@ function UnifiedCanvasInner() {
       }}
       onSelectNode={(nodeId) => canvas.selectNodes([nodeId])}
       onUpdateNode={(nodeId, updates) => {
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         const existingNode = canvas.nodes.find((node) => node.id === nodeId);
         canvas.updateNode(nodeId, {
           data: {
@@ -558,8 +710,18 @@ function UnifiedCanvasInner() {
           },
         });
       }}
-      onDeleteNode={(nodeId) => canvas.removeNode(nodeId)}
+      onDeleteNode={(nodeId) => {
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
+        canvas.removeNode(nodeId);
+      }}
       onToggleVisibility={(nodeId) => {
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         const node = canvas.nodes.find((n) => n.id === nodeId);
         if (node) {
           canvas.updateNode(nodeId, {
@@ -568,6 +730,10 @@ function UnifiedCanvasInner() {
         }
       }}
       onToggleLock={(nodeId) => {
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         const node = canvas.nodes.find((n) => n.id === nodeId);
         if (node) {
           canvas.updateNode(nodeId, {
@@ -583,6 +749,10 @@ function UnifiedCanvasInner() {
       selectedNodeIds={canvas.selectedNodeIds}
       nodes={canvas.nodes as Array<{ id: string; type: string; data: Record<string, unknown> }>}
       onUpdateNode={(id, data) => {
+        if (!canMutateCanvas) {
+          warnReadOnly();
+          return;
+        }
         const existingNode = canvas.nodes.find((node) => node.id === id);
         canvas.updateNode(id, {
           data: {
@@ -614,8 +784,8 @@ function UnifiedCanvasInner() {
   const contextActions = useMemo(
     () => {
       const actions: HeaderAction[] = [
-        { id: 'undo', label: 'Undo', icon: Undo, onClick: () => canvas.undo(), disabled: !canvas.canUndo, tooltip: 'Undo', shortcut: '⌘Z' },
-        { id: 'redo', label: 'Redo', icon: Redo, onClick: () => canvas.redo(), disabled: !canvas.canRedo, tooltip: 'Redo', shortcut: '⌘⇧Z' },
+        { id: 'undo', label: 'Undo', icon: Undo, onClick: () => canMutateCanvas ? canvas.undo() : warnReadOnly(), disabled: !canMutateCanvas || !canvas.canUndo, tooltip: 'Undo', shortcut: '⌘Z' },
+        { id: 'redo', label: 'Redo', icon: Redo, onClick: () => canMutateCanvas ? canvas.redo() : warnReadOnly(), disabled: !canMutateCanvas || !canvas.canRedo, tooltip: 'Redo', shortcut: '⌘⇧Z' },
         { id: 'zoom-in', label: 'Zoom In', icon: ZoomIn, onClick: () => reactFlowInstance.zoomIn(), tooltip: 'Zoom in', shortcut: '⌘+' },
         { id: 'zoom-out', label: 'Zoom Out', icon: ZoomOut, onClick: () => reactFlowInstance.zoomOut(), tooltip: 'Zoom out', shortcut: '⌘-' },
         { id: 'settings', label: 'Settings', icon: Settings, onClick: () => navigate(`/p/${projectId}/settings`), tooltip: 'Project settings' },
@@ -644,7 +814,7 @@ function UnifiedCanvasInner() {
 
       return actions;
     },
-    [canvas, reactFlowInstance, projectId, navigate, shareEnabled, exportEnabled]
+    [canMutateCanvas, canvas, reactFlowInstance, projectId, navigate, shareEnabled, exportEnabled, warnReadOnly]
   );
 
   useEffect(() => {
@@ -691,6 +861,12 @@ function UnifiedCanvasInner() {
     <CanvasErrorBoundary>
       <Box
         className="w-full h-full flex flex-col" style={{ backgroundColor: phaseTheme.canvasBg, transition: 'background-color 0.5s ease-in-out' }} >
+        <LegacyRouteCompatibilityNotice
+          projectId={projectId}
+          legacySurface="Project canvas"
+          canonicalPhase="shape"
+          reason="Canvas design work is now part of Shape and Generate phase surfaces."
+        />
         <CanvasChromeLayout
           defaultCalmMode={shouldDefaultToCalmMode}
           leftRail={leftRailContent}
@@ -716,9 +892,15 @@ function UnifiedCanvasInner() {
                 onNodeContextMenu={handleNodeContextMenu}
                 onPaneClick={handleCanvasClick}
                 onPaneContextMenu={handleCanvasRightClick}
-                onPointerDown={drawing.handlePointerDown}
-                onPointerMove={drawing.handlePointerMove}
-                onPointerUp={drawing.handlePointerUp}
+                onPointerDown={(event) => {
+                  if (canMutateCanvas) drawing.handlePointerDown(event);
+                }}
+                onPointerMove={(event) => {
+                  if (canMutateCanvas) drawing.handlePointerMove(event);
+                }}
+                onPointerUp={() => {
+                  if (canMutateCanvas) drawing.handlePointerUp();
+                }}
                 nodeTypes={nodeTypes as unknown as NodeTypes}
                 edgeTypes={edgeTypes}
                 fitView
@@ -764,11 +946,19 @@ function UnifiedCanvasInner() {
                       <UnifiedToolbar
                         variant="floating"
                         activeTool={canvas.activeTool || 'select'}
-                        onToolChange={canvas.setActiveTool}
-                        onUndo={canvas.undo}
-                        onRedo={canvas.redo}
-                        canUndo={canvas.canUndo}
-                        canRedo={canvas.canRedo}
+                        onToolChange={(tool) => {
+                          const mutatingTools = ['draw', 'rectangle', 'ellipse', 'diamond', 'text', 'sticky', 'frame', 'image', 'code', 'circle'];
+                          if (!canMutateCanvas && mutatingTools.includes(tool)) {
+                            warnReadOnly();
+                            canvas.setActiveTool('select');
+                            return;
+                          }
+                          canvas.setActiveTool(tool);
+                        }}
+                        onUndo={() => canMutateCanvas ? canvas.undo() : warnReadOnly()}
+                        onRedo={() => canMutateCanvas ? canvas.redo() : warnReadOnly()}
+                        canUndo={canMutateCanvas && canvas.canUndo}
+                        canRedo={canMutateCanvas && canvas.canRedo}
                         zoomLevel={canvas.viewport?.zoom || 1}
                         onZoomIn={() => reactFlowInstance.zoomIn()}
                         onZoomOut={() => reactFlowInstance.zoomOut()}
@@ -819,6 +1009,7 @@ function UnifiedCanvasInner() {
             currentMode={currentMode}
             codePanelVisible={codePanelVisible}
             toggleCodePanel={toggleCodePanel}
+            canMutateCanvas={canMutateCanvas}
           />
 
           {/* Toast Notifications */}

@@ -1,4 +1,5 @@
 import { ApiRequestError, yappcApi } from '@/lib/api/client';
+import type { GenerateReviewDecision } from '@/lib/api/client';
 
 import type { MountedPhase, PhaseTransitionPreviewSnapshot } from './types';
 
@@ -9,6 +10,24 @@ export interface ExecutePhaseActionParams {
   readonly projectId: string;
   readonly tenantId?: string;
   readonly preview: PhaseTransitionPreviewSnapshot | null;
+}
+
+export interface ExecuteGenerateReviewDecisionParams {
+  readonly projectId: string;
+  readonly runId: string;
+  readonly decision: GenerateReviewDecision;
+  readonly actorId: string;
+  readonly reason?: string;
+}
+
+export type RunPostAction = 'rollback' | 'promote' | 'observe';
+
+export interface ExecuteRunPostActionParams {
+  readonly projectId: string;
+  readonly runId: string;
+  readonly action: RunPostAction;
+  readonly targetVersion?: string;
+  readonly targetEnvironment?: string;
 }
 
 export interface PhaseActionResult {
@@ -117,5 +136,87 @@ export async function executePhasePrimaryAction({
   return {
     kind: 'surface',
     message: 'Review the phase-native surface before continuing.',
+  };
+}
+
+export async function executeGenerateReviewDecision({
+  projectId,
+  runId,
+  decision,
+  actorId,
+  reason,
+}: ExecuteGenerateReviewDecisionParams): Promise<PhaseActionResult> {
+  if (!runId) {
+    throw new Error('Generation review requires a run id.');
+  }
+  if (!projectId) {
+    throw new Error('Generation review requires a project id.');
+  }
+  if (!actorId) {
+    throw new Error('Generation review requires an authenticated reviewer.');
+  }
+
+  const response = await yappcApi.generate.review(runId, decision, {
+    projectId,
+    actorId,
+    reason,
+  });
+  const status = response.status ?? decision.toUpperCase();
+  const message = response.message ?? `Generation run ${runId} ${decision} decision recorded.`;
+
+  return {
+    kind: 'generate-review',
+    runId: response.runId ?? runId,
+    status,
+    reviewRequired: response.reviewRequired ?? false,
+    message,
+  };
+}
+
+export async function executeRunPostAction({
+  projectId,
+  runId,
+  action,
+  targetVersion = 'previous-stable',
+  targetEnvironment = 'staging',
+}: ExecuteRunPostActionParams): Promise<PhaseActionResult> {
+  if (!projectId) {
+    throw new Error('Run post-action requires a project id.');
+  }
+  if (!runId) {
+    throw new Error('Run post-action requires a run id.');
+  }
+
+  if (action === 'rollback') {
+    const result = await yappcApi.run.rollback({
+      deploymentId: runId,
+      targetVersion,
+    });
+    return {
+      kind: 'run-workflow',
+      runId,
+      status: result.status ?? 'ROLLBACK_REQUESTED',
+      message: `Run ${runId} rollback requested to ${targetVersion}.`,
+    };
+  }
+
+  if (action === 'promote') {
+    const result = await yappcApi.run.promote({
+      deploymentId: runId,
+      targetEnvironment,
+    });
+    return {
+      kind: 'run-workflow',
+      runId,
+      status: result.status ?? 'PROMOTION_REQUESTED',
+      message: `Run ${runId} promotion requested for ${targetEnvironment}.`,
+    };
+  }
+
+  return {
+    kind: 'navigate',
+    runId,
+    status: 'OBSERVATION_HANDOFF',
+    message: `Run ${runId} is ready for observation handoff.`,
   };
 }

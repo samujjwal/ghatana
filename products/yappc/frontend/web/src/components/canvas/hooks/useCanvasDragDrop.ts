@@ -49,10 +49,12 @@ export interface UseCanvasDragDropConfig {
     reactFlowInstance: ReactFlowInstance | null;
     interactionMode: string;
     onCreateArtifact: (template: ArtifactTemplate, position: { x: number; y: number }) => void;
+    canDropArtifacts?: boolean;
+    readOnlyReason?: string;
 }
 
 export function useCanvasDragDrop(config: UseCanvasDragDropConfig) {
-    const { projectId, reactFlowInstance, interactionMode, onCreateArtifact } = config;
+    const { projectId, reactFlowInstance, interactionMode, onCreateArtifact, canDropArtifacts = true, readOnlyReason } = config;
 
     const [draggedTemplate, setDraggedTemplate] = useAtom(draggedTemplateAtom);
     const setAlignmentGuides = useSetAtom(alignmentGuidesAtom);
@@ -233,6 +235,11 @@ export function useCanvasDragDrop(config: UseCanvasDragDropConfig) {
             setIsDragOver(false);
 
             if (!draggedTemplate || !reactFlowInstance) return;
+            if (!canDropArtifacts) {
+                setDraggedTemplate(null);
+                announce(readOnlyReason ?? 'Canvas edits are unavailable in this mode.');
+                return;
+            }
 
             try {
                 const position = reactFlowInstance.screenToFlowPosition({
@@ -246,14 +253,14 @@ export function useCanvasDragDrop(config: UseCanvasDragDropConfig) {
                 announce('Failed to place artifact on canvas');
             }
         },
-        [draggedTemplate, reactFlowInstance, onCreateArtifact, setDraggedTemplate, announce],
+        [canDropArtifacts, draggedTemplate, reactFlowInstance, onCreateArtifact, readOnlyReason, setDraggedTemplate, announce],
     );
 
     const handleCanvasDragOver = useCallback((event: React.DragEvent) => {
         event.preventDefault();
-        event.dataTransfer.dropEffect = 'copy';
-        setIsDragOver(true);
-    }, []);
+        event.dataTransfer.dropEffect = canDropArtifacts ? 'copy' : 'none';
+        setIsDragOver(canDropArtifacts);
+    }, [canDropArtifacts]);
 
     const handleCanvasDragLeave = useCallback(() => {
         setIsDragOver(false);

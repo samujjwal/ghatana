@@ -9,6 +9,7 @@ description = "DMOS Kernel Bridge — production kernel bridge adapter for DMOS 
 
 dependencies {
     api(project(":products:digital-marketing:dm-core-contracts"))
+    api(project(":products:digital-marketing:dm-domain"))
     api(project(":products:digital-marketing:dm-domain-packs"))
     api(project(":platform-kernel:kernel-core"))
     api(project(":platform-kernel:kernel-plugin"))
@@ -20,6 +21,8 @@ dependencies {
     api(project(":platform-plugins:plugin-notification"))
     api(project(":platform:java:policy-as-code"))
     api(project(":platform:java:workflow"))
+    api(project(":platform:java:domain"))
+    api(project(":platform:java:ai-integration"))
 
     compileOnly(libs.spotbugs.annotations)
 

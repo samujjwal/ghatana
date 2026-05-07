@@ -114,7 +114,7 @@ export function UnifiedRightPanel({ selectedNodeIds = [], nodes = [], onUpdateNo
                     {activeTab === 'ai' && (
                         <Box>
                             <Typography variant="subtitle2" gutterBottom>
-                                Ask AI anything...
+                                Ask the guided assistant anything...
                             </Typography>
                             <Box className="mt-4">
                                 <Box

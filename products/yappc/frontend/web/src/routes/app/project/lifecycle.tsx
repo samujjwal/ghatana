@@ -32,6 +32,7 @@ import { useLifecycleTransition } from '../../../hooks/useLifecycleTransition';
 import { FOW_STAGE_LABELS, getFOWStageForPhase } from '../../../types/fow-stages';
 import { LIFECYCLE_PHASE } from '../../../types/lifecycle';
 import { PHASE_GATES } from '../../../shared/types/phase-gates';
+import { LegacyRouteCompatibilityNotice } from './LegacyRouteCompatibilityNotice';
 
 type RequirementPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 type RequirementStatus =
@@ -945,6 +946,13 @@ export default function Component() {
     return createElement(
         'div',
         { className: 'h-full overflow-auto bg-bg-default' },
+        createElement(LegacyRouteCompatibilityNotice, {
+            projectId,
+            legacySurface: 'Lifecycle explorer',
+            canonicalPhase: 'learn',
+            reason:
+                'Lifecycle evidence, recommendations, and review signals are now distributed across the phase cockpits.',
+        }),
         createElement(LifecycleExplorer, { projectId }),
         createElement(
             'section',

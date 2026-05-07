@@ -29,15 +29,12 @@ import { createElement, lazy } from 'react';
  */
 export const LazyAIPanel = lazy(
   () =>
-    import('../components/route/LazyFeatureUnavailable').then((module) => ({
-      default: () =>
-        createElement(module.LazyFeatureUnavailable, {
-          title: 'Guided assistant unavailable',
-          description: 'This workspace has not enabled the guided canvas assistant yet. Existing canvas tools remain available.',
-          testId: 'lazy-guided-panel-unavailable',
-        }),
+    import('../components/canvas/unified/panels/AIPanel').then((module) => ({
+      default: module.AIPanel,
     })),
 );
+
+export const LazyGuidedPanel = LazyAIPanel;
 
 /**
  * Canvas collaboration banner (live cursors, avatars).
@@ -130,6 +127,7 @@ export const LazyWorkspaceMembers = lazy(
 
 export type LazyRouteKey =
   | 'LazyAIPanel'
+  | 'LazyGuidedPanel'
   | 'LazyCollaborationBanner'
   | 'LazyNodeContextMenu'
   | 'LazyOutlinePanel'

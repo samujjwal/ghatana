@@ -26,9 +26,9 @@ tags:
   - name: auth
     description: Authentication and token management
   - name: workspaces
-    description: Workspace CRUD and AI suggestion endpoints used by the active web client
+    description: Workspace CRUD and recommendation endpoints used by the active web client
   - name: projects
-    description: Project CRUD, inclusion, and AI suggestion endpoints used by the active web client
+    description: Project CRUD, inclusion, and recommendation endpoints used by the active web client
   - name: lifecycle
     description: Project lifecycle phase management
   - name: intent
@@ -42,7 +42,7 @@ tags:
   - name: approvals
     description: Human approval workflow
   - name: suggestions
-    description: AI-powered lifecycle suggestions
+    description: Guided lifecycle recommendations
   - name: workflows
     description: Durable workflow engine
   - name: health
@@ -400,6 +400,68 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /api/projects/dashboard-actions:
+    get:
+      tags: [projects]
+      summary: List backend-backed dashboard blocker, review, and continuation actions
+      operationId: listProjectDashboardActions
+      parameters:
+        - name: workspaceId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dashboard action summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectDashboardActionsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/projects/{projectId}/dashboard-actions/execute:
+    post:
+      tags: [projects]
+      summary: Execute a safe backend-backed dashboard action
+      operationId: executeProjectDashboardAction
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExecuteProjectDashboardActionRequest"
+      responses:
+        "200":
+          description: Safe dashboard action executed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecuteProjectDashboardActionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Action requires review before one-click execution
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /api/projects/{projectId}:
     parameters:
       - name: projectId
@@ -658,8 +720,8 @@ paths:
   /api/v1/yappc/intent/analyze:
     post:
       tags: [intent]
-      summary: AI-analyse captured intent
-      description: Sends the captured intent through the LLM pipeline for enrichment and decomposition.
+      summary: Analyze captured intent
+      description: Sends the captured intent through the guided enrichment pipeline for decomposition and review.
       operationId: analyzeIntent
       requestBody:
         required: true
@@ -765,6 +827,87 @@ paths:
         "200":
           description: Differential regeneration result
 
+  /api/v1/yappc/generate/runs/{runId}/apply:
+    post:
+      tags: [generate]
+      summary: Apply a reviewed generated artefact run
+      operationId: applyGenerationRun
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateReviewDecisionRequest"
+      responses:
+        "200":
+          description: Generation review decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateReviewDecisionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/yappc/generate/runs/{runId}/reject:
+    post:
+      tags: [generate]
+      summary: Reject a reviewed generated artefact run
+      operationId: rejectGenerationRun
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateReviewDecisionRequest"
+      responses:
+        "200":
+          description: Generation review decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateReviewDecisionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/yappc/generate/runs/{runId}/rollback:
+    post:
+      tags: [generate]
+      summary: Roll back a reviewed generated artefact run
+      operationId: rollbackGenerationRun
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateReviewDecisionRequest"
+      responses:
+        "200":
+          description: Generation review decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateReviewDecisionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
   /api/v1/yappc/generate/artifacts/{id}:
     get:
       tags: [generate]
@@ -777,6 +920,43 @@ paths:
           description: Artefact manifest
         "404":
           $ref: "#/components/responses/NotFound"
+
+  /api/v1/yappc/artifact/import-source:
+    post:
+      tags: [artifact-graph]
+      summary: Start a governed source import job
+      operationId: importSourceArtifact
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SourceImportRequest"
+      responses:
+        "200":
+          description: Source import job created and ready for review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceImportResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   # ── Validate ─────────────────────────────────────────────────────────────────
 
@@ -907,16 +1087,16 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  # ── AI Suggestions ────────────────────────────────────────────────────────────
+  # ── Guided Recommendations ────────────────────────────────────────────────────
 
   /api/v1/projects/{projectId}/suggestions:
     post:
       tags: [suggestions]
-      summary: Generate AI lifecycle suggestions
+      summary: Generate lifecycle recommendations
       description: |
-        Calls `AISuggestionService` with the current project phase and context,
-        returning up to 5 typed suggestions.  The AI model is selected by the
-        `AIModelRouter` based on `TaskType.REASONING`.
+        Calls the recommendation service with the current project phase and context,
+        returning up to 5 typed suggestions. Internal model routing and provenance
+        remain available in the response lineage where applicable.
       operationId: generateSuggestions
       parameters:
         - name: projectId
@@ -937,7 +1117,7 @@ paths:
                 stakeholders: "design team, frontend engineers"
       responses:
         "200":
-          description: AI suggestions
+          description: Lifecycle recommendations
           content:
             application/json:
               schema:
@@ -1394,11 +1574,11 @@ paths:
   /api/devsecops/ai-insights:
     get:
       operationId: getDevSecOpsAiInsights
-      summary: Get AI-generated DevSecOps insights
+      summary: Get DevSecOps recommended insights
       tags: [DevSecOps]
       responses:
         "200":
-          description: AI insights
+          description: Recommended insights
           content:
             application/json:
               schema:
@@ -1873,11 +2053,11 @@ paths:
           type: string
     get:
       operationId: getProjectAiCost
-      summary: Get AI cost for a project
+      summary: Get automation cost for a project
       tags: [Projects]
       responses:
         "200":
-          description: AI cost breakdown
+          description: Automation cost breakdown
           content:
             application/json:
               schema:
@@ -1932,7 +2112,7 @@ paths:
           type: string
     post:
       operationId: refreshProjectAiSuggestions
-      summary: Trigger AI suggestion refresh for a project
+      summary: Refresh project recommendations
       tags: [Projects]
       responses:
         "202":
@@ -1949,7 +2129,7 @@ paths:
           type: string
     post:
       operationId: refreshWorkspaceAiSuggestions
-      summary: Trigger AI suggestion refresh for a workspace
+      summary: Refresh workspace recommendations
       tags: [Workspaces]
       responses:
         "202":
@@ -2235,7 +2415,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RunRequest"
+              $ref: "#/components/schemas/RunWithObservationRequest"
       responses:
         "200":
           description: Run result with observations
@@ -3581,7 +3761,8 @@ components:
 
     ProjectLifecyclePhase:
       type: string
-      description: Legacy project lifecycle phase used by the active web workspace/project surface.
+      description: Canonical mounted lifecycle phase with accepted legacy compatibility aliases.
+      enum: [INTENT, SHAPE, CONTEXT, VALIDATE, PLAN, GENERATE, EXECUTE, RUN, VERIFY, OBSERVE, LEARN, IMPROVE, EVOLVE, INSTITUTIONALIZE]
 
     Workspace:
       type: object
@@ -3661,6 +3842,93 @@ components:
             addedAt:
               type: string
               format: date-time
+
+    ProjectDashboardAction:
+      type: object
+      required:
+        [id, projectId, projectName, workspaceId, lifecyclePhase, routePhase, kind, title, summary, severity, source, requiresReview, safeToRun, updatedAt]
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        projectName:
+          type: string
+        workspaceId:
+          type: string
+        lifecyclePhase:
+          type: string
+        routePhase:
+          type: string
+        kind:
+          type: string
+          enum: [blocker, review, safe-to-continue]
+        title:
+          type: string
+        summary:
+          type: string
+        severity:
+          type: string
+          enum: [critical, warning, info]
+        source:
+          type: string
+          enum: [project.aiNextActions, project.lifecyclePhase]
+        requiresReview:
+          type: boolean
+        safeToRun:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+
+    ProjectDashboardActionsResponse:
+      type: object
+      required: [workspaceId, blockedWork, reviewRequired, safeToContinue, generatedAt]
+      properties:
+        workspaceId:
+          type: string
+        blockedWork:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectDashboardAction"
+        reviewRequired:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectDashboardAction"
+        safeToContinue:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectDashboardAction"
+        generatedAt:
+          type: string
+          format: date-time
+
+    ExecuteProjectDashboardActionRequest:
+      type: object
+      required: [workspaceId, actionId]
+      properties:
+        workspaceId:
+          type: string
+        actionId:
+          type: string
+
+    ExecuteProjectDashboardActionResponse:
+      type: object
+      required: [projectId, actionId, outcome, targetPhase, targetPath, auditRecorded]
+      properties:
+        projectId:
+          type: string
+        actionId:
+          type: string
+        outcome:
+          type: string
+          enum: [opened-phase-cockpit]
+        targetPhase:
+          type: string
+        targetPath:
+          type: string
+        auditRecorded:
+          type: boolean
 
     WorkspaceDetail:
       allOf:
@@ -3768,8 +4036,7 @@ components:
         status:
           $ref: "#/components/schemas/ProjectStatus"
         lifecyclePhase:
-          type: string
-          enum: [INTENT, SHAPE, VALIDATE, GENERATE, RUN, OBSERVE, IMPROVE]
+          $ref: "#/components/schemas/ProjectLifecyclePhase"
 
     IncludeProjectRequest:
       type: object
@@ -4231,6 +4498,134 @@ components:
         diff:
           type: string
           description: Description of changes to apply
+
+    GenerateReviewDecisionRequest:
+      type: object
+      required: [projectId, actorId]
+      properties:
+        projectId:
+          type: string
+        actorId:
+          type: string
+        reason:
+          type: string
+
+    GenerateReviewDecisionResponse:
+      type: object
+      required: [runId, projectId, decision, status, reviewRequired, actorId, decidedAt, auditEvent, message]
+      properties:
+        runId:
+          type: string
+        projectId:
+          type: string
+        decision:
+          type: string
+          enum: [apply, reject, rollback]
+        status:
+          type: string
+          enum: [APPLIED, REJECTED, ROLLED_BACK]
+        reviewRequired:
+          type: boolean
+        actorId:
+          type: string
+        decidedAt:
+          type: string
+          format: date-time
+        auditEvent:
+          type: string
+        message:
+          type: string
+
+    SourceImportRequest:
+      type: object
+      required: [sourceType, source, projectId]
+      properties:
+        sourceType:
+          type: string
+          enum: [tsx, route, storybook, artifact, zip]
+        source:
+          type: string
+          maxLength: 4096
+          description: HTTPS source URL or artifact reference.
+        projectId:
+          type: string
+        targetComponentName:
+          type: string
+        options:
+          type: object
+          additionalProperties: true
+
+    SourceImportResponse:
+      type: object
+      required: [success, files, warnings, errors, metadata]
+      properties:
+        success:
+          type: boolean
+        componentId:
+          type: string
+        files:
+          type: array
+          items:
+            type: object
+            required: [path, content, type]
+            properties:
+              path:
+                type: string
+              content:
+                type: string
+              type:
+                type: string
+                enum: [component, style, test, documentation, other, route]
+              source:
+                type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        errors:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+          required: [sourceType, source, importedAt, dependencies, fileCount, totalSize]
+          properties:
+            sourceType:
+              type: string
+            source:
+              type: string
+            importedAt:
+              type: string
+              format: date-time
+            componentName:
+              type: string
+            dependencies:
+              type: array
+              items:
+                type: string
+            fileCount:
+              type: integer
+            totalSize:
+              type: integer
+        job:
+          type: object
+          properties:
+            id:
+              type: string
+            status:
+              type: string
+              enum: [REVIEW_REQUIRED, REJECTED, FAILED]
+            reason:
+              type: string
+            tenantId:
+              type: string
+            workspaceId:
+              type: string
+            projectId:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
 
     # ── Validate schemas ──────────────────────────────────────────────────────
 
@@ -4857,21 +5252,50 @@ components:
 
     RollbackRequest:
       type: object
-      required: [runId]
+      required: [deploymentId, targetVersion]
       properties:
-        runId:
+        deploymentId:
+          type: string
+        targetVersion:
           type: string
         reason:
           type: string
 
     PromoteRequest:
       type: object
-      required: [runId, targetEnvironment]
+      required: [deploymentId, targetEnvironment]
       properties:
-        runId:
+        deploymentId:
           type: string
         targetEnvironment:
           type: string
+
+    RunWithObservationRequest:
+      type: object
+      required: [runSpec]
+      properties:
+        runSpec:
+          type: object
+          required: [id]
+          properties:
+            id:
+              type: string
+            artifactsRef:
+              type: string
+            tasks:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            environment:
+              type: string
+            config:
+              type: object
+              additionalProperties:
+                type: string
+        observationConfig:
+          type: object
+          additionalProperties: true
 
     ObservationRequest:
       type: object

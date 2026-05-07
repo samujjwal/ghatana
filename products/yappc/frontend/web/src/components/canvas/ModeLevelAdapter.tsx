@@ -306,7 +306,7 @@ export function getModeLevelState(mode: CanvasMode, level: AbstractionLevel): Mo
         description: 'Unknown state',
         tools: [],
         emptyMessage: 'Select a mode and level',
-        aiSuggestion: 'Ask AI for help',
+        aiSuggestion: 'Ask the guided assistant for help',
         icon: <AutoAwesome />,
     };
 }

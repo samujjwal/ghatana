@@ -267,6 +267,50 @@ class PageArtifactControllerTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("review decision persists governance lineage and returns audit metadata")
+    void recordReviewDecision_persistsGovernanceReviewState() throws Exception {
+        PageArtifactDocument.GovernanceRecord pendingRecord = sampleGovernanceRecord(
+                "artifact-review",
+                "doc-review",
+                "action-1",
+                "pending"
+        );
+        PageArtifactDocument document = sampleDocument("artifact-review", "doc-review", "manual", List.of(pendingRecord));
+        runPromise(() -> repository.save(TENANT_ID, WORKSPACE_ID, PROJECT_ID, document));
+
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/page-artifacts/artifact-review/review-decisions")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
+                .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Workspace-IDs"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Project-IDs"), PROJECT_ID)
+                .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(Map.of(
+                        "actionId", "action-1",
+                        "decision", "accepted",
+                        "evidence", List.of("reviewed-by-human")
+                ))))
+                .build();
+
+        HttpResponse response = runPromise(() -> controller.recordReviewDecision(attachPrincipal(request, "EDITOR")));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        JsonNode body = objectMapper.readTree(runPromise(response::loadBody).asString(StandardCharsets.UTF_8));
+        assertThat(body.get("artifactId").asText()).isEqualTo("artifact-review");
+        assertThat(body.get("actionId").asText()).isEqualTo("action-1");
+        assertThat(body.get("decision").asText()).isEqualTo("accepted");
+        assertThat(body.get("actor").asText()).isEqualTo(USER_ID);
+        assertThat(body.get("confidence").asDouble()).isEqualTo(0.87);
+        assertThat(body.get("reversible").asBoolean()).isTrue();
+        assertThat(body.get("changedNodeIds").get(0).asText()).isEqualTo("node-1");
+        assertThat(body.get("evidence").get(0).asText()).isEqualTo("reviewed-by-human");
+
+        PageArtifactDocument persisted = runPromise(() ->
+                repository.load(TENANT_ID, WORKSPACE_ID, PROJECT_ID, "artifact-review"));
+        assertThat(persisted.aiChangeRecords().get(0).lineage().reviewState()).isEqualTo("accepted");
+        assertThat(persisted.aiChangeRecords().get(0).lineage().evidence()).containsExactly("reviewed-by-human");
+    }
+
+    @Test
     @DisplayName("load passes resource details into the injected resource authorizer")
     void loadDocument_passesResourceDetailsToAuthorizer() throws Exception {
         PageArtifactDocument document = sampleDocument("artifact-8", "doc-8", "manual", List.of());
@@ -461,6 +505,29 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 source,
                 0,
                 0.92
+        );
+    }
+
+    private static PageArtifactDocument.GovernanceRecord sampleGovernanceRecord(
+            String artifactId,
+            String documentId,
+            String actionId,
+            String reviewState
+    ) {
+        return new PageArtifactDocument.GovernanceRecord(
+                artifactId,
+                documentId,
+                new PageArtifactDocument.GovernanceLineage(
+                        actionId,
+                        "property-completion",
+                        "Suggested safer label copy",
+                        0.87,
+                        true,
+                        reviewState,
+                        List.of("node-1"),
+                        "2026-01-01T00:00:00Z",
+                        List.of("initial-suggestion")
+                )
         );
     }
 

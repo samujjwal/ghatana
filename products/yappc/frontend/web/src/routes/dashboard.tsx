@@ -13,6 +13,8 @@
 import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { useSetAtom } from 'jotai';
+import { useMutation } from '@tanstack/react-query';
+import { Button } from '@ghatana/design-system';
 import { ArrowRight, CheckCircle2, FolderOpen, Plus, ShieldAlert } from 'lucide-react';
 
 // Hooks
@@ -32,8 +34,40 @@ import { NextActionDashboard } from '../components/dashboard/NextActionDashboard
 // Services
 import ActionRegistry from '../services/ActionRegistry';
 import type { ActionDefinition } from '../services/ActionRegistry';
-import { calculateNextBestActions } from '../services/auto/NextBestActionService';
 import type { NextAction } from '../components/dashboard/NextActionDashboard';
+import type { ProjectWithOwnership } from '../state/atoms/workspaceAtom';
+import { getCanonicalPhaseLabel, normalizeToMountedPhase } from '../services/phase/CanonicalPhaseService';
+import type { ProjectDashboardAction } from '../lib/api';
+import { yappcApi } from '../lib/api';
+
+function getProjectResumePath(project: ProjectWithOwnership): string {
+    const phaseRoute = normalizeToMountedPhase(project.lifecyclePhase ?? 'INTENT');
+    return `/p/${project.id}/${phaseRoute}`;
+}
+
+function getProjectUpdatedAt(project: ProjectWithOwnership): string {
+    if (typeof project.updatedAt === 'string' && !Number.isNaN(Date.parse(project.updatedAt))) {
+        return project.updatedAt;
+    }
+    if (typeof project.createdAt === 'string' && !Number.isNaN(Date.parse(project.createdAt))) {
+        return project.createdAt;
+    }
+    return new Date(0).toISOString();
+}
+
+function getProjectNextActionTitles(project: ProjectWithOwnership): readonly string[] {
+    if (Array.isArray(project.aiNextActions)) {
+        const backedActions = project.aiNextActions
+            .filter((action): action is string => typeof action === 'string' && action.trim().length > 0)
+            .slice(0, 3);
+
+        if (backedActions.length > 0) {
+            return backedActions;
+        }
+    }
+
+    return [`Resume ${getCanonicalPhaseLabel(project.lifecyclePhase ?? 'INTENT').toLowerCase()} phase`];
+}
 
 /**
  * Home Dashboard Component
@@ -42,7 +76,16 @@ import type { NextAction } from '../components/dashboard/NextActionDashboard';
  */
 export default function Component() {
     const navigate = useNavigate();
-    const { ownedProjects, includedProjects, workspaces, isLoading: workspaceLoading } = useWorkspaceContext();
+    const {
+        ownedProjects,
+        includedProjects,
+        workspaces,
+        currentWorkspace,
+        dashboardActions,
+        dashboardActionsLoading,
+        dashboardActionsError,
+        isLoading: workspaceLoading,
+    } = useWorkspaceContext();
     const { getLastOpenedProject, setLastOpenedProject } = useLastOpenedProject();
     const setHeaderVisible = useSetAtom(headerVisibleAtom);
 
@@ -54,7 +97,7 @@ export default function Component() {
     const isGuest = !currentUser.isAuthenticated;
     const isEmpty = !isLoading && !isGuest && allProjects.length === 0;
     const recentProjects = useMemo(
-        () => [...allProjects].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)).slice(0, 3),
+        () => [...allProjects].sort((left, right) => getProjectUpdatedAt(right).localeCompare(getProjectUpdatedAt(left))).slice(0, 3),
         [allProjects]
     );
 
@@ -66,26 +109,36 @@ export default function Component() {
     // consistently in the CommandPalette (Cmd+K).
     // -----------------------------------------------------------------------
     const mostRecentProject = recentProjects[0];
+    const blockedWork = dashboardActions?.blockedWork ?? [];
+    const reviewRequired = dashboardActions?.reviewRequired ?? [];
+    const safeToContinue = dashboardActions?.safeToContinue ?? [];
+    const executeDashboardAction = useMutation({
+        mutationFn: async (action: ProjectDashboardAction) => {
+            const workspaceId = currentWorkspace?.id ?? action.workspaceId;
+            return yappcApi.projects.executeDashboardAction(action.projectId, {
+                workspaceId,
+                actionId: action.id,
+            });
+        },
+        onSuccess: (result) => {
+            navigate(result.targetPath);
+        },
+    });
+
+    const openDashboardAction = (action: ProjectDashboardAction) => {
+        if (action.safeToRun) {
+            executeDashboardAction.mutate(action);
+            return;
+        }
+        navigate(`/p/${action.projectId}/${action.routePhase}`);
+    };
 
     const dashboardNextActions = useMemo<readonly NextAction[]>(() => {
         if (!mostRecentProject) {
             return [];
         }
 
-        // Prefer AI-computed next actions already stored on the project;
-        // fall back to phase-based calculation when none are available.
-        const actionTitles: string[] =
-            mostRecentProject.aiNextActions.length > 0
-                ? mostRecentProject.aiNextActions.slice(0, 3)
-                : calculateNextBestActions({
-                      phase: mostRecentProject.lifecyclePhase,
-                      state: {},
-                      blockers: [],
-                      role: 'member',
-                      permissions: [],
-                      activity: [],
-                      capabilities: [],
-                  }).actions.slice(0, 3).map((a) => a.title);
+        const actionTitles = getProjectNextActionTitles(mostRecentProject);
 
         return actionTitles.map((title, index): NextAction => ({
             id: `dashboard-next-action-${index}`,
@@ -93,7 +146,7 @@ export default function Component() {
             description: `${title} · ${mostRecentProject.name}`,
             priority: index === 0 ? 'primary' : index === 1 ? 'secondary' : 'tertiary',
             action: () => {
-                navigate(`/p/${mostRecentProject.id}`);
+                navigate(getProjectResumePath(mostRecentProject));
             },
         }));
     }, [mostRecentProject, navigate]);
@@ -145,7 +198,7 @@ export default function Component() {
         if (workspaceId) {
             setLastOpenedProject(workspaceId, projectId);
         }
-        navigate(`/p/${projectId}`);
+        navigate(getProjectResumePath(project));
     };
 
     const handleWorkspaceClick = (workspaceId: string) => {
@@ -161,11 +214,13 @@ export default function Component() {
         }
 
         // Fallback: open first project in workspace
-        const workspaceProjects = allProjects.filter(p => p.ownerWorkspaceId === workspaceId);
+        const workspaceProjects = currentWorkspace?.id === workspaceId
+            ? allProjects
+            : allProjects.filter(p => p.ownerWorkspaceId === workspaceId);
         if (workspaceProjects.length > 0) {
             const firstProject = workspaceProjects[0];
             setLastOpenedProject(workspaceId, firstProject.id);
-            navigate(`/p/${firstProject.id}`);
+            navigate(getProjectResumePath(firstProject));
         } else {
             navigate(`/projects`);
         }
@@ -209,20 +264,22 @@ export default function Component() {
                                 create one, or review blockers in your current workspace.
                             </p>
                         </div>
-                        <button
+                        <Button
                             type="button"
+                            variant="solid"
                             onClick={() => navigate('/projects')}
                             className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-700"
                         >
                             <Plus className="h-4 w-4" />
                             Create Project
-                        </button>
+                        </Button>
                     </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-3">
-                    <button
+                    <Button
                         type="button"
+                        variant="outline"
                         onClick={() => {
                             const [latestProject] = recentProjects;
                             if (latestProject) {
@@ -242,10 +299,11 @@ export default function Component() {
                                 ? `Open ${recentProjects[0].name} in its project cockpit.`
                                 : 'Open a project cockpit and continue where you left off.'}
                         </p>
-                    </button>
+                    </Button>
 
-                    <button
+                    <Button
                         type="button"
+                        variant="outline"
                         onClick={() => navigate('/projects')}
                         className="rounded-2xl border border-divider bg-bg-paper p-5 text-left shadow-sm transition-transform hover:-translate-y-0.5"
                     >
@@ -256,7 +314,7 @@ export default function Component() {
                         <p className="mt-2 text-sm text-text-secondary">
                             Start a new product in the active workspace with a persisted, API-backed create flow.
                         </p>
-                    </button>
+                    </Button>
 
                     <div className="rounded-2xl border border-divider bg-bg-paper p-5 shadow-sm">
                         <div className="mb-3 flex items-center gap-2">
@@ -275,6 +333,14 @@ export default function Component() {
                                             {ws.name} has no projects yet.
                                         </p>
                                     ))
+                            ) : mostRecentProject && getProjectNextActionTitles(mostRecentProject).length > 0 && Array.isArray(mostRecentProject.aiNextActions) && mostRecentProject.aiNextActions.length > 0 ? (
+                                <p className="text-sm text-warning-color dark:text-warning-color">
+                                    {mostRecentProject.name} has {getProjectNextActionTitles(mostRecentProject).length} backed review action(s) to check.
+                                </p>
+                            ) : mostRecentProject ? (
+                                <p className="text-sm text-text-secondary">
+                                    No backed blocker or review actions are reported by the project API yet. Resume the lifecycle cockpit to refresh readiness.
+                                </p>
                             ) : (
                                 <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-300">
                                     <CheckCircle2 className="h-4 w-4" />
@@ -294,6 +360,41 @@ export default function Component() {
                     </section>
                 )}
 
+                <section className="grid gap-4 md:grid-cols-3" aria-label="Backed dashboard action status">
+                    <DashboardActionStatusCard
+                        title="Blocked Work"
+                        tone="warning"
+                        actions={blockedWork}
+                        loading={dashboardActionsLoading === true}
+                        error={dashboardActionsError}
+                        emptyText="No backend blockers are reported for this workspace."
+                        onOpenProject={openDashboardAction}
+                    />
+                    <DashboardActionStatusCard
+                        title="Review Required"
+                        tone="review"
+                        actions={reviewRequired}
+                        loading={dashboardActionsLoading === true}
+                        error={dashboardActionsError}
+                        emptyText="No backend review actions are waiting."
+                        onOpenProject={openDashboardAction}
+                    />
+                    <DashboardActionStatusCard
+                        title="Safe To Continue"
+                        tone="safe"
+                        actions={safeToContinue}
+                        loading={dashboardActionsLoading === true}
+                        error={dashboardActionsError}
+                        emptyText="No safe continuation action has been reported yet."
+                        onOpenProject={openDashboardAction}
+                    />
+                    {executeDashboardAction.error instanceof Error && (
+                        <p role="alert" className="md:col-span-3 rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error-color">
+                            Could not execute the safe dashboard action: {executeDashboardAction.error.message}
+                        </p>
+                    )}
+                </section>
+
                 <section className="rounded-2xl border border-divider bg-bg-paper p-6 shadow-sm">
                     <div className="flex items-center justify-between gap-4">
                         <div>
@@ -301,21 +402,23 @@ export default function Component() {
                                 Jump directly back into the latest project cockpits.
                             </p>
                         </div>
-                        <button
+                        <Button
                             type="button"
+                            variant="outline"
                             onClick={() => navigate('/projects')}
                             className="inline-flex items-center gap-2 text-sm font-medium text-primary-600 transition-colors hover:text-primary-700"
                         >
                             View all projects
                             <ArrowRight className="h-4 w-4" />
-                        </button>
+                        </Button>
                     </div>
 
                     <div className="mt-6 grid gap-3">
                         {recentProjects.map((project) => (
-                            <button
+                            <Button
                                 key={project.id}
                                 type="button"
+                                variant="outline"
                                 onClick={() => handleProjectClick(project.id)}
                                 className="flex items-center justify-between rounded-xl border border-divider px-4 py-3 text-left transition-colors hover:bg-bg-default"
                             >
@@ -328,7 +431,7 @@ export default function Component() {
                                 <span className="text-xs uppercase tracking-[0.14em] text-text-secondary">
                                     {project.type}
                                 </span>
-                            </button>
+                            </Button>
                         ))}
                     </div>
                 </section>
@@ -341,20 +444,22 @@ export default function Component() {
                                 Switch context only when needed.
                             </p>
                         </div>
-                        <button
+                        <Button
                             type="button"
+                            variant="outline"
                             onClick={() => navigate('/workspaces')}
                             className="text-sm font-medium text-primary-600 transition-colors hover:text-primary-700"
                         >
                             Manage workspaces
-                        </button>
+                        </Button>
                     </div>
 
                     <div className="mt-6 grid gap-3 md:grid-cols-2">
                         {workspaces.map((workspace) => (
-                            <button
+                            <Button
                                 key={workspace.id}
                                 type="button"
+                                variant="outline"
                                 onClick={() => handleWorkspaceClick(workspace.id)}
                                 className="rounded-xl border border-divider px-4 py-4 text-left transition-colors hover:bg-bg-default"
                             >
@@ -362,11 +467,65 @@ export default function Component() {
                                 <p className="mt-1 text-sm text-text-secondary">
                                     {workspace.description || 'No description yet'}
                                 </p>
-                            </button>
+                            </Button>
                         ))}
                     </div>
                 </section>
             </section>
+        </div>
+    );
+}
+
+interface DashboardActionStatusCardProps {
+    readonly title: string;
+    readonly tone: 'warning' | 'review' | 'safe';
+    readonly actions: readonly ProjectDashboardAction[];
+    readonly loading: boolean;
+    readonly error: unknown;
+    readonly emptyText: string;
+    readonly onOpenProject: (action: ProjectDashboardAction) => void;
+}
+
+function DashboardActionStatusCard(props: DashboardActionStatusCardProps) {
+    const { title, tone, actions, loading, error, emptyText, onOpenProject } = props;
+    const toneClass =
+        tone === 'safe'
+            ? 'border-emerald-200 bg-emerald-50/60 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-200'
+            : tone === 'review'
+                ? 'border-primary-200 bg-primary-50/60 text-primary-800 dark:border-primary-900/50 dark:bg-primary-950/20 dark:text-primary-200'
+                : 'border-warning-border bg-warning-bg/60 text-warning-color dark:border-warning-border/50 dark:bg-warning-bg/20 dark:text-warning-color';
+
+    return (
+        <div className={`rounded-2xl border p-5 shadow-sm ${toneClass}`}>
+            <div className="flex items-center justify-between gap-3">
+                <h2 className="text-base font-semibold">{title}</h2>
+                <span className="rounded-full bg-white/70 px-2 py-0.5 text-xs font-semibold dark:bg-black/20">
+                    {actions.length}
+                </span>
+            </div>
+
+            {loading ? (
+                <p className="mt-4 text-sm opacity-80">Loading backend action status...</p>
+            ) : error ? (
+                <p className="mt-4 text-sm opacity-80">Could not load backed action status. Retry from the dashboard refresh.</p>
+            ) : actions.length === 0 ? (
+                <p className="mt-4 text-sm opacity-80">{emptyText}</p>
+            ) : (
+                <div className="mt-4 space-y-3">
+                    {actions.slice(0, 3).map((action) => (
+                        <Button
+                            key={action.id}
+                            type="button"
+                            variant="outline"
+                            onClick={() => onOpenProject(action)}
+                            className="block w-full rounded-xl bg-white/75 p-3 text-left text-sm shadow-sm transition-transform hover:-translate-y-0.5 dark:bg-black/20"
+                        >
+                            <span className="block font-semibold">{action.title}</span>
+                            <span className="mt-1 block opacity-80">{action.projectName} · {action.summary}</span>
+                        </Button>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

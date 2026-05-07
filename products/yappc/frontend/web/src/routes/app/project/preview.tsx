@@ -15,6 +15,7 @@ import { useParams } from "react-router";
 import { RefreshCw as Refresh, ExternalLink as OpenInNew, Smartphone, Tablet, Laptop, AlertTriangle, Loader2 } from 'lucide-react';
 import type { PreviewStatusContract } from '@/contracts/workspace-project';
 import { getExternalPreviewSandbox } from '@/security/ContentSecurityPolicy';
+import { LegacyRouteCompatibilityNotice } from './LegacyRouteCompatibilityNotice';
 
 type DeviceMode = 'mobile' | 'tablet' | 'desktop';
 
@@ -111,30 +112,38 @@ export default function PreviewPage() {
 
     if (previewStatus === 'unconfigured' || previewStatus === 'loading' || previewStatus === 'unavailable' || previewStatus === 'error') {
         return (
-            <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-divider bg-bg-paper p-8 text-center">
-                <div className="max-w-lg">
-                    <span className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium ${previewStatusView.className}`} data-testid="preview-status-badge">
-                        {previewStatus === 'loading' && <Loader2 className="w-3 h-3 animate-spin" />}
-                        {previewStatus === 'unavailable' && <AlertTriangle className="w-3 h-3" />}
-                        {previewStatus === 'error' && <AlertTriangle className="w-3 h-3" />}
-                        {previewStatusView.label}
-                    </span>
-                    <h1 className="text-xl font-semibold text-text-primary mt-3">Preview {previewStatus === 'loading' ? 'Setup' : 'Not Available'}</h1>
-                    <p className="mt-3 text-sm text-text-secondary">
-                        {previewStatusView.detail}
-                    </p>
-                    <p className="mt-2 text-xs text-text-secondary border-t border-divider pt-2">
-                        {previewStatusView.capabilityBoundary}
-                    </p>
-                    {previewStatus === 'unavailable' && (
-                        <button
-                            onClick={() => setPreviewStatus('loading')}
-                            className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors text-sm"
-                        >
-                            <Refresh className="w-4 h-4" />
-                            Retry
-                        </button>
-                    )}
+            <div className="flex h-full flex-col">
+                <LegacyRouteCompatibilityNotice
+                    projectId={projectId}
+                    legacySurface="Project preview"
+                    canonicalPhase="observe"
+                    reason="Preview and runtime signals are now part of Observe."
+                />
+                <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-divider bg-bg-paper p-8 text-center">
+                    <div className="max-w-lg">
+                        <span className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium ${previewStatusView.className}`} data-testid="preview-status-badge">
+                            {previewStatus === 'loading' && <Loader2 className="w-3 h-3 animate-spin" />}
+                            {previewStatus === 'unavailable' && <AlertTriangle className="w-3 h-3" />}
+                            {previewStatus === 'error' && <AlertTriangle className="w-3 h-3" />}
+                            {previewStatusView.label}
+                        </span>
+                        <h1 className="text-xl font-semibold text-text-primary mt-3">Preview {previewStatus === 'loading' ? 'Setup' : 'Not Available'}</h1>
+                        <p className="mt-3 text-sm text-text-secondary">
+                            {previewStatusView.detail}
+                        </p>
+                        <p className="mt-2 text-xs text-text-secondary border-t border-divider pt-2">
+                            {previewStatusView.capabilityBoundary}
+                        </p>
+                        {previewStatus === 'unavailable' && (
+                            <button
+                                onClick={() => setPreviewStatus('loading')}
+                                className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors text-sm"
+                            >
+                                <Refresh className="w-4 h-4" />
+                                Retry
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         );
@@ -152,6 +161,12 @@ export default function PreviewPage() {
 
     return (
         <div className="flex flex-col h-full">
+            <LegacyRouteCompatibilityNotice
+                projectId={projectId}
+                legacySurface="Project preview"
+                canonicalPhase="observe"
+                reason="Preview and runtime signals are now part of Observe."
+            />
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-divider bg-bg-paper px-4 py-3">
                 <div>
                     <p className="text-sm font-semibold text-text-primary">Preview via external host</p>
