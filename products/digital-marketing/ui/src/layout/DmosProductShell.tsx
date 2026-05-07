@@ -40,10 +40,12 @@ export function DmosProductShell({ children }: DmosProductShellProps): React.Rea
       'exec-sponsor': 'Executive review and strategic governance.',
       admin: 'Operational administration and platform support.',
     },
-    routes: dmosRouteManifest.map((route) => ({
-      ...route,
-      path: resolveDmosRoutePath(route.path, workspaceId),
-    })),
+    routes: dmosRouteManifest
+      .filter((route) => route.lifecycle !== 'boundary' || route.discoverable === true)
+      .map((route) => ({
+        ...route,
+        path: resolveDmosRoutePath(route.path, workspaceId),
+      })),
     headerActions: (
       <div className="flex items-center gap-3">
         <span className="hidden text-sm text-slate-600 sm:inline">

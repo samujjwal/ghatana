@@ -15,6 +15,7 @@ import { MarketResearchPage } from '@/pages/MarketResearchPage';
 import { AdvancedChannelsPage } from '@/pages/AdvancedChannelsPage';
 import { LocalizationPage } from '@/pages/LocalizationPage';
 import { AgencyOperationsPage } from '@/pages/AgencyOperationsPage';
+import { AiOptimizationPage } from '@/pages/AiOptimizationPage';
 import { VALID_ROLES, type ValidRole, normalizeRoles } from '@/lib/role-utils';
 
 export interface DmosRouteManifestEntry extends ProductRouteCapability {
@@ -230,6 +231,21 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   // ── P3 Roadmap Routes ────────────────────────────────────────────────────
   {
+    path: '/workspaces/:workspaceId/ai-optimization',
+    label: 'AI Optimization',
+    description: 'AI-driven next-best-action recommendations, anomaly detection, and budget optimization.',
+    group: 'Intelligence',
+    minimumRole: 'brand-manager',
+    personas: ['planner', 'analyst', 'approver'],
+    tiers: ['enterprise'],
+    actions: ['view-recommendations', 'approve-optimizations'],
+    cards: ['next-best-actions', 'anomaly-detection', 'budget-reallocation'],
+    iconName: 'sparkles',
+    lifecycle: 'boundary',
+    capabilityKey: 'dmos.ai_optimization',
+    element: <AiOptimizationPage />,
+  },
+  {
     path: '/workspaces/:workspaceId/self-marketing-funnel',
     label: 'Self-Marketing Funnel',
     description: 'Product-led growth funnel management and trial onboarding flows.',
@@ -241,7 +257,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     cards: ['funnel-stages', 'trial-onboarding'],
     iconName: 'funnel',
     lifecycle: 'boundary',
-    capabilityKey: 'dmos.self-marketing',
+    capabilityKey: 'dmos.self_marketing',
     element: <SelfMarketingFunnelPage />,
   },
   {
@@ -256,7 +272,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     cards: ['trend-analysis', 'buyer-personas'],
     iconName: 'search',
     lifecycle: 'boundary',
-    capabilityKey: 'dmos.market-research',
+    capabilityKey: 'dmos.market_research',
     element: <MarketResearchPage />,
   },
   {
@@ -271,7 +287,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     cards: ['programmatic-dsp', 'ctv-campaigns', 'influencer-roster'],
     iconName: 'broadcast',
     lifecycle: 'boundary',
-    capabilityKey: 'dmos.advanced-channels',
+    capabilityKey: 'dmos.advanced_channels',
     element: <AdvancedChannelsPage />,
   },
   {

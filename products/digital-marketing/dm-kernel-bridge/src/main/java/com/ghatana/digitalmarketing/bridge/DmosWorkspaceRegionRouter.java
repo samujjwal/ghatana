@@ -50,6 +50,13 @@ public final class DmosWorkspaceRegionRouter {
             throw new IllegalArgumentException(
                     "primaryRegion '" + primaryRegion + "' must be registered in regionEndpoints");
         }
+        // P1-008: Validate all registered endpoints use HTTPS
+        for (Map.Entry<String, URI> entry : regionEndpoints.entrySet()) {
+            if (!"https".equalsIgnoreCase(entry.getValue().getScheme())) {
+                throw new IllegalArgumentException(
+                    "Region endpoint must use HTTPS: region=" + entry.getKey() + ", uri=" + entry.getValue());
+            }
+        }
     }
 
     /**

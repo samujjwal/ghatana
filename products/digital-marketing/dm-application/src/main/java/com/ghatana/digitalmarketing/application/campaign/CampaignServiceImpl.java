@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.digitalmarketing.application.command.DmCommandService;
 import com.ghatana.digitalmarketing.application.governance.DmKillSwitchService;
 import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
+import com.ghatana.digitalmarketing.bridge.CampaignEventSourcingAdapter;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
@@ -36,8 +37,11 @@ import static com.ghatana.digitalmarketing.pack.DmComplianceRuleSetIds.DM_CAMPAI
  *   <li>Domain transition via {@link Campaign} state machine</li>
  *   <li>Approval routing via {@link DigitalMarketingKernelAdapter#requestApproval}</li>
  *   <li>Persistence via {@link CampaignRepository}</li>
+ *   <li>Event publishing via {@link CampaignEventSourcingAdapter}</li>
  *   <li>Audit recording via {@link DigitalMarketingKernelAdapter#recordAudit}</li>
  * </ol>
+ * <p>P1-006: Event publishing is wired transactionally with repository saves to ensure
+ * consistent event sourcing for campaign lifecycle events.</p>
  *
  * @doc.type class
  * @doc.purpose Production DMOS campaign application service
@@ -58,6 +62,7 @@ public final class CampaignServiceImpl implements CampaignService {
     private final DmKillSwitchService killSwitchService;
     private final DmCommandService commandService;
     private final ObjectMapper objectMapper;
+    private final CampaignEventSourcingAdapter eventSourcingAdapter;
 
     /**
      * Constructs the campaign service.
@@ -70,6 +75,7 @@ public final class CampaignServiceImpl implements CampaignService {
      * @param killSwitchService      kill switch service for circuit breaker checks (P1-024)
      * @param commandService         command service for issuing outbox commands (P1-023)
      * @param objectMapper           JSON mapper for command payload serialization
+     * @param eventSourcingAdapter   event sourcing adapter for publishing campaign lifecycle events (P1-006)
      */
     public CampaignServiceImpl(
             DigitalMarketingKernelAdapter kernelAdapter,
@@ -79,7 +85,8 @@ public final class CampaignServiceImpl implements CampaignService {
             DmosMetricsCollector metrics,
             DmKillSwitchService killSwitchService,
             DmCommandService commandService,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            CampaignEventSourcingAdapter eventSourcingAdapter) {
         this.kernelAdapter = Objects.requireNonNull(kernelAdapter, "kernelAdapter must not be null");
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
         this.compliancePlugin = Objects.requireNonNull(compliancePlugin, "compliancePlugin must not be null");
@@ -91,6 +98,7 @@ public final class CampaignServiceImpl implements CampaignService {
         this.killSwitchService = Objects.requireNonNull(killSwitchService, "killSwitchService must not be null");
         this.commandService = Objects.requireNonNull(commandService, "commandService must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
+        this.eventSourcingAdapter = Objects.requireNonNull(eventSourcingAdapter, "eventSourcingAdapter must not be null");
     }
 
     // -----------------------------------------------------------------------
@@ -122,12 +130,14 @@ public final class CampaignServiceImpl implements CampaignService {
                     .build();
 
                 return repository.save(campaign)
-                    .then(saved -> kernelAdapter.recordAudit(
-                        ctx.withIdempotencyKey(DmIdempotencyKey.forCommand("CreateCampaign", saved.getId())),
-                        saved.getId(),
-                        "create",
-                        Map.of("campaignName", saved.getName(), "type", saved.getType().name())
-                    ).map(auditId -> {
+                    .then(saved -> eventSourcingAdapter.publishCreated(ctx, saved)
+                        .then(offset -> kernelAdapter.recordAudit(
+                            ctx.withIdempotencyKey(DmIdempotencyKey.forCommand("CreateCampaign", saved.getId())),
+                            saved.getId(),
+                            "create",
+                            Map.of("campaignName", saved.getName(), "type", saved.getType().name())
+                        ))
+                    .map(auditId -> {
                         metrics.increment(DmosMetricsCollector.CAMPAIGN_CREATED, Map.of(
                             "tenantId",    ctx.getTenantId().getValue(),
                             "workspaceId", ctx.getWorkspaceId().getValue(),
@@ -166,7 +176,8 @@ public final class CampaignServiceImpl implements CampaignService {
             .then(campaign -> {
                 Campaign launched = campaign.launch();
                 return repository.save(launched)
-                    .then(saved -> issueGoogleAdsCommandIfNeeded(ctx, saved)
+                    .then(saved -> eventSourcingAdapter.publishLaunched(ctx, saved)
+                        .then(offset -> issueGoogleAdsCommandIfNeeded(ctx, saved))
                         .then(ignored -> kernelAdapter.recordAudit(
                             ctx,
                             saved.getId(),
@@ -219,18 +230,150 @@ public final class CampaignServiceImpl implements CampaignService {
             .then(campaign -> {
                 Campaign paused = campaign.pause();
                 return repository.save(paused)
-                    .then(saved -> kernelAdapter.recordAudit(
-                        ctx,
-                        saved.getId(),
-                        "pause",
-                        Map.of("previousStatus", campaign.getStatus().name())
-                    ).map(auditId -> {
+                    .then(saved -> eventSourcingAdapter.publishPaused(ctx, saved)
+                        .then(offset -> kernelAdapter.recordAudit(
+                            ctx,
+                            saved.getId(),
+                            "pause",
+                            Map.of("previousStatus", campaign.getStatus().name())
+                        ))
+                    .map(auditId -> {
                         metrics.increment(DmosMetricsCollector.CAMPAIGN_PAUSED, Map.of(
                             "tenantId",    ctx.getTenantId().getValue(),
                             "workspaceId", ctx.getWorkspaceId().getValue()
                         ));
                         LOG.info("[DMOS] Campaign paused: id={}, tenant={}",
                             saved.getId(), ctx.getTenantId().getValue());
+                        return saved;
+                    }));
+            });
+    }
+
+    // -----------------------------------------------------------------------
+    // Complete
+    // -----------------------------------------------------------------------
+
+    @Override
+    public Promise<Campaign> completeCampaign(DmOperationContext ctx, String campaignId) {
+        Objects.requireNonNull(ctx, "ctx must not be null");
+        Objects.requireNonNull(campaignId, "campaignId must not be null");
+
+        return kernelAdapter.isAuthorized(ctx, "campaigns/" + campaignId, "complete")
+            .then(allowed -> {
+                if (!allowed) {
+                    return Promise.ofException(new SecurityException(
+                        "Not authorized to complete campaign " + campaignId
+                    ));
+                }
+                return repository.findById(ctx.getWorkspaceId(), campaignId);
+            })
+            .then(optCampaign -> Promise.of(optCampaign.orElseThrow(
+                () -> new NoSuchElementException("Campaign not found: " + campaignId)
+            )))
+            .then(campaign -> {
+                Campaign completed = campaign.complete();
+                return repository.save(completed)
+                    .then(saved -> eventSourcingAdapter.publishCompleted(ctx, saved)
+                        .then(offset -> kernelAdapter.recordAudit(
+                            ctx,
+                            saved.getId(),
+                            "complete",
+                            Map.of("previousStatus", campaign.getStatus().name())
+                        ))
+                    .map(auditId -> {
+                        metrics.increment(DmosMetricsCollector.CAMPAIGN_COMPLETED, Map.of(
+                            "tenantId", ctx.getTenantId().getValue(),
+                            "workspaceId", ctx.getWorkspaceId().getValue()
+                        ));
+                        LOG.info("[DMOS] Campaign completed: id={}, tenant={}",
+                            saved.getId(), ctx.getTenantId().getValue());
+                        return saved;
+                    }));
+            });
+    }
+
+    // -----------------------------------------------------------------------
+    // Archive
+    // -----------------------------------------------------------------------
+
+    @Override
+    public Promise<Campaign> archiveCampaign(DmOperationContext ctx, String campaignId) {
+        Objects.requireNonNull(ctx, "ctx must not be null");
+        Objects.requireNonNull(campaignId, "campaignId must not be null");
+
+        return kernelAdapter.isAuthorized(ctx, "campaigns/" + campaignId, "archive")
+            .then(allowed -> {
+                if (!allowed) {
+                    return Promise.ofException(new SecurityException(
+                        "Not authorized to archive campaign " + campaignId
+                    ));
+                }
+                return repository.findById(ctx.getWorkspaceId(), campaignId);
+            })
+            .then(optCampaign -> Promise.of(optCampaign.orElseThrow(
+                () -> new NoSuchElementException("Campaign not found: " + campaignId)
+            )))
+            .then(campaign -> {
+                Campaign archived = campaign.archive();
+                return repository.save(archived)
+                    .then(saved -> eventSourcingAdapter.publishArchived(ctx, saved)
+                        .then(offset -> kernelAdapter.recordAudit(
+                            ctx,
+                            saved.getId(),
+                            "archive",
+                            Map.of("previousStatus", campaign.getStatus().name())
+                        ))
+                    .map(auditId -> {
+                        metrics.increment(DmosMetricsCollector.CAMPAIGN_ARCHIVED, Map.of(
+                            "tenantId", ctx.getTenantId().getValue(),
+                            "workspaceId", ctx.getWorkspaceId().getValue()
+                        ));
+                        LOG.info("[DMOS] Campaign archived: id={}, tenant={}",
+                            saved.getId(), ctx.getTenantId().getValue());
+                        return saved;
+                    }));
+            });
+    }
+
+    // -----------------------------------------------------------------------
+    // Rollback
+    // -----------------------------------------------------------------------
+
+    @Override
+    public Promise<Campaign> rollbackCampaign(DmOperationContext ctx, String campaignId) {
+        Objects.requireNonNull(ctx, "ctx must not be null");
+        Objects.requireNonNull(campaignId, "campaignId must not be null");
+
+        return kernelAdapter.isAuthorized(ctx, "campaigns/" + campaignId, "rollback")
+            .then(allowed -> {
+                if (!allowed) {
+                    return Promise.ofException(new SecurityException(
+                        "Not authorized to rollback campaign " + campaignId
+                    ));
+                }
+                return repository.findById(ctx.getWorkspaceId(), campaignId);
+            })
+            .then(optCampaign -> Promise.of(optCampaign.orElseThrow(
+                () -> new NoSuchElementException("Campaign not found: " + campaignId)
+            )))
+            .then(campaign -> {
+                CampaignStatus previousStatus = campaign.getStatus();
+                Campaign rolledBack = campaign.rollback();
+                return repository.save(rolledBack)
+                    .then(saved -> eventSourcingAdapter.publishRolledBack(ctx, saved, previousStatus)
+                        .then(offset -> kernelAdapter.recordAudit(
+                            ctx,
+                            saved.getId(),
+                            "rollback",
+                            Map.of("previousStatus", previousStatus.name())
+                        ))
+                    .map(auditId -> {
+                        metrics.increment(DmosMetricsCollector.CAMPAIGN_ROLLED_BACK, Map.of(
+                            "tenantId", ctx.getTenantId().getValue(),
+                            "workspaceId", ctx.getWorkspaceId().getValue()
+                        ));
+                        LOG.info("[DMOS] Campaign rolled back: id={}, previousStatus={}, tenant={}",
+                            saved.getId(), previousStatus, ctx.getTenantId().getValue());
                         return saved;
                     }));
             });

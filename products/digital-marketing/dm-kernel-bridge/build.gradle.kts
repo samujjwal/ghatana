@@ -50,8 +50,9 @@ tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.jacocoTestReport)
     violationRules {
         rule {
-            limit { counter = "LINE"; value = "COVEREDRATIO"; minimum = "0.60".toBigDecimal() }
-            limit { counter = "BRANCH"; value = "COVEREDRATIO"; minimum = "0.45".toBigDecimal() }
+            // P0-012: Raise coverage gates from 60%/45% to 90%/80% for critical bridge modules
+            limit { counter = "LINE"; value = "COVEREDRATIO"; minimum = "0.90".toBigDecimal() }
+            limit { counter = "BRANCH"; value = "COVEREDRATIO"; minimum = "0.80".toBigDecimal() }
         }
     }
 }

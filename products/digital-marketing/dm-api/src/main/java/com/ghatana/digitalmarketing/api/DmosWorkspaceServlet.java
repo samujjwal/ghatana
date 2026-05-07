@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ghatana.digitalmarketing.application.capabilities.DmosCapabilityRegistry;
 import com.ghatana.digitalmarketing.application.workspace.WorkspaceService;
 import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
@@ -33,6 +34,7 @@ import java.util.Objects;
  *   GET    /v1/workspaces/:workspaceId               — Get a workspace
  *   POST   /v1/workspaces/:workspaceId/suspend       — Suspend a workspace
  *   POST   /v1/workspaces/:workspaceId/reactivate    — Reactivate a workspace
+ *   GET    /v1/workspaces/:workspaceId/capabilities  — Get workspace capabilities (P0-002, P0-004)
  * </pre>
  *
  * <p>Tenant isolation is enforced through the {@code X-Tenant-ID} header.
@@ -42,6 +44,8 @@ import java.util.Objects;
  * P2-025: Uses DmosHttpContextFactory for server-side identity derivation to prevent
  * spoofed identity attacks (P0-015). Client-provided X-Roles/X-Permissions headers are
  * ignored in production mode.
+ *
+ * P0-002, P0-004: Added capabilities endpoint for runtime feature gating.
  *
  * @doc.type class
  * @doc.purpose DMOS HTTP API servlet for workspace management endpoints
@@ -97,6 +101,8 @@ public final class DmosWorkspaceServlet {
                 this::handleSuspendWorkspace)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/reactivate",
                 this::handleReactivateWorkspace)
+            .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/capabilities",
+                this::handleGetWorkspaceCapabilities)
             .build()
         );
     }
@@ -211,6 +217,34 @@ public final class DmosWorkspaceServlet {
         }
     }
 
+    private Promise<HttpResponse> handleGetWorkspaceCapabilities(HttpRequest request) {
+        try {
+            String workspaceId = request.getPathParameter("workspaceId");
+            DmOperationContext ctx = httpContextFactory.buildContext(request, "root", false);
+
+            return workspaceService.getWorkspaceCapabilities(ctx, workspaceId)
+                .map(capabilities -> {
+                    WorkspaceCapabilitiesResponse response = new WorkspaceCapabilitiesResponse(
+                        workspaceId,
+                        java.time.Instant.now().toString(),
+                        capabilities
+                    );
+                    return jsonResponse(200, response);
+                })
+                .then(r -> Promise.of(r), e -> {
+                    if (e instanceof NoSuchElementException) {
+                        return Promise.of(errorResponse(404, "Workspace not found: " + workspaceId));
+                    }
+                    return handleError("get workspace capabilities", e);
+                });
+        } catch (IllegalArgumentException e) {
+            return Promise.of(errorResponse(400, e.getMessage()));
+        } catch (Exception e) {
+            LOG.error("[DMOS] Unexpected error getting workspace capabilities", e);
+            return Promise.of(errorResponse(500, "Internal error"));
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Error helpers
     // -------------------------------------------------------------------------
@@ -277,6 +311,13 @@ public final class DmosWorkspaceServlet {
             );
         }
     }
+
+    /** P0-002, P0-004: API response for workspace capabilities. */
+    record WorkspaceCapabilitiesResponse(
+        String workspaceId,
+        String lastUpdated,
+        java.util.Map<String, Boolean> capabilities
+    ) { }
 
     /** Error response body. */
     record ErrorBody(int status, String message) { }

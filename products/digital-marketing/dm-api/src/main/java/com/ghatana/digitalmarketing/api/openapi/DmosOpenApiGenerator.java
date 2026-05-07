@@ -105,6 +105,19 @@ public final class DmosOpenApiGenerator {
         addApprovalPaths(paths);
         addAiActionLogPaths(paths);
         addWorkspacePaths(paths);
+        addCapabilitiesPaths(paths);
+        addAdCopyPaths(paths);
+        addCompetitorResearchPaths(paths);
+        addContentValidationPaths(paths);
+        addContentVersionPaths(paths);
+        addEmailFollowUpPaths(paths);
+        addIntakeQuestionnairePaths(paths);
+        addLandingPagePaths(paths);
+        addLeadScoringPaths(paths);
+        addProposalPaths(paths);
+        addSowPaths(paths);
+        addWebsiteAuditPaths(paths);
+        addRouteEntitlementPaths(paths);
         addHealthPaths(paths);
         addPublicIntakePaths(paths);
         openApi.put("paths", paths);
@@ -144,6 +157,12 @@ public final class DmosOpenApiGenerator {
             "Launch campaign", "Launch a campaign");
         addPath(paths, "/v1/workspaces/{workspaceId}/campaigns/{id}/pause", "POST", 
             "Pause campaign", "Pause a running campaign");
+        addPath(paths, "/v1/workspaces/{workspaceId}/campaigns/{id}/complete", "POST",
+            "Complete campaign", "Mark a campaign as completed (P1-005)");
+        addPath(paths, "/v1/workspaces/{workspaceId}/campaigns/{id}/archive", "POST",
+            "Archive campaign", "Archive a completed campaign (P1-005)");
+        addPath(paths, "/v1/workspaces/{workspaceId}/campaigns/{id}/rollback", "POST",
+            "Rollback campaign", "Rollback a campaign to DRAFT status (P1-005)");
         addPath(paths, "/v1/workspaces/{workspaceId}/campaigns/{id}/approve", "POST", 
             "Approve campaign", "Approve a pending campaign approval");
         addPath(paths, "/v1/workspaces/{workspaceId}/campaigns/{id}/reject", "POST", 
@@ -191,6 +210,75 @@ public final class DmosOpenApiGenerator {
             "List workspaces", "List workspaces accessible to the user");
         addPath(paths, "/v1/workspaces/{workspaceId}", "GET", 
             "Get workspace", "Retrieve a specific workspace");
+    }
+
+    private static void addCapabilitiesPaths(Map<String, Object> paths) {
+        addPath(paths, "/v1/workspaces/{workspaceId}/capabilities", "GET",
+            "Get workspace capabilities", "Retrieve capability flags for a workspace (P0-002)");
+    }
+
+    private static void addAdCopyPaths(Map<String, Object> paths) {
+        addPath(paths, "/v1/workspaces/{workspaceId}/ad-copy/generate", "POST",
+            "Generate ad copy", "Generate AI-powered ad copy drafts");
+        addPath(paths, "/v1/workspaces/{workspaceId}/ad-copy/latest-approved", "GET",
+            "Get latest approved ad copy", "Retrieve the latest approved ad copy");
+    }
+
+    private static void addCompetitorResearchPaths(Map<String, Object> paths) {
+        addPath(paths, "/v1/workspaces/{workspaceId}/competitor-research", "POST",
+            "Generate competitor research", "Generate AI-powered competitor intelligence");
+    }
+
+    private static void addContentValidationPaths(Map<String, Object> paths) {
+        addPath(paths, "/v1/workspaces/{workspaceId}/content-validation", "POST",
+            "Validate content", "Validate content against compliance rules");
+    }
+
+    private static void addContentVersionPaths(Map<String, Object> paths) {
+        addPath(paths, "/v1/workspaces/{workspaceId}/content-versions", "GET",
+            "List content versions", "List content version history");
+        addPath(paths, "/v1/workspaces/{workspaceId}/content-versions/{versionId}", "GET",
+            "Get content version", "Retrieve a specific content version");
+    }
+
+    private static void addEmailFollowUpPaths(Map<String, Object> paths) {
+        addPath(paths, "/v1/workspaces/{workspaceId}/email-followup", "POST",
+            "Generate email follow-up", "Generate AI-powered email follow-up sequences");
+    }
+
+    private static void addIntakeQuestionnairePaths(Map<String, Object> paths) {
+        addPath(paths, "/v1/workspaces/{workspaceId}/intake-questionnaire", "POST",
+            "Submit intake questionnaire", "Submit workspace intake questionnaire");
+    }
+
+    private static void addLandingPagePaths(Map<String, Object> paths) {
+        addPath(paths, "/v1/workspaces/{workspaceId}/landing-pages", "POST",
+            "Generate landing page", "Generate AI-powered landing page content");
+    }
+
+    private static void addLeadScoringPaths(Map<String, Object> paths) {
+        addPath(paths, "/v1/workspaces/{workspaceId}/lead-scoring", "POST",
+            "Score leads", "Score leads using AI-powered lead scoring");
+    }
+
+    private static void addProposalPaths(Map<String, Object> paths) {
+        addPath(paths, "/v1/workspaces/{workspaceId}/proposals", "POST",
+            "Generate proposal", "Generate AI-powered marketing proposal");
+    }
+
+    private static void addSowPaths(Map<String, Object> paths) {
+        addPath(paths, "/v1/workspaces/{workspaceId}/sows", "POST",
+            "Generate SOW", "Generate AI-powered statement of work");
+    }
+
+    private static void addWebsiteAuditPaths(Map<String, Object> paths) {
+        addPath(paths, "/v1/workspaces/{workspaceId}/website-audit", "POST",
+            "Audit website", "Generate AI-powered website audit report");
+    }
+
+    private static void addRouteEntitlementPaths(Map<String, Object> paths) {
+        addPath(paths, "/v1/routes/entitlements", "GET",
+            "Get route entitlements", "Retrieve route entitlement information");
     }
 
     private static void addHealthPaths(Map<String, Object> paths) {

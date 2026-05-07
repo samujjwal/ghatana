@@ -98,6 +98,20 @@ public final class Campaign {
         return toBuilder().status(CampaignStatus.ARCHIVED).updatedAt(Instant.now()).build();
     }
 
+    /**
+     * Transitions the campaign to {@link CampaignStatus#DRAFT}.
+     * Only valid from {@link CampaignStatus#LAUNCHED} or {@link CampaignStatus#PAUSED}.
+     *
+     * <p>P1-005: Extends campaign lifecycle beyond create/launch/pause to include
+     * rollback to draft for rework before re-launching.</p>
+     *
+     * @throws IllegalStateException if the campaign is not in a rollbackable state
+     */
+    public Campaign rollback() {
+        requireStatus("rollback", CampaignStatus.LAUNCHED, CampaignStatus.PAUSED);
+        return toBuilder().status(CampaignStatus.DRAFT).updatedAt(Instant.now()).build();
+    }
+
     /** Returns {@code true} when a launch or resume is currently permitted. */
     public boolean isLaunchable() {
         return status == CampaignStatus.DRAFT || status == CampaignStatus.PAUSED;

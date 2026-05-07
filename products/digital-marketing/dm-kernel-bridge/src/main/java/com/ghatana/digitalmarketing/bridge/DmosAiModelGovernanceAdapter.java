@@ -4,14 +4,17 @@ import com.ghatana.aiplatform.registry.ABTestingService;
 import com.ghatana.aiplatform.registry.DeploymentStatus;
 import com.ghatana.aiplatform.registry.ModelMetadata;
 import com.ghatana.aiplatform.registry.ModelRegistryPort;
+import com.ghatana.digitalmarketing.bridge.governance.AiExperimentConfig;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * KERNEL-P2-3: AI model governance adapter for DMOS.
@@ -26,6 +29,9 @@ import java.util.Optional;
  *       model evaluation before full promotion to production.
  * </ul>
  *
+ * <p>P0-011: Hardened with typed experiment configuration, approval gates, and audit events.
+ * Model promotion now requires evaluation result, approval, and audit event recording.
+ *
  * <p><b>Usage</b>
  * <pre>{@code
  * DmosAiModelGovernanceAdapter governance = new DmosAiModelGovernanceAdapter(
@@ -34,12 +40,16 @@ import java.util.Optional;
  * // Register a candidate model for DMOS ad-copy generation
  * governance.registerCandidateModel(tenantId, "dmos-adcopy", "v2.0.0");
  *
- * // Define an A/B experiment
+ * // Define an A/B experiment with typed configuration
  * governance.defineExperiment(tenantId, "adcopy-v2-trial",
  *     "dmos-adcopy:v1.0.0", "dmos-adcopy:v2.0.0", "20%");
  *
- * // Route a campaign's entity to either baseline or variant
- * String assignedModel = governance.assignModel(tenantId, "adcopy-v2-trial", campaignId);
+ * // Record metrics and approve before promotion
+ * governance.recordExperimentMetrics(tenantId, "adcopy-v2-trial", metrics);
+ * governance.approveExperiment(tenantId, "adcopy-v2-trial", "approver-id");
+ *
+ * // Promote with approval gate
+ * governance.promoteToProduction(tenantId, "dmos-adcopy", "v2.0.0", "adcopy-v2-trial");
  * }</pre>
  *
  * @doc.type class
@@ -53,6 +63,12 @@ public final class DmosAiModelGovernanceAdapter {
 
     private final ModelRegistryPort modelRegistry;
     private final ABTestingService abTesting;
+    
+    // P0-011: In-memory store for experiment configurations with approval state
+    private final Map<String, AiExperimentConfig> experimentConfigs = new ConcurrentHashMap<>();
+    
+    // P0-011: Audit event recorder for model governance actions
+    private final ModelGovernanceAuditRecorder auditRecorder;
 
     /**
      * @param modelRegistry platform model registry service
@@ -63,6 +79,16 @@ public final class DmosAiModelGovernanceAdapter {
             ABTestingService abTesting) {
         this.modelRegistry = Objects.requireNonNull(modelRegistry, "modelRegistry required");
         this.abTesting = Objects.requireNonNull(abTesting, "abTesting required");
+        this.auditRecorder = new ModelGovernanceAuditRecorder();
+    }
+
+    public DmosAiModelGovernanceAdapter(
+            ModelRegistryPort modelRegistry,
+            ABTestingService abTesting,
+            ModelGovernanceAuditRecorder auditRecorder) {
+        this.modelRegistry = Objects.requireNonNull(modelRegistry, "modelRegistry required");
+        this.abTesting = Objects.requireNonNull(abTesting, "abTesting required");
+        this.auditRecorder = Objects.requireNonNull(auditRecorder, "auditRecorder required");
     }
 
     // ─── Model Registry Operations ─────────────────────────────────────────────
@@ -107,20 +133,50 @@ public final class DmosAiModelGovernanceAdapter {
     }
 
     /**
-     * Promotes a staged model to {@link DeploymentStatus#PRODUCTION}.
+     * P0-011: Promotes a staged model to {@link DeploymentStatus#PRODUCTION} with approval gate.
      * The model must already be registered via {@link #registerCandidateModel}.
+     * 
+     * <p>Requires experiment approval if experimentId is provided.
      *
-     * @param tenantId  tenant owning the model
-     * @param modelName model name
-     * @param version   version to promote
+     * @param tenantId    tenant owning the model
+     * @param modelName   model name
+     * @param version     version to promote
+     * @param experimentId optional experiment ID that approved this promotion
      * @return Promise of the promoted {@link ModelMetadata}
      */
     public Promise<ModelMetadata> promoteToProduction(
-            DmTenantId tenantId, String modelName, String version) {
+            DmTenantId tenantId, String modelName, String version, String experimentId) {
         Objects.requireNonNull(tenantId, "tenantId required");
 
         return Promise.ofCallback(cb -> {
             try {
+                // P0-011: Validate model refs
+                String modelRef = modelName + ":" + version;
+                AiExperimentConfig.validateModelRef(modelRef);
+                
+                // P0-011: Check approval gate if experiment provided
+                if (experimentId != null) {
+                    String configKey = tenantId.getValue() + ":" + experimentId;
+                    AiExperimentConfig config = experimentConfigs.get(configKey);
+                    if (config == null) {
+                        cb.setException(new IllegalArgumentException(
+                                "Experiment not found: " + experimentId));
+                        return;
+                    }
+                    if (config.approvalState() != AiExperimentConfig.ApprovalState.APPROVED) {
+                        cb.setException(new IllegalStateException(
+                                "Experiment not approved: " + experimentId + 
+                                " (state: " + config.approvalState() + ")"));
+                        return;
+                    }
+                    // P0-011: Verify metrics exist for approved experiment
+                    if (config.metrics().outcome().equals("IN_PROGRESS")) {
+                        cb.setException(new IllegalStateException(
+                                "Experiment metrics incomplete: " + experimentId));
+                        return;
+                    }
+                }
+
                 Optional<ModelMetadata> found =
                         modelRegistry.findByName(tenantId.getValue(), modelName, version);
                 if (found.isEmpty()) {
@@ -132,11 +188,14 @@ public final class DmosAiModelGovernanceAdapter {
                 ModelMetadata model = found.get();
                 modelRegistry.updateStatus(tenantId.getValue(), model.getId(), DeploymentStatus.PRODUCTION);
 
+                // P0-011: Record audit event for promotion
+                auditRecorder.recordPromotion(tenantId.getValue(), modelName, version, experimentId);
+
                 // Re-fetch to get updated metadata
                 ModelMetadata updated = modelRegistry.findByName(tenantId.getValue(), modelName, version)
                         .orElse(model);
-                LOG.info("[DMOS][AI-Gov] Model promoted to PRODUCTION: tenantId={} model={} version={}",
-                        tenantId.getValue(), modelName, version);
+                LOG.info("[DMOS][AI-Gov] Model promoted to PRODUCTION: tenantId={} model={} version={} experiment={}",
+                        tenantId.getValue(), modelName, version, experimentId);
                 cb.set(updated);
             } catch (Exception ex) {
                 LOG.error("[DMOS][AI-Gov] Failed to promote model: model={} version={} error={}",
@@ -144,6 +203,14 @@ public final class DmosAiModelGovernanceAdapter {
                 cb.setException(ex);
             }
         });
+    }
+
+    /**
+     * Legacy promote method without experiment ID (for backward compatibility).
+     */
+    public Promise<ModelMetadata> promoteToProduction(
+            DmTenantId tenantId, String modelName, String version) {
+        return promoteToProduction(tenantId, modelName, version, null);
     }
 
     /**
@@ -209,8 +276,7 @@ public final class DmosAiModelGovernanceAdapter {
     // ─── A/B Evaluation Operations ─────────────────────────────────────────────
 
     /**
-     * Defines a new A/B experiment routing a percentage of traffic from
-     * {@code baselineModelRef} to {@code variantModelRef}.
+     * P0-011: Defines a new A/B experiment with typed configuration and validated split percent.
      *
      * @param tenantId         tenant owning the experiment
      * @param experimentId     unique experiment identifier
@@ -232,19 +298,138 @@ public final class DmosAiModelGovernanceAdapter {
 
         return Promise.ofCallback(cb -> {
             try {
+                // P0-011: Validate model refs format
+                AiExperimentConfig.validateModelRef(baselineModelRef);
+                AiExperimentConfig.validateModelRef(variantModelRef);
+                
+                // P0-011: Parse and validate split percent
+                AiExperimentConfig.SplitPercent validatedSplit = 
+                        AiExperimentConfig.parseSplitPercent(splitPercent);
+                
+                // P0-011: Create typed experiment configuration
+                AiExperimentConfig config = AiExperimentConfig.builder()
+                        .experimentId(experimentId)
+                        .baselineModelRef(baselineModelRef)
+                        .variantModelRef(variantModelRef)
+                        .splitPercent(validatedSplit)
+                        .status(AiExperimentConfig.ExperimentStatus.DRAFT)
+                        .approvalState(AiExperimentConfig.ApprovalState.PENDING)
+                        .build();
+                
+                // Store typed configuration
+                String configKey = tenantId.getValue() + ":" + experimentId;
+                experimentConfigs.put(configKey, config);
+                
+                // Register with platform AB testing service
                 ABTestingService.Experiment experiment = new ABTestingService.Experiment(
                         experimentId,
                         experimentId,
-                        splitPercent,
+                        validatedSplit.toString(),
                         baselineModelRef,
                         variantModelRef
                 );
                 abTesting.registerExperiment(tenantId.getValue(), experiment);
+                
+                // P0-011: Record audit event
+                auditRecorder.recordExperimentDefined(tenantId.getValue(), experimentId, 
+                        baselineModelRef, variantModelRef, validatedSplit.toString());
+                
                 LOG.info("[DMOS][AI-Gov] A/B experiment defined: tenantId={} experimentId={} baseline={} variant={} split={}",
-                        tenantId.getValue(), experimentId, baselineModelRef, variantModelRef, splitPercent);
+                        tenantId.getValue(), experimentId, baselineModelRef, variantModelRef, validatedSplit);
                 cb.set(null);
             } catch (Exception ex) {
                 LOG.error("[DMOS][AI-Gov] Failed to define experiment: id={} error={}", experimentId, ex.getMessage(), ex);
+                cb.setException(ex);
+            }
+        });
+    }
+
+    /**
+     * P0-011: Records metrics for an experiment.
+     *
+     * @param tenantId     tenant owning the experiment
+     * @param experimentId experiment identifier
+     * @param metrics      experiment metrics
+     */
+    public Promise<Void> recordExperimentMetrics(
+            DmTenantId tenantId,
+            String experimentId,
+            AiExperimentConfig.ExperimentMetrics metrics) {
+        Objects.requireNonNull(tenantId, "tenantId required");
+        Objects.requireNonNull(experimentId, "experimentId required");
+        Objects.requireNonNull(metrics, "metrics required");
+
+        return Promise.ofCallback(cb -> {
+            try {
+                String configKey = tenantId.getValue() + ":" + experimentId;
+                AiExperimentConfig config = experimentConfigs.get(configKey);
+                if (config == null) {
+                    cb.setException(new IllegalArgumentException("Experiment not found: " + experimentId));
+                    return;
+                }
+                
+                // Update configuration with metrics
+                AiExperimentConfig updated = config.toBuilder()
+                        .metrics(metrics)
+                        .updatedAt(java.time.Instant.now())
+                        .build();
+                experimentConfigs.put(configKey, updated);
+                
+                // P0-011: Record audit event
+                auditRecorder.recordMetricsRecorded(tenantId.getValue(), experimentId, metrics.outcome());
+                
+                LOG.info("[DMOS][AI-Gov] Experiment metrics recorded: tenantId={} experimentId={} outcome={}",
+                        tenantId.getValue(), experimentId, metrics.outcome());
+                cb.set(null);
+            } catch (Exception ex) {
+                LOG.error("[DMOS][AI-Gov] Failed to record metrics: experimentId={} error={}", 
+                        experimentId, ex.getMessage(), ex);
+                cb.setException(ex);
+            }
+        });
+    }
+
+    /**
+     * P0-011: Approves an experiment for model promotion.
+     *
+     * @param tenantId    tenant owning the experiment
+     * @param experimentId experiment identifier
+     * @param approverId  ID of the approver
+     */
+    public Promise<Void> approveExperiment(
+            DmTenantId tenantId,
+            String experimentId,
+            String approverId) {
+        Objects.requireNonNull(tenantId, "tenantId required");
+        Objects.requireNonNull(experimentId, "experimentId required");
+        Objects.requireNonNull(approverId, "approverId required");
+
+        return Promise.ofCallback(cb -> {
+            try {
+                String configKey = tenantId.getValue() + ":" + experimentId;
+                AiExperimentConfig config = experimentConfigs.get(configKey);
+                if (config == null) {
+                    cb.setException(new IllegalArgumentException("Experiment not found: " + experimentId));
+                    return;
+                }
+                
+                // Update approval state
+                AiExperimentConfig updated = config.toBuilder()
+                        .approvalState(AiExperimentConfig.ApprovalState.APPROVED)
+                        .status(AiExperimentConfig.ExperimentStatus.COMPLETED)
+                        .updatedAt(java.time.Instant.now())
+                        .build();
+                experimentConfigs.put(configKey, updated);
+                
+                // P0-011: Record audit event
+                auditRecorder.recordApproval(tenantId.getValue(), experimentId, approverId);
+                
+                LOG.info("[DMOS][AI-Gov] Experiment approved: tenantId={} experimentId={} approver={}",
+                        tenantId.getValue(), experimentId, approverId);
+                cb.set(null);
+            } catch (Exception ex) {
+                LOG.error("[DMOS][AI-Gov] Failed to approve experiment: experimentId={} error={}", 
+                        experimentId, ex.getMessage(), ex);
                 cb.setException(ex);
             }
         });

@@ -1,10 +1,12 @@
 package com.ghatana.digitalmarketing.application.workspace;
 
+import com.ghatana.digitalmarketing.application.capabilities.DmosCapabilityRegistry;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.workspace.Workspace;
 import io.activej.promise.Promise;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Application service contract for DMOS workspace management.
@@ -72,6 +74,17 @@ public interface WorkspaceService {
      * @throws IllegalStateException if the workspace is not in SUSPENDED status
      */
     Promise<Workspace> reactivateWorkspace(DmOperationContext ctx, String workspaceId);
+
+    /**
+     * P0-002, P0-004: Returns all capabilities for a workspace.
+     *
+     * @param ctx         operation context
+     * @param workspaceId the workspace identifier string
+     * @return promise resolving to a map of capability keys to their enabled status
+     * @throws SecurityException if the actor is not authorized to read the workspace
+     * @throws java.util.NoSuchElementException if the workspace does not exist
+     */
+    Promise<Map<String, Boolean>> getWorkspaceCapabilities(DmOperationContext ctx, String workspaceId);
 
     // -----------------------------------------------------------------------
     // Command record

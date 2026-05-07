@@ -16,6 +16,9 @@ import java.util.Map;
  *   <li>{@link #CAMPAIGN_CREATED} — campaign creation events</li>
  *   <li>{@link #CAMPAIGN_LAUNCHED} — successful campaign launches</li>
  *   <li>{@link #CAMPAIGN_PAUSED} — campaign pause events</li>
+ *   <li>{@link #CAMPAIGN_COMPLETED} — campaign completion events</li>
+ *   <li>{@link #CAMPAIGN_ARCHIVED} — campaign archive events</li>
+ *   <li>{@link #CAMPAIGN_ROLLED_BACK} — campaign rollback events</li>
  *   <li>{@link #APPROVAL_REQUESTED} — budget / campaign approval requests</li>
  *   <li>{@link #PERFORMANCE_FETCHED} — connector performance data fetch events</li>
  * </ul>
@@ -35,6 +38,15 @@ public interface DmosMetricsCollector {
 
     /** Counter: a campaign was paused. Labels: {@code tenantId}, {@code workspaceId}. */
     String CAMPAIGN_PAUSED = "dmos.campaign.paused";
+
+    /** Counter: a campaign was completed. Labels: {@code tenantId}, {@code workspaceId}. */
+    String CAMPAIGN_COMPLETED = "dmos.campaign.completed";
+
+    /** Counter: a campaign was archived. Labels: {@code tenantId}, {@code workspaceId}. */
+    String CAMPAIGN_ARCHIVED = "dmos.campaign.archived";
+
+    /** Counter: a campaign was rolled back. Labels: {@code tenantId}, {@code workspaceId}. */
+    String CAMPAIGN_ROLLED_BACK = "dmos.campaign.rolled_back";
 
     /** Counter: a human-approval was requested (budget or campaign). Labels: {@code tenantId}, {@code operationType}. */
     String APPROVAL_REQUESTED = "dmos.approval.requested";

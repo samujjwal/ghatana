@@ -88,7 +88,7 @@ class CampaignEventSourcingAdapterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("publishCreated embeds campaign fields in JSON payload")
+    @DisplayName("publishCreated embeds campaign fields in JSON payload with typed DTO")
     void publishCreatedEmbedsPayload() {
         runPromise(() -> adapter.publishCreated(ctx, campaign));
 
@@ -96,6 +96,9 @@ class CampaignEventSourcingAdapterTest extends EventloopTestBase {
         assertThat(payload).contains("\"campaignId\":\"camp-001\"");
         assertThat(payload).contains("\"name\":\"Black Friday Campaign\"");
         assertThat(payload).contains("\"status\":\"DRAFT\"");
+        // P0-010: Verify proper JSON structure from Jackson serialization
+        assertThat(payload).contains("\"workspaceId\":\"ws-1\"");
+        assertThat(payload).contains("\"type\":\"EMAIL\"");
     }
 
     @Test
@@ -139,7 +142,7 @@ class CampaignEventSourcingAdapterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("replay returns entries matching campaignId header")
+    @DisplayName("replay returns entries matching campaignId header using offset-based read")
     void replayFiltersEntriesByCampaignId() {
         EventLogStore.EventEntry matchingEntry = EventLogStore.EventEntry.builder()
                 .eventType(EVT_CAMPAIGN_CREATED)
@@ -151,12 +154,32 @@ class CampaignEventSourcingAdapterTest extends EventloopTestBase {
                 .payload("{}".getBytes())
                 .headers(Map.of("campaignId", "camp-999"))
                 .build();
-        eventStore.timeRangeResult = List.of(matchingEntry, otherEntry);
+        eventStore.readResult = List.of(matchingEntry, otherEntry);
 
         List<EventLogStore.EventEntry> replayed = runPromise(() -> adapter.replay("tenant-1", "camp-001"));
 
         assertThat(replayed).hasSize(1);
         assertThat(replayed.get(0).headers()).containsEntry("campaignId", "camp-001");
+    }
+
+    @Test
+    @DisplayName("P0-009: replay uses offset-based read without 10k event cap")
+    void replayUsesOffsetBasedRead() {
+        // Create more than 10k events to verify no cap
+        List<EventLogStore.EventEntry> manyEntries = new java.util.ArrayList<>();
+        for (int i = 0; i < 15_000; i++) {
+            manyEntries.add(EventLogStore.EventEntry.builder()
+                    .eventType(EVT_CAMPAIGN_CREATED)
+                    .payload("{}".getBytes())
+                    .headers(Map.of("campaignId", "camp-001"))
+                    .build());
+        }
+        eventStore.readResult = manyEntries;
+
+        List<EventLogStore.EventEntry> replayed = runPromise(() -> adapter.replay("tenant-1", "camp-001"));
+
+        // P0-009: Should return all events, not capped at 10k
+        assertThat(replayed).hasSize(15_000);
     }
 
     // ─── Test double ─────────────────────────────────────────────────────────
@@ -165,7 +188,7 @@ class CampaignEventSourcingAdapterTest extends EventloopTestBase {
 
         TenantContext lastTenant;
         EventLogStore.EventEntry lastEntry;
-        List<EventLogStore.EventEntry> timeRangeResult = List.of();
+        List<EventLogStore.EventEntry> readResult = List.of();
         private long nextOffset = 1L;
 
         @Override
@@ -188,12 +211,12 @@ class CampaignEventSourcingAdapterTest extends EventloopTestBase {
 
         @Override
         public Promise<List<EventLogStore.EventEntry>> read(TenantContext tenant, Offset from, int limit) {
-            return Promise.of(List.of());
+            return Promise.of(readResult);
         }
 
         @Override
         public Promise<List<EventLogStore.EventEntry>> readByTimeRange(TenantContext tenant, Instant startTime, Instant endTime, int limit) {
-            return Promise.of(timeRangeResult);
+            return Promise.of(List.of());
         }
 
         @Override

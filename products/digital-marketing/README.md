@@ -10,10 +10,10 @@ DMOS is the Ghatana product workspace for an AI-native, governance-first digital
 | `dm-domain-packs` | Boundary policy rules, compliance rule packs, plugin startup bindings, pack validations | Stable |
 | `dm-kernel-bridge` | Product-owned adapter over kernel bridge ports (feature flags, audit, compliance, human-approval plugin) | Stable |
 | `dm-domain` | Domain model, aggregates, invariants, approval target types, AI action log | Stable scaffold |
-| `dm-application` | Application services and orchestrations: campaign, strategy, budget, approval, content, connector, workflow, AI actions | MVP scaffold — some services are deterministic stubs |
+| `dm-application` | Application services and orchestrations: campaign, strategy, budget, approval, content, connector, workflow, AI actions | MVP scaffold — deterministic adapters are production-blocked via ProductionBootstrapValidator (P0-006) |
 | `dm-infra` | In-memory repository adapters for local dev, tests, and single-instance staging (ConcurrentHashMap-backed) | Dev/test only — production uses PostgreSQL adapters from dm-persistence |
 | `dm-persistence` | Persistence module (Flyway migrations, PostgreSQL adapters) | Production-ready with PostgreSQL adapters |
-| `dm-connector-google-ads` | OkHttp adapters for Google Ads OAuth, campaign creation, and performance retrieval (REST API v14) | Adapter layer complete; wiring through command/workflow runtime pending |
+| `dm-connector-google-ads` | OkHttp adapters for Google Ads OAuth, campaign creation, and performance retrieval (REST API v14) | Adapter layer complete; command/workflow runtime wiring complete (P0-007) |
 | `dm-api` | ActiveJ HTTP servlets for all DMOS routes; rate limiting, correlation ID, tenant header enforcement | MVP complete |
 | `dm-integration-tests` | DMOS integration test suites | Partial |
 | `ui` | React 19 + TypeScript frontend (`@dmos/ui`) | MVP complete — E2E pending |
@@ -90,19 +90,26 @@ All routes served by `dm-api`. Required headers on every request:
 - `X-Principal-ID` (mandatory)
 - `X-Session-ID` (mandatory)
 - `X-Correlation-ID` (mandatory)
-- `X-Roles` (optional, but missing/empty results in no privileges)
-- `X-Permissions` (optional)
+- `X-Roles` (optional; in production, derived from token/session via DmosHttpContextFactory - client-provided values are ignored for security)
+- `X-Permissions` (optional; in production, derived from token/session via DmosHttpContextFactory - client-provided values are ignored for security)
 - `X-Idempotency-Key` (recommended for write operations to prevent duplicate execution)
+
+P0-005: Production identity derivation uses `DmosHttpContextFactory` to derive principal, roles, and permissions from trusted token/session. Spoofed `X-Principal-ID`, `X-Roles`, and `X-Permissions` headers never grant access in production.
 
 ## Security & Privacy (DMOS-P0-1)
 
-DMOS implements production-grade PII protection:
-- **Hashed Identifiers**: Email addresses and other identifiers are hashed using HMAC-SHA256 before storage
-- **Encrypted PII**: Raw PII data is encrypted using AES-GCM encryption
-- **DSAR Compliance**: Data Subject Access Request (DSAR) endpoints support GDPR/CCPA right-to-be-forgotten
-- **Tenant Isolation**: All PII data is scoped to tenant with hashed keys for privacy-safe lookups
+P1-013: PII model and token hardening is pending implementation. Current security posture:
+- **Tenant Isolation**: All data is scoped to tenant with workspace-level isolation
+- **Header Enforcement**: Production identity derivation uses `DmosHttpContextFactory` to derive principal, roles, and permissions from trusted token/session (P0-005)
+- **Rate Limiting**: API rate limiting via `DmosApiRateLimiter`
+- **Audit Logging**: All mutating operations record audit events via kernel bridge
 
-See `ContactRepository` and `DataSubjectRequestService` for implementation details.
+Pending P1-013 implementation:
+- **Hashed Identifiers**: Email addresses and other identifiers should be hashed using HMAC-SHA256 before storage
+- **Encrypted PII**: Raw PII data should be encrypted using AES-GCM encryption
+- **DSAR Compliance**: Data Subject Access Request (DSAR) endpoints to support GDPR/CCPA right-to-be-forgotten
+- **PII Redaction**: Logs and traces should redact PII data
+- **Key Management**: Production requires secure key material management
 
 | Module | Route prefix | Servlet |
 |---|---|---|
@@ -120,13 +127,34 @@ Standard error codes: `400` bad request / missing header, `403` not authorised, 
 
 ## UI Routes
 
-| Path | Page | Description |
-|---|---|---|
-| `/login` | `LoginPage` | Authentication entry point |
-| `/workspaces/:workspaceId/dashboard` | `DashboardPage` | Workspace overview (approval widget, workflow status, risk/compliance, AI actions) |
-| `/workspaces/:workspaceId/approvals` | `ApprovalQueuePage` | Pending approval queue — filter by type, permission-aware |
-| `/workspaces/:workspaceId/approvals/:requestId` | `ApprovalDetailPage` | Approval detail — snapshot, risk level, approve/reject |
-| `/workspaces/:workspaceId/ai-actions` | `AiActionLogPage` | AI action log |
+### Stable (Production-Ready)
+
+| Path | Page | Description | Capability |
+|---|---|---|---|
+| `/login` | `LoginPage` | Authentication entry point | - |
+| `/workspaces/:workspaceId/dashboard` | `DashboardPage` | Workspace overview (approval widget, workflow status, risk/compliance, AI actions) | - |
+| `/workspaces/:workspaceId/approvals` | `ApprovalQueuePage` | Pending approval queue — filter by type, permission-aware | - |
+| `/workspaces/:workspaceId/approvals/:requestId` | `ApprovalDetailPage` | Approval detail — snapshot, risk level, approve/reject | - |
+| `/workspaces/:workspaceId/ai-actions` | `AiActionLogPage` | AI action log | - |
+| `/workspaces/:workspaceId/campaigns` | `CampaignsPage` | Campaign planning and orchestration | dmos.campaigns |
+| `/workspaces/:workspaceId/strategy` | `StrategyPage` | Strategy generation, review, and approvals | dmos.strategy |
+| `/workspaces/:workspaceId/budget` | `BudgetPage` | Budget recommendations and approval decisions | dmos.budget |
+
+### Boundary (Feature-Gated, Backend/Data Pending)
+
+| Path | Page | Description | Capability |
+|---|---|---|---|
+| `/workspaces/:workspaceId/funnel-analytics` | `FunnelAnalyticsPage` | Full-funnel conversion analytics and stage drop-off reporting | dmos.reporting |
+| `/workspaces/:workspaceId/attribution` | `AttributionPage` | Multi-touch attribution models and channel credit distribution | dmos.reporting |
+| `/workspaces/:workspaceId/roi-roas` | `RoiRoasPage` | Return on investment and return on ad spend dashboards | dmos.reporting |
+| `/workspaces/:workspaceId/self-marketing-funnel` | `SelfMarketingFunnelPage` | Product-led growth funnel management and trial onboarding flows | dmos.self-marketing |
+| `/workspaces/:workspaceId/market-research` | `MarketResearchPage` | Trend analysis, buyer persona generation, and competitive intelligence | dmos.market-research |
+| `/workspaces/:workspaceId/advanced-channels` | `AdvancedChannelsPage` | Programmatic advertising, Connected TV, and influencer management | dmos.advanced-channels |
+| `/workspaces/:workspaceId/localization` | `LocalizationPage` | Multi-language campaign support and region-specific compliance controls | dmos.localization |
+| `/workspaces/:workspaceId/agency` | `AgencyOperationsPage` | Client onboarding, white-label reports, and multi-client workspace management | dmos.agency |
+
+P1-001: UI routes updated to include all route manifest entries with lifecycle and capability requirements.
+P2-001: README UI routes section split by implementation state (stable vs boundary).
 
 ## Product Guardrails
 
@@ -152,4 +180,4 @@ Standard error codes: `400` bad request / missing header, `403` not authorised, 
 | Privacy/security | ⚠️ Partial | Rate limiting, tenant isolation, header enforcement in place; PII model and token hardening pending |
 | Approval workflow | ✅ Ready | Full UI + API + plugin integration; snapshot, decide, audit trail |
 | AI action transparency | ✅ Ready | AI action log persisted and surfaced in UI |
-| Kernel bridge integration | ⚠️ Partial | Platform plugins wired; real kernel bridge authorization/audit integration pending |
+| Kernel bridge integration | ✅ Complete | Platform plugins wired; real kernel bridge authorization/audit integration verified (P0-008) |

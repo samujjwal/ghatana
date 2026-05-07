@@ -1,15 +1,19 @@
 package com.ghatana.kernel.security;
 
+import io.activej.promise.Promise;
+
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Privacy management for data protection and consent.
  *
- * <p>Manages consent, data classification, and data residency requirements
- * for privacy compliance with applicable regulatory frameworks.</p>
+ * <p>Manages consent, data classification, data residency requirements,
+ * PII encryption/redaction, and DSAR compliance for privacy compliance
+ * with applicable regulatory frameworks (GDPR, CCPA, etc.).</p>
  *
  * @doc.type interface
- * @doc.purpose Privacy and consent management
+ * @doc.purpose Privacy and consent management with PII/DSAR support (KERNEL-P1)
  * @doc.layer core
  * @doc.pattern Service
  * @author Ghatana Kernel Team
@@ -22,9 +26,9 @@ public interface PrivacyManager {
      *
      * @param request the data request
      * @param tenantId the tenant identifier
-     * @return consent status
+     * @return Promise containing consent status
      */
-    ConsentStatus checkConsent(DataRequest request, String tenantId);
+    Promise<ConsentStatus> checkConsent(DataRequest request, String tenantId);
 
     /**
      * Classifies data according to privacy rules.
@@ -39,9 +43,9 @@ public interface PrivacyManager {
      *
      * @param location the data location
      * @param tenantId the tenant identifier
-     * @return true if residency requirements are met
+     * @return Promise containing true if residency requirements are met
      */
-    boolean enforceResidency(DataLocation location, String tenantId);
+    Promise<Boolean> enforceResidency(DataLocation location, String tenantId);
 
     /**
      * Records consent for data processing.
@@ -50,16 +54,79 @@ public interface PrivacyManager {
      * @param userId the user identifier
      * @param purpose the processing purpose
      * @param granted whether consent is granted
+     * @return Promise that completes when consent is recorded
      */
-    void recordConsent(String tenantId, String userId, String purpose, boolean granted);
+    Promise<Void> recordConsent(String tenantId, String userId, String purpose, boolean granted);
 
     /**
      * Gets privacy policy for a tenant.
      *
      * @param tenantId the tenant identifier
-     * @return the privacy policy
+     * @return Promise containing the privacy policy
      */
-    Policy getPrivacyPolicy(String tenantId);
+    Promise<Optional<Policy>> getPrivacyPolicy(String tenantId);
+
+    /**
+     * Encrypts PII data using tenant-specific encryption.
+     *
+     * @param tenantId the tenant identifier
+     * @param pii the PII data to encrypt
+     * @return Promise containing encrypted PII
+     */
+    Promise<String> encryptPII(String tenantId, String pii);
+
+    /**
+     * Decrypts PII data using tenant-specific encryption.
+     *
+     * @param tenantId the tenant identifier
+     * @param encryptedPii the encrypted PII data
+     * @return Promise containing decrypted PII
+     */
+    Promise<String> decryptPII(String tenantId, String encryptedPii);
+
+    /**
+     * Hashes PII identifier for pseudonymization.
+     *
+     * @param tenantId the tenant identifier
+     * @param identifier the PII identifier to hash
+     * @return Promise containing hashed identifier
+     */
+    Promise<String> hashPIIIdentifier(String tenantId, String identifier);
+
+    /**
+     * Redacts PII from log output or audit trails.
+     *
+     * @param data the data containing potential PII
+     * @param classification the data classification
+     * @return redacted data with PII masked
+     */
+    String redactPII(String data, DataClassification classification);
+
+    /**
+     * Processes a Data Subject Access Request (DSAR).
+     *
+     * @param request the DSAR request
+     * @return Promise containing DSAR result
+     */
+    Promise<DSarResult> processDSAR(DSARRequest request);
+
+    /**
+     * Deletes data for a data subject (Right to be Forgotten).
+     *
+     * @param tenantId the tenant identifier
+     * @param subjectId the data subject identifier
+     * @return Promise that completes when deletion is finished
+     */
+    Promise<Void> deleteSubjectData(String tenantId, String subjectId);
+
+    /**
+     * Exports data for a data subject (Right to Data Portability).
+     *
+     * @param tenantId the tenant identifier
+     * @param subjectId the data subject identifier
+     * @return Promise containing exported data
+     */
+    Promise<Map<String, Object>> exportSubjectData(String tenantId, String subjectId);
 
     /**
      * Represents a data access request.
@@ -123,5 +190,98 @@ public interface PrivacyManager {
         public String getRegion() { return region; }
         public String getCountry() { return country; }
         public String getDataCenter() { return dataCenter; }
+    }
+
+    /**
+     * Privacy policy for a tenant.
+     */
+    record Policy(
+        String tenantId,
+        String version,
+        Map<String, Boolean> consentPurposes,
+        DataRetention retention,
+        String effectiveDate
+    ) {
+        public Policy {
+            if (tenantId == null || tenantId.isBlank()) {
+                throw new IllegalArgumentException("tenantId must not be blank");
+            }
+            if (version == null || version.isBlank()) {
+                throw new IllegalArgumentException("version must not be blank");
+            }
+            consentPurposes = Map.copyOf(consentPurposes);
+        }
+    }
+
+    /**
+     * Data retention configuration.
+     */
+    record DataRetention(
+        int piiRetentionDays,
+        int auditRetentionDays,
+        int logRetentionDays
+    ) {}
+
+    /**
+     * DSAR request type.
+     */
+    enum DSARType {
+        ACCESS,
+        DELETION,
+        PORTABILITY,
+        RECTIFICATION
+    }
+
+    /**
+     * DSAR request.
+     */
+    record DSARRequest(
+        String requestId,
+        String tenantId,
+        String subjectId,
+        DSARType type,
+        String requesterId,
+        java.time.Instant requestedAt
+    ) {
+        public DSARRequest {
+            if (requestId == null || requestId.isBlank()) {
+                throw new IllegalArgumentException("requestId must not be blank");
+            }
+            if (tenantId == null || tenantId.isBlank()) {
+                throw new IllegalArgumentException("tenantId must not be blank");
+            }
+            if (subjectId == null || subjectId.isBlank()) {
+                throw new IllegalArgumentException("subjectId must not be blank");
+            }
+        }
+    }
+
+    /**
+     * DSAR result.
+     */
+    record DSarResult(
+        String requestId,
+        DSARStatus status,
+        Map<String, Object> data,
+        String message,
+        java.time.Instant completedAt
+    ) {
+        public DSarResult {
+            if (requestId == null || requestId.isBlank()) {
+                throw new IllegalArgumentException("requestId must not be blank");
+            }
+            data = Map.copyOf(data);
+        }
+    }
+
+    /**
+     * DSAR processing status.
+     */
+    enum DSARStatus {
+        PENDING,
+        PROCESSING,
+        COMPLETED,
+        FAILED,
+        PARTIALLY_COMPLETED
     }
 }

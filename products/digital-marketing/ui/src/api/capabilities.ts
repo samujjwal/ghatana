@@ -15,6 +15,7 @@ import { apiRequest } from '@/lib/http-client';
 
 /**
  * P1-037: Standard capability keys for DMOS features.
+ * P0-004: Added missing capability keys for new route manifest features.
  */
 export const CapabilityKeys = {
   // Core features
@@ -29,6 +30,14 @@ export const CapabilityKeys = {
   LANDING_PAGE_GENERATION: 'dmos.landing_page_generation',
   EMAIL_DRAFT_GENERATION: 'dmos.email_draft_generation',
   SOW_GENERATION: 'dmos.sow_generation',
+
+  // P0-004: New route manifest capability keys
+  REPORTING: 'dmos.reporting',
+  SELF_MARKETING: 'dmos.self_marketing',
+  MARKET_RESEARCH: 'dmos.market_research',
+  ADVANCED_CHANNELS: 'dmos.advanced_channels',
+  LOCALIZATION: 'dmos.localization',
+  AGENCY: 'dmos.agency',
 } as const;
 
 export type CapabilityKey = typeof CapabilityKeys[keyof typeof CapabilityKeys];

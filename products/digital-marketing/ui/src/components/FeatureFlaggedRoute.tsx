@@ -33,9 +33,10 @@ const CapabilityDrivenRoute: React.FC<FeatureFlaggedRouteProps> = ({
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const isEnabled = useCapabilityEnabled(workspaceId ?? null, capabilityKey);
 
-  // While loading, show loading state
-  // In production, you might want to show a skeleton or the feature with a loading indicator
-  // For now, we'll render children and let them handle their own loading states
+  // P1-011: Show loading state while capability data is being fetched
+  if (isEnabled === null) {
+    return <div className="p-4 text-gray-500">Loading...</div>;
+  }
 
   // P0-005: Render feature unavailable page instead of redirecting to login
   if (!isEnabled) {
@@ -54,6 +55,7 @@ const CapabilityDrivenRoute: React.FC<FeatureFlaggedRouteProps> = ({
 
 /**
  * Returns a user-friendly display name for a capability key.
+ * P1-010: Extended to include all route manifest capability keys.
  */
 function getCapabilityDisplayName(capabilityKey: string): string {
   const nameMap: Record<string, string> = {
@@ -62,6 +64,12 @@ function getCapabilityDisplayName(capabilityKey: string): string {
     'dmos.budget': 'Budget',
     'dmos.approvals': 'Approvals',
     'dmos.ai_actions': 'AI Action Log',
+    'dmos.reporting': 'Reporting',
+    'dmos.self-marketing': 'Self-Marketing',
+    'dmos.market-research': 'Market Research',
+    'dmos.advanced-channels': 'Advanced Channels',
+    'dmos.localization': 'Localization',
+    'dmos.agency': 'Agency Operations',
   };
   return nameMap[capabilityKey] || 'This feature';
 }

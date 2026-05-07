@@ -1,7 +1,8 @@
 /**
  * Attribution Reporting Page — reporting capability placeholder.
  *
- * <p>P2-006: Route is capability-gated via {@code dmos.reporting}.</p>
+ * <p>P0-003: Route is capability-gated via {@code dmos.reporting}. Shows a
+ * feature unavailable view until the reporting backend is available.</p>
  *
  * @doc.type page
  * @doc.purpose Multi-touch attribution reporting view
@@ -26,8 +27,9 @@ export function AttributionPage(): React.ReactElement {
         Workspace: <span className="font-mono">{workspaceId}</span>
       </p>
       <div className="border border-dashed border-gray-300 rounded-lg p-12 text-center text-gray-400">
-        <p className="text-lg font-medium">Attribution Reporting Coming Soon</p>
-        <p className="text-sm mt-2">Multi-touch attribution models and channel credit reporting will be available here.</p>
+        <p className="text-lg font-medium">Feature Not Available</p>
+        <p className="text-sm mt-2">Multi-touch attribution models and channel credit reporting require the dmos.reporting capability.</p>
+        <p className="text-sm mt-2">Contact your administrator to enable this feature.</p>
       </div>
     </section>
   );

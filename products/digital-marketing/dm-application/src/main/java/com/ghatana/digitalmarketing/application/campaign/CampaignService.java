@@ -69,6 +69,42 @@ public interface CampaignService {
     Promise<Campaign> pauseCampaign(DmOperationContext ctx, String campaignId);
 
     /**
+     * Marks a campaign as COMPLETED.
+     *
+     * <p>P1-005: Extends campaign lifecycle beyond create/launch/pause to include
+     * completion, archive, and rollback operations with event publishing.</p>
+     *
+     * @param ctx        the operation context; must have an idempotency key for write
+     * @param campaignId the ID of the campaign to complete
+     * @return promise resolving to the completed campaign
+     */
+    Promise<Campaign> completeCampaign(DmOperationContext ctx, String campaignId);
+
+    /**
+     * Archives a campaign that is in COMPLETED status.
+     *
+     * <p>P1-005: Extends campaign lifecycle beyond create/launch/pause to include
+     * completion, archive, and rollback operations with event publishing.</p>
+     *
+     * @param ctx        the operation context; must have an idempotency key for write
+     * @param campaignId the ID of the campaign to archive
+     * @return promise resolving to the archived campaign
+     */
+    Promise<Campaign> archiveCampaign(DmOperationContext ctx, String campaignId);
+
+    /**
+     * Rolls back a campaign to DRAFT status.
+     *
+     * <p>P1-005: Extends campaign lifecycle beyond create/launch/pause to include
+     * completion, archive, and rollback operations with event publishing.</p>
+     *
+     * @param ctx        the operation context; must have an idempotency key for write
+     * @param campaignId the ID of the campaign to rollback
+     * @return promise resolving to the rolled-back campaign
+     */
+    Promise<Campaign> rollbackCampaign(DmOperationContext ctx, String campaignId);
+
+    /**
      * Retrieves a campaign by ID within the workspace in the operation context.
      *
      * @param ctx        the operation context

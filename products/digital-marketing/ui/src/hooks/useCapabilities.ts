@@ -38,12 +38,17 @@ export function useCapabilities(
 
 /**
  * Checks if a specific capability is enabled.
+ * P1-011: Returns null while loading to avoid "feature unavailable" flicker.
  */
 export function useCapabilityEnabled(
   workspaceId: string | null,
   capabilityKey: string,
-): boolean {
-  const { data } = useCapabilities(workspaceId);
+): boolean | null {
+  const { data, isLoading } = useCapabilities(workspaceId);
+
+  if (isLoading) {
+    return null; // Loading state - caller should show skeleton/loading UI
+  }
 
   if (!data) {
     return false; // Fail closed

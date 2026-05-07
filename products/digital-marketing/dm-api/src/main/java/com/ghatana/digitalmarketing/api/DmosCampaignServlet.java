@@ -48,6 +48,9 @@ import java.util.Set;
  *   GET    /v1/workspaces/:workspaceId/campaigns/:id       — Get a campaign
  *   POST   /v1/workspaces/:workspaceId/campaigns/:id/launch — Launch a campaign
  *   POST   /v1/workspaces/:workspaceId/campaigns/:id/pause  — Pause a campaign
+ *   POST   /v1/workspaces/:workspaceId/campaigns/:id/complete — Complete a campaign
+ *   POST   /v1/workspaces/:workspaceId/campaigns/:id/archive — Archive a campaign
+ *   POST   /v1/workspaces/:workspaceId/campaigns/:id/rollback — Rollback a campaign
  * </pre>
  *
  * <p>Tenant isolation is enforced through the {@code X-Tenant-ID} header.
@@ -113,6 +116,12 @@ public final class DmosCampaignServlet {
                     this::handleLaunchCampaign)
                 .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns/:id/pause",
                     this::handlePauseCampaign)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns/:id/complete",
+                    this::handleCompleteCampaign)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns/:id/archive",
+                    this::handleArchiveCampaign)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns/:id/rollback",
+                    this::handleRollbackCampaign)
                 .build(),
             metrics,
             "campaign"
@@ -312,6 +321,129 @@ public final class DmosCampaignServlet {
         } catch (Exception e) {
             String correlationId = DmCorrelationId.generate().getValue();
             LOG.error("[DMOS] Failed to pause campaign", e);
+            return Promise.of(errorResponse(500, "Internal error", correlationId));
+        }
+    }
+
+    private Promise<HttpResponse> handleCompleteCampaign(HttpRequest request) {
+        try {
+            String workspaceId = request.getPathParameter("workspaceId");
+            String campaignId  = request.getPathParameter("id");
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+
+            io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/complete", ctx).startSpan();
+            try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                telemetry.setCampaignId(campaignId);
+                return campaignService.completeCampaign(ctx, campaignId)
+                    .map(campaign -> {
+                        span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                        span.end();
+                        return jsonResponse(200, CampaignResponse.from(campaign));
+                    })
+                .then(r -> Promise.of(r), e -> {
+                    telemetry.recordException(span, e);
+                    span.end();
+                    if (e instanceof SecurityException) {
+                        return Promise.of(errorResponse(403, e.getMessage(), ctx.getCorrelationId().getValue()));
+                    }
+                    if (e instanceof java.util.NoSuchElementException) {
+                        return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
+                    }
+                    if (e instanceof IllegalStateException) {
+                        return Promise.of(errorResponse(409, e.getMessage(), ctx.getCorrelationId().getValue()));
+                    }
+                    LOG.error("[DMOS] Failed to complete campaign", e);
+                    return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+                });
+            }
+        } catch (IllegalArgumentException e) {
+            String correlationId = DmCorrelationId.generate().getValue();
+            return Promise.of(errorResponse(400, e.getMessage(), correlationId));
+        } catch (Exception e) {
+            String correlationId = DmCorrelationId.generate().getValue();
+            LOG.error("[DMOS] Failed to complete campaign", e);
+            return Promise.of(errorResponse(500, "Internal error", correlationId));
+        }
+    }
+
+    private Promise<HttpResponse> handleArchiveCampaign(HttpRequest request) {
+        try {
+            String workspaceId = request.getPathParameter("workspaceId");
+            String campaignId  = request.getPathParameter("id");
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+
+            io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/archive", ctx).startSpan();
+            try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                telemetry.setCampaignId(campaignId);
+                return campaignService.archiveCampaign(ctx, campaignId)
+                    .map(campaign -> {
+                        span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                        span.end();
+                        return jsonResponse(200, CampaignResponse.from(campaign));
+                    })
+                .then(r -> Promise.of(r), e -> {
+                    telemetry.recordException(span, e);
+                    span.end();
+                    if (e instanceof SecurityException) {
+                        return Promise.of(errorResponse(403, e.getMessage(), ctx.getCorrelationId().getValue()));
+                    }
+                    if (e instanceof java.util.NoSuchElementException) {
+                        return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
+                    }
+                    if (e instanceof IllegalStateException) {
+                        return Promise.of(errorResponse(409, e.getMessage(), ctx.getCorrelationId().getValue()));
+                    }
+                    LOG.error("[DMOS] Failed to archive campaign", e);
+                    return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+                });
+            }
+        } catch (IllegalArgumentException e) {
+            String correlationId = DmCorrelationId.generate().getValue();
+            return Promise.of(errorResponse(400, e.getMessage(), correlationId));
+        } catch (Exception e) {
+            String correlationId = DmCorrelationId.generate().getValue();
+            LOG.error("[DMOS] Failed to archive campaign", e);
+            return Promise.of(errorResponse(500, "Internal error", correlationId));
+        }
+    }
+
+    private Promise<HttpResponse> handleRollbackCampaign(HttpRequest request) {
+        try {
+            String workspaceId = request.getPathParameter("workspaceId");
+            String campaignId  = request.getPathParameter("id");
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+
+            io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/rollback", ctx).startSpan();
+            try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                telemetry.setCampaignId(campaignId);
+                return campaignService.rollbackCampaign(ctx, campaignId)
+                    .map(campaign -> {
+                        span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                        span.end();
+                        return jsonResponse(200, CampaignResponse.from(campaign));
+                    })
+                .then(r -> Promise.of(r), e -> {
+                    telemetry.recordException(span, e);
+                    span.end();
+                    if (e instanceof SecurityException) {
+                        return Promise.of(errorResponse(403, e.getMessage(), ctx.getCorrelationId().getValue()));
+                    }
+                    if (e instanceof java.util.NoSuchElementException) {
+                        return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
+                    }
+                    if (e instanceof IllegalStateException) {
+                        return Promise.of(errorResponse(409, e.getMessage(), ctx.getCorrelationId().getValue()));
+                    }
+                    LOG.error("[DMOS] Failed to rollback campaign", e);
+                    return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+                });
+            }
+        } catch (IllegalArgumentException e) {
+            String correlationId = DmCorrelationId.generate().getValue();
+            return Promise.of(errorResponse(400, e.getMessage(), correlationId));
+        } catch (Exception e) {
+            String correlationId = DmCorrelationId.generate().getValue();
+            LOG.error("[DMOS] Failed to rollback campaign", e);
             return Promise.of(errorResponse(500, "Internal error", correlationId));
         }
     }

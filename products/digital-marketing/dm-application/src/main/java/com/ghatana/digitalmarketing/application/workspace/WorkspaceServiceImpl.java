@@ -1,5 +1,6 @@
 package com.ghatana.digitalmarketing.application.workspace;
 
+import com.ghatana.digitalmarketing.application.capabilities.DmosCapabilityRegistry;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
@@ -10,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -202,6 +204,61 @@ public final class WorkspaceServiceImpl implements WorkspaceService {
                                         Map.of("previousStatus", opt.get().getStatus().name()))
                                     .map(__ -> saved);
                             });
+                    });
+            });
+    }
+
+    @Override
+    public Promise<Map<String, Boolean>> getWorkspaceCapabilities(DmOperationContext ctx, String workspaceId) {
+        Objects.requireNonNull(ctx, "ctx must not be null");
+        Objects.requireNonNull(workspaceId, "workspaceId must not be null");
+        if (workspaceId.isBlank()) {
+            return Promise.ofException(new IllegalArgumentException("workspaceId must not be blank"));
+        }
+
+        return kernelAdapter.isAuthorized(ctx, "workspaces/" + workspaceId, "read")
+            .then(allowed -> {
+                if (!allowed) {
+                    return Promise.ofException(
+                        new SecurityException("Actor not authorized to read workspace " + workspaceId));
+                }
+                return repository.findById(ctx.getTenantId(), DmWorkspaceId.of(workspaceId))
+                    .then(opt -> {
+                        if (opt.isEmpty()) {
+                            return Promise.ofException(
+                                new NoSuchElementException("Workspace not found: " + workspaceId));
+                        }
+                        
+                        // P0-002, P0-004: Return all capabilities from the registry
+                        // For now, enable core capabilities by default
+                        Map<String, Boolean> capabilities = new HashMap<>();
+                        DmosCapabilityRegistry.allCapabilities().forEach(cap -> {
+                            // Core capabilities are enabled by default for active workspaces
+                            boolean enabled = opt.get().getStatus() == WorkspaceStatus.ACTIVE && 
+                                (cap.key().equals(DmosCapabilityRegistry.CAMPAIGNS) ||
+                                 cap.key().equals(DmosCapabilityRegistry.STRATEGY) ||
+                                 cap.key().equals(DmosCapabilityRegistry.BUDGET) ||
+                                 cap.key().equals(DmosCapabilityRegistry.APPROVALS) ||
+                                 cap.key().equals(DmosCapabilityRegistry.AI_ACTIONS) ||
+                                 cap.key().equals(DmosCapabilityRegistry.AD_COPY_GENERATION) ||
+                                 cap.key().equals(DmosCapabilityRegistry.LANDING_PAGE_GENERATION) ||
+                                 cap.key().equals(DmosCapabilityRegistry.EMAIL_DRAFT_GENERATION) ||
+                                 cap.key().equals(DmosCapabilityRegistry.SOW_GENERATION));
+                            
+                            // P0-004: New capabilities are disabled by default (boundary features)
+                            if (cap.key().equals(DmosCapabilityRegistry.REPORTING) ||
+                                cap.key().equals(DmosCapabilityRegistry.SELF_MARKETING) ||
+                                cap.key().equals(DmosCapabilityRegistry.MARKET_RESEARCH) ||
+                                cap.key().equals(DmosCapabilityRegistry.ADVANCED_CHANNELS) ||
+                                cap.key().equals(DmosCapabilityRegistry.LOCALIZATION) ||
+                                cap.key().equals(DmosCapabilityRegistry.AGENCY)) {
+                                enabled = false;
+                            }
+                            
+                            capabilities.put(cap.key(), enabled);
+                        });
+                        
+                        return Promise.of(capabilities);
                     });
             });
     }
