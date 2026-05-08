@@ -21,6 +21,6 @@ This is the implementation checklist derived from the previous audit.
 - [x] Enforce server-side capability checks in every boundary servlet (not only UI gating).
 - [x] Replace temporary production hard-fail placeholders with real production adapters for preflight and event store.
 - [x] Complete production identity provider implementation (token verification + role/permission resolution).
-- [ ] Add servlet-level API validation matrix tests for optimization and capability endpoints.
-- [ ] Add direct API tests proving disabled capabilities return forbidden/locked responses.
+- [x] Add servlet-level API validation matrix tests for optimization and capability endpoints.
+- [x] Add direct API tests proving disabled capabilities return forbidden/locked responses.
 - [x] Add end-to-end stable route suite (UI -> API -> Postgres) to CI.

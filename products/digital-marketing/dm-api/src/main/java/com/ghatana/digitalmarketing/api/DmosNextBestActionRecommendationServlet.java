@@ -126,6 +126,8 @@ public final class DmosNextBestActionRecommendationServlet {
                 }
             } catch (IllegalArgumentException e) {
                 return Promise.of(errorResponse(400, e.getMessage(), resolveCorrelationId(request), Map.of("request", e.getMessage())));
+            } catch (SecurityException e) {
+                return Promise.of(errorResponse(403, e.getMessage(), resolveCorrelationId(request), Map.of()));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to publish next-best-action recommendation", e);
                 return Promise.of(errorResponse(500, "Internal error", resolveCorrelationId(request), Map.of()));
@@ -157,6 +159,8 @@ public final class DmosNextBestActionRecommendationServlet {
                 }
             } catch (IllegalArgumentException e) {
                 return Promise.of(errorResponse(400, e.getMessage(), resolveCorrelationId(request), Map.of("request", e.getMessage())));
+            } catch (SecurityException e) {
+                return Promise.of(errorResponse(403, e.getMessage(), resolveCorrelationId(request), Map.of()));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to approve next-best-action recommendation", e);
                 return Promise.of(errorResponse(500, "Internal error", resolveCorrelationId(request), Map.of()));
@@ -188,6 +192,8 @@ public final class DmosNextBestActionRecommendationServlet {
                 }
             } catch (IllegalArgumentException e) {
                 return Promise.of(errorResponse(400, e.getMessage(), resolveCorrelationId(request), Map.of("request", e.getMessage())));
+            } catch (SecurityException e) {
+                return Promise.of(errorResponse(403, e.getMessage(), resolveCorrelationId(request), Map.of()));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to reject next-best-action recommendation", e);
                 return Promise.of(errorResponse(500, "Internal error", resolveCorrelationId(request), Map.of()));
@@ -204,6 +210,8 @@ public final class DmosNextBestActionRecommendationServlet {
                 .then(r -> Promise.of(r), e -> mapServiceError("list recommendations", e));
         } catch (IllegalArgumentException e) {
             return Promise.of(errorResponse(400, e.getMessage(), resolveCorrelationId(request), Map.of("request", e.getMessage())));
+        } catch (SecurityException e) {
+            return Promise.of(errorResponse(403, e.getMessage(), resolveCorrelationId(request), Map.of()));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to list next-best-action recommendations", e);
             return Promise.of(errorResponse(500, "Internal error", resolveCorrelationId(request), Map.of()));
@@ -222,6 +230,8 @@ public final class DmosNextBestActionRecommendationServlet {
                 .then(r -> Promise.of(r), e -> mapServiceError("get recommendation", e));
         } catch (IllegalArgumentException e) {
             return Promise.of(errorResponse(400, e.getMessage(), resolveCorrelationId(request), Map.of("request", e.getMessage())));
+        } catch (SecurityException e) {
+            return Promise.of(errorResponse(403, e.getMessage(), resolveCorrelationId(request), Map.of()));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to get next-best-action recommendation", e);
             return Promise.of(errorResponse(500, "Internal error", resolveCorrelationId(request), Map.of()));

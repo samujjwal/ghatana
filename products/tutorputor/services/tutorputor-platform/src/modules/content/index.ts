@@ -66,9 +66,19 @@ export const contentModule: FastifyPluginAsync = async (app) => {
   await registerContentRoutes(app, { contentService });
 
   // Register Content Studio routes
-  // F-023: Serve under both the legacy /api/content-studio/* prefix (one-release alias)
+  // F-023: Serve under both the legacy /api/content-studio/* prefix (deprecated)
   // and the canonical /api/v1/content-studio/* prefix.  The content module is mounted at
   // /api so "/content-studio" → /api/content-studio and "/v1/content-studio" → /api/v1/content-studio.
+  // Legacy prefix is deprecated and will be removed in a future release.
+  
+  // Add deprecation warning for legacy prefix
+  app.addHook('onRequest', async (request, reply) => {
+    if (request.url.startsWith('/content-studio/')) {
+      reply.header('Deprecation', '110');
+      reply.header('Link', '</api/v1/content-studio>; rel="alternate"');
+    }
+  });
+
   registerContentStudioRoutes(app, {
     contentStudioService,
     animationIntegration,

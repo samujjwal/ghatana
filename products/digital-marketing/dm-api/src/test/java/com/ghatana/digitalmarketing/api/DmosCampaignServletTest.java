@@ -1,7 +1,10 @@
 package com.ghatana.digitalmarketing.api;
 
+import com.ghatana.digitalmarketing.api.observability.DmosTelemetry;
+import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.application.campaign.CampaignService;
 import com.ghatana.digitalmarketing.application.campaign.CampaignComplianceViolationException;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.campaign.Campaign;
@@ -24,6 +27,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
@@ -520,6 +524,35 @@ class DmosCampaignServletTest extends EventloopTestBase {
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
         assertThat(response.getCode()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("GET campaigns list returns 403 when campaigns capability is disabled")
+    void shouldReturn403WhenCampaignCapabilityDisabled() {
+        DmosHttpContextFactory.IdentityProvider noCampaignPermission = (token, tenantId) ->
+            new DmosHttpContextFactory.IdentityProvider.IdentityResult(
+                "user-1",
+                "session-1",
+                Set.of("operator"),
+                Set.of("dmos.strategy"),
+                true
+            );
+
+        servlet = new DmosCampaignServlet(
+            campaignService,
+            Eventloop.create(),
+            DmosMetricsCollector.noop(),
+            new DmosTelemetry(io.opentelemetry.api.OpenTelemetry.noop()),
+            new DmosHttpContextFactory(true, noCampaignPermission)
+        ).getServlet();
+
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/campaigns")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer token")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(403);
     }
 
     // -------------------------------------------------------------------------

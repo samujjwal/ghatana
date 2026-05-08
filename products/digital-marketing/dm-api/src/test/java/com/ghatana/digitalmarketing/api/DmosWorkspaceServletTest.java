@@ -380,6 +380,41 @@ class DmosWorkspaceServletTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("GET capabilities returns 200 on success")
+    void shouldReturn200OnGetCapabilities() {
+        workspaceService.capabilitiesResult = Promise.of(List.of(
+            new WorkspaceService.WorkspaceCapability(
+                "dmos.ai_optimization",
+                true,
+                "AI optimization features",
+                "operator",
+                "standard"
+            )
+        ));
+
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/capabilities")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "owner-1")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer dev-token")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("GET capabilities returns 400 when tenant header is missing")
+    void shouldReturn400OnGetCapabilitiesMissingTenant() {
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/capabilities")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer dev-token")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(400);
+    }
+
+    @Test
     @DisplayName("GET single returns 500 on unexpected service exception")
     void shouldReturn500OnGetUnexpectedFailure() {
         workspaceService.getResult = Promise.ofException(new RuntimeException("unexpected get failure"));

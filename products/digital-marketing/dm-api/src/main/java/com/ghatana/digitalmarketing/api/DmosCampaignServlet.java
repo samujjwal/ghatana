@@ -168,6 +168,9 @@ public final class DmosCampaignServlet {
         } catch (IllegalArgumentException e) {
             String correlationId = DmCorrelationId.generate().getValue();
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
+        } catch (SecurityException e) {
+            String correlationId = DmCorrelationId.generate().getValue();
+            return Promise.of(errorResponse(403, e.getMessage(), correlationId));
         } catch (Exception e) {
             String correlationId = DmCorrelationId.generate().getValue();
             LOG.error("[DMOS] Failed to list campaigns", e);
@@ -209,6 +212,9 @@ public final class DmosCampaignServlet {
             } catch (IllegalArgumentException e) {
                 String correlationId = DmCorrelationId.generate().getValue();
                 return Promise.of(errorResponse(400, e.getMessage(), correlationId));
+            } catch (SecurityException e) {
+                String correlationId = DmCorrelationId.generate().getValue();
+                return Promise.of(errorResponse(403, e.getMessage(), correlationId));
             } catch (Exception e) {
                 String correlationId = DmCorrelationId.generate().getValue();
                 LOG.error("[DMOS] Failed to create campaign", e);
@@ -239,6 +245,9 @@ public final class DmosCampaignServlet {
         } catch (IllegalArgumentException e) {
             String correlationId = DmCorrelationId.generate().getValue();
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
+        } catch (SecurityException e) {
+            String correlationId = DmCorrelationId.generate().getValue();
+            return Promise.of(errorResponse(403, e.getMessage(), correlationId));
         } catch (Exception e) {
             String correlationId = DmCorrelationId.generate().getValue();
             LOG.error("[DMOS] Failed to get campaign", e);
@@ -285,6 +294,9 @@ public final class DmosCampaignServlet {
         } catch (IllegalArgumentException e) {
             String correlationId = DmCorrelationId.generate().getValue();
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
+        } catch (SecurityException e) {
+            String correlationId = DmCorrelationId.generate().getValue();
+            return Promise.of(errorResponse(403, e.getMessage(), correlationId));
         } catch (Exception e) {
             String correlationId = DmCorrelationId.generate().getValue();
             LOG.error("[DMOS] Failed to launch campaign", e);
@@ -328,6 +340,9 @@ public final class DmosCampaignServlet {
         } catch (IllegalArgumentException e) {
             String correlationId = DmCorrelationId.generate().getValue();
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
+        } catch (SecurityException e) {
+            String correlationId = DmCorrelationId.generate().getValue();
+            return Promise.of(errorResponse(403, e.getMessage(), correlationId));
         } catch (Exception e) {
             String correlationId = DmCorrelationId.generate().getValue();
             LOG.error("[DMOS] Failed to pause campaign", e);
@@ -369,6 +384,9 @@ public final class DmosCampaignServlet {
         } catch (IllegalArgumentException e) {
             String correlationId = DmCorrelationId.generate().getValue();
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
+        } catch (SecurityException e) {
+            String correlationId = DmCorrelationId.generate().getValue();
+            return Promise.of(errorResponse(403, e.getMessage(), correlationId));
         } catch (Exception e) {
             String correlationId = DmCorrelationId.generate().getValue();
             LOG.error("[DMOS] Failed to complete campaign", e);
@@ -410,6 +428,9 @@ public final class DmosCampaignServlet {
         } catch (IllegalArgumentException e) {
             String correlationId = DmCorrelationId.generate().getValue();
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
+        } catch (SecurityException e) {
+            String correlationId = DmCorrelationId.generate().getValue();
+            return Promise.of(errorResponse(403, e.getMessage(), correlationId));
         } catch (Exception e) {
             String correlationId = DmCorrelationId.generate().getValue();
             LOG.error("[DMOS] Failed to archive campaign", e);
@@ -451,6 +472,9 @@ public final class DmosCampaignServlet {
         } catch (IllegalArgumentException e) {
             String correlationId = DmCorrelationId.generate().getValue();
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
+        } catch (SecurityException e) {
+            String correlationId = DmCorrelationId.generate().getValue();
+            return Promise.of(errorResponse(403, e.getMessage(), correlationId));
         } catch (Exception e) {
             String correlationId = DmCorrelationId.generate().getValue();
             LOG.error("[DMOS] Failed to rollback campaign", e);

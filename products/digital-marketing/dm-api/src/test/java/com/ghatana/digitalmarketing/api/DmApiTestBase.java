@@ -57,7 +57,7 @@ public abstract class DmApiTestBase extends EventloopTestBase {
             }
 
             // Set security headers
-            return Promise.of(HttpResponse.ok()
+            return Promise.of(HttpResponse.ofCode(200)
                 .withHeader(io.activej.http.HttpHeaders.of("X-Content-Type-Options"), "nosniff")
                 .withHeader(io.activej.http.HttpHeaders.of("X-Frame-Options"), "DENY")
                 .withHeader(io.activej.http.HttpHeaders.of("Content-Security-Policy"), "default-src 'self'")

@@ -569,7 +569,7 @@ class DmosApprovalServletTest extends EventloopTestBase {
             return new ApprovalRecord(
                 requestId, "cv-1", "user-alice",
                 "dmos-approval/content_version", ApprovalStatus.PENDING,
-                Instant.now(), null, null, null, null);
+                Instant.now(), null, null, null, null, java.util.Map.of());
         }
 
         private static ApprovalSnapshot sampleSnapshot(String requestId) {
@@ -594,7 +594,7 @@ class DmosApprovalServletTest extends EventloopTestBase {
                 ? ApprovalStatus.APPROVED : ApprovalStatus.REJECTED;
             return Promise.of(new ApprovalRecord(
                 command.requestId(), record.subjectId(), record.requestedBy(), record.action(),
-                status, record.requestedAt(), null, Instant.now(), "user-alice", command.notes()));
+                status, record.requestedAt(), null, Instant.now(), "user-alice", command.notes(), java.util.Map.of()));
         }
 
         @Override
@@ -608,6 +608,13 @@ class DmosApprovalServletTest extends EventloopTestBase {
         @Override
         public Promise<List<ApprovalRecord>> listPendingApprovals(
                 DmOperationContext ctx, String subjectId) {
+            if (throwOnListPending != null) return Promise.ofException(throwOnListPending);
+            return Promise.of(List.of(sampleRecord("req-a"), sampleRecord("req-b")));
+        }
+
+        @Override
+        public Promise<List<ApprovalRecord>> listPendingApprovalsForWorkspace(
+                DmOperationContext ctx, String workspaceId) {
             if (throwOnListPending != null) return Promise.ofException(throwOnListPending);
             return Promise.of(List.of(sampleRecord("req-a"), sampleRecord("req-b")));
         }

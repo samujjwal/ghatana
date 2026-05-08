@@ -183,9 +183,8 @@ function main() {
   
   // Write output
   const output = JSON.stringify(routeOwners, null, 2);
-  // Use writeFileSync in a real script, but for now just log
-  console.log(`\nFound ${Object.keys(routeOwners.routes).length} routes`);
-  console.log(`Output would be written to: ${OUTPUT_FILE}`);
+  writeFileSync(OUTPUT_FILE, output, 'utf-8');
+  console.log(`\nWrote ${Object.keys(routeOwners.routes).length} routes to: ${OUTPUT_FILE}`);
   
   // Print sample
   console.log('\nSample routes:');

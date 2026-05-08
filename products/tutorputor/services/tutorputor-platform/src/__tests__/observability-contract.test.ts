@@ -48,7 +48,7 @@ async function buildObservabilityApp(
   });
 
   app.addHook('onResponse', async (request, reply) => {
-    reqCounter.inc({ method: request.method, route: (request as unknown as { routerPath?: string }).routerPath ?? 'unknown', status_code: String(reply.statusCode) });
+    reqCounter.inc({ method: request.method, route: request.routeOptions.url ?? 'unknown', status_code: String(reply.statusCode) });
   });
 
   app.get('/health', async (_req, reply) => {

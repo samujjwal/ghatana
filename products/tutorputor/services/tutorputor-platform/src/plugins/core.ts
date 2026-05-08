@@ -132,7 +132,7 @@ export const setupCorePlugins: FastifyPluginAsync<CorePluginsOptions> = async (
   });
 
   app.addHook("onResponse", async (request, reply) => {
-    const route = (request as unknown as { routerPath?: string }).routerPath ?? "unknown";
+    const route = request.routeOptions.url ?? "unknown";
     const labels = { method: request.method, route, status_code: String(reply.statusCode) };
     httpRequestCounter.inc(labels);
     httpRequestDurationHistogram.observe(labels, reply.elapsedTime / 1000);

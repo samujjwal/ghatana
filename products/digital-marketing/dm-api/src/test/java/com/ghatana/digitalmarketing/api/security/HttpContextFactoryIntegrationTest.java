@@ -48,6 +48,7 @@ class HttpContextFactoryIntegrationTest {
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-123")
             .withHeader(HttpHeaders.of("X-Principal-ID"), "user-1")
             .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.campaigns")
             .build();
 
         assertThrows(IllegalArgumentException.class, () -> factory.buildContext(request, "ws-1", true));
