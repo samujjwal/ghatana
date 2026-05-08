@@ -1,8 +1,15 @@
 package com.ghatana.digitalmarketing.api.localization;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.digitalmarketing.application.localization.LocalizationConfigService;
 import com.ghatana.digitalmarketing.domain.localization.TimeZoneConfig;
+import io.activej.eventloop.Eventloop;
+import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
+import io.activej.http.HttpRequest;
+import io.activej.http.HttpResponse;
 import io.activej.http.RoutingServlet;
+import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,57 +27,71 @@ import java.util.Objects;
 public final class DmosTimeZoneConfigServlet {
 
     private static final Logger LOG = LoggerFactory.getLogger(DmosTimeZoneConfigServlet.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    private final Eventloop eventloop;
     private final LocalizationConfigService configService;
 
-    public DmosTimeZoneConfigServlet(LocalizationConfigService configService) {
+    public DmosTimeZoneConfigServlet(Eventloop eventloop, LocalizationConfigService configService) {
+        this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.configService = Objects.requireNonNull(configService, "configService must not be null");
     }
 
     public RoutingServlet routing() {
-        return RoutingServlet.builder()
-            .map("/api/v1/localization/timezone/:regionCode", this::getTimeZoneConfig)
-            .map("/api/v1/localization/timezone", this::saveTimeZoneConfig)
+        return RoutingServlet.builder(eventloop)
+            .with(io.activej.http.HttpMethod.GET, "/api/v1/localization/timezone/:regionCode", this::getTimeZoneConfig)
+            .with(io.activej.http.HttpMethod.POST, "/api/v1/localization/timezone", this::saveTimeZoneConfig)
             .build();
     }
 
-    private io.activej.http.AsyncServlet getTimeZoneConfig(io.activej.http.HttpRequest req) {
+    private Promise<HttpResponse> getTimeZoneConfig(HttpRequest req) {
         String regionCode = req.getPathParameter("regionCode");
         LOG.info("[DMOS][API] GET timezone config for region={}", regionCode);
 
         return configService.getTimeZoneConfig(regionCode)
-            .map(config -> io.activej.http.HttpResponse.ok200()
-                .withJson(toJson(config)))
-            .thenEx((exception, value) -> {
-                if (exception != null) {
-                    LOG.error("[DMOS][API] Error getting timezone config", exception);
-                    return io.activej.promise.Promise.of(io.activej.http.HttpResponse.of(500).withPlainText("Internal server error"));
+            .map(config -> {
+                try {
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(OBJECT_MAPPER.writeValueAsBytes(toJson(config)))
+                        .build();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
-                return io.activej.promise.Promise.of(value);
+            })
+            .then(r -> Promise.of(r), e -> {
+                LOG.error("[DMOS][API] Error getting timezone config", e);
+                return Promise.of(HttpResponse.ofCode(500).withPlainText("Internal server error").build());
             });
     }
 
-    private io.activej.http.AsyncServlet saveTimeZoneConfig(io.activej.http.HttpRequest req) {
+    private Promise<HttpResponse> saveTimeZoneConfig(HttpRequest req) {
         LOG.info("[DMOS][API] POST save timezone config");
 
         return req.loadBody()
             .then(body -> {
                 try {
-                    TimeZoneConfig config = fromJson(body);
+                    String bodyStr = body.toString();
+                    TimeZoneConfig config = fromJson(bodyStr);
                     return configService.saveTimeZoneConfig(config)
-                        .map(saved -> io.activej.http.HttpResponse.ok200()
-                            .withJson(toJson(saved)));
+                        .map(saved -> {
+                            try {
+                                return HttpResponse.ofCode(200)
+                                    .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                                    .withBody(OBJECT_MAPPER.writeValueAsBytes(toJson(saved)))
+                                    .build();
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
                 } catch (Exception e) {
                     LOG.error("[DMOS][API] Error parsing timezone config", e);
-                    return io.activej.promise.Promise.of(io.activej.http.HttpResponse.of(400).withPlainText("Invalid request"));
+                    return Promise.of(HttpResponse.ofCode(400).withPlainText("Invalid request").build());
                 }
             })
-            .thenEx((exception, value) -> {
-                if (exception != null) {
-                    LOG.error("[DMOS][API] Error saving timezone config", exception);
-                    return io.activej.promise.Promise.of(io.activej.http.HttpResponse.of(500).withPlainText("Internal server error"));
-                }
-                return io.activej.promise.Promise.of(value);
+            .then(r -> Promise.of(r), e -> {
+                LOG.error("[DMOS][API] Error saving timezone config", e);
+                return Promise.of(HttpResponse.ofCode(500).withPlainText("Internal server error").build());
             });
     }
 

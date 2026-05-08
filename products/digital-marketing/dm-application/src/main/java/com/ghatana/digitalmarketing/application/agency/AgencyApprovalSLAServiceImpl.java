@@ -34,8 +34,8 @@ public class AgencyApprovalSLAServiceImpl implements AgencyApprovalSLAService {
         AgencyApprovalSLA sla = AgencyApprovalSLA.builder()
             .id(slaId)
             .contractId(command.contractId())
-            .agencyTenantId(ctx.tenantId().getValue())
-            .clientId(ctx.tenantId().getValue())
+            .agencyTenantId(ctx.getTenantId().getValue())
+            .clientId(ctx.getTenantId().getValue())
             .approvalType(command.approvalType())
             .maxApprovalTime(command.maxApprovalTime())
             .escalationLevel(0)
@@ -105,6 +105,6 @@ public class AgencyApprovalSLAServiceImpl implements AgencyApprovalSLAService {
 
     @Override
     public Promise<java.util.List<AgencyApprovalSLA>> list(DmOperationContext ctx) {
-        return repository.listByTenant(ctx.tenantId().getValue());
+        return repository.listByTenant(ctx.getTenantId().getValue());
     }
 }

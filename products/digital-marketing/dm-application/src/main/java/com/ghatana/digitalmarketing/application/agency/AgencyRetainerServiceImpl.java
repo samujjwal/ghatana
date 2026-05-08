@@ -35,8 +35,8 @@ public class AgencyRetainerServiceImpl implements AgencyRetainerService {
         AgencyRetainer retainer = AgencyRetainer.builder()
             .id(retainerId)
             .contractId(command.contractId())
-            .agencyTenantId(ctx.tenantId().getValue())
-            .clientId(ctx.tenantId().getValue())
+            .agencyTenantId(ctx.getTenantId().getValue())
+            .clientId(ctx.getTenantId().getValue())
             .monthlyAmount(command.monthlyAmount())
             .currency(command.currency())
             .billingCycleStart(command.billingCycleStart())
@@ -107,6 +107,6 @@ public class AgencyRetainerServiceImpl implements AgencyRetainerService {
 
     @Override
     public Promise<java.util.List<AgencyRetainer>> list(DmOperationContext ctx) {
-        return repository.listByTenant(ctx.tenantId().getValue());
+        return repository.listByTenant(ctx.getTenantId().getValue());
     }
 }

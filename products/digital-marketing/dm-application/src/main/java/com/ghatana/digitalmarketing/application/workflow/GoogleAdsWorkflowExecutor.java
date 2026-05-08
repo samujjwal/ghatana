@@ -237,7 +237,7 @@ public final class GoogleAdsWorkflowExecutor {
      * P0-007: Connector integration completed - calls Google Ads API via connector service.
      */
     private Promise<WorkflowResult> executeWorkflow(DmOperationContext ctx, String outboxId, WorkflowType type) {
-        return outboxService.findById(ctx.getTenantId(), outboxId)
+        return outboxRepository.findById(outboxId)
             .then(opt -> {
                 if (opt.isEmpty()) {
                     LOG.error("[DMOS-WORKFLOW] Outbox entry not found: id={}", outboxId);
@@ -268,11 +268,7 @@ public final class GoogleAdsWorkflowExecutor {
         return result.whenException(e -> {
             LOG.error("[DMOS-WORKFLOW] Failed to process outbox entry: id={}, attempt={}", 
                 entry.getId(), attempt, e);
-            if (attempt < MAX_RETRIES) {
-                return scheduleRetry(ctx, entry, type, attempt);
-            }
-            return Promise.of(new WorkflowResult(WorkflowStatus.FAILED, entry.getId()));
-        });
+        }).then(r -> Promise.of(r));
     }
 
     /**
@@ -302,7 +298,6 @@ public final class GoogleAdsWorkflowExecutor {
             })
             .whenException(e -> {
                 LOG.error("[DMOS-WORKFLOW] Failed to publish campaign: campaignId={}", campaignId, e);
-                return Promise.of(new WorkflowResult(WorkflowStatus.FAILED, entry.getId()));
             });
     }
 
@@ -313,7 +308,7 @@ public final class GoogleAdsWorkflowExecutor {
     private Promise<WorkflowResult> executeUpdate(DmOperationContext ctx, DmOutboxEntry entry) {
         String campaignId = extractCampaignId(entry.getSerializedPayload());
         
-        return linkRepository.findByInternalCampaignId(ctx.getTenantId(), campaignId)
+        return linkRepository.findByInternalCampaignId(campaignId)
             .then(opt -> {
                 if (opt.isEmpty()) {
                     LOG.error("[DMOS-WORKFLOW] Campaign link not found for update: campaignId={}", campaignId);
@@ -333,7 +328,7 @@ public final class GoogleAdsWorkflowExecutor {
     private Promise<WorkflowResult> executePause(DmOperationContext ctx, DmOutboxEntry entry) {
         String campaignId = extractCampaignId(entry.getSerializedPayload());
         
-        return linkRepository.findByInternalCampaignId(ctx.getTenantId(), campaignId)
+        return linkRepository.findByInternalCampaignId(campaignId)
             .then(opt -> {
                 if (opt.isEmpty()) {
                     LOG.error("[DMOS-WORKFLOW] Campaign link not found for pause: campaignId={}", campaignId);
@@ -355,9 +350,15 @@ public final class GoogleAdsWorkflowExecutor {
             WorkflowType type,
             int attempt) {
         LOG.info("[DMOS-WORKFLOW] Scheduling retry: id={}, attempt={}", entry.getId(), attempt + 1);
-        return eventloop.schedule(eventloop.currentTimeMillis() + RETRY_DELAY_MS, () -> 
-            processOutboxEntry(ctx, entry, type, attempt + 1)
-        );
+        return Promise.ofBlocking(eventloop, () -> {
+            try {
+                Thread.sleep(RETRY_DELAY_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Retry interrupted", e);
+            }
+            return processOutboxEntry(ctx, entry, type, attempt + 1).getResult();
+        });
     }
 
     private String extractCampaignId(String payload) {
@@ -389,4 +390,13 @@ public final class GoogleAdsWorkflowExecutor {
         String externalCampaignId
     ) {
         public WorkflowResult(WorkflowStatus status, String outboxId) {
-            this(
+            this(status, outboxId, null);
+        }
+    }
+
+    public static class WorkflowException extends RuntimeException {
+        public WorkflowException(String message) {
+            super(message);
+        }
+    }
+}

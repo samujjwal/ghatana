@@ -1,7 +1,9 @@
 package com.ghatana.digitalmarketing.persistence.optimization;
 
-import com.ghatana.digitalmarketing.application.optimization.AnomalyDetectionResultRepository;
+import com.ghatana.digitalmarketing.application.optimization.AnomalyDetectionRepository;
 import com.ghatana.digitalmarketing.domain.optimization.AnomalyDetectionResult;
+import com.ghatana.digitalmarketing.domain.optimization.AnomalySeverity;
+import com.ghatana.digitalmarketing.domain.optimization.AnomalyStatus;
 import io.activej.promise.Promise;
 
 import java.util.ArrayList;
@@ -11,7 +13,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * PostgreSQL implementation of {@link AnomalyDetectionResultRepository}.
+ * PostgreSQL implementation of {@link AnomalyDetectionRepository}.
  *
  * <p>Currently uses in-memory storage for development. Production implementation
  * should use PostgreSQL with proper schema and connection pooling.</p>
@@ -21,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @doc.layer product
  * @doc.pattern Repository
  */
-public final class PostgresAnomalyDetectionResultRepository implements AnomalyDetectionResultRepository {
+public final class PostgresAnomalyDetectionResultRepository implements AnomalyDetectionRepository {
 
     private final Map<String, AnomalyDetectionResult> storage = new ConcurrentHashMap<>();
 
@@ -72,6 +74,28 @@ public final class PostgresAnomalyDetectionResultRepository implements AnomalyDe
         List<AnomalyDetectionResult> result = new ArrayList<>();
         for (AnomalyDetectionResult rec : storage.values()) {
             if (rec.getTenantId().equals(tenantId) && rec.getCampaignId().equals(campaignId)) {
+                result.add(rec);
+            }
+        }
+        return Promise.of(result);
+    }
+
+    @Override
+    public Promise<List<AnomalyDetectionResult>> listBySeverity(String tenantId, AnomalySeverity severity) {
+        List<AnomalyDetectionResult> result = new ArrayList<>();
+        for (AnomalyDetectionResult rec : storage.values()) {
+            if (rec.getTenantId().equals(tenantId) && rec.getSeverity() == severity) {
+                result.add(rec);
+            }
+        }
+        return Promise.of(result);
+    }
+
+    @Override
+    public Promise<List<AnomalyDetectionResult>> listByStatus(String tenantId, AnomalyStatus status) {
+        List<AnomalyDetectionResult> result = new ArrayList<>();
+        for (AnomalyDetectionResult rec : storage.values()) {
+            if (rec.getTenantId().equals(tenantId) && rec.getStatus() == status) {
                 result.add(rec);
             }
         }

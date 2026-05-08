@@ -1,16 +1,18 @@
 package com.ghatana.digitalmarketing.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.application.agency.AgencyApprovalSLAService;
 import com.ghatana.digitalmarketing.application.agency.AgencyApprovalSLAService.CreateSLACommand;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.agency.AgencyApprovalSLA;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
-import io.activej.json.Json;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,137 +80,171 @@ public final class DmosAgencyApprovalSLAServlet {
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
-            CreateRequest createRequest = objectMapper.readValue(request.getBody(), CreateRequest.class);
+            CreateRequest createRequest = objectMapper.readValue(request.getBody().getString(java.nio.charset.StandardCharsets.UTF_8), CreateRequest.class);
+
+            Map<String, Duration> escalationTimeouts = createRequest.escalationTimeouts().entrySet().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                    java.util.Map.Entry::getKey,
+                    e -> Duration.parse(e.getValue())
+                ));
 
             CreateSLACommand command = new CreateSLACommand(
                 createRequest.contractId(),
                 createRequest.approvalType(),
                 Duration.parse(createRequest.maxApprovalTime()),
-                createRequest.escalationTimeouts(),
+                escalationTimeouts,
                 createRequest.escalationProcedure()
             );
 
             return agencyApprovalSLAService.create(ctx, command)
-                .then(sla -> {
-                    metrics.incrementCounter("agency_approval_sla.create.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(sla)))));
+                .map(sla -> {
+                    metrics.increment("agency_approval_sla.create.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(sla)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_approval_sla.create.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_approval_sla.create.error", Map.of());
                     LOG.error("Failed to create approval SLA", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_approval_sla.create.error");
+            metrics.increment("agency_approval_sla.create.error", Map.of());
             LOG.error("Failed to parse create request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleActivate(HttpRequest request) {
-        String slaId = request.pathParameter("slaId");
+        String slaId = request.getPathParameter("slaId");
         boolean isWriteOperation = true;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
             return agencyApprovalSLAService.activate(ctx, slaId)
-                .then(sla -> {
-                    metrics.incrementCounter("agency_approval_sla.activate.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(sla)))));
+                .map(sla -> {
+                    metrics.increment("agency_approval_sla.activate.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(sla)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_approval_sla.activate.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_approval_sla.activate.error", Map.of());
                     LOG.error("Failed to activate approval SLA", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_approval_sla.activate.error");
+            metrics.increment("agency_approval_sla.activate.error", Map.of());
             LOG.error("Failed to process activate request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleDeactivate(HttpRequest request) {
-        String slaId = request.pathParameter("slaId");
+        String slaId = request.getPathParameter("slaId");
         boolean isWriteOperation = true;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
-            DeactivateRequest deactivateRequest = objectMapper.readValue(request.getBody(), DeactivateRequest.class);
+            DeactivateRequest deactivateRequest = objectMapper.readValue(request.getBody().getString(java.nio.charset.StandardCharsets.UTF_8), DeactivateRequest.class);
 
             return agencyApprovalSLAService.deactivate(ctx, slaId, deactivateRequest.reason())
-                .then(sla -> {
-                    metrics.incrementCounter("agency_approval_sla.deactivate.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(sla)))));
+                .map(sla -> {
+                    metrics.increment("agency_approval_sla.deactivate.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(sla)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_approval_sla.deactivate.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_approval_sla.deactivate.error", Map.of());
                     LOG.error("Failed to deactivate approval SLA", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_approval_sla.deactivate.error");
+            metrics.increment("agency_approval_sla.deactivate.error", Map.of());
             LOG.error("Failed to parse deactivate request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleUpdateEscalation(HttpRequest request) {
-        String slaId = request.pathParameter("slaId");
+        String slaId = request.getPathParameter("slaId");
         boolean isWriteOperation = true;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
-            EscalationRequest escalationRequest = objectMapper.readValue(request.getBody(), EscalationRequest.class);
+            EscalationRequest escalationRequest = objectMapper.readValue(request.getBody().getString(java.nio.charset.StandardCharsets.UTF_8), EscalationRequest.class);
 
             return agencyApprovalSLAService.updateEscalationLevel(ctx, slaId, escalationRequest.newLevel())
-                .then(sla -> {
-                    metrics.incrementCounter("agency_approval_sla.escalation.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(sla)))));
+                .map(sla -> {
+                    metrics.increment("agency_approval_sla.escalation.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(sla)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_approval_sla.escalation.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_approval_sla.escalation.error", Map.of());
                     LOG.error("Failed to update escalation level", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_approval_sla.escalation.error");
+            metrics.increment("agency_approval_sla.escalation.error", Map.of());
             LOG.error("Failed to parse escalation request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleGetById(HttpRequest request) {
-        String slaId = request.pathParameter("slaId");
+        String slaId = request.getPathParameter("slaId");
         boolean isWriteOperation = false;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
             return agencyApprovalSLAService.findById(ctx, slaId)
-                .then(slaOpt -> {
+                .map(slaOpt -> {
                     if (slaOpt.isEmpty()) {
-                        return Promise.of(HttpResponse.ofCode(404).withJson(Json.of("{\"error\":\"Approval SLA not found\"}")));
+                        return HttpResponse.ofCode(404)
+                            .withBody("{\"error\":\"Approval SLA not found\"}")
+                            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                            .build();
                     }
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(slaOpt.get())))));
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(slaOpt.get())))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_approval_sla.get.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_approval_sla.get.error", Map.of());
                     LOG.error("Failed to get approval SLA", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_approval_sla.get.error");
+            metrics.increment("agency_approval_sla.get.error", Map.of());
             LOG.error("Failed to process get request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
@@ -219,28 +255,39 @@ public final class DmosAgencyApprovalSLAServlet {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
             return agencyApprovalSLAService.list(ctx)
-                .then(slas -> {
+                .map(slas -> {
                     Object[] dtos = slas.stream().map(this::toDto).toArray();
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(dtos))));
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(dtos))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_approval_sla.list.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_approval_sla.list.error", Map.of());
                     LOG.error("Failed to list approval SLAs", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_approval_sla.list.error");
+            metrics.increment("agency_approval_sla.list.error", Map.of());
             LOG.error("Failed to process list request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private HttpResponse mapServiceError(Exception e) {
         if (e instanceof IllegalArgumentException) {
-            return HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"" + e.getMessage() + "\"}"));
+            return HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"" + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build();
         }
-        return HttpResponse.ofCode(500).withJson(Json.of("{\"error\":\"Internal server error\"}"));
+        return HttpResponse.ofCode(500)
+            .withBody("{\"error\":\"Internal server error\"}")
+            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+            .build();
     }
 
     private SLADto toDto(AgencyApprovalSLA sla) {

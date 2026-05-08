@@ -2,6 +2,7 @@ package com.ghatana.digitalmarketing.persistence.optimization;
 
 import com.ghatana.digitalmarketing.application.optimization.ExperimentSuggestionRepository;
 import com.ghatana.digitalmarketing.domain.optimization.ExperimentSuggestion;
+import com.ghatana.digitalmarketing.domain.optimization.ExperimentSuggestionStatus;
 import io.activej.promise.Promise;
 
 import java.util.ArrayList;
@@ -72,6 +73,17 @@ public final class PostgresExperimentSuggestionRepository implements ExperimentS
         List<ExperimentSuggestion> result = new ArrayList<>();
         for (ExperimentSuggestion rec : storage.values()) {
             if (rec.getTenantId().equals(tenantId) && rec.getCampaignId().equals(campaignId)) {
+                result.add(rec);
+            }
+        }
+        return Promise.of(result);
+    }
+
+    @Override
+    public Promise<List<ExperimentSuggestion>> listByStatus(String tenantId, ExperimentSuggestionStatus status) {
+        List<ExperimentSuggestion> result = new ArrayList<>();
+        for (ExperimentSuggestion rec : storage.values()) {
+            if (rec.getTenantId().equals(tenantId) && rec.getStatus() == status) {
                 result.add(rec);
             }
         }

@@ -3,15 +3,17 @@ package com.ghatana.digitalmarketing.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.digitalmarketing.application.agency.AgencyContractService;
 import com.ghatana.digitalmarketing.application.agency.AgencyContractService.CreateContractCommand;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
+import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.agency.AgencyContract;
 import com.ghatana.digitalmarketing.domain.agency.AgencyContractStatus;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
-import io.activej.json.Json;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,7 +81,7 @@ public final class DmosAgencyContractServlet {
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
-            CreateRequest createRequest = objectMapper.readValue(request.getBody(), CreateRequest.class);
+            CreateRequest createRequest = objectMapper.readValue(request.getBody().getString(java.nio.charset.StandardCharsets.UTF_8), CreateRequest.class);
 
             CreateContractCommand command = new CreateContractCommand(
                 createRequest.clientId(),
@@ -94,24 +96,29 @@ public final class DmosAgencyContractServlet {
 
             return agencyContractService.create(ctx, command)
                 .then(contract -> {
-                    metrics.incrementCounter("agency_contract.create.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(contract)))));
+                    metrics.increment("agency_contract.create.success", Map.of());
+                    return Promise.of(HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(contract)))
+                        .build());
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_contract.create.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_contract.create.error", Map.of());
                     LOG.error("Failed to create agency contract", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_contract.create.error");
+            metrics.increment("agency_contract.create.error", Map.of());
             LOG.error("Failed to parse create request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleActivate(HttpRequest request) {
-        String contractId = request.pathParameter("contractId");
+        String contractId = request.getPathParameter("contractId");
         boolean isWriteOperation = true;
 
         try {
@@ -119,100 +126,123 @@ public final class DmosAgencyContractServlet {
 
             return agencyContractService.activate(ctx, contractId)
                 .then(contract -> {
-                    metrics.incrementCounter("agency_contract.activate.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(contract)))));
+                    metrics.increment("agency_contract.activate.success", Map.of());
+                    return Promise.of(HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(contract)))
+                        .build());
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_contract.activate.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_contract.activate.error", Map.of());
                     LOG.error("Failed to activate agency contract", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_contract.activate.error");
+            metrics.increment("agency_contract.activate.error", Map.of());
             LOG.error("Failed to process activate request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleTerminate(HttpRequest request) {
-        String contractId = request.pathParameter("contractId");
+        String contractId = request.getPathParameter("contractId");
         boolean isWriteOperation = true;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
-            TerminateRequest terminateRequest = objectMapper.readValue(request.getBody(), TerminateRequest.class);
+            TerminateRequest terminateRequest = objectMapper.readValue(request.getBody().getString(java.nio.charset.StandardCharsets.UTF_8), TerminateRequest.class);
 
             return agencyContractService.terminate(ctx, contractId, terminateRequest.reason())
                 .then(contract -> {
-                    metrics.incrementCounter("agency_contract.terminate.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(contract)))));
+                    metrics.increment("agency_contract.terminate.success", Map.of());
+                    return Promise.of(HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(contract)))
+                        .build());
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_contract.terminate.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_contract.terminate.error", Map.of());
                     LOG.error("Failed to terminate agency contract", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_contract.terminate.error");
+            metrics.increment("agency_contract.terminate.error", Map.of());
             LOG.error("Failed to parse terminate request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleRenew(HttpRequest request) {
-        String contractId = request.pathParameter("contractId");
+        String contractId = request.getPathParameter("contractId");
         boolean isWriteOperation = true;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
-            RenewRequest renewRequest = objectMapper.readValue(request.getBody(), RenewRequest.class);
+            RenewRequest renewRequest = objectMapper.readValue(request.getBody().getString(java.nio.charset.StandardCharsets.UTF_8), RenewRequest.class);
 
             return agencyContractService.renew(ctx, contractId, LocalDate.parse(renewRequest.newEndDate()))
-                .then(contract -> {
-                    metrics.incrementCounter("agency_contract.renew.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(contract)))));
+                .map(contract -> {
+                    metrics.increment("agency_contract.renew.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(contract)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_contract.renew.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_contract.renew.error", Map.of());
                     LOG.error("Failed to renew agency contract", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_contract.renew.error");
+            metrics.increment("agency_contract.renew.error", Map.of());
             LOG.error("Failed to parse renew request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleGetById(HttpRequest request) {
-        String contractId = request.pathParameter("contractId");
+        String contractId = request.getPathParameter("contractId");
         boolean isWriteOperation = false;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
             return agencyContractService.findById(ctx, contractId)
-                .then(contractOpt -> {
+                .map(contractOpt -> {
                     if (contractOpt.isEmpty()) {
-                        return Promise.of(HttpResponse.ofCode(404).withJson(Json.of("{\"error\":\"Contract not found\"}")));
+                        return HttpResponse.ofCode(404)
+                            .withBody("{\"error\":\"Contract not found\"}")
+                            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                            .build();
                     }
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(contractOpt.get())))));
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(contractOpt.get())))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_contract.get.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_contract.get.error", Map.of());
                     LOG.error("Failed to get agency contract", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_contract.get.error");
+            metrics.increment("agency_contract.get.error", Map.of());
             LOG.error("Failed to process get request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
@@ -223,28 +253,39 @@ public final class DmosAgencyContractServlet {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
             return agencyContractService.list(ctx)
-                .then(contracts -> {
+                .map(contracts -> {
                     Object[] dtos = contracts.stream().map(this::toDto).toArray();
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(dtos))));
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(dtos))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_contract.list.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_contract.list.error", Map.of());
                     LOG.error("Failed to list agency contracts", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_contract.list.error");
+            metrics.increment("agency_contract.list.error", Map.of());
             LOG.error("Failed to process list request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private HttpResponse mapServiceError(Exception e) {
         if (e instanceof IllegalArgumentException) {
-            return HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"" + e.getMessage() + "\"}"));
+            return HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"" + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build();
         }
-        return HttpResponse.ofCode(500).withJson(Json.of("{\"error\":\"Internal server error\"}"));
+        return HttpResponse.ofCode(500)
+            .withBody("{\"error\":\"Internal server error\"}")
+            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+            .build();
     }
 
     private ContractDto toDto(AgencyContract contract) {

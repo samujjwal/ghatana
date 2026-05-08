@@ -1,6 +1,7 @@
 package com.ghatana.digitalmarketing.application.campaign;
 
 import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
+import com.ghatana.digitalmarketing.bridge.CampaignEventSourcingAdapter;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
@@ -11,11 +12,14 @@ import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignStatus;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignType;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.plugin.PluginContext;
 import com.ghatana.platform.plugin.PluginMetadata;
 import com.ghatana.platform.plugin.PluginState;
 import com.ghatana.platform.plugin.PluginType;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.platform.types.identity.Offset;
 import com.ghatana.plugin.compliance.CompliancePlugin;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +50,8 @@ class CampaignServiceImplTest extends EventloopTestBase {
     private InMemoryKillSwitchService killSwitchService;
     private InMemoryCommandService commandService;
     private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    private TestEventLogStore eventStore;
+    private CampaignEventSourcingAdapter eventSourcingAdapter;
 
     @BeforeEach
     void setUp() {
@@ -55,6 +61,8 @@ class CampaignServiceImplTest extends EventloopTestBase {
         killSwitchService = new InMemoryKillSwitchService();
         commandService = new InMemoryCommandService();
         objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        eventStore = new TestEventLogStore();
+        eventSourcingAdapter = new CampaignEventSourcingAdapter(eventStore);
         service = new CampaignServiceImpl(
             kernelAdapter,
             repository,
@@ -69,7 +77,8 @@ class CampaignServiceImplTest extends EventloopTestBase {
             DmosMetricsCollector.noop(),
             killSwitchService,
             commandService,
-            objectMapper
+            objectMapper,
+            eventSourcingAdapter
         );
 
         ctx = DmOperationContext.builder()
@@ -92,15 +101,15 @@ class CampaignServiceImplTest extends EventloopTestBase {
         );
 
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(null, repository, compliancePlugin, preflightProvider, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper));
+            .isThrownBy(() -> new CampaignServiceImpl(null, repository, compliancePlugin, preflightProvider, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper, eventSourcingAdapter));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, null, compliancePlugin, preflightProvider, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper));
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, null, compliancePlugin, preflightProvider, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper, eventSourcingAdapter));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, null, preflightProvider, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper));
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, null, preflightProvider, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper, eventSourcingAdapter));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, null, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper));
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, null, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper, eventSourcingAdapter));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, preflightProvider, null, killSwitchService, commandService, objectMapper))
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, preflightProvider, null, killSwitchService, commandService, objectMapper, eventSourcingAdapter))
             .withMessageContaining("metrics");
     }
 
@@ -591,6 +600,60 @@ class CampaignServiceImplTest extends EventloopTestBase {
             return Promise.of(commands.stream()
                 .filter(c -> c.getTenantId().equals(ctx.getTenantId().getValue()) && c.getStatus() == status)
                 .count());
+        }
+    }
+
+    /** Simple in-memory EventLogStore stub for testing CampaignEventSourcingAdapter. */
+    private static final class TestEventLogStore implements EventLogStore {
+
+        TenantContext lastTenant;
+        EventLogStore.EventEntry lastEntry;
+        private long nextOffset = 1L;
+
+        @Override
+        public Promise<Offset> append(TenantContext tenant, EventLogStore.EventEntry entry) {
+            this.lastTenant = tenant;
+            this.lastEntry = entry;
+            return Promise.of(new Offset(String.valueOf(nextOffset++)));
+        }
+
+        @Override
+        public Promise<List<Offset>> appendBatch(TenantContext tenant, List<EventLogStore.EventEntry> entries) {
+            return Promise.of(entries.stream()
+                .map(e -> new Offset(String.valueOf(nextOffset++)))
+                .toList());
+        }
+
+        @Override
+        public Promise<List<EventLogStore.EventEntry>> read(TenantContext tenant, Offset from, int limit) {
+            return Promise.of(List.of());
+        }
+
+        @Override
+        public Promise<List<EventLogStore.EventEntry>> readByTimeRange(
+                TenantContext tenant, Instant startTime, Instant endTime, int limit) {
+            return Promise.of(List.of());
+        }
+
+        @Override
+        public Promise<List<EventLogStore.EventEntry>> readByType(
+                TenantContext tenant, String eventType, Offset from, int limit) {
+            return Promise.of(List.of());
+        }
+
+        @Override
+        public Promise<Offset> getLatestOffset(TenantContext tenant) {
+            return Promise.of(new Offset(String.valueOf(nextOffset)));
+        }
+
+        @Override
+        public Promise<Offset> getEarliestOffset(TenantContext tenant) {
+            return Promise.of(new Offset("0"));
+        }
+
+        @Override
+        public Promise<EventLogStore.Subscription> tail(TenantContext tenant, Offset from, java.util.function.Consumer<EventLogStore.EventEntry> handler) {
+            return Promise.ofException(new UnsupportedOperationException("tail not implemented in test stub"));
         }
     }
 }

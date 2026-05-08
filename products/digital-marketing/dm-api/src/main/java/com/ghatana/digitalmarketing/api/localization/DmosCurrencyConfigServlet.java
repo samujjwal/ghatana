@@ -1,9 +1,14 @@
 package com.ghatana.digitalmarketing.api.localization;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.digitalmarketing.application.localization.LocalizationConfigService;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.localization.CurrencyConfig;
+import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
+import io.activej.http.HttpRequest;
+import io.activej.http.HttpResponse;
 import io.activej.http.RoutingServlet;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
@@ -24,57 +29,71 @@ import java.util.Objects;
 public final class DmosCurrencyConfigServlet {
 
     private static final Logger LOG = LoggerFactory.getLogger(DmosCurrencyConfigServlet.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    private final Eventloop eventloop;
     private final LocalizationConfigService configService;
 
-    public DmosCurrencyConfigServlet(LocalizationConfigService configService) {
+    public DmosCurrencyConfigServlet(Eventloop eventloop, LocalizationConfigService configService) {
+        this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.configService = Objects.requireNonNull(configService, "configService must not be null");
     }
 
     public RoutingServlet routing() {
-        return RoutingServlet.builder()
-            .map("/api/v1/localization/currency/:regionCode", this::getCurrencyConfig)
-            .map("/api/v1/localization/currency", this::saveCurrencyConfig)
+        return RoutingServlet.builder(eventloop)
+            .with(io.activej.http.HttpMethod.GET, "/api/v1/localization/currency/:regionCode", this::getCurrencyConfig)
+            .with(io.activej.http.HttpMethod.POST, "/api/v1/localization/currency", this::saveCurrencyConfig)
             .build();
     }
 
-    private AsyncServlet getCurrencyConfig(io.activej.http.HttpRequest req) {
+    private Promise<HttpResponse> getCurrencyConfig(HttpRequest req) {
         String regionCode = req.getPathParameter("regionCode");
         LOG.info("[DMOS][API] GET currency config for region={}", regionCode);
 
         return configService.getCurrencyConfig(regionCode)
-            .map(config -> io.activej.http.HttpResponse.ok200()
-                .withJson(toJson(config)))
-            .thenEx((exception, value) -> {
-                if (exception != null) {
-                    LOG.error("[DMOS][API] Error getting currency config", exception);
-                    return Promise.of(io.activej.http.HttpResponse.of(500).withPlainText("Internal server error"));
+            .map(config -> {
+                try {
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(OBJECT_MAPPER.writeValueAsBytes(toJson(config)))
+                        .build();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
-                return Promise.of(value);
+            })
+            .then(r -> Promise.of(r), e -> {
+                LOG.error("[DMOS][API] Error getting currency config", e);
+                return Promise.of(HttpResponse.ofCode(500).withPlainText("Internal server error").build());
             });
     }
 
-    private AsyncServlet saveCurrencyConfig(io.activej.http.HttpRequest req) {
+    private Promise<HttpResponse> saveCurrencyConfig(HttpRequest req) {
         LOG.info("[DMOS][API] POST save currency config");
 
         return req.loadBody()
             .then(body -> {
                 try {
-                    CurrencyConfig config = fromJson(body);
+                    String bodyStr = body.toString();
+                    CurrencyConfig config = fromJson(bodyStr);
                     return configService.saveCurrencyConfig(config)
-                        .map(saved -> io.activej.http.HttpResponse.ok200()
-                            .withJson(toJson(saved)));
+                        .map(saved -> {
+                            try {
+                                return HttpResponse.ofCode(200)
+                                    .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                                    .withBody(OBJECT_MAPPER.writeValueAsBytes(toJson(saved)))
+                                    .build();
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
                 } catch (Exception e) {
                     LOG.error("[DMOS][API] Error parsing currency config", e);
-                    return Promise.of(io.activej.http.HttpResponse.of(400).withPlainText("Invalid request"));
+                    return Promise.of(HttpResponse.ofCode(400).withPlainText("Invalid request").build());
                 }
             })
-            .thenEx((exception, value) -> {
-                if (exception != null) {
-                    LOG.error("[DMOS][API] Error saving currency config", exception);
-                    return Promise.of(io.activej.http.HttpResponse.of(500).withPlainText("Internal server error"));
-                }
-                return Promise.of(value);
+            .then(r -> Promise.of(r), e -> {
+                LOG.error("[DMOS][API] Error saving currency config", e);
+                return Promise.of(HttpResponse.ofCode(500).withPlainText("Internal server error").build());
             });
     }
 

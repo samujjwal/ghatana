@@ -117,7 +117,7 @@ public final class PostgresDemoWorkspaceRepository implements DemoWorkspaceRepos
     }
 
     @Override
-    public Promise<Optional<DemoWorkspace>> findByLeadId(String leadId) {
+    public Promise<List<DemoWorkspace>> findByLeadId(String leadId) {
         Objects.requireNonNull(leadId, "leadId must not be null");
         return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection();
@@ -125,36 +125,15 @@ public final class PostgresDemoWorkspaceRepository implements DemoWorkspaceRepos
                 stmt.setString(1, leadId);
                 stmt.setString(2, extractTenantId(leadId));
                 try (ResultSet rs = stmt.executeQuery()) {
-                    if (rs.next()) {
-                        return Optional.of(mapRow(rs));
-                    }
-                    return Optional.empty();
-                }
-            } catch (SQLException e) {
-                LOG.error("[DMOS-PERSIST] failed to find demo workspace by lead_id={}: {}", leadId, e.getMessage(), e);
-                throw new DmPersistenceException("Failed to find demo workspace by lead_id: " + leadId, e);
-            }
-        });
-    }
-
-    @Override
-    public Promise<List<DemoWorkspace>> findByDemoWorkspaceId(String demoWorkspaceId) {
-        Objects.requireNonNull(demoWorkspaceId, "demoWorkspaceId must not be null");
-        return Promise.ofBlocking(executor, () -> {
-            try (Connection conn = dataSource.getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(SELECT_BY_ID_SQL)) {
-                stmt.setString(1, demoWorkspaceId);
-                stmt.setString(2, extractTenantId(demoWorkspaceId));
-                try (ResultSet rs = stmt.executeQuery()) {
                     List<DemoWorkspace> result = new ArrayList<>();
-                    if (rs.next()) {
+                    while (rs.next()) {
                         result.add(mapRow(rs));
                     }
                     return result;
                 }
             } catch (SQLException e) {
-                LOG.error("[DMOS-PERSIST] failed to find demo workspace id={}: {}", demoWorkspaceId, e.getMessage(), e);
-                throw new DmPersistenceException("Failed to find demo workspace: " + demoWorkspaceId, e);
+                LOG.error("[DMOS-PERSIST] failed to find demo workspace by lead_id={}: {}", leadId, e.getMessage(), e);
+                throw new DmPersistenceException("Failed to find demo workspace by lead_id: " + leadId, e);
             }
         });
     }

@@ -1,8 +1,15 @@
 package com.ghatana.digitalmarketing.api.localization;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.digitalmarketing.application.localization.LocalizationConfigService;
 import com.ghatana.digitalmarketing.domain.localization.BrandLegalReviewConfig;
+import io.activej.eventloop.Eventloop;
+import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
+import io.activej.http.HttpRequest;
+import io.activej.http.HttpResponse;
 import io.activej.http.RoutingServlet;
+import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,57 +27,71 @@ import java.util.Objects;
 public final class DmosBrandLegalReviewConfigServlet {
 
     private static final Logger LOG = LoggerFactory.getLogger(DmosBrandLegalReviewConfigServlet.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    private final Eventloop eventloop;
     private final LocalizationConfigService configService;
 
-    public DmosBrandLegalReviewConfigServlet(LocalizationConfigService configService) {
+    public DmosBrandLegalReviewConfigServlet(Eventloop eventloop, LocalizationConfigService configService) {
+        this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.configService = Objects.requireNonNull(configService, "configService must not be null");
     }
 
     public RoutingServlet routing() {
-        return RoutingServlet.builder()
-            .map("/api/v1/localization/brand-legal/:regionCode", this::getBrandLegalReviewConfig)
-            .map("/api/v1/localization/brand-legal", this::saveBrandLegalReviewConfig)
+        return RoutingServlet.builder(eventloop)
+            .with(io.activej.http.HttpMethod.GET, "/api/v1/localization/brand-legal/:regionCode", this::getBrandLegalReviewConfig)
+            .with(io.activej.http.HttpMethod.POST, "/api/v1/localization/brand-legal", this::saveBrandLegalReviewConfig)
             .build();
     }
 
-    private io.activej.http.AsyncServlet getBrandLegalReviewConfig(io.activej.http.HttpRequest req) {
+    private Promise<HttpResponse> getBrandLegalReviewConfig(HttpRequest req) {
         String regionCode = req.getPathParameter("regionCode");
         LOG.info("[DMOS][API] GET brand legal review config for region={}", regionCode);
 
         return configService.getBrandLegalReviewConfig(regionCode)
-            .map(config -> io.activej.http.HttpResponse.ok200()
-                .withJson(toJson(config)))
-            .thenEx((exception, value) -> {
-                if (exception != null) {
-                    LOG.error("[DMOS][API] Error getting brand legal review config", exception);
-                    return io.activej.promise.Promise.of(io.activej.http.HttpResponse.of(500).withPlainText("Internal server error"));
+            .map(config -> {
+                try {
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(OBJECT_MAPPER.writeValueAsBytes(toJson(config)))
+                        .build();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
-                return io.activej.promise.Promise.of(value);
+            })
+            .then(r -> Promise.of(r), e -> {
+                LOG.error("[DMOS][API] Error getting brand legal review config", e);
+                return Promise.of(HttpResponse.ofCode(500).withPlainText("Internal server error").build());
             });
     }
 
-    private io.activej.http.AsyncServlet saveBrandLegalReviewConfig(io.activej.http.HttpRequest req) {
+    private Promise<HttpResponse> saveBrandLegalReviewConfig(HttpRequest req) {
         LOG.info("[DMOS][API] POST save brand legal review config");
 
         return req.loadBody()
             .then(body -> {
                 try {
-                    BrandLegalReviewConfig config = fromJson(body);
+                    String bodyStr = body.toString();
+                    BrandLegalReviewConfig config = fromJson(bodyStr);
                     return configService.saveBrandLegalReviewConfig(config)
-                        .map(saved -> io.activej.http.HttpResponse.ok200()
-                            .withJson(toJson(saved)));
+                        .map(saved -> {
+                            try {
+                                return HttpResponse.ofCode(200)
+                                    .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                                    .withBody(OBJECT_MAPPER.writeValueAsBytes(toJson(saved)))
+                                    .build();
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
                 } catch (Exception e) {
                     LOG.error("[DMOS][API] Error parsing brand legal review config", e);
-                    return io.activej.promise.Promise.of(io.activej.http.HttpResponse.of(400).withPlainText("Invalid request"));
+                    return Promise.of(HttpResponse.ofCode(400).withPlainText("Invalid request").build());
                 }
             })
-            .thenEx((exception, value) -> {
-                if (exception != null) {
-                    LOG.error("[DMOS][API] Error saving brand legal review config", exception);
-                    return io.activej.promise.Promise.of(io.activej.http.HttpResponse.of(500).withPlainText("Internal server error"));
-                }
-                return io.activej.promise.Promise.of(value);
+            .then(r -> Promise.of(r), e -> {
+                LOG.error("[DMOS][API] Error saving brand legal review config", e);
+                return Promise.of(HttpResponse.ofCode(500).withPlainText("Internal server error").build());
             });
     }
 

@@ -2,6 +2,7 @@ package com.ghatana.digitalmarketing.persistence.optimization;
 
 import com.ghatana.digitalmarketing.application.optimization.BudgetReallocationProposalRepository;
 import com.ghatana.digitalmarketing.domain.optimization.BudgetReallocationProposal;
+import com.ghatana.digitalmarketing.domain.optimization.BudgetReallocationStatus;
 import io.activej.promise.Promise;
 
 import java.util.ArrayList;
@@ -68,10 +69,21 @@ public final class PostgresBudgetReallocationProposalRepository implements Budge
     }
 
     @Override
-    public Promise<List<BudgetReallocationProposal>> listByCampaign(String tenantId, String campaignId) {
+    public Promise<List<BudgetReallocationProposal>> listByBudgetRecommendation(String tenantId, String budgetRecommendationId) {
         List<BudgetReallocationProposal> result = new ArrayList<>();
         for (BudgetReallocationProposal rec : storage.values()) {
-            if (rec.getTenantId().equals(tenantId) && rec.getCampaignId().equals(campaignId)) {
+            if (rec.getTenantId().equals(tenantId) && rec.getBudgetRecommendationId().equals(budgetRecommendationId)) {
+                result.add(rec);
+            }
+        }
+        return Promise.of(result);
+    }
+
+    @Override
+    public Promise<List<BudgetReallocationProposal>> listByStatus(String tenantId, BudgetReallocationStatus status) {
+        List<BudgetReallocationProposal> result = new ArrayList<>();
+        for (BudgetReallocationProposal rec : storage.values()) {
+            if (rec.getTenantId().equals(tenantId) && rec.getStatus() == status) {
                 result.add(rec);
             }
         }

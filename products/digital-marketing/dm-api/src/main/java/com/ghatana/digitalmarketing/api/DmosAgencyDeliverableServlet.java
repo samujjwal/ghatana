@@ -3,14 +3,16 @@ package com.ghatana.digitalmarketing.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.digitalmarketing.application.agency.AgencyDeliverableService;
 import com.ghatana.digitalmarketing.application.agency.AgencyDeliverableService.CreateDeliverableCommand;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
+import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.agency.AgencyDeliverable;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
-import io.activej.json.Json;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +82,7 @@ public final class DmosAgencyDeliverableServlet {
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
-            CreateRequest createRequest = objectMapper.readValue(request.getBody(), CreateRequest.class);
+            CreateRequest createRequest = objectMapper.readValue(request.getBody().getString(java.nio.charset.StandardCharsets.UTF_8), CreateRequest.class);
 
             CreateDeliverableCommand command = new CreateDeliverableCommand(
                 createRequest.contractId(),
@@ -93,149 +95,182 @@ public final class DmosAgencyDeliverableServlet {
             );
 
             return agencyDeliverableService.create(ctx, command)
-                .then(deliverable -> {
-                    metrics.incrementCounter("agency_deliverable.create.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(deliverable)))));
+                .map(deliverable -> {
+                    metrics.increment("agency_deliverable.create.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(deliverable)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_deliverable.create.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_deliverable.create.error", Map.of());
                     LOG.error("Failed to create agency deliverable", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_deliverable.create.error");
+            metrics.increment("agency_deliverable.create.error", Map.of());
             LOG.error("Failed to parse create request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleStart(HttpRequest request) {
-        String deliverableId = request.pathParameter("deliverableId");
+        String deliverableId = request.getPathParameter("deliverableId");
         boolean isWriteOperation = true;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
             return agencyDeliverableService.start(ctx, deliverableId)
-                .then(deliverable -> {
-                    metrics.incrementCounter("agency_deliverable.start.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(deliverable)))));
+                .map(deliverable -> {
+                    metrics.increment("agency_deliverable.start.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(deliverable)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_deliverable.start.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_deliverable.start.error", Map.of());
                     LOG.error("Failed to start agency deliverable", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_deliverable.start.error");
+            metrics.increment("agency_deliverable.start.error", Map.of());
             LOG.error("Failed to process start request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleSubmit(HttpRequest request) {
-        String deliverableId = request.pathParameter("deliverableId");
+        String deliverableId = request.getPathParameter("deliverableId");
         boolean isWriteOperation = true;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
             return agencyDeliverableService.submitForReview(ctx, deliverableId)
-                .then(deliverable -> {
-                    metrics.incrementCounter("agency_deliverable.submit.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(deliverable)))));
+                .map(deliverable -> {
+                    metrics.increment("agency_deliverable.submit.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(deliverable)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_deliverable.submit.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_deliverable.submit.error", Map.of());
                     LOG.error("Failed to submit agency deliverable", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_deliverable.submit.error");
+            metrics.increment("agency_deliverable.submit.error", Map.of());
             LOG.error("Failed to process submit request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleComplete(HttpRequest request) {
-        String deliverableId = request.pathParameter("deliverableId");
+        String deliverableId = request.getPathParameter("deliverableId");
         boolean isWriteOperation = true;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
             return agencyDeliverableService.complete(ctx, deliverableId)
-                .then(deliverable -> {
-                    metrics.incrementCounter("agency_deliverable.complete.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(deliverable)))));
+                .map(deliverable -> {
+                    metrics.increment("agency_deliverable.complete.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(deliverable)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_deliverable.complete.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_deliverable.complete.error", Map.of());
                     LOG.error("Failed to complete agency deliverable", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_deliverable.complete.error");
+            metrics.increment("agency_deliverable.complete.error", Map.of());
             LOG.error("Failed to process complete request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleReject(HttpRequest request) {
-        String deliverableId = request.pathParameter("deliverableId");
+        String deliverableId = request.getPathParameter("deliverableId");
         boolean isWriteOperation = true;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
-            RejectRequest rejectRequest = objectMapper.readValue(request.getBody(), RejectRequest.class);
+            RejectRequest rejectRequest = objectMapper.readValue(request.getBody().getString(java.nio.charset.StandardCharsets.UTF_8), RejectRequest.class);
 
             return agencyDeliverableService.reject(ctx, deliverableId, rejectRequest.reason())
-                .then(deliverable -> {
-                    metrics.incrementCounter("agency_deliverable.reject.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(deliverable)))));
+                .map(deliverable -> {
+                    metrics.increment("agency_deliverable.reject.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(deliverable)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_deliverable.reject.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_deliverable.reject.error", Map.of());
                     LOG.error("Failed to reject agency deliverable", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_deliverable.reject.error");
+            metrics.increment("agency_deliverable.reject.error", Map.of());
             LOG.error("Failed to parse reject request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleGetById(HttpRequest request) {
-        String deliverableId = request.pathParameter("deliverableId");
+        String deliverableId = request.getPathParameter("deliverableId");
         boolean isWriteOperation = false;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
             return agencyDeliverableService.findById(ctx, deliverableId)
-                .then(deliverableOpt -> {
+                .map(deliverableOpt -> {
                     if (deliverableOpt.isEmpty()) {
-                        return Promise.of(HttpResponse.ofCode(404).withJson(Json.of("{\"error\":\"Deliverable not found\"}")));
+                        return HttpResponse.ofCode(404)
+                            .withBody("{\"error\":\"Deliverable not found\"}")
+                            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                            .build();
                     }
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(deliverableOpt.get())))));
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(deliverableOpt.get())))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_deliverable.get.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_deliverable.get.error", Map.of());
                     LOG.error("Failed to get agency deliverable", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_deliverable.get.error");
+            metrics.increment("agency_deliverable.get.error", Map.of());
             LOG.error("Failed to process get request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
@@ -246,28 +281,39 @@ public final class DmosAgencyDeliverableServlet {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
             return agencyDeliverableService.list(ctx)
-                .then(deliverables -> {
+                .map(deliverables -> {
                     Object[] dtos = deliverables.stream().map(this::toDto).toArray();
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(dtos))));
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(dtos))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_deliverable.list.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_deliverable.list.error", Map.of());
                     LOG.error("Failed to list agency deliverables", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_deliverable.list.error");
+            metrics.increment("agency_deliverable.list.error", Map.of());
             LOG.error("Failed to process list request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private HttpResponse mapServiceError(Exception e) {
         if (e instanceof IllegalArgumentException) {
-            return HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"" + e.getMessage() + "\"}"));
+            return HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"" + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build();
         }
-        return HttpResponse.ofCode(500).withJson(Json.of("{\"error\":\"Internal server error\"}"));
+        return HttpResponse.ofCode(500)
+            .withBody("{\"error\":\"Internal server error\"}")
+            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+            .build();
     }
 
     private DeliverableDto toDto(AgencyDeliverable deliverable) {

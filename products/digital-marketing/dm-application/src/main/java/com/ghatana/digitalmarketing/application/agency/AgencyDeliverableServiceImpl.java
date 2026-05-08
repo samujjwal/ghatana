@@ -34,8 +34,8 @@ public class AgencyDeliverableServiceImpl implements AgencyDeliverableService {
         AgencyDeliverable deliverable = AgencyDeliverable.builder()
             .id(deliverableId)
             .contractId(command.contractId())
-            .agencyTenantId(ctx.tenantId().getValue())
-            .clientId(ctx.tenantId().getValue())
+            .agencyTenantId(ctx.getTenantId().getValue())
+            .clientId(ctx.getTenantId().getValue())
             .deliverableType(command.deliverableType())
             .title(command.title())
             .description(command.description())
@@ -123,6 +123,6 @@ public class AgencyDeliverableServiceImpl implements AgencyDeliverableService {
 
     @Override
     public Promise<java.util.List<AgencyDeliverable>> list(DmOperationContext ctx) {
-        return repository.listByTenant(ctx.tenantId().getValue());
+        return repository.listByTenant(ctx.getTenantId().getValue());
     }
 }

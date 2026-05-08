@@ -3,15 +3,18 @@ package com.ghatana.digitalmarketing.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.digitalmarketing.application.funnel.TrialOnboardingService;
 import com.ghatana.digitalmarketing.application.funnel.TrialOnboardingService.CreateTrialOnboardingCommand;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
+import com.ghatana.digitalmarketing.api.observability.DmosTelemetry;
+import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.funnel.TrialOnboarding;
 import com.ghatana.digitalmarketing.domain.funnel.TrialOnboardingStatus;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
-import io.activej.json.Json;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,13 +77,13 @@ public final class DmosTrialOnboardingServlet {
     }
 
     private Promise<HttpResponse> handleCreate(HttpRequest request) {
-        String workspaceId = request.pathParameter("workspaceId");
+        String workspaceId = request.getPathParameter("workspaceId");
         boolean isWriteOperation = true;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, isWriteOperation);
 
-            CreateRequest createRequest = objectMapper.readValue(request.getBody(), CreateRequest.class);
+            CreateRequest createRequest = objectMapper.readValue(request.getBody().getString(java.nio.charset.StandardCharsets.UTF_8), CreateRequest.class);
 
             CreateTrialOnboardingCommand command = new CreateTrialOnboardingCommand(
                 createRequest.leadId(),
@@ -89,189 +92,233 @@ public final class DmosTrialOnboardingServlet {
             );
 
             return trialOnboardingService.create(ctx, command)
-                .then(onboarding -> {
-                    metrics.incrementCounter("trial_onboarding.create.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(onboarding)))));
+                .map(onboarding -> {
+                    metrics.increment("trial_onboarding.create.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(onboarding)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("trial_onboarding.create.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("trial_onboarding.create.error", Map.of());
                     LOG.error("Failed to create trial onboarding", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("trial_onboarding.create.error");
+            metrics.increment("trial_onboarding.create.error", Map.of());
             LOG.error("Failed to parse create request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleStart(HttpRequest request) {
-        String workspaceId = request.pathParameter("workspaceId");
-        String onboardingId = request.pathParameter("onboardingId");
+        String workspaceId = request.getPathParameter("workspaceId");
+        String onboardingId = request.getPathParameter("onboardingId");
         boolean isWriteOperation = true;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, isWriteOperation);
 
             return trialOnboardingService.start(ctx, onboardingId)
-                .then(onboarding -> {
-                    metrics.incrementCounter("trial_onboarding.start.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(onboarding)))));
+                .map(onboarding -> {
+                    metrics.increment("trial_onboarding.start.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(onboarding)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("trial_onboarding.start.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("trial_onboarding.start.error", Map.of());
                     LOG.error("Failed to start trial onboarding", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("trial_onboarding.start.error");
+            metrics.increment("trial_onboarding.start.error", Map.of());
             LOG.error("Failed to process start request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleAdvanceStep(HttpRequest request) {
-        String workspaceId = request.pathParameter("workspaceId");
-        String onboardingId = request.pathParameter("onboardingId");
+        String workspaceId = request.getPathParameter("workspaceId");
+        String onboardingId = request.getPathParameter("onboardingId");
         boolean isWriteOperation = true;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, isWriteOperation);
 
-            AdvanceStepRequest advanceRequest = objectMapper.readValue(request.getBody(), AdvanceStepRequest.class);
+            AdvanceStepRequest advanceRequest = objectMapper.readValue(request.getBody().getString(java.nio.charset.StandardCharsets.UTF_8), AdvanceStepRequest.class);
 
             return trialOnboardingService.advanceStep(ctx, onboardingId, advanceRequest.stepNumber(), advanceRequest.progress())
-                .then(onboarding -> {
-                    metrics.incrementCounter("trial_onboarding.advance.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(onboarding)))));
+                .map(onboarding -> {
+                    metrics.increment("trial_onboarding.advance.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(onboarding)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("trial_onboarding.advance.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("trial_onboarding.advance.error", Map.of());
                     LOG.error("Failed to advance trial onboarding step", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("trial_onboarding.advance.error");
+            metrics.increment("trial_onboarding.advance.error", Map.of());
             LOG.error("Failed to parse advance step request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleComplete(HttpRequest request) {
-        String workspaceId = request.pathParameter("workspaceId");
-        String onboardingId = request.pathParameter("onboardingId");
+        String workspaceId = request.getPathParameter("workspaceId");
+        String onboardingId = request.getPathParameter("onboardingId");
         boolean isWriteOperation = true;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, isWriteOperation);
 
             return trialOnboardingService.complete(ctx, onboardingId)
-                .then(onboarding -> {
-                    metrics.incrementCounter("trial_onboarding.complete.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(onboarding)))));
+                .map(onboarding -> {
+                    metrics.increment("trial_onboarding.complete.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(onboarding)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("trial_onboarding.complete.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("trial_onboarding.complete.error", Map.of());
                     LOG.error("Failed to complete trial onboarding", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("trial_onboarding.complete.error");
+            metrics.increment("trial_onboarding.complete.error", Map.of());
             LOG.error("Failed to process complete request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleCancel(HttpRequest request) {
-        String workspaceId = request.pathParameter("workspaceId");
-        String onboardingId = request.pathParameter("onboardingId");
+        String workspaceId = request.getPathParameter("workspaceId");
+        String onboardingId = request.getPathParameter("onboardingId");
         boolean isWriteOperation = true;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, isWriteOperation);
 
-            CancelRequest cancelRequest = objectMapper.readValue(request.getBody(), CancelRequest.class);
+            CancelRequest cancelRequest = objectMapper.readValue(request.getBody().getString(java.nio.charset.StandardCharsets.UTF_8), CancelRequest.class);
 
             return trialOnboardingService.cancel(ctx, onboardingId, cancelRequest.reason())
-                .then(onboarding -> {
-                    metrics.incrementCounter("trial_onboarding.cancel.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(onboarding)))));
+                .map(onboarding -> {
+                    metrics.increment("trial_onboarding.cancel.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(onboarding)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("trial_onboarding.cancel.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("trial_onboarding.cancel.error", Map.of());
                     LOG.error("Failed to cancel trial onboarding", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("trial_onboarding.cancel.error");
+            metrics.increment("trial_onboarding.cancel.error", Map.of());
             LOG.error("Failed to parse cancel request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleGetById(HttpRequest request) {
-        String workspaceId = request.pathParameter("workspaceId");
-        String onboardingId = request.pathParameter("onboardingId");
+        String workspaceId = request.getPathParameter("workspaceId");
+        String onboardingId = request.getPathParameter("onboardingId");
         boolean isWriteOperation = false;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, isWriteOperation);
 
             return trialOnboardingService.findById(ctx, onboardingId)
-                .then(onboardingOpt -> {
+                .map(onboardingOpt -> {
                     if (onboardingOpt.isEmpty()) {
-                        return Promise.of(HttpResponse.ofCode(404).withJson(Json.of("{\"error\":\"Trial onboarding not found\"}")));
+                        return HttpResponse.ofCode(404)
+                            .withBody("{\"error\":\"Trial onboarding not found\"}")
+                            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                            .build();
                     }
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(onboardingOpt.get())))));
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(onboardingOpt.get())))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("trial_onboarding.get.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("trial_onboarding.get.error", Map.of());
                     LOG.error("Failed to get trial onboarding", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("trial_onboarding.get.error");
+            metrics.increment("trial_onboarding.get.error", Map.of());
             LOG.error("Failed to process get request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleList(HttpRequest request) {
-        String workspaceId = request.pathParameter("workspaceId");
+        String workspaceId = request.getPathParameter("workspaceId");
         boolean isWriteOperation = false;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, isWriteOperation);
 
             return trialOnboardingService.list(ctx)
-                .then(onboardings -> {
+                .map(onboardings -> {
                     Object[] dtos = onboardings.stream().map(this::toDto).toArray();
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(dtos))));
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(dtos))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("trial_onboarding.list.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("trial_onboarding.list.error", Map.of());
                     LOG.error("Failed to list trial onboardings", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("trial_onboarding.list.error");
+            metrics.increment("trial_onboarding.list.error", Map.of());
             LOG.error("Failed to process list request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private HttpResponse mapServiceError(Exception e) {
         if (e instanceof IllegalArgumentException) {
-            return HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"" + e.getMessage() + "\"}"));
+            return HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"" + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build();
         }
-        return HttpResponse.ofCode(500).withJson(Json.of("{\"error\":\"Internal server error\"}"));
+        return HttpResponse.ofCode(500)
+            .withBody("{\"error\":\"Internal server error\"}")
+            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+            .build();
     }
 
     private TrialOnboardingDto toDto(TrialOnboarding onboarding) {

@@ -34,7 +34,7 @@ public class AgencyContractServiceImpl implements AgencyContractService {
 
         AgencyContract contract = AgencyContract.builder()
             .id(contractId)
-            .agencyTenantId(ctx.tenantId().getValue())
+            .agencyTenantId(ctx.getTenantId().getValue())
             .clientId(command.clientId())
             .contractNumber(command.contractNumber())
             .contractType(command.contractType())
@@ -102,6 +102,6 @@ public class AgencyContractServiceImpl implements AgencyContractService {
 
     @Override
     public Promise<java.util.List<AgencyContract>> list(DmOperationContext ctx) {
-        return repository.listByTenant(ctx.tenantId().getValue());
+        return repository.listByTenant(ctx.getTenantId().getValue());
     }
 }

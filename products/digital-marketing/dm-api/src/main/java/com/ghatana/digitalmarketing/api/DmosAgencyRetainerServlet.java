@@ -3,15 +3,17 @@ package com.ghatana.digitalmarketing.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.digitalmarketing.application.agency.AgencyRetainerService;
 import com.ghatana.digitalmarketing.application.agency.AgencyRetainerService.CreateRetainerCommand;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
+import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.agency.AgencyRetainer;
 import com.ghatana.digitalmarketing.domain.agency.AgencyRetainerStatus;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
-import io.activej.json.Json;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +82,7 @@ public final class DmosAgencyRetainerServlet {
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
-            CreateRequest createRequest = objectMapper.readValue(request.getBody(), CreateRequest.class);
+            CreateRequest createRequest = objectMapper.readValue(request.getBody().getString(java.nio.charset.StandardCharsets.UTF_8), CreateRequest.class);
 
             CreateRetainerCommand command = new CreateRetainerCommand(
                 createRequest.contractId(),
@@ -93,126 +95,154 @@ public final class DmosAgencyRetainerServlet {
             );
 
             return agencyRetainerService.create(ctx, command)
-                .then(retainer -> {
-                    metrics.incrementCounter("agency_retainer.create.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(retainer)))));
+                .map(retainer -> {
+                    metrics.increment("agency_retainer.create.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(retainer)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_retainer.create.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_retainer.create.error", Map.of());
                     LOG.error("Failed to create agency retainer", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_retainer.create.error");
+            metrics.increment("agency_retainer.create.error", Map.of());
             LOG.error("Failed to parse create request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleActivate(HttpRequest request) {
-        String retainerId = request.pathParameter("retainerId");
+        String retainerId = request.getPathParameter("retainerId");
         boolean isWriteOperation = true;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
             return agencyRetainerService.activate(ctx, retainerId)
-                .then(retainer -> {
-                    metrics.incrementCounter("agency_retainer.activate.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(retainer)))));
+                .map(retainer -> {
+                    metrics.increment("agency_retainer.activate.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(retainer)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_retainer.activate.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_retainer.activate.error", Map.of());
                     LOG.error("Failed to activate agency retainer", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_retainer.activate.error");
+            metrics.increment("agency_retainer.activate.error", Map.of());
             LOG.error("Failed to process activate request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleSuspend(HttpRequest request) {
-        String retainerId = request.pathParameter("retainerId");
+        String retainerId = request.getPathParameter("retainerId");
         boolean isWriteOperation = true;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
-            SuspendRequest suspendRequest = objectMapper.readValue(request.getBody(), SuspendRequest.class);
+            SuspendRequest suspendRequest = objectMapper.readValue(request.getBody().getString(java.nio.charset.StandardCharsets.UTF_8), SuspendRequest.class);
 
             return agencyRetainerService.suspend(ctx, retainerId, suspendRequest.reason())
-                .then(retainer -> {
-                    metrics.incrementCounter("agency_retainer.suspend.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(retainer)))));
+                .map(retainer -> {
+                    metrics.increment("agency_retainer.suspend.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(retainer)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_retainer.suspend.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_retainer.suspend.error", Map.of());
                     LOG.error("Failed to suspend agency retainer", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_retainer.suspend.error");
+            metrics.increment("agency_retainer.suspend.error", Map.of());
             LOG.error("Failed to parse suspend request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleCancel(HttpRequest request) {
-        String retainerId = request.pathParameter("retainerId");
+        String retainerId = request.getPathParameter("retainerId");
         boolean isWriteOperation = true;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
-            CancelRequest cancelRequest = objectMapper.readValue(request.getBody(), CancelRequest.class);
+            CancelRequest cancelRequest = objectMapper.readValue(request.getBody().getString(java.nio.charset.StandardCharsets.UTF_8), CancelRequest.class);
 
             return agencyRetainerService.cancel(ctx, retainerId, cancelRequest.reason())
-                .then(retainer -> {
-                    metrics.incrementCounter("agency_retainer.cancel.success");
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(retainer)))));
+                .map(retainer -> {
+                    metrics.increment("agency_retainer.cancel.success", Map.of());
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(retainer)))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_retainer.cancel.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_retainer.cancel.error", Map.of());
                     LOG.error("Failed to cancel agency retainer", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_retainer.cancel.error");
+            metrics.increment("agency_retainer.cancel.error", Map.of());
             LOG.error("Failed to parse cancel request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private Promise<HttpResponse> handleGetById(HttpRequest request) {
-        String retainerId = request.pathParameter("retainerId");
+        String retainerId = request.getPathParameter("retainerId");
         boolean isWriteOperation = false;
 
         try {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
             return agencyRetainerService.findById(ctx, retainerId)
-                .then(retainerOpt -> {
+                .map(retainerOpt -> {
                     if (retainerOpt.isEmpty()) {
-                        return Promise.of(HttpResponse.ofCode(404).withJson(Json.of("{\"error\":\"Retainer not found\"}")));
+                        return HttpResponse.ofCode(404)
+                            .withBody("{\"error\":\"Retainer not found\"}")
+                            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                            .build();
                     }
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(toDto(retainerOpt.get())))));
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(toDto(retainerOpt.get())))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_retainer.get.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_retainer.get.error", Map.of());
                     LOG.error("Failed to get agency retainer", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_retainer.get.error");
+            metrics.increment("agency_retainer.get.error", Map.of());
             LOG.error("Failed to process get request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
@@ -223,28 +253,39 @@ public final class DmosAgencyRetainerServlet {
             DmOperationContext ctx = httpContextFactory.buildContext(request, null, isWriteOperation);
 
             return agencyRetainerService.list(ctx)
-                .then(retainers -> {
+                .map(retainers -> {
                     Object[] dtos = retainers.stream().map(this::toDto).toArray();
-                    return Promise.of(HttpResponse.ok()
-                        .withJson(Json.of(objectMapper.writeValueAsString(dtos))));
+                    return HttpResponse.ofCode(200)
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(objectMapper.writeValueAsBytes(dtos))
+                        .build();
                 })
-                .whenException(e -> {
-                    metrics.incrementCounter("agency_retainer.list.error");
+                .then(r -> Promise.of(r), e -> {
+                    metrics.increment("agency_retainer.list.error", Map.of());
                     LOG.error("Failed to list agency retainers", e);
                     return Promise.of(mapServiceError(e));
                 });
         } catch (Exception e) {
-            metrics.incrementCounter("agency_retainer.list.error");
+            metrics.increment("agency_retainer.list.error", Map.of());
             LOG.error("Failed to process list request", e);
-            return Promise.of(HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")));
+            return Promise.of(HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build());
         }
     }
 
     private HttpResponse mapServiceError(Exception e) {
         if (e instanceof IllegalArgumentException) {
-            return HttpResponse.ofCode(400).withJson(Json.of("{\"error\":\"" + e.getMessage() + "\"}"));
+            return HttpResponse.ofCode(400)
+                .withBody("{\"error\":\"" + e.getMessage() + "\"}")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build();
         }
-        return HttpResponse.ofCode(500).withJson(Json.of("{\"error\":\"Internal server error\"}"));
+        return HttpResponse.ofCode(500)
+            .withBody("{\"error\":\"Internal server error\"}")
+            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+            .build();
     }
 
     private RetainerDto toDto(AgencyRetainer retainer) {

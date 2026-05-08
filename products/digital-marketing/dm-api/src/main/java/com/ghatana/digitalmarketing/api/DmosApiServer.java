@@ -16,6 +16,9 @@ import com.ghatana.digitalmarketing.application.campaign.CampaignRepository;
 import com.ghatana.digitalmarketing.application.campaign.CampaignPreflightDataProvider;
 import com.ghatana.digitalmarketing.application.campaign.CampaignService;
 import com.ghatana.digitalmarketing.application.campaign.CampaignServiceImpl;
+import com.ghatana.digitalmarketing.bridge.CampaignEventSourcingAdapter;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import io.activej.promise.Promise;
 import com.ghatana.digitalmarketing.application.command.DmCommandHandlerRegistry;
 import com.ghatana.digitalmarketing.application.command.DmCommandService;
 import com.ghatana.digitalmarketing.application.command.DmCommandServiceImpl;
@@ -34,6 +37,10 @@ import com.ghatana.digitalmarketing.application.transparency.AiActionLogServiceI
 import com.ghatana.digitalmarketing.application.workspace.WorkspaceRepository;
 import com.ghatana.digitalmarketing.application.workspace.WorkspaceService;
 import com.ghatana.digitalmarketing.application.workspace.WorkspaceServiceImpl;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.TenantContext;
+import com.ghatana.platform.types.identity.Offset;
+import com.ghatana.digitalmarketing.bridge.CampaignEventSourcingAdapter;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapterImpl;
 import com.ghatana.digitalmarketing.bridge.DmosRiskEvaluatorRegistrar;
@@ -586,6 +593,110 @@ public final class DmosApiServer extends Launcher {
         // KERNEL-P1-4: Use Micrometer-backed collector registered in wireObservability()
         DmosMetricsCollector dmosMetrics = get(DmosMetricsCollector.class);
 
+        // In-memory EventLogStore implementation for development/testing
+        EventLogStore eventLogStore = new EventLogStore() {
+            private final java.util.Map<String, java.util.List<EventEntry>> store = new java.util.concurrent.ConcurrentHashMap<>();
+            private final java.util.Map<String, Long> offsets = new java.util.concurrent.ConcurrentHashMap<>();
+            private final java.util.Map<String, java.util.List<java.util.function.Consumer<EventEntry>>> tailListeners = new java.util.concurrent.ConcurrentHashMap<>();
+
+            @Override
+            public Promise<Offset> append(TenantContext tenant, EventEntry entry) {
+                java.util.List<EventEntry> entries = store.computeIfAbsent(tenant.tenantId(), k -> new java.util.ArrayList<>());
+                long offset;
+                synchronized (entries) {
+                    entries.add(entry);
+                    offset = offsets.compute(tenant.tenantId(), (k, v) -> v == null ? 1L : v + 1L);
+                }
+                java.util.List<java.util.function.Consumer<EventEntry>> listeners = tailListeners.get(tenant.tenantId());
+                if (listeners != null) {
+                    for (java.util.function.Consumer<EventEntry> listener : listeners) {
+                        listener.accept(entry);
+                    }
+                }
+                return Promise.of(Offset.of(String.valueOf(offset)));
+            }
+
+            @Override
+            public Promise<java.util.List<Offset>> appendBatch(TenantContext tenant, java.util.List<EventEntry> entries) {
+                java.util.List<Offset> results = new java.util.ArrayList<>(entries.size());
+                for (EventEntry entry : entries) {
+                    results.add(append(tenant, entry).getResult());
+                }
+                return Promise.of(results);
+            }
+
+            @Override
+            public Promise<java.util.List<EventEntry>> read(TenantContext tenant, Offset from, int limit) {
+                java.util.List<EventEntry> entries = store.getOrDefault(tenant.tenantId(), java.util.List.of());
+                long startOffset = from.value().equals("0") ? 0 : Long.parseLong(from.value()) - 1;
+                return Promise.of(entries.stream()
+                    .skip(startOffset)
+                    .limit(limit)
+                    .toList());
+            }
+
+            @Override
+            public Promise<java.util.List<EventEntry>> readByTimeRange(
+                    TenantContext tenant,
+                    java.time.Instant startTime,
+                    java.time.Instant endTime,
+                    int limit) {
+                java.util.List<EventEntry> entries = store.getOrDefault(tenant.tenantId(), java.util.List.of());
+                return Promise.of(entries.stream()
+                    .filter(e -> !e.timestamp().isBefore(startTime) && e.timestamp().isBefore(endTime))
+                    .limit(limit)
+                    .toList());
+            }
+
+            @Override
+            public Promise<java.util.List<EventEntry>> readByType(
+                    TenantContext tenant,
+                    String eventType,
+                    Offset from,
+                    int limit) {
+                java.util.List<EventEntry> entries = store.getOrDefault(tenant.tenantId(), java.util.List.of());
+                long startOffset = from.value().equals("0") ? 0 : Long.parseLong(from.value()) - 1;
+                return Promise.of(entries.stream()
+                    .skip(startOffset)
+                    .filter(e -> e.eventType().equals(eventType))
+                    .limit(limit)
+                    .toList());
+            }
+
+            @Override
+            public Promise<Offset> getLatestOffset(TenantContext tenant) {
+                Long offset = offsets.get(tenant.tenantId());
+                return Promise.of(Offset.of(offset != null ? String.valueOf(offset) : "0"));
+            }
+
+            @Override
+            public Promise<Offset> getEarliestOffset(TenantContext tenant) {
+                return Promise.of(Offset.of("0"));
+            }
+
+            @Override
+            public Promise<Subscription> tail(TenantContext tenant, Offset from, java.util.function.Consumer<EventEntry> handler) {
+                java.util.List<java.util.function.Consumer<EventEntry>> listeners = tailListeners.computeIfAbsent(tenant.tenantId(), k -> new java.util.concurrent.CopyOnWriteArrayList<>());
+                listeners.add(handler);
+                return Promise.of(new Subscription() {
+                    private volatile boolean cancelled = false;
+                    
+                    @Override
+                    public void cancel() {
+                        cancelled = true;
+                        listeners.remove(handler);
+                    }
+                    
+                    @Override
+                    public boolean isCancelled() {
+                        return cancelled;
+                    }
+                });
+            }
+        };
+
+        CampaignEventSourcingAdapter eventSourcingAdapter = new CampaignEventSourcingAdapter(eventLogStore);
+
         CampaignService campaignService = new CampaignServiceImpl(
             kernelAdapter,
             campaignRepo,
@@ -594,7 +705,8 @@ public final class DmosApiServer extends Launcher {
             dmosMetrics,
             killSwitchService,
             commandService,
-            new ObjectMapper()
+            new ObjectMapper(),
+            eventSourcingAdapter
         );
         register(CampaignService.class, campaignService);
 
