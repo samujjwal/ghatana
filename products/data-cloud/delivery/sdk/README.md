@@ -228,6 +228,12 @@ Run tests with:
 ./gradlew :sdk:test
 ```
 
+Run cross-language SDK drift checks (Java, TypeScript, Python) from repository root with:
+
+```bash
+./gradlew :products:data-cloud:delivery:sdk:check --no-build-cache --rerun-tasks
+```
+
 ## Generation
 
 SDKs are automatically generated from the OpenAPI specification. To regenerate:

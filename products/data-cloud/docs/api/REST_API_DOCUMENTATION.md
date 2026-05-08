@@ -199,7 +199,7 @@ POST /api/v1/context/tickets/rag
 | Method | Path | Purpose |
 | --- | --- | --- |
 | GET | `/api/v1/surfaces` | Runtime Truth Registry target surface |
-| GET | `/api/v1/capabilities` | Compatibility runtime truth endpoint; migrate callers to `/api/v1/surfaces` |
+| GET | `/api/v1/capabilities` | Compatibility runtime truth endpoint; migrate callers to `/api/v1/surfaces` (retirement tracked in `docs/api/CAPABILITIES_ENDPOINT_RETIREMENT_ISSUE.md`) |
 | PUT | `/api/v1/autonomy/level` | Set global autonomy level |
 | GET | `/api/v1/autonomy/level` | Get global autonomy level |
 | GET | `/api/v1/autonomy/domains` | List autonomy domains |

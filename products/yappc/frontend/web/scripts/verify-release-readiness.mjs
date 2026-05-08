@@ -47,6 +47,13 @@ const requiredEvidence = [
     ],
   },
   {
+    area: 'preview-edge-security',
+    files: [
+      'products/yappc/frontend/web/src/routes/preview-builder.tsx',
+      'products/yappc/frontend/web/src/routes/__tests__/preview-builder-security.test.tsx',
+    ],
+  },
+  {
     area: 'persistence',
     files: [
       'products/yappc/frontend/web/src/components/canvas/page/__tests__/pageArtifactPersistence.test.ts',
@@ -153,6 +160,44 @@ if (!readinessChecklist.includes('pnpm --filter @ghatana/yappc-web-app run verif
   failures.push('release checklist: verify:release-readiness command is not documented');
 } else {
   passes.push('release checklist: verify:release-readiness command documented');
+}
+
+const previewBuilderRoute = readFileSync(
+  resolveFromRepo('products/yappc/frontend/web/src/routes/preview-builder.tsx'),
+  'utf8',
+);
+const previewBuilderSecurityTest = readFileSync(
+  resolveFromRepo('products/yappc/frontend/web/src/routes/__tests__/preview-builder-security.test.tsx'),
+  'utf8',
+);
+const requiredPreviewHeaders = [
+  'Content-Security-Policy',
+  'Cross-Origin-Resource-Policy',
+  'Permissions-Policy',
+  'Referrer-Policy',
+  'X-Content-Type-Options',
+  'X-Frame-Options',
+];
+for (const header of requiredPreviewHeaders) {
+  if (!previewBuilderRoute.includes(`'${header}'`)) {
+    failures.push(`preview-edge-security: route does not define ${header}`);
+  } else if (!previewBuilderSecurityTest.includes(`['${header}']`)) {
+    failures.push(`preview-edge-security: test does not assert ${header}`);
+  } else {
+    passes.push(`preview-edge-security: ${header} route/test contract present`);
+  }
+}
+const requiredPreviewCspDirectives = [
+  "frame-ancestors 'self'",
+  "object-src 'none'",
+  'unsafe-eval',
+];
+for (const directive of requiredPreviewCspDirectives) {
+  if (!previewBuilderSecurityTest.includes(directive)) {
+    failures.push(`preview-edge-security: test does not assert CSP directive ${directive}`);
+  } else {
+    passes.push(`preview-edge-security: CSP directive ${directive} asserted`);
+  }
 }
 
 for (const message of passes) {

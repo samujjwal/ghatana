@@ -74,6 +74,36 @@ interface ProgressiveDisclosureModel {
   secondaryActions: string[];
 }
 
+type LifecycleAuditOutcome = 'SUCCESS' | 'REJECTED' | 'FAILED';
+
+interface LifecycleOperationAuditContext {
+  action:
+    | 'YAPPC_LIFECYCLE_GATE_VALIDATED'
+    | 'YAPPC_LIFECYCLE_ARTIFACT_CREATED'
+    | 'YAPPC_LIFECYCLE_ARTIFACT_UPDATED'
+    | 'YAPPC_LIFECYCLE_ARTIFACT_DELETED';
+  outcome: LifecycleAuditOutcome;
+  status: number;
+  resource: string;
+  details: string;
+  projectId?: string;
+  artifactId?: string;
+  phase?: string;
+  gate?: string;
+  reason?: string;
+  metadata?: Record<string, unknown>;
+}
+
+interface LifecycleArtifactAuditSummary {
+  id: string;
+  projectId: string;
+  type: string;
+  status: string;
+  phase: string;
+  flowStage?: number | null;
+  createdBy?: string | null;
+}
+
 // Use canonical taxonomy from domain module
 // LIFECYCLE_PHASES, LIFECYCLE_PHASE_ORDER, LIFECYCLE_PHASES_BY_ID imported from '../domain/lifecycle/lifecycle-taxonomy'
 
@@ -97,6 +127,68 @@ function validateProjectId(projectId: string | undefined): projectId is string {
   return !!(projectId && projectId.trim().length > 0);
 }
 
+function getHeaderValue(value: string | string[] | undefined): string | null {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+  return value ?? null;
+}
+
+async function logLifecycleOperationAuditEvent(params: {
+  request: FastifyRequest;
+  context: LifecycleOperationAuditContext;
+}): Promise<boolean> {
+  const { request, context } = params;
+  const authenticatedUser = request.user;
+  const actor = authenticatedUser?.userId ?? getHeaderValue(request.headers['x-user-id']) ?? 'system';
+  const actorRole = authenticatedUser?.role ?? getHeaderValue(request.headers['x-user-role']) ?? 'SYSTEM';
+  const tenantId = authenticatedUser?.tenantId ?? getHeaderValue(request.headers['x-tenant-id']) ?? undefined;
+  const workspaceId = authenticatedUser?.workspaceId ?? getHeaderValue(request.headers['x-workspace-id']);
+  const correlationId = request.correlationId ?? getHeaderValue(request.headers['x-correlation-id']) ?? undefined;
+
+  try {
+    await getAuditService().log({
+      action: context.action,
+      actor,
+      actorRole,
+      resource: context.resource,
+      severity: context.outcome === 'SUCCESS' ? 'info' : 'warn',
+      details: context.details,
+      ipAddress: request.ip,
+      userAgent: getHeaderValue(request.headers['user-agent']) ?? undefined,
+      method: request.method,
+      status: context.status,
+      tenantId,
+      success: context.outcome === 'SUCCESS',
+      error: context.reason,
+      metadata: {
+        projectId: context.projectId,
+        workspaceId,
+        artifactId: context.artifactId,
+        phase: context.phase,
+        gate: context.gate,
+        outcome: context.outcome,
+        correlationId,
+        route: request.url,
+        ...context.metadata,
+      },
+    });
+    return true;
+  } catch (error) {
+    request.log.warn(
+      {
+        error,
+        projectId: context.projectId,
+        artifactId: context.artifactId,
+        action: context.action,
+        outcome: context.outcome,
+      },
+      'Failed to write lifecycle audit event'
+    );
+    return false;
+  }
+}
+
 /**
  * Log structured audit event for stage transitions
  */
@@ -106,7 +198,7 @@ async function logStageTransitionAuditEvent(params: {
   fromStage: number;
   toStage: number;
   forced: boolean;
-  gateEvaluation?: any;
+  gateEvaluation?: Record<string, unknown>;
 }): Promise<void> {
   const { request, projectId, fromStage, toStage, forced, gateEvaluation } = params;
 
@@ -971,21 +1063,47 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
       minCount: 0,
     };
     const passed = artifacts.length >= requirement.minCount;
+    const completedArtifactTypes = (artifacts as Array<{ type: string }>).map(
+      (artifact: { type: string }) => artifact.type
+    );
+    const readiness =
+      requirement.minCount > 0
+        ? Math.min(100, Math.round((artifacts.length / requirement.minCount) * 100))
+        : 100;
+    const missingArtifacts = requirement.requiredArtifacts.filter(
+      (requiredArtifact: string) => !completedArtifactTypes.includes(requiredArtifact)
+    );
+    const auditRecorded = await logLifecycleOperationAuditEvent({
+      request,
+      context: {
+        action: 'YAPPC_LIFECYCLE_GATE_VALIDATED',
+        outcome: 'SUCCESS',
+        status: 200,
+        resource: `/lifecycle/projects/${projectId}/gates/${gate ?? 'unspecified'}/validate`,
+        details: `Lifecycle gate ${gate ?? 'unspecified'} validated for project ${projectId}`,
+        projectId,
+        phase,
+        gate,
+        metadata: {
+          passed,
+          readiness,
+          requiredArtifacts: requirement.requiredArtifacts,
+          completedArtifacts: completedArtifactTypes,
+          missingArtifacts,
+        },
+      },
+    });
 
     return {
       gate,
       phase,
       projectId,
       passed,
-      readiness: Math.min(
-        100,
-        Math.round((artifacts.length / requirement.minCount) * 100)
-      ),
+      readiness,
       requiredArtifacts: requirement.requiredArtifacts,
-      completedArtifacts: artifacts.map((a) => a.type),
-      missingArtifacts: requirement.requiredArtifacts.filter(
-        (req: string) => !artifacts.some((a) => a.type === req)
-      ),
+      completedArtifacts: completedArtifactTypes,
+      missingArtifacts,
+      auditRecorded,
       validatedAt: new Date(),
     };
   });
@@ -1131,7 +1249,29 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
           metadata: (artifactBody.metadata ?? {}) as Prisma.InputJsonValue,
         },
       });
+      const artifactSummary = artifact as LifecycleArtifactAuditSummary;
 
+      const auditRecorded = await logLifecycleOperationAuditEvent({
+        request,
+        context: {
+          action: 'YAPPC_LIFECYCLE_ARTIFACT_CREATED',
+          outcome: 'SUCCESS',
+          status: 201,
+          resource: `/lifecycle/artifacts/${artifactSummary.id}`,
+          details: `Lifecycle artifact ${artifactSummary.id} created for project ${projectId}`,
+          projectId,
+          artifactId: artifactSummary.id,
+          phase: artifactSummary.phase,
+          metadata: {
+            title,
+            type,
+            artifactStatus: artifactSummary.status,
+            flowStage: artifactSummary.flowStage,
+            createdBy: artifactSummary.createdBy,
+          },
+        },
+      });
+      reply.header('x-audit-recorded', String(auditRecorded));
       return reply.status(201).send(artifact);
     }
   );
@@ -1161,7 +1301,26 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
           ...(body.metadata !== undefined && { metadata: body.metadata as Prisma.InputJsonValue }),
         },
       });
+      const artifactSummary = artifact as LifecycleArtifactAuditSummary;
 
+      const auditRecorded = await logLifecycleOperationAuditEvent({
+        request,
+        context: {
+          action: 'YAPPC_LIFECYCLE_ARTIFACT_UPDATED',
+          outcome: 'SUCCESS',
+          status: 200,
+          resource: `/lifecycle/artifacts/${artifactSummary.id}`,
+          details: `Lifecycle artifact ${artifactSummary.id} updated`,
+          projectId: artifactSummary.projectId,
+          artifactId: artifactSummary.id,
+          phase: artifactSummary.phase,
+          metadata: {
+            changedFields: Object.keys(body).filter((key) => body[key as keyof typeof body] !== undefined),
+            artifactStatus: artifactSummary.status,
+          },
+        },
+      });
+      reply.header('x-audit-recorded', String(auditRecorded));
       return artifact;
     }
   );
@@ -1173,10 +1332,29 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
       const { artifactId } = request.params as { artifactId: string };
 
       const prisma = getPrismaClient();
-      await prisma.lifecycleArtifact.delete({
+      const artifact = await prisma.lifecycleArtifact.delete({
         where: { id: artifactId },
       });
+      const artifactSummary = artifact as LifecycleArtifactAuditSummary;
 
+      const auditRecorded = await logLifecycleOperationAuditEvent({
+        request,
+        context: {
+          action: 'YAPPC_LIFECYCLE_ARTIFACT_DELETED',
+          outcome: 'SUCCESS',
+          status: 204,
+          resource: `/lifecycle/artifacts/${artifactSummary.id}`,
+          details: `Lifecycle artifact ${artifactSummary.id} deleted`,
+          projectId: artifactSummary.projectId,
+          artifactId: artifactSummary.id,
+          phase: artifactSummary.phase,
+          metadata: {
+            type: artifactSummary.type,
+            artifactStatus: artifactSummary.status,
+          },
+        },
+      });
+      reply.header('x-audit-recorded', String(auditRecorded));
       return reply.status(204).send();
     }
   );

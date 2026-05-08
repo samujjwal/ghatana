@@ -104,8 +104,8 @@ public class YappcApiModule extends AbstractModule {
     }
 
     @Provides
-    RunApiController runApiController(RunService runService) {
-        return new RunApiController(runService);
+    RunApiController runApiController(RunService runService, AuditLogger auditLogger) {
+        return new RunApiController(runService, auditLogger);
     }
 
     @Provides

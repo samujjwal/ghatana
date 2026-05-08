@@ -54,6 +54,37 @@ describe('createAIChangeRecord', () => {
     expect(record.lineage.reviewState).toBe('auto-accepted');
     expect(record.lineage.evidence).toEqual(['contract:Button/color']);
   });
+
+  it('stores rollback metadata for reversible governance decisions', () => {
+    const document = createPageArtifactDocument({
+      artifactId: 'art-rollback',
+      name: 'Rollback Fixture',
+      createdBy: 'tester',
+    });
+    const record = createAIChangeRecord(
+      'art-rollback',
+      'doc-rollback',
+      'property-completion',
+      'Imported generated page',
+      0.82,
+      ['root'],
+      {
+        rollbackMetadata: {
+          strategy: 'restore-builder-document',
+          serializedBuilderDocument: document.serializedBuilderDocument,
+          capturedAt: '2026-01-01T00:00:00.000Z',
+          reason: 'Restore prior page before generated import.',
+        },
+      },
+    );
+
+    expect(record.rollbackMetadata).toEqual({
+      strategy: 'restore-builder-document',
+      serializedBuilderDocument: document.serializedBuilderDocument,
+      capturedAt: '2026-01-01T00:00:00.000Z',
+      reason: 'Restore prior page before generated import.',
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------

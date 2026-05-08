@@ -118,6 +118,13 @@ describe('Operator and admin surfaces are registered', () => {
     expect(route?.discoverable).toBe(false);
   });
 
+  it('has /operations/release-truth route (unified release readiness dashboard)', () => {
+    const route = getRouteByPath('/operations/release-truth');
+    expect(route).toBeDefined();
+    expect(route?.minimumShellRole).toBe('admin');
+    expect(route?.discoverable).toBe(true);
+  });
+
   it('has /plugins route (plugin management)', () => {
     const route = getRouteByPath('/plugins');
     expect(route).toBeDefined();

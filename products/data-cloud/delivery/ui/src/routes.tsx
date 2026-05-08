@@ -56,6 +56,9 @@ const OperationsConsole = React.lazy(() =>
 const OperationsJobCenterPage = React.lazy(() =>
   import('./pages/OperationsJobCenterPage').then((m) => ({ default: m.OperationsJobCenterPage }))
 );
+const ReleaseTruthDashboardPage = React.lazy(() =>
+  import('./pages/ReleaseTruthDashboardPage').then((m) => ({ default: m.ReleaseTruthDashboardPage }))
+);
 const InsightsPage = React.lazy(() =>
   import('./pages/InsightsPage').then((m) => ({ default: m.InsightsPage }))
 );
@@ -314,6 +317,14 @@ export const routes: RouteObject[] = [
       {
         path: 'operations/jobs',
         element: <RoleProtectedRoute routePath="/operations/jobs">{withSuspense(OperationsJobCenterPage)}</RoleProtectedRoute>,
+      },
+      {
+        path: 'operations/release-truth',
+        element: (
+          <RoleProtectedRoute routePath="/operations/release-truth">
+            {withSuspense(ReleaseTruthDashboardPage)}
+          </RoleProtectedRoute>
+        ),
       },
 
       // AEP Integration Pages

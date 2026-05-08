@@ -14,6 +14,7 @@ import js from '@eslint/js';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import prettierConfig from 'eslint-config-prettier';
+import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
@@ -24,6 +25,7 @@ export default [
     plugins: {
       react: reactPlugin,
       'react-hooks': reactHooksPlugin,
+      'jsx-a11y': jsxA11yPlugin,
     },
     languageOptions: {
       parserOptions: {
@@ -57,6 +59,28 @@ export default [
       // --- React Hooks (FINDING-DC-UI-L1) -----------------------------------
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
+
+      // --- Accessibility (FINDING-DC-UI-M1) — jsx-a11y recommended ----------
+      // Enforces WCAG 2.1 AA best practices at lint time. This complements
+      // the runtime axe-core tests in src/__tests__/accessibility/.
+      'jsx-a11y/alt-text': 'error',
+      'jsx-a11y/anchor-has-content': 'error',
+      'jsx-a11y/anchor-is-valid': 'error',
+      'jsx-a11y/aria-activedescendant-has-tabindex': 'error',
+      'jsx-a11y/aria-props': 'error',
+      'jsx-a11y/aria-proptypes': 'error',
+      'jsx-a11y/aria-role': 'error',
+      'jsx-a11y/aria-unsupported-elements': 'error',
+      'jsx-a11y/click-events-have-key-events': 'warn',
+      'jsx-a11y/heading-has-content': 'error',
+      'jsx-a11y/html-has-lang': 'error',
+      'jsx-a11y/interactive-supports-focus': 'warn',
+      'jsx-a11y/label-has-associated-control': 'error',
+      'jsx-a11y/no-autofocus': 'warn',
+      'jsx-a11y/no-redundant-roles': 'error',
+      'jsx-a11y/role-has-required-aria-props': 'error',
+      'jsx-a11y/role-supports-aria-props': 'error',
+      'jsx-a11y/tabindex-no-positive': 'warn',
 
       // --- React general ----------------------------------------------------
       'react/react-in-jsx-scope': 'off',      // Not needed with React 17+ JSX transform

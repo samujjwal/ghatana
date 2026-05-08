@@ -38,6 +38,8 @@ import telemetryRoutes from './routes/telemetry';
 import aiRoutes from './routes/ai';
 import planningRoutes from './routes/planning';
 import sourceImportRoutes from './routes/source-imports';
+import importReviewRoutes from './routes/import-review';
+import registryCandidateRoutes from './routes/registry-candidates';
 import { devAuthBypass } from './middleware/devAuth';
 import {
   assertDevAuthBypassAllowed,
@@ -487,6 +489,8 @@ export async function createApp(
   registerApiPrefixes(app, telemetryRoutes);
   registerApiPrefixes(app, aiRoutes);
   registerApiPrefixes(app, sourceImportRoutes);
+  registerApiPrefixes(app, importReviewRoutes);
+  registerApiPrefixes(app, registryCandidateRoutes);
   registerApiPrefixes(app, planningRoutes);
 
 async function readResponseText(response: Response): Promise<string> {

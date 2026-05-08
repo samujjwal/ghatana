@@ -44,6 +44,7 @@ import {
 } from '../../../services/compiler/ArtifactCompilerRuntimeHealth';
 import { PageBuilderCommands, type Command, type CommandResult, type InsertComponentCommand, type MoveComponentCommand } from '../../../services/canvas/commands/PageBuilderCommands';
 import { persistResidualIslandReview } from '../../../services/canvas/commands/ResidualIslandReviewService';
+import { persistImportReviewDecision } from '../../../services/canvas/commands/ImportReviewDecisionService';
 import {
   promoteResidualIslandToRegistryCandidate,
   type RegistryCandidatePromotionResponse,
@@ -59,6 +60,7 @@ import type { ComponentData } from './schemas';
 import {
   validateDocument,
   deserializeDocument,
+  serializeDocument,
 } from '@ghatana/ui-builder';
 import type { Binding, BuilderDocument, ComponentInstance, LossPoint, NodeId, ResponsiveVariant, StateVariant, ValidationResult } from '@ghatana/ui-builder';
 
@@ -257,7 +259,11 @@ interface PageDesignerProps {
   /** Called when an AI change is applied to the page (for audit/governance recording) */
   readonly onAIChangeRecord?: (record: PageArtifactAIChangeRecord) => void;
   /** Called when a pending AI/automation change is accepted or rejected. */
-  readonly onAIReviewDecision?: (actionId: string, decision: 'accepted' | 'rejected') => void;
+  readonly onAIReviewDecision?: (
+    actionId: string,
+    decision: 'accepted' | 'rejected',
+    rollbackMetadata?: PageArtifactAIChangeRecord['rollbackMetadata'],
+  ) => void;
   /** Called when the user selects a node in the designer canvas */
   readonly onSelectionChange?: (nodeId: string | null) => void;
   /** Called when the user hovers a node in the designer canvas */
@@ -359,6 +365,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
 
   // Governance trace tracker — scoped to this designer session
   const lineageTrackerRef = useRef(new AIActionLineageTracker());
+  const aiChangeRecordRef = useRef(new Map<string, PageArtifactAIChangeRecord>());
   const [pendingAIActions, setPendingAIActions] = useState<readonly import('./pageArtifactDocument').AIActionLineage[]>([]);
 
   const validation = useMemo(() => validateDocument(document, contracts), [contracts, document]);
@@ -531,6 +538,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
    */
   const recordAIChange = useCallback(
     (record: PageArtifactAIChangeRecord) => {
+      aiChangeRecordRef.current.set(record.lineage.actionId, record);
       lineageTrackerRef.current.record(record.lineage);
       setPendingAIActions(lineageTrackerRef.current.getPending());
       onAIChangeRecord?.(record);
@@ -547,11 +555,27 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         announceReadOnly();
         return;
       }
+      const record = aiChangeRecordRef.current.get(actionId);
+      if (decision === 'rejected' && record?.rollbackMetadata?.strategy === 'restore-builder-document') {
+        const rollbackDocument = deserializeDocument(record.rollbackMetadata.serializedBuilderDocument);
+        const rollbackResult = executeCommandResult({
+          id: `rollback-ai-${actionId}-${Date.now()}`,
+          type: 'import-document',
+          timestamp: new Date().toISOString(),
+          data: {
+            document: rollbackDocument,
+          },
+        });
+        if (!rollbackResult) {
+          announceDropFeedback('Rejected automation change could not be rolled back; review decision was not recorded.');
+          return;
+        }
+      }
       lineageTrackerRef.current.setReviewState(actionId, decision);
       setPendingAIActions(lineageTrackerRef.current.getPending());
-      onAIReviewDecision?.(actionId, decision);
+      onAIReviewDecision?.(actionId, decision, record?.rollbackMetadata);
     },
-    [announceReadOnly, canEdit, onAIReviewDecision],
+    [announceDropFeedback, announceReadOnly, canEdit, executeCommandResult, onAIReviewDecision],
   );
 
   const resolveInsertionTarget = useCallback((): {
@@ -651,6 +675,14 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
       return;
     }
 
+    const rollbackDocument = commandServiceRef.current?.getDocument() ?? document;
+    const rollbackMetadata: PageArtifactAIChangeRecord['rollbackMetadata'] = {
+      strategy: 'restore-builder-document',
+      serializedBuilderDocument: serializeDocument(rollbackDocument),
+      capturedAt: new Date().toISOString(),
+      reason: 'Restore the builder document that was active before importing the decompiled semantic model.',
+    };
+
     // Load the first page into the editor
     const imported = first.serializedBuilderDocument;
     const importedBuilderDocument = deserializeDocument(imported);
@@ -696,6 +728,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
             `source:${first.source}`,
             `residuals:${residuals.length}`,
           ],
+          rollbackMetadata,
         },
       ),
     );
@@ -815,13 +848,40 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   );
 
   const handleImportReviewDecision = useCallback(
-    (reviewItemId: string, decision: ImportReviewDecision) => {
-      setImportReviewDecisions((current) => ({
-        ...current,
-        [reviewItemId]: decision,
-      }));
+    async (reviewItem: ImportReviewQueueItem, decision: ImportReviewDecision) => {
+      if (!canEdit) {
+        announceReadOnly();
+        return;
+      }
+      if (!importResidualArtifactId) {
+        setImportError('Cannot persist import review decision without an artifact id.');
+        return;
+      }
+
+      try {
+        await persistImportReviewDecision({
+          artifactId: importResidualArtifactId,
+          reviewItemId: reviewItem.id,
+          kind: reviewItem.kind,
+          decision,
+          label: reviewItem.label,
+          details: reviewItem.details,
+          notes: `Import review queue decision recorded from PageDesigner: ${decision}.`,
+        });
+        setImportReviewDecisions((current) => ({
+          ...current,
+          [reviewItem.id]: decision,
+        }));
+        setImportError(null);
+      } catch (error) {
+        setImportError(
+          error instanceof Error
+            ? error.message
+            : `Could not persist import review decision for ${reviewItem.id}.`,
+        );
+      }
     },
-    [],
+    [announceReadOnly, canEdit, importResidualArtifactId],
   );
 
   const handleAddComponent = useCallback(
@@ -1581,7 +1641,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
                         variant="outline"
                         size="small"
                         data-testid={`page-designer-import-review-apply-${item.id}`}
-                        onClick={() => handleImportReviewDecision(item.id, 'applied')}
+                        onClick={() => void handleImportReviewDecision(item, 'applied')}
                       >
                         Apply item
                       </Button>
@@ -1590,7 +1650,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
                         variant="outline"
                         size="small"
                         data-testid={`page-designer-import-review-skip-${item.id}`}
-                        onClick={() => handleImportReviewDecision(item.id, 'skipped')}
+                        onClick={() => void handleImportReviewDecision(item, 'skipped')}
                       >
                         Skip item
                       </Button>

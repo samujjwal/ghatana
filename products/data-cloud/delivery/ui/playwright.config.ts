@@ -104,7 +104,8 @@ export default defineConfig({
       command: process.platform === 'win32'
         ? '.\\gradlew.bat :products:data-cloud:delivery:launcher:runLauncher'
         : './gradlew :products:data-cloud:delivery:launcher:runLauncher',
-      cwd: '../../..',
+      // From delivery/ui we need four levels up to repo root (contains gradlew).
+      cwd: '../../../..',
       url: 'http://127.0.0.1:8082/health',
       reuseExistingServer: !process.env.CI,
       timeout: 240 * 1000,
@@ -115,7 +116,8 @@ export default defineConfig({
       },
     },
     {
-      command: 'corepack pnpm exec vite --host 127.0.0.1 --port 5173',
+      // Use pnpm directly so Playwright does not depend on corepack being installed.
+      command: 'pnpm exec vite --host 127.0.0.1 --port 5173',
       cwd: '.',
       url: 'http://127.0.0.1:5173',
       reuseExistingServer: !process.env.CI,

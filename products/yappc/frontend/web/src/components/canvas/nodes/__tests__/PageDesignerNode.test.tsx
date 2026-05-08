@@ -57,7 +57,11 @@ vi.mock('@/components/canvas/page/PageDesigner', () => ({
     ) => void;
     onImportArtifacts?: (artifacts: readonly unknown[]) => void;
     onAIChangeRecord?: (record: unknown) => void;
-    onAIReviewDecision?: (actionId: string, decision: 'accepted' | 'rejected') => void;
+    onAIReviewDecision?: (
+      actionId: string,
+      decision: 'accepted' | 'rejected',
+      rollbackMetadata?: unknown,
+    ) => void;
     phaseConfig?: { allowEditing: boolean };
     readOnlyReason?: string;
   }) => (
@@ -163,6 +167,21 @@ vi.mock('@/components/canvas/page/PageDesigner', () => ({
       <TestButton
         data-testid="trigger-ai-review-accept"
         onClick={() => onAIReviewDecision?.('ai-1', 'accepted')}
+      />
+      <TestButton
+        data-testid="trigger-ai-review-reject"
+        onClick={() =>
+          onAIReviewDecision?.('ai-1', 'rejected', {
+            strategy: 'restore-builder-document',
+            serializedBuilderDocument: createPageArtifactDocument({
+              artifactId: 'artifact-main',
+              name: 'Previous Page',
+              createdBy: 'tester',
+            }).serializedBuilderDocument,
+            capturedAt: '2026-01-01T00:00:00.000Z',
+            reason: 'Restore the prior builder document.',
+          })
+        }
       />
     </div>
   ),
@@ -530,6 +549,65 @@ describe('PageDesignerNode', () => {
         metadata: {
           actionId: 'ai-1',
           decision: 'accepted',
+        },
+      });
+    });
+
+    it('restores the rollback snapshot when rejecting a reversible AI review decision', () => {
+      const currentDocument = createPageArtifactDocument({
+        artifactId: 'artifact-main',
+        name: 'Current Page',
+        createdBy: 'tester',
+      });
+      const rollbackDocument = createPageArtifactDocument({
+        artifactId: 'artifact-main',
+        name: 'Previous Page',
+        createdBy: 'tester',
+      });
+      const pageDocument = {
+        ...currentDocument,
+        aiChangeRecords: [
+          {
+            artifactId: 'artifact-main',
+            documentId: 'doc-1',
+            lineage: {
+              actionId: 'ai-1',
+              hookKind: 'property-completion' as const,
+              reason: 'Synthetic AI change for node test',
+              confidence: 0.9,
+              reversible: true,
+              reviewState: 'pending' as const,
+              affectedNodeIds: [],
+              appliedAt: new Date().toISOString(),
+              evidence: [],
+            },
+            rollbackMetadata: {
+              strategy: 'restore-builder-document' as const,
+              serializedBuilderDocument: rollbackDocument.serializedBuilderDocument,
+              capturedAt: '2026-01-01T00:00:00.000Z',
+              reason: 'Restore the prior builder document.',
+            },
+          },
+        ],
+      };
+
+      render(<PageDesignerNode {...makeNodeProps({ expanded: true, pageDocument })} />);
+      fireEvent.click(screen.getByTestId('trigger-ai-review-reject'));
+
+      const command = mockExecuteCommand.mock.calls[0]?.[0] as {
+        readonly to?: { readonly pageDocument?: typeof pageDocument };
+      };
+      const persistedDocument = command.to?.pageDocument;
+      expect(persistedDocument?.syncStatus).toBe('dirty');
+      expect(persistedDocument?.serializedBuilderDocument.name).toBe(rollbackDocument.serializedBuilderDocument.name);
+      expect(persistedDocument?.aiChangeRecords?.[0]?.lineage.reviewState).toBe('rejected');
+      expect(persistedDocument?.operationLog?.at(-1)).toMatchObject({
+        operation: 'governance-record',
+        status: 'succeeded',
+        metadata: {
+          actionId: 'ai-1',
+          decision: 'rejected',
+          rollbackApplied: true,
         },
       });
     });

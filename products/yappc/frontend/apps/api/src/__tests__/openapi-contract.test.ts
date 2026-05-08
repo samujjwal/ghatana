@@ -174,6 +174,9 @@ describe('OpenAPI Contract Compliance', () => {
       '/api/v1/yappc/generate/runs/{runId}/rollback': ['post'],
       '/api/v1/yappc/artifact/import-source': ['post'],
       '/api/v1/yappc/artifact/import-source/{jobId}': ['get'],
+      '/api/v1/yappc/artifacts/{artifactId}/import-review-decisions': ['post'],
+      '/api/v1/yappc/artifacts/{artifactId}/residual-islands/{residualIslandId}/review': ['post'],
+      '/api/v1/yappc/artifacts/{artifactId}/residual-islands/{residualIslandId}/registry-candidates': ['post'],
       '/api/v1/yappc/run/rollback': ['post'],
       '/api/v1/yappc/run/promote': ['post'],
       '/api/v1/yappc/validate': ['post'],
@@ -244,6 +247,8 @@ describe('OpenAPI Contract Compliance', () => {
     expect(source).toContain('registerApiPrefixes(app, workspaceRoutes);');
     expect(source).toContain('registerApiPrefixes(app, projectRoutes);');
     expect(source).toContain('registerApiPrefixes(app, aiRoutes);');
+    expect(source).toContain('registerApiPrefixes(app, importReviewRoutes);');
+    expect(source).toContain('registerApiPrefixes(app, registryCandidateRoutes);');
   });
 
   it('defines suggest-artifacts schema shape in canonical OpenAPI contract', () => {

@@ -92,6 +92,20 @@ public final class PageArtifactController {
     ) {
     }
 
+    private record ReviewDecisionMutation(
+            PageArtifactDocument document,
+            boolean changed,
+            boolean rollbackApplied,
+            String failureMessage
+    ) {
+    }
+
+    private static final class ReviewDecisionRollbackState {
+        private boolean applied;
+        private String failureMessage;
+        private Map<String, Object> builderDocument;
+    }
+
     /**
      * Creates a new PageArtifactController.
      * <p>
@@ -564,15 +578,18 @@ public final class PageArtifactController {
                                                 .build());
                                     }
 
-                                    PageArtifactDocument updatedDocument =
+                                    ReviewDecisionMutation mutation =
                                             withReviewDecision(document, decisionRequest.actionId(), decisionRequest.decision(), decisionRequest.evidence());
-                                    if (updatedDocument == document) {
+                                    if (!mutation.changed()) {
                                         return Promise.of(ResponseBuilder.notFound()
                                                 .json(Map.of(
                                                         "error", "Not Found",
                                                         "message", "Governance action not found: " + decisionRequest.actionId()
                                                 ))
                                                 .build());
+                                    }
+                                    if (mutation.failureMessage() != null) {
+                                        return Promise.of(unprocessableEntity(mutation.failureMessage()));
                                     }
 
                                     String actor = userId == null || userId.isBlank() ? "system" : userId;
@@ -585,7 +602,7 @@ public final class PageArtifactController {
                                                     tenantId,
                                                     workspaceId,
                                                     projectId,
-                                                    updatedDocument,
+                                                    mutation.document(),
                                                     "governance-review-decision",
                                                     actor,
                                                     summary
@@ -609,19 +626,20 @@ public final class PageArtifactController {
                                                         decisionRequest.decision(),
                                                         actor
                                                 );
+                                                Map<String, Object> responseBody = new LinkedHashMap<>();
+                                                responseBody.put("artifactId", artifactId);
+                                                responseBody.put("documentId", persisted.documentId());
+                                                responseBody.put("actionId", decisionRequest.actionId());
+                                                responseBody.put("decision", decisionRequest.decision());
+                                                responseBody.put("actor", actor);
+                                                responseBody.put("decidedAt", decidedAt.toString());
+                                                responseBody.put("confidence", lineage.confidence());
+                                                responseBody.put("changedNodeIds", lineage.affectedNodeIds());
+                                                responseBody.put("reversible", lineage.reversible());
+                                                responseBody.put("evidence", lineage.evidence());
+                                                responseBody.put("rollbackApplied", mutation.rollbackApplied());
                                                 return ResponseBuilder.ok()
-                                                        .json(Map.of(
-                                                                "artifactId", artifactId,
-                                                                "documentId", persisted.documentId(),
-                                                                "actionId", decisionRequest.actionId(),
-                                                                "decision", decisionRequest.decision(),
-                                                                "actor", actor,
-                                                                "decidedAt", decidedAt.toString(),
-                                                                "confidence", lineage.confidence(),
-                                                                "changedNodeIds", lineage.affectedNodeIds(),
-                                                                "reversible", lineage.reversible(),
-                                                                "evidence", lineage.evidence()
-                                                        ))
+                                                        .json(responseBody)
                                                         .build();
                                             });
                                 });
@@ -713,13 +731,14 @@ public final class PageArtifactController {
                 .findFirst();
     }
 
-    private PageArtifactDocument withReviewDecision(
+    private ReviewDecisionMutation withReviewDecision(
             PageArtifactDocument document,
             String actionId,
             String decision,
             List<String> reviewEvidence
     ) {
         boolean[] changed = new boolean[] { false };
+        ReviewDecisionRollbackState rollbackState = new ReviewDecisionRollbackState();
         List<PageArtifactDocument.GovernanceRecord> updatedRecords = document.aiChangeRecords().stream()
                 .map(record -> {
                     PageArtifactDocument.GovernanceLineage lineage = record.lineage();
@@ -728,6 +747,22 @@ public final class PageArtifactController {
                     }
 
                     changed[0] = true;
+                    if ("rejected".equals(decision)) {
+                        if (!lineage.reversible()) {
+                            rollbackState.failureMessage = "Cannot reject governance action " + actionId
+                                    + " because it is not marked reversible.";
+                            return record;
+                        }
+                        Optional<Map<String, Object>> rollbackSnapshot = extractRollbackBuilderDocument(lineage.rollbackMetadata());
+                        if (rollbackSnapshot.isEmpty()) {
+                            rollbackState.failureMessage = "Cannot reject governance action " + actionId
+                                    + " because rollback metadata is missing a builder document snapshot.";
+                            return record;
+                        }
+                        rollbackState.builderDocument = rollbackSnapshot.get();
+                        rollbackState.applied = true;
+                    }
+
                     List<String> evidence = reviewEvidence == null || reviewEvidence.isEmpty()
                             ? lineage.evidence()
                             : List.copyOf(reviewEvidence);
@@ -743,17 +778,29 @@ public final class PageArtifactController {
                                     decision,
                                     lineage.affectedNodeIds(),
                                     lineage.appliedAt(),
-                                    evidence
+                                    evidence,
+                                    lineage.rollbackMetadata()
                             )
                     );
                 })
                 .toList();
 
         if (!changed[0]) {
-            return document;
+            return new ReviewDecisionMutation(document, false, false, null);
         }
 
-        return new PageArtifactDocument(
+        if (rollbackState.failureMessage != null) {
+            return new ReviewDecisionMutation(document, true, false, rollbackState.failureMessage);
+        }
+
+        Map<String, Object> builderDocument = rollbackState.applied
+                ? rollbackState.builderDocument
+                : document.builderDocument();
+        List<PageArtifactDocument.OperationRecord> operationLog = rollbackState.applied
+                ? appendRollbackOperation(document, actionId)
+                : document.operationLog();
+
+        PageArtifactDocument updatedDocument = new PageArtifactDocument(
                 document.artifactId(),
                 document.documentId(),
                 document.name(),
@@ -763,14 +810,63 @@ public final class PageArtifactController {
                 document.syncStatus(),
                 document.trustLevel(),
                 document.dataClassification(),
-                document.builderDocument(),
+                builderDocument,
                 document.validationSummary(),
                 updatedRecords,
                 document.source(),
                 document.residualIslandCount(),
                 document.roundTripFidelity(),
-                document.operationLog()
+                operationLog
         );
+        return new ReviewDecisionMutation(updatedDocument, true, rollbackState.applied, null);
+    }
+
+    private Optional<Map<String, Object>> extractRollbackBuilderDocument(Map<String, Object> rollbackMetadata) {
+        if (rollbackMetadata == null || rollbackMetadata.isEmpty()) {
+            return Optional.empty();
+        }
+        Object snapshot = rollbackMetadata.get("serializedBuilderDocument");
+        if (snapshot == null) {
+            snapshot = rollbackMetadata.get("builderDocument");
+        }
+        if (!(snapshot instanceof Map<?, ?> snapshotMap)) {
+            return Optional.empty();
+        }
+        Map<String, Object> builderDocument = new LinkedHashMap<>();
+        for (Map.Entry<?, ?> entry : snapshotMap.entrySet()) {
+            if (!(entry.getKey() instanceof String key)) {
+                return Optional.empty();
+            }
+            builderDocument.put(key, entry.getValue());
+        }
+        return Optional.of(Map.copyOf(builderDocument));
+    }
+
+    private List<PageArtifactDocument.OperationRecord> appendRollbackOperation(
+            PageArtifactDocument document,
+            String actionId
+    ) {
+        List<PageArtifactDocument.OperationRecord> operationLog = new java.util.ArrayList<>(document.operationLog());
+        Instant createdAt = Instant.now();
+        operationLog.add(new PageArtifactDocument.OperationRecord(
+                document.artifactId() + ":governance-rollback:" + createdAt,
+                document.artifactId(),
+                document.documentId(),
+                "governance-record",
+                "succeeded",
+                "system",
+                "Rolled back rejected automation governance action.",
+                createdAt.toString(),
+                null,
+                Map.of(
+                        "actionId", actionId,
+                        "decision", "rejected",
+                        "rollbackApplied", true
+                )
+        ));
+        return operationLog.size() > 100
+                ? List.copyOf(operationLog.subList(operationLog.size() - 100, operationLog.size()))
+                : List.copyOf(operationLog);
     }
 
     private HttpResponse badRequest(String message) {

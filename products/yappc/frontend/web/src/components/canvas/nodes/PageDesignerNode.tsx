@@ -45,6 +45,7 @@ import {
   updateAIChangeRecordReviewState,
   updatePageArtifactDocument,
   type PageArtifactAIChangeRecord,
+  type PageArtifactAIRollbackMetadata,
   type PageArtifactDocument,
 } from '../page/pageArtifactDocument';
 import { type BuilderDocument, type ValidationResult } from '@ghatana/ui-builder';
@@ -594,22 +595,38 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
   );
 
   const handleAIReviewDecision = useCallback(
-    (actionId: string, decision: 'accepted' | 'rejected') => {
+    (
+      actionId: string,
+      decision: 'accepted' | 'rejected',
+      rollbackMetadata?: PageArtifactAIRollbackMetadata,
+    ) => {
       if (!data.pageDocument || !canMutatePageDocument) {
         return;
       }
 
+      const reviewUpdatedDocument = updateAIChangeRecordReviewState(data.pageDocument, actionId, decision);
+      const rollbackApplied =
+        decision === 'rejected' && rollbackMetadata?.strategy === 'restore-builder-document';
+      const reviewedDocument = rollbackApplied
+        ? {
+            ...reviewUpdatedDocument,
+            serializedBuilderDocument: rollbackMetadata.serializedBuilderDocument,
+          }
+        : reviewUpdatedDocument;
       const updatedPageDocument = appendOperation(
         {
-          ...updateAIChangeRecordReviewState(data.pageDocument, actionId, decision),
+          ...reviewedDocument,
           syncStatus: 'dirty',
         },
         'governance-record',
-        decision === 'accepted' ? 'succeeded' : 'requires-review',
-        `Recorded ${decision} review decision for automation change.`,
+        'succeeded',
+        rollbackApplied
+          ? 'Recorded rejected review decision and restored the previous builder document snapshot.'
+          : `Recorded ${decision} review decision for automation change.`,
         {
           actionId,
           decision,
+          rollbackApplied,
         },
       );
 

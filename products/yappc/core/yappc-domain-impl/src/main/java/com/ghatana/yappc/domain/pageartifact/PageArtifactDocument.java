@@ -255,10 +255,41 @@ public final class PageArtifactDocument {
             String reviewState,
             List<String> affectedNodeIds,
             String appliedAt,
-            List<String> evidence
+            List<String> evidence,
+            Map<String, Object> rollbackMetadata
     ) {
         @JsonCreator
         public GovernanceLineage {
+            affectedNodeIds = affectedNodeIds != null ? List.copyOf(affectedNodeIds) : List.of();
+            evidence = evidence != null ? List.copyOf(evidence) : List.of();
+            rollbackMetadata = rollbackMetadata != null
+                    ? java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(rollbackMetadata))
+                    : Map.of();
+        }
+
+        public GovernanceLineage(
+                String actionId,
+                String hookKind,
+                String reason,
+                double confidence,
+                boolean reversible,
+                String reviewState,
+                List<String> affectedNodeIds,
+                String appliedAt,
+                List<String> evidence
+        ) {
+            this(
+                    actionId,
+                    hookKind,
+                    reason,
+                    confidence,
+                    reversible,
+                    reviewState,
+                    affectedNodeIds,
+                    appliedAt,
+                    evidence,
+                    Map.of()
+            );
         }
     }
 

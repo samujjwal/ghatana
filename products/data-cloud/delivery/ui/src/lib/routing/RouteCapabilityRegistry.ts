@@ -232,6 +232,15 @@ export const canonicalRouteRegistry: RouteCapabilityRegistry = {
     discoverable: false,
     description: 'Background operations timeline and status center',
   },
+  operationsReleaseTruth: {
+    path: '/operations/release-truth',
+    label: 'Release Truth',
+    minimumShellRole: 'admin',
+    lifecycle: 'active',
+    capabilities: ['capability-registry', 'governance.audit', 'health.eventStore'],
+    discoverable: true,
+    description: 'Unified runtime truth, release gates, and evidence dashboard',
+  },
   // DC-UX-035: plugins page is active — boundary states are inside the page (catalog/delivery tabs)
   plugins: {
     path: '/plugins',

@@ -35,6 +35,15 @@ export interface PageArtifactAIChangeRecord {
   readonly artifactId: string;
   /** The document version at the time the change was applied. */
   readonly documentId: string;
+  /** Deterministic snapshot used to roll back reversible rejected changes. */
+  readonly rollbackMetadata?: PageArtifactAIRollbackMetadata;
+}
+
+export interface PageArtifactAIRollbackMetadata {
+  readonly strategy: 'restore-builder-document';
+  readonly serializedBuilderDocument: SerializedDocument;
+  readonly capturedAt: string;
+  readonly reason: string;
 }
 
 export type PageArtifactOperationStatus =
@@ -100,10 +109,16 @@ export function createAIChangeRecord(
     readonly reviewState?: AIReviewState;
     readonly correlationId?: string;
     readonly evidence?: readonly string[];
+    readonly rollbackMetadata?: PageArtifactAIRollbackMetadata;
   },
 ): PageArtifactAIChangeRecord {
   const lineage = createLineageEntry(hookKind, reason, confidence, affectedNodeIds as readonly NodeId[], options);
-  return { lineage, artifactId, documentId };
+  return {
+    lineage,
+    artifactId,
+    documentId,
+    ...(options?.rollbackMetadata ? { rollbackMetadata: options.rollbackMetadata } : {}),
+  };
 }
 
 /** Re-export the platform tracker for use in product code. */

@@ -376,6 +376,95 @@ class PageArtifactControllerTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("review rejection rolls back the persisted builder document atomically")
+    void recordReviewDecision_rejectRollsBackBuilderDocument() throws Exception {
+        Map<String, Object> rollbackBuilderDocument = Map.of(
+                "rootNodes", List.of("previous-root"),
+                "nodes", Map.of(
+                        "previous-root", Map.of(
+                                "id", "previous-root",
+                                "contractName", "Box",
+                                "props", Map.of("label", "Before AI"),
+                                "slots", Map.of("default", List.of())
+                        )
+                )
+        );
+        PageArtifactDocument.GovernanceRecord pendingRecord = sampleGovernanceRecordWithRollback(
+                "artifact-review-reject",
+                "doc-review-reject",
+                "action-reject",
+                "pending",
+                rollbackBuilderDocument
+        );
+        PageArtifactDocument document = sampleDocument("artifact-review-reject", "doc-review-reject", "manual", List.of(pendingRecord));
+        runPromise(() -> repository.save(TENANT_ID, WORKSPACE_ID, PROJECT_ID, document));
+
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/page-artifacts/artifact-review-reject/review-decisions")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
+                .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Workspace-IDs"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Project-IDs"), PROJECT_ID)
+                .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(Map.of(
+                        "actionId", "action-reject",
+                        "decision", "rejected",
+                        "evidence", List.of("unsafe-generated-change")
+                ))))
+                .build();
+
+        HttpResponse response = runPromise(() -> controller.recordReviewDecision(attachPrincipal(request, "EDITOR")));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        JsonNode body = objectMapper.readTree(runPromise(response::loadBody).asString(StandardCharsets.UTF_8));
+        assertThat(body.get("decision").asText()).isEqualTo("rejected");
+        assertThat(body.get("rollbackApplied").asBoolean()).isTrue();
+
+        PageArtifactDocument persisted = runPromise(() ->
+                repository.load(TENANT_ID, WORKSPACE_ID, PROJECT_ID, "artifact-review-reject"));
+        assertThat(persisted.builderDocument()).isEqualTo(rollbackBuilderDocument);
+        assertThat(persisted.aiChangeRecords().get(0).lineage().reviewState()).isEqualTo("rejected");
+        assertThat(persisted.operationLog().get(0).operation()).isEqualTo("governance-record");
+        assertThat(persisted.operationLog().get(0).metadata()).containsEntry("rollbackApplied", true);
+    }
+
+    @Test
+    @DisplayName("review rejection fails closed when rollback metadata is absent")
+    void recordReviewDecision_rejectRequiresRollbackMetadata() throws Exception {
+        PageArtifactDocument.GovernanceRecord pendingRecord = sampleGovernanceRecord(
+                "artifact-review-reject-missing",
+                "doc-review-reject-missing",
+                "action-reject-missing",
+                "pending"
+        );
+        PageArtifactDocument document = sampleDocument(
+                "artifact-review-reject-missing",
+                "doc-review-reject-missing",
+                "manual",
+                List.of(pendingRecord)
+        );
+        runPromise(() -> repository.save(TENANT_ID, WORKSPACE_ID, PROJECT_ID, document));
+
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/page-artifacts/artifact-review-reject-missing/review-decisions")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
+                .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Workspace-IDs"), WORKSPACE_ID)
+                .withHeader(HttpHeaders.of("X-Authorized-Project-IDs"), PROJECT_ID)
+                .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(Map.of(
+                        "actionId", "action-reject-missing",
+                        "decision", "rejected"
+                ))))
+                .build();
+
+        HttpResponse response = runPromise(() -> controller.recordReviewDecision(attachPrincipal(request, "EDITOR")));
+
+        assertThat(response.getCode()).isEqualTo(422);
+        PageArtifactDocument persisted = runPromise(() ->
+                repository.load(TENANT_ID, WORKSPACE_ID, PROJECT_ID, "artifact-review-reject-missing"));
+        assertThat(persisted.aiChangeRecords().get(0).lineage().reviewState()).isEqualTo("pending");
+    }
+
+    @Test
     @DisplayName("load passes resource details into the injected resource authorizer")
     void loadDocument_passesResourceDetailsToAuthorizer() throws Exception {
         PageArtifactDocument document = sampleDocument("artifact-8", "doc-8", "manual", List.of());
@@ -603,6 +692,36 @@ class PageArtifactControllerTest extends EventloopTestBase {
                         List.of("node-1"),
                         "2026-01-01T00:00:00Z",
                         List.of("initial-suggestion")
+                )
+        );
+    }
+
+    private static PageArtifactDocument.GovernanceRecord sampleGovernanceRecordWithRollback(
+            String artifactId,
+            String documentId,
+            String actionId,
+            String reviewState,
+            Map<String, Object> rollbackBuilderDocument
+    ) {
+        return new PageArtifactDocument.GovernanceRecord(
+                artifactId,
+                documentId,
+                new PageArtifactDocument.GovernanceLineage(
+                        actionId,
+                        "property-completion",
+                        "Suggested safer label copy",
+                        0.87,
+                        true,
+                        reviewState,
+                        List.of("node-1"),
+                        "2026-01-01T00:00:00Z",
+                        List.of("initial-suggestion"),
+                        Map.of(
+                                "strategy", "restore-builder-document",
+                                "serializedBuilderDocument", rollbackBuilderDocument,
+                                "capturedAt", "2026-01-01T00:00:00Z",
+                                "reason", "Restore prior page before generated import."
+                        )
                 )
         );
     }

@@ -8,3 +8,7 @@ Canonical OpenAPI sources live in:
 - `../../contracts/openapi/action-plane.yaml`
 
 The compatibility AEP contract remains at `../../contracts/openapi/aep.yaml` until AEP-named surfaces are retired.
+
+Compatibility endpoint retirement tracking:
+
+- `./CAPABILITIES_ENDPOINT_RETIREMENT_ISSUE.md` for retiring `GET /api/v1/capabilities` in favor of `GET /api/v1/surfaces`.

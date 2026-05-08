@@ -1010,6 +1010,160 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /api/v1/yappc/artifacts/{artifactId}/residual-islands/{residualIslandId}/registry-candidates:
+    post:
+      tags: [artifact-graph]
+      summary: Promote a residual island to a reviewed registry candidate
+      operationId: promoteRegistryCandidate
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: residualIslandId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Tenant-ID
+          in: header
+          required: false
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: false
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistryCandidatePromotionRequest"
+      responses:
+        "201":
+          description: Registry candidate queued for review and backed by audit evidence
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistryCandidatePromotionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          description: Audit evidence could not be persisted, so the candidate was not accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/v1/yappc/artifacts/{artifactId}/residual-islands/{residualIslandId}/review:
+    post:
+      tags: [artifact-graph]
+      summary: Persist a residual island review decision
+      operationId: persistResidualIslandReview
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: residualIslandId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Tenant-ID
+          in: header
+          required: false
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: false
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResidualIslandReviewRequest"
+      responses:
+        "200":
+          description: Residual island review decision persisted with audit evidence
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResidualIslandReviewResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          description: Audit evidence could not be persisted, so the decision was not accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/v1/yappc/artifacts/{artifactId}/import-review-decisions:
+    post:
+      tags: [artifact-graph]
+      summary: Persist an import review queue decision
+      operationId: persistImportReviewDecision
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Tenant-ID
+          in: header
+          required: false
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: false
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportReviewDecisionRequest"
+      responses:
+        "201":
+          description: Import review decision persisted with audit evidence
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportReviewDecisionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          description: Audit evidence could not be persisted, so the decision was not accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   # ── Validate ─────────────────────────────────────────────────────────────────
 
   /api/v1/yappc/validate:
@@ -4889,6 +5043,134 @@ components:
           format: date-time
         auditRecorded:
           type: boolean
+
+    RegistryCandidatePromotionRequest:
+      type: object
+      required: [proposedContractName, source]
+      properties:
+        proposedContractName:
+          type: string
+          minLength: 1
+        source:
+          type: string
+          enum: [decompiled-import]
+        notes:
+          type: string
+
+    RegistryCandidatePromotionResponse:
+      type: object
+      required:
+        - candidateId
+        - artifactId
+        - residualIslandId
+        - proposedContractName
+        - status
+        - auditRecordId
+        - auditRecorded
+        - createdAt
+      properties:
+        candidateId:
+          type: string
+        artifactId:
+          type: string
+        residualIslandId:
+          type: string
+        proposedContractName:
+          type: string
+        status:
+          type: string
+          enum: [NEEDS_REVIEW]
+        auditRecordId:
+          type: string
+        auditRecorded:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    ResidualIslandReviewRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [ACCEPTED, REJECTED]
+        notes:
+          type: string
+
+    ResidualIslandReviewResponse:
+      type: object
+      required:
+        - artifactId
+        - residualIslandId
+        - decision
+        - auditRecordId
+        - auditRecorded
+        - reviewedAt
+      properties:
+        artifactId:
+          type: string
+        residualIslandId:
+          type: string
+        decision:
+          type: string
+          enum: [ACCEPTED, REJECTED]
+        auditRecordId:
+          type: string
+        auditRecorded:
+          type: boolean
+        reviewedAt:
+          type: string
+          format: date-time
+
+    ImportReviewDecisionRequest:
+      type: object
+      required: [reviewItemId, kind, decision]
+      properties:
+        reviewItemId:
+          type: string
+          minLength: 1
+        kind:
+          type: string
+          enum: [loss-point, residual-island]
+        decision:
+          type: string
+          enum: [applied, skipped, promoted]
+        label:
+          type: string
+        details:
+          type: string
+        notes:
+          type: string
+
+    ImportReviewDecisionResponse:
+      type: object
+      required:
+        - artifactId
+        - reviewItemId
+        - kind
+        - decision
+        - auditRecordId
+        - auditRecorded
+        - reviewedAt
+      properties:
+        artifactId:
+          type: string
+        reviewItemId:
+          type: string
+        kind:
+          type: string
+          enum: [loss-point, residual-island]
+        decision:
+          type: string
+          enum: [applied, skipped, promoted]
+        auditRecordId:
+          type: string
+        auditRecorded:
+          type: boolean
+        reviewedAt:
+          type: string
+          format: date-time
 
     # ── Validate schemas ──────────────────────────────────────────────────────
 

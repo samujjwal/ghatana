@@ -62,6 +62,27 @@ val smokeValidateScripts by tasks.registering(Exec::class) {
 }
 
 /**
+ * DC-P1-452: Validate recovery runbook command drift.
+ * Run with: ./gradlew :products:data-cloud:integration-tests:runbookSmoke
+ */
+val runbookSmoke by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates recovery runbook commands are executable and current (DC-P1-452)"
+
+    val scriptFile = project.file("../planes/action/server/src/test/scripts/validate-runbook-commands.sh")
+    inputs.file(scriptFile)
+    inputs.dir(project.file("../scripts/disaster-recovery"))
+
+    if (System.getProperty("os.name").lowercase().contains("windows")) {
+        commandLine("bash", scriptFile.absolutePath)
+    } else {
+        commandLine(scriptFile.absolutePath)
+    }
+
+    isIgnoreExitValue = false
+}
+
+/**
  * DC-A13: Lint the Data Cloud Helm chart.
  * Run with: ./gradlew :products:data-cloud:integration-tests:helmLint
  */

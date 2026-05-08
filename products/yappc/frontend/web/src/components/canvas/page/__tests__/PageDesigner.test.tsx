@@ -1174,7 +1174,23 @@ describe('PageDesigner — import panel', () => {
     );
   });
 
-  it('shows import review queue decisions for loss points and residuals', () => {
+  it('persists import review queue decisions for loss points before marking them decided', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          artifactId: 'art-1',
+          reviewItemId: 'loss-0-unsupported-pattern-section.hero',
+          kind: 'loss-point',
+          decision: 'skipped',
+          auditRecordId: 'audit-import-review-1',
+          auditRecorded: true,
+          reviewedAt: '2026-05-07T00:00:00.000Z',
+        }),
+        { status: 201, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
     render(<PageDesigner projectId="proj-1" />);
     fireEvent.click(screen.getByTestId('page-designer-import-btn'));
     const textarea = screen.getByTestId('page-designer-import-textarea') as HTMLTextAreaElement;
@@ -1195,8 +1211,26 @@ describe('PageDesigner — import panel', () => {
       ),
     );
 
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/v1/yappc/artifacts/art-1/import-review-decisions',
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include',
+          body: JSON.stringify({
+            reviewItemId: 'loss-0-unsupported-pattern-section.hero',
+            kind: 'loss-point',
+            decision: 'skipped',
+            label: 'unsupported-pattern at section.hero',
+            details: 'Hero animation could not be represented as a canonical component.',
+            notes: 'Import review queue decision recorded from PageDesigner: skipped.',
+          }),
+        }),
+      );
+    });
+
     expect(
-      screen.getByTestId('page-designer-import-review-decision-loss-0-unsupported-pattern-section.hero'),
+      await screen.findByTestId('page-designer-import-review-decision-loss-0-unsupported-pattern-section.hero'),
     ).toHaveTextContent('Decision: skipped');
     expect(screen.getByTestId('page-designer-import-review-queue')).toHaveTextContent(
       'Import review queue: 1/2 decided',
@@ -1488,6 +1522,10 @@ describe('PageDesigner — import panel', () => {
         documentId: 'doc-import',
         lineage: expect.objectContaining({
           hookKind: 'property-completion',
+        }),
+        rollbackMetadata: expect.objectContaining({
+          strategy: 'restore-builder-document',
+          reason: expect.stringContaining('Restore'),
         }),
       }),
     );

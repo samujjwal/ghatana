@@ -16,11 +16,12 @@
  * @doc.security Service token auth, idempotency keys
  */
 
-import { FastifyPluginAsync } from 'fastify';
+import { FastifyPluginAsync, type FastifyRequest } from 'fastify';
 import { type PrismaClient } from '@prisma/client';
 import { getPrismaClient } from '../database/client.js';
 import { requirePermission } from '../middleware/rbac.middleware';
 import { createHash, timingSafeEqual } from 'crypto';
+import { getAuditService } from '../services/audit/audit.service';
 
 // In-memory idempotency store (use Redis in production)
 const idempotencyStore = new Map<string, { processedAt: Date; response: unknown }>();
@@ -76,6 +77,26 @@ type ExecutionCreateInput = Omit<ExecutionRecord, 'id'> & {
 };
 
 type ExecutionPhaseResult = Record<string, unknown>;
+
+type LifecycleExecutionAuditOutcome = 'SUCCESS' | 'REJECTED' | 'FAILED';
+
+interface LifecycleExecutionAuditContext {
+  action: 'YAPPC_LIFECYCLE_EXECUTION_RESULT' | 'YAPPC_LIFECYCLE_EXECUTION_PHASE_RESULT';
+  outcome: LifecycleExecutionAuditOutcome;
+  status: number;
+  projectId?: string;
+  executionId?: string;
+  phase?: string;
+  executionStatus?: string;
+  durationMs?: number;
+  reason?: string;
+  operation: 'create' | 'update' | 'phase-update' | 'reject' | 'failure';
+  metadata?: Record<string, unknown>;
+}
+
+interface LifecycleExecutionAuditResult {
+  auditRecorded: boolean;
+}
 
 interface LifecycleExecutionRequest {
   projectId: string;
@@ -175,6 +196,71 @@ function storeIdempotencyResponse(idempotencyKey: string, response: unknown): vo
   });
 }
 
+function getHeaderValue(value: string | string[] | undefined): string | null {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+  return value ?? null;
+}
+
+async function logLifecycleExecutionAudit(
+  request: FastifyRequest,
+  context: LifecycleExecutionAuditContext
+): Promise<LifecycleExecutionAuditResult> {
+  const authenticatedUser = request.user;
+  const actor = authenticatedUser?.userId ?? getHeaderValue(request.headers['x-user-id']) ?? 'java-backend';
+  const actorRole = authenticatedUser?.role ?? getHeaderValue(request.headers['x-user-role']) ?? 'SERVICE';
+  const tenantId = authenticatedUser?.tenantId ?? getHeaderValue(request.headers['x-tenant-id']) ?? undefined;
+  const workspaceId = authenticatedUser?.workspaceId ?? getHeaderValue(request.headers['x-workspace-id']);
+  const correlationId = request.correlationId ?? getHeaderValue(request.headers['x-correlation-id']) ?? undefined;
+
+  try {
+    await getAuditService().log({
+      action: context.action,
+      actor,
+      actorRole,
+      resource: context.executionId
+        ? `lifecycle-execution/${context.executionId}`
+        : 'lifecycle-execution',
+      severity: context.outcome === 'SUCCESS' ? 'info' : 'warn',
+      details: `Lifecycle execution ${context.operation} ${context.outcome.toLowerCase()}`,
+      ipAddress: request.ip,
+      userAgent: getHeaderValue(request.headers['user-agent']) ?? undefined,
+      method: request.method,
+      status: context.status,
+      tenantId,
+      success: context.outcome === 'SUCCESS',
+      error: context.reason,
+      metadata: {
+        projectId: context.projectId,
+        workspaceId,
+        executionId: context.executionId,
+        phase: context.phase,
+        executionStatus: context.executionStatus,
+        durationMs: context.durationMs,
+        outcome: context.outcome,
+        operation: context.operation,
+        correlationId,
+        route: request.url,
+        ...context.metadata,
+      },
+    });
+    return { auditRecorded: true };
+  } catch (error) {
+    request.log.warn(
+      {
+        error,
+        projectId: context.projectId,
+        executionId: context.executionId,
+        phase: context.phase,
+        outcome: context.outcome,
+      },
+      'Failed to write lifecycle execution audit event'
+    );
+    return { auditRecorded: false };
+  }
+}
+
 /**
  * Verify project binding - ensure execution belongs to claimed project
  */
@@ -236,15 +322,37 @@ const lifecycleExecutionRoutes: FastifyPluginAsync = async (fastify) => {
 
       // Validate required fields
       if (!body.projectId || !body.executionId || !body.status) {
+        const audit = await logLifecycleExecutionAudit(request, {
+          action: 'YAPPC_LIFECYCLE_EXECUTION_RESULT',
+          outcome: 'REJECTED',
+          status: 400,
+          projectId: body.projectId,
+          executionId: body.executionId,
+          executionStatus: body.status,
+          operation: 'reject',
+          reason: 'missing_required_fields',
+        });
         return reply.status(400).send({
           error: 'Missing required fields: projectId, executionId, status',
+          auditRecorded: audit.auditRecorded,
         });
       }
 
       // Validate projectId is not empty
       if (!body.projectId.trim()) {
+        const audit = await logLifecycleExecutionAudit(request, {
+          action: 'YAPPC_LIFECYCLE_EXECUTION_RESULT',
+          outcome: 'REJECTED',
+          status: 400,
+          projectId: body.projectId,
+          executionId: body.executionId,
+          executionStatus: body.status,
+          operation: 'reject',
+          reason: 'empty_project_id',
+        });
         return reply.status(400).send({
           error: 'Invalid projectId: cannot be empty',
+          auditRecorded: audit.auditRecorded,
         });
       }
 
@@ -253,9 +361,20 @@ const lifecycleExecutionRoutes: FastifyPluginAsync = async (fastify) => {
       // Verify project binding
       const bindingCheck = await verifyProjectBinding(prisma, body.executionId, body.projectId);
       if (!bindingCheck.valid) {
+        const audit = await logLifecycleExecutionAudit(request, {
+          action: 'YAPPC_LIFECYCLE_EXECUTION_RESULT',
+          outcome: 'REJECTED',
+          status: 403,
+          projectId: body.projectId,
+          executionId: body.executionId,
+          executionStatus: body.status,
+          operation: 'reject',
+          reason: bindingCheck.error,
+        });
         return reply.status(403).send({
           error: 'Forbidden',
           message: bindingCheck.error,
+          auditRecorded: audit.auditRecorded,
         });
       }
 
@@ -293,7 +412,25 @@ const lifecycleExecutionRoutes: FastifyPluginAsync = async (fastify) => {
             },
           });
 
-          return { success: true, execution: updatedExecution };
+          const audit = await logLifecycleExecutionAudit(request, {
+            action: 'YAPPC_LIFECYCLE_EXECUTION_RESULT',
+            outcome: 'SUCCESS',
+            status: 200,
+            projectId: body.projectId,
+            executionId: body.executionId,
+            executionStatus: body.status,
+            durationMs: body.totalDurationMs,
+            operation: 'update',
+            metadata: {
+              executedPhases: body.executedPhases,
+              success: body.success,
+              errorPhase: body.errorPhase,
+              fallbacksUsed: body.fallbacksUsed,
+            },
+          });
+          const response = { success: true, execution: updatedExecution, auditRecorded: audit.auditRecorded };
+          storeIdempotencyResponse(idempotencyKey, response);
+          return response;
         } else {
           // Create new execution record
           const newExecution = await prisma.lifecycleExecutionResult.create({
@@ -323,13 +460,42 @@ const lifecycleExecutionRoutes: FastifyPluginAsync = async (fastify) => {
             },
           });
 
-          return { success: true, execution: newExecution };
+          const audit = await logLifecycleExecutionAudit(request, {
+            action: 'YAPPC_LIFECYCLE_EXECUTION_RESULT',
+            outcome: 'SUCCESS',
+            status: 201,
+            projectId: body.projectId,
+            executionId: body.executionId,
+            executionStatus: body.status,
+            durationMs: body.totalDurationMs,
+            operation: 'create',
+            metadata: {
+              executedPhases: body.executedPhases,
+              success: body.success,
+              errorPhase: body.errorPhase,
+              fallbacksUsed: body.fallbacksUsed,
+            },
+          });
+          const response = { success: true, execution: newExecution, auditRecorded: audit.auditRecorded };
+          storeIdempotencyResponse(idempotencyKey, response);
+          return reply.status(201).send(response);
         }
       } catch (error) {
+        const audit = await logLifecycleExecutionAudit(request, {
+          action: 'YAPPC_LIFECYCLE_EXECUTION_RESULT',
+          outcome: 'FAILED',
+          status: 500,
+          projectId: body.projectId,
+          executionId: body.executionId,
+          executionStatus: body.status,
+          operation: 'failure',
+          reason: error instanceof Error ? error.message : 'Unknown error',
+        });
         fastify.log.error({ err: error }, 'Failed to persist lifecycle execution result');
         return reply.status(500).send({
           error: 'Failed to persist execution result',
           details: error instanceof Error ? error.message : 'Unknown error',
+          auditRecorded: audit.auditRecorded,
         });
       }
     }
@@ -487,12 +653,35 @@ const lifecycleExecutionRoutes: FastifyPluginAsync = async (fastify) => {
           data: updateData,
         });
 
-        return { success: true, execution: updatedExecution };
+        const audit = await logLifecycleExecutionAudit(request, {
+          action: 'YAPPC_LIFECYCLE_EXECUTION_PHASE_RESULT',
+          outcome: body.status === 'SUCCESS' ? 'SUCCESS' : 'FAILED',
+          status: 200,
+          projectId: execution.projectId,
+          executionId,
+          phase: body.phase,
+          executionStatus: body.status,
+          durationMs: body.durationMs,
+          operation: 'phase-update',
+        });
+        return { success: true, execution: updatedExecution, auditRecorded: audit.auditRecorded };
       } catch (error) {
+        const audit = await logLifecycleExecutionAudit(request, {
+          action: 'YAPPC_LIFECYCLE_EXECUTION_PHASE_RESULT',
+          outcome: 'FAILED',
+          status: 500,
+          executionId,
+          phase: body.phase,
+          executionStatus: body.status,
+          durationMs: body.durationMs,
+          operation: 'failure',
+          reason: error instanceof Error ? error.message : 'Unknown error',
+        });
         fastify.log.error({ err: error }, 'Failed to update phase result');
         return reply.status(500).send({
           error: 'Failed to update phase result',
           details: error instanceof Error ? error.message : 'Unknown error',
+          auditRecorded: audit.auditRecorded,
         });
       }
     }
