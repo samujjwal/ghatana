@@ -734,7 +734,11 @@ public final class AlertingHandler {
     }
 
     private Promise<DataCloudClient.Offset> appendMutationEvent(String tenantId, String eventType, Map<String, Object> payload) {
-        return client.appendEvent(tenantId, DataCloudClient.Event.of(eventType, payload));
+        return client.appendEvent(tenantId, DataCloudClient.Event.builder()
+            .type(eventType)
+            .payload(payload)
+            .source("datacloud.launcher.alerting-handler")
+            .build());
     }
 
     private List<Map<String, Object>> buildAlertGroups(List<Map<String, Object>> alerts) {

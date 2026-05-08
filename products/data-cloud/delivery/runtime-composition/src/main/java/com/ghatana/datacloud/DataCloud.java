@@ -20,6 +20,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 /**
@@ -109,7 +110,10 @@ public final class DataCloud {
         Objects.requireNonNull(config, "config required");
 
         if (config.profile() == DataCloudConfig.DataCloudProfile.SOVEREIGN) {
-            return new H2SovereignEventLogStore(resolveSovereignDataDirectory(config));
+            return new H2SovereignEventLogStore(
+                resolveSovereignDataDirectory(config),
+                Executors.newVirtualThreadPerTaskExecutor(),
+                resolveTailPollingConfig(config));
         }
 
         if (config.profile() == DataCloudConfig.DataCloudProfile.LOCAL) {
@@ -137,7 +141,10 @@ public final class DataCloud {
         Objects.requireNonNull(legacyDiscoveredStore, "legacyDiscoveredStore required");
 
         if (config.profile() == DataCloudConfig.DataCloudProfile.SOVEREIGN) {
-            return new H2SovereignEventLogStore(resolveSovereignDataDirectory(config));
+            return new H2SovereignEventLogStore(
+                resolveSovereignDataDirectory(config),
+                Executors.newVirtualThreadPerTaskExecutor(),
+                resolveTailPollingConfig(config));
         }
 
         if (config.profile() == DataCloudConfig.DataCloudProfile.LOCAL) {
@@ -187,6 +194,49 @@ public final class DataCloud {
             return Paths.get(directory);
         }
         return Paths.get(System.getProperty("user.home"), ".ghatana", "datacloud", "sovereign");
+    }
+
+    private static H2SovereignEventLogStore.TailPollingConfig resolveTailPollingConfig(DataCloudConfig config) {
+        Map<String, Object> customConfig = config.customConfig();
+        long pollIntervalMs = readLongConfig(customConfig, "sovereign.tail.pollIntervalMs", 250L);
+        int maxSubscribers = readIntConfig(customConfig, "sovereign.tail.maxSubscribers", 1024);
+        int maxBatchSize = readIntConfig(customConfig, "sovereign.tail.maxBatchSize", 100);
+        long maxBackoffMs = readLongConfig(customConfig, "sovereign.tail.maxBackoffMs", 30_000L);
+        return new H2SovereignEventLogStore.TailPollingConfig(
+            pollIntervalMs,
+            maxSubscribers,
+            maxBatchSize,
+            maxBackoffMs);
+    }
+
+    private static long readLongConfig(Map<String, Object> config, String key, long defaultValue) {
+        Object value = config.get(key);
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        if (value instanceof String text && !text.isBlank()) {
+            try {
+                return Long.parseLong(text.trim());
+            } catch (NumberFormatException ignored) {
+                return defaultValue;
+            }
+        }
+        return defaultValue;
+    }
+
+    private static int readIntConfig(Map<String, Object> config, String key, int defaultValue) {
+        Object value = config.get(key);
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        if (value instanceof String text && !text.isBlank()) {
+            try {
+                return Integer.parseInt(text.trim());
+            } catch (NumberFormatException ignored) {
+                return defaultValue;
+            }
+        }
+        return defaultValue;
     }
 
     // ==================== Configuration ====================
@@ -486,6 +536,7 @@ public final class DataCloud {
         public Promise<List<Event>> queryEvents(String tenantId, EventQuery query) {
             checkNotClosed();
             TenantContext tenant = TenantContext.of(tenantId);
+            com.ghatana.platform.types.identity.Offset fromOffset = com.ghatana.platform.types.identity.Offset.of(query.fromOffset().value());
             Optional<String> singleType = query.eventTypes().size() == 1
                 ? Optional.of(query.eventTypes().getFirst())
                 : Optional.empty();
@@ -495,10 +546,26 @@ public final class DataCloud {
                     return eventLogStore.readByType(
                             tenant,
                             singleType.get(),
-                            com.ghatana.platform.types.identity.Offset.zero(),
+                            fromOffset,
                             query.limit())
                         .map(entries -> entries.stream()
                             .filter(e -> !e.timestamp().isBefore(query.startTime()) && e.timestamp().isBefore(query.endTime()))
+                            .map(this::toEvent)
+                            .toList());
+                }
+                if (!query.eventTypes().isEmpty()) {
+                    List<Promise<List<EventLogStore.EventEntry>>> readsByType = query.eventTypes().stream()
+                        .map(type -> eventLogStore.readByType(tenant, type, fromOffset, query.limit()))
+                        .toList();
+
+                    return io.activej.promise.Promises.toList(readsByType)
+                        .map(results -> results.stream()
+                            .flatMap(List::stream)
+                            .filter(e -> !e.timestamp().isBefore(query.startTime()) && e.timestamp().isBefore(query.endTime()))
+                            .sorted(Comparator
+                                .comparing(EventLogStore.EventEntry::timestamp)
+                                .thenComparing(EventLogStore.EventEntry::eventId))
+                            .limit(query.limit())
                             .map(this::toEvent)
                             .toList());
                 }
@@ -515,7 +582,7 @@ public final class DataCloud {
                 return eventLogStore.readByType(
                         tenant,
                         singleType.get(),
-                        com.ghatana.platform.types.identity.Offset.zero(),
+                        fromOffset,
                         query.limit())
                     .map(entries -> entries.stream()
                         .map(this::toEvent)
@@ -524,7 +591,7 @@ public final class DataCloud {
 
             return eventLogStore.read(
                     tenant,
-                    com.ghatana.platform.types.identity.Offset.zero(), query.limit())
+                    fromOffset, query.limit())
                 .map(entries -> entries.stream()
                     .filter(e -> query.eventTypes().isEmpty() || query.eventTypes().contains(e.eventType()))
                     .map(this::toEvent)

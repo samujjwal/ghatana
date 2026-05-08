@@ -122,6 +122,29 @@ public class PostgresEntityStore implements EntityStore, AutoCloseable {
     }
 
     @Override
+    public Promise<Optional<Entity>> findByRef(TenantContext tenant, EntityRef ref) {
+        Objects.requireNonNull(tenant, "tenant required");
+        Objects.requireNonNull(ref, "ref required");
+
+        return Promise.ofBlocking(blockingExecutor, () -> {
+            String sql = "SELECT " + ENTITY_SELECT_COLUMNS
+                + " FROM entities WHERE tenant_id = ? AND collection_name = ? AND id = ?::uuid AND active = TRUE";
+            try (Connection connection = openTenantConnection(tenant);
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, tenant.tenantId());
+                statement.setString(2, ref.collection());
+                statement.setObject(3, UUID.fromString(ref.entityId().value()));
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (!resultSet.next()) {
+                        return Optional.empty();
+                    }
+                    return Optional.of(readEntity(resultSet));
+                }
+            }
+        });
+    }
+
+    @Override
     public Promise<List<Entity>> findByIds(TenantContext tenant, List<EntityId> ids) {
         Objects.requireNonNull(tenant, "tenant required");
         Objects.requireNonNull(ids, "ids required");
@@ -198,6 +221,26 @@ public class PostgresEntityStore implements EntityStore, AutoCloseable {
                 statement.setTimestamp(1, Timestamp.from(Instant.now()));
                 statement.setString(2, tenant.tenantId());
                 statement.setObject(3, UUID.fromString(id.value()));
+                statement.executeUpdate();
+                return null;
+            }
+        });
+    }
+
+    @Override
+    public Promise<Void> deleteByRef(TenantContext tenant, EntityRef ref) {
+        Objects.requireNonNull(tenant, "tenant required");
+        Objects.requireNonNull(ref, "ref required");
+
+        return Promise.ofBlocking(blockingExecutor, () -> {
+            String sql = "UPDATE entities SET active = FALSE, updated_at = ?, version = version + 1 "
+                + "WHERE tenant_id = ? AND collection_name = ? AND id = ?::uuid AND active = TRUE";
+            try (Connection connection = openTenantConnection(tenant);
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setTimestamp(1, Timestamp.from(Instant.now()));
+                statement.setString(2, tenant.tenantId());
+                statement.setString(3, ref.collection());
+                statement.setObject(4, UUID.fromString(ref.entityId().value()));
                 statement.executeUpdate();
                 return null;
             }
@@ -308,6 +351,25 @@ public class PostgresEntityStore implements EntityStore, AutoCloseable {
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setString(1, tenant.tenantId());
                 statement.setObject(2, UUID.fromString(id.value()));
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    return resultSet.next();
+                }
+            }
+        });
+    }
+
+    @Override
+    public Promise<Boolean> existsByRef(TenantContext tenant, EntityRef ref) {
+        Objects.requireNonNull(tenant, "tenant required");
+        Objects.requireNonNull(ref, "ref required");
+
+        return Promise.ofBlocking(blockingExecutor, () -> {
+            String sql = "SELECT 1 FROM entities WHERE tenant_id = ? AND collection_name = ? AND id = ?::uuid AND active = TRUE";
+            try (Connection connection = openTenantConnection(tenant);
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, tenant.tenantId());
+                statement.setString(2, ref.collection());
+                statement.setObject(3, UUID.fromString(ref.entityId().value()));
                 try (ResultSet resultSet = statement.executeQuery()) {
                     return resultSet.next();
                 }

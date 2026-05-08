@@ -65,7 +65,7 @@ import {
   type QueryPolicyEvaluation,
   type QueryResultData,
 } from '../api/analytics.service';
-import { getCapabilitySignal, useCapabilityRegistry } from '../api/capabilities.service';
+import { getCapabilitySignal, useCapabilityRegistry } from '../api/surfaces.service';
 import { CapabilityTruthPanel } from '../components/capabilities/CapabilityTruthPanel';
 import { aiOperationsService } from '../api/ai-operations.service';
 import { UnsupportedRuntimeBoundaryError } from '../lib/runtime-boundaries';

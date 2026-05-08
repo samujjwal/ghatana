@@ -32,7 +32,7 @@ vi.mock('../../lib/api/ai', () => ({
   aiQueryKeys: mockAi.aiQueryKeys,
 }));
 
-vi.mock('../../api/capabilities.service', () => ({
+vi.mock('../../api/surfaces.service', () => ({
   useCapabilityRegistry: mockCapabilities.useCapabilityRegistry,
   getCapabilitySignal: (capabilities: Array<{ key: string }> | undefined, aliases: string[]) =>
     capabilities?.find((capability) => aliases.includes(capability.key)),

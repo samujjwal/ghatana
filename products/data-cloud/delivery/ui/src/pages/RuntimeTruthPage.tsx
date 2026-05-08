@@ -13,7 +13,7 @@
 import type { ReactElement } from 'react';
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, CheckCircle2, AlertTriangle, MinusCircle, HelpCircle } from 'lucide-react';
-import { useCapabilityRegistry, type CapabilitySignal, type CapabilityStatus } from '@/api/capabilities.service';
+import { useCapabilityRegistry, type CapabilitySignal, type CapabilityStatus } from '@/api/surfaces.service';
 import { cn } from '@/lib/theme';
 
 // ── Plane taxonomy ────────────────────────────────────────────────────────────

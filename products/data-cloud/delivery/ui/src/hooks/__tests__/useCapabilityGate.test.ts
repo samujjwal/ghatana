@@ -7,7 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import type { CapabilityRegistrySnapshot, CapabilitySignal } from '../../api/capabilities.service';
+import type { CapabilityRegistrySnapshot, CapabilitySignal } from '../../api/surfaces.service';
 
 // ---------------------------------------------------------------------------
 // Hoist mocks before imports
@@ -17,8 +17,8 @@ const { mockUseCapabilityRegistry } = vi.hoisted(() => ({
   mockUseCapabilityRegistry: vi.fn<() => { data: CapabilityRegistrySnapshot | undefined; isLoading: boolean }>(),
 }));
 
-vi.mock('../../api/capabilities.service', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../api/capabilities.service')>();
+vi.mock('../../api/surfaces.service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../api/surfaces.service')>();
   return {
     ...actual,
     useCapabilityRegistry: mockUseCapabilityRegistry,

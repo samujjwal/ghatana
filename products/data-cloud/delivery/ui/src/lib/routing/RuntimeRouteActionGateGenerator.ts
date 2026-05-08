@@ -10,7 +10,7 @@
  * @doc.pattern Generator
  */
 
-import type { CapabilitySignal } from '@/api/capabilities.service';
+import type { CapabilitySignal } from '@/api/surfaces.service';
 import {
   canonicalRouteRegistry,
   type RouteCapability,

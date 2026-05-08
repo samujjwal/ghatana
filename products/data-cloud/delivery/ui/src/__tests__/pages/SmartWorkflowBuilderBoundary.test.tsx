@@ -6,7 +6,7 @@ import { SmartWorkflowBuilder } from '../../pages/SmartWorkflowBuilder';
 import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 import { smartWorkflowGenerationBoundary } from '@/components/common/unsupportedSurfaceRegistry';
 
-vi.mock('../../api/capabilities.service', () => ({
+vi.mock('../../api/surfaces.service', () => ({
   useCapabilityRegistry: () => ({
     data: {
       generatedAt: '2026-04-17T12:00:00Z',

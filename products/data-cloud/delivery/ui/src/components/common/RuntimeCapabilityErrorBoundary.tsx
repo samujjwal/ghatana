@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import { useCapabilityRegistry } from '../../api/capabilities.service';
+import { useCapabilityRegistry } from '../../api/surfaces.service';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Props {

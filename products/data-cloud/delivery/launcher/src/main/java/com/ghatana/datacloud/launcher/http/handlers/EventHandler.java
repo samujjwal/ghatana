@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -111,7 +112,11 @@ public class EventHandler {
                     if (payloadErr.isPresent()) return Promise.of(http.errorResponse(400, payloadErr.get()));
                 }
 
-                DataCloudClient.Event event = DataCloudClient.Event.of(eventType, payload);
+                DataCloudClient.Event event = DataCloudClient.Event.builder()
+                    .type(eventType)
+                    .payload(payload)
+                    .source("datacloud.launcher.event-handler")
+                    .build();
 
                 return traceSupport.trace(
                     request,
@@ -178,9 +183,13 @@ public class EventHandler {
         String eventType = request.getQueryParameter("type");
         final int finalFromOffset = fromOffset;
         final Instant finalFromTimestamp = fromTimestamp;
-        DataCloudClient.EventQuery query = eventType != null
-            ? DataCloudClient.EventQuery.byType(eventType)
-            : DataCloudClient.EventQuery.all();
+        DataCloudClient.Offset queryOffset = DataCloudClient.Offset.of(Math.max(0, finalFromOffset));
+        DataCloudClient.EventQuery query = new DataCloudClient.EventQuery(
+            eventType != null ? List.of(eventType) : List.of(),
+            null,
+            null,
+            queryOffset,
+            limitResult.getValue());
 
         return traceSupport.trace(
             request,
@@ -194,14 +203,23 @@ public class EventHandler {
             .map(events -> {
                 var filtered = events.stream()
                     .filter(e -> finalFromTimestamp == null || e.timestamp().isAfter(finalFromTimestamp))
-                    .skip(finalFromOffset)
+                    .limit(limitResult.getValue())
                     .toList();
 
                 var eventResponses = new java.util.ArrayList<Map<String, Object>>();
                 for (int i = 0; i < filtered.size(); i++) {
                     var e = filtered.get(i);
+                    long eventOffset = finalFromOffset + i;
+                    String eventOffsetHeader = e.headers().get("_x_dc_offset");
+                    if (eventOffsetHeader != null) {
+                        try {
+                            eventOffset = Long.parseLong(eventOffsetHeader);
+                        } catch (NumberFormatException ignored) {
+                            // Keep compatibility fallback offset if header is not numeric.
+                        }
+                    }
                     eventResponses.add(Map.of(
-                        "offset", (long)(finalFromOffset + i),
+                        "offset", eventOffset,
                         "type", e.type(),
                         "payload", e.payload(),
                         "timestamp", e.timestamp().toString()

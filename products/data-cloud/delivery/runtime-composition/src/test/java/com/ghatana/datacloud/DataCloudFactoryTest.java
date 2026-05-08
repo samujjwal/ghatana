@@ -4,6 +4,7 @@ import com.ghatana.datacloud.DataCloud.DataCloudConfig;
 import com.ghatana.datacloud.DataCloud.DataCloudConfig.DataCloudProfile;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.datacloud.storage.H2SovereignEventLogStore;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -168,7 +169,10 @@ class DataCloudFactoryTest extends EventloopTestBase {
 
             runPromise(() -> client.appendEvent( 
                 "tenant-a",
-                DataCloudClient.Event.of("user.created", Map.of("userId", "u-1")) 
+                DataCloudClient.Event.builder()
+                    .type("user.created")
+                    .payload(Map.of("userId", "u-1"))
+                    .build()
             ));
 
             List<DataCloudClient.Event> events = runPromise(() -> client.queryEvents( 
@@ -223,7 +227,11 @@ class DataCloudFactoryTest extends EventloopTestBase {
                 Map.<String, Object>of("id", "doc-1", "title", "Manifest"))); 
             runPromise(() -> firstClient.appendEvent( 
                 "tenant-sovereign",
-                DataCloudClient.Event.of("document.created", Map.of("entityId", "doc-1")))); 
+                DataCloudClient.Event.builder()
+                    .type("document.created")
+                    .payload(Map.of("entityId", "doc-1"))
+                    .source("datacloud.factory-test")
+                    .build())); 
         } finally {
             firstClient.close(); 
         }
@@ -244,6 +252,34 @@ class DataCloudFactoryTest extends EventloopTestBase {
             assertThat(events.get(0).type()).isEqualTo("document.created");
         } finally {
             secondClient.close(); 
+        }
+    }
+
+    @Test
+    @DisplayName("sovereign profile applies tail polling configuration from custom config")
+    void sovereignProfileAppliesTailPollingConfiguration() {
+        DataCloudConfig sovereignConfig = DataCloudConfig.builder()
+            .profile(DataCloudProfile.SOVEREIGN)
+            .customConfig(Map.of(
+                "sovereign.dataDir", tempDir.resolve("tail-config").toString(),
+                "sovereign.tail.pollIntervalMs", 75,
+                "sovereign.tail.maxSubscribers", 7,
+                "sovereign.tail.maxBatchSize", 33,
+                "sovereign.tail.maxBackoffMs", 5000))
+            .build();
+
+        DataCloudClient client = DataCloud.create(sovereignConfig);
+        try {
+            assertThat(client.eventLogStore()).isInstanceOf(H2SovereignEventLogStore.class);
+            H2SovereignEventLogStore store = (H2SovereignEventLogStore) client.eventLogStore();
+            Map<String, Object> snapshot = store.tailRuntimeSnapshot();
+
+            assertThat(snapshot.get("pollIntervalMs")).isEqualTo(75L);
+            assertThat(snapshot.get("maxSubscribers")).isEqualTo(7);
+            assertThat(snapshot.get("maxBatchSize")).isEqualTo(33);
+            assertThat(snapshot.get("maxBackoffMs")).isEqualTo(5000L);
+        } finally {
+            client.close();
         }
     }
 }

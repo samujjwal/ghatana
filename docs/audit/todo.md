@@ -39,7 +39,9 @@ Data Cloud’s intended product shape is clear: it is an AI-native operational d
 
 - P1.16 (AI fallback policy consistency): PARTIAL
     - Runtime behavior now distinguishes production fail-closed vs local heuristic fallback for core AI assist flows.
-    - Remaining work: align all docs/UI Runtime Truth surfaces and every secondary AI advisory route with the same production policy semantics.
+    - Runtime Truth UI migration advanced: first-party delivery UI imports/mocks now resolve through canonical `surfaces.service` instead of `capabilities.service` paths.
+    - Verified no direct `api/capabilities.service` imports remain under `products/data-cloud/delivery/ui/src/**`.
+    - Remaining work: align secondary AI advisory route messaging/semantics with the same production fail-closed policy language across docs and operator UX.
 
 - P1.18 (durability requirements in non-local profiles): PARTIAL
     - Production startup now blocks when idempotency store is missing, in addition to existing audit/policy/settings guards.
@@ -55,21 +57,81 @@ Data Cloud’s intended product shape is clear: it is an AI-native operational d
 
 - P1.12 (Runtime Truth migration and capability-first retirement): PARTIAL
     - Canonical backend Runtime Truth endpoints now include both `/api/v1/surfaces` and `/api/v1/surfaces/schema`, with compatibility endpoints still served.
-    - Frontend compatibility client `capabilities.service` now uses `/surfaces` first and falls back to `/capabilities` only when needed, reducing drift while preserving backward compatibility.
+    - Canonical frontend implementation is now centralized in `surfaces.service` (surface-first), with `capabilities.service` reduced to a compatibility shim that re-exports mapped capability-first APIs.
+    - First-party delivery UI source/tests/hooks/pages were migrated from `api/capabilities.service` imports to `api/surfaces.service` imports.
     - Added regression coverage for surfaces-schema handler path and capability-client fallback behavior.
-    - Remaining work: migrate remaining first-party UI imports/usages from capability-first naming to surface-first contracts and complete SDK/OpenAPI compatibility retirement sequencing.
+    - Validated migration with `pnpm run type-check` in `products/data-cloud/delivery/ui` (passing).
+    - Focused vitest suites for runtime truth service/routes/pages largely pass; existing `SqlWorkspacePage` test failures remain and are not introduced by this import-path migration.
+    - Remaining work: complete SDK/OpenAPI compatibility retirement sequencing and clean up remaining capability-first naming debt in labels/text where required.
 
-- P1.21 (`Event.of(...)` bypass): PARTIAL
+- P1.21 (`Event.of(...)` bypass): COMPLETE
     - Marked `DataCloudClient.Event.of(...)` as deprecated and enforced non-local append validation.
-    - Remaining work: broad migration of legacy call sites to explicit source-populated builders.
+    - Completed production-path migration of Data Cloud call sites to explicit source-populated builders across launcher and action-plane server modules (`EventHandler`, `AlertingHandler`, `EntityCrudHandler`, `AiAssistHandler`, `DataProductHandler`, `AnalyticsController`, `AepHttpServer`).
+    - Verified no remaining production `DataCloudClient.Event.of(...)` usages under `products/data-cloud/**/src/main/**`.
+    - Migrated residual Data Cloud test call sites to builder usage across runtime-composition, launcher, and shared-spi test modules.
+    - Verification sweep: no remaining `DataCloudClient.Event.of(...)` call sites under `products/data-cloud/**`.
+    - Validated compilation with `:products:data-cloud:delivery:launcher:compileJava` and `:products:data-cloud:planes:action:server:compileJava`.
+    - Validated focused test coverage for migrated runtime-composition and launcher suites (passing); note `:products:data-cloud:planes:shared-spi:test` still reports pre-existing unrelated `DataCloudClientValueTypesTest` filter-operator assertion failures.
+    - Added static enforcement guardrail `checkDataCloudNoDeprecatedEventFactory` in root `build.gradle.kts`, wired into standard `check`, to fail on any future `DataCloudClient.Event.of(...)` usage under `products/data-cloud/**/src/main|src/test/**`.
+    - Validated guardrail task execution with `./gradlew checkDataCloudNoDeprecatedEventFactory`.
 
 - P1.22 (`queryEvents` store-level filter pushdown): PARTIAL
     - Added single-type pushdown path to `readByType` in `DataCloud.queryEvents`.
-    - Remaining work: offset/page semantics extension in `EventQuery` + full pushdown for multi-type/time combinations.
+    - Extended `DataCloudClient.EventQuery` with `fromOffset` semantics (backward-compatible constructor preserved), and wired `DataCloud.queryEvents` to push `fromOffset` into store-level `read`/`readByType` calls.
+    - Updated launcher `EventHandler` to pass offset+limit into `EventQuery` (instead of skipping in-memory after fetch), and to prefer persisted `_x_dc_offset` headers for response offsets when available.
+    - Added multi-type + time-range pushdown path in `DataCloud.queryEvents`: when multiple event types are provided with a time window, the client now queries each type via store-level `readByType(...)`, then merges/sorts/limits in memory.
+    - Added regression tests in `DataCloudClientTest` for type-filtered and all-event offset queries.
+    - Added regression test `should apply multi-type time-range query with store-level type pushdown` in `DataCloudClientTest`.
+    - Validated launcher compatibility routes via targeted tests (`DataCloudHttpServerEventTest`, `EventAppendTest`, `EventHandlerTenantEnforcementTest`) after offset pushdown wiring.
+    - Remaining work: introduce native store SPI support for multi-type/time-range querying to avoid N-per-type reads and in-memory merge in high-cardinality scenarios.
 
 - P1.23 (`TailRequest.fromLatest` semantics): PARTIAL
     - Implemented latest-offset snapshot resolution in H2 tail subscription initialization.
-    - Remaining work: deterministic integration test harness for polling-tail semantics and parity check in all providers.
+    - Fixed H2 polling-tail loop to execute deterministic synchronous reads in its scheduler thread (eliminates missed callbacks from async completion context mismatch).
+    - Added deterministic regression test `tail from latest receives only events appended after subscription` in `H2SovereignEventLogStoreBehaviorTest`.
+    - Added provider parity behavior in `InMemoryEventLogStoreProvider`: tail subscriptions now receive future appends and `Offset.of(-1)` starts from latest without replay; cancellation removes listeners.
+    - Added provider regression test `tailFromLatestReceivesOnlyNewEvents` in `InMemoryEventLogStoreProviderTest`.
+    - Implemented Kafka provider parity: `KafkaEventLogStore.tail(...)` now resolves `Offset.latest()` (`-1`) to end-of-log before polling so subscription receives only post-subscription events.
+    - Added Kafka conformance test coverage `tail from latest receives only events appended after subscription` in `KafkaEventLogStoreConformanceIT`.
+    - Implemented warm-tier provider parity: `WarmTierEventLogStore.tail(...)` now resolves `Offset.latest()` (`-1`) to latest+1 at subscription start, preventing historical replay.
+    - Added warm-tier integration test coverage `from latest delivers only events appended after subscription` in `WarmTierEventLogStoreTest`.
+    - Remaining work: execute Kafka/Warm-tier parity under live container-backed harness in CI/local Docker-enabled environment (current local run skipped due `@Testcontainers(disabledWithoutDocker = true)`).
+
+- P1.24 (H2 tail polling configurability/observability): PARTIAL
+        - Added explicit polling controls to `H2SovereignEventLogStore` via `TailPollingConfig` (`pollIntervalMs`, `maxSubscribers`, `maxBatchSize`, `maxBackoffMs`) with bounded defaults.
+        - Wired sovereign factory construction to pass tail config from `DataCloudConfig.customConfig` keys:
+            `sovereign.tail.pollIntervalMs`, `sovereign.tail.maxSubscribers`, `sovereign.tail.maxBatchSize`, `sovereign.tail.maxBackoffMs`.
+        - Added tail runtime telemetry in `H2SovereignEventLogStore` (`activeSubscribers`, `totalPolls`, `pollErrors`, `lastPollDurationMs`) and surfaced as `tailRuntimeSnapshot()`.
+        - Added non-H2 parity telemetry in `InMemoryEventLogStoreProvider` via `tailRuntimeSnapshot()` (`activeSubscribers`, `totalSubscriptions`, `totalNotifications`, mode/store metadata).
+        - Added Kafka non-H2 telemetry snapshot via `KafkaEventLogStore.tailRuntimeSnapshot()` (`activeSubscribers`, `totalSubscriptions`, `totalPolls`, `pollErrors`, `eventsDispatched`).
+        - Added warm-tier non-H2 telemetry snapshot via `WarmTierEventLogStore.tailRuntimeSnapshot()` (`activeSubscribers`, `totalSubscriptions`, `totalPolls`, `pollErrors`, `eventsDispatched`, poll mode/batch metadata).
+        - Added subscriber-cap enforcement in tail subscriptions (`maxSubscribers`) with fail-fast rejection.
+        - Exposed event-tail posture under Runtime Truth `_meta.runtimePosture.eventTail` in launcher capability snapshots (reflection-based to avoid hard coupling).
+        - Added/updated regression tests:
+            - `H2SovereignEventLogStoreBehaviorTest` for tail runtime snapshot config + active subscriber counters.
+            - `H2SovereignEventLogStoreBehaviorTest` for max-subscriber limit rejection behavior.
+            - `DataCloudFactoryTest` for sovereign tail config propagation from custom config.
+            - `DataCloudHttpServerCapabilityTest` for Runtime Truth event-tail metadata presence.
+            - `InMemoryEventLogStoreProviderTest` for in-memory tail runtime snapshot subscriber/notification telemetry.
+            - `KafkaEventLogStoreConformanceIT` for tail runtime snapshot presence/active-subscriber metrics (execution currently gated by Docker availability).
+            - `WarmTierEventLogStoreTest` for tail runtime snapshot telemetry shape and active-subscriber visibility (execution currently gated by Docker/Testcontainers availability).
+        - Remaining work: extend equivalent telemetry exposure to additional non-H2 providers (e.g., Kafka/warm-tier) and add load-oriented assertions for subscriber-limit behavior.
+
+    - P1.8 (collection-scoped `EntityStore` methods fail-fast): PARTIAL
+        - Updated SPI defaults so `findByRef`, `deleteByRef`, and `existsByRef` fail fast with `UnsupportedOperationException` instead of silently delegating to unsafe ID-only methods.
+        - Implemented collection-scoped overrides in `PostgresEntityStore` (`findByRef`, `deleteByRef`, `existsByRef`) to remain compliant with the stricter SPI contract.
+        - Verified legacy in-memory integration test stubs remain compatible (they now fail fast for collection-scoped calls unless explicitly overridden).
+        - Added dedicated regression test `EntityStoreCollectionScopedDefaultsTest` to enforce fail-fast default behavior.
+        - Validated targeted modules with `:products:data-cloud:planes:shared-spi:test --tests com.ghatana.datacloud.spi.EntityStoreCollectionScopedDefaultsTest` and `:products:data-cloud:extensions:plugins:compileJava`.
+        - Migrated action event-bridge adapter usage to collection-scoped references in `EventCloudAgentStore` (`findByRef`, `deleteByRef`, `existsByRef`) and updated `EventCloudAgentStoreTest` accordingly.
+        - Updated `ProviderConformanceSuite` entity checks to use collection-scoped references (`findByRef`/`deleteByRef`) instead of deprecated ID-only calls.
+        - Migrated governance/entity read-delete paths in `DataLifecycleHandler` to collection-scoped references (`findByRef`/`deleteByRef`) for redaction, policy lookup, and policy delete/get flows.
+        - Migrated retention purge batch delete in `DataLifecycleHandler` from deprecated ID-only `deleteBatch` to collection-scoped `deleteByRefs`.
+        - Validated with `:products:data-cloud:planes:action:event-bridge:test` (all passing).
+        - Validated runtime conformance compilation with `:products:data-cloud:delivery:runtime-composition:compileJava`.
+        - Re-validated with `:products:data-cloud:delivery:launcher:compileJava` and `:products:data-cloud:delivery:launcher:test --tests DataCloudHttpServerCapabilityTest` (passing).
+        - Verification sweep: no remaining deprecated `EntityStore` ID-only call sites in `products/data-cloud/**/src/main/**`.
+        - Remaining work: run full integration suite after existing unrelated integration compile blockers are resolved.
 
 ## P0 — Must fix before production
 

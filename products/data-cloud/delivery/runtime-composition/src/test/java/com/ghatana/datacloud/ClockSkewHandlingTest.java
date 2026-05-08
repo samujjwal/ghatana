@@ -197,7 +197,10 @@ class ClockSkewHandlingTest extends EventloopTestBase {
                 final int idx = i;
                 DataCloudClient.Offset off = runPromise(() -> 
                     client.appendEvent(TENANT_ID, 
-                        DataCloudClient.Event.of("entity.created", Map.of("idx", idx)))); 
+                        DataCloudClient.Event.builder()
+                            .type("entity.created")
+                            .payload(Map.of("idx", idx))
+                            .build()));
                 offsets.add(off.value()); 
             }
 
@@ -219,7 +222,9 @@ class ClockSkewHandlingTest extends EventloopTestBase {
             for (int i = 0; i < eventCount; i++) { 
                 final int idx = i;
                 DataCloudClient.Offset off = runPromise(() -> 
-                    client.appendEvent(TENANT_ID, DataCloudClient.Event.of("seq", Map.of("idx", idx)))); 
+                    client.appendEvent(
+                        TENANT_ID,
+                        DataCloudClient.Event.builder().type("seq").payload(Map.of("idx", idx)).build()));
                 offsets.add(off.value()); 
             }
 

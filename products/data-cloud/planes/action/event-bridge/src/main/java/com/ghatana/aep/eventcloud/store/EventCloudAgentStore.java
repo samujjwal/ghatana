@@ -7,6 +7,7 @@ package com.ghatana.aep.eventcloud.store;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EntityStore.Entity;
 import com.ghatana.datacloud.spi.EntityStore.EntityId;
+import com.ghatana.datacloud.spi.EntityStore.EntityRef;
 import com.ghatana.datacloud.spi.EntityStore.QuerySpec;
 import com.ghatana.datacloud.spi.TenantContext;
 import io.activej.promise.Promise;
@@ -103,7 +104,7 @@ public final class EventCloudAgentStore {
      */
     public Promise<Optional<Entity>> findById(String tenantId, String agentId) {
         TenantContext tenant = TenantContext.of(tenantId);
-        return entityStore.findById(tenant, EntityId.of(agentId))
+        return entityStore.findByRef(tenant, EntityRef.of(COLLECTION, agentId))
             .map(opt -> opt.filter(e -> COLLECTION.equals(e.collection())));
     }
 
@@ -153,7 +154,7 @@ public final class EventCloudAgentStore {
      */
     public Promise<Void> delete(String tenantId, String agentId) {
         TenantContext tenant = TenantContext.of(tenantId);
-        return entityStore.delete(tenant, EntityId.of(agentId))
+        return entityStore.deleteByRef(tenant, EntityRef.of(COLLECTION, agentId))
             .whenResult(v ->
                 log.debug("[agent-store] Deleted agent={} tenant={}", agentId, tenantId))
             .whenException(e ->
@@ -185,6 +186,6 @@ public final class EventCloudAgentStore {
      */
     public Promise<Boolean> exists(String tenantId, String agentId) {
         TenantContext tenant = TenantContext.of(tenantId);
-        return entityStore.exists(tenant, EntityId.of(agentId));
+        return entityStore.existsByRef(tenant, EntityRef.of(COLLECTION, agentId));
     }
 }

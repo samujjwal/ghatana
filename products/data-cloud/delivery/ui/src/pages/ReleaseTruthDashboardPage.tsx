@@ -26,7 +26,7 @@ import {
   getCapabilitySignal,
   useCapabilityRegistry,
   type CapabilitySignal,
-} from '@/api/capabilities.service';
+} from '@/api/surfaces.service';
 import {
   generateRouteActionGates,
   type GeneratedGateStatus,

@@ -11,7 +11,7 @@
 
 import React from 'react';
 import { useCapabilityGate, type GateMode } from '../../hooks/useCapabilityGate';
-import { useCapabilityRegistry } from '../../api/capabilities.service';
+import { useCapabilityRegistry } from '../../api/surfaces.service';
 import { Loader2 } from 'lucide-react';
 
 interface CapabilityGatedProps {

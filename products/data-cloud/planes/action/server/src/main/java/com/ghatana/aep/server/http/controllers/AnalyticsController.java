@@ -448,7 +448,11 @@ public class AnalyticsController {
                 ? analyticsStore.saveAnomaly(tenantId, record).map(saved -> (Void) null)
                 : Promise.complete();
             Promise<Void> eventWrite = dataCloud != null
-                ? dataCloud.appendEvent(tenantId, DataCloudClient.Event.of(ANOMALY_EVENT_TYPE, payload)).map(offset -> (Void) null)
+                ? dataCloud.appendEvent(tenantId, DataCloudClient.Event.builder()
+                    .type(ANOMALY_EVENT_TYPE)
+                    .payload(payload)
+                    .source("datacloud.action.analytics-controller")
+                    .build()).map(offset -> (Void) null)
                 : Promise.complete();
             writes.add(persist.then(v -> eventWrite)
                 .map(v -> {
@@ -473,7 +477,11 @@ public class AnalyticsController {
             "tags", snapshot.tags()
         );
         Promise<Void> eventWrite = dataCloud != null
-            ? dataCloud.appendEvent(tenantId, DataCloudClient.Event.of(KPI_EVENT_TYPE, payload)).map(offset -> (Void) null)
+            ? dataCloud.appendEvent(tenantId, DataCloudClient.Event.builder()
+                .type(KPI_EVENT_TYPE)
+                .payload(payload)
+                .source("datacloud.action.analytics-controller")
+                .build()).map(offset -> (Void) null)
             : Promise.complete();
         return eventWrite.map(v -> {
             if (analyticsEventPublisher != null) {
@@ -502,7 +510,11 @@ public class AnalyticsController {
         payload.put("recordedAt", Instant.now().toString());
 
         Promise<Void> eventWrite = dataCloud != null
-            ? dataCloud.appendEvent(tenantId, DataCloudClient.Event.of(ANOMALY_FEEDBACK_EVENT_TYPE, payload)).map(offset -> (Void) null)
+            ? dataCloud.appendEvent(tenantId, DataCloudClient.Event.builder()
+                .type(ANOMALY_FEEDBACK_EVENT_TYPE)
+                .payload(payload)
+                .source("datacloud.action.analytics-controller")
+                .build()).map(offset -> (Void) null)
             : Promise.complete();
         return eventWrite.map(v -> {
             if (analyticsEventPublisher != null) {

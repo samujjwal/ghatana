@@ -384,19 +384,29 @@ public interface DataCloudClient extends AutoCloseable {
         List<String> eventTypes,
         java.time.Instant startTime,
         java.time.Instant endTime,
+        Offset fromOffset,
         int limit
     ) {
         public EventQuery {
             eventTypes = eventTypes != null ? List.copyOf(eventTypes) : List.of();
+            fromOffset = fromOffset != null ? fromOffset : Offset.zero();
             if (limit <= 0) limit = 100;
         }
 
+        public EventQuery(List<String> eventTypes, java.time.Instant startTime, java.time.Instant endTime, int limit) {
+            this(eventTypes, startTime, endTime, Offset.zero(), limit);
+        }
+
         public static EventQuery all() {
-            return new EventQuery(List.of(), null, null, 100);
+            return new EventQuery(List.of(), null, null, Offset.zero(), 100);
         }
 
         public static EventQuery byType(String... types) {
-            return new EventQuery(List.of(types), null, null, 100);
+            return new EventQuery(List.of(types), null, null, Offset.zero(), 100);
+        }
+
+        public static EventQuery fromOffset(long offset) {
+            return new EventQuery(List.of(), null, null, Offset.of(offset), 100);
         }
     }
 

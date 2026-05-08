@@ -42,7 +42,7 @@ import {
 } from '../lib/theme';
 import { RBACGuard } from '../components/security/RBACGuard';
 import { useAlertsSummary } from '../api/alerts.service';
-import { useCapabilityRegistry, type CapabilitySignal } from '../api/capabilities.service';
+import { useCapabilityRegistry, type CapabilitySignal } from '../api/surfaces.service';
 
 interface HealthStatus {
   component: string;

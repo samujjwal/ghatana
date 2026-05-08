@@ -47,7 +47,9 @@ public final class ProviderConformanceSuite {
                 .build();
             EntityStore.Entity saved = block(store.save(tenant, e));
             if (saved == null || saved.id() == null) throw new AssertionError("Save returned null");
-            Optional<EntityStore.Entity> retrieved = block(store.findById(tenant, saved.id()));
+            Optional<EntityStore.Entity> retrieved = block(store.findByRef(
+                tenant,
+                EntityStore.EntityRef.of(saved.collection(), saved.id().value())));
             if (retrieved.isEmpty()) throw new AssertionError("GetById returned empty");
             if (!retrieved.get().id().equals(saved.id())) throw new AssertionError("ID mismatch");
         }));
@@ -78,8 +80,10 @@ public final class ProviderConformanceSuite {
                 .metadata(EntityStore.EntityMetadata.empty())
                 .build();
             EntityStore.Entity saved = block(store.save(tenant, e));
-            block(store.delete(tenant, saved.id()));
-            Optional<EntityStore.Entity> afterDelete = block(store.findById(tenant, saved.id()));
+            block(store.deleteByRef(tenant, EntityStore.EntityRef.of(saved.collection(), saved.id().value())));
+            Optional<EntityStore.Entity> afterDelete = block(store.findByRef(
+                tenant,
+                EntityStore.EntityRef.of(saved.collection(), saved.id().value())));
             if (afterDelete.isPresent()) throw new AssertionError("Entity still exists after delete");
         }));
 
@@ -93,7 +97,9 @@ public final class ProviderConformanceSuite {
                 .metadata(EntityStore.EntityMetadata.empty())
                 .build();
             EntityStore.Entity saved = block(store.save(tenant, e));
-            Optional<EntityStore.Entity> crossTenant = block(store.findById(other, saved.id()));
+            Optional<EntityStore.Entity> crossTenant = block(store.findByRef(
+                other,
+                EntityStore.EntityRef.of(saved.collection(), saved.id().value())));
             if (crossTenant.isPresent()) throw new AssertionError("Cross-tenant access allowed");
         }));
 

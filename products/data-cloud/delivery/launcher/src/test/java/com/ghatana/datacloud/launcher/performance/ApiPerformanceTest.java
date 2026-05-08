@@ -486,7 +486,10 @@ class ApiPerformanceTest extends EventloopTestBase {
     }
 
     private DataCloudClient.Event buildEvent(String type) { 
-        return DataCloudClient.Event.of(type, Map.of("src", "perf-test", "ts", Instant.now().toString())); 
+        return DataCloudClient.Event.builder()
+            .type(type)
+            .payload(Map.of("src", "perf-test", "ts", Instant.now().toString()))
+            .build(); 
     }
 
     private DataCloudClient.EventQuery buildEventQuery() { 

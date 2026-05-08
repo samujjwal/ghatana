@@ -53,7 +53,7 @@ vi.mock('../../lib/api/workflows', () => ({
 
 vi.mock('../../api/analytics.service', () => analyticsMocks);
 
-vi.mock('../../api/capabilities.service', () => ({
+vi.mock('../../api/surfaces.service', () => ({
   useCapabilityRegistry: analyticsMocks.useCapabilityRegistry,
   getCapabilitySignal: (capabilities: Array<{ key: string }> | undefined, aliases: string[]) =>
     capabilities?.find((capability) => aliases.includes(capability.key)),

@@ -42,7 +42,7 @@ vi.mock('../../api/ai-operations.service', () => ({
   aiOperationsService: mockAiOperations,
 }));
 
-vi.mock('../../api/capabilities.service', () => ({
+vi.mock('../../api/surfaces.service', () => ({
   useCapabilityRegistry: mockCapabilities.useCapabilityRegistry,
   getCapabilitySignal: (capabilities: Array<{ key: string }> | undefined, aliases: string[]) =>
     capabilities?.find((capability) => aliases.includes(capability.key)),
@@ -279,13 +279,13 @@ describe('SqlWorkspacePage', () => {
 
     expect(await screen.findByText('orders')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /AI Assist/i }));
+    fireEvent.click(screen.getByTestId('sql-ai-assist-toggle'));
     fireEvent.change(
-      screen.getByPlaceholderText(/Describe what you want to query/i),
+      screen.getByTestId('sql-ai-assist-input'),
       { target: { value: 'Show top event types this week' } },
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Generate/i }));
+    fireEvent.click(screen.getByTestId('sql-ai-assist-generate'));
 
     await waitFor(() => {
       expect(mockAnalytics.fetchAnalyticsQuerySuggestions).toHaveBeenCalledWith(
@@ -454,55 +454,79 @@ describe('SqlWorkspacePage', () => {
       }
     );
 
-    expect(guardrails).toMatchObject({
-      requiresReview: true,
-      estimatedCost: 5400,
-    });
+    expect(guardrails).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          severity: 'critical',
+          title: 'Review-first path required',
+        }),
+        expect.objectContaining({
+          title: 'Elevated estimated cost',
+        }),
+      ]),
+    );
   });
 
   // TEST-2: Degradation UI tests
   describe('Degradation Indicators', () => {
     it('displays Analytics degradation indicator when Analytics is degraded', async () => {
       mockCapabilities.useCapabilityRegistry.mockReturnValue({
-        capabilities: [
-          { key: 'analytics.query', status: 'degraded' as const, detail: 'Analytics engine overloaded' },
-        ],
+        data: {
+          generatedAt: '2026-04-17T12:00:00Z',
+          requestId: 'req-degraded-analytics',
+          tenantId: TEST_TENANT_ID,
+          capabilities: [
+            { key: 'analytics', label: 'Analytics', status: 'degraded' as const, summary: 'DEGRADED', detail: 'Analytics engine overloaded' },
+          ],
+        },
       });
 
       render(<SqlWorkspacePage />, { wrapper: TestWrapper });
 
       await waitFor(() => {
-        expect(screen.getByText(/Analytics Degraded/i)).toBeInTheDocument();
+        expect(screen.getByText(/Analytics Engine:/i)).toBeInTheDocument();
+        expect(screen.getByText(/DEGRADED/i)).toBeInTheDocument();
       });
     });
 
     it('displays Federated Query degradation indicator when Federated Query is unavailable', async () => {
       mockCapabilities.useCapabilityRegistry.mockReturnValue({
-        capabilities: [
-          { key: 'analytics.federated', status: 'unavailable' as const, detail: 'Federated query not configured' },
-        ],
+        data: {
+          generatedAt: '2026-04-17T12:00:00Z',
+          requestId: 'req-degraded-federated',
+          tenantId: TEST_TENANT_ID,
+          capabilities: [
+            { key: 'analytics', label: 'Analytics', status: 'active' as const, summary: 'ACTIVE', detail: undefined },
+            { key: 'trino', label: 'Trino', status: 'unavailable' as const, summary: 'UNAVAILABLE', detail: 'Federated query not configured' },
+          ],
+        },
       });
 
       render(<SqlWorkspacePage />, { wrapper: TestWrapper });
 
       await waitFor(() => {
-        expect(screen.getByText(/Federated Query Unavailable/i)).toBeInTheDocument();
+        expect(screen.getByText(/Federated Query:/i)).toBeInTheDocument();
+        expect(screen.getByText(/UNAVAILABLE/i)).toBeInTheDocument();
       });
     });
 
     it('does not display degradation indicators when all services are healthy', async () => {
       mockCapabilities.useCapabilityRegistry.mockReturnValue({
-        capabilities: [
-          { key: 'analytics.query', status: 'healthy' as const, detail: '' },
-          { key: 'analytics.federated', status: 'healthy' as const, detail: '' },
-        ],
+        data: {
+          generatedAt: '2026-04-17T12:00:00Z',
+          requestId: 'req-healthy',
+          tenantId: TEST_TENANT_ID,
+          capabilities: [
+            { key: 'analytics', label: 'Analytics', status: 'active' as const, summary: 'ACTIVE', detail: '' },
+            { key: 'trino', label: 'Trino', status: 'active' as const, summary: 'ACTIVE', detail: '' },
+          ],
+        },
       });
 
       render(<SqlWorkspacePage />, { wrapper: TestWrapper });
 
       await waitFor(() => {
-        expect(screen.queryByText(/Degraded/i)).not.toBeInTheDocument();
-        expect(screen.queryByText(/Unavailable/i)).not.toBeInTheDocument();
+        expect(screen.queryByTestId('sql-optional-dependencies-warning')).not.toBeInTheDocument();
       });
     });
   });

@@ -1695,6 +1695,7 @@ public class DataCloudHttpServer {
         runtimePosture.put("entityStoreDurable", entityStoreDurable);
         runtimePosture.put("eventStoreWired", eventLogStore != null);
         runtimePosture.put("coreEventStoreDurable", coreEventStoreDurable);
+        runtimePosture.put("eventTail", buildEventTailPosture(client != null ? client.eventLogStore() : null));
         runtimePosture.put("idempotencyStoreDurable", entityWriteIdempotencyStore != null);
         runtimePosture.put("auditConfigured", auditService != null);
         runtimePosture.put("policyConfigured", policyEngine != null);
@@ -1815,6 +1816,35 @@ public class DataCloudHttpServer {
         capabilities.put("featureFlags", featureFlags);
 
         return capabilities;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> buildEventTailPosture(Object coreEventStore) {
+        if (coreEventStore == null) {
+            return Map.of(
+                "available", false,
+                "configurable", false,
+                "reason", "Core event store is not wired");
+        }
+
+        try {
+            var snapshotMethod = coreEventStore.getClass().getMethod("tailRuntimeSnapshot");
+            Object snapshot = snapshotMethod.invoke(coreEventStore);
+            if (snapshot instanceof Map<?, ?> mapSnapshot) {
+                Map<String, Object> normalized = new LinkedHashMap<>();
+                normalized.put("available", true);
+                normalized.put("configurable", true);
+                ((Map<Object, Object>) mapSnapshot).forEach((key, value) -> normalized.put(String.valueOf(key), value));
+                return normalized;
+            }
+        } catch (ReflectiveOperationException ignored) {
+            // Store does not expose tail runtime metrics snapshot.
+        }
+
+        return Map.of(
+            "available", true,
+            "configurable", false,
+            "storeType", coreEventStore.getClass().getSimpleName());
     }
 
     private String buildCapabilitySummaryLog() {

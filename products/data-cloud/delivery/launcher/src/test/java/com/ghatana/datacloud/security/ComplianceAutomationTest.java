@@ -292,7 +292,10 @@ class ComplianceAutomationTest extends EventloopTestBase {
         @Test
         @DisplayName("Audit events for event append must include event type and tenant")
         void eventAppend_auditableWithEventTypeAndTenant() throws Exception { 
-            DataCloudClient.Event event = DataCloudClient.Event.of("AUDIT_TEST", Map.of("k", "v")); 
+            DataCloudClient.Event event = DataCloudClient.Event.builder()
+                .type("AUDIT_TEST")
+                .payload(Map.of("k", "v"))
+                .build(); 
             when(client.appendEvent(TENANT_ID, event)) 
                 .thenReturn(Promise.of(DataCloudClient.Offset.of(1L))); 
 

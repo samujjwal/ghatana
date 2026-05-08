@@ -208,8 +208,10 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
         @DisplayName("appended event is retrievable via queryEvents")
         void appendedEventIsRetrievable() { 
             runPromise(() -> client.appendEvent(TENANT, 
-                    DataCloudClient.Event.of("item.created", 
-                            Map.of("itemId", "item-sdk-1", "status", "NEW")))); 
+                    DataCloudClient.Event.builder()
+                    .type("item.created")
+                    .payload(Map.of("itemId", "item-sdk-1", "status", "NEW"))
+                    .build()));
 
             List<DataCloudClient.Event> events = runPromise( 
                     () -> client.queryEvents(TENANT, 
@@ -226,8 +228,10 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
             for (int i = 0; i < count; i++) { 
                 int idx = i;
                 runPromise(() -> client.appendEvent(TENANT, 
-                        DataCloudClient.Event.of("metric.reported", 
-                                Map.of("index", (Object) idx)))); 
+                    DataCloudClient.Event.builder()
+                        .type("metric.reported")
+                        .payload(Map.of("index", (Object) idx))
+                        .build()));
             }
 
             List<DataCloudClient.Event> events = runPromise( 
@@ -241,8 +245,10 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
         @DisplayName("events from other tenants are not returned")
         void eventsAreTenantScoped() { 
             runPromise(() -> client.appendEvent("other-tenant", 
-                    DataCloudClient.Event.of("secret.event", 
-                            Map.of("payload", "hidden")))); 
+                    DataCloudClient.Event.builder()
+                    .type("secret.event")
+                    .payload(Map.of("payload", "hidden"))
+                    .build()));
 
             List<DataCloudClient.Event> events = runPromise( 
                     () -> client.queryEvents(TENANT, 

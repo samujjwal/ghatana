@@ -1741,7 +1741,11 @@ public class AiAssistHandler {
             consent.put("purpose", purpose);
             consent.put("timestamp", Instant.now().toString());
             client.appendEvent(tenantId,
-                DataCloudClient.Event.of("model.consent", consent))
+                DataCloudClient.Event.builder()
+                    .type("model.consent")
+                    .payload(consent)
+                    .source("datacloud.launcher.ai-assist")
+                    .build())
                 .whenException(e -> log.warn("Model consent log failed tenant={} model={}: {}", tenantId, model, e.getMessage()));
 
             return null;
@@ -2188,13 +2192,17 @@ public class AiAssistHandler {
                     requestId);
 
                 if (client != null) {
-                    client.appendEvent(tenantId, DataCloudClient.Event.of("ai.suggestion.apply", Map.of(
-                        "eventId", auditEventId,
-                        "suggestionId", suggestionId,
-                        "outcome", outcome,
-                        "requestId", requestId,
-                        "recordedAt", Instant.now().toString()
-                    ))).whenException(e -> log.warn(
+                    client.appendEvent(tenantId, DataCloudClient.Event.builder()
+                        .type("ai.suggestion.apply")
+                        .payload(Map.of(
+                            "eventId", auditEventId,
+                            "suggestionId", suggestionId,
+                            "outcome", outcome,
+                            "requestId", requestId,
+                            "recordedAt", Instant.now().toString()
+                        ))
+                        .source("datacloud.launcher.ai-assist")
+                        .build()).whenException(e -> log.warn(
                         "Failed to append AI suggestion apply event tenant={} suggestion={}: {}",
                         tenantId,
                         suggestionId,
@@ -3270,7 +3278,11 @@ public class AiAssistHandler {
             Map<String, Object> eventPayload = new LinkedHashMap<>(record);
             eventPayload.remove("id");
             eventPayload.put("actionId", actionId);
-            client.appendEvent(tenantId, DataCloudClient.Event.of("ai.action", eventPayload))
+                client.appendEvent(tenantId, DataCloudClient.Event.builder()
+                    .type("ai.action")
+                    .payload(eventPayload)
+                    .source("datacloud.launcher.ai-assist")
+                    .build())
                 .whenException(e -> log.warn("[P2.1] AI action event append failed tenant={} domain={}: {}", tenantId, domain, e.getMessage()));
         } catch (Exception e) {
             log.warn("[DC-E3] AI action record construction failed tenant={} domain={}: {}", tenantId, domain, e.getMessage());
@@ -3390,7 +3402,11 @@ public class AiAssistHandler {
                         eventPayload.put("actionType", actionType);
                         eventPayload.put("tenantId", tenantId);
                         eventPayload.put("comment", comment);
-                        client.appendEvent(tenantId, DataCloudClient.Event.of("ai.feedback", eventPayload))
+                        client.appendEvent(tenantId, DataCloudClient.Event.builder()
+                            .type("ai.feedback")
+                            .payload(eventPayload)
+                            .source("datacloud.launcher.ai-assist")
+                            .build())
                             .whenException(e -> log.warn("[P2.6] AI feedback event append failed tenant={}: {}", tenantId, e.getMessage()));
                     }
 

@@ -26,7 +26,7 @@ const { mockAi, mockWorkflows, mockNavigate } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
 }));
 
-vi.mock('../../api/capabilities.service', () => ({
+vi.mock('../../api/surfaces.service', () => ({
   useCapabilityRegistry: mockCapabilities.useCapabilityRegistry,
   getCapabilitySignal: (capabilities: Array<{ key: string }> | undefined, aliases: string[]) =>
     capabilities?.find((capability) => aliases.includes(capability.key)),

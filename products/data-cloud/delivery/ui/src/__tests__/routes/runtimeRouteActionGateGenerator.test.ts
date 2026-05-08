@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { generateRouteActionGates } from '@/lib/routing/RuntimeRouteActionGateGenerator';
-import type { CapabilitySignal } from '@/api/capabilities.service';
+import type { CapabilitySignal } from '@/api/surfaces.service';
 
 describe('generateRouteActionGates', () => {
   it('generates route/action gates from runtime capability signals', () => {

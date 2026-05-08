@@ -8,7 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import type { CapabilityRegistrySnapshot, CapabilitySignal } from '../../../api/capabilities.service';
+import type { CapabilityRegistrySnapshot, CapabilitySignal } from '../../../api/surfaces.service';
 
 // ---------------------------------------------------------------------------
 // Hoist mocks before module resolution
@@ -23,7 +23,7 @@ vi.mock('../../../hooks/useCapabilityGate', () => ({
   useCapabilityGate: mockUseCapabilityGate,
 }));
 
-vi.mock('../../../api/capabilities.service', () => ({
+vi.mock('../../../api/surfaces.service', () => ({
   useCapabilityRegistry: mockUseCapabilityRegistry,
 }));
 

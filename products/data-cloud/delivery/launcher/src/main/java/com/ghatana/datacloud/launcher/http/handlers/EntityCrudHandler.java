@@ -264,8 +264,11 @@ public class EntityCrudHandler {
                     Map.of("collection", finalCollection),
                     () -> client.save(resolvedTenantId, finalCollection, provenanced))
                     .then(entity -> {
-                        DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.saved",
-                            buildCdcEnvelope(resolvedTenantId, handlerSpan.spanId(), entity, "upsert", null));
+                        DataCloudClient.Event cdcEvent = DataCloudClient.Event.builder()
+                            .type("entity.saved")
+                            .payload(buildCdcEnvelope(resolvedTenantId, handlerSpan.spanId(), entity, "upsert", null))
+                            .source("datacloud.launcher.entity-crud")
+                            .build();
                         return traceSupport.trace(
                             request,
                             resolvedTenantId,
@@ -595,8 +598,11 @@ public class EntityCrudHandler {
                     Map.of("collection", collection, "entity.id", id),
                     () -> client.delete(resolvedTenantId, collection, id))
                     .then(v -> {
-                        DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.deleted",
-                            buildDeleteCdcEnvelope(resolvedTenantId, handlerSpan.spanId(), existingEntity, collection, id));
+                        DataCloudClient.Event cdcEvent = DataCloudClient.Event.builder()
+                            .type("entity.deleted")
+                            .payload(buildDeleteCdcEnvelope(resolvedTenantId, handlerSpan.spanId(), existingEntity, collection, id))
+                            .source("datacloud.launcher.entity-crud")
+                            .build();
                         return traceSupport.trace(
                             request,
                             resolvedTenantId,
@@ -733,13 +739,17 @@ public class EntityCrudHandler {
                     List<Map<String, Object>> entitySnapshots = savedEntities.stream()
                         .map(e -> buildCdcEnvelope(resolvedTenant, handlerSpan.spanId(), e, "upsert", null))
                         .toList();
-                    DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.batch-saved", Map.of(
-                        "collection", collection,
-                        "count", savedEntities.size(),
-                        "ids", ids,
-                        "operation", "batch-upsert",
-                        "entities", entitySnapshots
-                    ));
+                    DataCloudClient.Event cdcEvent = DataCloudClient.Event.builder()
+                        .type("entity.batch-saved")
+                        .payload(Map.of(
+                            "collection", collection,
+                            "count", savedEntities.size(),
+                            "ids", ids,
+                            "operation", "batch-upsert",
+                            "entities", entitySnapshots
+                        ))
+                        .source("datacloud.launcher.entity-crud")
+                        .build();
                     return client.appendEvent(resolvedTenant, cdcEvent)
                         .map(ignored -> {
                             wsBroadcaster.accept("collection.batch-saved", Map.of(
@@ -876,14 +886,18 @@ public class EntityCrudHandler {
                             .map(r -> Map.of("id", r.get("id"), "error", r.get("error")))
                             .toList();
 
-                        DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.batch-deleted", Map.of(
-                            "collection", collection,
-                            "count", deletedIds.size(),
-                            "ids", deletedIds,
-                            "operation", "batch-delete",
-                            "totalRequested", ids.size(),
-                            "errors", errors
-                        ));
+                        DataCloudClient.Event cdcEvent = DataCloudClient.Event.builder()
+                            .type("entity.batch-deleted")
+                            .payload(Map.of(
+                                "collection", collection,
+                                "count", deletedIds.size(),
+                                "ids", deletedIds,
+                                "operation", "batch-delete",
+                                "totalRequested", ids.size(),
+                                "errors", errors
+                            ))
+                            .source("datacloud.launcher.entity-crud")
+                            .build();
                         return client.appendEvent(resolvedTenant, cdcEvent)
                             .map(ignored -> {
                                 wsBroadcaster.accept("collection.batch-deleted", Map.of(

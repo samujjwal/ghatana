@@ -420,11 +420,11 @@ public class DataLifecycleHandler {
                     return entityStore.query(tenantContext, buildCollectionQuery(collection))
                         .then(queryResult -> {
                         List<EntityStore.Entity> candidates = findPurgeCandidates(policy.orElse(null), queryResult.entities());
-                        List<EntityStore.EntityId> entityIds = candidates.stream()
-                            .map(EntityStore.Entity::id)
+                        List<EntityStore.EntityRef> entityRefs = candidates.stream()
+                            .map(entity -> EntityStore.EntityRef.of(collection, entity.id().value()))
                             .toList();
 
-                        if (entityIds.isEmpty()) {
+                        if (entityRefs.isEmpty()) {
                             logGovernanceEvent(
                                 tenantContext,
                                 requestId,
@@ -444,7 +444,7 @@ public class DataLifecycleHandler {
                                 ), tenantId, requestId), objectMapper));
                         }
 
-                        return entityStore.deleteBatch(tenantContext, entityIds)
+                        return entityStore.deleteByRefs(tenantContext, entityRefs)
                             .then(batchResult -> {
                                 log.info("[DC-E5] purge COMPLETED collection={} tenant={} deleted={}",
                                     collection, tenantId, batchResult.successCount());
@@ -452,7 +452,7 @@ public class DataLifecycleHandler {
                                     collection, Map.of(
                                         "dryRun", false,
                                         "deletedCount", batchResult.successCount(),
-                                        "requestedCount", entityIds.size(),
+                                        "requestedCount", entityRefs.size(),
                                         "confirmationTokenHash", sha256Hex(confirmationToken)));
                                 logGovernanceEvent(
                                     tenantContext,
@@ -461,7 +461,7 @@ public class DataLifecycleHandler {
                                     collection,
                                     Map.of(
                                         "deletedCount", batchResult.successCount(),
-                                        "requestedCount", entityIds.size(),
+                                        "requestedCount", entityRefs.size(),
                                         "failedCount", batchResult.failureCount()));
 
                                 return savePurgeTombstone(
@@ -469,7 +469,7 @@ public class DataLifecycleHandler {
                                     collection,
                                     candidates.stream().map(entity -> entity.id().value()).toList(),
                                     batchResult.successCount(),
-                                    entityIds.size(),
+                                    entityRefs.size(),
                                     sha256Hex(confirmationToken),
                                     requestId
                                 ).map(ignored -> batchResult);
@@ -482,7 +482,7 @@ public class DataLifecycleHandler {
                                 result.put("status", "PURGE_COMPLETED");
                                 result.put("deletedCount", batchResult.successCount());
                                 result.put("deletedRows", batchResult.successCount());
-                                result.put("requestedRows", entityIds.size());
+                                result.put("requestedRows", entityRefs.size());
                                 result.put("failedRows", batchResult.failureCount());
                                 result.put("deletedEntityIds", candidates.stream()
                                     .map(entity -> entity.id().value())
@@ -552,7 +552,7 @@ public class DataLifecycleHandler {
                 }
 
                 EntityStore entityStore = requireEntityStore();
-                EntityStore.EntityId storeEntityId = EntityStore.EntityId.of(entityId);
+                EntityStore.EntityRef entityRef = EntityStore.EntityRef.of(collection, entityId);
                 return loadRetentionPolicy(tenantContext, collection)
                     .then(policyOpt -> {
                         if (hasActiveLegalHolds(policyOpt.orElse(null))) {
@@ -565,7 +565,7 @@ public class DataLifecycleHandler {
                                 objectMapper,
                                 423));
                         }
-                        return entityStore.findById(tenantContext, storeEntityId)
+                        return entityStore.findByRef(tenantContext, entityRef)
                             .then(entityOpt -> {
                         if (entityOpt.isEmpty()) {
                             return Promise.of(http.errorEnvelopeResponse(
@@ -810,7 +810,7 @@ public class DataLifecycleHandler {
 
         TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
         return loadRetentionPolicy(tenantContext, collection)
-            .then(policy -> requireEntityStore().findById(tenantContext, EntityStore.EntityId.of(entityId))
+            .then(policy -> requireEntityStore().findByRef(tenantContext, EntityStore.EntityRef.of(collection, entityId))
                 .map(entityOpt -> {
                     if (entityOpt.isEmpty()) {
                         return http.errorEnvelopeResponse(
@@ -1253,7 +1253,9 @@ public class DataLifecycleHandler {
 
     private Promise<Optional<Map<String, Object>>> loadRetentionPolicy(TenantContext tenantContext,
                                                                        String collection) {
-        return requireEntityStore().findById(tenantContext, EntityStore.EntityId.of(policyId(collection)))
+        return requireEntityStore().findByRef(
+            tenantContext,
+            EntityStore.EntityRef.of(GOVERNANCE_POLICY_COLLECTION, policyId(collection)))
             .map(found -> found
                 .filter(entity -> GOVERNANCE_POLICY_COLLECTION.equals(entity.collection()))
                 .map(entity -> new LinkedHashMap<>(entity.data())));
@@ -1818,7 +1820,9 @@ public class DataLifecycleHandler {
                 if (existingOpt.isEmpty()) {
                     return Promise.of(http.errorResponse(404, "Policy not found: " + policyId));
                 }
-                Promise<Void> deletePromise = requireEntityStore().delete(tenantContext, EntityStore.EntityId.of(governancePolicyEntityId(policyId)));
+                Promise<Void> deletePromise = requireEntityStore().deleteByRef(
+                    tenantContext,
+                    EntityStore.EntityRef.of(GOVERNANCE_POLICIES_COLLECTION, governancePolicyEntityId(policyId)));
                 if (deletePromise == null) {
                     emitAudit(tenantId, requestId, "POLICY_DELETED", GOVERNANCE_POLICIES_COLLECTION,
                         Map.of("policyId", policyId));
@@ -1928,7 +1932,9 @@ public class DataLifecycleHandler {
 
     private Promise<Optional<Map<String, Object>>> loadGovernancePolicyById(TenantContext tenantContext,
                                                                              String policyId) {
-        return requireEntityStore().findById(tenantContext, EntityStore.EntityId.of(governancePolicyEntityId(policyId)))
+        return requireEntityStore().findByRef(
+            tenantContext,
+            EntityStore.EntityRef.of(GOVERNANCE_POLICIES_COLLECTION, governancePolicyEntityId(policyId)))
             .map(found -> found
                 .filter(entity -> GOVERNANCE_POLICIES_COLLECTION.equals(entity.collection()))
                 .map(this::normalizeGovernancePolicy));

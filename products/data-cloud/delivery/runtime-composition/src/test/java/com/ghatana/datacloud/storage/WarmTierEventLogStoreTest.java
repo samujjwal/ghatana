@@ -486,5 +486,47 @@ class WarmTierEventLogStoreTest extends EventloopTestBase {
             assertThat(received).isNotEmpty(); 
             assertThat(received.get(0).eventType()).isEqualTo("tail.event");
         }
+
+        @Test
+        @DisplayName("from latest delivers only events appended after subscription")
+        void tail_fromLatest_deliversOnlyNewEvents() throws InterruptedException {
+            runPromise(() -> store().append(TENANT_A, entry("before.1")));
+            runPromise(() -> store().append(TENANT_A, entry("before.2")));
+
+            CopyOnWriteArrayList<EventEntry> received = new CopyOnWriteArrayList<>();
+            Subscription sub = runPromise(() ->
+                store().tail(TENANT_A, Offset.of(-1), received::add));
+
+            runPromise(() -> store().append(TENANT_A, entry("after.1")));
+
+            long deadline = System.currentTimeMillis() + 2_000;
+            while (received.isEmpty() && System.currentTimeMillis() < deadline) {
+                Thread.sleep(100);
+            }
+
+            sub.cancel();
+            assertThat(received)
+                .extracting(EventEntry::eventType)
+                .contains("after.1")
+                .doesNotContain("before.1", "before.2");
+        }
+
+        @Test
+        @DisplayName("tail runtime snapshot exposes subscriber and poll telemetry")
+        void tail_runtimeSnapshot_exposesTelemetry() {
+            WarmTierEventLogStore warmStore = store();
+
+            Map<String, Object> before = warmStore.tailRuntimeSnapshot();
+            assertThat(before.get("activeSubscribers")).isEqualTo(0L);
+
+            Subscription sub = runPromise(() ->
+                warmStore.tail(TENANT_A, Offset.of(-1), ignored -> { }));
+
+            Map<String, Object> during = warmStore.tailRuntimeSnapshot();
+            assertThat(during.get("activeSubscribers")).isEqualTo(1L);
+            assertThat(during.get("totalSubscriptions")).isEqualTo(1L);
+
+            sub.cancel();
+        }
     }
 }

@@ -7,6 +7,7 @@ package com.ghatana.aep.eventcloud.store;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EntityStore.Entity;
 import com.ghatana.datacloud.spi.EntityStore.EntityId;
+import com.ghatana.datacloud.spi.EntityStore.EntityRef;
 import com.ghatana.datacloud.spi.EntityStore.QueryResult;
 import com.ghatana.datacloud.spi.EntityStore.QuerySpec;
 import com.ghatana.datacloud.spi.TenantContext;
@@ -92,7 +93,7 @@ class EventCloudAgentStoreTest extends EventloopTestBase {
         Entity entity = new Entity( 
             EntityId.of(AGENT_ID), EventCloudAgentStore.COLLECTION, 
             Map.of("id", AGENT_ID, "name", "TestAgent"), null); 
-        when(entityStore.findById(any(TenantContext.class), eq(EntityId.of(AGENT_ID)))) 
+        when(entityStore.findByRef(any(TenantContext.class), eq(EntityRef.of(EventCloudAgentStore.COLLECTION, AGENT_ID)))) 
             .thenReturn(Promise.of(Optional.of(entity))); 
 
         // WHEN
@@ -106,7 +107,7 @@ class EventCloudAgentStoreTest extends EventloopTestBase {
     @Test
     void shouldReturnEmptyWhenAgentNotFound() { 
         // GIVEN
-        when(entityStore.findById(any(TenantContext.class), eq(EntityId.of("nonexistent"))))
+        when(entityStore.findByRef(any(TenantContext.class), eq(EntityRef.of(EventCloudAgentStore.COLLECTION, "nonexistent"))))
             .thenReturn(Promise.of(Optional.empty())); 
 
         // WHEN
@@ -163,14 +164,14 @@ class EventCloudAgentStoreTest extends EventloopTestBase {
     @Test
     void shouldDeleteAgent() { 
         // GIVEN
-        when(entityStore.delete(any(TenantContext.class), eq(EntityId.of(AGENT_ID)))) 
+        when(entityStore.deleteByRef(any(TenantContext.class), eq(EntityRef.of(EventCloudAgentStore.COLLECTION, AGENT_ID)))) 
             .thenReturn(Promise.of(null)); 
 
         // WHEN
         runPromise(() -> agentStore.delete(TENANT, AGENT_ID)); 
 
         // THEN
-        verify(entityStore).delete(any(), eq(EntityId.of(AGENT_ID))); 
+        verify(entityStore).deleteByRef(any(), eq(EntityRef.of(EventCloudAgentStore.COLLECTION, AGENT_ID))); 
     }
 
     @Test
@@ -189,7 +190,7 @@ class EventCloudAgentStoreTest extends EventloopTestBase {
     @Test
     void shouldCheckExistence() { 
         // GIVEN
-        when(entityStore.exists(any(TenantContext.class), eq(EntityId.of(AGENT_ID)))) 
+        when(entityStore.existsByRef(any(TenantContext.class), eq(EntityRef.of(EventCloudAgentStore.COLLECTION, AGENT_ID)))) 
             .thenReturn(Promise.of(true)); 
 
         // WHEN

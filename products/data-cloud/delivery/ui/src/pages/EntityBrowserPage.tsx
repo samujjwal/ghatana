@@ -18,7 +18,7 @@ import { collectionsApi } from '../lib/api/collections';
 import { useSelection } from '../hooks/useSelection';
 import { logActivity } from '../lib/api/user-activity';
 import { RBACGuard } from '../components/security/RBACGuard';
-import { getCapabilitySignal, useCapabilityRegistry } from '../api/capabilities.service';
+import { getCapabilitySignal, useCapabilityRegistry } from '../api/surfaces.service';
 import { Check, Mic, Trash2 } from 'lucide-react';
 
 // =============================================================================

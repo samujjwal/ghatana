@@ -188,8 +188,8 @@ class DataCloudHttpServerEventTest {
         @DisplayName("returns 200 with event list when events exist")
         void queryEvents_withEvents_returns200WithList() throws Exception { 
             List<DataCloudClient.Event> events = List.of( 
-                    DataCloudClient.Event.of("order.placed", Map.of("orderId", "ORD-1")), 
-                    DataCloudClient.Event.of("order.shipped", Map.of("orderId", "ORD-1"))); 
+                DataCloudClient.Event.builder().type("order.placed").payload(Map.of("orderId", "ORD-1")).build(), 
+                DataCloudClient.Event.builder().type("order.shipped").payload(Map.of("orderId", "ORD-1")).build()); 
             when(mockClient.queryEvents(anyString(), any())) 
                     .thenReturn(Promise.of(events)); 
 
@@ -227,7 +227,7 @@ class DataCloudHttpServerEventTest {
         @DisplayName("passes event-type filter to client when ?type= is specified")
         void queryEvents_withTypeFilter_queriesClient() throws Exception { 
             List<DataCloudClient.Event> filtered = List.of( 
-                    DataCloudClient.Event.of("order.placed", Map.of("orderId", "ORD-X"))); 
+                DataCloudClient.Event.builder().type("order.placed").payload(Map.of("orderId", "ORD-X")).build()); 
             when(mockClient.queryEvents(anyString(), any())) 
                     .thenReturn(Promise.of(filtered)); 
 

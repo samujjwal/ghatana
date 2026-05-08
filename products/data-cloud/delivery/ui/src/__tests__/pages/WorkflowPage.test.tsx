@@ -42,7 +42,7 @@ vi.mock('../../lib/api/ai', () => ({
     aiQueryKeys: mockAi.aiQueryKeys,
 }));
 
-vi.mock('../../api/capabilities.service', () => ({
+vi.mock('../../api/surfaces.service', () => ({
     useCapabilityRegistry: mockCapabilities.useCapabilityRegistry,
     getCapabilitySignal: mockCapabilities.getCapabilitySignal,
 }));

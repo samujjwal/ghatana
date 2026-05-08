@@ -62,14 +62,19 @@ class DataCloudHttpServerCapabilityTest {
         Map<String, Object> body = mapper.readValue(response.body(), Map.class); 
         Map<String, Object> data = (Map<String, Object>) body.get("data");
         Map<String, Object> capabilities = (Map<String, Object>) data.get("capabilities");
+        Map<String, Object> meta = (Map<String, Object>) capabilities.get("_meta");
+        Map<String, Object> runtimePosture = (Map<String, Object>) meta.get("runtimePosture");
         Map<String, Object> jwtCapability = (Map<String, Object>) capabilities.get("authentication.jwt");
         Map<String, Object> databaseCapability = (Map<String, Object>) capabilities.get("health.database");
         Map<String, Object> searchCapability = (Map<String, Object>) capabilities.get("search.openSearch");
+        Map<String, Object> eventTail = (Map<String, Object>) runtimePosture.get("eventTail");
 
         assertThat(jwtCapability).containsEntry("status", "ACTIVE"); 
         assertThat(databaseCapability).containsEntry("status", "DEGRADED"); 
         assertThat(databaseCapability).containsEntry("dependencyStatus", "DOWN"); 
         assertThat(searchCapability).containsEntry("status", "NOT_CONFIGURED"); 
+        assertThat(eventTail).containsEntry("available", false);
+        assertThat(eventTail).containsEntry("configurable", false);
     }
 
     @Test

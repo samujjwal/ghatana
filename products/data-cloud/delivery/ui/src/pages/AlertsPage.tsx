@@ -46,7 +46,7 @@ import { ALERTS_UNSUPPORTED_MESSAGE, alertsService } from '../api/alerts.service
 import type { Alert, AlertGroup, ResolutionSuggestion, AlertSeverity, AlertStatus } from '../api/alerts.service';
 import { aiOperationsService } from '../api/ai-operations.service';
 import type { AiCrossCorrelation } from '../api/ai-operations.service';
-import { getCapabilitySignal, useCapabilityRegistry } from '../api/capabilities.service';
+import { getCapabilitySignal, useCapabilityRegistry } from '../api/surfaces.service';
 import { UnsupportedRuntimeBoundaryError } from '../lib/runtime-boundaries';
 
 function isAlertsUnsupportedError(error: unknown): boolean {

@@ -53,7 +53,10 @@ export { alertsService } from "./alerts.service";
 export * from "./plugin.service";
 export { pluginService } from "./plugin.service";
 
-// Capabilities — runtime capability registry
+// Runtime Truth surfaces — canonical registry API
+export * from "./surfaces.service";
+
+// Capabilities — compatibility alias for legacy imports
 export * from "./capabilities.service";
 
 // AI Observability — quality telemetry

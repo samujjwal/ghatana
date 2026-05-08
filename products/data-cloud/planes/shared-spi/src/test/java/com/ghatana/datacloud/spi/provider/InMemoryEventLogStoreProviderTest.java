@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -257,6 +258,50 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
             // offset == size of list => no entries returned
             runPromise(() -> store.tail(tenant, Offset.of(2L), received::add)); 
             assertThat(received).isEmpty(); 
+        }
+
+        @Test
+        void tailFromLatestReceivesOnlyNewEvents() {
+            runPromise(() -> store.append(tenant, entry("before-1")));
+            runPromise(() -> store.append(tenant, entry("before-2")));
+
+            List<EventEntry> received = new ArrayList<>();
+            EventLogStore.Subscription sub = runPromise(() ->
+                store.tail(tenant, Offset.of(-1L), received::add));
+
+            assertThat(received).isEmpty();
+
+            runPromise(() -> store.append(tenant, entry("after-1")));
+            runPromise(() -> store.append(tenant, entry("after-2")));
+
+            assertThat(received)
+                .extracting(EventEntry::eventType)
+                .containsExactly("after-1", "after-2");
+            sub.cancel();
+        }
+
+        @Test
+        void tailRuntimeSnapshotExposesSubscriberAndNotificationMetrics() {
+            Map<String, Object> before = store.tailRuntimeSnapshot();
+            assertThat(before.get("activeSubscribers")).isEqualTo(0);
+            assertThat(before.get("totalSubscriptions")).isEqualTo(0L);
+            assertThat(before.get("totalNotifications")).isEqualTo(0L);
+
+            EventLogStore.Subscription sub = runPromise(() ->
+                store.tail(tenant, Offset.of(-1L), event -> { }));
+
+            Map<String, Object> during = store.tailRuntimeSnapshot();
+            assertThat(during.get("activeSubscribers")).isEqualTo(1);
+            assertThat(during.get("totalSubscriptions")).isEqualTo(1L);
+
+            runPromise(() -> store.append(tenant, entry("new-event")));
+
+            Map<String, Object> afterEvent = store.tailRuntimeSnapshot();
+            assertThat(afterEvent.get("totalNotifications")).isEqualTo(1L);
+
+            sub.cancel();
+            Map<String, Object> afterCancel = store.tailRuntimeSnapshot();
+            assertThat(afterCancel.get("activeSubscribers")).isEqualTo(0);
         }
     }
 }

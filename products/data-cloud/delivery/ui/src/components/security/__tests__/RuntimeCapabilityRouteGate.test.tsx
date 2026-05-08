@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import type { CapabilityRegistrySnapshot } from '../../../api/capabilities.service';
+import type { CapabilityRegistrySnapshot } from '../../../api/surfaces.service';
 
 const { mockUseCapabilityRegistry, mockUseCapabilityGate } = vi.hoisted(() => ({
   mockUseCapabilityRegistry: vi.fn<() => { data: CapabilityRegistrySnapshot | undefined; isLoading: boolean }>(),
   mockUseCapabilityGate: vi.fn<(capabilities: string[], mode?: 'active' | 'activeOrDegraded' | 'notUnavailable') => boolean>(),
 }));
 
-vi.mock('../../../api/capabilities.service', () => ({
+vi.mock('../../../api/surfaces.service', () => ({
   useCapabilityRegistry: mockUseCapabilityRegistry,
 }));
 

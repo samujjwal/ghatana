@@ -155,7 +155,10 @@ class DataCloudClientValueTypesTest {
 
         @Test
         void factoryCreatesEvent() { 
-            DataCloudClient.Event ev = DataCloudClient.Event.of("OrderCreated", Map.of("orderId", "o1")); 
+            DataCloudClient.Event ev = DataCloudClient.Event.builder()
+                .type("OrderCreated")
+                .payload(Map.of("orderId", "o1"))
+                .build(); 
             assertThat(ev.type()).isEqualTo("OrderCreated");
             assertThat(ev.payload()).containsEntry("orderId", "o1"); 
             assertThat(ev.headers()).isEmpty(); 

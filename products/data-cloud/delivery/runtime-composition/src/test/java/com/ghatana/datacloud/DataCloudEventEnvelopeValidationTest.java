@@ -26,7 +26,10 @@ class DataCloudEventEnvelopeValidationTest extends EventloopTestBase {
 
         DataCloudClient client = DataCloud.create(config);
         try {
-            DataCloudClient.Event event = DataCloudClient.Event.of("entity.saved", Map.of("id", "1"));
+            DataCloudClient.Event event = DataCloudClient.Event.builder()
+                .type("entity.saved")
+                .payload(Map.of("id", "1"))
+                .build();
 
             assertThatThrownBy(() -> runPromise(() -> client.appendEvent("tenant-1", event)))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -41,7 +44,10 @@ class DataCloudEventEnvelopeValidationTest extends EventloopTestBase {
     void localAllowsSourceLessEvents() {
         DataCloudClient client = DataCloud.forTesting();
         try {
-            DataCloudClient.Event event = DataCloudClient.Event.of("entity.saved", Map.of("id", "1"));
+            DataCloudClient.Event event = DataCloudClient.Event.builder()
+                .type("entity.saved")
+                .payload(Map.of("id", "1"))
+                .build();
             runPromise(() -> client.appendEvent("tenant-1", event));
         } finally {
             client.close();

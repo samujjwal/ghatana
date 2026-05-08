@@ -15,8 +15,8 @@ import { IntelligentHub } from '../../pages/IntelligentHub';
 import { DataExplorer } from '../../pages/DataExplorer';
 import { CreateCollectionPage } from '../../pages/CreateCollectionPage';
 
-vi.mock('../../api/capabilities.service', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../api/capabilities.service')>();
+vi.mock('../../api/surfaces.service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../api/surfaces.service')>();
   return {
     ...actual,
     useCapabilityRegistry: () => ({

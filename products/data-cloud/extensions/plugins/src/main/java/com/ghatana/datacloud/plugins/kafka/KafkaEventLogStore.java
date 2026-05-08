@@ -50,6 +50,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 /**
@@ -127,6 +128,12 @@ public class KafkaEventLogStore implements EventLogStore {
 
     // Active tail subscriptions
     private final ConcurrentHashMap<String, TailSubscription> tailSubscriptions = new ConcurrentHashMap<>();
+
+    // Tail runtime telemetry
+    private final AtomicLong totalTailSubscriptions = new AtomicLong();
+    private final AtomicLong totalTailPolls = new AtomicLong();
+    private final AtomicLong totalTailErrors = new AtomicLong();
+    private final AtomicLong totalTailEventsDispatched = new AtomicLong();
 
     // Executor for tail polling threads
     private final ExecutorService tailExecutor;
@@ -301,6 +308,7 @@ public class KafkaEventLogStore implements EventLogStore {
         String subId = UUID.randomUUID().toString();
         TailSubscription subscription = new TailSubscription(subId);
         tailSubscriptions.put(subId, subscription);
+        totalTailSubscriptions.incrementAndGet();
 
         long startOffset = parseLong(from);
         String topic = topicFor(tenant.tenantId());
@@ -318,16 +326,28 @@ public class KafkaEventLogStore implements EventLogStore {
             try (KafkaConsumer<String, byte[]> consumer = buildConsumer(config, groupId)) {
                 TopicPartition tp = new TopicPartition(topic, 0);
                 consumer.assign(Collections.singletonList(tp));
-                consumer.seek(tp, Math.max(0, startOffset));
+
+                // Offset.latest() is encoded as -1. Resolve to end-of-log so only future events are tailed.
+                if (startOffset < 0) {
+                    Map<TopicPartition, Long> endOffsets = consumer.endOffsets(
+                        Collections.singletonList(tp), Duration.ofSeconds(10));
+                    long latestExclusive = endOffsets.getOrDefault(tp, 0L);
+                    consumer.seek(tp, latestExclusive);
+                } else {
+                    consumer.seek(tp, Math.max(0, startOffset));
+                }
 
                 while (!subscription.isCancelled()) {
                     ConsumerRecords<String, byte[]> records = consumer.poll(Duration.ofMillis(200));
+                    totalTailPolls.incrementAndGet();
                     for (ConsumerRecord<String, byte[]> record : records) {
                         if (subscription.isCancelled()) break;
                         try {
                             EventEntry entry = fromConsumerRecord(record);
                             handler.accept(entry);
+                            totalTailEventsDispatched.incrementAndGet();
                         } catch (Exception e) {
+                            totalTailErrors.incrementAndGet();
                             log.warn("Error dispatching tail event at offset={}", record.offset(), e);
                         }
                     }
@@ -335,6 +355,7 @@ public class KafkaEventLogStore implements EventLogStore {
             } catch (WakeupException ignored) {
                 // normal cancellation
             } catch (Exception e) {
+                totalTailErrors.incrementAndGet();
                 log.error("Tail subscription error for tenant={}", tenant.tenantId(), e);
             } finally {
                 tailSubscriptions.remove(subId);
@@ -358,6 +379,22 @@ public class KafkaEventLogStore implements EventLogStore {
         }
         producer.close(Duration.ofSeconds(5));
         adminClient.close(Duration.ofSeconds(5));
+    }
+
+    /**
+     * Runtime telemetry snapshot consumed by Runtime Truth posture reflection.
+     */
+    public Map<String, Object> tailRuntimeSnapshot() {
+        return Map.of(
+            "available", true,
+            "configurable", false,
+            "storeType", getClass().getSimpleName(),
+            "mode", "polling",
+            "activeSubscribers", tailSubscriptions.size(),
+            "totalSubscriptions", totalTailSubscriptions.get(),
+            "totalPolls", totalTailPolls.get(),
+            "pollErrors", totalTailErrors.get(),
+            "eventsDispatched", totalTailEventsDispatched.get());
     }
 
     // =========================================================================

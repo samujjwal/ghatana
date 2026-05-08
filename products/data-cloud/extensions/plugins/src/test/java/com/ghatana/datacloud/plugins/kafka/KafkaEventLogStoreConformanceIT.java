@@ -165,6 +165,46 @@ class KafkaEventLogStoreConformanceIT extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("tail from latest receives only events appended after subscription")
+    void tailFromLatestReceivesOnlyNewEvents() throws InterruptedException {
+        TenantContext tenant = TenantContext.of("tenant-kafka-tail-latest");
+        runPromise(() -> store.append(tenant, entry("before-1", "{\"n\":1}")));
+        runPromise(() -> store.append(tenant, entry("before-2", "{\"n\":2}")));
+
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<EventEntry> received = new AtomicReference<>();
+
+        runPromise(() -> store.tail(tenant, Offset.of(-1L), event -> {
+            received.set(event);
+            latch.countDown();
+        }));
+
+        runPromise(() -> store.append(tenant, entry("after-1", "{\"n\":3}")));
+
+        assertThat(latch.await(20, TimeUnit.SECONDS)).isTrue();
+        assertThat(received.get()).isNotNull();
+        assertThat(received.get().eventType()).isEqualTo("after-1");
+    }
+
+    @Test
+    @DisplayName("tail runtime snapshot exposes active subscription and poll telemetry")
+    void tailRuntimeSnapshotExposesTelemetry() {
+        TenantContext tenant = TenantContext.of("tenant-kafka-tail-snapshot");
+
+        Map<String, Object> before = store.tailRuntimeSnapshot();
+        assertThat(before.get("activeSubscribers")).isEqualTo(0);
+        assertThat(before.get("totalSubscriptions")).isEqualTo(0L);
+
+        EventLogStore.Subscription sub = runPromise(() -> store.tail(tenant, Offset.of(-1L), ignored -> { }));
+
+        Map<String, Object> during = store.tailRuntimeSnapshot();
+        assertThat(during.get("activeSubscribers")).isEqualTo(1);
+        assertThat(during.get("totalSubscriptions")).isEqualTo(1L);
+
+        sub.cancel();
+    }
+
+    @Test
     @DisplayName("tenant isolation: tenant-B cannot see tenant-A events via read")
     void tenantIsolationPreventsReadFromOtherTenant() { 
         TenantContext tenantA = TenantContext.of("tenant-kafka-iso-a");

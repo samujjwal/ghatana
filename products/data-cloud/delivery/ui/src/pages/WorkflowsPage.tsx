@@ -13,7 +13,7 @@ import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button, IconButton } from '@ghatana/design-system';
-import { getCapabilitySignal, useCapabilityRegistry } from '../api/capabilities.service';
+import { getCapabilitySignal, useCapabilityRegistry } from '../api/surfaces.service';
 import {
     Play,
     Pause,

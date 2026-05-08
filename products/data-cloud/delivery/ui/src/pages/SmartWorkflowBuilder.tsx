@@ -19,7 +19,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
-import { getCapabilitySignal, useCapabilityRegistry } from '../api/capabilities.service';
+import { getCapabilitySignal, useCapabilityRegistry } from '../api/surfaces.service';
 import { UnsupportedSurfaceBoundary } from '../components/common/UnsupportedSurfaceBoundary';
 import { smartWorkflowGenerationBoundary } from '../components/common/unsupportedSurfaceRegistry';
 import SessionBootstrap from '../lib/auth/session';

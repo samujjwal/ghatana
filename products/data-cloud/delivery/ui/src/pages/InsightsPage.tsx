@@ -23,7 +23,7 @@ import {
   getCapabilitySignal,
   useCapabilityRegistry,
   type CapabilitySignal,
-} from '../api/capabilities.service';
+} from '../api/surfaces.service';
 import { brainService, type BrainStats } from '../api/brain.service';
 import { costService, type CostBreakdown } from '../api/cost.service';
 import { workflowsApi } from '../lib/api/workflows';

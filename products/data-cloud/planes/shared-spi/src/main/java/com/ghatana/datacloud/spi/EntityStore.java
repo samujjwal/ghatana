@@ -70,9 +70,8 @@ public interface EntityStore {
      * @return promise of entity if found
      */
     default Promise<Optional<Entity>> findByRef(TenantContext tenant, EntityRef ref) {
-        // Default: delegate to findById for backward compatibility with legacy providers.
-        // Override in new providers to use collection-scoped key.
-        return findById(tenant, ref.entityId());
+        return Promise.ofException(new UnsupportedOperationException(
+            "EntityStore.findByRef must be implemented by provider for collection-scoped identity"));
     }
 
     /**
@@ -137,7 +136,8 @@ public interface EntityStore {
      * @return promise completing when deleted
      */
     default Promise<Void> deleteByRef(TenantContext tenant, EntityRef ref) {
-        return delete(tenant, ref.entityId());
+        return Promise.ofException(new UnsupportedOperationException(
+            "EntityStore.deleteByRef must be implemented by provider for collection-scoped identity"));
     }
 
     /**
@@ -203,7 +203,8 @@ public interface EntityStore {
      * @return promise of existence check
      */
     default Promise<Boolean> existsByRef(TenantContext tenant, EntityRef ref) {
-        return exists(tenant, ref.entityId());
+        return Promise.ofException(new UnsupportedOperationException(
+            "EntityStore.existsByRef must be implemented by provider for collection-scoped identity"));
     }
 
     /**

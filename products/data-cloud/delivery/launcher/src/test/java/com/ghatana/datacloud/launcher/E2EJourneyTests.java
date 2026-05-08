@@ -134,9 +134,10 @@ class E2EJourneyTests extends DataCloudHttpServerTestBase {
         @Test
         @DisplayName("POST /api/v1/events appends an event and GET /api/v1/events replays it")
         void appendThenReadEvents() throws Exception {
-            DataCloudClient.Event persistedEvent = DataCloudClient.Event.of(
-                    "ENTITY_CREATED",
-                    Map.of("entityId", "sales_2026"));
+            DataCloudClient.Event persistedEvent = DataCloudClient.Event.builder()
+                    .type("ENTITY_CREATED")
+                    .payload(Map.of("entityId", "sales_2026"))
+                    .build();
             when(mockClient.queryEvents(eq(TestConstants.TENANT_DEFAULT), any()))
                     .thenReturn(Promise.of(List.of(persistedEvent)));
 

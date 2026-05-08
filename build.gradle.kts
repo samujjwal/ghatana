@@ -73,6 +73,61 @@ tasks.matching { it.name == "check" }.configureEach {
     dependsOn("checkDocTags")
 }
 
+val checkDataCloudNoDeprecatedEventFactory by tasks.registering {
+    group = "verification"
+    description = "Fails when deprecated DataCloudClient.Event.of(...) is used under products/data-cloud."
+
+    val scanRoots = listOf(
+        rootProject.file("products/data-cloud")
+    )
+
+    inputs.files(scanRoots.map { root ->
+        project.fileTree(root) {
+            include("**/src/main/**/*.java")
+            include("**/src/test/**/*.java")
+        }
+    })
+
+    doLast {
+        val marker = "DataCloudClient.Event.of("
+        val violations = mutableListOf<String>()
+
+        scanRoots.forEach { root ->
+            if (!root.exists()) {
+                return@forEach
+            }
+            root.walkTopDown()
+                .filter { it.isFile }
+                .filter { it.extension == "java" }
+                .filter { file ->
+                    val p = file.invariantSeparatorsPath
+                    p.contains("/src/main/") || p.contains("/src/test/")
+                }
+                .forEach { file ->
+                    file.useLines { lines ->
+                        lines.forEachIndexed { index, line ->
+                            if (line.contains(marker)) {
+                                violations += "${project.relativePath(file)}:${index + 1}"
+                            }
+                        }
+                    }
+                }
+        }
+
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                "Deprecated DataCloudClient.Event.of(...) usage is forbidden. " +
+                    "Use DataCloudClient.Event.builder() instead.\n" +
+                    violations.joinToString("\n")
+            )
+        }
+    }
+}
+
+tasks.matching { it.name == "check" }.configureEach {
+    dependsOn(checkDataCloudNoDeprecatedEventFactory)
+}
+
 data class ArchitectureDependencyEdge(
     val fromProjectPath: String,
     val toProjectPath: String,

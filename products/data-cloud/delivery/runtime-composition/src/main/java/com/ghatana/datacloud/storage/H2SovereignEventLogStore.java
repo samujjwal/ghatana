@@ -33,6 +33,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 /**
@@ -53,16 +55,26 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
     private final Path databasePath;
     private final DataSource dataSource;
     private final Executor executor;
+    private final TailPollingConfig tailPollingConfig;
+    private final AtomicInteger activeSubscribers = new AtomicInteger(0);
+    private final AtomicLong totalPolls = new AtomicLong(0);
+    private final AtomicLong totalPollErrors = new AtomicLong(0);
+    private final AtomicLong lastPollDurationMs = new AtomicLong(0);
 
     private static final String SQLSTATE_UNIQUE_VIOLATION = "23505";
 
     public H2SovereignEventLogStore(Path sovereignDirectory) {
-        this(sovereignDirectory, Executors.newVirtualThreadPerTaskExecutor());
+        this(sovereignDirectory, Executors.newVirtualThreadPerTaskExecutor(), TailPollingConfig.defaults());
     }
 
     public H2SovereignEventLogStore(Path sovereignDirectory, Executor executor) {
+        this(sovereignDirectory, executor, TailPollingConfig.defaults());
+    }
+
+    public H2SovereignEventLogStore(Path sovereignDirectory, Executor executor, TailPollingConfig tailPollingConfig) {
         this.databasePath = Objects.requireNonNull(sovereignDirectory, "sovereignDirectory").resolve("events");
         this.executor = Objects.requireNonNull(executor, "executor");
+        this.tailPollingConfig = Objects.requireNonNull(tailPollingConfig, "tailPollingConfig");
         this.dataSource = createDataSource(databasePath);
         initializeSchema();
     }
@@ -144,9 +156,47 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
 
     @Override
     public Promise<Subscription> tail(TenantContext tenant, Offset from, Consumer<EventEntry> handler) {
+        if (activeSubscribers.get() >= tailPollingConfig.maxSubscribers()) {
+            return Promise.ofException(new IllegalStateException(
+                "Tail subscriber limit reached: " + tailPollingConfig.maxSubscribers()));
+        }
         PollingSubscription subscription = new PollingSubscription(tenant.tenantId(), from, handler);
         subscription.start();
         return Promise.of(subscription);
+    }
+
+    public Map<String, Object> tailRuntimeSnapshot() {
+        return Map.of(
+            "pollIntervalMs", tailPollingConfig.pollIntervalMs(),
+            "maxSubscribers", tailPollingConfig.maxSubscribers(),
+            "maxBatchSize", tailPollingConfig.maxBatchSize(),
+            "maxBackoffMs", tailPollingConfig.maxBackoffMs(),
+            "activeSubscribers", activeSubscribers.get(),
+            "totalPolls", totalPolls.get(),
+            "pollErrors", totalPollErrors.get(),
+            "lastPollDurationMs", lastPollDurationMs.get()
+        );
+    }
+
+    /**
+     * Configurable tail-poll controls for sovereign H2 event streaming.
+     */
+    public record TailPollingConfig(
+        long pollIntervalMs,
+        int maxSubscribers,
+        int maxBatchSize,
+        long maxBackoffMs
+    ) {
+        public TailPollingConfig {
+            pollIntervalMs = Math.max(10L, pollIntervalMs);
+            maxSubscribers = Math.max(1, maxSubscribers);
+            maxBatchSize = Math.max(1, maxBatchSize);
+            maxBackoffMs = Math.max(pollIntervalMs, maxBackoffMs);
+        }
+
+        public static TailPollingConfig defaults() {
+            return new TailPollingConfig(250L, 1024, 100, 30_000L);
+        }
     }
 
     public Path databasePath() {
@@ -483,21 +533,27 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
         }
     }
 
+    private List<EventEntry> readFromOffsetSync(String tenantId, long fromOffset, int limit) throws Exception {
+        return readWithPredicate(
+            tenantId,
+            " AND offset_value >= ? ORDER BY offset_value ASC LIMIT ?",
+            statement -> {
+                statement.setLong(2, fromOffset);
+                statement.setInt(3, limit);
+            });
+    }
+
     @FunctionalInterface
     private interface SqlBinder {
         void bind(PreparedStatement statement) throws Exception;
     }
 
     private final class PollingSubscription implements Subscription {
-        /** DC-PERF-003: configurable base poll interval in ms. */
-        private static final long BASE_POLL_MS = 250L;
-        /** DC-PERF-003: maximum backoff cap when errors are sustained. */
-        private static final long MAX_BACKOFF_MS = 30_000L;
-
         private final String tenantId;
         private final Consumer<EventEntry> handler;
         private final ScheduledExecutorService scheduler;
         private final AtomicBoolean cancelled;
+        private final AtomicBoolean counted;
         private volatile long nextOffset;
         /** Consecutive error count used to compute exponential backoff. */
         private volatile int consecutiveErrors = 0;
@@ -511,6 +567,7 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
                 return thread;
             });
             this.cancelled = new AtomicBoolean(false);
+            this.counted = new AtomicBoolean(false);
             long parsedOffset = parseOffset(from);
             if (parsedOffset < 0L) {
                 this.nextOffset = resolveLatestOffsetSnapshot(tenantId) + 1L;
@@ -520,7 +577,10 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
         }
 
         private void start() {
-            schedulePoll(BASE_POLL_MS);
+            if (counted.compareAndSet(false, true)) {
+                activeSubscribers.incrementAndGet();
+            }
+            schedulePoll(tailPollingConfig.pollIntervalMs());
         }
 
         private long resolveLatestOffsetSnapshot(String tenantId) {
@@ -540,34 +600,40 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
 
         private void doPoll() {
             if (cancelled.get()) return;
-            read(TenantContext.of(tenantId, Map.of()), Offset.of(nextOffset), 100)
-                .whenComplete((entries, error) -> {
-                    if (error != null) {
-                        consecutiveErrors++;
-                        long backoffMs = Math.min(BASE_POLL_MS * (1L << Math.min(consecutiveErrors, 7)), MAX_BACKOFF_MS);
-                        log.warn("DC-PERF-003: tail poll error for tenant={} (attempt {}), backing off {}ms: {}",
-                            tenantId, consecutiveErrors, backoffMs, error.getMessage());
-                        schedulePoll(backoffMs);
-                        return;
+            try {
+                long pollStartNanos = System.nanoTime();
+                List<EventEntry> entries = readFromOffsetSync(tenantId, nextOffset, tailPollingConfig.maxBatchSize());
+                totalPolls.incrementAndGet();
+                lastPollDurationMs.set(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - pollStartNanos));
+                consecutiveErrors = 0;
+                for (EventEntry entry : entries) {
+                    handler.accept(entry);
+                    String headerOffset = entry.headers().get(HEADER_OFFSET_KEY);
+                    if (headerOffset != null) {
+                        nextOffset = Long.parseLong(headerOffset) + 1L;
                     }
-                    consecutiveErrors = 0;
-                    if (entries != null) {
-                        for (EventEntry entry : entries) {
-                            handler.accept(entry);
-                            String headerOffset = entry.headers().get(HEADER_OFFSET_KEY);
-                            if (headerOffset != null) {
-                                nextOffset = Long.parseLong(headerOffset) + 1L;
-                            }
-                        }
-                    }
-                    schedulePoll(BASE_POLL_MS);
-                });
+                }
+                schedulePoll(tailPollingConfig.pollIntervalMs());
+            } catch (Exception error) {
+                consecutiveErrors++;
+                totalPollErrors.incrementAndGet();
+                long backoffMs = Math.min(
+                    tailPollingConfig.pollIntervalMs() * (1L << Math.min(consecutiveErrors, 7)),
+                    tailPollingConfig.maxBackoffMs());
+                log.warn("DC-PERF-003: tail poll error for tenant={} (attempt {}), backing off {}ms: {}",
+                    tenantId, consecutiveErrors, backoffMs, error.getMessage());
+                schedulePoll(backoffMs);
+            }
         }
 
         @Override
         public void cancel() {
-            cancelled.set(true);
-            scheduler.shutdownNow();
+            if (cancelled.compareAndSet(false, true)) {
+                if (counted.compareAndSet(true, false)) {
+                    activeSubscribers.decrementAndGet();
+                }
+                scheduler.shutdownNow();
+            }
         }
 
         @Override

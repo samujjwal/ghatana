@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -123,6 +124,11 @@ public class WarmTierEventLogStore implements EventLogStore {
 
     private final DataSource dataSource;
     private final Executor executor;
+    private final AtomicLong activeTailSubscribers = new AtomicLong();
+    private final AtomicLong totalTailSubscriptions = new AtomicLong();
+    private final AtomicLong totalTailPolls = new AtomicLong();
+    private final AtomicLong totalTailErrors = new AtomicLong();
+    private final AtomicLong totalTailEventsDispatched = new AtomicLong();
 
     /**
      * Creates a store backed by the given {@link DataSource}.
@@ -284,9 +290,43 @@ public class WarmTierEventLogStore implements EventLogStore {
 
     @Override
     public Promise<Subscription> tail(TenantContext tenant, Offset from, Consumer<EventEntry> handler) {
-        PollingSubscription subscription = new PollingSubscription(tenant, from, handler);
-        subscription.start(dataSource, executor);
-        return Promise.of(subscription);
+        return Promise.ofBlocking(executor, () -> {
+            long fromOffset = parseLong(from);
+            long effectiveOffset = fromOffset < 0 ? readLatestOffsetValue(tenant) + 1 : fromOffset;
+
+            PollingSubscription subscription = new PollingSubscription(
+                tenant,
+                Offset.of(effectiveOffset),
+                handler,
+                totalTailPolls,
+                totalTailErrors,
+                totalTailEventsDispatched,
+                activeTailSubscribers::decrementAndGet);
+
+            activeTailSubscribers.incrementAndGet();
+            totalTailSubscriptions.incrementAndGet();
+            subscription.start(dataSource, executor);
+            return (Subscription) subscription;
+        });
+    }
+
+    /**
+     * Runtime telemetry snapshot consumed by Runtime Truth posture reflection.
+     */
+    public Map<String, Object> tailRuntimeSnapshot() {
+        Map<String, Object> snapshot = new HashMap<>();
+        snapshot.put("available", true);
+        snapshot.put("configurable", false);
+        snapshot.put("storeType", getClass().getSimpleName());
+        snapshot.put("mode", "polling");
+        snapshot.put("pollIntervalMs", PollingSubscription.POLL_DELAY_MS);
+        snapshot.put("maxBatchSize", PollingSubscription.POLL_BATCH);
+        snapshot.put("activeSubscribers", activeTailSubscribers.get());
+        snapshot.put("totalSubscriptions", totalTailSubscriptions.get());
+        snapshot.put("totalPolls", totalTailPolls.get());
+        snapshot.put("pollErrors", totalTailErrors.get());
+        snapshot.put("eventsDispatched", totalTailEventsDispatched.get());
+        return Map.copyOf(snapshot);
     }
 
     // =========================================================================
@@ -376,6 +416,20 @@ public class WarmTierEventLogStore implements EventLogStore {
         }
     }
 
+    private long readLatestOffsetValue(TenantContext tenant) throws SQLException {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(LATEST_OFFSET_SQL)) {
+            ps.setString(1, tenant.tenantId());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    long val = rs.getLong(1);
+                    return rs.wasNull() ? 0L : val;
+                }
+                return 0L;
+            }
+        }
+    }
+
     // =========================================================================
     //  Polling Subscription (tail implementation)
     // =========================================================================
@@ -386,46 +440,68 @@ public class WarmTierEventLogStore implements EventLogStore {
      */
     private static final class PollingSubscription implements Subscription {
 
-        private static final int POLL_BATCH  = 100;
-        private static final long POLL_DELAY_MS = 250L;
+        static final int POLL_BATCH  = 100;
+        static final long POLL_DELAY_MS = 250L;
         private static final Logger log = LoggerFactory.getLogger(PollingSubscription.class);
 
         private final TenantContext tenant;
         private volatile long nextOffset;
         private final Consumer<EventEntry> handler;
         private final AtomicBoolean cancelled = new AtomicBoolean(false);
+        private final AtomicLong totalTailPolls;
+        private final AtomicLong totalTailErrors;
+        private final AtomicLong totalTailEventsDispatched;
+        private final Runnable onTerminate;
 
-        PollingSubscription(TenantContext tenant, Offset from, Consumer<EventEntry> handler) {
+        PollingSubscription(
+                TenantContext tenant,
+                Offset from,
+                Consumer<EventEntry> handler,
+                AtomicLong totalTailPolls,
+                AtomicLong totalTailErrors,
+                AtomicLong totalTailEventsDispatched,
+                Runnable onTerminate) {
             this.tenant     = tenant;
             this.nextOffset = parseLong(from);
             this.handler    = handler;
+            this.totalTailPolls = totalTailPolls;
+            this.totalTailErrors = totalTailErrors;
+            this.totalTailEventsDispatched = totalTailEventsDispatched;
+            this.onTerminate = onTerminate;
         }
 
         void start(DataSource dataSource, Executor executor) {
             executor.execute(() -> {
-                while (!cancelled.get()) {
-                    try {
-                        List<EventEntry> batch = poll(dataSource);
-                        for (EventEntry entry : batch) {
-                            if (cancelled.get()) return;
-                            handler.accept(entry);
-                        }
-                        if (batch.isEmpty()) {
-                            Thread.sleep(POLL_DELAY_MS);
-                        }
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        return;
-                    } catch (Exception e) {
-                        log.warn("WarmTierEventLogStore tail poll error for tenant={}: {}",
-                                tenant.tenantId(), e.getMessage(), e);
+                try {
+                    while (!cancelled.get()) {
                         try {
-                            Thread.sleep(POLL_DELAY_MS * 4); // back-off on error
+                            totalTailPolls.incrementAndGet();
+                            List<EventEntry> batch = poll(dataSource);
+                            for (EventEntry entry : batch) {
+                                if (cancelled.get()) return;
+                                handler.accept(entry);
+                                totalTailEventsDispatched.incrementAndGet();
+                            }
+                            if (batch.isEmpty()) {
+                                Thread.sleep(POLL_DELAY_MS);
+                            }
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
                             return;
+                        } catch (Exception e) {
+                            totalTailErrors.incrementAndGet();
+                            log.warn("WarmTierEventLogStore tail poll error for tenant={}: {}",
+                                    tenant.tenantId(), e.getMessage(), e);
+                            try {
+                                Thread.sleep(POLL_DELAY_MS * 4); // back-off on error
+                            } catch (InterruptedException ie) {
+                                Thread.currentThread().interrupt();
+                                return;
+                            }
                         }
                     }
+                } finally {
+                    onTerminate.run();
                 }
             });
         }

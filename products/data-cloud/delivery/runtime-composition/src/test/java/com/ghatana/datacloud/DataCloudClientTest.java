@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -145,6 +146,100 @@ class DataCloudClientTest extends EventloopTestBase {
             List<Event> events = runPromise( 
                     () -> client.queryEvents(TENANT, EventQuery.byType("sensor.reading")));
             assertThat(events).isNotEmpty(); 
+        }
+
+        @Test
+        @DisplayName("should apply fromOffset for type-filtered event queries")
+        void shouldApplyFromOffsetForTypeQueries() {
+            runPromise(() -> client.appendEvent(TENANT, Event.of("sensor.reading", Map.of("value", 1))));
+            runPromise(() -> client.appendEvent(TENANT, Event.of("other.event", Map.of("value", 2))));
+            runPromise(() -> client.appendEvent(TENANT, Event.of("sensor.reading", Map.of("value", 3))));
+            runPromise(() -> client.appendEvent(TENANT, Event.of("sensor.reading", Map.of("value", 4))));
+
+            EventQuery query = new EventQuery(
+                List.of("sensor.reading"),
+                null,
+                null,
+                Offset.of(2),
+                10);
+
+            List<Event> events = runPromise(() -> client.queryEvents(TENANT, query));
+
+            assertThat(events).hasSize(2);
+            assertThat(events).allMatch(event -> event.type().equals("sensor.reading"));
+            assertThat(events)
+                .extracting(event -> event.payload().get("value"))
+                .containsExactly(3, 4);
+        }
+
+        @Test
+        @DisplayName("should apply fromOffset for all-event queries")
+        void shouldApplyFromOffsetForAllQueries() {
+            runPromise(() -> client.appendEvent(TENANT, Event.of("event.one", Map.of("idx", 1))));
+            runPromise(() -> client.appendEvent(TENANT, Event.of("event.two", Map.of("idx", 2))));
+            runPromise(() -> client.appendEvent(TENANT, Event.of("event.three", Map.of("idx", 3))));
+
+            EventQuery query = new EventQuery(List.of(), null, null, Offset.of(1), 2);
+            List<Event> events = runPromise(() -> client.queryEvents(TENANT, query));
+
+            assertThat(events).hasSize(2);
+            assertThat(events)
+                .extracting(event -> event.payload().get("idx"))
+                .containsExactly(2, 3);
+        }
+
+        @Test
+        @DisplayName("should apply multi-type time-range query with store-level type pushdown")
+        void shouldApplyMultiTypeTimeRangeWithOffset() {
+            Instant base = Instant.parse("2026-01-01T00:00:00Z");
+
+            runPromise(() -> client.appendEvent(TENANT, Event.builder()
+                .type("type.a")
+                .source("test")
+                .timestamp(base)
+                .payload(Map.of("idx", 0))
+                .build()));
+            runPromise(() -> client.appendEvent(TENANT, Event.builder()
+                .type("type.b")
+                .source("test")
+                .timestamp(base.plusSeconds(1))
+                .payload(Map.of("idx", 1))
+                .build()));
+            runPromise(() -> client.appendEvent(TENANT, Event.builder()
+                .type("type.c")
+                .source("test")
+                .timestamp(base.plusSeconds(2))
+                .payload(Map.of("idx", 2))
+                .build()));
+            runPromise(() -> client.appendEvent(TENANT, Event.builder()
+                .type("type.a")
+                .source("test")
+                .timestamp(base.plusSeconds(3))
+                .payload(Map.of("idx", 3))
+                .build()));
+            runPromise(() -> client.appendEvent(TENANT, Event.builder()
+                .type("type.b")
+                .source("test")
+                .timestamp(base.plusSeconds(4))
+                .payload(Map.of("idx", 4))
+                .build()));
+
+            EventQuery query = new EventQuery(
+                List.of("type.a", "type.b"),
+                base.plusSeconds(1),
+                base.plusSeconds(4),
+                Offset.of(1),
+                10);
+
+            List<Event> events = runPromise(() -> client.queryEvents(TENANT, query));
+
+            assertThat(events).hasSize(2);
+            assertThat(events)
+                .extracting(Event::type)
+                .containsExactly("type.b", "type.a");
+            assertThat(events)
+                .extracting(event -> event.payload().get("idx"))
+                .containsExactly(1, 3);
         }
 
         @Test

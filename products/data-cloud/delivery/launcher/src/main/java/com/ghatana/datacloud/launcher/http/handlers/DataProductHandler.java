@@ -355,13 +355,17 @@ public final class DataProductHandler {
                             // Emit event log entry for degradation alert
                             if (client != null) {
                                 client.appendEvent(tenantId,
-                                    DataCloudClient.Event.of("data-product.sla-breach", Map.of(
-                                        "productId", productId,
-                                        "collection", collection,
-                                        "slaStatus", slaStatus,
-                                        "quality", snapshot.toMap(),
-                                        "detectedAt", Instant.now().toString()
-                                    ))).whenException(e -> log.warn("Failed to emit SLA breach event: {}", e.getMessage()));
+                                    DataCloudClient.Event.builder()
+                                        .type("data-product.sla-breach")
+                                        .payload(Map.of(
+                                            "productId", productId,
+                                            "collection", collection,
+                                            "slaStatus", slaStatus,
+                                            "quality", snapshot.toMap(),
+                                            "detectedAt", Instant.now().toString()
+                                        ))
+                                        .source("datacloud.launcher.data-product")
+                                        .build()).whenException(e -> log.warn("Failed to emit SLA breach event: {}", e.getMessage()));
                             }
                         }
                         return http.jsonResponse(result, requestId);

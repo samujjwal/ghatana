@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 /**
@@ -32,6 +34,9 @@ public final class InMemoryEventLogStoreProvider implements EventLogStore {
 
     private final Map<String, List<EventEntry>> store = new ConcurrentHashMap<>();
     private final Map<String, Long> offsets = new ConcurrentHashMap<>();
+    private final Map<String, List<Consumer<EventEntry>>> tailListeners = new ConcurrentHashMap<>();
+    private final AtomicLong totalTailSubscriptions = new AtomicLong();
+    private final AtomicLong totalTailNotifications = new AtomicLong();
 
     @Override
     public Promise<Offset> append(TenantContext tenant, EventEntry entry) {
@@ -39,7 +44,9 @@ public final class InMemoryEventLogStoreProvider implements EventLogStore {
         synchronized (entries) {
             // M4: compute offset first so we can embed it in the stored entry's headers
             long offset = offsets.compute(tenant.tenantId(), (key, value) -> value == null ? 1L : value + 1L);
-            entries.add(withOffsetHeader(entry, offset));
+            EventEntry storedEntry = withOffsetHeader(entry, offset);
+            entries.add(storedEntry);
+            notifyTailListeners(tenant.tenantId(), storedEntry);
             return Promise.of(Offset.of(offset));
         }
     }
@@ -52,7 +59,9 @@ public final class InMemoryEventLogStoreProvider implements EventLogStore {
             for (EventEntry entry : entries) {
                 // M4: embed offset header before storing
                 long offset = offsets.compute(tenant.tenantId(), (key, value) -> value == null ? 1L : value + 1L);
-                tenantEntries.add(withOffsetHeader(entry, offset));
+                EventEntry storedEntry = withOffsetHeader(entry, offset);
+                tenantEntries.add(storedEntry);
+                notifyTailListeners(tenant.tenantId(), storedEntry);
                 results.add(Offset.of(offset));
             }
         }
@@ -110,16 +119,67 @@ public final class InMemoryEventLogStoreProvider implements EventLogStore {
     public Promise<Subscription> tail(TenantContext tenant, Offset from, Consumer<EventEntry> handler) {
         List<EventEntry> entries = store.getOrDefault(tenant.tenantId(), List.of());
         int startIndex = tailStartIndex(from, entries.size());
-        // L4: create subscription first so cancellation is honoured between delivered entries
-        Subscription sub = new Subscription() {
-            private volatile boolean cancelled;
-            @Override public void cancel() { cancelled = true; }
-            @Override public boolean isCancelled() { return cancelled; }
+        // L4: create guarded callback so cancellation is honoured between delivered entries.
+        final String tenantId = tenant.tenantId();
+        final boolean[] cancelled = {false};
+
+        Consumer<EventEntry> guardedHandler = event -> {
+            if (!cancelled[0]) {
+                handler.accept(event);
+            }
         };
+
+        final Subscription sub = new Subscription() {
+            @Override
+            public void cancel() {
+                cancelled[0] = true;
+                List<Consumer<EventEntry>> listeners = tailListeners.get(tenantId);
+                if (listeners != null) {
+                    listeners.remove(guardedHandler);
+                }
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return cancelled[0];
+            }
+        };
+
         for (int i = startIndex; i < entries.size() && !sub.isCancelled(); i++) {
             handler.accept(entries.get(i));
         }
+
+        tailListeners.computeIfAbsent(tenantId, ignored -> new CopyOnWriteArrayList<>()).add(guardedHandler);
+        totalTailSubscriptions.incrementAndGet();
+
         return Promise.of(sub);
+    }
+
+    /**
+     * Runtime telemetry snapshot for Runtime Truth posture exposure.
+     */
+    public Map<String, Object> tailRuntimeSnapshot() {
+        return Map.of(
+            "available", true,
+            "configurable", false,
+            "storeType", getClass().getSimpleName(),
+            "mode", "push",
+            "activeSubscribers", activeSubscriberCount(),
+            "totalSubscriptions", totalTailSubscriptions.get(),
+            "totalNotifications", totalTailNotifications.get());
+    }
+
+    private void notifyTailListeners(String tenantId, EventEntry entry) {
+        List<Consumer<EventEntry>> listeners = tailListeners.get(tenantId);
+        if (listeners == null || listeners.isEmpty()) {
+            return;
+        }
+        totalTailNotifications.addAndGet(listeners.size());
+        listeners.forEach(listener -> listener.accept(entry));
+    }
+
+    private int activeSubscriberCount() {
+        return tailListeners.values().stream().mapToInt(List::size).sum();
     }
 
     /** Returns the stored offset value from an entry's headers, or Long.MAX_VALUE if absent. */

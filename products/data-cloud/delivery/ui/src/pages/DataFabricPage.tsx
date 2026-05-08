@@ -29,7 +29,7 @@ import {
 import { apiClient } from '../lib/api/client';
 import { migrateCollection as migrateCollectionApi, type MigrationTargetTier } from '../api/cost.service';
 import { aiOperationsService, type AiFabricAdvisory } from '../api/ai-operations.service';
-import { getCapabilitySignal, useCapabilityRegistry } from '../api/capabilities.service';
+import { getCapabilitySignal, useCapabilityRegistry } from '../api/surfaces.service';
 import { UnsupportedRuntimeBoundaryError } from '../lib/runtime-boundaries';
 import { UnsupportedSurfaceBoundary } from '../components/common/UnsupportedSurfaceBoundary';
 import { dataFabricMetricsBoundary } from '../components/common/unsupportedSurfaceRegistry';

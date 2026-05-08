@@ -9,7 +9,7 @@
  * @doc.layer frontend
  */
 
-import { useCapabilityRegistry, getCapabilitySignal, type CapabilitySignal } from '../api/capabilities.service';
+import { useCapabilityRegistry, getCapabilitySignal, type CapabilitySignal } from '../api/surfaces.service';
 
 export type GateMode = 'active' | 'activeOrDegraded' | 'notUnavailable';
 

@@ -11,7 +11,7 @@ vi.mock('../../lib/api/client', () => ({
   },
 }));
 
-import { fetchCapabilityRegistry, getCapabilitySignal } from '../../api/capabilities.service';
+import { fetchCapabilityRegistry, getCapabilitySignal } from '../../api/surfaces.service';
 
 describe('capabilities.service', () => {
   beforeEach(() => {

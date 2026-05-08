@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertTriangle, CheckCircle2, HelpCircle, MinusCircle } from 'lucide-react';
-import type { CapabilitySignal } from '../../api/capabilities.service';
+import type { CapabilitySignal } from '../../api/surfaces.service';
 import { cn } from '../../lib/theme';
 
 interface CapabilityTruthPanelProps {

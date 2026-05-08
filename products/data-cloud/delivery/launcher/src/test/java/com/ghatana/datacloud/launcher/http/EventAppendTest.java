@@ -196,8 +196,8 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
         @Test
         @DisplayName("returns 200 with events starting from specified offset")
         void readEvents_fromOffset_returns200() throws Exception { 
-            var event1 = DataCloudClient.Event.of("ENTITY_CREATED", Map.of("entityId", "ent-1")); 
-            var event2 = DataCloudClient.Event.of("ENTITY_UPDATED", Map.of("entityId", "ent-1")); 
+            var event1 = DataCloudClient.Event.builder().type("ENTITY_CREATED").payload(Map.of("entityId", "ent-1")).build(); 
+            var event2 = DataCloudClient.Event.builder().type("ENTITY_UPDATED").payload(Map.of("entityId", "ent-1")).build(); 
             when(mockClient.queryEvents(anyString(), any())) 
                     .thenReturn(Promise.of(List.of(event1, event2))); 
 
@@ -218,9 +218,15 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
          */
         @Test
         @DisplayName("returns 200 with empty list when offset exceeds stream length")
-        void readEvents_beyondStreamLength_returns200Empty() throws Exception {            var event1 = DataCloudClient.Event.of("ENTITY_CREATED", Map.of("entityId", "ent-1")); 
-            when(mockClient.queryEvents(anyString(), any())) 
-                    .thenReturn(Promise.of(List.of(event1))); 
+        void readEvents_beyondStreamLength_returns200Empty() throws Exception {
+            var event1 = DataCloudClient.Event.builder().type("ENTITY_CREATED").payload(Map.of("entityId", "ent-1")).build();
+            when(mockClient.queryEvents(anyString(), any()))
+                .thenAnswer(invocation -> {
+                    DataCloudClient.EventQuery query = invocation.getArgument(1);
+                    return query.fromOffset().value() > 0
+                        ? Promise.of(List.of())
+                        : Promise.of(List.of(event1));
+                });
             startServer(); 
 
             HttpResponse<String> resp = get("/api/v1/events?from=999999");
@@ -238,7 +244,7 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
         @Test
         @DisplayName("returns only events in tenant from X-Tenant-ID header")
         void readEvents_withTenantHeader_returnsOnlyTenantEvents() throws Exception { 
-            var event = DataCloudClient.Event.of("ENTITY_CREATED", Map.of("entityId", "ent-1")); 
+            var event = DataCloudClient.Event.builder().type("ENTITY_CREATED").payload(Map.of("entityId", "ent-1")).build(); 
             when(mockClient.queryEvents(anyString(), any())) 
                     .thenReturn(Promise.of(List.of(event))); 
 
@@ -261,12 +267,12 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
         @DisplayName("events are returned in strict append order")
         void readEvents_order_isStrictlyMonotonic() throws Exception { 
             // Create events with increasing-offset attributes
-            var event1 = DataCloudClient.Event.of("ENTITY_CREATED", 
-                    Map.of("entityId", "ent-1", "offset", 0)); 
-            var event2 = DataCloudClient.Event.of("ENTITY_UPDATED", 
-                    Map.of("entityId", "ent-1", "offset", 1)); 
-            var event3 = DataCloudClient.Event.of("ENTITY_DELETED", 
-                    Map.of("entityId", "ent-1", "offset", 2)); 
+            var event1 = DataCloudClient.Event.builder().type("ENTITY_CREATED")
+                .payload(Map.of("entityId", "ent-1", "offset", 0)).build(); 
+            var event2 = DataCloudClient.Event.builder().type("ENTITY_UPDATED")
+                .payload(Map.of("entityId", "ent-1", "offset", 1)).build(); 
+            var event3 = DataCloudClient.Event.builder().type("ENTITY_DELETED")
+                .payload(Map.of("entityId", "ent-1", "offset", 2)).build(); 
 
             when(mockClient.queryEvents(anyString(), any())) 
                     .thenReturn(Promise.of(List.of(event1, event2, event3))); 
@@ -305,8 +311,8 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
         @Test
         @DisplayName("returns 200 with event at specified offset")
         void getEventAtOffset_exists_returns200() throws Exception { 
-            var event = DataCloudClient.Event.of("ENTITY_CREATED", 
-                    Map.of("entityId", "ent-1", "offset", 0)); 
+            var event = DataCloudClient.Event.builder().type("ENTITY_CREATED")
+                .payload(Map.of("entityId", "ent-1", "offset", 0)).build(); 
             when(mockClient.queryEvents(anyString(), any())) 
                     .thenReturn(Promise.of(List.of(event))); 
 
@@ -327,7 +333,8 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
          */
         @Test
         @DisplayName("returns 404 when offset does not exist")
-        void getEventAtOffset_outOfRange_returns404() throws Exception {            var event = DataCloudClient.Event.of("ENTITY_CREATED", Map.of("entityId", "ent-1")); 
+        void getEventAtOffset_outOfRange_returns404() throws Exception {
+            var event = DataCloudClient.Event.builder().type("ENTITY_CREATED").payload(Map.of("entityId", "ent-1")).build(); 
             when(mockClient.queryEvents(anyString(), any())) 
                     .thenReturn(Promise.of(List.of(event))); 
             startServer(); 

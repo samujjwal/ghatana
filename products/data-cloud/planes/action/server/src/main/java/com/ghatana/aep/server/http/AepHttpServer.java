@@ -2274,7 +2274,11 @@ public class AepHttpServer {
         payload.put("stepType", "pipeline.rollback");
         payload.put("linkedVersions", List.of(previousVersion != null ? previousVersion : -1, restoredVersion));
 
-        return agentDataCloud.appendEvent(tenantId, DataCloudClient.Event.of("aep.pipeline.rollback", payload))
+        return agentDataCloud.appendEvent(tenantId, DataCloudClient.Event.builder()
+                .type("aep.pipeline.rollback")
+                .payload(payload)
+                .source("datacloud.action.aep-http-server")
+                .build())
             .map(offset -> auditId)
             .then(Promise::of, e -> {
                 log.warn("Failed to record pipeline rollback audit for pipelineId={}: {}", pipelineId, e.getMessage());
