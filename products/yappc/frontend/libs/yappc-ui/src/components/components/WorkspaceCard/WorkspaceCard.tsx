@@ -6,7 +6,6 @@ import React from 'react';
 
 import { Typography, IconButton, Box, Chip } from '@ghatana/design-system';
 
-import { resolveMuiColor } from '../../utils/safePalette';
 import { Button } from '../Button';
 import { Card, CardContent, CardActions } from '../Card';
 
@@ -146,13 +145,7 @@ export const WorkspaceCard: React.FC<WorkspaceCardProps> = ({
             <IconButton
               size="sm"
               onClick={handleFavoriteToggle}
-              color={
-                resolveMuiColor(
-                  useTheme(),
-                  favorite ? 'primary' : 'default',
-                  'default'
-                ) as unknown
-              }
+              color={favorite ? 'primary' : 'default'}
               aria-label={
                 favorite ? 'Remove from favorites' : 'Add to favorites'
               }
@@ -172,9 +165,8 @@ export const WorkspaceCard: React.FC<WorkspaceCardProps> = ({
         {description && (
           <Typography
             as="p"
-            className="text-sm"
             color="text.secondary"
-            className="mb-4"
+            className="mb-4 text-sm"
           >
             {description}
           </Typography>

@@ -18,7 +18,7 @@ import {
   Typography,
   Divider,
   Box,
-} from '@ghatana/design-system';
+} from '../../compat';
 
 import type { DataTableColumn } from './types';
 

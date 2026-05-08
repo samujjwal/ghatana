@@ -20,10 +20,12 @@ export type ChipColor =
   | 'info'
   | 'success';
 
+export type ChipTone = ChipColor | 'danger' | 'neutral';
+
 /**
  * Chip size variants
  */
-export type ChipSize = 'small' | 'medium';
+export type ChipSize = 'small' | 'medium' | 'sm' | 'md';
 
 /**
  * Props for the Chip component
@@ -48,6 +50,11 @@ export interface ChipProps extends Omit<
    * @default 'default'
    */
   color?: ChipColor;
+
+  /**
+   * Color alias used by newer primitives.
+   */
+  tone?: ChipTone;
 
   /**
    * Size variant
@@ -121,6 +128,7 @@ export const Chip = forwardRef<HTMLDivElement, ChipProps>(
       label,
       variant = 'filled',
       color = 'default',
+      tone,
       size = 'medium',
       icon,
       onDelete,
@@ -132,13 +140,21 @@ export const Chip = forwardRef<HTMLDivElement, ChipProps>(
     ref
   ) => {
     // Size classes
-    const sizeClasses: Record<ChipSize, string> = {
+    const normalizedSize = size === 'sm' ? 'small' : size === 'md' ? 'medium' : size;
+    const normalizedColor: ChipColor =
+      tone === 'danger'
+        ? 'error'
+        : tone === 'neutral'
+          ? 'default'
+          : (tone ?? color);
+
+    const sizeClasses: Record<'small' | 'medium', string> = {
       small: 'h-6 text-xs px-2 gap-1', // 24px height, 12px font, 8px padding
       medium: 'h-8 text-sm px-3 gap-1.5', // 32px height, 14px font, 12px padding
     };
 
     // Icon size classes
-    const iconSizeClasses: Record<ChipSize, string> = {
+    const iconSizeClasses: Record<'small' | 'medium', string> = {
       small: 'w-4 h-4', // 16px icon
       medium: 'w-5 h-5', // 20px icon
     };
@@ -219,15 +235,15 @@ export const Chip = forwardRef<HTMLDivElement, ChipProps>(
           // Base styles
           'inline-flex items-center justify-center rounded-full font-medium transition-colors select-none',
           // Size
-          sizeClasses[size],
+          sizeClasses[normalizedSize],
           // Variant and color
           variant === 'filled'
-            ? filledColorClasses[color]
-            : `border ${outlinedColorClasses[color]}`,
+            ? filledColorClasses[normalizedColor]
+            : `border ${outlinedColorClasses[normalizedColor]}`,
           // Interactive states
           isClickable && [
             'cursor-pointer',
-            variant === 'filled' && hoverColorClasses[color],
+            variant === 'filled' && hoverColorClasses[normalizedColor],
             variant === 'outlined' && 'hover:bg-grey-50',
             'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1',
           ],
@@ -241,7 +257,7 @@ export const Chip = forwardRef<HTMLDivElement, ChipProps>(
       >
         {/* Start icon */}
         {icon && (
-          <span className={cn('flex-shrink-0', iconSizeClasses[size])}>
+          <span className={cn('flex-shrink-0', iconSizeClasses[normalizedSize])}>
             {icon}
           </span>
         )}
@@ -257,7 +273,7 @@ export const Chip = forwardRef<HTMLDivElement, ChipProps>(
             disabled={disabled}
             className={cn(
               'flex-shrink-0 rounded-full transition-colors',
-              iconSizeClasses[size],
+              iconSizeClasses[normalizedSize],
               'hover:bg-black hover:bg-opacity-10',
               'focus:outline-none focus:bg-black focus:bg-opacity-10',
               disabled && 'cursor-not-allowed'

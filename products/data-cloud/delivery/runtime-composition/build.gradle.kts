@@ -80,6 +80,7 @@ dependencies {
     testImplementation("org.testcontainers:kafka:1.21.4")
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.hikaricp)
+    testImplementation(testFixtures(project(":products:data-cloud:planes:shared-spi")))
     testImplementation("io.grpc:grpc-testing:1.79.0")
     testImplementation("io.grpc:grpc-inprocess:1.79.0")
     testImplementation("org.xerial:sqlite-jdbc:3.46.0.0")
@@ -92,6 +93,16 @@ dependencies {
     testFixturesImplementation(project(":platform:java:testing"))
 
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")
+}
+
+val performanceTest by tasks.registering(Test::class) {
+    description = "Runs @Tag(\"performance\") tests."
+    group = "verification"
+    useJUnitPlatform {
+        includeTags("performance")
+    }
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
 }
 
 tasks.test {

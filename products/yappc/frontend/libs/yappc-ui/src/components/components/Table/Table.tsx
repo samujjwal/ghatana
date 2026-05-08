@@ -2,6 +2,22 @@ import * as React from 'react';
 
 import { cn } from '../../utils/cn';
 
+const isTableRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const renderCellValue = (value: unknown): React.ReactNode => {
+  if (React.isValidElement(value)) return value;
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  ) {
+    return value;
+  }
+  if (value === null || value === undefined) return null;
+  return String(value);
+};
+
 /**
  * Table column alignment
  */
@@ -273,7 +289,10 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
       if (typeof rowId === 'function') {
         return rowId(row, index);
       }
-      return row[rowId];
+      const value = isTableRecord(row) ? row[rowId] : undefined;
+      return typeof value === 'string' || typeof value === 'number'
+        ? value
+        : index;
     };
 
     // Check if row is selected
@@ -352,7 +371,9 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
           typeof column.accessor === 'function'
             ? column.accessor(row, index)
             : column.accessor
-              ? row[column.accessor]
+              ? isTableRecord(row)
+                ? row[column.accessor]
+                : undefined
               : undefined;
         return column.render(value, row, index);
       }
@@ -362,7 +383,7 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
       }
 
       if (column.accessor) {
-        return row[column.accessor];
+        return isTableRecord(row) ? row[column.accessor] : undefined;
       }
 
       return null;
@@ -566,7 +587,7 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
                           alignClasses[align]
                         )}
                       >
-                        {value}
+                        {renderCellValue(value)}
                       </td>
                     );
                   })}

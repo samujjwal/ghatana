@@ -34,7 +34,7 @@ export const PredictionsTab: React.FC<Props> = ({ insights }) => {
         <Card>
           <CardContent>
             <Typography as="h6">Build Time Prediction</Typography>
-            <Typography as="h4" tone="primary">
+            <Typography as="h4" color="primary">
               {insights.buildTimePrediction.predictedTime.toFixed(1)} minutes
             </Typography>
 
@@ -63,14 +63,12 @@ export const PredictionsTab: React.FC<Props> = ({ insights }) => {
             <Typography as="h6" gutterBottom>
               Performance Factors
             </Typography>
-            <List dense>
+            <List>
               {insights.buildTimePrediction.factors.map((factor, index) => (
                 <ListItem key={index}>
                   <ListItemText
                     primary={factor.name}
                     secondary={factor.description}
-                    primaryTypographyProps={{ variant: 'body2' }}
-                    secondaryTypographyProps={{ variant: 'caption' }}
                   />
                   <Box className="ml-auto">
                     <Chip

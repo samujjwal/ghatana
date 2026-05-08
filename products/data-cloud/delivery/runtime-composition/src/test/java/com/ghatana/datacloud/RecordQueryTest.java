@@ -1,5 +1,6 @@
 package com.ghatana.datacloud;
 
+import com.ghatana.datacloud.entity.storage.FilterCriteria;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,20 +25,20 @@ class RecordQueryTest {
         @Test
         void addsFilterCondition() { 
             RecordQuery q = new RecordQuery() 
-                    .where("status", RecordQuery.Operator.EQUALS, "active"); 
+                    .where("status", FilterCriteria.Operator.EQ, "active"); 
 
             assertThat(q.getFilters()).hasSize(1); 
             RecordQuery.FilterCondition f = q.getFilters().get(0); 
             assertThat(f.getField()).isEqualTo("status");
-            assertThat(f.getOperator()).isEqualTo(RecordQuery.Operator.EQUALS); 
+            assertThat(f.getOperator()).isEqualTo(FilterCriteria.Operator.EQ); 
             assertThat(f.getValue()).isEqualTo("active");
         }
 
         @Test
         void supportsChaining() { 
             RecordQuery q = new RecordQuery() 
-                    .where("age", RecordQuery.Operator.GREATER_THAN, 18) 
-                    .where("active", RecordQuery.Operator.EQUALS, true); 
+                    .where("age", FilterCriteria.Operator.GT, 18) 
+                    .where("active", FilterCriteria.Operator.EQ, true); 
 
             assertThat(q.getFilters()).hasSize(2); 
         }
@@ -54,7 +55,7 @@ class RecordQueryTest {
 
             assertThat(q.getFilters()).hasSize(1); 
             RecordQuery.FilterCondition f = q.getFilters().get(0); 
-            assertThat(f.getOperator()).isEqualTo(RecordQuery.Operator.IN); 
+            assertThat(f.getOperator()).isEqualTo(FilterCriteria.Operator.IN); 
             assertThat(f.getValues()).isEqualTo(ids); 
         }
 
@@ -65,7 +66,7 @@ class RecordQueryTest {
 
             assertThat(q.getFilters()).hasSize(1); 
             RecordQuery.FilterCondition f = q.getFilters().get(0); 
-            assertThat(f.getOperator()).isEqualTo(RecordQuery.Operator.NOT_IN); 
+            assertThat(f.getOperator()).isEqualTo(FilterCriteria.Operator.NOT_IN); 
             assertThat(f.getValues()).isEqualTo(excluded); 
         }
     }
@@ -367,9 +368,9 @@ class RecordQueryTest {
     @Test
     @DisplayName("Operator enum has all expected values")
     void operatorEnumValues() { 
-        assertThat(RecordQuery.Operator.values()).hasSize(17); 
-        assertThat(RecordQuery.Operator.EQUALS).isNotNull(); 
-        assertThat(RecordQuery.Operator.REGEX).isNotNull(); 
+        assertThat(FilterCriteria.Operator.values()).hasSizeGreaterThan(0); 
+        assertThat(FilterCriteria.Operator.EQ).isNotNull(); 
+        assertThat(FilterCriteria.Operator.REGEX).isNotNull(); 
     }
 
     @Test

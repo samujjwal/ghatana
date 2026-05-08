@@ -1,13 +1,8 @@
-// Legacy version (inline styles)
-export {
-  Breadcrumb as BreadcrumbLegacy,
-  type BreadcrumbItem,
-  type BreadcrumbProps as BreadcrumbLegacyProps,
-} from './Breadcrumb';
-
-// New Tailwind version (default export)
 export {
   Breadcrumb,
+  Breadcrumb as BreadcrumbLegacy,
   type BreadcrumbItemType,
   type BreadcrumbProps,
-} from 'yappc-ui/navigation-ui';
+  type BreadcrumbProps as BreadcrumbLegacyProps,
+} from './Breadcrumb.tailwind';
+export type { BreadcrumbItemType as BreadcrumbItem } from './Breadcrumb.tailwind';

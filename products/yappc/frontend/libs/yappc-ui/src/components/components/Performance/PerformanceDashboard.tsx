@@ -50,7 +50,6 @@ import {
 
 import { usePerformanceMonitoring } from '../../hooks/performance/usePerformanceMonitoring';
 import { wrapForTooltip } from '../../utils/accessibility';
-import { resolveMuiColor } from '../../utils/safePalette';
 
 import { PerformanceTrendingChart } from './PerformanceTrendingChart';
 
@@ -212,7 +211,17 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
 
   // Handle time range change
   const handleTimeRangeChange = useCallback((event: unknown) => {
-    setTimeRange(event.target.value);
+    if (
+      typeof event === 'object' &&
+      event !== null &&
+      'target' in event &&
+      typeof event.target === 'object' &&
+      event.target !== null &&
+      'value' in event.target &&
+      typeof event.target.value === 'string'
+    ) {
+      setTimeRange(event.target.value as typeof defaultTimeRange);
+    }
   }, []);
 
   // Toggle real-time updates
@@ -230,23 +239,13 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
         case 'up':
           return (
             <TrendingUpIcon
-              color={
-                resolveMuiColor(
-                  useTheme(),
-                  summary.status === 'critical' ? 'error' : 'primary',
-                  'default'
-                ) as unknown
+              className={
+                summary.status === 'critical' ? 'text-red-600' : 'text-blue-600'
               }
             />
           );
         case 'down':
-          return (
-            <TrendingDownIcon
-              color={
-                resolveMuiColor(useTheme(), 'success', 'default') as unknown
-              }
-            />
-          );
+          return <TrendingDownIcon className="text-green-600" />;
         default:
           return null;
       }
@@ -284,21 +283,19 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
             <Chip
               size="sm"
               label={`${summary.changePercent >= 0 ? '+' : ''}${summary.changePercent.toFixed(1)}%`}
-              color={resolveMuiColor(
-                useTheme(),
+              color={
                 summary.trend === 'down'
                   ? 'success'
                   : summary.trend === 'up'
                     ? 'error'
-                    : 'default',
-                'default'
-              )}
+                    : 'default'
+              }
               variant="outlined"
             />
             <Chip
               size="sm"
               label={summary.status}
-              color={resolveMuiColor(useTheme(), getStatusColor(), 'default')}
+              color={getStatusColor()}
               variant="filled"
             />
           </Box>
@@ -313,7 +310,7 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
       <Box className="flex items-center justify-between mb-6">
         <Box className="flex items-center gap-2">
           <DashboardIcon
-            color={resolveMuiColor(useTheme(), 'primary', 'default') as unknown}
+            className="text-blue-600"
           />
           <Typography as="h4" component="h1">
             {title}
@@ -322,16 +319,14 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
             <Chip
               size="sm"
               label="Live"
-              color={
-                resolveMuiColor(useTheme(), 'success', 'default') as unknown
-              }
+              color="success"
               variant="outlined"
             />
           )}
         </Box>
 
         <Box className="flex items-center gap-4">
-          <FormControl size="sm" className="min-w-[120px]">
+          <FormControl size="small" className="min-w-[120px]">
             <InputLabel>Time Range</InputLabel>
             <Select
               value={timeRange}
@@ -351,7 +346,7 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
               <Switch
                 checked={enableRealTime}
                 onChange={handleRealTimeToggle}
-                size="sm"
+                size="small"
               />
             }
             label="Real-time"
@@ -489,9 +484,9 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
                       <ListItem key={alert.id}>
                         <ListItemIcon>
                           {alert.severity === 'critical' ? (
-                            <ErrorIcon tone="danger" />
+                            <ErrorIcon className="text-red-600" />
                           ) : (
-                            <WarningIcon tone="warning" />
+                            <WarningIcon className="text-amber-600" />
                           )}
                         </ListItemIcon>
                         <ListItemText
@@ -501,15 +496,13 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
                         <Chip
                           size="sm"
                           label={alert.resolved ? 'Resolved' : alert.severity}
-                          color={resolveMuiColor(
-                            useTheme(),
+                          color={
                             alert.resolved
                               ? 'success'
                               : alert.severity === 'critical'
                                 ? 'error'
-                                : 'warning',
-                            'default'
-                          )}
+                                : 'warning'
+                          }
                           variant={alert.resolved ? 'outlined' : 'filled'}
                         />
                       </ListItem>
@@ -574,7 +567,6 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
       {lastUpdate && (
         <Typography
           as="span"
-          className="text-xs text-gray-500"
           color="text.secondary"
           className="block mt-4 text-center"
         >

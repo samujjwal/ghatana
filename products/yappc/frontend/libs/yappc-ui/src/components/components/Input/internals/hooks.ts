@@ -171,7 +171,7 @@ export function useDebouncedChange(
   onDebouncedChange: ((value: string) => void) | undefined,
   delayMs: number
 ) {
-  const debounceTimerRef = useRef<NodeJS.Timeout>();
+  const debounceTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const debouncedChangeHandler = useCallback(
     (value: string) => {

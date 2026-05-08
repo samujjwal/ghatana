@@ -23,10 +23,7 @@ import {
   Box,
   Card,
   CardContent,
-  Typography,
   Grid,
-  Stack,
-  Chip,
   Avatar,
   Badge,
   Tooltip,
@@ -36,7 +33,11 @@ import {
 
 import { selectedDomainIdAtom } from 'yappc-state';
 
+import type { TaskDomain } from '../../hooks/useConfig';
 import { useTaskDomains } from '../../hooks/useConfig';
+import { Chip } from '../Chip';
+import { Stack } from '../Stack';
+import { Typography } from '../Typography';
 
 // Domain icons mapping
 const DOMAIN_ICONS: Record<string, React.ReactNode> = {
@@ -77,7 +78,7 @@ export const EnhancedDomainSelector: React.FC<EnhancedDomainSelectorProps> = ({
     onDomainSelect?.(domainId);
   };
 
-  const getPersonaRelevanceScore = (domain: unknown) => {
+  const getPersonaRelevanceScore = (domain: TaskDomain) => {
     if (!currentPersona || !domain.personas) return 0;
     return domain.personas.includes(currentPersona) ? 2 : 1;
   };

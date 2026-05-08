@@ -354,7 +354,7 @@ export const DraggableCanvas: React.FC<DraggableCanvasProps> = ({
             <Typography as="p">
               Click on components in the library to add them to the canvas
             </Typography>
-            <Typography as="p" className="text-sm" className="mt-2">
+            <Typography as="p" className="mt-2 text-sm">
               Drag items to reorder them
             </Typography>
           </Box>

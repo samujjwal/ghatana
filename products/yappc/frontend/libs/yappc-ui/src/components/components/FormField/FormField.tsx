@@ -161,15 +161,18 @@ export const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
 
     // Clone children to add aria attributes
     const enhancedChildren = React.Children.map(children, (child) => {
-      if (React.isValidElement(child)) {
-        const childProps = child.props;
+      if (
+        React.isValidElement<
+          React.HTMLAttributes<HTMLElement> & { disabled?: boolean }
+        >(child)
+      ) {
         return React.cloneElement(child, {
           id: fieldId,
           'aria-invalid': error ? true : undefined,
           'aria-describedby': cn(errorId, helperId).trim() || undefined,
           'aria-required': required ? true : undefined,
-          disabled: disabled || childProps.disabled,
-        } as unknown);
+          disabled: disabled || child.props.disabled,
+        });
       }
       return child;
     });

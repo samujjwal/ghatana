@@ -238,6 +238,24 @@ class DataCloudHttpServerHealthTest {
         assertThat(eventStore).containsEntry("status", "UP"); 
     }
 
+    @Test
+    @DisplayName("DC-OPS-001 — health detail exposes trace_export as NOT_CONFIGURED when CLICKHOUSE_HOST is absent")
+    void healthDetailExposesTraceExportState_notConfigured() throws Exception {
+        startServer(); // no withTraceExportService() call → traceExportService is null
+
+        HttpResponse<String> response = get("/health/detail");
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = mapper.readValue(response.body(), Map.class);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems");
+        assertThat(subsystems).containsKey("trace_export");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> traceExport = (Map<String, Object>) subsystems.get("trace_export");
+        assertThat(traceExport).containsEntry("status", "NOT_CONFIGURED");
+    }
+
     private void startServer() throws Exception { 
         server = new DataCloudHttpServer(mockClient, port); 
         server.start(); 

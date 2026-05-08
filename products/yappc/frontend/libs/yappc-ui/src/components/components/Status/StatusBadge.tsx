@@ -226,7 +226,7 @@ export const StatusBadge = React.forwardRef<HTMLDivElement, StatusBadgeProps>(
       animated && (status === 'running' || status === 'pending')
         ? 'animate-pulse'
         : '',
-      (chipProps as unknown).className,
+      chipProps.className,
     ]
       .filter(Boolean)
       .join(' ');

@@ -56,7 +56,8 @@ export function useWebSocketSearch(
   } = options;
 
   // WebSocket connection
-  const { isConnected, send } = useWebSocket();
+  const { status, send } = useWebSocket({ autoConnect: enableRealTimeUpdates });
+  const isConnected = status === 'connected';
 
   // Search state
   const [query, setQuery] = useState('');

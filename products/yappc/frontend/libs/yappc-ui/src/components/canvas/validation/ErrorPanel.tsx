@@ -14,6 +14,41 @@ import type {
   ValidationSeverity,
 } from './CanvasValidator';
 
+type SeverityFilter = 'all' | ValidationSeverity;
+type CategoryFilter =
+  | 'all'
+  | 'component'
+  | 'event'
+  | 'performance'
+  | 'binding'
+  | 'accessibility';
+
+const severityOptions = new Set<SeverityFilter>([
+  'all',
+  'error',
+  'warning',
+  'info',
+]);
+
+const categoryOptions = new Set<CategoryFilter>([
+  'all',
+  'component',
+  'event',
+  'performance',
+  'binding',
+  'accessibility',
+]);
+
+const toSeverityFilter = (value: string): SeverityFilter =>
+  severityOptions.has(value as SeverityFilter)
+    ? (value as SeverityFilter)
+    : 'all';
+
+const toCategoryFilter = (value: string): CategoryFilter =>
+  categoryOptions.has(value as CategoryFilter)
+    ? (value as CategoryFilter)
+    : 'all';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -214,7 +249,9 @@ export const ErrorPanel: React.FC<ErrorPanelProps> = ({
                 </label>
                 <select
                   value={severityFilter}
-                  onChange={(e) => setSeverityFilter(e.target.value as unknown)}
+                  onChange={(e) =>
+                    setSeverityFilter(toSeverityFilter(e.target.value))
+                  }
                   style={{
                     width: '100%',
                     padding: '4px 8px',
@@ -250,7 +287,9 @@ export const ErrorPanel: React.FC<ErrorPanelProps> = ({
                 </label>
                 <select
                   value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value as unknown)}
+                  onChange={(e) =>
+                    setCategoryFilter(toCategoryFilter(e.target.value))
+                  }
                   style={{
                     width: '100%',
                     padding: '4px 8px',

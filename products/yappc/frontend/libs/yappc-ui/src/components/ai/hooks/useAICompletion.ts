@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 
-import type { IAIService, CompletionOptions } from 'yappc-ai/core';
+import type { IAIService, CompletionOptions } from '../aiServiceTypes';
 
 /**
  * AI completion state
@@ -146,7 +146,7 @@ export function useAICompletion(
   });
 
   const abortControllerRef = useRef<AbortController | null>(null);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
    * Cancel ongoing completion

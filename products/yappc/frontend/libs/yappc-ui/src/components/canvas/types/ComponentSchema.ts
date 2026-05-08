@@ -3,6 +3,32 @@
  */
 
 /**
+ * Component schema consumed by canvas import/export and template tooling.
+ */
+export interface ComponentSchema {
+  id?: string;
+  type: string;
+  props?: Record<string, unknown>;
+  children?: ComponentSchema[];
+  dataBinding?: {
+    source: string;
+    mode: 'one-way' | 'two-way' | 'one-time' | 'expression';
+    path?: string;
+  };
+  validation?: Array<{
+    type: string;
+    params?: unknown[];
+    message?: string;
+  }>;
+  events?: Record<string, { emit: string; payload?: Record<string, unknown> }>;
+  metadata?: {
+    label?: string;
+    description?: string;
+    category?: string;
+  };
+}
+
+/**
  * Transformation context
  */
 export interface TransformContext {

@@ -113,7 +113,7 @@ export const TextField = React.forwardRef<HTMLDivElement, TextFieldProps>(
         prefix={prefix}
         suffix={suffix}
         className={fieldClassName}
-        {...(rest as unknown)}
+        {...rest}
       />
     );
   }

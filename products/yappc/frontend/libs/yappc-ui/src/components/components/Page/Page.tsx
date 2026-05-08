@@ -1,11 +1,6 @@
 import React from 'react';
 
-import {
-  Box,
-  Typography,
-  Breadcrumb as Breadcrumbs,
-  Link,
-} from '@ghatana/design-system';
+import { Box, Typography, Link } from '@ghatana/design-system';
 
 import { type spacing } from '../../tokens';
 import { isMobile } from '../../utils/platform';
@@ -126,38 +121,43 @@ export const Page = React.forwardRef<HTMLDivElement, PageProps>(
     const renderHeader = () => (
       <Box className={mobile ? 'mb-4' : 'mb-6'}>
         {breadcrumbs && breadcrumbs.length > 0 && (
-          <Breadcrumbs aria-label="breadcrumb" className="mb-2">
+          <nav
+            aria-label="breadcrumb"
+            className="mb-2 flex flex-wrap items-center gap-2"
+          >
             {breadcrumbs.map((crumb, index) => {
               const isLast = index === breadcrumbs.length - 1;
-
-              if (isLast || !crumb.href) {
-                return (
-                  <Typography
-                    key={index}
-                    color={isLast ? 'text.primary' : 'text.secondary'}
-                    as="p"
-                    className="text-sm"
-                  >
-                    {crumb.label}
-                  </Typography>
-                );
-              }
-
-              return (
+              const content = isLast || !crumb.href ? (
+                <Typography
+                  color={isLast ? 'text.primary' : 'text.secondary'}
+                  as="span"
+                  className="text-sm"
+                >
+                  {crumb.label}
+                </Typography>
+              ) : (
                 <Link
-                  key={index}
-                  tone="neutral"
                   href={crumb.href}
                   onClick={crumb.onClick}
                   underline="hover"
-                  as="p"
-                  className="text-sm"
+                  className="text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                 >
                   {crumb.label}
                 </Link>
               );
+
+              return (
+                <React.Fragment key={`${crumb.label}-${index}`}>
+                  {content}
+                  {!isLast && (
+                    <span className="text-sm text-zinc-400" aria-hidden="true">
+                      /
+                    </span>
+                  )}
+                </React.Fragment>
+              );
             })}
-          </Breadcrumbs>
+          </nav>
         )}
 
         <Box className="flex items-center justify-between flex-wrap gap-4">

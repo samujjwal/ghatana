@@ -17,7 +17,7 @@ import {
   CardContent,
   LinearProgress,
   Typography,
-} from '@ghatana/design-system';
+} from '../../compat';
 
 import type { KPICardProps } from './types';
 

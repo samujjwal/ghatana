@@ -2,6 +2,8 @@ package com.ghatana.datacloud;
 
 import lombok.*;
 
+import com.ghatana.datacloud.entity.storage.FilterCriteria;
+
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.*;
@@ -29,8 +31,8 @@ import java.util.*;
  * <pre>{@code
  * // Simple query
  * RecordQuery query = RecordQuery.forCollection("users")
- *         .where("status", Operator.EQUALS, "active")
- *         .where("age", Operator.GREATER_THAN, 18)
+ *         .where("status", FilterCriteria.Operator.EQ, "active")
+ *         .where("age", FilterCriteria.Operator.GT, 18)
  *         .orderBy("createdAt", SortDirection.DESC)
  *         .limit(100);
  *
@@ -185,11 +187,16 @@ public class RecordQuery implements Serializable {
 
         private static final long serialVersionUID = 1L;
         private String field;
-        private Operator operator;
+        private FilterCriteria.Operator operator;
         private Object value;
         private List<Object> values; // for IN/NOT_IN operators
     }
 
+    /**
+     * @deprecated Use {@link FilterCriteria.Operator} directly. This enum is retained for
+     * backwards-compatibility only and will be removed in a future release.
+     */
+    @Deprecated
     public enum Operator {
         EQUALS,
         NOT_EQUALS,
@@ -279,7 +286,7 @@ public class RecordQuery implements Serializable {
     }
 
     // ==================== Fluent API ====================
-    public RecordQuery where(String field, Operator operator, Object value) {
+    public RecordQuery where(String field, FilterCriteria.Operator operator, Object value) {
         if (filters == null) {
             filters = new ArrayList<>();
         }
@@ -297,7 +304,7 @@ public class RecordQuery implements Serializable {
         }
         filters.add(FilterCondition.builder()
                 .field(field)
-                .operator(Operator.IN)
+                .operator(FilterCriteria.Operator.IN)
                 .values(values)
                 .build());
         return this;
@@ -309,7 +316,7 @@ public class RecordQuery implements Serializable {
         }
         filters.add(FilterCondition.builder()
                 .field(field)
-                .operator(Operator.NOT_IN)
+                .operator(FilterCriteria.Operator.NOT_IN)
                 .values(values)
                 .build());
         return this;

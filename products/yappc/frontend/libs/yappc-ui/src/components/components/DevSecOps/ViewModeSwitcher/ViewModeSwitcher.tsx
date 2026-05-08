@@ -17,7 +17,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
-} from '@ghatana/design-system';
+} from '../../compat';
 
 import type { ViewMode } from 'yappc-core/types/devsecops';
 
@@ -52,6 +52,12 @@ const VIEW_MODE_METADATA: Record<ViewMode, ViewModeMetadata> = {
 
 const DEFAULT_MODES: ViewMode[] = ['canvas', 'kanban', 'timeline', 'table'];
 
+const isViewMode = (value: string | null): value is ViewMode =>
+  value === 'canvas' ||
+  value === 'kanban' ||
+  value === 'timeline' ||
+  value === 'table';
+
 /**
  * ViewModeSwitcher - Toggle between different view modes
  *
@@ -80,9 +86,9 @@ export function ViewModeSwitcher({
 }: ViewModeSwitcherProps) {
   const handleChange = (
     _event: React.MouseEvent<HTMLElement>,
-    newMode: ViewMode | null
+    newMode: string | null
   ) => {
-    if (newMode !== null) {
+    if (isViewMode(newMode)) {
       onChange?.(newMode); // Use optional chaining to prevent crash
     }
   };

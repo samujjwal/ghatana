@@ -13,7 +13,7 @@ export interface BaseCanvasNode {
   position: { x: number; y: number };
   size: { width: number; height: number };
   style?: Record<string, unknown>;
-  data?: Record<string, unknown>;
+  data?: unknown;
 }
 
 /**

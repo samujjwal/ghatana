@@ -12,7 +12,6 @@ import {
   Typography,
 } from '@ghatana/design-system';
 
-import { resolveMuiColor } from '../../utils/safePalette';
 import { Grid } from '../Grid';
 
 import type { RecommendationCounts } from './types';
@@ -47,7 +46,6 @@ export const SummaryCards: React.FC<InsightsSummaryProps> = ({
   models = [],
   recommendationCounts = { critical: 0, high: 0, medium: 0, low: 0, total: 0 },
 }) => {
-  const theme = useTheme();
   return (
     <Grid cols="grid-cols-1 sm:grid-cols-2 md:grid-cols-4" gap="gap-4">
       {buildTimePrediction && (
@@ -55,9 +53,7 @@ export const SummaryCards: React.FC<InsightsSummaryProps> = ({
           <Card>
             <CardContent>
               <Box className="flex items-center gap-2 mb-2">
-                <TimerIcon
-                  color={resolveMuiColor(theme, 'info', 'default') as unknown}
-                />
+                <TimerIcon color="currentColor" />
                 <Typography as="h6">Build Time</Typography>
               </Box>
               <Typography as="h4" color="info.main">
@@ -83,32 +79,18 @@ export const SummaryCards: React.FC<InsightsSummaryProps> = ({
           <Card>
             <CardContent>
               <Box className="flex items-center gap-2 mb-2">
-                <SecurityIcon
-                  color={
-                    resolveMuiColor(
-                      theme,
-                      deploymentRisk.riskLevel === 'critical'
-                        ? 'error'
-                        : deploymentRisk.riskLevel === 'high'
-                          ? 'warning'
-                          : 'success',
-                      'default'
-                    ) as unknown
-                  }
-                />
+                <SecurityIcon color="currentColor" />
                 <Typography as="h6">Risk Level</Typography>
               </Box>
               <Typography
                 as="h4"
-                color={resolveMuiColor(
-                  theme,
+                color={
                   deploymentRisk.riskLevel === 'critical'
-                    ? 'error'
+                    ? 'danger'
                     : deploymentRisk.riskLevel === 'high'
                       ? 'warning'
-                      : 'success',
-                  'main'
-                )}
+                      : 'success'
+                }
               >
                 {deploymentRisk.riskLevel.toUpperCase()}
               </Typography>
@@ -124,9 +106,7 @@ export const SummaryCards: React.FC<InsightsSummaryProps> = ({
         <Card>
           <CardContent>
             <Box className="flex items-center gap-2 mb-2">
-              <LightbulbIcon
-                color={resolveMuiColor(theme, 'warning', 'default') as unknown}
-              />
+              <LightbulbIcon color="currentColor" />
               <Typography as="h6">Recommendations</Typography>
             </Box>
             <Typography as="h4" color="warning.main">
@@ -137,14 +117,14 @@ export const SummaryCards: React.FC<InsightsSummaryProps> = ({
                 <Chip
                   size="sm"
                   label={`${recommendationCounts.critical} Critical`}
-                  color={resolveMuiColor(theme, 'error', 'default')}
+                  color="danger"
                 />
               )}
               {recommendationCounts.high > 0 && (
                 <Chip
                   size="sm"
                   label={`${recommendationCounts.high} High`}
-                  color={resolveMuiColor(theme, 'warning', 'default')}
+                  color="warning"
                 />
               )}
             </Box>
@@ -156,9 +136,7 @@ export const SummaryCards: React.FC<InsightsSummaryProps> = ({
         <Card>
           <CardContent>
             <Box className="flex items-center gap-2 mb-2">
-              <RefreshIcon
-                color={resolveMuiColor(theme, 'success', 'default') as unknown}
-              />
+              <RefreshIcon color="currentColor" />
               <Typography as="h6">AI Accuracy</Typography>
             </Box>
             <Typography as="h4" color="success.main">

@@ -2,8 +2,6 @@ import React from 'react';
 
 import { Box } from '@ghatana/design-system';
 
-import { useGlobalStateValue } from 'yappc-state';
-
 /**
  * Native matchMedia hook replacing MUI's useTheme + useMediaQuery
  */
@@ -24,6 +22,8 @@ const useIsMobile = (): boolean => {
 
   return matches;
 };
+
+const getDefaultPlatform = (): 'web' | 'desktop' | 'mobile' => 'web';
 
 /**
  *
@@ -47,9 +47,7 @@ export function ResponsiveLayout({
   headerContent,
   footerContent,
 }: ResponsiveLayoutProps) {
-  const platform = useGlobalStateValue<'web' | 'desktop' | 'mobile'>(
-    'store:platform'
-  );
+  const platform = getDefaultPlatform();
   const isMobileSize = useIsMobile();
 
   // Determine layout based on platform and screen size
@@ -61,40 +59,37 @@ export function ResponsiveLayout({
     <Box className="flex flex-col h-screen">
       {/* Header */}
       {headerContent && (
-        <Box component="header" className="w-full z-50">
+        <header className="w-full z-50">
           {headerContent}
-        </Box>
+        </header>
       )}
 
       {/* Main content area with optional sidebar */}
       <Box className="flex flex-1 overflow-hidden">
         {/* Sidebar (desktop/web) */}
         {showSidebar && sidebarContent && (
-          <Box
-            component="aside"
+          <aside
             className="w-60 shrink-0 hidden sm:block border-r border-gray-200 dark:border-gray-700 overflow-auto"
           >
             {sidebarContent}
-          </Box>
+          </aside>
         )}
 
         {/* Main content */}
-        <Box
-          component="main"
+        <main
           className={`flex-1 p-4 overflow-auto ${showBottomNav ? 'pb-16' : 'pb-4'}`}
         >
           {children}
-        </Box>
+        </main>
       </Box>
 
       {/* Footer/Bottom Navigation (mobile) */}
       {showBottomNav && footerContent && (
-        <Box
-          component="footer"
+        <footer
           className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
         >
           {footerContent}
-        </Box>
+        </footer>
       )}
     </Box>
   );

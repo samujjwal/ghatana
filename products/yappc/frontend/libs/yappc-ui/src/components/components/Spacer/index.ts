@@ -1,15 +1,26 @@
 import * as React from 'react';
 
-import { Spacer as GlobalSpacer } from 'yappc-ui';
-import type { SpacerProps as GlobalSpacerProps } from 'yappc-ui';
+export interface SpacerProps extends React.HTMLAttributes<HTMLDivElement> {
+  size?: number | string;
+  axis?: 'horizontal' | 'vertical';
+}
 
-export type { GlobalSpacerProps as SpacerProps };
-
-export const Spacer = React.forwardRef<HTMLDivElement, GlobalSpacerProps>(
-  (props, ref) => React.createElement(GlobalSpacer, { ref, ...props })
+export const Spacer = React.forwardRef<HTMLDivElement, SpacerProps>(
+  ({ size = 4, axis = 'vertical', style, ...props }, ref) => {
+    const resolvedSize = typeof size === 'number' ? `${size}px` : size;
+    return React.createElement('div', {
+      ref,
+      'aria-hidden': true,
+      style: {
+        ...style,
+        [axis === 'vertical' ? 'height' : 'width']: resolvedSize,
+      },
+      ...props,
+    });
+  }
 );
 
 Spacer.displayName = 'Spacer';
 
 export { Spacer as SpacerTailwind };
-export type { GlobalSpacerProps as SpacerTailwindProps };
+export type { SpacerProps as SpacerTailwindProps };

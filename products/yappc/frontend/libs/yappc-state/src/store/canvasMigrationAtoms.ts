@@ -1,4 +1,5 @@
 import { atom } from 'jotai';
+import type { ReactNode } from 'react';
 import { featureFlagsAtom } from './atoms';
 
 export type BootstrapPhase =
@@ -8,14 +9,21 @@ export type BootstrapPhase =
   | 'test'
   | 'launch';
 
-export type InputMode = 'text' | 'voice' | 'upload' | 'canvas';
+export type InputMode = 'text' | 'voice' | 'upload' | 'canvas' | 'template';
 
-export type AgentStatus = 'idle' | 'thinking' | 'responding' | 'error';
+export type AgentStatus =
+  | 'idle'
+  | 'thinking'
+  | 'typing'
+  | 'responding'
+  | 'waiting'
+  | 'error';
 
 export interface QuestionOption {
   id: string;
   label: string;
   value: string;
+  icon?: ReactNode;
 }
 
 export interface Question {

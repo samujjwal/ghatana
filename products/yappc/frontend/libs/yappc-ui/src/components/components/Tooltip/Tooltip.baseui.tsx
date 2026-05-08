@@ -105,7 +105,9 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
   ) => {
     const resolvedContent = title ?? content ?? '';
     const [visible, setVisible] = useState(false);
-    const timerRef = useRef<ReturnType<typeof setTimeout>>();
+    const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+      undefined
+    );
     const tooltipId = useRef(
       `tooltip-${Math.random().toString(36).slice(2, 9)}`
     );

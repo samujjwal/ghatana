@@ -24,11 +24,12 @@ import {
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 
 import { cn } from '@ghatana/design-system';
-import { Button } from '@ghatana/design-system';
-import { Badge } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
 
 import { TooltipContent, TooltipTrigger } from 'yappc-ui';
+
+import { Badge } from '../Badge';
+import { Button } from '../Button';
 
 // =============================================================================
 // Web Speech API Types (for environments without native types)
@@ -52,17 +53,12 @@ interface SpeechRecognitionResultList {
   [index: number]: SpeechRecognitionResult;
 }
 
-interface SpeechRecognitionEventInit extends EventInit {
-  resultIndex?: number;
-  results: SpeechRecognitionResultList;
-}
-
-interface SpeechRecognitionEventType extends Event {
+interface SpeechRecognitionResultEvent {
   readonly resultIndex: number;
   readonly results: SpeechRecognitionResultList;
 }
 
-interface SpeechRecognitionErrorEventType extends Event {
+interface SpeechRecognitionErrorEventType {
   readonly error:
     | 'no-speech'
     | 'audio-capture'
@@ -88,12 +84,18 @@ interface SpeechRecognitionType extends EventTarget {
       ) => void)
     | null;
   onresult:
-    | ((this: SpeechRecognitionType, ev: SpeechRecognitionEventType) => void)
+    | ((this: SpeechRecognitionType, ev: SpeechRecognitionResultEvent) => void)
     | null;
   start(): void;
   stop(): void;
   abort(): void;
 }
+
+type SpeechRecognitionWindow = Window &
+  typeof globalThis & {
+    SpeechRecognition?: new () => SpeechRecognitionType;
+    webkitSpeechRecognition?: new () => SpeechRecognitionType;
+  };
 
 // =============================================================================
 // Types
@@ -229,11 +231,11 @@ export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
   useEffect(() => {
     if (!isSpeechSupported) return;
 
+    const speechWindow = window as SpeechRecognitionWindow;
     const SpeechRecognitionConstructor =
-      (window as unknown).SpeechRecognition ||
-      (window as unknown).webkitSpeechRecognition;
-    const recognition: SpeechRecognitionType =
-      new SpeechRecognitionConstructor();
+      speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
+    if (!SpeechRecognitionConstructor) return;
+    const recognition = new SpeechRecognitionConstructor();
 
     recognition.continuous = true;
     recognition.interimResults = showInterim;
@@ -246,7 +248,7 @@ export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
       onStart?.();
     };
 
-    recognition.onresult = (event: SpeechRecognitionEventType) => {
+    const handleSpeechResult = (event: SpeechRecognitionResultEvent): void => {
       let interim = '';
       let final = '';
 
@@ -273,7 +275,11 @@ export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
       }
     };
 
-    recognition.onerror = (event: SpeechRecognitionErrorEventType) => {
+    (recognition as { onresult: ((event: unknown) => void) | null }).onresult = (event: unknown) => {
+      handleSpeechResult(event as SpeechRecognitionResultEvent);
+    };
+
+    recognition.onerror = (event: { error: string; message?: string }) => {
       let message = 'An error occurred';
       switch (event.error) {
         case 'no-speech':

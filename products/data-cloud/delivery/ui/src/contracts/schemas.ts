@@ -669,6 +669,70 @@ export const AiQualitySummarySchema = z.object({
 
 export const AiQualitySummaryResponseSchema = apiEnvelopeSchema(AiQualitySummarySchema);
 
+// ---------------------------------------------------------------------------
+// Data Quality / Governance (P3)
+// ---------------------------------------------------------------------------
+
+export const DataQualityTrustScoreSchema = z.object({
+  collection: z.string(),
+  qualityScore: z.number().min(0).max(1),
+  trustScore: z.number().min(0).max(100),
+  lifecycleStatus: z.string(),
+  operationalStatus: z.string(),
+  qualityMetrics: z.record(z.string(), z.number()).optional(),
+  computedAt: z.string(),
+});
+
+export const DataQualityTrustScoresSchema = z.object({
+  tenantId: z.string(),
+  count: z.number(),
+  generatedAt: z.string(),
+  scores: z.array(DataQualityTrustScoreSchema),
+});
+
+export const DataQualityTrustScoresResponseSchema = apiEnvelopeSchema(DataQualityTrustScoresSchema);
+
+export const GovernancePolicySimulationRequestSchema = z.object({
+  name: z.string().optional(),
+  type: z.string().optional(),
+  description: z.string().optional(),
+  enabled: z.boolean().optional(),
+  scope: z.record(z.string(), z.unknown()).optional(),
+  rules: z.array(z.record(z.string(), z.unknown())).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const GovernancePolicySimulationResultSchema = z.object({
+  dryRun: z.boolean(),
+  simulatedAt: z.string(),
+  policyType: z.string(),
+  affectedCollections: z.number(),
+  totalCollections: z.number(),
+  policyConflicts: z.number(),
+  estimatedBlockedOperations: z.number(),
+  riskLevel: z.enum(['low', 'medium', 'high']),
+  scope: z.record(z.string(), z.unknown()).optional(),
+  sampleCollections: z.array(z.string()),
+  recommendations: z.array(z.string()),
+});
+
+export const GovernancePolicySimulationResponseSchema = apiEnvelopeSchema(GovernancePolicySimulationResultSchema);
+
+export const GovernanceInventorySchema = z.object({
+  tenantId: z.string(),
+  collectionsTotal: z.number(),
+  collectionsClassified: z.number(),
+  collectionsUnclassified: z.number(),
+  activeLegalHolds: z.number(),
+  totalPiiFields: z.number(),
+  generatedAt: z.string(),
+  auditEventsIn30Days: z.number().optional(),
+  redactionsIn30Days: z.number().optional(),
+  purgesIn30Days: z.number().optional(),
+}).passthrough();
+
+export const GovernanceInventoryResponseSchema = apiEnvelopeSchema(GovernanceInventorySchema);
+
 export const AnomalyDetectionRequestSchema = z.object({
   collectionName: z.string().min(1),
   timeRange: z.object({
@@ -1490,3 +1554,8 @@ export type ConnectorType = z.infer<typeof ConnectorTypeSchema>;
 export type CreateConnectorRequest = z.infer<typeof CreateConnectorRequestSchema>;
 export type UpdateConnectorRequest = z.infer<typeof UpdateConnectorRequestSchema>;
 export type AiQualitySummary = z.infer<typeof AiQualitySummarySchema>;
+export type DataQualityTrustScore = z.infer<typeof DataQualityTrustScoreSchema>;
+export type DataQualityTrustScores = z.infer<typeof DataQualityTrustScoresSchema>;
+export type GovernancePolicySimulationRequest = z.infer<typeof GovernancePolicySimulationRequestSchema>;
+export type GovernancePolicySimulationResult = z.infer<typeof GovernancePolicySimulationResultSchema>;
+export type GovernanceInventory = z.infer<typeof GovernanceInventorySchema>;

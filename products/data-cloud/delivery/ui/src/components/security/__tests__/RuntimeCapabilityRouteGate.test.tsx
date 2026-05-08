@@ -3,8 +3,8 @@ import { render, screen } from '@testing-library/react';
 import type { CapabilityRegistrySnapshot } from '../../../api/capabilities.service';
 
 const { mockUseCapabilityRegistry, mockUseCapabilityGate } = vi.hoisted(() => ({
-  mockUseCapabilityRegistry: vi.fn<[], { data: CapabilityRegistrySnapshot | undefined; isLoading: boolean }>(),
-  mockUseCapabilityGate: vi.fn<[string[], 'active' | 'activeOrDegraded' | 'notUnavailable' | undefined], boolean>(),
+  mockUseCapabilityRegistry: vi.fn<() => { data: CapabilityRegistrySnapshot | undefined; isLoading: boolean }>(),
+  mockUseCapabilityGate: vi.fn<(capabilities: string[], mode?: 'active' | 'activeOrDegraded' | 'notUnavailable') => boolean>(),
 }));
 
 vi.mock('../../../api/capabilities.service', () => ({

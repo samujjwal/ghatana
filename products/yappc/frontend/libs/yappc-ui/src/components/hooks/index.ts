@@ -13,4 +13,20 @@ export * from './performance';
 export * from './ai';
 export * from './useOnboardingTour';
 export * from './auth';
-export * from 'yappc-state/config-hooks';
+export {
+  configQueryKeys,
+  usePersonas,
+  usePersona,
+  useDomains,
+  useDomain,
+  useTemplates,
+  useTemplate,
+  useTasks,
+  useTask,
+} from 'yappc-state/config-hooks';
+export type {
+  PersonaConfig,
+  TaskTemplate,
+  TaskData,
+  WorkflowConfig,
+} from 'yappc-state/config-hooks';

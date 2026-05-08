@@ -29,11 +29,12 @@ import {
 import React, { useState, useCallback } from 'react';
 
 import { cn } from '@ghatana/design-system';
-import { Button } from '@ghatana/design-system';
-import { Dialog } from '@ghatana/design-system';
-import { Badge } from '@ghatana/design-system';
 import { Input } from '@ghatana/design-system';
 import { Progress } from '@ghatana/design-system';
+
+import { Badge } from '../Badge';
+import { Button } from '../Button';
+import { Dialog } from '../Dialog';
 
 import {
   DropdownMenu,

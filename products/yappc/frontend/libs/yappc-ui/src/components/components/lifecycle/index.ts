@@ -4,18 +4,21 @@
  */
 
 // Components
+import { lifecycleStageStyles } from './LifecycleStage';
+import { projectDashboardStyles } from './ProjectDashboard';
+import { stageNavigationStyles } from './StageNavigation';
+import { taskListStyles } from './TaskList';
+
+export { LifecycleStage, LIFECYCLE_STAGES } from './LifecycleStage';
+export { ProjectDashboard } from './ProjectDashboard';
+export { TaskList } from './TaskList';
+export { StageNavigation, type StageNavigationProps } from './StageNavigation';
 export {
-  LifecycleStage,
-  LIFECYCLE_STAGES,
   lifecycleStageStyles,
-} from './LifecycleStage';
-export { ProjectDashboard, projectDashboardStyles } from './ProjectDashboard';
-export { TaskList, taskListStyles } from './TaskList';
-export {
-  StageNavigation,
+  projectDashboardStyles,
   stageNavigationStyles,
-  type StageNavigationProps,
-} from 'yappc-ui/navigation-ui';
+  taskListStyles,
+};
 
 // Hooks (from parent directory)
 export {

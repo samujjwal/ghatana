@@ -23,14 +23,22 @@ const flattenChildren = (children: React.ReactNode): React.ReactNode[] => {
   return result;
 };
 
-const getDisplayName = (type: React.ElementType): string => {
+const getDisplayName = (type: unknown): string => {
   if (typeof type === 'string') {
     return type;
   }
   if (typeof type === 'function') {
-    return type.displayName ?? type.name ?? '';
+    return (
+      (type as { displayName?: string; name?: string }).displayName ??
+      (type as { displayName?: string; name?: string }).name ??
+      ''
+    );
   }
-  if (typeof (type as { displayName?: string }).displayName === 'string') {
+  if (
+    typeof type === 'object' &&
+    type !== null &&
+    typeof (type as { displayName?: string }).displayName === 'string'
+  ) {
     return (type as { displayName?: string }).displayName ?? '';
   }
   return '';
@@ -38,7 +46,7 @@ const getDisplayName = (type: React.ElementType): string => {
 
 const isElementNamed = (element: React.ReactNode, name: string): boolean =>
   React.isValidElement(element) &&
-  getDisplayName(element.type as unknown) === name;
+  getDisplayName(element.type) === name;
 
 /**
  * Tabs variant types

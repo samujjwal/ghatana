@@ -26,7 +26,10 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
     | 'primary'
     | 'secondary'
     | 'error'
+    | 'danger'
+    | 'destructive'
     | 'warning'
+    | 'amber'
     | 'info'
     | 'success'
     | 'default';
@@ -41,7 +44,35 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
    * Badge variant
    * @default 'standard'
    */
-  variant?: 'standard' | 'dot';
+  variant?:
+    | 'standard'
+    | 'dot'
+    | 'solid'
+    | 'outline'
+    | 'secondary'
+    | 'destructive'
+    | 'success'
+    | 'warning';
+
+  /**
+   * Legacy color scheme alias used by older YAPPC surfaces.
+   */
+  colorScheme?:
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'error'
+    | 'danger'
+    | 'destructive'
+    | 'warning'
+    | 'amber'
+    | 'info'
+    | 'default';
+
+  /**
+   * Tone alias used by newer package-local primitives.
+   */
+  tone?: BadgeProps['colorScheme'];
 
   /**
    * Hide badge when badgeContent is 0
@@ -133,6 +164,8 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
       color = 'primary',
       size = 'medium',
       variant = 'standard',
+      colorScheme,
+      tone,
       showZero = false,
       max = 99,
       overlap = 'rectangular',
@@ -145,6 +178,29 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
     },
     ref
   ) => {
+    const resolvedColor =
+      variant === 'destructive'
+        ? 'error'
+        : variant === 'success'
+          ? 'success'
+          : variant === 'warning'
+            ? 'warning'
+            : (tone ?? colorScheme ?? color) === 'danger'
+              ? 'error'
+            : (tone ?? colorScheme) === 'amber'
+              ? 'warning'
+              : (tone ?? colorScheme) === 'destructive'
+                ? 'error'
+                : (tone ?? colorScheme ?? color);
+    const resolvedVariant =
+      variant === 'solid' ||
+      variant === 'outline' ||
+      variant === 'secondary' ||
+      variant === 'destructive' ||
+      variant === 'success' ||
+      variant === 'warning'
+        ? 'standard'
+        : variant;
     // Determine if badge should be shown
     const isZero = badgeContent === 0 || badgeContent === '0';
     const shouldHide = invisible || (isZero && !showZero);
@@ -157,13 +213,13 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
 
     // If no children, render standalone badge
     if (!children) {
-      if (variant === 'dot') {
+      if (resolvedVariant === 'dot') {
         return (
           <span
             ref={ref}
             className={cn(
               'inline-flex rounded-full',
-              colorClasses[color],
+              colorClasses[resolvedColor],
               dotSizeClasses[size],
               pulse && 'animate-pulse',
               shouldHide && 'hidden',
@@ -178,8 +234,8 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
         <span
           ref={ref}
           className={cn(
-            'inline-flex items-center justify-center rounded-full font-medium',
-            colorClasses[color],
+              'inline-flex items-center justify-center rounded-full font-medium',
+              colorClasses[resolvedColor],
             sizeClasses[size],
             pulse && 'animate-pulse',
             shouldHide && 'hidden',
@@ -204,15 +260,15 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
           <span
             className={cn(
               'absolute flex items-center justify-center rounded-full font-medium',
-              colorClasses[color],
-              variant === 'dot' ? dotSizeClasses[size] : sizeClasses[size],
+              colorClasses[resolvedColor],
+              resolvedVariant === 'dot' ? dotSizeClasses[size] : sizeClasses[size],
               positionClasses[anchorOrigin],
               overlap === 'circular' && 'origin-center scale-100',
               pulse && 'animate-pulse',
               'ring-2 ring-white'
             )}
           >
-            {variant === 'standard' && displayContent}
+            {resolvedVariant === 'standard' && displayContent}
           </span>
         )}
       </span>

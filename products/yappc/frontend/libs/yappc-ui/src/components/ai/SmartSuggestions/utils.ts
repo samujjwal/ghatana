@@ -91,9 +91,17 @@ export async function fetchSuggestionsForType(
     ...completionOptions,
   });
 
+  const content =
+    typeof response === 'object' &&
+    response !== null &&
+    'content' in response &&
+    typeof response.content === 'string'
+      ? response.content
+      : '';
+
   return parseResponseToSuggestions(
     type,
-    response?.content as string,
+    content,
     maxPerType,
     minConfidence,
     seen

@@ -200,12 +200,14 @@ Missing auth configuration causes a startup failure validated by `DataCloudHttpL
 After startup, confirm the health endpoints respond correctly:
 
 ```bash
-curl http://localhost:8080/health/ready     # must return 200 {"status":"UP"}
-curl http://localhost:8080/health/live      # must return 200
-curl http://localhost:8080/metrics          # must return Prometheus text format
+curl http://localhost:8080/ready     # must return 200 {"status":"UP"}
+curl http://localhost:8080/live      # must return 200
+curl http://localhost:8080/metrics   # must return Prometheus text format
+curl http://localhost:8080/health/detail  # full subsystem breakdown
+```
 ```
 
-The readiness probe returns `503` until all durable stores (PostgreSQL, Kafka) have established their connections.
+The readiness probe (`/ready`) returns `503` until all durable stores (PostgreSQL, Kafka) have established their connections. Use `/health/detail` for a full subsystem breakdown.
 
 ### Step 4 — Run migration contract checks
 
@@ -240,6 +242,175 @@ If these warnings appear with `DATACLOUD_PROFILE=production`, the startup guard 
 | `production` | PostgreSQL | Kafka | Required | JDBC (required) |
 
 Profiles `staging` and `production` use the strict profile policy. In-memory settings storage is rejected at startup in both.
+
+## Trace Export Configuration and Diagnostics
+
+Trace export is optional but recommended for production observability. Spans are flushed to ClickHouse via the `B4` trace export service.
+
+### Environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `CLICKHOUSE_HOST` | _(not set)_ | When absent, trace export is **disabled** (degraded, not an error) |
+| `CLICKHOUSE_PORT` | `8123` | ClickHouse HTTP port |
+| `CLICKHOUSE_DATABASE` | `observability` | ClickHouse database for trace spans |
+| `CLICKHOUSE_USER` | _(optional)_ | ClickHouse authentication user |
+| `CLICKHOUSE_PASSWORD` | _(optional)_ | ClickHouse authentication password |
+
+### Checking trace export state
+
+The health endpoint exposes the runtime trace export state under the `trace_export` subsystem key:
+
+```bash
+curl -s http://localhost:8080/ready | jq '.subsystems.trace_export'
+```
+
+Expected responses:
+
+```json
+# ClickHouse configured — spans are being exported
+{ "status": "UP", "exporter": "clickhouse" }
+
+# ClickHouse not configured — spans are dropped (not an error; feature disabled)
+{ "status": "NOT_CONFIGURED", "detail": "CLICKHOUSE_HOST not set — spans are not exported" }
+```
+
+### Degraded trace export
+
+If `CLICKHOUSE_HOST` is set but ClickHouse is unreachable:
+
+1. The bootstrap logs a warning: `CLICKHOUSE_HOST not set — trace spans will not be exported (B4 degraded)`.
+2. All HTTP traffic continues unaffected — trace export failures are non-blocking.
+3. Monitor the `dc.trace.export.*` Prometheus counters to detect export error rate.
+
+To restore: fix ClickHouse connectivity, then restart the service (the trace exporter is wired at startup).
+
+---
+
+## Audit Trail Configuration and Diagnostics
+
+Audit events for sensitive mutations (entity delete, governance changes, schema drops, bulk exports) are durably persisted to the platform event store, which uses the same backing store as the `EventLogStore` (Kafka in production, in-memory for local/dev).
+
+### Audit storage
+
+Audit events are written to the `__audit` stream within the event store. In Kafka-backed deployments, this corresponds to the `__audit` Kafka topic scoped per tenant.
+
+### Checking audit service availability
+
+```bash
+# Production startup fails if audit service is unavailable — confirm it started cleanly
+curl -s http://localhost:8080/health/ready | jq '.subsystems'
+```
+
+In non-embedded profiles with missing audit service wiring, the startup guard throws `DataCloudTransportStartupException` and the process exits. Validated by `DataCloudHttpServerProductionDependencyTest`.
+
+### Inspecting audit events (local/dev)
+
+The `GET /api/v1/autonomy/logs` endpoint exposes a recent audit summary when the server is running in local mode with an in-memory event store. For Kafka-backed production deployments, query the `__audit` Kafka topic directly.
+
+### Audit coverage per route classification
+
+| Route classification | Audit emission |
+|---|---|
+| SENSITIVE (entity delete, bulk export, schema drop) | Always emitted — includes `tenantId`, `actor`, `traceId`, `action`, `result` |
+| CRITICAL (governance operations) | Always emitted |
+| READ (GET entity, analytics query) | Not audited |
+
+---
+
+## Route-Level Metrics Reference
+
+Route metrics are emitted by `DataCloudHttpMetrics` and follow the Prometheus text format at `/metrics`.
+
+### Key metrics
+
+| Prometheus metric | Type | Description |
+|---|---|---|
+| `dc_http_requests_total` | Counter | Total HTTP requests per handler/operation/tenant/status |
+| `dc_http_request_latency_seconds` | Timer/Histogram | Request latency per handler/operation/tenant |
+| `dc_http_errors_total` | Counter | HTTP errors per handler/operation/tenant |
+| `dc_entity_operations_total` | Counter | Entity CRUD operations (create/update/delete) |
+| `dc_event_append_total` | Counter | Event append operations |
+| `dc_governance_operations_total` | Counter | Governance/policy operations |
+| `dc_ai_recommendation_requests_total` | Counter | AI heuristic recommendation calls |
+
+### Metric labels
+
+All `dc_http_*` metrics carry these labels (suitable for dashboard grouping):
+
+- `handler` — handler class name (e.g., `AnalyticsHandler`, `EntityHandler`)
+- `operation` — method name (e.g., `handleAnalyticsQuery`, `handleExecutePipeline`)
+- `tenant` — tenant ID from `X-Tenant-ID` header
+- `status` — `success` or `error`
+
+### Handler coverage
+
+The following handlers emit `dc_http_*` metrics in production:
+
+- `AnalyticsHandler` — analytics query routes
+- `AiModelHandler` — AI model listing routes
+- `WorkflowExecutionHandler` — pipeline execution routes
+
+### Checking metrics
+
+```bash
+curl -s http://localhost:8080/metrics | grep dc_http
+curl -s http://localhost:8080/metrics | grep dc_entity
+```
+
+### Metrics in CI
+
+Route-level metrics are exercised by `DataCloudHttpServerRouteMetricsTest` (DC-OPS-002). Business metrics are exercised by `DataCloudHttpServerObservabilityTest`.
+
+---
+
+## Degraded Mode Diagnostic Guide
+
+Use this guide when `/health/ready` returns `503` or a subsystem shows `DOWN` or `NOT_CONFIGURED`.
+
+### Step 1 — Identify degraded subsystems
+
+```bash
+curl -s http://localhost:8080/ready | jq '.subsystems | to_entries[] | select(.value.status != "UP")'
+```
+
+### Step 2 — Interpret each subsystem
+
+| Subsystem key | `status: DOWN` cause | `status: NOT_CONFIGURED` cause |
+|---|---|---|
+| `entity_store` | EntityStore SPI failed connection | Profile is `local`; in-memory is intentional |
+| `event_store` | EventLogStore/Kafka unreachable | Profile is `local`; in-memory is intentional |
+| `trace_export` | ClickHouse unreachable or export erroring | `CLICKHOUSE_HOST` not set — spans not exported |
+| `settings_store` | JDBC settings store connection failed | In-memory used, blocked in `production` profile |
+| `policy_engine` | OPA/policy engine unreachable | Policy engine optional in `local` profile |
+
+### Step 3 — Check startup logs for root cause
+
+```bash
+# Grep for startup guard failures
+journalctl -u data-cloud --since "5 minutes ago" | grep -E "ERROR|WARN|DataCloud"
+```
+
+### Step 4 — Restart procedure
+
+After fixing the underlying issue:
+
+```bash
+# 1. Verify configuration
+curl http://localhost:8080/ready  # must return 200
+
+# 2. Confirm metrics are publishing
+curl http://localhost:8080/metrics | grep -c dc_http  # must return > 0 after first request
+
+# 3. Confirm audit log is operational (send a test mutation)
+curl -X POST http://localhost:8080/api/v1/entities/smoke-test \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "X-Tenant-ID: smoke-tenant" \
+  -H "Content-Type: application/json" \
+  -d '{"type":"test","data":{"check":"ok"}}'
+```
+
+---
 
 ## Production Tenant Isolation Verification
 

@@ -54,6 +54,10 @@ export interface ThemeContext {
  *
  */
 export class ThemeApplicator {
+  private static isRecord(value: unknown): value is Record<string, unknown> {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+  }
+
   /**
    * Apply theme tokens to component props
    */
@@ -200,7 +204,7 @@ export class ThemeApplicator {
       for (const [key, value] of Object.entries(obj)) {
         const varName = prefix ? `${prefix}-${key}` : key;
 
-        if (typeof value === 'object' && !Array.isArray(value)) {
+        if (this.isRecord(value)) {
           flattenObject(value, varName);
         } else {
           cssVars[`--${varName}`] = String(value);
@@ -262,7 +266,7 @@ export class ThemeApplicator {
       for (const [key, value] of Object.entries(obj)) {
         const path = prefix ? `${prefix}.${key}` : key;
 
-        if (typeof value === 'object' && !Array.isArray(value)) {
+        if (this.isRecord(value)) {
           collectPaths(value, path);
         } else {
           paths.push(path);

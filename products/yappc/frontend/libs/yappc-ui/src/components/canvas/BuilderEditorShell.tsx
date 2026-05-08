@@ -40,7 +40,7 @@ import {
   type AutosaveStatus,
   type BuilderCollabSession,
 } from 'yappc-state';
-import type { PreviewMode } from '@ghatana/ui-builder';
+import type { PreviewMode } from '@ghatana/ui-builder/preview';
 
 // ─── Status chip ──────────────────────────────────────────────────────────────
 
@@ -193,8 +193,9 @@ interface PreviewModeIndicatorProps {
 
 const PREVIEW_MODE_LABELS: Record<PreviewMode, string> = {
   'trusted-local': 'Trusted (local)',
+  'trusted-controlled': 'Trusted (controlled)',
   'semi-trusted': 'Semi-trusted',
-  'untrusted-sandbox': 'Sandboxed',
+  untrusted: 'Sandboxed',
 };
 
 const PreviewModeIndicator: React.FC<PreviewModeIndicatorProps> = ({ mode }) => {
@@ -204,7 +205,7 @@ const PreviewModeIndicator: React.FC<PreviewModeIndicatorProps> = ({ mode }) => 
       label={PREVIEW_MODE_LABELS[mode]}
       title={`Preview policy: ${PREVIEW_MODE_LABELS[mode]}`}
       icon={<Eye size={12} aria-hidden />}
-      variant={mode === 'untrusted-sandbox' ? 'error' : 'default'}
+      variant={mode === 'untrusted' ? 'error' : 'default'}
     />
   );
 };

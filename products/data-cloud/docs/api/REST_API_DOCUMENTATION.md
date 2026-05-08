@@ -241,6 +241,18 @@ POST /api/v1/context/tickets/rag
 - Unsupported optional subsystem: `501` or `503` depending on handler behavior
 - Successful mutations usually return JSON with IDs, timestamps, and request correlation fields
 
+## Runtime Truth Surface Migration
+
+The canonical Runtime Truth endpoint is `/api/v1/surfaces`. The older `/api/v1/capabilities` endpoint remains available for backwards compatibility but is scheduled for retirement — see `docs/api/CAPABILITIES_ENDPOINT_RETIREMENT_ISSUE.md`.
+
+**Migration Guide:**
+
+| Old Usage | New Usage |
+| --- | --- |
+| `GET /api/v1/capabilities` | `GET /api/v1/surfaces` |
+
+The `/api/v1/surfaces` response includes the full plane/surface map as registered by the Runtime Truth Registry at startup. Callers should treat the surface list as read-only and authoritative for surface discovery.
+
 ## Notes On Accuracy
 
 - This file reflects the routes currently registered in the launcher.

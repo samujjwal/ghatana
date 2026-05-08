@@ -1,45 +1,5 @@
-import * as React from 'react';
-
-import { Switch as GlobalSwitch } from '@ghatana/design-system';
-
-import type { SwitchProps as GlobalSwitchProps } from 'yappc-ui';
-
-export type { GlobalSwitchProps as SwitchProps };
-
-type LegacyColor =
-  | 'primary'
-  | 'secondary'
-  | 'success'
-  | 'error'
-  | 'warning'
-  | 'grey';
-
-type LegacyProps = Omit<GlobalSwitchProps, 'tone'> & {
-  colorScheme?: LegacyColor;
-};
-
-const toneMap: Record<LegacyColor, GlobalSwitchProps['tone']> = {
-  primary: 'primary',
-  secondary: 'secondary',
-  success: 'success',
-  error: 'danger',
-  warning: 'warning',
-  grey: 'neutral',
-};
-
-export const Switch = React.forwardRef<HTMLButtonElement, LegacyProps>(
-  (props, ref) => {
-    const { colorScheme = 'primary', ...rest } = props;
-
-    return React.createElement(GlobalSwitch, {
-      ref,
-      tone: toneMap[colorScheme] ?? 'primary',
-      ...rest,
-    });
-  }
-);
-
-Switch.displayName = 'Switch';
-
-export { Switch as SwitchTailwind };
-export type { LegacyProps as SwitchTailwindProps };
+export { Switch, Switch as SwitchTailwind } from './Switch.tailwind';
+export type {
+  SwitchProps,
+  SwitchProps as SwitchTailwindProps,
+} from './Switch.tailwind';

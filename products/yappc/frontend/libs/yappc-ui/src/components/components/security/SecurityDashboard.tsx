@@ -64,7 +64,6 @@ import { Badge } from '@ghatana/design-system';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
 import { Progress } from '@ghatana/design-system';
-import { Tabs } from '@ghatana/design-system';
 
 import {
   vulnerabilitiesAtom,
@@ -83,7 +82,7 @@ import {
 } from 'yappc-ui';
 import { TooltipContent, TooltipTrigger } from 'yappc-ui';
 import { ScrollArea } from 'yappc-ui';
-import { TabsContent, TabsList, TabsTrigger } from 'yappc-ui';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from 'yappc-ui';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from 'yappc-ui';
 
 // =============================================================================
@@ -171,6 +170,139 @@ export interface SecurityAlert {
   status: 'new' | 'acknowledged' | 'resolved';
   details?: string;
 }
+
+const vulnerabilitySeverities: ReadonlySet<string> = new Set([
+  'critical',
+  'high',
+  'medium',
+  'low',
+  'informational',
+]);
+const vulnerabilityStatuses: ReadonlySet<string> = new Set([
+  'open',
+  'in_progress',
+  'resolved',
+  'accepted',
+  'false_positive',
+]);
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isVulnerabilitySeverity = (
+  value: unknown
+): value is VulnerabilitySeverity =>
+  typeof value === 'string' && vulnerabilitySeverities.has(value);
+
+const isVulnerabilityStatus = (
+  value: unknown
+): value is VulnerabilityStatus =>
+  typeof value === 'string' && vulnerabilityStatuses.has(value);
+
+const isScanType = (value: unknown): value is ScanType =>
+  value === 'sast' ||
+  value === 'dast' ||
+  value === 'sca' ||
+  value === 'container' ||
+  value === 'secret' ||
+  value === 'iac';
+
+const isVulnerability = (value: unknown): value is Vulnerability => {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.id === 'string' &&
+    typeof value.title === 'string' &&
+    typeof value.description === 'string' &&
+    isVulnerabilitySeverity(value.severity) &&
+    isVulnerabilityStatus(value.status) &&
+    isScanType(value.source) &&
+    typeof value.firstDetected === 'string' &&
+    typeof value.lastSeen === 'string' &&
+    typeof value.slaBreach === 'boolean' &&
+    Array.isArray(value.tags)
+  );
+};
+
+const isComplianceFramework = (
+  value: unknown
+): value is ComplianceFramework => {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.id === 'string' &&
+    typeof value.name === 'string' &&
+    typeof value.totalControls === 'number' &&
+    typeof value.passedControls === 'number' &&
+    typeof value.failedControls === 'number' &&
+    typeof value.notApplicable === 'number' &&
+    typeof value.lastAssessment === 'string'
+  );
+};
+
+const isSecurityAlert = (value: unknown): value is SecurityAlert => {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.id === 'string' &&
+    typeof value.title === 'string' &&
+    isVulnerabilitySeverity(value.severity) &&
+    (value.type === 'threat' ||
+      value.type === 'anomaly' ||
+      value.type === 'policy' ||
+      value.type === 'compliance') &&
+    typeof value.source === 'string' &&
+    typeof value.timestamp === 'string' &&
+    (value.status === 'new' ||
+      value.status === 'acknowledged' ||
+      value.status === 'resolved')
+  );
+};
+
+const defaultSecurityScore: SecurityScore = {
+  overall: 0,
+  trend: 'stable',
+  trendValue: 0,
+  categories: [],
+  history: [],
+};
+
+const isSecurityScore = (value: unknown): value is SecurityScore => {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.overall === 'number' &&
+    (value.trend === 'improving' ||
+      value.trend === 'declining' ||
+      value.trend === 'stable') &&
+    typeof value.trendValue === 'number' &&
+    Array.isArray(value.categories) &&
+    Array.isArray(value.history)
+  );
+};
+
+const normalizeVulnerabilities = (value: unknown): Vulnerability[] => {
+  if (!Array.isArray(value)) return [];
+  const normalized: Vulnerability[] = [];
+  value.forEach((item: unknown) => {
+    if (isVulnerability(item)) normalized.push(item);
+  });
+  return normalized;
+};
+
+const normalizeComplianceStatus = (value: unknown): ComplianceFramework[] => {
+  if (!Array.isArray(value)) return [];
+  const normalized: ComplianceFramework[] = [];
+  value.forEach((item: unknown) => {
+    if (isComplianceFramework(item)) normalized.push(item);
+  });
+  return normalized;
+};
+
+const normalizeSecurityAlerts = (value: unknown): SecurityAlert[] => {
+  if (!Array.isArray(value)) return [];
+  const normalized: SecurityAlert[] = [];
+  value.forEach((item: unknown) => {
+    if (isSecurityAlert(item)) normalized.push(item);
+  });
+  return normalized;
+};
 
 interface SecurityDashboardProps {
   onVulnerabilityClick?: (vulnerability: Vulnerability) => void;
@@ -434,7 +566,7 @@ const VulnerabilityCard = React.memo(
               </Badge>
 
               <CollapsibleTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                   {isExpanded ? (
                     <ChevronDown className="w-4 h-4" />
                   ) : (
@@ -617,10 +749,29 @@ export const SecurityDashboard: React.FC<SecurityDashboardProps> = ({
   isLoading = false,
   className,
 }) => {
-  const vulnerabilities = useAtomValue(vulnerabilitiesAtom);
-  const complianceStatus = useAtomValue(complianceStatusAtom);
-  const securityScore = useAtomValue(securityScoreAtom);
-  const securityAlerts = useAtomValue(securityAlertsAtom);
+  const rawVulnerabilities = useAtomValue(vulnerabilitiesAtom);
+  const rawComplianceStatus = useAtomValue(complianceStatusAtom);
+  const rawSecurityScore = useAtomValue(securityScoreAtom);
+  const rawSecurityAlerts = useAtomValue(securityAlertsAtom);
+  const vulnerabilities = useMemo<Vulnerability[]>(
+    () => normalizeVulnerabilities(rawVulnerabilities),
+    [rawVulnerabilities]
+  );
+  const complianceStatus = useMemo<ComplianceFramework[]>(
+    () => normalizeComplianceStatus(rawComplianceStatus),
+    [rawComplianceStatus]
+  );
+  const securityScore = useMemo<SecurityScore>(
+    () =>
+      isSecurityScore(rawSecurityScore)
+        ? rawSecurityScore
+        : defaultSecurityScore,
+    [rawSecurityScore]
+  );
+  const securityAlerts = useMemo<SecurityAlert[]>(
+    () => normalizeSecurityAlerts(rawSecurityAlerts),
+    [rawSecurityAlerts]
+  );
 
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedVulns, setExpandedVulns] = useState<Set<string>>(new Set());
@@ -767,7 +918,15 @@ export const SecurityDashboard: React.FC<SecurityDashboardProps> = ({
       {/* Tabs */}
       <Tabs
         value={activeTab}
-        onValueChange={(v) => setActiveTab(v as typeof activeTab)}
+        onValueChange={(value) => {
+          if (
+            value === 'overview' ||
+            value === 'vulnerabilities' ||
+            value === 'compliance'
+          ) {
+            setActiveTab(value);
+          }
+        }}
         className="flex-1 flex flex-col"
       >
         <div className="px-4 py-2 border-b border-zinc-800">
@@ -945,7 +1104,7 @@ export const SecurityDashboard: React.FC<SecurityDashboardProps> = ({
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="sm" className="h-9 w-9 p-0">
                   <Filter className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>

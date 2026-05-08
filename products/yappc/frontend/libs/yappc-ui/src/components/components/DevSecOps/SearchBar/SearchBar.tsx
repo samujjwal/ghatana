@@ -24,7 +24,7 @@ import {
   Popper,
   TextField,
   Typography,
-} from '@ghatana/design-system';
+} from '../../compat';
 
 import type { SearchBarProps } from './types';
 
@@ -165,9 +165,8 @@ export function SearchBar({
       {resultsCount !== undefined && inputValue && (
         <Typography
           as="span"
-          className="text-xs text-gray-500"
+          className="ml-2 mt-1 block text-xs text-gray-500"
           color="text.secondary"
-          className="ml-2 mt-1 block"
         >
           {resultsCount} {resultsCount === 1 ? 'result' : 'results'}
         </Typography>

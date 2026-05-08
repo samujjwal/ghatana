@@ -1,6 +1,9 @@
 package com.ghatana.datacloud;
 
 import com.ghatana.datacloud.DataCloudClient.Entity;
+import com.ghatana.datacloud.DataCloudClient.Event;
+import com.ghatana.datacloud.DataCloudClient.Offset;
+import com.ghatana.datacloud.DataCloudClient.TailRequest;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,10 +12,13 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -95,6 +101,18 @@ class StoragePerformanceBaselineTest extends EventloopTestBase {
      * headroom for 1 000-element in-memory collections on resource-constrained CI.
      */
     private static final long QUERY_P99_THRESHOLD_NS = 10_000_000L;   // 10 ms
+
+    /**
+     * P99 latency SLA for {@code appendEvent} on in-memory event log store.
+     * Pure in-memory append is O(1); 5 ms accommodates eventloop handoff overhead.
+     */
+    private static final long APPEND_EVENT_P99_THRESHOLD_NS = 5_000_000L;  // 5 ms
+
+    /**
+     * Maximum time to receive all tailed events in a synchronous tail check.
+     * For 100 pre-appended events, the in-memory tail should deliver within 2 s.
+     */
+    private static final long TAIL_DELIVERY_TIMEOUT_MS = 2_000L;  // 2 s
 
     // ── Test state ────────────────────────────────────────────────────────────
 
@@ -311,5 +329,85 @@ class StoragePerformanceBaselineTest extends EventloopTestBase {
         System.out.printf( 
                 "[Performance] %s() — P50=%4d µs  P95=%4d µs  P99=%4d µs  (SLA P99<%d µs)%n", 
                 op, toMicros(p50), toMicros(p95), toMicros(p99), toMicros(sla)); 
+    }
+
+    // =========================================================================
+    //  appendEvent() baseline
+    // =========================================================================
+
+    @Test
+    @DisplayName("appendEvent() P99 must stay within in-memory SLA")
+    void appendEventShouldMeetP99LatencySla() {
+        // ── Warmup ────────────────────────────────────────────────────────────
+        for (int i = 0; i < WARMUP_OPS; i++) {
+            final int idx = i;
+            runPromise(() -> client.appendEvent(TENANT, Event.builder()
+                    .type("perf.warmup")
+                    .payload(Map.of("seq", idx))
+                    .build()));
+        }
+
+        // ── Measure ───────────────────────────────────────────────────────────
+        long[] latencies = new long[MEASURE_OPS];
+        for (int i = 0; i < MEASURE_OPS; i++) {
+            final int idx = i;
+            final Map<String, Object> payload = Map.of("seq", idx, "id", UUID.randomUUID().toString());
+            long t0 = System.nanoTime();
+            runPromise(() -> client.appendEvent(TENANT, Event.builder()
+                    .type("perf.append")
+                    .payload(payload)
+                    .build()));
+            latencies[i] = System.nanoTime() - t0;
+        }
+
+        // ── Assertions ────────────────────────────────────────────────────────
+        long p50 = percentile(latencies, 50);
+        long p95 = percentile(latencies, 95);
+        long p99 = percentile(latencies, 99);
+
+        logPercentiles("appendEvent", p50, p95, p99, APPEND_EVENT_P99_THRESHOLD_NS);
+
+        assertThat(p99)
+                .as("appendEvent() P99 latency (%d µs) must be < %d µs SLA",
+                        toMicros(p99), toMicros(APPEND_EVENT_P99_THRESHOLD_NS))
+                .isLessThan(APPEND_EVENT_P99_THRESHOLD_NS);
+    }
+
+    // =========================================================================
+    //  tailEvents() delivery baseline
+    // =========================================================================
+
+    @Test
+    @DisplayName("tailEvents() must deliver all pre-appended events within timeout")
+    void tailEventsShouldDeliverWithinTimeout() throws InterruptedException {
+        // Pre-append 100 events
+        int eventCount = 100;
+        for (int i = 0; i < eventCount; i++) {
+            final int idx = i;
+            runPromise(() -> client.appendEvent(TENANT, Event.builder()
+                    .type("perf.tail")
+                    .payload(Map.of("seq", idx))
+                    .build()));
+        }
+
+        // Tail from the beginning and collect delivered events
+        List<Event> received = new ArrayList<>();
+        CountDownLatch latch = new CountDownLatch(eventCount);
+
+        com.ghatana.datacloud.DataCloudClient.Subscription sub = client.tailEvents(
+                TENANT,
+                TailRequest.fromBeginning(),
+                event -> {
+                    received.add(event);
+                    latch.countDown();
+                });
+
+        boolean completed = latch.await(TAIL_DELIVERY_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        sub.cancel();
+
+        assertThat(completed)
+                .as("tailEvents() must deliver all %d events within %d ms", eventCount, TAIL_DELIVERY_TIMEOUT_MS)
+                .isTrue();
+        assertThat(received).hasSizeGreaterThanOrEqualTo(eventCount);
     }
 }

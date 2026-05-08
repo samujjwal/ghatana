@@ -36,7 +36,7 @@ import { cn } from '../../utils/cn';
  */
 export interface SwitchProps extends Omit<
   React.ButtonHTMLAttributes<HTMLButtonElement>,
-  'type'
+  'type' | 'value'
 > {
   /**
    * Label text displayed next to switch
@@ -47,6 +47,8 @@ export interface SwitchProps extends Omit<
    * Checked state
    */
   checked?: boolean;
+  value?: string;
+  onCheckedChange?: (checked: boolean) => void;
 
   /**
    * Color scheme for the switch
@@ -106,7 +108,10 @@ export const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
       containerClassName,
       disabled,
       checked,
-      ...props
+      id,
+      name,
+      value,
+      onCheckedChange,
     },
     ref
   ) => {
@@ -159,8 +164,12 @@ export const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
       >
         <BaseSwitch.Root
           ref={ref}
+          id={id}
+          name={name}
+          value={value}
           disabled={disabled}
           checked={checked}
+          onCheckedChange={onCheckedChange}
           className={cn(
             // Base styles
             'relative inline-flex items-center rounded-full transition-colors',
@@ -182,7 +191,6 @@ export const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
             // Custom className
             className
           )}
-          {...props}
         >
           <BaseSwitch.Thumb
             className={cn(

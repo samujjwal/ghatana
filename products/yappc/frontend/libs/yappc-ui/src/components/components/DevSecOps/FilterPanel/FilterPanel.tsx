@@ -30,7 +30,7 @@ import {
   Surface as Paper,
   Stack,
   Typography,
-} from '@ghatana/design-system';
+} from '../../compat';
 
 import type { ItemStatus, Priority } from 'yappc-core/types/devsecops';
 
@@ -154,7 +154,7 @@ export function FilterPanel({
             Filters
           </Typography>
           {activeFilterCount > 0 && (
-            <Chip label={activeFilterCount} size="sm" tone="primary" />
+            <Chip label={String(activeFilterCount)} size="sm" tone="primary" />
           )}
         </Box>
         <Box>
@@ -181,7 +181,7 @@ export function FilterPanel({
         expanded={expandedSections.has('status')}
         onChange={() => toggleSection('status')}
         disableGutters
-        variant="flat"
+        variant="outlined"
       >
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography as="p" className="text-sm font-medium" fontWeight={600}>
@@ -214,7 +214,7 @@ export function FilterPanel({
         expanded={expandedSections.has('priority')}
         onChange={() => toggleSection('priority')}
         disableGutters
-        variant="flat"
+        variant="outlined"
       >
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography as="p" className="text-sm font-medium" fontWeight={600}>
@@ -247,7 +247,7 @@ export function FilterPanel({
           expanded={expandedSections.has('phases')}
           onChange={() => toggleSection('phases')}
           disableGutters
-          variant="flat"
+          variant="outlined"
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography as="p" className="text-sm font-medium" fontWeight={600}>
@@ -281,7 +281,7 @@ export function FilterPanel({
           expanded={expandedSections.has('tags')}
           onChange={() => toggleSection('tags')}
           disableGutters
-          variant="flat"
+          variant="outlined"
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography as="p" className="text-sm font-medium" fontWeight={600}>

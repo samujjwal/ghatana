@@ -352,13 +352,13 @@ public class PipelineCheckpointHandler {
 
     private com.ghatana.datacloud.spi.EntityStore.Filter toStoreFilter(DataCloudClient.Filter filter) {
         return switch (filter.operator()) {
-            case "eq" -> com.ghatana.datacloud.spi.EntityStore.Filter.eq(filter.field(), filter.value());
-            case "ne" -> com.ghatana.datacloud.spi.EntityStore.Filter.ne(filter.field(), filter.value());
-            case "gt" -> com.ghatana.datacloud.spi.EntityStore.Filter.gt(filter.field(), filter.value());
-            case "gte" -> com.ghatana.datacloud.spi.EntityStore.Filter.gte(filter.field(), filter.value());
-            case "lt" -> com.ghatana.datacloud.spi.EntityStore.Filter.lt(filter.field(), filter.value());
-            case "lte" -> com.ghatana.datacloud.spi.EntityStore.Filter.lte(filter.field(), filter.value());
-            case "like" -> com.ghatana.datacloud.spi.EntityStore.Filter.like(filter.field(), filter.value().toString());
+            case EQ -> com.ghatana.datacloud.spi.EntityStore.Filter.eq(filter.field(), filter.value());
+            case NE -> com.ghatana.datacloud.spi.EntityStore.Filter.ne(filter.field(), filter.value());
+            case GT -> com.ghatana.datacloud.spi.EntityStore.Filter.gt(filter.field(), filter.value());
+            case GTE -> com.ghatana.datacloud.spi.EntityStore.Filter.gte(filter.field(), filter.value());
+            case LT -> com.ghatana.datacloud.spi.EntityStore.Filter.lt(filter.field(), filter.value());
+            case LTE -> com.ghatana.datacloud.spi.EntityStore.Filter.lte(filter.field(), filter.value());
+            case LIKE -> com.ghatana.datacloud.spi.EntityStore.Filter.like(filter.field(), filter.value().toString());
             default -> com.ghatana.datacloud.spi.EntityStore.Filter.eq(filter.field(), filter.value());
         };
     }

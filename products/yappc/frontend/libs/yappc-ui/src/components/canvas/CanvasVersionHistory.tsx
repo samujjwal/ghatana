@@ -86,14 +86,11 @@ export const CanvasVersionHistory: React.FC<CanvasVersionHistoryProps> = ({
   return (
     <Box
       className={className}
-      display="flex"
-      flexDirection="column"
-      gap={1}
-      height="100%"
+      sx={{ display: 'flex', flexDirection: 'column', gap: 1, height: '100%' }}
     >
-      <Box display="flex" alignItems="center" gap={0.75} px={1} pt={1}>
+      <Box sx={{ alignItems: 'center', display: 'flex', gap: 0.75, px: 1, pt: 1 }}>
         <HistoryIcon size={16} />
-        <Typography variant="subtitle2" fontWeight={600}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
           Version history
         </Typography>
       </Box>
@@ -107,11 +104,11 @@ export const CanvasVersionHistory: React.FC<CanvasVersionHistoryProps> = ({
       )}
 
       {isLoading ? (
-        <Box display="flex" justifyContent="center" py={3}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
           <CircularProgress size={24} />
         </Box>
       ) : versions.length === 0 ? (
-        <Box display="flex" justifyContent="center" py={3}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
           <Typography variant="body2" color="text.secondary">
             No versions saved yet.
           </Typography>
@@ -133,10 +130,10 @@ export const CanvasVersionHistory: React.FC<CanvasVersionHistoryProps> = ({
               >
                 <ListItemText
                   primary={
-                    <Box display="flex" alignItems="center" gap={0.5}>
+                    <Box sx={{ alignItems: 'center', display: 'flex', gap: 0.5 }}>
                       <Typography
                         variant="body2"
-                        fontWeight={isCurrent ? 700 : 400}
+                        sx={{ fontWeight: isCurrent ? 700 : 400 }}
                       >
                         v{version.version}
                       </Typography>
@@ -160,7 +157,11 @@ export const CanvasVersionHistory: React.FC<CanvasVersionHistoryProps> = ({
                   secondary={
                     <>
                       {version.changeSummary && (
-                        <Typography variant="caption" display="block" noWrap>
+                        <Typography
+                          variant="caption"
+                          noWrap
+                          sx={{ display: 'block' }}
+                        >
                           {version.changeSummary}
                         </Typography>
                       )}
@@ -174,7 +175,7 @@ export const CanvasVersionHistory: React.FC<CanvasVersionHistoryProps> = ({
                 {onRestore && !isCurrent && (
                   <ListItemSecondaryAction>
                     {isConfirming ? (
-                      <Box display="flex" gap={0.5}>
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
                         <Button
                           size="small"
                           variant="contained"
@@ -215,7 +216,7 @@ export const CanvasVersionHistory: React.FC<CanvasVersionHistoryProps> = ({
           })}
 
           {hasMore && (
-            <Box display="flex" justifyContent="center" py={1}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
               <Button size="small" variant="text" onClick={onLoadMore}>
                 Load more
               </Button>

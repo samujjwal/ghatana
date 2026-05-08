@@ -58,11 +58,13 @@ const MessageBubble: React.FC<{ message: CopilotMessage }> = ({ message }) => {
   const isUser = message.role === 'user';
   return (
     <Box
-      display="flex"
-      flexDirection={isUser ? 'row-reverse' : 'row'}
-      alignItems="flex-end"
-      gap={0.75}
-      mb={1}
+      sx={{
+        display: 'flex',
+        flexDirection: isUser ? 'row-reverse' : 'row',
+        alignItems: 'flex-end',
+        gap: 0.75,
+        mb: 1,
+      }}
     >
       <Avatar
         sx={{
@@ -145,22 +147,21 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
   return (
     <Box
       className={className}
-      display="flex"
-      flexDirection="column"
-      height="100%"
-      sx={{ minHeight: 300 }}
+      sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 300 }}
     >
       {/* Header */}
       <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        px={1.5}
-        py={1}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          px: 1.5,
+          py: 1,
+        }}
       >
-        <Box display="flex" alignItems="center" gap={0.75}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
           <BrainIcon size={16} />
-          <Typography variant="subtitle2" fontWeight={600}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
             AI Copilot
           </Typography>
         </Box>
@@ -178,10 +179,10 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
       {/* Message list */}
       <Box
         ref={listRef}
-        flexGrow={1}
-        px={1.5}
-        py={1}
         sx={{
+          flexGrow: 1,
+          px: 1.5,
+          py: 1,
           overflowY: 'auto',
           maxHeight,
           minHeight: 120,
@@ -189,17 +190,19 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
       >
         {messages.length === 0 && !isSending && !error && (
           <Box
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            py={4}
-            gap={1}
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              py: 4,
+              gap: 1,
+            }}
           >
             <BotIcon size={32} opacity={0.3} />
             <Typography
               variant="body2"
               color="text.secondary"
-              textAlign="center"
+              sx={{ textAlign: 'center' }}
             >
               Ask me anything about your project — architecture, code, planning
               or deployment.
@@ -212,7 +215,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
         ))}
 
         {isSending && (
-          <Box display="flex" alignItems="center" gap={0.75} mb={1}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
             <Avatar
               sx={{
                 width: 26,
@@ -240,7 +243,15 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
       <Divider />
 
       {/* Input */}
-      <Box display="flex" alignItems="flex-end" gap={0.5} px={1.5} py={1}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: 0.5,
+          px: 1.5,
+          py: 1,
+        }}
+      >
         <TextField
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -251,7 +262,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
           fullWidth
           size="small"
           disabled={isSending}
-          inputProps={{ 'aria-label': 'Copilot message input' }}
+          slotProps={{ htmlInput: { 'aria-label': 'Copilot message input' } }}
         />
         <Tooltip title="Send (Enter)">
           <span>

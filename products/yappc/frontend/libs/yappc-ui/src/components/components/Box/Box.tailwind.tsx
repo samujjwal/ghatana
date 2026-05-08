@@ -10,10 +10,14 @@ import type { ElementType } from 'react';
 
 import { cn } from '../../utils/cn';
 
+type SpacingValue = string | number;
+type FlexValue = string | number | boolean;
+
 /**
  *
  */
-export interface BoxProps extends React.HTMLAttributes<HTMLElement> {
+export interface BoxProps
+  extends Omit<React.HTMLAttributes<HTMLElement>, 'color'> {
   /**
    * The HTML element to render
    * @default 'div'
@@ -21,75 +25,80 @@ export interface BoxProps extends React.HTMLAttributes<HTMLElement> {
   as?: ElementType;
 
   /**
+   * MUI-compatible element alias.
+   */
+  component?: ElementType;
+
+  /**
    * Padding (theme spacing units or Tailwind classes)
    * Examples: 'p-4', 'px-6 py-4', 'p-md'
    */
-  p?: string;
+  p?: SpacingValue;
 
   /**
    * Padding X-axis
    */
-  px?: string;
+  px?: SpacingValue;
 
   /**
    * Padding Y-axis
    */
-  py?: string;
+  py?: SpacingValue;
 
   /**
    * Padding top
    */
-  pt?: string;
+  pt?: SpacingValue;
 
   /**
    * Padding right
    */
-  pr?: string;
+  pr?: SpacingValue;
 
   /**
    * Padding bottom
    */
-  pb?: string;
+  pb?: SpacingValue;
 
   /**
    * Padding left
    */
-  pl?: string;
+  pl?: SpacingValue;
 
   /**
    * Margin (theme spacing units or Tailwind classes)
    */
-  m?: string;
+  m?: SpacingValue;
 
   /**
    * Margin X-axis
    */
-  mx?: string;
+  mx?: SpacingValue;
 
   /**
    * Margin Y-axis
    */
-  my?: string;
+  my?: SpacingValue;
 
   /**
    * Margin top
    */
-  mt?: string;
+  mt?: SpacingValue;
 
   /**
    * Margin right
    */
-  mr?: string;
+  mr?: SpacingValue;
 
   /**
    * Margin bottom
    */
-  mb?: string;
+  mb?: SpacingValue;
 
   /**
    * Margin left
    */
-  ml?: string;
+  ml?: SpacingValue;
 
   /**
    * Background color (Tailwind classes)
@@ -125,6 +134,16 @@ export interface BoxProps extends React.HTMLAttributes<HTMLElement> {
    * Examples: 'block', 'flex', 'grid', 'inline-block'
    */
   display?: string;
+
+  /**
+   * MUI-compatible layout aliases.
+   */
+  alignItems?: string;
+  justifyContent?: string;
+  gap?: SpacingValue;
+  flexWrap?: string;
+  flexDirection?: string;
+  flex?: FlexValue;
 
   /**
    * Width (Tailwind classes)
@@ -232,6 +251,7 @@ export const Box = forwardRef<HTMLElement, BoxProps>(
   (
     {
       as = 'div',
+      component,
       p,
       px,
       py,
@@ -252,6 +272,12 @@ export const Box = forwardRef<HTMLElement, BoxProps>(
       border,
       shadow,
       display,
+      alignItems,
+      justifyContent,
+      gap,
+      flexWrap,
+      flexDirection,
+      flex,
       w,
       h,
       maxW,
@@ -271,25 +297,41 @@ export const Box = forwardRef<HTMLElement, BoxProps>(
     },
     ref
   ) => {
-    const Component = as;
+    const Component = component || as;
+
+    const spacingClass = (
+      prefix: string,
+      value?: SpacingValue
+    ): string | undefined => {
+      if (value === undefined) return undefined;
+      if (typeof value === 'number') return `${prefix}-${value}`;
+      if (value.startsWith(`${prefix}-`)) return value;
+      return `${prefix}-${value}`;
+    };
+
+    const flexClass = (prefix: string, value?: string): string | undefined => {
+      if (!value) return undefined;
+      if (value.startsWith(`${prefix}-`)) return value;
+      return `${prefix}-${value}`;
+    };
 
     const classes = cn(
       // Padding
-      p,
-      px,
-      py,
-      pt,
-      pr,
-      pb,
-      pl,
+      spacingClass('p', p),
+      spacingClass('px', px),
+      spacingClass('py', py),
+      spacingClass('pt', pt),
+      spacingClass('pr', pr),
+      spacingClass('pb', pb),
+      spacingClass('pl', pl),
       // Margin
-      m,
-      mx,
-      my,
-      mt,
-      mr,
-      mb,
-      ml,
+      spacingClass('m', m),
+      spacingClass('mx', mx),
+      spacingClass('my', my),
+      spacingClass('mt', mt),
+      spacingClass('mr', mr),
+      spacingClass('mb', mb),
+      spacingClass('ml', ml),
       // Colors
       bg,
       color,
@@ -299,6 +341,12 @@ export const Box = forwardRef<HTMLElement, BoxProps>(
       shadow,
       // Layout
       display,
+      flexClass('items', alignItems),
+      flexClass('justify', justifyContent),
+      spacingClass('gap', gap),
+      flexClass('flex', flexWrap),
+      flexClass('flex', flexDirection),
+      typeof flex === 'string' ? flexClass('flex', flex) : flex === 1 ? 'flex-1' : undefined,
       w,
       h,
       maxW,

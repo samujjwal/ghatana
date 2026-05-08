@@ -16,9 +16,6 @@ import {
   Box,
   Card,
   CardContent,
-  Typography,
-  Stack,
-  Chip,
   FormControl,
   InputLabel,
   Select,
@@ -27,6 +24,9 @@ import {
 
 import { selectedWorkflowIdAtom } from 'yappc-state';
 
+import { Chip } from '../Chip';
+import { Stack } from '../Stack';
+import { Typography } from '../Typography';
 import { useWorkflows } from '../../hooks/useConfig';
 
 // ============================================================================
@@ -48,6 +48,14 @@ interface PhaseCardProps {
     stages?: string[];
     tasks?: string[];
   };
+}
+
+interface WorkflowView {
+  id: string;
+  name: string;
+  description?: string;
+  lifecycleStages?: string[];
+  phases?: PhaseCardProps['phase'][];
 }
 
 // ============================================================================
@@ -143,15 +151,13 @@ export const WorkflowRenderer: React.FC<WorkflowRendererProps> = ({
 }) => {
   const workflows = useWorkflows();
   const [selectedId, setSelectedId] = useAtom(selectedWorkflowIdAtom);
-  // Cast to any to access extended workflow properties from API
-  const selectedWorkflow = workflows.find(
-    (w) => w.id === selectedId
-  ) as unknown;
+  const workflowViews = workflows as WorkflowView[];
+  const selectedWorkflow = workflowViews.find((w) => w.id === selectedId);
 
   return (
     <Box className={className}>
       {/* Workflow Selector */}
-      <FormControl fullWidth size="sm" className="mb-6">
+      <FormControl fullWidth size="small" className="mb-6">
         <InputLabel id="workflow-select-label">Select Workflow</InputLabel>
         <Select
           labelId="workflow-select-label"
@@ -163,7 +169,7 @@ export const WorkflowRenderer: React.FC<WorkflowRendererProps> = ({
           <MenuItem value="">
             <em>Choose a workflow...</em>
           </MenuItem>
-          {workflows.map((wf) => (
+          {workflowViews.map((wf) => (
             <MenuItem key={wf.id} value={wf.id}>
               {wf.name}
             </MenuItem>
@@ -183,9 +189,8 @@ export const WorkflowRenderer: React.FC<WorkflowRendererProps> = ({
               {selectedWorkflow.description && (
                 <Typography
                   as="p"
-                  className="text-sm"
+                  className="mt-1 text-sm"
                   color="text.secondary"
-                  className="mt-1"
                 >
                   {selectedWorkflow.description}
                 </Typography>
@@ -193,8 +198,10 @@ export const WorkflowRenderer: React.FC<WorkflowRendererProps> = ({
             </Box>
 
             {/* Lifecycle Stages */}
-            {selectedWorkflow.lifecycleStages &&
-              selectedWorkflow.lifecycleStages.length > 0 && (
+            {(() => {
+              const lifecycleStages = selectedWorkflow.lifecycleStages ?? [];
+
+              return lifecycleStages.length > 0 ? (
                 <Box className="mb-6">
                   <Typography
                     as="p"
@@ -210,8 +217,7 @@ export const WorkflowRenderer: React.FC<WorkflowRendererProps> = ({
                     alignItems="center"
                     className="overflow-x-auto pb-2"
                   >
-                    {selectedWorkflow.lifecycleStages.map(
-                      (stage: string, idx: number) => (
+                    {lifecycleStages.map((stage, idx) => (
                         <React.Fragment key={stage}>
                           <Chip
                             label={stage}
@@ -219,18 +225,17 @@ export const WorkflowRenderer: React.FC<WorkflowRendererProps> = ({
                             variant="outlined"
                             className="min-w-max"
                           />
-                          {idx <
-                            selectedWorkflow.lifecycleStages.length - 1 && (
+                          {idx < lifecycleStages.length - 1 && (
                             <Typography color="text.secondary" className="px-1">
                               →
                             </Typography>
                           )}
                         </React.Fragment>
-                      )
-                    )}
+                      ))}
                   </Stack>
                 </Box>
-              )}
+              ) : null;
+            })()}
 
             {/* Phases */}
             {selectedWorkflow.phases && selectedWorkflow.phases.length > 0 && (

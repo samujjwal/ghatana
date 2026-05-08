@@ -1204,6 +1204,8 @@ public class DataCloudHttpServer {
         if (tenantQuotaService != null) eventHandler.withTenantQuotaService(tenantQuotaService);
         pipelineCheckpointHandler = new PipelineCheckpointHandler(client, httpSupport);
         workflowExecutionHandler = new WorkflowExecutionHandler(client, httpSupport);
+        // DC-OPS-002: Emit dc.http.requests, dc.http.request.latency, and dc.http.errors for pipeline/workflow routes.
+        workflowExecutionHandler.withMetrics(new DataCloudHttpMetrics(metricsCollector));
         alertingHandler = new AlertingHandler(client, httpSupport).withAutonomyController(autonomyController);
         if (runtimePluginManager == null) {
             runtimePluginManager = new DataCloudRuntimePluginManager();
@@ -1234,6 +1236,16 @@ public class DataCloudHttpServer {
 
         aiModelHandler = new AiModelHandler(aiModelManager, featureStoreService, httpSupport);
         aiModelHandler.withMetrics(new DataCloudHttpMetrics(metricsCollector));
+
+        // DC-OPS-001: Register trace export health supplier before HealthHandler snapshot is taken
+        // HealthHandler uses Map.copyOf(), so all suppliers must be registered before construction.
+        healthSubsystemSuppliers.putIfAbsent("trace_export", () -> {
+            if (traceExportService != null) {
+                return Map.of("status", "UP", "exporter", "clickhouse");
+            }
+            return Map.of("status", "NOT_CONFIGURED",
+                          "detail", "CLICKHOUSE_HOST not set — spans are not exported");
+        });
 
         healthHandler = new HealthHandler(httpSupport, healthSubsystemSuppliers, metricsCollector);
 
@@ -1272,7 +1284,6 @@ public class DataCloudHttpServer {
         if (policyEngine != null) {
             healthSubsystemSuppliers.putIfAbsent("policy_engine", () -> Map.of("status", "UP", "mode", "in-process"));
         }
-        
         // P2-001: Add health indicator for embedding mode
         healthSubsystemSuppliers.putIfAbsent("semantic_search", () -> Map.of(
             "status", "UP",

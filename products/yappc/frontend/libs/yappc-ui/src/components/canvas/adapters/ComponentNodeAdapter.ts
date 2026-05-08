@@ -6,6 +6,7 @@
 
 import type { ComponentNode, ComponentNodeData } from '../types';
 import type {
+  ComponentSchema,
   TransformContext,
   TransformOptions,
   TransformResult,
@@ -13,32 +14,6 @@ import type {
 
 import { DesignTokenMapper } from './DesignTokenMapper';
 import { PropertyTransformer } from './PropertyTransformer';
-
-/**
- * Component schema (simplified, will integrate with Phase 2)
- */
-export interface ComponentSchema {
-  id?: string;
-  type: string;
-  props?: Record<string, unknown>;
-  children?: ComponentSchema[];
-  dataBinding?: {
-    source: string;
-    mode: 'one-way' | 'two-way' | 'one-time' | 'expression';
-    path?: string;
-  };
-  validation?: Array<{
-    type: string;
-    params?: unknown[];
-    message?: string;
-  }>;
-  events?: Record<string, { emit: string; payload?: Record<string, unknown> }>;
-  metadata?: {
-    label?: string;
-    description?: string;
-    category?: string;
-  };
-}
 
 /**
  * Component size calculator
@@ -147,7 +122,7 @@ export class ComponentNodeAdapter {
       }
 
       // Calculate component size
-      const size = this.calculateSize(schema.type, nodeData.props, schema);
+      const size = this.calculateSize(schema.type, nodeData.props ?? {}, schema);
 
       // Create canvas node
       const node: ComponentNode = {
@@ -341,16 +316,10 @@ export class ComponentNodeAdapter {
     schema?: ComponentSchema
   ): { width: number; height: number } {
     // Check for explicit size in props
-    if (props.width && props.height) {
+    if (props.width !== undefined && props.height !== undefined) {
       return {
-        width:
-          typeof props.width === 'number'
-            ? props.width
-            : parseInt(props.width, 10),
-        height:
-          typeof props.height === 'number'
-            ? props.height
-            : parseInt(props.height, 10),
+        width: this.toDimension(props.width, 200),
+        height: this.toDimension(props.height, 100),
       };
     }
 
@@ -378,6 +347,17 @@ export class ComponentNodeAdapter {
    */
   private static generateId(): string {
     return `comp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private static toDimension(value: unknown, fallback: number): number {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const parsed = parseInt(value, 10);
+      return Number.isFinite(parsed) ? parsed : fallback;
+    }
+    return fallback;
   }
 
   /**

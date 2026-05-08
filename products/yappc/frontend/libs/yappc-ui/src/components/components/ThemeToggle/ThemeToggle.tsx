@@ -29,7 +29,7 @@ export function ThemeToggle({
   style,
   size = 'medium',
 }: ThemeToggleProps) {
-  const { mode, toggleTheme } = useTheme();
+  const { mode, toggleMode } = useTheme();
 
   const sizeMap = {
     small: '32px',
@@ -61,7 +61,7 @@ export function ThemeToggle({
 
   return (
     <button
-      onClick={toggleTheme}
+      onClick={toggleMode}
       className={className}
       style={buttonStyle}
       aria-label={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}

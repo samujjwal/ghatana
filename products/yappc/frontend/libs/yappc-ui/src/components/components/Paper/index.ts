@@ -1,5 +1,5 @@
-export { Paper, type PaperProps } from 'yappc-ui';
-export {
-  Paper as PaperTailwind,
-  type PaperProps as PaperTailwindProps,
-} from 'yappc-ui';
+export { Paper, Paper as PaperTailwind } from './Paper.tailwind';
+export type {
+  PaperProps,
+  PaperProps as PaperTailwindProps,
+} from './Paper.tailwind';

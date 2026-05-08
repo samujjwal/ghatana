@@ -39,7 +39,6 @@ import {
 import { usePerformanceMonitoring } from '../../hooks/performance/usePerformanceMonitoring';
 import type { PerformanceTrend } from '../../hooks/performance/usePerformanceMonitoring';
 import { wrapForTooltip } from '../../utils/accessibility';
-import { resolveMuiColor } from '../../utils/safePalette';
 
 /**
  *
@@ -246,13 +245,12 @@ const TrendIndicator = React.memo<TrendIndicatorProps>(
       ? `${Math.abs(trend.changePercent).toFixed(1)}%`
       : `${trend.direction} ${Math.abs(trend.changePercent).toFixed(1)}%`;
 
-    const theme = useTheme();
     return (
       <Chip
         size="sm"
         icon={getTrendIcon()}
         label={label}
-        color={resolveMuiColor(theme, getTrendColor(), 'default') as unknown}
+        color={getTrendColor()}
         variant={trend.confidence > 0.7 ? 'filled' : 'outlined'}
       />
     );
@@ -331,12 +329,10 @@ export const PerformanceTrendingChart: React.FC<TrendingChartProps> = ({
   }, []);
 
   // Handle chart type change
-  const handleChartTypeChange = useCallback(
-    (_: React.MouseEvent<HTMLElement>, newType: string | null) => {
-      if (newType) setChartType(newType as typeof chartType);
-    },
-    []
-  );
+  const handleChartTypeChange = useCallback((newType: string | string[]) => {
+    const nextType = Array.isArray(newType) ? newType[0] : newType;
+    if (nextType === 'line' || nextType === 'area') setChartType(nextType);
+  }, []);
 
   // Handle data export
   const handleExport = useCallback(() => {
@@ -361,16 +357,12 @@ export const PerformanceTrendingChart: React.FC<TrendingChartProps> = ({
   ).length;
 
   return (
-    <Card className={className} className="h-full">
+    <Card className={['h-full', className].filter(Boolean).join(' ')}>
       <CardContent>
         {/* Header */}
         <Box className="flex items-center justify-between mb-4">
           <Box className="flex items-center gap-2">
-            <TimelineIcon
-              color={
-                resolveMuiColor(useTheme(), 'primary', 'default') as unknown
-              }
-            />
+            <TimelineIcon className="text-blue-600" />
             <Typography as="h6" component="h2">
               {title || `Performance Trend: ${metric}`}
             </Typography>
@@ -378,9 +370,7 @@ export const PerformanceTrendingChart: React.FC<TrendingChartProps> = ({
               <Chip
                 size="sm"
                 label="Live"
-                color={
-                  resolveMuiColor(useTheme(), 'success', 'default') as unknown
-                }
+                color="success"
                 variant="outlined"
               />
             )}
@@ -391,7 +381,7 @@ export const PerformanceTrendingChart: React.FC<TrendingChartProps> = ({
 
             <Tooltip title="Export data">
               {wrapForTooltip(
-                <IconButton size="sm" onClick={handleExport}>
+                <IconButton size="small" onClick={handleExport}>
                   <DownloadIcon aria-hidden={true} />
                 </IconButton>,
                 { 'aria-describedby': `performance-export-tooltip-${metric}` }
@@ -416,7 +406,7 @@ export const PerformanceTrendingChart: React.FC<TrendingChartProps> = ({
 
         {/* Controls */}
         <Box className="flex items-center gap-4 mb-4">
-          <FormControl size="sm" className="min-w-[120px]">
+          <FormControl size="small" className="min-w-[120px]">
             <InputLabel>Time Range</InputLabel>
             <Select
               value={selectedTimeRange}
@@ -435,7 +425,7 @@ export const PerformanceTrendingChart: React.FC<TrendingChartProps> = ({
             value={chartType}
             exclusive
             onChange={handleChartTypeChange}
-            size="sm"
+                  size="small"
           >
             <ToggleButton value="line">Line</ToggleButton>
             <ToggleButton value="area">Area</ToggleButton>
@@ -506,7 +496,7 @@ export const PerformanceTrendingChart: React.FC<TrendingChartProps> = ({
             <Box className="flex items-center gap-1">
               <Box
                 className="w-[12px] h-[1px] bg-amber-600"
-                style={{ borderTop: '1px dashed', borderTop: '1px dashed' }}
+                style={{ borderTop: '1px dashed' }}
               />
               <Typography as="span" className="text-xs text-gray-500">
                 Warning

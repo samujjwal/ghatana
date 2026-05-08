@@ -15,8 +15,8 @@ import type { CapabilityRegistrySnapshot, CapabilitySignal } from '../../../api/
 // ---------------------------------------------------------------------------
 
 const { mockUseCapabilityGate, mockUseCapabilityRegistry } = vi.hoisted(() => ({
-  mockUseCapabilityGate: vi.fn<[string[], import('../../../hooks/useCapabilityGate').GateMode?], boolean>(),
-  mockUseCapabilityRegistry: vi.fn<[], { data: CapabilityRegistrySnapshot | undefined; isLoading: boolean }>(),
+  mockUseCapabilityGate: vi.fn<(capabilities: string[], mode?: import('../../../hooks/useCapabilityGate').GateMode) => boolean>(),
+  mockUseCapabilityRegistry: vi.fn<() => { data: CapabilityRegistrySnapshot | undefined; isLoading: boolean }>(),
 }));
 
 vi.mock('../../../hooks/useCapabilityGate', () => ({

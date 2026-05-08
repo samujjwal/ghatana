@@ -36,6 +36,10 @@
       "@yappc/ui/*": ["libs/yappc-ui/src/*"],
       "@yappc/state": ["libs/yappc-state/src"],
       "@yappc/state/crdt/*": ["libs/yappc-state/src/store/crdt/*"],
+      "yappc-state": ["libs/yappc-state/src"],
+      "yappc-state/aiAtoms": ["libs/yappc-state/src/store/aiAtoms.ts"],
+      "yappc-state/config-hooks": ["libs/yappc-state/src/store/config-hooks/index.ts"],
+      "yappc-state/*": ["libs/yappc-state/src/*"],
       "@yappc/shortcuts": ["libs/shortcuts/src"],
       "@yappc/shortcuts/*": ["libs/shortcuts/src/*"],
       "@yappc/ai": ["libs/yappc-ai/src"],
@@ -92,6 +96,8 @@
       "@ghatana/ds-schema/*": ["../../../platform/typescript/ds-schema/src/*"],
       "@ghatana/ui-builder": ["../../../platform/typescript/ui-builder/src"],
       "@ghatana/ui-builder/*": ["../../../platform/typescript/ui-builder/src/*"],
+      "yappc-ui": ["libs/yappc-ui/src"],
+      "yappc-ui/*": ["libs/yappc-ui/src/*"],
       "@ghatana/platform-utils": ["../../../platform/typescript/foundation/platform-utils/src"],
       "@ghatana/platform-utils/*": ["../../../platform/typescript/foundation/platform-utils/src/*"]
     }

@@ -35,15 +35,6 @@ export {
 } from './ProtectedRoute';
 export type { ProtectedRouteProps } from './ProtectedRoute';
 
-// Examples (for development and documentation)
-export * as AuthExamples from './examples';
-export { LoginPage, RegisterPage, DashboardPage } from './examples';
-export type {
-  LoginPageProps,
-  RegisterPageProps,
-  DashboardPageProps,
-} from './examples';
-
 // ============================================================================
 // Usage Examples
 // ============================================================================

@@ -17,15 +17,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { RoleProtectedRoute } from '../RoleProtectedRoute';
-import type { ShellRole } from '../../lib/auth/session';
+import type { ShellRole } from '../../../lib/auth/session';
 
 // ---------------------------------------------------------------------------
 // Mock session bootstrap
 // ---------------------------------------------------------------------------
 
-const mockShellRole = vi.fn<[], ShellRole>(() => 'primary-user');
+const mockShellRole = vi.fn<() => ShellRole>(() => 'primary-user');
 
-vi.mock('../../lib/auth/session', () => ({
+vi.mock('../../../lib/auth/session', () => ({
   default: {
     bootstrap: () => ({ shellRole: mockShellRole() }),
   },
@@ -36,7 +36,7 @@ vi.mock('../../lib/auth/session', () => ({
 // Mock route registry to return deterministic data without reading real files
 // ---------------------------------------------------------------------------
 
-vi.mock('../../lib/routing/RouteCapabilityRegistry', () => ({
+vi.mock('../../../lib/routing/RouteCapabilityRegistry', () => ({
   getRouteByPath: (path: string) => {
     const routes: Record<string, { path: string; minimumShellRole: 'primary-user' | 'operator' | 'admin' }> = {
       '/insights': { path: '/insights', minimumShellRole: 'operator' },

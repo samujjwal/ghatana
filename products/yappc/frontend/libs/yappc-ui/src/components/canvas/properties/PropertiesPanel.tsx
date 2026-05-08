@@ -11,6 +11,7 @@ import React, { useMemo } from 'react';
 
 import { useForm } from '../../hooks/useForm';
 import { validators } from '../../utils/validation';
+import type { ValidationRules } from '../../utils/validation';
 import type {
   ComponentMetadata,
   PropDefinition,
@@ -68,6 +69,19 @@ interface PropertyFieldProps {
   themeContext?: ThemeContext;
 }
 
+const toInputValue = (value: unknown): string | number => {
+  if (typeof value === 'string' || typeof value === 'number') {
+    return value;
+  }
+  return '';
+};
+
+const toCheckedValue = (value: unknown): boolean =>
+  typeof value === 'boolean' ? value : false;
+
+const optionToInputValue = (value: string | number | boolean): string | number =>
+  typeof value === 'boolean' ? String(value) : value;
+
 const PropertyField: React.FC<PropertyFieldProps> = ({
   definition,
   value,
@@ -101,7 +115,7 @@ const PropertyField: React.FC<PropertyFieldProps> = ({
         </label>
         <input
           type="text"
-          value={value || ''}
+          value={toInputValue(value)}
           onChange={(e) => onChange(e.target.value)}
           style={commonStyles}
           placeholder={`Enter ${label.toLowerCase()}`}
@@ -127,7 +141,7 @@ const PropertyField: React.FC<PropertyFieldProps> = ({
         </label>
         <input
           type="number"
-          value={value || ''}
+          value={toInputValue(value)}
           onChange={(e) => onChange(Number(e.target.value))}
           style={commonStyles}
           placeholder={`Enter ${label.toLowerCase()}`}
@@ -145,7 +159,7 @@ const PropertyField: React.FC<PropertyFieldProps> = ({
         >
           <input
             type="checkbox"
-            checked={value || false}
+            checked={toCheckedValue(value)}
             onChange={(e) => onChange(e.target.checked)}
             style={{ marginRight: 8 }}
           />
@@ -171,13 +185,16 @@ const PropertyField: React.FC<PropertyFieldProps> = ({
           {required && <span style={{ color: '#d32f2f' }}> *</span>}
         </label>
         <select
-          value={value || ''}
+          value={toInputValue(value)}
           onChange={(e) => onChange(e.target.value)}
           style={commonStyles}
         >
           <option value="">Select {label.toLowerCase()}</option>
           {options.map((option) => (
-            <option key={option.value} value={option.value}>
+            <option
+              key={String(option.value)}
+              value={optionToInputValue(option.value)}
+            >
               {option.label}
             </option>
           ))}
@@ -204,7 +221,7 @@ const PropertyField: React.FC<PropertyFieldProps> = ({
         <TokenPicker
           themeContext={themeContext}
           category={tokenCategory}
-          value={value}
+          value={typeof value === 'string' ? value : undefined}
           onChange={(tokenPath) => onChange(`$${tokenPath}`)}
         />
       </div>
@@ -229,7 +246,7 @@ const PropertyField: React.FC<PropertyFieldProps> = ({
         <div style={{ display: 'flex', gap: 8 }}>
           <input
             type="color"
-            value={value || '#000000'}
+            value={typeof value === 'string' ? value : '#000000'}
             onChange={(e) => onChange(e.target.value)}
             style={{
               width: 60,
@@ -240,7 +257,7 @@ const PropertyField: React.FC<PropertyFieldProps> = ({
           />
           <input
             type="text"
-            value={value || ''}
+            value={toInputValue(value)}
             onChange={(e) => onChange(e.target.value)}
             style={{ ...commonStyles, flex: 1 }}
             placeholder="#000000"
@@ -265,7 +282,7 @@ const PropertyField: React.FC<PropertyFieldProps> = ({
       </label>
       <input
         type="text"
-        value={value || ''}
+        value={toInputValue(value)}
         onChange={(e) => onChange(e.target.value)}
         style={commonStyles}
         placeholder={`Enter ${label.toLowerCase()}`}
@@ -287,7 +304,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 }) => {
   // Build validation rules from prop definitions
   const validationRules = useMemo(() => {
-    const rules: Record<string, unknown[]> = {};
+    const rules: ValidationRules = {};
 
     if (metadata.propDefinitions) {
       for (const propDef of metadata.propDefinitions) {

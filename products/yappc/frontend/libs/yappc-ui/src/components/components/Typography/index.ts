@@ -8,8 +8,8 @@ export {
   type HeadingProps,
   Link,
   type LinkProps,
-  List,
-  type ListProps,
+  List as TypographyList,
+  type ListProps as TypographyListProps,
   Code,
   type CodeProps,
-} from 'yappc-ui';
+} from './Typography.tailwind';

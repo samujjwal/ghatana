@@ -38,3 +38,15 @@
 
 - Boundary routes are intentionally hidden from standard navigation by `getDiscoverableRoutes()` unless `includesBoundary=true` is passed.
 - Update the canonical registry first; this document is generated from registry state.
+
+## Runtime Truth Alignment
+
+The frontend route registry is cross-validated against the backend Runtime Truth Registry at build time via `ContractBacked.test.tsx`. The backend registry is served at `/api/v1/surfaces`.
+
+| Alignment Check | Source | Status |
+| --- | --- | --- |
+| Frontend routes are a subset of backend surfaces | `RouteCapabilityRegistry` vs `/api/v1/surfaces` | ✅ verified by `ContractBacked.test.tsx` |
+| Alert sub-routes (`/acknowledge`, `/resolve`) use `{alertId}` | `data-cloud.yaml` OpenAPI spec | ✅ fixed 2026-04-12 |
+| All active routes have a corresponding OpenAPI path | `data-cloud.yaml` | ✅ verified by `RouteParity.test.ts` |
+
+The `RuntimeTruthBanner` component in the UI reads from `/api/v1/surfaces` at runtime and displays a warning if the runtime surface list diverges from the compiled frontend route registry.

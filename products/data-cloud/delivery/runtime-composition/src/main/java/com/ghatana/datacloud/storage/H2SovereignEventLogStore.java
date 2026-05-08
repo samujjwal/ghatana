@@ -259,30 +259,82 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
         }
     }
 
+    // DC-P2-006: Ordered list of schema migrations. Each entry is applied once and tracked in
+    // dc_h2_schema_migrations. Migration IDs are 1-based and must be appended only — never reordered.
+    private static final List<String> SCHEMA_MIGRATIONS = List.of(
+        // Migration 1: initial dc_event_log schema (DC-P0-004 idempotency index note preserved).
+        """
+        CREATE TABLE IF NOT EXISTS dc_event_log (
+            offset_value BIGINT AUTO_INCREMENT PRIMARY KEY,
+            tenant_id VARCHAR(255) NOT NULL,
+            event_id VARCHAR(64) NOT NULL,
+            event_type VARCHAR(255) NOT NULL,
+            event_version VARCHAR(64) NOT NULL,
+            payload BLOB NOT NULL,
+            content_type VARCHAR(255) NOT NULL,
+            headers_json CLOB NOT NULL,
+            idempotency_key VARCHAR(255),
+            created_at TIMESTAMP NOT NULL
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS idx_dc_event_log_tenant_offset ON dc_event_log(tenant_id, offset_value)",
+        "CREATE INDEX IF NOT EXISTS idx_dc_event_log_tenant_type ON dc_event_log(tenant_id, event_type, offset_value)",
+        // DC-P0-004: H2 does not support partial indexes; null idempotency_key values are treated
+        // as distinct in unique indexes. Use PostgreSQL for stricter partial-index semantics in production.
+        "CREATE INDEX IF NOT EXISTS idx_dc_event_log_idempotency ON dc_event_log(tenant_id, idempotency_key)"
+    );
+
+    private static final int INITIAL_MIGRATION_VERSION = 1;
+
     private void initializeSchema() {
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
-            statement.execute("""
-                CREATE TABLE IF NOT EXISTS dc_event_log (
-                    offset_value BIGINT AUTO_INCREMENT PRIMARY KEY,
-                    tenant_id VARCHAR(255) NOT NULL,
-                    event_id VARCHAR(64) NOT NULL,
-                    event_type VARCHAR(255) NOT NULL,
-                    event_version VARCHAR(64) NOT NULL,
-                    payload BLOB NOT NULL,
-                    content_type VARCHAR(255) NOT NULL,
-                    headers_json CLOB NOT NULL,
-                    idempotency_key VARCHAR(255),
-                    created_at TIMESTAMP NOT NULL
-                )
-                """);
-            statement.execute("CREATE INDEX IF NOT EXISTS idx_dc_event_log_tenant_offset ON dc_event_log(tenant_id, offset_value)");
-            statement.execute("CREATE INDEX IF NOT EXISTS idx_dc_event_log_tenant_type ON dc_event_log(tenant_id, event_type, offset_value)");
-            // DC-P0-004: Unique constraint prevents duplicate events with same idempotency key per tenant.
-            statement.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_dc_event_log_idempotency ON dc_event_log(tenant_id, idempotency_key) WHERE idempotency_key IS NOT NULL");
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                // DC-P2-006: Create the schema-version tracking table first so all subsequent
+                // migrations are idempotent across restarts.
+                try (Statement stmt = connection.createStatement()) {
+                    stmt.execute("""
+                        CREATE TABLE IF NOT EXISTS dc_h2_schema_migrations (
+                            migration_id INTEGER PRIMARY KEY,
+                            applied_at TIMESTAMP NOT NULL
+                        )
+                        """);
+                }
+                applyMigrations(connection);
+                connection.commit();
+            } catch (Exception exception) {
+                connection.rollback();
+                throw exception;
+            }
         } catch (Exception exception) {
             throw new IllegalStateException("Failed to initialize sovereign event log schema", exception);
         }
+    }
+
+    /**
+     * DC-P2-006: Applies any unapplied schema migrations in order.
+     * Migration 1 covers all statements in {@link #SCHEMA_MIGRATIONS}.
+     * Future schema changes should add new migration entries to {@link #SCHEMA_MIGRATIONS}
+     * and update the version check accordingly.
+     */
+    private void applyMigrations(Connection connection) throws Exception {
+        int maxApplied;
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT MAX(migration_id) FROM dc_h2_schema_migrations")) {
+            maxApplied = rs.next() && rs.getObject(1) != null ? rs.getInt(1) : 0;
+        }
+
+        if (maxApplied < INITIAL_MIGRATION_VERSION) {
+            try (Statement stmt = connection.createStatement()) {
+                for (String sql : SCHEMA_MIGRATIONS) {
+                    stmt.execute(sql);
+                }
+                stmt.execute(
+                    "INSERT INTO dc_h2_schema_migrations (migration_id, applied_at) VALUES ("
+                    + INITIAL_MIGRATION_VERSION + ", CURRENT_TIMESTAMP())");
+            }
+        }
+        // Future migrations: add `if (maxApplied < 2) { ... }` blocks here for each new version.
     }
 
     private DataSource createDataSource(Path path) {

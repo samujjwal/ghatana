@@ -147,6 +147,7 @@ export interface UseProjectReturn {
   loading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
+  advanceStage: () => Promise<Project | undefined>;
 }
 
 export interface UseTasksReturn {
@@ -154,6 +155,8 @@ export interface UseTasksReturn {
   loading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
+  updateTaskStatus: (taskId: string, status: Task['status']) => Promise<Task>;
+  retryTask: (taskId: string) => Promise<Task>;
 }
 
 export interface UseTaskReturn {
@@ -165,6 +168,9 @@ export interface UseTaskReturn {
 
 export interface UsePhaseStatesReturn {
   phaseStates: PhaseState[];
+  currentPhase: PhaseState | undefined;
+  completedPhases: PhaseState[];
+  blockedPhases: PhaseState[];
   loading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;

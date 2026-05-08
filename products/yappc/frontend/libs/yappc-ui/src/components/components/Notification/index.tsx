@@ -10,17 +10,20 @@ import { clsx } from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import type { Notification as NotificationType } from 'yappc-core/types';
-
 interface NotificationAction {
   label: string;
   action: () => void;
   variant?: 'primary' | 'secondary' | 'danger';
 }
 
-export interface EnhancedNotification extends Omit<NotificationType, 'type'> {
+export interface EnhancedNotification {
+  id: string;
+  title: string;
+  message: string;
   type: 'info' | 'success' | 'warning' | 'error';
   actions?: NotificationAction[];
+  createdAt?: string;
+  read?: boolean;
 }
 
 interface NotificationProps {

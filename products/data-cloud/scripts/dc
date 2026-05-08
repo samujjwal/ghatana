@@ -1,0 +1,159 @@
+#!/usr/bin/env bash
+# dc — Data Cloud operator CLI (DC-P3-001)
+#
+# Provides a unified entry point for runtime truth, health, route inventory,
+# contract drift, and provider conformance checks.
+#
+# Usage:
+#   dc health [--base-url URL]
+#   dc routes [--base-url URL]
+#   dc contract-drift [--warn-only]
+#   dc provider-check [--warn-only]
+#   dc tenant-isolation [--warn-only]
+#   dc config validate --config-path PATH [--verbose]
+#   dc full-audit [--warn-only]
+#
+# Environment variables:
+#   DC_BASE_URL   Base URL of the running Data Cloud instance (default: http://localhost:8080)
+#
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DC_BASE_URL="${DC_BASE_URL:-http://localhost:8080}"
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+usage() {
+  grep '^#' "$0" | sed 's/^# \{0,1\}//'
+  exit 0
+}
+
+die() { echo "::error:: $*" >&2; exit 1; }
+
+check_curl() {
+  command -v curl >/dev/null 2>&1 || die "curl is required but not installed."
+}
+
+# ── Commands ─────────────────────────────────────────────────────────────────
+
+cmd_health() {
+  local base_url="${1:-$DC_BASE_URL}"
+  check_curl
+  echo "── Data Cloud Health ────────────────────────────────────────────────"
+  echo "Endpoint: ${base_url}/health"
+  local status
+  status=$(curl -sf --max-time 10 "${base_url}/health" 2>/dev/null) || {
+    echo "  ✗ UNREACHABLE — server did not respond at ${base_url}"
+    echo "    Start the server: ./gradlew :products:data-cloud:delivery:launcher:run"
+    exit 1
+  }
+  echo "  Response:"
+  echo "$status" | sed 's/^/  /'
+  # Check for degraded status
+  if echo "$status" | grep -qi '"status".*"DOWN"\|"status".*"DEGRADED"'; then
+    echo "  ✗ Health check reports non-healthy status"
+    exit 1
+  fi
+  echo "  ✓ Health: OK"
+}
+
+cmd_routes() {
+  local base_url="${1:-$DC_BASE_URL}"
+  check_curl
+  echo "── Data Cloud Route Inventory ───────────────────────────────────────"
+  echo "Endpoint: ${base_url}/actuator/routes  (or /api/v1/runtime/routes)"
+  local routes
+  routes=$(curl -sf --max-time 10 "${base_url}/api/v1/runtime/routes" 2>/dev/null) || {
+    # Fallback: parse routes from OpenAPI spec
+    echo "  ℹ  Live routes endpoint not available — showing OpenAPI inventory."
+    grep -E "^  /|^    (get|post|put|patch|delete):" \
+      "${SCRIPT_DIR}/../contracts/openapi/data-cloud.yaml" 2>/dev/null \
+      | sed 's/^/  /' \
+      | head -60
+    echo ""
+    echo "  (Start the server and re-run for live route inventory)"
+    return 0
+  }
+  echo "$routes" | sed 's/^/  /'
+  echo "  ✓ Route inventory retrieved."
+}
+
+cmd_contract_drift() {
+  local warn_only="${1:-}"
+  echo "── Contract Drift Detection ─────────────────────────────────────────"
+  bash "${SCRIPT_DIR}/check-openapi-drift.sh" ${warn_only:+--warn-only}
+}
+
+cmd_provider_check() {
+  local warn_only="${1:-}"
+  echo "── Provider Conformance / Reuse Scorecard ───────────────────────────"
+  bash "${SCRIPT_DIR}/check-reuse-scorecard.sh" ${warn_only:+--warn-only}
+}
+
+cmd_tenant_isolation() {
+  local warn_only="${1:-}"
+  echo "── Tenant Isolation Audit ───────────────────────────────────────────"
+  bash "${SCRIPT_DIR}/audit-tenant-isolation.sh" ${warn_only:+--warn-only}
+}
+
+cmd_config_validate() {
+  # Delegate to the Java-based ConfigValidationCli via Gradle
+  shift # remove 'validate' sub-command token if present
+  echo "── Config Validation ────────────────────────────────────────────────"
+  local config_path=""
+  local verbose=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --config-path) config_path="$2"; shift 2 ;;
+      --verbose)     verbose="--verbose"; shift ;;
+      *) die "Unknown option: $1" ;;
+    esac
+  done
+  [[ -n "$config_path" ]] || die "--config-path is required for config validate"
+  # Run via Gradle task; fall back to direct java -jar if built
+  local jar
+  jar=$(find "${SCRIPT_DIR}/../.." -name "data-cloud-cli*.jar" -not -path "*/tmp/*" 2>/dev/null | head -1)
+  if [[ -n "$jar" ]]; then
+    java -jar "$jar" validate --config-path "$config_path" ${verbose}
+  else
+    echo "  ℹ  No pre-built CLI jar found. Run via Gradle:"
+    echo "  ./gradlew :products:data-cloud:planes:operations:config:run --args=\"validate --config-path $config_path $verbose\""
+  fi
+}
+
+cmd_full_audit() {
+  local warn_only="${1:-}"
+  echo "══ Data Cloud Full Audit ════════════════════════════════════════════"
+  echo ""
+  cmd_contract_drift "$warn_only"    || true
+  echo ""
+  cmd_provider_check "$warn_only"    || true
+  echo ""
+  cmd_tenant_isolation "$warn_only"  || true
+  echo ""
+  echo "══ Full Audit Complete ══════════════════════════════════════════════"
+}
+
+# ── Dispatch ─────────────────────────────────────────────────────────────────
+
+COMMAND="${1:-help}"
+shift || true
+
+case "$COMMAND" in
+  health)           cmd_health "${1:-}" ;;
+  routes)           cmd_routes "${1:-}" ;;
+  contract-drift)   cmd_contract_drift "${1:-}" ;;
+  provider-check)   cmd_provider_check "${1:-}" ;;
+  tenant-isolation) cmd_tenant_isolation "${1:-}" ;;
+  config)
+    SUB="${1:-help}"
+    shift || true
+    case "$SUB" in
+      validate) cmd_config_validate validate "$@" ;;
+      *)        die "Unknown config sub-command: $SUB. Use: dc config validate --config-path PATH" ;;
+    esac
+    ;;
+  full-audit)       cmd_full_audit "${1:-}" ;;
+  help|--help|-h)   usage ;;
+  *)                die "Unknown command: $COMMAND. Run 'dc help' for usage." ;;
+esac

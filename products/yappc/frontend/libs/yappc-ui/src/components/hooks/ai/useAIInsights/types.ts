@@ -99,21 +99,27 @@ export interface AIInsightAnalysis {
 
 /** Type guard for AIInsightAnalysis */
 export function isAIInsightAnalysis(obj: unknown): obj is AIInsightAnalysis {
+  if (obj === null || typeof obj !== 'object') return false;
+  const candidate = obj as {
+    recommendations?: unknown;
+    patterns?: unknown;
+    lastAnalysis?: unknown;
+  };
+  const patterns = candidate.patterns;
+  if (patterns === null || typeof patterns !== 'object') return false;
+  const patternCandidate = patterns as {
+    detected?: unknown;
+    anomalies?: unknown;
+    trends?: unknown;
+  };
   return (
-    obj !== null &&
-    typeof obj === 'object' &&
     'buildTimePrediction' in obj &&
     'deploymentRisk' in obj &&
-    'recommendations' in obj &&
-    'patterns' in obj &&
-    'lastAnalysis' in obj &&
-    Array.isArray(obj.recommendations) &&
-    typeof obj.patterns === 'object' &&
-    obj.patterns !== null &&
-    Array.isArray(obj.patterns.detected) &&
-    Array.isArray(obj.patterns.anomalies) &&
-    Array.isArray(obj.patterns.trends) &&
-    obj.lastAnalysis instanceof Date
+    Array.isArray(candidate.recommendations) &&
+    Array.isArray(patternCandidate.detected) &&
+    Array.isArray(patternCandidate.anomalies) &&
+    Array.isArray(patternCandidate.trends) &&
+    candidate.lastAnalysis instanceof Date
   );
 }
 

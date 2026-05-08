@@ -201,7 +201,7 @@ export const InteractionDrawer: FC<DrawerProps> = ({
   }
 
   const rootClassName =
-    variant === 'permanent'
+    variant === 'persistent' && open
       ? 'relative pointer-events-none'
       : 'fixed inset-0 z-[1300] pointer-events-none';
 

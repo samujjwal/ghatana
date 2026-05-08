@@ -10,6 +10,15 @@ import type { ComponentNodeData } from '../types';
  * Property transformation utilities
  */
 export class PropertyTransformer {
+  private static isPlainRecord(value: unknown): value is Record<string, unknown> {
+    return (
+      value !== null &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      value.constructor === Object
+    );
+  }
+
   /**
    * Transform component props to canvas node data
    */
@@ -65,7 +74,7 @@ export class PropertyTransformer {
     }
 
     // Handle objects (but not Date, RegExp, etc.)
-    if (typeof value === 'object' && value.constructor === Object) {
+    if (this.isPlainRecord(value)) {
       const transformed: Record<string, unknown> = {};
       for (const [key, val] of Object.entries(value)) {
         transformed[key] = this.transformValue(val);
@@ -138,11 +147,9 @@ export class PropertyTransformer {
 
     for (const [key, value] of Object.entries(override)) {
       if (
-        value &&
-        typeof value === 'object' &&
-        !Array.isArray(value) &&
+        this.isPlainRecord(value) &&
         key in result &&
-        typeof result[key] === 'object'
+        this.isPlainRecord(result[key])
       ) {
         result[key] = this.mergeProps(result[key], value);
       } else {
@@ -167,7 +174,9 @@ export class PropertyTransformer {
 
     for (const [key, value] of Object.entries(props)) {
       if (metadataKeys.includes(key)) {
-        Object.assign(metadata, value);
+        if (this.isPlainRecord(value)) {
+          Object.assign(metadata, value);
+        }
       } else {
         cleanProps[key] = value;
       }

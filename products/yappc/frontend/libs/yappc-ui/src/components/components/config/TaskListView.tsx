@@ -16,14 +16,14 @@ import {
   Box,
   Card,
   CardContent,
-  Typography,
-  Stack,
-  Chip,
-  Skeleton,
 } from '@ghatana/design-system';
 
 import { selectedDomainIdAtom } from 'yappc-state';
 
+import { Chip } from '../Chip';
+import { Skeleton } from '../Skeleton';
+import { Stack } from '../Stack';
+import { Typography } from '../Typography';
 import { useDomainById } from '../../hooks/useConfig';
 
 // ============================================================================
@@ -136,9 +136,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => (
           {task.description && (
             <Typography
               as="p"
-              className="text-sm"
+              className="mt-1 text-sm"
               color="text.secondary"
-              className="mt-1"
             >
               {task.description}
             </Typography>
@@ -264,7 +263,7 @@ const TaskListContent: React.FC<TaskListContentProps> = ({ domainId }) => {
         <Typography as="p">
           Tasks are loaded from the domain configuration.
         </Typography>
-        <Typography as="p" className="text-sm" className="mt-2">
+        <Typography as="p" className="mt-2 text-sm">
           Select a domain to see associated tasks.
         </Typography>
       </Box>
@@ -292,8 +291,7 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
   if (!selectedDomainId) {
     return (
       <Box
-        className={className}
-        className="text-center py-16 text-gray-500 dark:text-gray-400"
+        className={`${className} text-center py-16 text-gray-500 dark:text-gray-400`}
       >
         <Typography className="mb-2 text-[2.5rem]">📋</Typography>
         <Typography as="p">Select a domain to view tasks</Typography>

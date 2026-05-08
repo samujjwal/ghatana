@@ -1,5 +1,2 @@
-export { Chip, type ChipProps } from 'yappc-ui';
-export {
-  Chip as ChipTailwind,
-  type ChipProps as ChipTailwindProps,
-} from 'yappc-ui';
+export { Chip, Chip as ChipTailwind, type ChipProps } from './Chip.tailwind';
+export type { ChipProps as ChipTailwindProps } from './Chip.tailwind';

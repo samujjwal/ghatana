@@ -36,7 +36,7 @@ export {
   type ResourceEstimate,
   type InitializationPreset,
   type PresetCardProps,
-} from 'yappc-ui/initialization-ui';
+} from './PresetCard';
 
 // EnvironmentTabs - Environment tab navigation
 export {
@@ -58,7 +58,7 @@ export {
   type Resource,
   type ResourceAction,
   type ResourcesListProps,
-} from 'yappc-ui/initialization-ui';
+} from './ResourcesList';
 
 // RollbackConfirmDialog - Rollback confirmation dialog
 export {

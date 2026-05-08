@@ -26,11 +26,9 @@ const CanvasLazy = React.lazy(loadCanvasComponent);
 
 export interface CanvasEditorProps {
   /** The CanvasDocument to render. Pass `null` to show an empty state. */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  document?: any;
+  document?: unknown;
   /** Custom theme applied to the canvas surface */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  theme?: any;
+  theme?: unknown;
   /** Height of the canvas container (default: 100%) */
   height?: string | number;
   /** Width of the canvas container (default: 100%) */
@@ -40,12 +38,14 @@ export interface CanvasEditorProps {
 
 const CanvasLoadingFallback: React.FC = () => (
   <Box
-    display="flex"
-    alignItems="center"
-    justifyContent="center"
-    height="100%"
-    flexDirection="column"
-    gap={1}
+    sx={{
+      alignItems: 'center',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 1,
+      height: '100%',
+      justifyContent: 'center',
+    }}
   >
     <CircularProgress size={28} />
     <Typography variant="caption" color="text.secondary">

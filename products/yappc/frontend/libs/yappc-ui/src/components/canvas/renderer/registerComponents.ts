@@ -7,23 +7,36 @@
  * @module canvas/renderer/registerComponents
  */
 
-// Import UI components
-import { Accordion } from '../../components/Accordion/Accordion';
-import { Alert } from '../../components/Alert/Alert';
-import { Avatar } from '../../components/Avatar/Avatar';
-import { Badge } from '../../components/Badge/Badge';
-import { Button } from '../../components/Button/Button';
-import { Card } from '../../components/Card/Card';
-import { Container } from '../../components/Container/Container';
-import { Dialog } from '../../components/Dialog/Dialog';
-import { Form } from '../../components/Form/Form';
-import { Grid } from '../../components/Grid/Grid';
-import { Menu } from '../../components/Menu/Menu';
-import { Stack } from '../../components/Stack/Stack';
-import { Tabs } from '../../components/Tabs/Tabs';
-import { TextField } from '../../components/TextField/TextField';
+import React from 'react';
 
 import { RendererComponentRegistry } from './ComponentRegistry';
+
+import type { ComponentType } from './ComponentRegistry';
+
+const createFallbackElement =
+  (tagName: keyof React.JSX.IntrinsicElements): ComponentType =>
+  (props: unknown) => {
+    const { children, ...rest } =
+      props !== null && typeof props === 'object'
+        ? (props as Record<string, unknown>)
+        : {};
+    return React.createElement(tagName, rest, children as React.ReactNode);
+  };
+
+const Accordion = createFallbackElement('details');
+const Alert = createFallbackElement('div');
+const Avatar = createFallbackElement('div');
+const Badge = createFallbackElement('span');
+const Button = createFallbackElement('button');
+const Card = createFallbackElement('div');
+const Container = createFallbackElement('div');
+const Dialog = createFallbackElement('dialog');
+const Form = createFallbackElement('form');
+const Grid = createFallbackElement('div');
+const Menu = createFallbackElement('menu');
+const Stack = createFallbackElement('div');
+const Tabs = createFallbackElement('div');
+const TextField = createFallbackElement('input');
 
 // ============================================================================
 // Register All Components

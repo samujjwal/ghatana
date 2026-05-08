@@ -61,6 +61,47 @@ export const CardContent = GlobalCardContent;
 export const CardActions = GlobalCardActions;
 export const CardMedia = GlobalCardMedia;
 
+export interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
+  children?: React.ReactNode;
+}
+
+export const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
+  ({ children, className, ...props }, ref) =>
+    React.createElement(
+      'h3',
+      {
+        ref,
+        className: ['text-lg font-semibold leading-none tracking-tight', className]
+          .filter(Boolean)
+          .join(' '),
+        ...props,
+      },
+      children
+    )
+);
+CardTitle.displayName = 'CardTitle';
+
+export interface CardDescriptionProps
+  extends React.HTMLAttributes<HTMLParagraphElement> {
+  children?: React.ReactNode;
+}
+
+export const CardDescription = React.forwardRef<
+  HTMLParagraphElement,
+  CardDescriptionProps
+>(({ children, className, ...props }, ref) =>
+  React.createElement(
+    'p',
+    {
+      ref,
+      className: ['text-sm text-gray-500', className].filter(Boolean).join(' '),
+      ...props,
+    },
+    children
+  )
+);
+CardDescription.displayName = 'CardDescription';
+
 export type {
   GlobalCardHeaderProps as CardHeaderProps,
   GlobalCardContentProps as CardContentProps,

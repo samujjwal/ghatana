@@ -51,7 +51,7 @@ interface ApiError {
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe('ApiClient runtime truth evidence (DC-P1-438)', () => {
-  let ApiClient: typeof import('../api/client').ApiClient;
+  let ApiClient: typeof import('../../lib/api/client').ApiClient;
   let createApiClient: () => InstanceType<typeof ApiClient>;
 
   beforeEach(async () => {

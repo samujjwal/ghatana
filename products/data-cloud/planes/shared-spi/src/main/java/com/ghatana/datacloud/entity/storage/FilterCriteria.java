@@ -52,6 +52,13 @@ public class FilterCriteria {
         LIKE("LIKE"),      // Pattern matching
         ILIKE("ILIKE"),    // Case-insensitive pattern matching
         IN("IN"),          // Value in list
+        NOT_IN("NOT IN"),  // Value not in list
+        NOT_LIKE("NOT LIKE"),  // Inverse pattern matching
+        STARTS_WITH("LIKE"),   // Prefix match (translated to LIKE 'prefix%')
+        ENDS_WITH("LIKE"),     // Suffix match (translated to LIKE '%suffix')
+        CONTAINS("LIKE"),      // Substring match (translated to LIKE '%sub%')
+        BETWEEN("BETWEEN"),    // Range match (inclusive)
+        REGEX("~"),            // Regular expression match
         IS_NULL("IS NULL"),         // Field is null
         IS_NOT_NULL("IS NOT NULL"); // Field is not null
 

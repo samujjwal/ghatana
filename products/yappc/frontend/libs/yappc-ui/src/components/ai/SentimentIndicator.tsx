@@ -24,9 +24,9 @@
  */
 
 import {
-  SentimentVerySatisfied as HappyIcon,
-  SentimentNeutral as NeutralIcon,
-  SentimentVeryDissatisfied as SadIcon,
+  Smile as HappyIcon,
+  Meh as NeutralIcon,
+  Frown as SadIcon,
   ChevronDown as ExpandMoreIcon,
   ChevronUp as ExpandLessIcon,
 } from 'lucide-react';
@@ -44,10 +44,7 @@ import {
   Collapse,
 } from '@ghatana/design-system';
 
-import type { SentimentAnalyzer } from 'yappc-ai/core';
-import { type SentimentResult } from 'yappc-ai/core';
-
-import { resolveMuiColor } from '../utils/safePalette';
+import type { SentimentAnalyzer, SentimentResult } from './aiServiceTypes';
 
 /**
  *
@@ -122,7 +119,6 @@ export const SentimentIndicator: React.FC<SentimentIndicatorProps> = ({
   minLength = 5,
   className,
 }) => {
-  const theme = useTheme();
   const [result, setResult] = useState<SentimentResult | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -183,7 +179,7 @@ export const SentimentIndicator: React.FC<SentimentIndicatorProps> = ({
       <Chip
         icon={config.icon}
         label={config.emoji}
-        color={resolveMuiColor(theme, String(config.color), 'default')}
+        color={config.color}
         size="sm"
         className={className}
       />
@@ -194,7 +190,7 @@ export const SentimentIndicator: React.FC<SentimentIndicatorProps> = ({
     <Chip
       icon={config.icon}
       label={`${config.emoji} ${config.label}`}
-      color={resolveMuiColor(theme, String(config.color), 'default')}
+      color={config.color}
       size="md"
       className={className}
     />
@@ -230,7 +226,7 @@ export const SentimentIndicator: React.FC<SentimentIndicatorProps> = ({
           <LinearProgress
             variant="determinate"
             value={result.confidence * 100}
-            color={resolveMuiColor(theme, String(config.color), 'default')}
+            color={config.color}
           />
         )}
 
@@ -246,8 +242,7 @@ export const SentimentIndicator: React.FC<SentimentIndicatorProps> = ({
             </Typography>
             <Typography
               as="span"
-              className="text-xs text-gray-500"
-              className="font-bold"
+              className="text-xs text-gray-500 font-bold"
             >
               {Math.round(result.scores.positive * 100)}%
             </Typography>
@@ -255,7 +250,6 @@ export const SentimentIndicator: React.FC<SentimentIndicatorProps> = ({
           <LinearProgress
             variant="determinate"
             value={result.scores.positive * 100}
-            tone="success"
             className="h-[4px]"
           />
 
@@ -269,8 +263,7 @@ export const SentimentIndicator: React.FC<SentimentIndicatorProps> = ({
             </Typography>
             <Typography
               as="span"
-              className="text-xs text-gray-500"
-              className="font-bold"
+              className="text-xs text-gray-500 font-bold"
             >
               {Math.round(result.scores.neutral * 100)}%
             </Typography>
@@ -291,8 +284,7 @@ export const SentimentIndicator: React.FC<SentimentIndicatorProps> = ({
             </Typography>
             <Typography
               as="span"
-              className="text-xs text-gray-500"
-              className="font-bold"
+              className="text-xs text-gray-500 font-bold"
             >
               {Math.round(result.scores.negative * 100)}%
             </Typography>
@@ -300,7 +292,6 @@ export const SentimentIndicator: React.FC<SentimentIndicatorProps> = ({
           <LinearProgress
             variant="determinate"
             value={result.scores.negative * 100}
-            tone="danger"
             className="h-[4px]"
           />
         </Stack>
@@ -339,9 +330,8 @@ export const SentimentIndicator: React.FC<SentimentIndicatorProps> = ({
                       <Box className="flex-1 min-w-0">
                         <Typography
                           as="span"
-                          className="text-xs text-gray-500"
                           color="text.secondary"
-                          className="overflow-hidden text-ellipsis whitespace-nowrap block"
+                          className="text-xs text-gray-500 overflow-hidden text-ellipsis whitespace-nowrap block"
                         >
                           {item.text}
                         </Typography>

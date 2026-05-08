@@ -6,40 +6,23 @@
 
 'use client';
 
-import { useAtom, type WritableAtom } from 'jotai';
-import { atom } from 'jotai';
+import { useAtom, atom } from 'jotai';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-
-import { StateManager } from 'yappc-state';
 
 type Theme = 'light' | 'dark' | 'system';
 type ThemeWithoutSystem = 'light' | 'dark';
 
-const baseThemeAtomRef =
-  StateManager.getAtom<ThemeWithoutSystem>('store:theme');
-
-if (!baseThemeAtomRef) {
-  throw new Error(
-    '[ThemeProvider] Expected "store:theme" atom to be registered in StateManager'
-  );
-}
+const baseThemeAtomRef = atom<ThemeWithoutSystem>('light');
 
 // Create a derived atom that handles the 'system' theme
 export const themeAtom = atom(
-  (get) => {
-    const theme = get(
-      baseThemeAtomRef as WritableAtom<ThemeWithoutSystem, [Theme], void>
-    );
-    return theme;
-  },
+  (get) => get(baseThemeAtomRef),
   (get, set, update: Theme) => {
     // Only update if the theme is different
-    const currentTheme = get(
-      baseThemeAtomRef as WritableAtom<ThemeWithoutSystem, [Theme], void>
-    );
+    const currentTheme = get(baseThemeAtomRef);
     if (currentTheme !== update) {
       set(
-        baseThemeAtomRef as WritableAtom<ThemeWithoutSystem, [Theme], void>,
+        baseThemeAtomRef,
         update === 'system'
           ? window.matchMedia('(prefers-color-scheme: dark)').matches
             ? 'dark'

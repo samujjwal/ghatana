@@ -188,11 +188,11 @@ interface ActiveQuestionProps {
 }
 
 const PHASE_LABELS: Record<BootstrapPhase, string> = {
-  enter: 'Getting Started',
-  explore: 'Exploring Requirements',
-  refine: 'Refining Details',
-  validate: 'Validating Blueprint',
-  complete: 'Ready to Build',
+  discover: 'Getting Started',
+  design: 'Exploring Requirements',
+  build: 'Refining Details',
+  test: 'Validating Blueprint',
+  launch: 'Ready to Build',
 };
 
 const ActiveQuestion: React.FC<ActiveQuestionProps> = ({
@@ -263,6 +263,7 @@ const AgentStatusDisplay: React.FC<AgentStatusProps> = ({
     idle: { color: 'text-zinc-400' },
     thinking: { color: 'text-yellow-400', animation: 'animate-pulse' },
     typing: { color: 'text-blue-400', animation: 'animate-pulse' },
+    responding: { color: 'text-blue-400', animation: 'animate-pulse' },
     waiting: { color: 'text-zinc-400' },
     error: { color: 'text-red-400' },
   };

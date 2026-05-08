@@ -323,7 +323,7 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
                     TENANT_B,
                     COLLECTION,
                     new Query( 
-                            List.of(new Filter("classification", "eq", "secret")), 
+                            List.of(Filter.eq("classification", "secret")), 
                             List.of(), 
                             0,
                             100)));

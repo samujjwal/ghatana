@@ -381,7 +381,7 @@ export function SmartDataTable<T = Item>({
               startAdornment: (
                 <InputAdornment position="start">
                   <Tooltip title="AI-powered search">
-                    <AIIcon tone="primary" />
+                    <AIIcon className="text-blue-600" />
                   </Tooltip>
                 </InputAdornment>
               ),

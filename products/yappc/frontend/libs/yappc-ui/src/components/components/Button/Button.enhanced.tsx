@@ -9,7 +9,10 @@
 
 import React from 'react';
 
-import { Button as BaseButton, Tooltip } from '@ghatana/design-system';
+import {
+  Button as BaseButton,
+  type ButtonProps as BaseButtonProps,
+} from './Button.tailwind';
 import {
   borderRadiusSm,
   borderRadiusMd,
@@ -19,7 +22,7 @@ import {
   spacingLg,
   fontWeightMedium,
   fontWeightSemibold,
-} from '@ghatana/yappc-shared-ui-core/tokens';
+} from '../../tokens';
 
 import { useAccessibility } from '../../hooks';
 import useKeyboardActivate from '../../hooks/useKeyboardActivate';
@@ -41,6 +44,21 @@ type TooltipPlacement =
   | 'top-end'
   | 'bottom-start'
   | 'bottom-end';
+
+type ButtonTone =
+  | 'primary'
+  | 'secondary'
+  | 'success'
+  | 'error'
+  | 'danger'
+  | 'warning'
+  | 'info'
+  | 'inherit';
+
+type EnhancedButtonRestProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  startIcon?: React.ReactNode;
+  endIcon?: React.ReactNode;
+};
 
 /**
  * Props for the enhanced Button component.
@@ -103,6 +121,21 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   tooltipProps?: Record<string, unknown>;
 
   /**
+   * Loading state. Disables the button and shows the package-local spinner.
+   */
+  loading?: boolean;
+
+  /**
+   * Icon rendered before children.
+   */
+  startIcon?: React.ReactNode;
+
+  /**
+   * Icon rendered after children.
+   */
+  endIcon?: React.ReactNode;
+
+  /**
    * ARIA label for accessibility
    * Used when button content is not descriptive enough
    */
@@ -154,14 +187,12 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   /**
    * Color tone
    */
-  color?:
-    | 'primary'
-    | 'secondary'
-    | 'success'
-    | 'error'
-    | 'warning'
-    | 'info'
-    | 'inherit';
+  color?: ButtonTone;
+
+  /**
+   * Legacy tone alias used by older stories and callers.
+   */
+  tone?: ButtonTone;
 }
 
 /** Map shape to Tailwind border-radius */
@@ -185,6 +216,43 @@ const sizeClasses: Record<string, string> = {
   small: 'min-h-[36px] min-w-[64px] px-4 py-2 text-sm',
   medium: 'min-h-[44px] min-w-[64px] px-5 py-2.5 text-[0.9375rem]',
   large: 'min-h-[48px] min-w-[64px] px-6 py-4 text-base',
+};
+
+const mapButtonSize = (
+  size: NonNullable<ButtonProps['size']>
+): NonNullable<BaseButtonProps['size']> => {
+  if (size === 'small') return 'sm';
+  if (size === 'large') return 'lg';
+  return 'md';
+};
+
+const mapButtonVariant = (
+  variant: ButtonProps['variant']
+): NonNullable<BaseButtonProps['variant']> => {
+  if (variant === 'contained') return 'solid';
+  if (variant === 'text') return 'ghost';
+  if (variant === 'outlined') return 'outline';
+  if (variant === 'soft') return 'secondary';
+  return variant ?? 'solid';
+};
+
+const mapButtonColorScheme = (
+  tone: ButtonTone | undefined
+): NonNullable<BaseButtonProps['colorScheme']> => {
+  if (tone === 'danger') return 'error';
+  if (tone === 'inherit' || tone === 'info') return 'grey';
+  return tone ?? 'primary';
+};
+
+const cloneDecorativeIcon = (icon: React.ReactNode): React.ReactNode => {
+  if (!React.isValidElement(icon)) {
+    return icon;
+  }
+
+  return React.cloneElement(
+    icon as React.ReactElement<React.HTMLAttributes<HTMLElement>>,
+    { 'aria-hidden': true }
+  );
 };
 
 /**
@@ -245,6 +313,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       children,
       shape = 'rounded',
       elevation = 1,
+      fullWidth = false,
       disableRipple = false,
       rippleColor,
       tooltip,
@@ -255,32 +324,25 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       size = 'medium',
       className,
       variant,
+      color,
+      tone,
+      startIcon,
+      endIcon,
+      onKeyDown,
       ...rest
     } = props;
 
     // Extract accessibility props
-    const { a11yProps, rest: otherProps } = getA11yProps(rest);
+    const { a11yProps, rest: otherProps } = getA11yProps(
+      rest as Record<string, unknown>
+    ) as {
+      a11yProps: React.HTMLAttributes<HTMLButtonElement>;
+      rest: EnhancedButtonRestProps;
+    };
 
     // Extract and clone icons to mark them as decorative
-    const { startIcon, endIcon } = otherProps;
-    const clonedStartIcon =
-      startIcon && React.isValidElement(startIcon)
-        ? React.cloneElement(startIcon, {
-            'aria-hidden': true,
-          })
-        : startIcon;
-
-    const clonedEndIcon =
-      endIcon && React.isValidElement(endIcon)
-        ? React.cloneElement(endIcon, {
-            'aria-hidden': true,
-          })
-        : endIcon;
-
-    // Build button props
-    const buttonProps = { ...otherProps } as unknown;
-    if (startIcon) buttonProps.startIcon = clonedStartIcon;
-    if (endIcon) buttonProps.endIcon = clonedEndIcon;
+    const clonedStartIcon = cloneDecorativeIcon(startIcon);
+    const clonedEndIcon = cloneDecorativeIcon(endIcon);
 
     // Use accessibility hook for audit
     const { ref: a11yRef } = useAccessibility<HTMLButtonElement>({
@@ -312,7 +374,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     // Compute aria-label from children when not explicitly provided
     const computedAriaLabel = computeAriaLabel(
       children,
-      buttonProps['aria-label'] || a11yProps['aria-label']
+      otherProps['aria-label'] || a11yProps['aria-label']
     );
 
     // Compose Tailwind classes for enhanced styling
@@ -334,29 +396,30 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       .filter(Boolean)
       .join(' ');
 
-    // Map variant to BaseButton variant
-    const baseVariant =
-      variant === 'contained'
-        ? 'solid'
-        : variant === 'text'
-          ? 'ghost'
-          : variant;
-
     // Create button element
     const buttonElement = (
       <BaseButton
         ref={setRefs}
-        variant={baseVariant as unknown}
-        loading={loading}
+        variant={mapButtonVariant(variant)}
+        colorScheme={mapButtonColorScheme(tone ?? color)}
+        isLoading={loading}
+        leftIcon={clonedStartIcon}
+        rightIcon={clonedEndIcon}
         disabled={disabled || loading}
         aria-disabled={disabled || loading ? true : undefined}
         aria-busy={loading ? true : undefined}
-        size={size}
+        size={mapButtonSize(size)}
         className={buttonClassName}
-        {...buttonProps}
+        fullWidth={fullWidth}
+        {...otherProps}
         {...a11yProps}
         {...(computedAriaLabel ? { 'aria-label': computedAriaLabel } : {})}
-        onKeyDown={handleKeyDown}
+        onKeyDown={(event) => {
+          onKeyDown?.(event);
+          if (!event.defaultPrevented) {
+            handleKeyDown(event);
+          }
+        }}
       >
         {children}
       </BaseButton>
@@ -366,14 +429,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     if (tooltip) {
       const describedById = `button-tooltip-${Math.random().toString(36).slice(2, 9)}`;
       return (
-        <Tooltip
+        <span
+          data-tooltip-placement={tooltipPlacement}
           title={tooltip}
-          placement={tooltipPlacement}
-          arrow
-          {...tooltipProps}
+          {...(tooltipProps as React.HTMLAttributes<HTMLSpanElement>)}
         >
           {wrapForTooltip(buttonElement, { 'aria-describedby': describedById })}
-        </Tooltip>
+        </span>
       );
     }
 

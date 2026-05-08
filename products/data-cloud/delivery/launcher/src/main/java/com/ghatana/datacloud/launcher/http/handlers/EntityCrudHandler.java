@@ -538,13 +538,13 @@ public class EntityCrudHandler {
 
     private com.ghatana.datacloud.spi.EntityStore.Filter toStoreFilter(DataCloudClient.Filter filter) {
         return switch (filter.operator()) {
-            case "eq" -> com.ghatana.datacloud.spi.EntityStore.Filter.eq(filter.field(), filter.value());
-            case "ne" -> com.ghatana.datacloud.spi.EntityStore.Filter.ne(filter.field(), filter.value());
-            case "gt" -> com.ghatana.datacloud.spi.EntityStore.Filter.gt(filter.field(), filter.value());
-            case "gte" -> com.ghatana.datacloud.spi.EntityStore.Filter.gte(filter.field(), filter.value());
-            case "lt" -> com.ghatana.datacloud.spi.EntityStore.Filter.lt(filter.field(), filter.value());
-            case "lte" -> com.ghatana.datacloud.spi.EntityStore.Filter.lte(filter.field(), filter.value());
-            case "like" -> com.ghatana.datacloud.spi.EntityStore.Filter.like(filter.field(), (String) filter.value());
+            case EQ -> com.ghatana.datacloud.spi.EntityStore.Filter.eq(filter.field(), filter.value());
+            case NE -> com.ghatana.datacloud.spi.EntityStore.Filter.ne(filter.field(), filter.value());
+            case GT -> com.ghatana.datacloud.spi.EntityStore.Filter.gt(filter.field(), filter.value());
+            case GTE -> com.ghatana.datacloud.spi.EntityStore.Filter.gte(filter.field(), filter.value());
+            case LT -> com.ghatana.datacloud.spi.EntityStore.Filter.lt(filter.field(), filter.value());
+            case LTE -> com.ghatana.datacloud.spi.EntityStore.Filter.lte(filter.field(), filter.value());
+            case LIKE -> com.ghatana.datacloud.spi.EntityStore.Filter.like(filter.field(), (String) filter.value());
             default -> com.ghatana.datacloud.spi.EntityStore.Filter.eq(filter.field(), filter.value());
         };
     }
@@ -1138,6 +1138,111 @@ public class EntityCrudHandler {
                 return Promise.of(http.errorResponse(500, "Failed to upsert collection metadata: " + e.getMessage()));
             }
         });
+    }
+
+    /**
+     * GET /api/v1/data-quality/trust-scores
+     *
+     * <p>Returns the canonical Data Plane trust-score contract derived from the
+     * collection registry metadata. Scores are normalized to 0-100 and include
+     * lifecycle and operational posture so operators can compare collection trust
+     * levels consistently across surfaces.
+     */
+    public Promise<HttpResponse> handleGetDataQualityTrustScores(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) {
+            return Promise.of(http.errorResponse(400, tenantErr.get()));
+        }
+
+        DataCloudClient.Query query = DataCloudClient.Query.builder()
+            .limit(500)
+            .build();
+
+        return client.query(tenantId, "dc_collections", query)
+            .map(collections -> {
+                List<Map<String, Object>> scores = collections.stream()
+                    .map(entity -> toTrustScoreEntry(entity.data()))
+                    .toList();
+
+                Map<String, Object> response = new LinkedHashMap<>();
+                response.put("tenantId", tenantId);
+                response.put("count", scores.size());
+                response.put("generatedAt", Instant.now().toString());
+                response.put("scores", scores);
+                return http.jsonResponse(response);
+            })
+            .mapException(e -> {
+                log.error("[trust-scores] tenant={} failed to compute trust scores", tenantId, e);
+                return new HttpException("Failed to compute trust scores: " + e.getMessage(), e);
+            });
+    }
+
+    private static Map<String, Object> toTrustScoreEntry(Map<String, Object> metadata) {
+        String collection = String.valueOf(metadata.getOrDefault("id", metadata.getOrDefault("name", "unknown")));
+        String lifecycleStatus = String.valueOf(metadata.getOrDefault("lifecycleStatus", "DRAFT"));
+        String operationalStatus = String.valueOf(metadata.getOrDefault("operationalStatus", "unknown"));
+
+        double qualityScore = parseNormalizedQualityScore(metadata.get("qualityScore"));
+        int trustScore = computeTrustScore(qualityScore, lifecycleStatus, operationalStatus);
+
+        Map<String, Object> score = new LinkedHashMap<>();
+        score.put("collection", collection);
+        score.put("qualityScore", qualityScore);
+        score.put("trustScore", trustScore);
+        score.put("lifecycleStatus", lifecycleStatus);
+        score.put("operationalStatus", operationalStatus);
+        score.put("qualityMetrics", metadata.getOrDefault("qualityMetrics", Map.of()));
+        score.put("computedAt", Instant.now().toString());
+        return score;
+    }
+
+    private static double parseNormalizedQualityScore(Object value) {
+        if (value instanceof Number number) {
+            return clamp(number.doubleValue(), 0.0, 1.0);
+        }
+        if (value instanceof String stringValue) {
+            try {
+                return clamp(Double.parseDouble(stringValue), 0.0, 1.0);
+            } catch (NumberFormatException ignored) {
+                return 0.6;
+            }
+        }
+        return 0.6;
+    }
+
+    private static int computeTrustScore(double qualityScore, String lifecycleStatus, String operationalStatus) {
+        double score = qualityScore * 100.0;
+
+        String normalizedOperationalStatus = operationalStatus == null
+            ? "unknown"
+            : operationalStatus.trim().toLowerCase();
+        if ("degraded".equals(normalizedOperationalStatus)) {
+            score -= 15.0;
+        } else if ("unavailable".equals(normalizedOperationalStatus)) {
+            score -= 35.0;
+        } else if ("maintenance".equals(normalizedOperationalStatus)) {
+            score -= 10.0;
+        }
+
+        String normalizedLifecycleStatus = lifecycleStatus == null
+            ? "UNKNOWN"
+            : lifecycleStatus.trim().toUpperCase();
+        if ("DEPRECATED".equals(normalizedLifecycleStatus)) {
+            score -= 10.0;
+        } else if ("ARCHIVED".equals(normalizedLifecycleStatus)) {
+            score -= 20.0;
+        }
+
+        return (int) Math.round(clamp(score, 0.0, 100.0));
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     // ==================== Full-Text Search ====================

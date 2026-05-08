@@ -53,7 +53,6 @@ import { Avatar } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { Progress } from '@ghatana/design-system';
-import { Tabs } from '@ghatana/design-system';
 
 import { incidentsAtom, alertsAtom, activeIncidentAtom } from 'yappc-state';
 import { AvatarFallback, AvatarImage } from 'yappc-ui';
@@ -68,7 +67,7 @@ import {
 import { TooltipContent, TooltipTrigger } from 'yappc-ui';
 import { CardTitle } from 'yappc-ui';
 import { ScrollArea } from 'yappc-ui';
-import { TabsContent, TabsList, TabsTrigger } from 'yappc-ui';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from 'yappc-ui';
 
 // =============================================================================
 // Types
@@ -134,6 +133,82 @@ export interface Alert {
   count: number;
   lastOccurrence: string;
 }
+
+const incidentSeverities: ReadonlySet<string> = new Set([
+  'critical',
+  'high',
+  'medium',
+  'low',
+]);
+const incidentStatuses: ReadonlySet<string> = new Set([
+  'triggered',
+  'acknowledged',
+  'investigating',
+  'identified',
+  'monitoring',
+  'resolved',
+]);
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isIncidentSeverity = (value: unknown): value is IncidentSeverity =>
+  typeof value === 'string' && incidentSeverities.has(value);
+
+const isIncidentStatus = (value: unknown): value is IncidentStatus =>
+  typeof value === 'string' && incidentStatuses.has(value);
+
+const isIncident = (value: unknown): value is Incident => {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.id === 'string' &&
+    typeof value.title === 'string' &&
+    isIncidentSeverity(value.severity) &&
+    isIncidentStatus(value.status) &&
+    typeof value.service === 'string' &&
+    typeof value.startedAt === 'string' &&
+    Array.isArray(value.affectedServices) &&
+    Array.isArray(value.responders) &&
+    Array.isArray(value.timeline) &&
+    typeof value.relatedAlerts === 'number' &&
+    Array.isArray(value.tags)
+  );
+};
+
+const isAlert = (value: unknown): value is Alert => {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.id === 'string' &&
+    typeof value.title === 'string' &&
+    isIncidentSeverity(value.severity) &&
+    (value.status === 'firing' ||
+      value.status === 'acknowledged' ||
+      value.status === 'resolved') &&
+    typeof value.source === 'string' &&
+    typeof value.service === 'string' &&
+    typeof value.triggeredAt === 'string' &&
+    typeof value.count === 'number' &&
+    typeof value.lastOccurrence === 'string'
+  );
+};
+
+const normalizeIncidents = (value: unknown): Incident[] => {
+  if (!Array.isArray(value)) return [];
+  const normalized: Incident[] = [];
+  value.forEach((item: unknown) => {
+    if (isIncident(item)) normalized.push(item);
+  });
+  return normalized;
+};
+
+const normalizeAlerts = (value: unknown): Alert[] => {
+  if (!Array.isArray(value)) return [];
+  const normalized: Alert[] = [];
+  value.forEach((item: unknown) => {
+    if (isAlert(item)) normalized.push(item);
+  });
+  return normalized;
+};
 
 interface IncidentDashboardProps {
   onIncidentClick?: (incident: Incident) => void;
@@ -357,7 +432,7 @@ const IncidentCard = React.memo(
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                 <MoreHorizontal className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -574,8 +649,16 @@ export const IncidentDashboard: React.FC<IncidentDashboardProps> = ({
   isLoading = false,
   className,
 }) => {
-  const incidents = useAtomValue(incidentsAtom);
-  const alerts = useAtomValue(alertsAtom);
+  const rawIncidents = useAtomValue(incidentsAtom);
+  const rawAlerts = useAtomValue(alertsAtom);
+  const incidents = useMemo<Incident[]>(
+    () => normalizeIncidents(rawIncidents),
+    [rawIncidents]
+  );
+  const alerts = useMemo<Alert[]>(
+    () => normalizeAlerts(rawAlerts),
+    [rawAlerts]
+  );
   const setActiveIncident = useSetAtom(activeIncidentAtom);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -611,6 +694,7 @@ export const IncidentDashboard: React.FC<IncidentDashboardProps> = ({
     const avgResolutionMinutes =
       resolvedIncidents.length > 0
         ? resolvedIncidents.reduce((sum, i) => {
+            if (!i.resolvedAt) return sum;
             return (
               sum +
               differenceInMinutes(new Date(i.resolvedAt), new Date(i.startedAt))
@@ -680,7 +764,7 @@ export const IncidentDashboard: React.FC<IncidentDashboardProps> = ({
 
   const handleIncidentClick = useCallback(
     (incident: Incident) => {
-      setActiveIncident(incident);
+      setActiveIncident({ ...incident });
       onIncidentClick?.(incident);
     },
     [setActiveIncident, onIncidentClick]
@@ -771,7 +855,7 @@ export const IncidentDashboard: React.FC<IncidentDashboardProps> = ({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="sm" className="h-9 w-9 p-0">
               <Filter className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -828,7 +912,11 @@ export const IncidentDashboard: React.FC<IncidentDashboardProps> = ({
       {/* Content */}
       <Tabs
         value={activeTab}
-        onValueChange={(v) => setActiveTab(v as 'incidents' | 'alerts')}
+        onValueChange={(value) => {
+          if (value === 'incidents' || value === 'alerts') {
+            setActiveTab(value);
+          }
+        }}
         className="flex-1 flex flex-col"
       >
         <div className="px-4">

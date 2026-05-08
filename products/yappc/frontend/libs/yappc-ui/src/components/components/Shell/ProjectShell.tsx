@@ -19,10 +19,8 @@ import {
   Breadcrumb as Breadcrumbs,
   IconButton,
   Button,
-  Drawer,
-  AppBar,
-  Toolbar,
 } from '@ghatana/design-system';
+import { AppBar, Drawer, Toolbar } from 'yappc-ui';
 
 import { TabNavigation } from '../Navigation/TabNavigation';
 import type { TabNavigationItem } from '../Navigation/TabNavigation';
@@ -204,11 +202,12 @@ export const ProjectShell = React.forwardRef<HTMLDivElement, ProjectShellProps>(
     } = props;
 
     // Filter rest props so we don't accidentally forward unknown props to DOM elements
-    const forwardedProps: Record<string, unknown> = {};
+    const forwardedProps: React.HTMLAttributes<HTMLDivElement> = {};
     const allowList = /^(id|role|data-|aria-)/i;
     Object.keys(rest || {}).forEach((key) => {
       if (allowList.test(key)) {
-        (forwardedProps as unknown)[key] = (rest as unknown)[key];
+        forwardedProps[key as keyof React.HTMLAttributes<HTMLDivElement>] =
+          rest[key as keyof typeof rest];
       }
     });
 
@@ -268,7 +267,7 @@ export const ProjectShell = React.forwardRef<HTMLDivElement, ProjectShellProps>(
                     : 'ghost'
               }
               size="sm"
-              startIcon={action.icon as unknown}
+              startIcon={action.icon}
               aria-label={action.label}
             >
               {!isMobile && action.label}
@@ -353,11 +352,11 @@ export const ProjectShell = React.forwardRef<HTMLDivElement, ProjectShellProps>(
         {/* Mobile Navigation Drawer */}
         {isMobile && (
           <Drawer
-            anchor="left"
+            position="left"
             open={mobileMenuOpen}
-            onClose={handleMobileMenuToggle}
+            onOpenChange={(open) => setMobileMenuOpen(open)}
           >
-            <AppBar position="static" variant="flat">
+            <AppBar position="static">
               <Toolbar>
                 <Typography as="h6" noWrap component="div">
                   Navigation
@@ -406,7 +405,7 @@ export const ProjectShell = React.forwardRef<HTMLDivElement, ProjectShellProps>(
                       }
                       fullWidth
                       className="justify-start gap-2"
-                      startIcon={action.icon as unknown}
+                      startIcon={action.icon}
                     >
                       {action.label}
                     </Button>

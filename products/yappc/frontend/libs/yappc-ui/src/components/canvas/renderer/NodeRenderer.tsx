@@ -15,7 +15,7 @@ import {
   RendererComponentRegistry,
   useRegisteredComponent,
 } from './ComponentRegistry';
-import { ThemeApplicator, ThemeLayer } from './ThemeApplicator';
+import { ThemeApplicator } from './ThemeApplicator';
 import type { ThemeContext } from './ThemeApplicator';
 
 // ============================================================================
@@ -84,6 +84,9 @@ export interface ErrorBoundaryState {
   hasError: boolean;
   error?: Error;
 }
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
 
 // ============================================================================
 // Error Boundary
@@ -196,7 +199,7 @@ export const NodeRenderer: React.FC<NodeRendererProps> = ({
       handlers[eventName] = (payload: unknown) => {
         onEvent?.(eventConfig.emit, {
           ...eventConfig.payload,
-          ...payload,
+          ...(isRecord(payload) ? payload : {}),
         });
       };
     }

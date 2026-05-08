@@ -2,6 +2,7 @@ package com.ghatana.datacloud;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.datacloud.entity.storage.FilterCriteria;
 import com.ghatana.datacloud.spi.BatchResult;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.TenantContext;
@@ -416,13 +417,13 @@ public final class DataCloud {
 
         private EntityStore.Filter toStoreFilter(DataCloudClient.Filter filter) {
             return switch (filter.operator()) {
-                case "eq" -> EntityStore.Filter.eq(filter.field(), filter.value());
-                case "ne" -> EntityStore.Filter.ne(filter.field(), filter.value());
-                case "gt" -> EntityStore.Filter.gt(filter.field(), filter.value());
-                case "gte" -> EntityStore.Filter.gte(filter.field(), filter.value());
-                case "lt" -> EntityStore.Filter.lt(filter.field(), filter.value());
-                case "lte" -> EntityStore.Filter.lte(filter.field(), filter.value());
-                case "like" -> EntityStore.Filter.like(filter.field(), (String) filter.value());
+                case EQ -> EntityStore.Filter.eq(filter.field(), filter.value());
+                case NE -> EntityStore.Filter.ne(filter.field(), filter.value());
+                case GT -> EntityStore.Filter.gt(filter.field(), filter.value());
+                case GTE -> EntityStore.Filter.gte(filter.field(), filter.value());
+                case LT -> EntityStore.Filter.lt(filter.field(), filter.value());
+                case LTE -> EntityStore.Filter.lte(filter.field(), filter.value());
+                case LIKE -> EntityStore.Filter.like(filter.field(), (String) filter.value());
                 default -> EntityStore.Filter.eq(filter.field(), filter.value());
             };
         }

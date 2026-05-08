@@ -59,6 +59,16 @@ interface TokenOption {
   category: string;
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const toCssLength = (value: unknown): string | number | undefined => {
+  if (typeof value === 'number' || typeof value === 'string') {
+    return value;
+  }
+  return undefined;
+};
+
 // ============================================================================
 // Token Picker Component
 // ============================================================================
@@ -84,7 +94,7 @@ export const TokenPicker: React.FC<TokenPickerProps> = ({
       for (const [key, val] of Object.entries(obj)) {
         const path = prefix ? `${prefix}.${key}` : key;
 
-        if (typeof val === 'object' && !Array.isArray(val) && val !== null) {
+        if (isRecord(val)) {
           extractTokens(val, path);
         } else {
           const tokenCategory = path.split('.')[0];
@@ -99,7 +109,7 @@ export const TokenPicker: React.FC<TokenPickerProps> = ({
       }
     };
 
-    extractTokens(layerTokens);
+    extractTokens(isRecord(layerTokens) ? layerTokens : {});
     return tokens;
   }, [themeContext, category]);
 
@@ -125,7 +135,7 @@ export const TokenPicker: React.FC<TokenPickerProps> = ({
           style={{
             width: 20,
             height: 20,
-            backgroundColor: val,
+            backgroundColor: typeof val === 'string' ? val : undefined,
             border: '1px solid #ccc',
             borderRadius: 4,
           }}
@@ -137,7 +147,7 @@ export const TokenPicker: React.FC<TokenPickerProps> = ({
       return (
         <div
           style={{
-            width: val,
+            width: toCssLength(val),
             height: 8,
             backgroundColor: '#1976d2',
             borderRadius: 2,
@@ -147,7 +157,7 @@ export const TokenPicker: React.FC<TokenPickerProps> = ({
     }
 
     if (cat === 'typography') {
-      return <span style={{ fontSize: 12, color: '#666' }}>{val}</span>;
+      return <span style={{ fontSize: 12, color: '#666' }}>{String(val)}</span>;
     }
 
     return <span style={{ fontSize: 12, color: '#666' }}>{String(val)}</span>;

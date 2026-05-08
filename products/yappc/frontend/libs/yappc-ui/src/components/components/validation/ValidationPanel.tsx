@@ -213,8 +213,8 @@ const IssueCard = React.memo(
                       <TooltipTrigger asChild>
                         <Button
                           variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
+                          size="sm"
+                          className="h-7 w-7 p-0"
                           onClick={(e) => {
                             e.stopPropagation();
                             onAutoFix?.();
@@ -237,8 +237,8 @@ const IssueCard = React.memo(
                       <TooltipTrigger asChild>
                         <Button
                           variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
+                          size="sm"
+                          className="h-7 w-7 p-0"
                           onClick={(e) => {
                             e.stopPropagation();
                             onDismiss();
@@ -252,7 +252,7 @@ const IssueCard = React.memo(
                   )}
 
                   <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
                       {isExpanded ? (
                         <ChevronDown className="w-3.5 h-3.5" />
                       ) : (
@@ -613,7 +613,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="sm" className="h-9 w-9 p-0">
               <Filter className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -660,7 +660,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="sm" className="h-9 w-9 p-0">
               <ArrowUpDown className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>

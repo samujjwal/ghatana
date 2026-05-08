@@ -15,7 +15,7 @@ import {
   workflowByIdAtom,
   workflowsByCategoryAtom,
   taskByIdAtom,
-} from '@ghatana/state/tasks/taskRegistryStore';
+} from '../tasks/taskRegistryStore';
 import type {
   WorkflowDefinition,
   WorkflowPhase,
@@ -24,18 +24,18 @@ import type {
   WorkflowCategory,
   LifecycleStage,
   TaskDefinition,
-} from '@ghatana/types/tasks';
+} from 'yappc-core/types/tasks';
 
-import { LifecycleStageBadge, LifecycleStageTimeline } from './TaskComponents';
+import {
+  LifecycleStageBadge,
+  LifecycleStageTimeline,
+} from '../tasks/TaskComponents';
 
 // ============================================================================
 // Category Configuration
 // ============================================================================
 
-const categoryConfig: Record<
-  WorkflowCategory,
-  { icon: string; color: string; label: string }
-> = {
+const categoryConfig: Record<string, { icon: string; color: string; label: string }> = {
   discovery: { icon: 'search', color: '#2196F3', label: 'Discovery' },
   delivery: { icon: 'rocket_launch', color: '#4CAF50', label: 'Delivery' },
   maintenance: { icon: 'build', color: '#FF9800', label: 'Maintenance' },
@@ -593,18 +593,3 @@ export function WorkflowExecutionStatusBadge({
     </div>
   );
 }
-
-// ============================================================================
-// Export all components
-// ============================================================================
-
-export {
-  WorkflowCard,
-  WorkflowGrid,
-  WorkflowCategoryTabs,
-  WorkflowPhaseCard,
-  WorkflowDetail,
-  WorkflowExecutionStatusBadge,
-  categoryConfig,
-  statusConfig,
-};

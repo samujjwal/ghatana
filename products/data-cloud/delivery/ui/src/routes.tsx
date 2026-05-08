@@ -59,6 +59,19 @@ const OperationsJobCenterPage = React.lazy(() =>
 const ReleaseTruthDashboardPage = React.lazy(() =>
   import('./pages/ReleaseTruthDashboardPage').then((m) => ({ default: m.ReleaseTruthDashboardPage }))
 );
+// DC-P3-002: Runtime Truth page with plane/surface/dependency drilldown
+const RuntimeTruthPage = React.lazy(() =>
+  import('./pages/RuntimeTruthPage').then((m) => ({ default: m.RuntimeTruthPage }))
+);
+const DataQualityTrustPage = React.lazy(() =>
+  import('./pages/DataQualityTrustPage').then((m) => ({ default: m.DataQualityTrustPage }))
+);
+const PolicySimulationPage = React.lazy(() =>
+  import('./pages/PolicySimulationPage').then((m) => ({ default: m.PolicySimulationPage }))
+);
+const TenantGovernancePage = React.lazy(() =>
+  import('./pages/TenantGovernancePage').then((m) => ({ default: m.TenantGovernancePage }))
+);
 const InsightsPage = React.lazy(() =>
   import('./pages/InsightsPage').then((m) => ({ default: m.InsightsPage }))
 );
@@ -292,11 +305,23 @@ export const routes: RouteObject[] = [
         path: 'trust',
         element: <RoleProtectedRoute routePath="/trust">{withSuspense(TrustCenter)}</RoleProtectedRoute>,
       },
+      {
+        path: 'trust/simulation',
+        element: <RoleProtectedRoute routePath="/trust">{withSuspense(PolicySimulationPage)}</RoleProtectedRoute>,
+      },
 
       // Insights - Unified Analytics
       {
         path: 'insights',
         element: <RoleProtectedRoute routePath="/insights">{withSuspense(InsightsPage)}</RoleProtectedRoute>,
+      },
+      {
+        path: 'insights/data-quality-trust',
+        element: <RoleProtectedRoute routePath="/insights">{withSuspense(DataQualityTrustPage)}</RoleProtectedRoute>,
+      },
+      {
+        path: 'insights/tenant-governance',
+        element: <RoleProtectedRoute routePath="/insights">{withSuspense(TenantGovernancePage)}</RoleProtectedRoute>,
       },
 
       // Alerts - operator-facing alert triage console (restored as canonical route)
@@ -325,6 +350,16 @@ export const routes: RouteObject[] = [
         element: (
           <RoleProtectedRoute routePath="/operations/release-truth">
             {withSuspense(ReleaseTruthDashboardPage)}
+          </RoleProtectedRoute>
+        ),
+      },
+
+      // DC-P3-002: Runtime Truth — plane/surface/dependency drilldown
+      {
+        path: 'operations/runtime-truth',
+        element: (
+          <RoleProtectedRoute routePath="/operations/runtime-truth">
+            {withSuspense(RuntimeTruthPage)}
           </RoleProtectedRoute>
         ),
       },

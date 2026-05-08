@@ -67,7 +67,6 @@ import React, {
 } from 'react';
 
 import { cn } from '@ghatana/design-system';
-import { Button } from '@ghatana/design-system';
 import { Input } from '@ghatana/design-system';
 import { Badge } from '@ghatana/design-system';
 import { Avatar } from '@ghatana/design-system';
@@ -75,6 +74,7 @@ import { Tooltip } from '@ghatana/design-system';
 import { Dialog, DialogContent, DialogTitle } from '@ghatana/design-system';
 import { Progress } from '@ghatana/design-system';
 
+import { Button } from '../Button';
 import {
   activeSprintAtom,
   sprintBoardAtom,
@@ -158,6 +158,41 @@ export interface Sprint {
   velocity?: number;
   commitment: number;
   completed: number;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isSprint(value: unknown): value is Sprint {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    typeof value.name === 'string' &&
+    typeof value.startDate === 'string' &&
+    typeof value.endDate === 'string' &&
+    typeof value.goal === 'string' &&
+    typeof value.capacity === 'number' &&
+    Array.isArray(value.teamMembers)
+  );
+}
+
+function isBoardColumn(value: unknown): value is BoardColumn {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    typeof value.title === 'string' &&
+    typeof value.status === 'string' &&
+    Array.isArray(value.stories)
+  );
+}
+
+function getBoardColumns(value: unknown): BoardColumn[] {
+  if (!isRecord(value) || !Array.isArray(value.columns)) {
+    return [];
+  }
+
+  return value.columns.filter(isBoardColumn);
 }
 
 interface SprintBoardProps {
@@ -663,9 +698,10 @@ export const SprintBoard: React.FC<SprintBoardProps> = ({
   const boardState = useAtomValue(sprintBoardAtom);
   const setSelectedStory = useSetAtom(selectedStoryAtom);
 
-  const sprint = sprintProp || activeSprint;
+  const sprint = sprintProp ?? (isSprint(activeSprint) ? activeSprint : null);
+  const boardColumns = useMemo(() => getBoardColumns(boardState), [boardState]);
   const [columns, setColumns] = useState<BoardColumn[]>(
-    columnsProp || boardState.columns || []
+    columnsProp ?? boardColumns
   );
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [activeStory, setActiveStory] = useState<Story | null>(null);
@@ -674,10 +710,10 @@ export const SprintBoard: React.FC<SprintBoardProps> = ({
   useEffect(() => {
     if (columnsProp) {
       setColumns(columnsProp);
-    } else if (boardState.columns) {
-      setColumns(boardState.columns);
+    } else {
+      setColumns(boardColumns);
     }
-  }, [columnsProp, boardState.columns]);
+  }, [columnsProp, boardColumns]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -812,7 +848,7 @@ export const SprintBoard: React.FC<SprintBoardProps> = ({
 
   const handleStoryClick = useCallback(
     (story: Story) => {
-      setSelectedStory(story);
+      setSelectedStory({ ...story });
       onStoryClick?.(story);
     },
     [setSelectedStory, onStoryClick]

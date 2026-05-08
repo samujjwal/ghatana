@@ -5,7 +5,7 @@ import { cn } from '../../utils/cn';
 /**
  * Skeleton variant types
  */
-export type SkeletonVariant = 'text' | 'circular' | 'rectangular';
+export type SkeletonVariant = 'text' | 'circular' | 'rectangular' | 'ghost';
 
 /**
  * Skeleton component props
@@ -60,7 +60,11 @@ export const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
   ({ variant = 'text', width, height, className, animation = true }, ref) => {
     // Default heights based on variant
     const defaultHeight =
-      variant === 'text' ? '1em' : variant === 'circular' ? '40px' : '100px';
+      variant === 'text' || variant === 'ghost'
+        ? '1em'
+        : variant === 'circular'
+          ? '40px'
+          : '100px';
 
     // Convert number to px string
     const widthValue = typeof width === 'number' ? `${width}px` : width;
@@ -70,6 +74,7 @@ export const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
     // Variant-specific classes
     const variantClasses = {
       text: 'rounded',
+      ghost: 'rounded',
       circular: 'rounded-full',
       rectangular: 'rounded-lg',
     };

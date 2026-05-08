@@ -41,6 +41,13 @@ interface AuthResponse {
   token: string;
 }
 
+export interface AuthSession {
+  user: AuthUserProfile;
+  token: string;
+  refreshToken?: string;
+  expiresIn?: number;
+}
+
 function readErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message) {
     return error.message;
@@ -405,6 +412,26 @@ export function useAuth() {
     [updateAuthState]
   );
 
+  const hydrateSession = useCallback(
+    (session: AuthSession): void => {
+      localStorage.setItem('auth_token', session.token);
+      localStorage.setItem('auth_user', JSON.stringify(session.user));
+
+      if (session.refreshToken) {
+        localStorage.setItem('auth_refresh_token', session.refreshToken);
+      }
+
+      updateAuthState({
+        user: session.user,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+        token: session.token,
+      });
+    },
+    [updateAuthState]
+  );
+
   const updateProfile = useCallback(
     async (updates: Partial<AuthUserProfile>) => {
       if (!authState.user || !authState.token) {
@@ -505,6 +532,7 @@ export function useAuth() {
     ...authState,
     login,
     register,
+    hydrateSession,
     logout,
     updateProfile,
     validateSession,

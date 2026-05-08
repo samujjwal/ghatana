@@ -105,6 +105,8 @@ public class DataCloudRouterBuilder {
         builder
             .with(HttpMethod.GET, "/api/v1/collections", entityHandler::handleListCollections)
             .with(HttpMethod.POST, "/api/v1/collections/:collection/metadata", entityHandler::handleUpsertCollectionMetadata)
+            // DC-P3-003: canonical Data Plane trust score contract
+            .with(HttpMethod.GET, "/api/v1/data-quality/trust-scores", entityHandler::handleGetDataQualityTrustScores)
             .with(HttpMethod.POST, "/api/v1/entities/:collection", entityHandler::handleSaveEntity)
             .with(HttpMethod.GET, "/api/v1/entities/:collection/stream", sseHandler::handleEntityCdcStream)
             .with(HttpMethod.GET, "/api/v1/entities/:collection/search", entityHandler::handleFullTextSearch)
@@ -416,6 +418,8 @@ public class DataCloudRouterBuilder {
             // DC-P1-009: Policy CRUD lifecycle — Trust Center governance contract
             .with(HttpMethod.POST, "/api/v1/governance/policies", dataLifecycleHandler::handleCreatePolicy)
             .with(HttpMethod.GET, "/api/v1/governance/policies", dataLifecycleHandler::handleListPolicies)
+            // DC-P3-004: policy simulation mode for governance changes
+            .with(HttpMethod.POST, "/api/v1/governance/policies/simulate", dataLifecycleHandler::handleSimulatePolicy)
             .with(HttpMethod.GET, "/api/v1/governance/policies/:id", dataLifecycleHandler::handleGetPolicy)
             .with(HttpMethod.PUT, "/api/v1/governance/policies/:id", dataLifecycleHandler::handleUpdatePolicy)
             .with(HttpMethod.DELETE, "/api/v1/governance/policies/:id", dataLifecycleHandler::handleDeletePolicy)

@@ -191,6 +191,7 @@ const GateItemComponent: React.FC<{
         <StatusBadge
           status={gate.status}
           category={gate.category}
+          label={gate.status}
           size="sm"
           tooltip={`${gate.name}: ${gate.message || gate.status}`}
         />
@@ -227,6 +228,7 @@ const GateItemComponent: React.FC<{
           <StatusBadge
             status={gate.status}
             category={gate.category}
+            label={gate.status}
             size="sm"
           />
           {showTime && (
@@ -265,7 +267,6 @@ const GateItemComponent: React.FC<{
                 <IconButton
                   size="sm"
                   aria-label={`View details for ${gate.name}`}
-                  component="span"
                 >
                   <OpenInNew size={16} />
                 </IconButton>
@@ -303,10 +304,10 @@ const LoadingSkeleton: React.FC<{ compact?: boolean; count?: number }> = ({
       {Array.from({ length: count }).map((_, index) => (
         <Box key={index} className="flex items-center gap-2">
           <Skeleton variant="circular" width={18} height={18} />
-          <Skeleton variant="ghost" width="40%" />
+          <Skeleton variant="rectangular" width="40%" />
           <Box className="flex-1" />
           <Skeleton variant="rectangular" width={60} height={20} />
-          <Skeleton variant="ghost" width={60} />
+          <Skeleton variant="rectangular" width={60} />
           <Skeleton variant="circular" width={24} height={24} />
         </Box>
       ))}
@@ -414,6 +415,7 @@ export const GateWidget = React.forwardRef<HTMLDivElement, GateWidgetProps>(
               </Typography>
               <StatusBadge
                 status={overallStatus}
+                label={overallStatus}
                 size="sm"
                 tooltip={`Overall status: ${gates.length} gates`}
               />

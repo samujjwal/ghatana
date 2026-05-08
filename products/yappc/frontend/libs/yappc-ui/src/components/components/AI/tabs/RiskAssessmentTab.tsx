@@ -81,25 +81,15 @@ export const RiskAssessmentTab: React.FC<Props> = ({ insights }) => {
               <Typography as="p" className="text-sm font-medium" gutterBottom>
                 Risk Factors
               </Typography>
-              <List dense>
+              <List>
                 {insights.deploymentRisk.riskFactors.map((factor, index) => (
                   <ListItem key={index}>
                     <ListItemIcon>
-                      <WarningIcon
-                        color={
-                          factor.weight > 0.7
-                            ? 'error'
-                            : factor.weight > 0.3
-                              ? 'warning'
-                              : 'success'
-                        }
-                      />
+                      <WarningIcon color="currentColor" />
                     </ListItemIcon>
                     <ListItemText
                       primary={factor.factor}
                       secondary={factor.description}
-                      primaryTypographyProps={{ variant: 'body2' }}
-                      secondaryTypographyProps={{ variant: 'caption' }}
                     />
                     <ListItemSecondaryAction>
                       <Chip
@@ -124,17 +114,14 @@ export const RiskAssessmentTab: React.FC<Props> = ({ insights }) => {
               <Typography as="p" className="text-sm font-medium" gutterBottom>
                 Recommendations
               </Typography>
-              <List dense>
+              <List>
                 {insights.deploymentRisk.recommendations.map(
                   (recommendation, index) => (
                     <ListItem key={index}>
                       <ListItemIcon>
-                        <LightbulbIcon tone="info" />
+                        <LightbulbIcon color="currentColor" />
                       </ListItemIcon>
-                      <ListItemText
-                        primary={recommendation}
-                        primaryTypographyProps={{ variant: 'body2' }}
-                      />
+                      <ListItemText primary={recommendation} />
                     </ListItem>
                   )
                 )}

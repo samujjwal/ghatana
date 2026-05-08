@@ -28,7 +28,7 @@ import {
 import type { User } from 'yappc-core/types';
 
 export { createDemoUser, useAuth } from './useAuth';
-export type { LoginCredentials, RegisterData } from './useAuth';
+export type { AuthSession, LoginCredentials, RegisterData } from './useAuth';
 
 type AuthRouteUser = User & {
   permissions?: string[];

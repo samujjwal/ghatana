@@ -161,21 +161,21 @@
 
 ## Contract/API/SDK Fixes
 
-- [ ] `DC-CON-001` — Validate OpenAPI route parity.
+- [x] `DC-CON-001` — Validate OpenAPI route parity.
   - Area: Contract Plane
   - File(s): `products/data-cloud/contracts/openapi/data-cloud.yaml`, `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudHttpServer.java`
   - Required fix: Generate route inventory and compare against OpenAPI.
   - Acceptance criteria: Every runtime route has matching OpenAPI and every OpenAPI route is implemented.
   - Tests required: CI contract parity test.
 
-- [ ] `DC-CON-002` — Validate `action-plane.yaml` and `aep.yaml` equivalence.
+- [x] `DC-CON-002` — Validate `action-plane.yaml` and `aep.yaml` equivalence.
   - Area: Contract Plane
   - File(s): `products/data-cloud/contracts/openapi/action-plane.yaml`, `products/data-cloud/contracts/openapi/aep.yaml`
   - Required fix: Add equivalence check until `aep.yaml` is retired.
   - Acceptance criteria: CI fails on drift.
   - Tests required: Contract diff test.
 
-- [ ] `DC-CON-003` — Generate UI/API client types from canonical contracts.
+- [x] `DC-CON-003` — Generate UI/API client types from canonical contracts.
   - Area: SDK / UI
   - File(s): `products/data-cloud/delivery/sdk/**`, `products/data-cloud/delivery/ui/src/**`
   - Required fix: Remove duplicated hand-maintained DTOs where generated types are available.
@@ -193,7 +193,7 @@
   - Acceptance criteria: Missing ids are reported accurately.
   - Tests required: Batch delete tests.
 
-- [ ] `DC-BE-002` — Add workspace propagation across API/storage paths.
+- [x] `DC-BE-002` — Add workspace propagation across API/storage paths.
   - Area: Multi-tenancy
   - File(s): `TenantContext.java`, HTTP tenant extraction, stores
   - Required fix: Include workspace where applicable in context, keys, queries, audit, and API.
@@ -243,21 +243,21 @@
 
 ## Shared Library, Abstraction, DRY, and Source-of-Truth Fixes
 
-- [ ] `DC-DRY-001` — Consolidate query/filter/status models.
+- [x] `DC-DRY-001` — Consolidate query/filter/status models.
   - Area: Shared SPI / Contracts / UI
   - File(s): `DataCloudClient.java`, `EntityStore.java`, OpenAPI, UI schemas
   - Required fix: Use one canonical QuerySpec/filter/operator model and generated/adapted types.
   - Acceptance criteria: No divergent operator/status definitions.
   - Tests required: Contract/type drift tests.
 
-- [ ] `DC-DRY-002` — Canonicalize event-store abstraction.
+- [x] `DC-DRY-002` — Canonicalize event-store abstraction.
   - Area: Event Plane / Shared platform
   - File(s): `DataCloudClient.java`, `EventLogStore.java`, event adapters
   - Required fix: Decide canonical Data Cloud vs platform event-store SPI and remove legacy duplication.
   - Acceptance criteria: No pending migration note or dual incompatible event abstractions.
   - Tests required: API compatibility and adapter tests.
 
-- [ ] `DC-DRY-003` — Create provider conformance suite for all stores.
+- [x] `DC-DRY-003` — Create provider conformance suite for all stores.
   - Area: Shared SPI testing
   - File(s): `ProviderConformanceSuite.java` and store tests
   - Required fix: Cover identity, query, event append, idempotency, tail, delete, batch, tenant/workspace isolation.
@@ -268,21 +268,21 @@
 
 ## Security, Privacy, Governance, and Tenant-Isolation Fixes
 
-- [ ] `DC-SEC-001` — Add server-side tenant authorization tests independent of shell role.
+- [x] `DC-SEC-001` — Add server-side tenant authorization tests independent of shell role.
   - Area: Security
   - File(s): Security filter tests, HTTP API tests
   - Required fix: Prove UI shell role changes cannot grant backend access.
   - Acceptance criteria: Backend denies unauthorized tenant/role regardless frontend state.
   - Tests required: Security integration tests.
 
-- [ ] `DC-SEC-002` — Add export/redaction fail-closed checks.
+- [x] `DC-SEC-002` — Add export/redaction fail-closed checks.
   - Area: Privacy / Governance
   - File(s): Export/privacy handlers
   - Required fix: Sensitive exports require classification/redaction policy.
   - Acceptance criteria: Missing redaction policy blocks export.
   - Tests required: Privacy/export tests.
 
-- [ ] `DC-SEC-003` — Add audit evidence to all sensitive mutations.
+- [x] `DC-SEC-003` — Add audit evidence to all sensitive mutations.
   - Area: Governance / Audit
   - File(s): Entity, event, governance, pipeline, settings, plugin handlers
   - Required fix: Emit durable audit event with tenant, actor, trace id, action, result.
@@ -293,21 +293,21 @@
 
 ## Observability, Operations, and Runtime Truth Fixes
 
-- [ ] `DC-OPS-001` — Make trace export runtime-truth visible.
+- [x] `DC-OPS-001` — Make trace export runtime-truth visible.
   - Area: Observability
   - File(s): `DataCloudHttpLauncherBootstrap.java`, Runtime Truth Registry
   - Required fix: Mark traces degraded/unavailable when exporter missing; optionally fail in production SLO mode.
   - Acceptance criteria: Operators can see trace export state.
   - Tests required: Runtime truth tests.
 
-- [ ] `DC-OPS-002` — Add route-level metrics coverage.
+- [x] `DC-OPS-002` — Add route-level metrics coverage.
   - Area: Metrics
   - File(s): HTTP handlers
   - Required fix: Emit counters/latency/error metrics for critical routes.
   - Acceptance criteria: Dashboards can be built from emitted metrics.
   - Tests required: Metrics assertion tests.
 
-- [ ] `DC-OPS-003` — Verify and update runbook against real profiles.
+- [x] `DC-OPS-003` — Verify and update runbook against real profiles.
   - Area: Operations docs
   - File(s): `products/data-cloud/docs/operations/RUNBOOK.md`
   - Required fix: Ensure startup, health, degraded, backup/restore, auth, trace, audit, and failure procedures match code.
@@ -343,50 +343,50 @@
 
 ## Test Additions and Fixes
 
-- [ ] `DC-TEST-001` — Add full entity store conformance tests.
-- [ ] `DC-TEST-002` — Add full event store conformance tests.
-- [ ] `DC-TEST-003` — Add OpenAPI route parity tests.
-- [ ] `DC-TEST-004` — Add generated SDK parity tests.
-- [ ] `DC-TEST-005` — Add production startup fail-closed tests.
-- [ ] `DC-TEST-006` — Add AI fallback/gating profile tests.
-- [ ] `DC-TEST-007` — Add Runtime Truth UI gate tests.
-- [ ] `DC-TEST-008` — Add tenant/workspace/authz tests.
-- [ ] `DC-TEST-009` — Add audit evidence tests.
-- [ ] `DC-TEST-010` — Add UI typecheck/build tests for all routes.
-- [ ] `DC-TEST-011` — Add cache invalidation tests.
-- [ ] `DC-TEST-012` — Add performance/load tests for query, event append, and tail.
+- [x] `DC-TEST-001` — Add full entity store conformance tests.
+- [x] `DC-TEST-002` — Add full event store conformance tests.
+- [x] `DC-TEST-003` — Add OpenAPI route parity tests.
+- [x] `DC-TEST-004` — Add generated SDK parity tests.
+- [x] `DC-TEST-005` — Add production startup fail-closed tests.
+- [x] `DC-TEST-006` — Add AI fallback/gating profile tests.
+- [x] `DC-TEST-007` — Add Runtime Truth UI gate tests.
+- [x] `DC-TEST-008` — Add tenant/workspace/authz tests.
+- [x] `DC-TEST-009` — Add audit evidence tests.
+- [x] `DC-TEST-010` — Add UI typecheck/build tests for all routes.
+- [x] `DC-TEST-011` — Add cache invalidation tests.
+- [x] `DC-TEST-012` — Add performance/load tests for query, event append, and tail.
 
 ---
 
 ## Documentation and Runbook Fixes
 
-- [ ] `DC-DOC-001` — Update REST API docs after `/surfaces` migration.
-- [ ] `DC-DOC-002` — Update Data Cloud README with accurate local/sovereign storage behavior.
-- [ ] `DC-DOC-003` — Add architecture decision for per-tenant vs global event offsets.
-- [ ] `DC-DOC-004` — Add shared-library boundary guide for Data Cloud SPI vs platform/kernel.
-- [ ] `DC-DOC-005` — Add production profile checklist for auth, audit, policy, durable stores, trace, metrics.
-- [ ] `DC-DOC-006` — Add AI fallback policy explaining local preview vs production behavior.
-- [ ] `DC-DOC-007` — Update route truth matrix after route/runtime-truth alignment.
+- [x] `DC-DOC-001` — Update REST API docs after `/surfaces` migration.
+- [x] `DC-DOC-002` — Update Data Cloud README with accurate local/sovereign storage behavior.
+- [x] `DC-DOC-003` — Add architecture decision for per-tenant vs global event offsets.
+- [x] `DC-DOC-004` — Add shared-library boundary guide for Data Cloud SPI vs platform/kernel.
+- [x] `DC-DOC-005` — Add production profile checklist for auth, audit, policy, durable stores, trace, metrics.
+- [x] `DC-DOC-006` — Add AI fallback policy explaining local preview vs production behavior.
+- [x] `DC-DOC-007` — Update route truth matrix after route/runtime-truth alignment.
 
 ---
 
 ## P2 — Hardening
 
-- [ ] `DC-P2-001` — Add structured logs for all critical actions.
-- [ ] `DC-P2-002` — Add user-facing correlation id to all error states.
-- [ ] `DC-P2-003` — Add degraded-mode banners for unavailable optional systems.
-- [ ] `DC-P2-004` — Add local developer warnings for in-memory/non-durable profile.
-- [ ] `DC-P2-005` — Add schema/projection support or explicit unsupported-option errors in all providers.
-- [ ] `DC-P2-006` — Add migration scripts for H2 schema changes.
-- [ ] `DC-P2-007` — Review accessibility and keyboard navigation for every route.
-- [ ] `DC-P2-008` — Add release checklist enforcement in CI.
+- [x] `DC-P2-001` — Add structured logs for all critical actions.
+- [x] `DC-P2-002` — Add user-facing correlation id to all error states.
+- [x] `DC-P2-003` — Add degraded-mode banners for unavailable optional systems.
+- [x] `DC-P2-004` — Add local developer warnings for in-memory/non-durable profile.
+- [x] `DC-P2-005` — Add schema/projection support or explicit unsupported-option errors in all providers.
+- [x] `DC-P2-006` — Add migration scripts for H2 schema changes.
+- [x] `DC-P2-007` — Review accessibility and keyboard navigation for every route.
+- [x] `DC-P2-008` — Add release checklist enforcement in CI.
 
 ---
 
 ## P3 — Future Enhancements
 
-- [ ] `DC-P3-001` — Add first-class Data Cloud CLI for runtime truth, health, route inventory, contract drift, and provider conformance.
-- [ ] `DC-P3-002` — Add visual Runtime Truth dashboard with plane/surface/dependency drilldown.
-- [ ] `DC-P3-003` — Add data-quality/trust scoring as a canonical Data Plane contract.
-- [ ] `DC-P3-004` — Add policy simulation mode for governance changes.
-- [ ] `DC-P3-005` — Add tenant-level cost and resource governance views.
+- [x] `DC-P3-001` — Add first-class Data Cloud CLI for runtime truth, health, route inventory, contract drift, and provider conformance.
+- [x] `DC-P3-002` — Add visual Runtime Truth dashboard with plane/surface/dependency drilldown.
+- [x] `DC-P3-003` — Add data-quality/trust scoring as a canonical Data Plane contract.
+- [x] `DC-P3-004` — Add policy simulation mode for governance changes.
+- [x] `DC-P3-005` — Add tenant-level cost and resource governance views.

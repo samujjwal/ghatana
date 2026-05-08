@@ -43,7 +43,7 @@ import {
   Badge,
   Fade,
   Stack,
-} from '@ghatana/design-system';
+} from '../../compat';
 
 import type { Item, ItemStatus } from 'yappc-core/types/devsecops';
 
@@ -430,7 +430,7 @@ export function SmartKanbanBoard({
                 tone="primary"
                 invisible={activeSuggestions.length === 0}
               >
-                <AIIcon tone="primary" />
+                <AIIcon className="text-blue-600" />
               </Badge>
               <Typography
                 as="p"

@@ -10,10 +10,35 @@ import type { ElementType } from 'react';
 
 import { cn } from '../../utils/cn';
 
+type SpacingValue = string | number;
+type StackDirection = 'vertical' | 'horizontal' | 'row' | 'column';
+type StackAlignment =
+  | 'start'
+  | 'center'
+  | 'end'
+  | 'stretch'
+  | 'baseline'
+  | 'flex-start'
+  | 'flex-end';
+type StackJustification =
+  | 'start'
+  | 'center'
+  | 'end'
+  | 'between'
+  | 'around'
+  | 'evenly'
+  | 'flex-start'
+  | 'flex-end'
+  | 'space-between'
+  | 'space-around'
+  | 'space-evenly';
+type StackWrap = 'wrap' | 'nowrap' | 'wrap-reverse' | boolean | string;
+
 /**
  *
  */
-export interface StackProps extends React.HTMLAttributes<HTMLElement> {
+export interface StackProps
+  extends Omit<React.HTMLAttributes<HTMLElement>, 'wrap'> {
   /**
    * The HTML element to render
    * @default 'div'
@@ -24,14 +49,19 @@ export interface StackProps extends React.HTMLAttributes<HTMLElement> {
    * Stack direction
    * @default 'vertical'
    */
-  direction?: 'vertical' | 'horizontal';
+  direction?: StackDirection;
 
   /**
    * Spacing between items (Tailwind gap classes)
    * Examples: 'gap-2', 'gap-4', 'gap-6'
    * @default 'gap-4'
    */
-  spacing?: string;
+  spacing?: SpacingValue;
+
+  /**
+   * Gap between items. Overrides spacing when provided.
+   */
+  gap?: SpacingValue;
 
   /**
    * Alignment on cross axis
@@ -44,7 +74,7 @@ export interface StackProps extends React.HTMLAttributes<HTMLElement> {
    * Alignment on cross axis specified with CSS keywords.
    * Convenience wrapper that maps to Tailwind classes.
    */
-  alignItems?: 'start' | 'center' | 'end' | 'stretch' | 'baseline';
+  alignItems?: StackAlignment;
 
   /**
    * Justification on main axis
@@ -56,13 +86,28 @@ export interface StackProps extends React.HTMLAttributes<HTMLElement> {
    * Main-axis justification specified with CSS keywords.
    * Convenience wrapper that maps to Tailwind classes.
    */
-  justifyContent?: 'start' | 'center' | 'end' | 'between' | 'around' | 'evenly';
+  justifyContent?: StackJustification;
 
   /**
    * Wrap items (Tailwind flex-wrap classes)
    * Examples: 'flex-wrap', 'flex-nowrap', 'flex-wrap-reverse'
    */
-  wrap?: string;
+  wrap?: StackWrap;
+
+  /**
+   * MUI-compatible flex-wrap alias.
+   */
+  flexWrap?: StackWrap;
+
+  /**
+   * Margin-top convenience alias.
+   */
+  mt?: SpacingValue;
+
+  /**
+   * Margin-bottom convenience alias.
+   */
+  mb?: SpacingValue;
 
   /**
    * Divider between items
@@ -91,6 +136,57 @@ export interface StackProps extends React.HTMLAttributes<HTMLElement> {
    * Children elements
    */
   children?: React.ReactNode;
+}
+
+function spacingClass(prefix: string, value?: SpacingValue): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value === 'number') return `${prefix}-${value}`;
+  if (value.startsWith(`${prefix}-`)) return value;
+  return `${prefix}-${value}`;
+}
+
+function mapAlignment(value?: string): string | undefined {
+  if (!value) return undefined;
+
+  const map: Record<string, string> = {
+    start: 'items-start',
+    center: 'items-center',
+    end: 'items-end',
+    stretch: 'items-stretch',
+    baseline: 'items-baseline',
+    'flex-start': 'items-start',
+    'flex-end': 'items-end',
+  };
+
+  return map[value] ?? value;
+}
+
+function mapJustification(value?: string): string | undefined {
+  if (!value) return undefined;
+
+  const map: Record<string, string> = {
+    start: 'justify-start',
+    center: 'justify-center',
+    end: 'justify-end',
+    between: 'justify-between',
+    around: 'justify-around',
+    evenly: 'justify-evenly',
+    'flex-start': 'justify-start',
+    'flex-end': 'justify-end',
+    'space-between': 'justify-between',
+    'space-around': 'justify-around',
+    'space-evenly': 'justify-evenly',
+  };
+
+  return map[value] ?? value;
+}
+
+function mapWrap(value?: StackWrap): string | undefined {
+  if (value === undefined || value === false) return undefined;
+  if (value === true || value === 'wrap') return 'flex-wrap';
+  if (value === 'nowrap') return 'flex-nowrap';
+  if (value === 'wrap-reverse') return 'flex-wrap-reverse';
+  return value;
 }
 
 /**
@@ -124,11 +220,15 @@ export const Stack = forwardRef<HTMLElement, StackProps>(
       as = 'div',
       direction = 'vertical',
       spacing = 'gap-4',
+      gap,
       align,
       alignItems,
       justify,
       justifyContent,
       wrap,
+      flexWrap,
+      mt,
+      mb,
       divider,
       fullWidth = false,
       fullHeight = false,
@@ -140,40 +240,18 @@ export const Stack = forwardRef<HTMLElement, StackProps>(
   ) => {
     const Component = as;
 
-    const isVertical = direction === 'vertical';
-
-    const alignClass =
-      align ??
-      (alignItems
-        ? ({
-            start: 'items-start',
-            center: 'items-center',
-            end: 'items-end',
-            stretch: 'items-stretch',
-            baseline: 'items-baseline',
-          }[alignItems] ?? undefined)
-        : undefined);
-
-    const justifyClass =
-      justify ??
-      (justifyContent
-        ? ({
-            start: 'justify-start',
-            center: 'justify-center',
-            end: 'justify-end',
-            between: 'justify-between',
-            around: 'justify-around',
-            evenly: 'justify-evenly',
-          }[justifyContent] ?? undefined)
-        : undefined);
+    const isVertical = direction === 'vertical' || direction === 'column';
+    const gapClass = spacingClass('gap', gap ?? spacing);
 
     const classes = cn(
       'flex',
       isVertical ? 'flex-col' : 'flex-row',
-      spacing,
-      alignClass,
-      justifyClass,
-      wrap,
+      gapClass,
+      mapAlignment(align ?? alignItems),
+      mapJustification(justify ?? justifyContent),
+      mapWrap(flexWrap ?? wrap),
+      spacingClass('mt', mt),
+      spacingClass('mb', mb),
       fullWidth && 'w-full',
       fullHeight && 'h-full',
       className

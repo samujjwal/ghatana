@@ -50,7 +50,7 @@ export const RecommendationsTab: React.FC<Props> = ({
   return (
     <div>
       {Object.entries(recommendationsByType).map(([type, recommendations]) => (
-        <Accordion key={type} defaultExpanded>
+        <Accordion key={type} defaultExpanded={[type]}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography as="h6" className="capitalize">
               {type} Recommendations ({recommendations.length})

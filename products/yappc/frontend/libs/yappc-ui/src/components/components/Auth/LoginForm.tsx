@@ -14,18 +14,36 @@ import { useState, type FormEvent } from 'react';
 
 import { useAuth } from '../../hooks/auth';
 
+import type { AuthSession } from '../../hooks/auth/useAuth';
+
 type AuthSessionPayload = {
-  user: Parameters<ReturnType<typeof useAuth>['login']>[0]['user'];
+  user: AuthSession['user'];
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
 };
 
+async function readResponseBody(response: Response): Promise<string> {
+  if (typeof response.text === 'function') {
+    return response.text();
+  }
+
+  if (typeof response.json === 'function') {
+    return JSON.stringify(await response.json());
+  }
+
+  return '';
+}
+
+function toErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 async function parseJsonResponse<T>(
   response: Response,
   context: string
 ): Promise<T> {
-  const raw = await response.text();
+  const raw = await readResponseBody(response);
 
   if (!raw) {
     throw new Error(`${context} returned an empty response`);
@@ -34,13 +52,13 @@ async function parseJsonResponse<T>(
   try {
     return JSON.parse(raw) as T;
   } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
+    const detail = toErrorMessage(error);
     throw new Error(`${context} returned invalid JSON: ${detail}`);
   }
 }
 
 async function readErrorMessage(response: Response, fallback: string): Promise<string> {
-  const raw = await response.text();
+  const raw = await readResponseBody(response);
 
   if (!raw) {
     return fallback;
@@ -129,7 +147,7 @@ export function LoginForm({
   submitText = 'Sign In',
   loginEndpoint = '/api/auth/login',
 }: LoginFormProps): React.JSX.Element {
-  const { login, isLoading, error: authError } = useAuth();
+  const { hydrateSession, isLoading, error: authError } = useAuth();
 
   // Form state
   const [email, setEmail] = useState('');
@@ -197,7 +215,7 @@ export function LoginForm({
       );
 
       // Update auth state
-      login({
+      hydrateSession({
         user: data.user,
         token: data.accessToken,
         refreshToken: data.refreshToken,
@@ -314,7 +332,7 @@ export function LoginForm({
       {/* Error Message */}
       {authError && (
         <div className="alert alert-error" role="alert">
-          {authError.message}
+          {toErrorMessage(authError)}
         </div>
       )}
 

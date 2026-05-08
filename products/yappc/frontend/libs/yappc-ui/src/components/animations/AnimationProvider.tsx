@@ -7,7 +7,7 @@
  * @module animations/AnimationProvider
  */
 
-import { MotionConfig } from 'framer-motion';
+import { MotionConfig, type Easing } from 'framer-motion';
 import React, { createContext, useContext, useMemo } from 'react';
 
 // ============================================================================
@@ -154,7 +154,7 @@ export const AnimationProvider: React.FC<AnimationProviderProps> = ({
         transition={{
           duration:
             (config.tokens.duration.normal / 1000) * config.durationMultiplier,
-          ease: config.tokens.easing.easeInOut,
+          ease: config.tokens.easing.easeInOut as Easing,
         }}
       >
         {children}

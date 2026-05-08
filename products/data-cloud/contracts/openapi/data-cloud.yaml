@@ -2695,14 +2695,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/AlertListResponse"
 
-  /api/v1/alerts/{id}/acknowledge:
+  /api/v1/alerts/{alertId}/acknowledge:
     post:
       summary: Acknowledge an alert
       operationId: apiV1AlertsIdAcknowledgePost
       tags: [alerts]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
-        - name: id
+        - name: alertId
           in: path
           required: true
           schema:
@@ -2716,14 +2716,14 @@ paths:
                 $ref: "#/components/schemas/Alert"
         "404": { $ref: "#/components/responses/NotFound" }
 
-  /api/v1/alerts/{id}/resolve:
+  /api/v1/alerts/{alertId}/resolve:
     post:
       summary: Resolve an alert
       operationId: apiV1AlertsIdResolvePost
       tags: [alerts]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
-        - name: id
+        - name: alertId
           in: path
           required: true
           schema:
@@ -5795,6 +5795,24 @@ paths:
         "400": { $ref: "#/components/responses/BadRequest" }
         "500": { $ref: "#/components/responses/InternalError" }
 
+  /api/v1/governance/policies/simulate:
+    post:
+      summary: Simulate governance policy impact without mutation (DC-P3-004)
+      operationId: apiV1GovernancePoliciesSimulatePost
+      tags: [governance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
+      responses:
+        "200": { description: Dry-run policy impact simulation result }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
   /api/v1/governance/policies/{id}:
     get:
       summary: Get a specific governance policy by ID (DC-P1-009)
@@ -7282,6 +7300,23 @@ paths:
               schema:
                 $ref: "#/components/schemas/LineageImpactResponse"
         "501": { description: Lineage plugin not configured. }
+
+  /api/v1/data-quality/trust-scores:
+    get:
+      summary: Canonical Data Plane quality and trust scores per collection (DC-P3-003)
+      operationId: apiV1DataQualityTrustScoresGet
+      tags: [data-quality, governance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Collection-level trust score snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
   /api/v1/collections:
     get:

@@ -24,17 +24,11 @@ import React, { useState, useCallback, useMemo } from 'react';
 import {
   Box,
   Grid,
-  Typography,
   Card,
   CardContent,
   Button,
   IconButton,
   Drawer,
-  InteractiveList as List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Fab,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -44,14 +38,25 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  AppBar,
-  Toolbar,
 } from '@ghatana/design-system';
 
 import { wrapForTooltip } from '../../utils/accessibility';
+import { Typography } from '../Typography';
 
-/** @ts-ignore - MUI Grid item prop typing issue in test config */
-const GridItem = Grid as unknown;
+const GridItem = Grid as React.ElementType;
+type DashboardWidgetType = DashboardWidget['type'];
+
+function resolveWidgetType(widgetTypeId: string): DashboardWidgetType {
+  if (widgetTypeId.includes('chart')) return 'chart';
+  if (widgetTypeId.includes('status') || widgetTypeId.includes('metric')) {
+    return 'metric';
+  }
+  if (widgetTypeId.includes('table') || widgetTypeId.includes('results')) {
+    return 'table';
+  }
+  if (widgetTypeId.includes('text')) return 'text';
+  return 'custom';
+}
 
 /**
  *
@@ -198,14 +203,14 @@ const WidgetRenderer: React.FC<{
         return (
           <Box className="flex items-center justify-center h-[200px] bg-gray-50 dark:bg-gray-950">
             <Typography color="text.secondary">
-              Chart: {widget.config.metric}
+              Chart: {String(widget.config.metric ?? 'Metric')}
             </Typography>
           </Box>
         );
       case 'metric':
         return (
           <Box className="text-center py-6">
-            <Typography as="h3" tone="primary">
+            <Typography as="h3" color="primary">
               42
             </Typography>
             <Typography color="text.secondary">Sample Metric</Typography>
@@ -291,7 +296,7 @@ export const CustomDashboardBuilder: React.FC<CustomDashboardBuilderProps> = ({
   const addWidget = useCallback((widgetType: WidgetType) => {
     const newWidget: DashboardWidget = {
       id: `widget_${Date.now()}`,
-      type: widgetType.id as unknown,
+      type: resolveWidgetType(widgetType.id),
       title: widgetType.name,
       config: { ...widgetType.defaultConfig },
       position: {
@@ -356,10 +361,9 @@ export const CustomDashboardBuilder: React.FC<CustomDashboardBuilderProps> = ({
   }, [availableWidgets]);
 
   return (
-    <Box className={className} className="h-screen flex flex-col">
+    <Box className={`${className ?? ''} h-screen flex flex-col`}>
       {/* Header */}
-      <AppBar position="static" color="default" variant="raised">
-        <Toolbar>
+      <Box className="flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-gray-800 dark:bg-gray-950">
           <DashboardIcon className="mr-4" />
           <Typography as="h6" className="grow">
             {layout.name}
@@ -384,8 +388,7 @@ export const CustomDashboardBuilder: React.FC<CustomDashboardBuilderProps> = ({
           <Button startIcon={<SaveIcon />} onClick={handleSave} variant="solid">
             Save
           </Button>
-        </Toolbar>
-      </AppBar>
+      </Box>
 
       {/* Dashboard Grid */}
       <Box className="grow p-4 overflow-auto">
@@ -430,13 +433,14 @@ export const CustomDashboardBuilder: React.FC<CustomDashboardBuilderProps> = ({
       </Box>
 
       {/* Add Widget FAB */}
-      <Fab
-        tone="primary"
+      <Button
+        aria-label="Add widget"
+        startIcon={<AddIcon />}
         className="fixed bottom-[16px] right-[16px]"
         onClick={() => setIsWidgetLibraryOpen(true)}
       >
-        <AddIcon />
-      </Fab>
+        Add Widget
+      </Button>
 
       {/* Widget Library Drawer */}
       <Drawer
@@ -455,28 +459,32 @@ export const CustomDashboardBuilder: React.FC<CustomDashboardBuilderProps> = ({
               <Typography
                 as="p"
                 className="text-sm font-medium"
-                tone="primary"
+                color="primary"
                 gutterBottom
               >
                 {category}
               </Typography>
 
-              <List>
+              <Box className="space-y-2">
                 {widgets.map((widget) => (
-                  <ListItem
+                  <button
+                    type="button"
                     key={widget.id}
-                    component="button"
                     onClick={() => addWidget(widget)}
-                    className="rounded mb-2 flex w-full cursor-pointer border border-gray-200 dark:border-gray-700"
+                    className="mb-2 flex w-full cursor-pointer items-start gap-3 rounded border border-gray-200 p-3 text-left transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-900"
                   >
-                    <ListItemIcon>{widget.icon}</ListItemIcon>
-                    <ListItemText
-                      primary={widget.name}
-                      secondary={widget.description}
-                    />
-                  </ListItem>
+                    <span className="mt-1 flex-shrink-0">{widget.icon}</span>
+                    <span>
+                      <span className="block text-sm font-medium">
+                        {widget.name}
+                      </span>
+                      <span className="block text-xs text-gray-500">
+                        {widget.description}
+                      </span>
+                    </span>
+                  </button>
                 ))}
-              </List>
+              </Box>
             </Box>
           ))}
         </Box>
@@ -565,7 +573,7 @@ export const CustomDashboardBuilder: React.FC<CustomDashboardBuilderProps> = ({
                     ...prev,
                     settings: {
                       ...prev.settings,
-                      columns: e.target.value as number,
+                      columns: Number(e.target.value),
                     },
                   }))
                 }

@@ -2,13 +2,22 @@
  * Tests for SmartSuggestions Component
  */
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import {
+  render as rtlRender,
+  screen,
+  fireEvent,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ReactElement } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+import { renderWithTheme } from '../../test-utils/renderWithTheme';
 import { SmartSuggestions } from '../SmartSuggestions';
 
 import type { IAIService, CompletionResponse } from 'yappc-ai/core';
+
+const render = (ui: ReactElement) => rtlRender(renderWithTheme(ui));
 
 const createMockAIService = (
   completionText = '1. First suggestion\n2. Second suggestion\n3. Third suggestion'

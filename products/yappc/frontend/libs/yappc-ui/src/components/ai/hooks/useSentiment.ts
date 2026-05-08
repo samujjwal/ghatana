@@ -4,7 +4,7 @@ import type {
   SentimentAnalyzer,
   SentimentResult,
   SentimentOptions,
-} from 'yappc-ai/core';
+} from '../aiServiceTypes';
 
 /**
  * Sentiment hook state
@@ -140,7 +140,7 @@ export function useSentiment(
     error: null,
   });
 
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   /**

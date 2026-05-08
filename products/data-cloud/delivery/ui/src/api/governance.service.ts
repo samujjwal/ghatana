@@ -13,8 +13,13 @@ import { apiClient } from '../lib/api/client';
 import { z } from 'zod';
 import {
   ComplianceSummaryEnvelopeSchema,
+  GovernanceInventoryResponseSchema,
+  GovernancePolicySimulationRequestSchema,
+  GovernancePolicySimulationResponseSchema,
   PiiFieldRegistryEnvelopeSchema,
   type ComplianceSummaryData as ComplianceSummary,
+  type GovernanceInventory,
+  type GovernancePolicySimulationResult,
   type PiiFieldRegistryData as PiiFieldRegistry,
 } from '../contracts/schemas';
 // DC-P1-009: Policy CRUD lifecycle is complete - boundary message imports removed
@@ -234,6 +239,9 @@ export interface GovernanceLifecycleSurface {
   action?: GovernanceOperationalAction;
   actionLabel?: string;
 }
+
+export type PolicySimulationResult = GovernancePolicySimulationResult;
+export type TenantGovernanceInventory = GovernanceInventory;
 
 export interface Policy {
   id: string;
@@ -736,6 +744,19 @@ export class GovernanceService {
       this.getPiiFieldRegistry(),
     ]);
     return buildLifecycleSurfaces(summary, piiFields);
+  }
+
+  async getGovernanceInventory(): Promise<TenantGovernanceInventory> {
+    const rawResponse = await apiClient.get('/governance/inventory');
+    const response = GovernanceInventoryResponseSchema.parse(rawResponse);
+    return unwrapEnvelope(response);
+  }
+
+  async simulatePolicy(policy: Partial<Policy>): Promise<PolicySimulationResult> {
+    const payload = GovernancePolicySimulationRequestSchema.parse(policy);
+    const rawResponse = await apiClient.post('/governance/policies/simulate', payload);
+    const response = GovernancePolicySimulationResponseSchema.parse(rawResponse);
+    return unwrapEnvelope(response);
   }
 
   async createPolicy(policy: Partial<Policy>): Promise<Policy> {

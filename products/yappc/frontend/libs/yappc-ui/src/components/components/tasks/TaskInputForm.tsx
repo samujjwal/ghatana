@@ -9,16 +9,186 @@
 
 import React, { useMemo, useCallback, useState, useEffect } from 'react';
 
-import {
-  FormGenerator,
-  type FormGeneratorProps,
-} from '@ghatana/form-generator/FormGenerator';
-import {
-  type FormSchema,
-  type FormField,
-  type FieldType,
-} from '@ghatana/form-generator/FormSchema';
-import type { TaskDefinition, TaskExecution } from '@ghatana/types/tasks';
+import type { TaskDefinition, TaskExecution } from 'yappc-core/types/tasks';
+
+type FieldType =
+  | 'text'
+  | 'textarea'
+  | 'email'
+  | 'url'
+  | 'date'
+  | 'datetime'
+  | 'time'
+  | 'number'
+  | 'checkbox'
+  | 'select'
+  | 'multiselect';
+
+interface FormField {
+  id: string;
+  type: FieldType;
+  label: string;
+  helpText?: string;
+  defaultValue?: unknown;
+  options?: Array<{ value: string; label: string }>;
+  validation?: {
+    required?: boolean;
+    minLength?: number;
+    maxLength?: number;
+    min?: number;
+    max?: number;
+    pattern?: string;
+  };
+}
+
+interface FormSchema {
+  id: string;
+  title: string;
+  description?: string;
+  fields: FormField[];
+  submitButton: { label: string; variant: 'primary' | 'secondary' };
+  cancelButton: { label: string; variant: 'primary' | 'secondary' };
+}
+
+interface FormGeneratorProps {
+  schema: FormSchema;
+  initialValues?: Record<string, unknown>;
+  isSubmitting?: boolean;
+  onSubmit: (data: Record<string, unknown>) => void | Promise<void>;
+  onCancel?: () => void;
+  debug?: boolean;
+}
+
+function toInputValue(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return '';
+}
+
+function FormGenerator({
+  schema,
+  initialValues,
+  isSubmitting,
+  onSubmit,
+  onCancel,
+  debug,
+}: FormGeneratorProps): React.ReactElement {
+  const [values, setValues] = useState<Record<string, unknown>>(() => {
+    const defaults: Record<string, unknown> = {};
+    schema.fields.forEach((field) => {
+      defaults[field.id] = initialValues?.[field.id] ?? field.defaultValue ?? '';
+    });
+    return defaults;
+  });
+
+  const updateValue = useCallback((fieldId: string, value: unknown): void => {
+    setValues((current) => ({ ...current, [fieldId]: value }));
+  }, []);
+
+  const handleSubmit = useCallback(
+    (event: React.FormEvent<HTMLFormElement>): void => {
+      event.preventDefault();
+      void onSubmit(values);
+    },
+    [onSubmit, values]
+  );
+
+  return (
+    <form className="space-y-4" onSubmit={handleSubmit}>
+      {schema.description && (
+        <p className="text-sm text-gray-500">{schema.description}</p>
+      )}
+      {schema.fields.map((field) => {
+        const value = values[field.id];
+        const baseClassName =
+          'mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20';
+
+        return (
+          <label key={field.id} className="block text-sm font-medium text-gray-700">
+            {field.label}
+            {field.validation?.required && (
+              <span className="ml-1 text-red-500" aria-hidden="true">
+                *
+              </span>
+            )}
+            {field.type === 'textarea' ? (
+              <textarea
+                className={baseClassName}
+                value={toInputValue(value)}
+                onChange={(event) => updateValue(field.id, event.target.value)}
+                required={field.validation?.required}
+              />
+            ) : field.type === 'checkbox' ? (
+              <input
+                className="ml-2 h-4 w-4 rounded border-gray-300 text-blue-600"
+                type="checkbox"
+                checked={Boolean(value)}
+                onChange={(event) => updateValue(field.id, event.target.checked)}
+              />
+            ) : field.type === 'select' || field.type === 'multiselect' ? (
+              <select
+                className={baseClassName}
+                value={toInputValue(value)}
+                onChange={(event) => updateValue(field.id, event.target.value)}
+                required={field.validation?.required}
+              >
+                <option value="">Select {field.label}</option>
+                {field.options?.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                className={baseClassName}
+                type={field.type === 'datetime' ? 'datetime-local' : field.type}
+                value={toInputValue(value)}
+                onChange={(event) => updateValue(field.id, event.target.value)}
+                required={field.validation?.required}
+                minLength={field.validation?.minLength}
+                maxLength={field.validation?.maxLength}
+                min={field.validation?.min}
+                max={field.validation?.max}
+                pattern={field.validation?.pattern}
+              />
+            )}
+            {field.helpText && (
+              <span className="mt-1 block text-xs text-gray-500">
+                {field.helpText}
+              </span>
+            )}
+          </label>
+        );
+      })}
+      {debug && (
+        <pre className="rounded bg-gray-100 p-3 text-xs">
+          {JSON.stringify(values, null, 2)}
+        </pre>
+      )}
+      <div className="flex justify-end gap-2">
+        {onCancel && (
+          <button
+            type="button"
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm"
+            onClick={onCancel}
+          >
+            {schema.cancelButton.label}
+          </button>
+        )}
+        <button
+          type="submit"
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Submitting...' : schema.submitButton.label}
+        </button>
+      </div>
+    </form>
+  );
+}
 
 // ============================================================================
 // Types
@@ -64,6 +234,31 @@ export interface TaskInputSchema {
   required?: string[];
   title?: string;
   description?: string;
+  hints?: string[];
+}
+
+function parseTaskInputSchema(value: unknown): TaskInputSchema {
+  const fallback: TaskInputSchema = { type: 'object', properties: {} };
+  if (typeof value === 'string') {
+    try {
+      const parsed: unknown = JSON.parse(value);
+      return parseTaskInputSchema(parsed);
+    } catch {
+      return fallback;
+    }
+  }
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    value.type === 'object' &&
+    'properties' in value &&
+    typeof value.properties === 'object' &&
+    value.properties !== null
+  ) {
+    return value as TaskInputSchema;
+  }
+  return fallback;
 }
 
 // ============================================================================
@@ -225,13 +420,18 @@ export function TaskInputForm({
   className,
 }: TaskInputFormProps): React.ReactElement {
   // Convert JSON Schema to FormSchema
+  const inputSchema = useMemo(
+    () => parseTaskInputSchema(task.inputSchema),
+    [task.inputSchema]
+  );
+
   const formSchema = useMemo(() => {
     return convertJsonSchemaToFormSchema(
       task.id,
       task.name,
-      task.inputSchema as TaskInputSchema
+      inputSchema
     );
-  }, [task.id, task.name, task.inputSchema]);
+  }, [task.id, task.name, inputSchema]);
 
   const handleSubmit = useCallback(
     async (data: Record<string, unknown>) => {
@@ -291,9 +491,7 @@ export function TaskInputForm({
       )}
 
       {/* Input Hints */}
-      {task.inputSchema.hints && (
-        <InputHints hints={task.inputSchema.hints as string[]} />
-      )}
+      {inputSchema.hints && <InputHints hints={inputSchema.hints} />}
 
       {/* Form */}
       <FormGenerator
@@ -462,7 +660,12 @@ export function TaskExecutionModal({
 
   if (!isOpen) return null;
 
-  const tabs = [
+  const tabs: Array<{
+    id: 'input' | 'output' | 'artifacts' | 'audit';
+    label: string;
+    icon: string;
+    disabled?: boolean;
+  }> = [
     { id: 'input', label: 'Input', icon: 'input' },
     { id: 'output', label: 'Output', icon: 'output', disabled: !execution },
     {
@@ -551,7 +754,7 @@ export function TaskExecutionModal({
           )}
 
           {activeTab === 'artifacts' && execution && (
-            <TaskArtifactsDisplay artifacts={execution.artifacts} />
+            <TaskArtifactsDisplay artifacts={execution.auditArtifacts} />
           )}
 
           {activeTab === 'audit' && execution && (
@@ -595,9 +798,8 @@ interface TaskArtifactsDisplayProps {
   artifacts:
     | Array<{
         type: string;
-        path?: string;
-        content?: string;
-        timestamp: Date;
+        capturedAt: Date;
+        hash?: string;
       }>
     | undefined;
 }
@@ -624,12 +826,12 @@ function TaskArtifactsDisplay({ artifacts }: TaskArtifactsDisplayProps) {
             <span className="material-icons text-gray-400">description</span>
             <div className="flex-1">
               <p className="font-medium text-sm">{artifact.type}</p>
-              {artifact.path && (
-                <p className="text-xs text-gray-500">{artifact.path}</p>
+              {artifact.hash && (
+                <p className="text-xs text-gray-500">{artifact.hash}</p>
               )}
             </div>
             <span className="text-xs text-gray-400">
-              {new Date(artifact.timestamp).toLocaleString()}
+              {new Date(artifact.capturedAt).toLocaleString()}
             </span>
           </div>
         ))}
@@ -669,7 +871,7 @@ function TaskAuditDisplay({ execution }: TaskAuditDisplayProps) {
             <span className="material-icons text-gray-400">{event.icon}</span>
             <span className="flex-1 text-sm">{event.event}</span>
             <span className="text-xs text-gray-400">
-              {new Date(event.timestamp).toLocaleString()}
+              {new Date(event.timestamp ?? Date.now()).toLocaleString()}
             </span>
           </div>
         ))}
@@ -688,7 +890,7 @@ function TaskAuditDisplay({ execution }: TaskAuditDisplayProps) {
           <dt className="text-gray-500">Status</dt>
           <dd>{execution.status}</dd>
           <dt className="text-gray-500">User</dt>
-          <dd>{execution.userId}</dd>
+          <dd>{execution.assignee ?? 'Unassigned'}</dd>
         </dl>
       </div>
     </div>

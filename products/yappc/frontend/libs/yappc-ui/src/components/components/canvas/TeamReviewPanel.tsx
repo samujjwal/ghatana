@@ -33,12 +33,9 @@ import {
 import React, { useState, useCallback, useMemo } from 'react';
 
 import { cn } from '@ghatana/design-system';
-import { Button } from '@ghatana/design-system';
 import { Input } from '@ghatana/design-system';
 import { Avatar } from '@ghatana/design-system';
-import { Badge } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
-import { Dialog } from '@ghatana/design-system';
 
 import { TooltipContent, TooltipTrigger } from 'yappc-ui';
 import {
@@ -48,6 +45,10 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from 'yappc-ui';
+
+import { Badge } from '../Badge';
+import { Button } from '../Button';
+import { Dialog } from '../Dialog';
 
 // =============================================================================
 // Types

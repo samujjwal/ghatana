@@ -27,7 +27,7 @@ import {
   IconButton,
   Toolbar,
   Typography,
-} from '@ghatana/design-system';
+} from '../../compat';
 
 import type { NavigationPage, TopNavProps } from './types';
 

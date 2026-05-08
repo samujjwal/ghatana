@@ -52,7 +52,17 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
    *
    * @default 'solid'
    */
-  variant?: 'solid' | 'outline' | 'ghost' | 'link';
+  variant?:
+    | 'solid'
+    | 'default'
+    | 'secondary'
+    | 'outline'
+    | 'outlined'
+    | 'ghost'
+    | 'link'
+    | 'text'
+    | 'contained'
+    | 'destructive';
 
   /**
    * Size variant of the button
@@ -63,7 +73,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
    *
    * @default 'md'
    */
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'icon' | 'small' | 'medium' | 'large';
 
   /**
    * Color scheme of the button
@@ -77,8 +87,16 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
     | 'secondary'
     | 'success'
     | 'error'
+    | 'danger'
     | 'warning'
+    | 'neutral'
+    | 'amber'
     | 'grey';
+
+  /**
+   * Tone alias used by newer package-local primitives.
+   */
+  tone?: ButtonProps['colorScheme'];
 
   /**
    * Render button with full width
@@ -100,9 +118,19 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   leftIcon?: React.ReactNode;
 
   /**
+   * MUI-compatible icon alias.
+   */
+  startIcon?: React.ReactNode;
+
+  /**
    * Icon to display after button text
    */
   rightIcon?: React.ReactNode;
+
+  /**
+   * MUI-compatible icon alias.
+   */
+  endIcon?: React.ReactNode;
 }
 
 /**
@@ -125,10 +153,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       variant = 'solid',
       size = 'md',
       colorScheme = 'primary',
+      tone,
       fullWidth = false,
       isLoading = false,
       leftIcon,
+      startIcon,
       rightIcon,
+      endIcon,
       className,
       disabled,
       children,
@@ -138,6 +169,34 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const isDisabled = disabled || isLoading;
+    const normalizedSize =
+      size === 'small' ? 'sm' : size === 'medium' ? 'md' : size === 'large' ? 'lg' : size;
+    const resolvedVariant =
+      variant === 'default'
+        ? 'solid'
+        : variant === 'contained'
+          ? 'solid'
+        : variant === 'outlined'
+          ? 'outline'
+        : variant === 'text'
+          ? 'ghost'
+        : variant === 'secondary'
+          ? 'solid'
+        : variant === 'destructive'
+          ? 'solid'
+          : variant;
+    const resolvedColorScheme =
+      variant === 'destructive'
+        ? 'error'
+        : variant === 'secondary'
+          ? 'secondary'
+        : (tone ?? colorScheme) === 'neutral'
+          ? 'grey'
+          : (tone ?? colorScheme) === 'amber'
+            ? 'warning'
+            : (tone ?? colorScheme) === 'danger'
+              ? 'error'
+              : (tone ?? colorScheme);
 
     return (
       <button
@@ -154,68 +213,76 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
           // Size variants
           {
-            'px-3 py-1.5 text-sm gap-1.5': size === 'sm',
-            'px-4 py-2 text-base gap-2': size === 'md',
-            'px-6 py-3 text-lg gap-2.5': size === 'lg',
+            'px-3 py-1.5 text-sm gap-1.5': normalizedSize === 'sm',
+            'px-4 py-2 text-base gap-2': normalizedSize === 'md',
+            'px-6 py-3 text-lg gap-2.5': normalizedSize === 'lg',
+            'h-9 w-9 p-0 text-sm gap-0': normalizedSize === 'icon',
           },
 
           // Variant + Color combinations
           {
             // Solid variant
             'bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700':
-              variant === 'solid' && colorScheme === 'primary',
+              resolvedVariant === 'solid' && resolvedColorScheme === 'primary',
             'bg-secondary-500 text-white hover:bg-secondary-600 active:bg-secondary-700':
-              variant === 'solid' && colorScheme === 'secondary',
+              resolvedVariant === 'solid' &&
+              resolvedColorScheme === 'secondary',
             'bg-success-DEFAULT text-white hover:bg-success-dark':
-              variant === 'solid' && colorScheme === 'success',
+              resolvedVariant === 'solid' && resolvedColorScheme === 'success',
             'bg-error-DEFAULT text-white hover:bg-error-dark':
-              variant === 'solid' && colorScheme === 'error',
+              resolvedVariant === 'solid' && resolvedColorScheme === 'error',
             'bg-warning-DEFAULT text-white hover:bg-warning-dark':
-              variant === 'solid' && colorScheme === 'warning',
+              resolvedVariant === 'solid' && resolvedColorScheme === 'warning',
             'bg-grey-500 text-white hover:bg-grey-600':
-              variant === 'solid' && colorScheme === 'grey',
+              resolvedVariant === 'solid' && resolvedColorScheme === 'grey',
 
             // Outline variant
             'border-2 border-primary-500 text-primary-500 hover:bg-primary-50 active:bg-primary-100':
-              variant === 'outline' && colorScheme === 'primary',
+              resolvedVariant === 'outline' &&
+              resolvedColorScheme === 'primary',
             'border-2 border-secondary-500 text-secondary-500 hover:bg-secondary-50':
-              variant === 'outline' && colorScheme === 'secondary',
+              resolvedVariant === 'outline' &&
+              resolvedColorScheme === 'secondary',
             'border-2 border-success-DEFAULT text-success-DEFAULT hover:bg-green-50':
-              variant === 'outline' && colorScheme === 'success',
+              resolvedVariant === 'outline' &&
+              resolvedColorScheme === 'success',
             'border-2 border-error-DEFAULT text-error-DEFAULT hover:bg-red-50':
-              variant === 'outline' && colorScheme === 'error',
+              resolvedVariant === 'outline' && resolvedColorScheme === 'error',
             'border-2 border-warning-DEFAULT text-warning-DEFAULT hover:bg-orange-50':
-              variant === 'outline' && colorScheme === 'warning',
+              resolvedVariant === 'outline' &&
+              resolvedColorScheme === 'warning',
             'border-2 border-grey-500 text-grey-700 hover:bg-grey-50':
-              variant === 'outline' && colorScheme === 'grey',
+              resolvedVariant === 'outline' && resolvedColorScheme === 'grey',
 
             // Ghost variant
             'text-primary-500 hover:bg-primary-50 active:bg-primary-100':
-              variant === 'ghost' && colorScheme === 'primary',
+              resolvedVariant === 'ghost' && resolvedColorScheme === 'primary',
             'text-secondary-500 hover:bg-secondary-50':
-              variant === 'ghost' && colorScheme === 'secondary',
+              resolvedVariant === 'ghost' &&
+              resolvedColorScheme === 'secondary',
             'text-success-DEFAULT hover:bg-green-50':
-              variant === 'ghost' && colorScheme === 'success',
+              resolvedVariant === 'ghost' && resolvedColorScheme === 'success',
             'text-error-DEFAULT hover:bg-red-50':
-              variant === 'ghost' && colorScheme === 'error',
+              resolvedVariant === 'ghost' && resolvedColorScheme === 'error',
             'text-warning-DEFAULT hover:bg-orange-50':
-              variant === 'ghost' && colorScheme === 'warning',
+              resolvedVariant === 'ghost' && resolvedColorScheme === 'warning',
             'text-grey-700 hover:bg-grey-50':
-              variant === 'ghost' && colorScheme === 'grey',
+              resolvedVariant === 'ghost' && resolvedColorScheme === 'grey',
 
             // Link variant
             'text-primary-500 hover:underline active:text-primary-700':
-              variant === 'link' && colorScheme === 'primary',
+              resolvedVariant === 'link' && resolvedColorScheme === 'primary',
             'text-secondary-500 hover:underline':
-              variant === 'link' && colorScheme === 'secondary',
+              resolvedVariant === 'link' &&
+              resolvedColorScheme === 'secondary',
             'text-success-DEFAULT hover:underline':
-              variant === 'link' && colorScheme === 'success',
+              resolvedVariant === 'link' && resolvedColorScheme === 'success',
             'text-error-DEFAULT hover:underline':
-              variant === 'link' && colorScheme === 'error',
+              resolvedVariant === 'link' && resolvedColorScheme === 'error',
             'text-warning-DEFAULT hover:underline':
-              variant === 'link' && colorScheme === 'warning',
+              resolvedVariant === 'link' && resolvedColorScheme === 'warning',
             'text-grey-700 hover:underline':
-              variant === 'link' && colorScheme === 'grey',
+              resolvedVariant === 'link' && resolvedColorScheme === 'grey',
           },
 
           // Full width
@@ -252,13 +319,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         )}
 
         {/* Left icon */}
-        {leftIcon && !isLoading && leftIcon}
+        {(leftIcon ?? startIcon) && !isLoading && (leftIcon ?? startIcon)}
 
         {/* Button text */}
         {children}
 
         {/* Right icon */}
-        {rightIcon && rightIcon}
+        {(rightIcon ?? endIcon) && (rightIcon ?? endIcon)}
       </button>
     );
   }

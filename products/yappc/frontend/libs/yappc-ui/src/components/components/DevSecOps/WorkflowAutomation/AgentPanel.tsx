@@ -44,7 +44,7 @@ import {
   FormControl,
   InputLabel,
   Alert,
-} from '@ghatana/design-system';
+} from '../../compat';
 
 import {
   useAgents,
@@ -172,7 +172,16 @@ const AgentExecutionDialog: React.FC<AgentExecutionDialogProps> = ({
             <InputLabel>Priority</InputLabel>
             <Select
               value={priority}
-              onChange={(e) => setPriority(e.target.value as unknown)}
+              onChange={(e) => {
+                const nextPriority = e.target.value;
+                if (
+                  nextPriority === 'low' ||
+                  nextPriority === 'medium' ||
+                  nextPriority === 'high'
+                ) {
+                  setPriority(nextPriority);
+                }
+              }}
               label="Priority"
             >
               <MenuItem value="low">Low</MenuItem>
@@ -270,9 +279,8 @@ const AgentCard: React.FC<AgentCardProps> = ({
 
             <Typography
               as="p"
-              className="text-sm"
+              className="mb-2 text-sm"
               color="text.secondary"
-              className="mb-2"
             >
               {agent.description}
             </Typography>
@@ -289,7 +297,7 @@ const AgentCard: React.FC<AgentCardProps> = ({
                 </Tooltip>
                 <Tooltip title="Total Executions">
                   <Chip
-                    label={agent.performance.totalExecutions}
+                    label={String(agent.performance.totalExecutions)}
                     size="sm"
                     variant="outlined"
                   />
@@ -449,9 +457,8 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
           <Box key={role} className="mb-6">
             <Typography
               as="p"
-              className="text-sm font-medium"
+              className="mb-2 text-sm font-medium"
               color="text.secondary"
-              className="mb-2"
             >
               {role.replace('-', ' ').toUpperCase()}
             </Typography>

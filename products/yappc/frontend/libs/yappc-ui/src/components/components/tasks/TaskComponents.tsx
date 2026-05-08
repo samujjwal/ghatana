@@ -15,7 +15,7 @@ import {
   tasksByDomainAtom,
   filteredTasksAtom,
   registryStatsAtom,
-} from '@ghatana/state/tasks/taskRegistryStore';
+} from './taskRegistryStore';
 import type {
   TaskDefinition,
   TaskDomain,
@@ -23,7 +23,7 @@ import type {
   Persona,
   AutomationLevel,
   TaskFilter,
-} from '@ghatana/types/tasks';
+} from 'yappc-core/types/tasks';
 
 // ============================================================================
 // Task Card Component
@@ -516,7 +516,7 @@ export function LifecycleStageBadge({
       style={{
         backgroundColor: `${config.color}20`,
         color: config.color,
-        ringColor: active ? config.color : undefined,
+        outlineColor: active ? config.color : undefined,
       }}
       title={stage.charAt(0).toUpperCase() + stage.slice(1)}
     >
@@ -631,18 +631,3 @@ export function TaskStats({ className }: TaskStatsProps) {
     </div>
   );
 }
-
-// ============================================================================
-// Export all components
-// ============================================================================
-
-export {
-  TaskCard,
-  TaskList,
-  DomainCard,
-  DomainGrid,
-  TaskFilterPanel,
-  LifecycleStageBadge,
-  LifecycleStageTimeline,
-  TaskStats,
-};

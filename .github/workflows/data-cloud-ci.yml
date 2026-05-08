@@ -287,6 +287,24 @@ jobs:
           chmod +x products/data-cloud/scripts/audit-tenant-isolation.sh
           bash products/data-cloud/scripts/audit-tenant-isolation.sh
 
+      - name: Verify production profile checklist exists (DC-P2-008)
+        run: |
+          CHECKLIST="products/data-cloud/docs/operations/PRODUCTION_PROFILE_CHECKLIST.md"
+          if [ ! -f "$CHECKLIST" ]; then
+            echo "::error::PRODUCTION_PROFILE_CHECKLIST.md is missing at $CHECKLIST"
+            echo "This checklist is required before any sovereign or production deployment."
+            echo "See DC-P2-008 in the Data Cloud todo list for context."
+            exit 1
+          fi
+          # Verify the checklist contains mandatory sections
+          for section in "Auth" "Audit" "Policy / Governance" "Durable Stores" "Operations" "Security"; do
+            if ! grep -qi "$section" "$CHECKLIST"; then
+              echo "::error::PRODUCTION_PROFILE_CHECKLIST.md is missing required section: '$section'"
+              exit 1
+            fi
+          done
+          echo "✓ Production profile checklist present and contains required sections."
+
       - name: Upload tenant isolation audit report
         if: always()
         run: |

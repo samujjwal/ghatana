@@ -14,6 +14,7 @@ const mockedUseAuth = vi.mocked(useAuth);
 function createAuthState(overrides: Partial<ReturnType<typeof useAuth>> = {}) {
   return {
     login: vi.fn(),
+    hydrateSession: vi.fn(),
     isLoading: false,
     error: null,
     ...overrides,
@@ -90,7 +91,7 @@ describe('RegisterForm', () => {
   });
 
   it('posts registration data and auto-logins on success', async () => {
-    const login = vi.fn();
+    const hydrateSession = vi.fn();
     const onSuccess = vi.fn();
     const mockFetch = vi.mocked(fetch);
     mockFetch.mockResolvedValue({
@@ -102,7 +103,7 @@ describe('RegisterForm', () => {
         expiresIn: 3600,
       }),
     } as Response);
-    mockedUseAuth.mockReturnValue(createAuthState({ login }));
+    mockedUseAuth.mockReturnValue(createAuthState({ hydrateSession }));
 
     const user = userEvent.setup();
     render(<RegisterForm onSuccess={onSuccess} />);
@@ -127,7 +128,7 @@ describe('RegisterForm', () => {
           }),
         })
       );
-      expect(login).toHaveBeenCalledWith({
+      expect(hydrateSession).toHaveBeenCalledWith({
         user: { id: 'user-1', email: 'john@example.com' },
         token: 'access-token',
         refreshToken: 'refresh-token',

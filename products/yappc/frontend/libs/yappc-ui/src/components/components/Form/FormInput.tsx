@@ -32,7 +32,13 @@ export const FormInput = ({ name, validate, ...props }: FormInputProps) => {
         <Input
           {...props}
           name={name}
-          value={value}
+          value={
+            typeof value === 'string' ||
+            typeof value === 'number' ||
+            Array.isArray(value)
+              ? value
+              : ''
+          }
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
           error={error}

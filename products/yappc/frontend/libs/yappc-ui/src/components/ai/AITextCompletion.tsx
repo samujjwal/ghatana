@@ -10,8 +10,7 @@ import {
   Typography,
 } from '@ghatana/design-system';
 
-import type { IAIService } from 'yappc-ai/core';
-
+import type { IAIService } from './aiServiceTypes';
 import { useAICompletion } from './hooks/useAICompletion';
 
 /**
@@ -76,7 +75,6 @@ export const AITextCompletion: React.FC<AITextCompletionProps> = ({
   disabled = false,
   multiline = false,
   rows = 4,
-  maxRows = 10,
   fullWidth = true,
   inlineSuggestion = true,
   triggerKey = 'Tab',
@@ -86,7 +84,7 @@ export const AITextCompletion: React.FC<AITextCompletionProps> = ({
   const [showSuggestion, setShowSuggestion] = useState(false);
   const [acceptedCount, setAcceptedCount] = useState(0);
   const [isPending, setIsPending] = useState(false);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     completion,
@@ -227,7 +225,6 @@ export const AITextCompletion: React.FC<AITextCompletionProps> = ({
         disabled={disabled}
         multiline={multiline}
         rows={rows}
-        maxRows={maxRows}
         fullWidth={fullWidth}
         variant="outlined"
         InputProps={{
@@ -242,8 +239,7 @@ export const AITextCompletion: React.FC<AITextCompletionProps> = ({
         <Box className="mt-2 p-4 rounded relative bg-gray-100 dark:bg-gray-800 border border-solid border-gray-200 dark:border-gray-700">
           <Typography
             as="p"
-            className="text-sm"
-            className="text-gray-500 dark:text-gray-400 italic"
+            className="text-sm text-gray-500 dark:text-gray-400 italic"
           >
             {completion}
           </Typography>
@@ -298,9 +294,8 @@ export const AITextCompletion: React.FC<AITextCompletionProps> = ({
       {error && (
         <Typography
           as="span"
-          className="text-xs text-gray-500"
-          tone="danger"
-          className="mt-2 block"
+          color="danger"
+          className="mt-2 block text-xs text-gray-500"
         >
           {error.message}
         </Typography>
@@ -310,7 +305,6 @@ export const AITextCompletion: React.FC<AITextCompletionProps> = ({
       {acceptedCount > 0 && (
         <Typography
           as="span"
-          className="text-xs text-gray-500"
           color="text.secondary"
           className="mt-2 block"
         >

@@ -29,7 +29,7 @@ export const Header: React.FC<Props> = ({
   return (
     <Box className="flex items-center justify-between mb-6">
       <Box className="flex items-center gap-2">
-        <PsychologyIcon tone="primary" />
+        <PsychologyIcon color="currentColor" />
         <Typography as="h4" component="h1">
           {title}
         </Typography>

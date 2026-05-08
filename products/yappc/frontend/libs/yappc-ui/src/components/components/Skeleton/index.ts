@@ -1,2 +1,2 @@
-export { Skeleton } from 'yappc-ui';
-export type { SkeletonProps, SkeletonVariant } from 'yappc-ui';
+export { Skeleton } from './Skeleton';
+export type { SkeletonProps, SkeletonVariant } from './Skeleton';

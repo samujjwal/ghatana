@@ -1,5 +1,6 @@
 plugins {
     id("java-module")
+    id("java-test-fixtures")
 }
 
 group = "com.ghatana.datacloud"
@@ -32,6 +33,11 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(project(":platform:java:testing"))
     testRuntimeOnly(libs.junit.jupiter.engine)
+
+    testFixturesApi(libs.junit.jupiter)
+    testFixturesApi(libs.assertj.core)
+    testFixturesApi(project(":platform:java:testing"))
+    testFixturesRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 tasks.test {

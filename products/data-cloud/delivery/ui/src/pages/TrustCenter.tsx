@@ -1035,7 +1035,7 @@ export function TrustCenter() {
               placeholder="Search live safeguards or derived policy coverage"
               aria-label="Search live safeguards or derived policy coverage"
               data-testid="trust-search-input"
-              leadingIcon={<Search className="h-4 w-4 text-gray-400" />}
+              InputProps={{ startAdornment: <Search className="h-4 w-4 text-gray-400" /> }}
               className="w-full"
             />
           </div>

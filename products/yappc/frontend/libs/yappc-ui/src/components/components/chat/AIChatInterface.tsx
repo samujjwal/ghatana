@@ -42,13 +42,8 @@ import React, {
   useMemo,
   forwardRef,
 } from 'react';
-import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import remarkGfm from 'remark-gfm';
 
 import { cn } from '@ghatana/design-system';
-import { Button } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
 
 import {
@@ -64,6 +59,8 @@ import {
   DropdownMenuTrigger,
 } from 'yappc-ui';
 import { TooltipContent, TooltipTrigger } from 'yappc-ui';
+
+import { Button } from '../Button';
 
 // =============================================================================
 // Types
@@ -104,97 +101,109 @@ interface AIChatInterfaceProps {
   className?: string;
 }
 
+type MarkdownSegment =
+  | { type: 'text'; content: string }
+  | { type: 'code'; language: string; content: string };
+
+interface AgentProgressState {
+  progress?: number;
+}
+
 // =============================================================================
 // Subcomponents
 // =============================================================================
 
+function parseMarkdownSegments(content: string): MarkdownSegment[] {
+  const segments: MarkdownSegment[] = [];
+  const codeFencePattern = /```(\w+)?\n([\s\S]*?)```/g;
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = codeFencePattern.exec(content)) !== null) {
+    if (match.index > cursor) {
+      segments.push({
+        type: 'text',
+        content: content.slice(cursor, match.index),
+      });
+    }
+
+    segments.push({
+      type: 'code',
+      language: match[1] ?? 'text',
+      content: match[2].replace(/\n$/, ''),
+    });
+    cursor = match.index + match[0].length;
+  }
+
+  if (cursor < content.length) {
+    segments.push({ type: 'text', content: content.slice(cursor) });
+  }
+
+  return segments.length > 0 ? segments : [{ type: 'text', content }];
+}
+
+const renderTextBlock = (content: string, index: number): React.ReactElement => {
+  const lines = content
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) {
+    return <React.Fragment key={index} />;
+  }
+
+  const isUnorderedList = lines.every((line) => /^[-*]\s+/.test(line));
+  const isOrderedList = lines.every((line) => /^\d+\.\s+/.test(line));
+
+  if (isUnorderedList) {
+    return (
+      <ul key={index} className="mb-3 ml-4 list-disc space-y-1">
+        {lines.map((line) => (
+          <li key={line} className="leading-relaxed">
+            {line.replace(/^[-*]\s+/, '')}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  if (isOrderedList) {
+    return (
+      <ol key={index} className="mb-3 ml-4 list-decimal space-y-1">
+        {lines.map((line) => (
+          <li key={line} className="leading-relaxed">
+            {line.replace(/^\d+\.\s+/, '')}
+          </li>
+        ))}
+      </ol>
+    );
+  }
+
+  return (
+    <div key={index}>
+      {lines.map((line) => (
+        <p key={line} className="mb-3 last:mb-0 leading-relaxed">
+          {line}
+        </p>
+      ))}
+    </div>
+  );
+};
+
 const MessageContent = React.memo(({ content }: { content: string }) => (
-  <ReactMarkdown
-    remarkPlugins={[remarkGfm]}
-    components={{
-      code({ node, inline, className, children, ...props }) {
-        const match = /language-(\w+)/.exec(className || '');
-        const language = match ? match[1] : '';
-
-        if (!inline && language) {
-          return (
-            <CodeBlock
-              code={String(children).replace(/\n$/, '')}
-              language={language}
-            />
-          );
-        }
-
-        return (
-          <code
-            className={cn(
-              'px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-200 text-sm font-mono',
-              className
-            )}
-            {...props}
-          >
-            {children}
-          </code>
-        );
-      },
-      p({ children }) {
-        return <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>;
-      },
-      ul({ children }) {
-        return <ul className="mb-3 ml-4 list-disc space-y-1">{children}</ul>;
-      },
-      ol({ children }) {
-        return <ol className="mb-3 ml-4 list-decimal space-y-1">{children}</ol>;
-      },
-      li({ children }) {
-        return <li className="leading-relaxed">{children}</li>;
-      },
-      a({ href, children }) {
-        return (
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 hover:text-blue-300 underline underline-offset-2"
-          >
-            {children}
-          </a>
-        );
-      },
-      blockquote({ children }) {
-        return (
-          <blockquote className="border-l-4 border-zinc-600 pl-4 italic text-zinc-400 mb-3">
-            {children}
-          </blockquote>
-        );
-      },
-      table({ children }) {
-        return (
-          <div className="overflow-x-auto mb-3">
-            <table className="min-w-full divide-y divide-zinc-700 border border-zinc-700 rounded">
-              {children}
-            </table>
-          </div>
-        );
-      },
-      th({ children }) {
-        return (
-          <th className="px-3 py-2 bg-zinc-800 text-left text-sm font-semibold">
-            {children}
-          </th>
-        );
-      },
-      td({ children }) {
-        return (
-          <td className="px-3 py-2 border-t border-zinc-700 text-sm">
-            {children}
-          </td>
-        );
-      },
-    }}
-  >
-    {content}
-  </ReactMarkdown>
+  <>
+    {parseMarkdownSegments(content).map((segment, index) =>
+      segment.type === 'code' ? (
+        <CodeBlock
+          key={`${segment.language}-${index}`}
+          code={segment.content}
+          language={segment.language}
+        />
+      ) : (
+        renderTextBlock(segment.content, index)
+      )
+    )}
+  </>
 ));
 
 MessageContent.displayName = 'MessageContent';
@@ -239,19 +248,9 @@ const CodeBlock = React.memo(
             )}
           </Button>
         </div>
-        <SyntaxHighlighter
-          language={language}
-          style={oneDark}
-          customStyle={{
-            margin: 0,
-            padding: '1rem',
-            background: '#18181b',
-            fontSize: '0.875rem',
-          }}
-          showLineNumbers
-        >
-          {code}
-        </SyntaxHighlighter>
+        <pre className="m-0 overflow-x-auto bg-[#18181b] p-4 text-sm">
+          <code data-language={language}>{code}</code>
+        </pre>
       </div>
     );
   }
@@ -487,6 +486,20 @@ export const AIChatInterface = forwardRef<HTMLDivElement, AIChatInterfaceProps>(
     const conversationHistory = useAtomValue(conversationHistoryAtom);
     const aiAgentState = useAtomValue(aiAgentStateAtom);
     const inputMode = useAtomValue(inputModeAtom);
+    const agentProgress =
+      'progress' in aiAgentState
+        ? (aiAgentState as AgentProgressState).progress
+        : undefined;
+    const normalizedConversationHistory = useMemo<ConversationTurn[]>(
+      () =>
+        conversationHistory.map((message) => ({
+          ...message,
+          timestamp: message.timestamp
+            ? new Date(message.timestamp).toISOString()
+            : new Date().toISOString(),
+        })),
+      [conversationHistory]
+    );
 
     const [inputValue, setInputValue] = useState('');
     const [attachments, setAttachments] = useState<File[]>([]);
@@ -500,7 +513,7 @@ export const AIChatInterface = forwardRef<HTMLDivElement, AIChatInterfaceProps>(
     // Auto-scroll to bottom
     useEffect(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [conversationHistory, isStreaming, streamContent]);
+    }, [normalizedConversationHistory, isStreaming, streamContent]);
 
     // Auto-resize textarea
     useEffect(() => {
@@ -572,7 +585,7 @@ export const AIChatInterface = forwardRef<HTMLDivElement, AIChatInterfaceProps>(
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto">
           {/* Welcome message for empty state */}
-          {conversationHistory.length === 0 && (
+          {normalizedConversationHistory.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full p-8 text-center">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center mb-6">
                 <Sparkles className="w-8 h-8 text-white" />
@@ -605,7 +618,7 @@ export const AIChatInterface = forwardRef<HTMLDivElement, AIChatInterfaceProps>(
 
           {/* Message list */}
           <AnimatePresence mode="popLayout">
-            {conversationHistory.map((message) => (
+            {normalizedConversationHistory.map((message) => (
               <MessageBubble
                 key={message.id}
                 message={message}
@@ -632,7 +645,7 @@ export const AIChatInterface = forwardRef<HTMLDivElement, AIChatInterfaceProps>(
           {aiAgentState.isProcessing && !streamContent && (
             <ThinkingIndicator
               stage={aiAgentState.currentTask}
-              progress={aiAgentState.progress}
+              progress={agentProgress}
               currentTask={aiAgentState.currentTask}
             />
           )}

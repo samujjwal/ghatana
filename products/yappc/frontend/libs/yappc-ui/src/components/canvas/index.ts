@@ -27,10 +27,27 @@ export * from './renderer';
 export * from './properties';
 
 // Data Binding Visualization (Day 35)
-export * from './visualization';
+export {
+  DataSourceNode as DataSourceVisualizationNode,
+  DataFlowVisualizer,
+  DataFlowLegend,
+} from './visualization';
+export type {
+  DataSourceNodeProps,
+  DataFlowVisualizerProps,
+  DataFlowLegendProps,
+  DataBinding,
+  NodePosition,
+} from './visualization';
 
 // Event Wiring (Day 36)
-export * from './events';
+export { EventNode as EventVisualizationNode, EventWiringPanel } from './events';
+export type {
+  EventNodeProps,
+  EventHandler,
+  EventWiringPanelProps,
+  EventConnection,
+} from './events';
 
 // Code Generation (Day 37)
 export * from './codegen';
@@ -39,7 +56,14 @@ export * from './codegen';
 export * from './templates';
 
 // Validation System (Day 39)
-export * from './validation';
+export { CanvasValidator, ErrorPanel } from './validation';
+export type {
+  ValidationSeverity,
+  ValidationIssue,
+  ValidationResult as CanvasValidationResult,
+  ValidationOptions,
+  ErrorPanelProps,
+} from './validation';
 
 // Canvas wrapper components (YAPPC integration)
 export { CanvasEditor } from './CanvasEditor';

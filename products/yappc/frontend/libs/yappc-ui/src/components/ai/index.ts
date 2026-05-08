@@ -16,5 +16,3 @@ export type { SentimentIndicatorProps } from './SentimentIndicator';
 
 export { CopilotChat } from './CopilotChat';
 export type { CopilotChatProps } from './CopilotChat';
-
-export * from './hooks';

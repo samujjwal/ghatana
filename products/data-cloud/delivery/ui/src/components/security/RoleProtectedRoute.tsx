@@ -20,11 +20,11 @@
  */
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router';
-import SessionBootstrap, { type ShellRole } from '../lib/auth/session';
+import SessionBootstrap, { type ShellRole } from '../../lib/auth/session';
 import {
   getRouteByPath,
   type RouteCapability,
-} from '../lib/routing/RouteCapabilityRegistry';
+} from '../../lib/routing/RouteCapabilityRegistry';
 
 interface RoleProtectedRouteProps {
   children?: React.ReactNode;

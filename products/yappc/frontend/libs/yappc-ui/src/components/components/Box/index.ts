@@ -1,3 +1,2 @@
-export { Box, type BoxProps } from 'yappc-ui';
-export { Box as BoxTailwind } from 'yappc-ui';
-export type { BoxProps as BoxTailwindProps } from 'yappc-ui';
+export { Box, Box as BoxTailwind, type BoxProps } from './Box.tailwind';
+export type { BoxProps as BoxTailwindProps } from './Box.tailwind';

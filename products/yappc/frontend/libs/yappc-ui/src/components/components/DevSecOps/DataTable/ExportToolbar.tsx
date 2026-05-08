@@ -14,7 +14,7 @@ import { Download as DownloadIcon } from 'lucide-react';
 import { Printer as PrintIcon } from 'lucide-react';
 import { useState } from 'react';
 
-import { IconButton, Menu, MenuItem, Tooltip } from '@ghatana/design-system';
+import { IconButton, Menu, MenuItem, Tooltip } from '../../compat';
 
 import { DataTableExport } from './export';
 import type { DataTableColumn } from './types';

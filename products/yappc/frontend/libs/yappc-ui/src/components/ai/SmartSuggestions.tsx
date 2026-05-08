@@ -52,6 +52,8 @@ import type {
 import SuggestionList from './SuggestionList';
 import { useSuggestions } from './useSuggestions';
 
+export type { SmartSuggestionsProps } from './SmartSuggestions/types';
+
 /**
  * Hook: keyboard navigation for suggestions
  */
@@ -302,7 +304,7 @@ export const SmartSuggestions: React.FC<SmartSuggestionsProps> = ({
 
       {error && (
         <Box className="p-4">
-          <Typography tone="danger" as="p" className="text-sm">
+          <Typography color="danger" as="p" className="text-sm">
             {error}
           </Typography>
           <Box className="mt-2">

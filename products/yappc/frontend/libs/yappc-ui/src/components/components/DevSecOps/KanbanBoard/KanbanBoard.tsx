@@ -34,7 +34,7 @@ import {
   Typography,
   Chip,
   LinearProgress,
-} from '@ghatana/design-system';
+} from '../../compat';
 
 import type { Item, ItemStatus } from 'yappc-core/types/devsecops';
 
@@ -168,7 +168,7 @@ function KanbanColumnComponent({
             {column.title}
           </Typography>
           <Chip
-            label={items.length}
+            label={String(items.length)}
             size="sm"
             color={isOverLimit ? 'error' : 'default'}
           />
@@ -352,9 +352,8 @@ export function KanbanBoard({
         <LinearProgress />
         <Typography
           as="p"
-          className="text-sm"
+          className="mt-4 text-center text-sm"
           color="text.secondary"
-          className="mt-4 text-center"
         >
           Loading board...
         </Typography>

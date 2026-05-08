@@ -3,16 +3,22 @@
  */
 
 import {
-  render,
+  render as rtlRender,
   screen,
   /* fireEvent */ waitFor,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ReactElement } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+import { renderWithTheme } from '../../test-utils/renderWithTheme';
 import { AITextCompletion } from '../AITextCompletion';
 
 import type { IAIService, CompletionResponse } from 'yappc-ai/core';
+
+const render = (ui: ReactElement) => rtlRender(renderWithTheme(ui));
+const rerenderWithTheme = (rerender: (ui: ReactElement) => void, ui: ReactElement) =>
+  rerender(renderWithTheme(ui));
 
 // Mock AI Service
 const createMockAIService = (overrides?: Partial<IAIService>): IAIService => ({
@@ -130,7 +136,8 @@ describe('AITextCompletion', () => {
 
       expect(screen.getByRole('textbox')).toHaveValue('Initial');
 
-      rerender(
+      rerenderWithTheme(
+        rerender,
         <AITextCompletion
           aiService={mockAIService}
           value="Updated"

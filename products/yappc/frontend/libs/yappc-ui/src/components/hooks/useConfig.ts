@@ -7,13 +7,19 @@ export interface TaskDomain {
   personas?: string[];
   description?: string;
   icon?: string;
+  color?: string;
+  capabilities?: string[];
+  phases?: string[];
 }
 
 export interface Workflow {
   id: string;
   name: string;
   persona?: string;
+  domain?: string;
   description?: string;
+  steps?: string[];
+  phases?: string[];
 }
 
 export interface Phase {
@@ -22,6 +28,9 @@ export interface Phase {
   primary_personas?: string[];
   secondary_personas?: string[];
   description?: string;
+  duration?: string;
+  activities?: string[];
+  gates?: string[];
 }
 
 export interface LifecycleConfig {
@@ -32,6 +41,18 @@ export interface LifecycleConfig {
 export interface AgentCapabilities {
   agents: unknown[];
   capabilities: unknown[];
+}
+
+export interface ConfigTask {
+  id: string;
+  name: string;
+  persona?: string;
+  description?: string;
+  priority?: 'critical' | 'high' | 'medium' | 'low';
+  type?: string;
+  complexity?: string;
+  estimated_duration?: string;
+  agent?: string;
 }
 
 // Mock data - default values until API is implemented
@@ -193,7 +214,7 @@ export const useAgentCapabilities = (): AgentCapabilities => {
   };
 };
 
-export const useAllTasks = (): unknown[] => {
+export const useAllTasks = (): ConfigTask[] => {
   return [
     {
       id: 'task-1',

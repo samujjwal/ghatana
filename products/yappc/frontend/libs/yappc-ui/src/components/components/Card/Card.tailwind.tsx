@@ -6,6 +6,7 @@
  */
 
 import { forwardRef } from 'react';
+import type { Ref } from 'react';
 
 import { cn } from '../../utils/cn';
 import { Box, type BoxProps } from '../Box';
@@ -229,13 +230,14 @@ export const CardMedia = forwardRef<HTMLDivElement, CardMediaProps>(
     const Component = component || (image ? 'img' : 'div');
 
     if (Component === 'img' && image) {
+      const imageProps = props as React.ImgHTMLAttributes<HTMLImageElement>;
       return (
         <img
-          ref={ref as unknown}
+          ref={ref as Ref<HTMLImageElement>}
           src={image}
           alt={alt}
           className={cn('w-full object-cover', height, className)}
-          {...(props as unknown)}
+          {...imageProps}
         />
       );
     }

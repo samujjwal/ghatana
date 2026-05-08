@@ -345,6 +345,50 @@ class EntityExportServiceTest extends EventloopTestBase {
             assertThat(ndjson).contains("\"email\":\"[REDACTED]\"");
             assertThat(ndjson).contains("\"status\":\"ACTIVE\"");
         }
+
+        @Test
+        @DisplayName("DC-SEC-002 — governed NDJSON export fails closed when unredacted PII present")
+        void governedNdjsonFailsClosedWhenUnredactedPiiPresent() {
+            Entity entity = entityWith(Map.of("ssn", "123-45-6789", "name", "Alice"));
+            stub(List.of(entity));
+
+            assertThatThrownBy(() -> runPromise(() ->
+                    service.exportNdjsonGoverned(TENANT, COLLECTION, Map.of(), 100)))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Governed export blocked by unredacted PII")
+                    .hasMessageContaining("field=ssn");
+        }
+
+        @Test
+        @DisplayName("DC-SEC-002 — governed CSV export succeeds when all PII fields are redacted")
+        void governedCsvSucceedsWhenAllPiiRedacted() {
+            Entity entity = entityWith(Map.of(
+                    "email", "[REDACTED]",
+                    "phone", "[REDACTED]",
+                    "status", "ACTIVE"));
+            stub(List.of(entity));
+
+            String csv = runPromise(() ->
+                    service.exportCsvGoverned(TENANT, COLLECTION, Map.of(), 100));
+
+            assertThat(csv).contains("[REDACTED]");
+            assertThat(csv).contains("ACTIVE");
+        }
+
+        @Test
+        @DisplayName("DC-SEC-002 — governed CSV export fails closed when multiple PII fields present")
+        void governedCsvFailsClosedWhenMultiplePiiFieldsPresent() {
+            Entity entity = entityWith(Map.of(
+                    "email", "alice@example.com",
+                    "phone", "555-1234",
+                    "status", "ACTIVE"));
+            stub(List.of(entity));
+
+            assertThatThrownBy(() -> runPromise(() ->
+                    service.exportCsvGoverned(TENANT, COLLECTION, Map.of(), 100)))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Governed export blocked by unredacted PII");
+        }
     }
 
     // =========================================================================

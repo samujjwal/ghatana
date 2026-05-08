@@ -39,7 +39,7 @@ export function renderWithTheme(
 ): ReturnType<typeof render> {
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <ThemeProvider defaultMode={themeMode}>
-      <MuiThemeProvider mode={themeMode}>{children}</MuiThemeProvider>
+      <MuiThemeProvider defaultMode={themeMode}>{children}</MuiThemeProvider>
     </ThemeProvider>
   );
 

@@ -14,6 +14,7 @@ const mockedUseAuth = vi.mocked(useAuth);
 function createAuthState(overrides: Partial<ReturnType<typeof useAuth>> = {}) {
   return {
     login: vi.fn(),
+    hydrateSession: vi.fn(),
     isLoading: false,
     error: null,
     ...overrides,
@@ -87,7 +88,7 @@ describe('LoginForm', () => {
   });
 
   it('posts credentials and hydrates auth state on success', async () => {
-    const login = vi.fn();
+    const hydrateSession = vi.fn();
     const onSuccess = vi.fn();
     const mockFetch = vi.mocked(fetch);
     mockFetch.mockResolvedValue({
@@ -99,7 +100,7 @@ describe('LoginForm', () => {
         expiresIn: 3600,
       }),
     } as Response);
-    mockedUseAuth.mockReturnValue(createAuthState({ login }));
+    mockedUseAuth.mockReturnValue(createAuthState({ hydrateSession }));
 
     const user = userEvent.setup();
     render(<LoginForm onSuccess={onSuccess} />);
@@ -122,7 +123,7 @@ describe('LoginForm', () => {
           }),
         })
       );
-      expect(login).toHaveBeenCalledWith({
+      expect(hydrateSession).toHaveBeenCalledWith({
         user: { id: 'user-1', email: 'test@example.com' },
         token: 'access-token',
         refreshToken: 'refresh-token',

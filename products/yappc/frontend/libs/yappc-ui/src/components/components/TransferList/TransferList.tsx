@@ -319,9 +319,9 @@ export const TransferList = React.forwardRef<HTMLDivElement, TransferListProps>(
                 onChange={() => handleToggleAll(isLeft)}
                 disabled={disabled || filteredItems.length === 0}
                 className="w-4 h-4 text-primary-500 border-grey-300 rounded focus:ring-primary-500 disabled:cursor-not-allowed"
-                {...(someChecked &&
-                  !allChecked &&
-                  ({ 'data-indeterminate': 'true' } as unknown))}
+                data-indeterminate={
+                  someChecked && !allChecked ? 'true' : undefined
+                }
               />
               <span className="text-sm text-grey-700">Select all</span>
             </label>

@@ -432,8 +432,15 @@ export const Input = memo(
       },
       ref
     ) => {
+      const initialValue =
+        typeof valueProp === 'string' || typeof valueProp === 'number'
+          ? String(valueProp)
+          : typeof defaultValueProp === 'string' ||
+              typeof defaultValueProp === 'number'
+            ? String(defaultValueProp)
+            : '';
       const [value, setValue] = useState<string>(
-        (valueProp as unknown) ?? (defaultValueProp as unknown) ?? ''
+        initialValue
       );
       const [showPassword, setShowPassword] = useState(false);
       const [showOptions, setShowOptions] = useState(false);

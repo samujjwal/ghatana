@@ -47,7 +47,7 @@ export const SuggestionList: React.FC<Props> = ({
   );
 
   return (
-    <List disablePadding>
+    <List>
       {suggestionTypes.map((type, groupIndex) => {
         const group = groups.find((g) => g.type === type);
         const typeSuggestions = group?.items ?? [];
@@ -56,7 +56,6 @@ export const SuggestionList: React.FC<Props> = ({
             {groupIndex > 0 && <Divider />}
             <Box className="p-3 pb-1">
               <Chip
-                component="span"
                 icon={<span />}
                 label={getSuggestionLabel(type)}
                 size="sm"
@@ -70,7 +69,6 @@ export const SuggestionList: React.FC<Props> = ({
                 <ListItem key={suggestion.id} disablePadding>
                   <ListItemButton
                     data-suggestion-index={globalIndex}
-                    component="button"
                     selected={isSelected}
                     onClick={() => onClick(suggestion, globalIndex)}
                   >
@@ -82,7 +80,6 @@ export const SuggestionList: React.FC<Props> = ({
                         suggestion.confidence &&
                         isSelected ? (
                           <Chip
-                            component="span"
                             label={`${Math.round(suggestion.confidence * 100)}% confidence`}
                             size="sm"
                             className="mt-1"

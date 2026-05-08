@@ -2,6 +2,7 @@ package com.ghatana.datacloud.client;
 
 import com.ghatana.datacloud.EventRecord;
 import com.ghatana.datacloud.RecordQuery;
+import com.ghatana.datacloud.entity.storage.FilterCriteria;
 import com.ghatana.datacloud.spi.StoragePlugin;
 import io.activej.promise.Promise;
 import lombok.extern.slf4j.Slf4j;
@@ -179,7 +180,7 @@ public class DefaultContextGateway implements ContextGateway {
             for (ContextDocument.ContextType type : request.includeTypes()) {
                 filters.add(RecordQuery.FilterCondition.builder()
                         .field("contextType")
-                        .operator(RecordQuery.Operator.EQUALS)
+                        .operator(FilterCriteria.Operator.EQ)
                         .value(type.name())
                         .build());
             }
@@ -548,7 +549,7 @@ public class DefaultContextGateway implements ContextGateway {
         List<RecordQuery.FilterCondition> filters = List.of(
                 RecordQuery.FilterCondition.builder()
                         .field("expiresAt")
-                        .operator(RecordQuery.Operator.LESS_THAN)
+                        .operator(FilterCriteria.Operator.LT)
                         .value(now)
                         .build()
         );

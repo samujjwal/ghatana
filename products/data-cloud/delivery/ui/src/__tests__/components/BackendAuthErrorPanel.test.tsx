@@ -31,11 +31,12 @@ function makeError(
   code: AuthDenialCode,
   opts: Partial<ApiError> = {},
 ): ApiError & { code: AuthDenialCode } {
+  const { code: _code, ...restOpts } = opts;
   return {
     code,
     message: code === "AUTH_REQUIRED" ? "Unauthorized" : "Forbidden",
     status: code === "AUTH_REQUIRED" ? 401 : 403,
-    ...opts,
+    ...restOpts,
   };
 }
 

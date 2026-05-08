@@ -288,6 +288,21 @@ export const ANALYTICS_AI_DISABLED_BOUNDARY_MESSAGE =
 export const BRAIN_AUTONOMY_DISABLED_BOUNDARY_MESSAGE =
   'Brain autonomy operations are disabled by runtime feature-gate policy for this deployment profile.';
 
+export const GOVERNANCE_POLICY_CREATE_BOUNDARY_MESSAGE =
+  'Governance policy creation is disabled by runtime feature-gate policy for this deployment profile.';
+
+export const GOVERNANCE_POLICY_DELETE_BOUNDARY_MESSAGE =
+  'Governance policy deletion is disabled by runtime feature-gate policy for this deployment profile.';
+
+export const GOVERNANCE_POLICY_TOGGLE_BOUNDARY_MESSAGE =
+  'Governance policy toggle is disabled by runtime feature-gate policy for this deployment profile.';
+
+export const GOVERNANCE_POLICY_UPDATE_BOUNDARY_MESSAGE =
+  'Governance policy update is disabled by runtime feature-gate policy for this deployment profile.';
+
+export const GOVERNANCE_VIOLATION_RESOLUTION_BOUNDARY_MESSAGE =
+  'Governance violation resolution is disabled by runtime feature-gate policy for this deployment profile.';
+
 export const AI_OBSERVABILITY_DISABLED_BOUNDARY_MESSAGE =
   'AI observability and quality-summary APIs are disabled by runtime feature-gate policy for this deployment profile.';
 

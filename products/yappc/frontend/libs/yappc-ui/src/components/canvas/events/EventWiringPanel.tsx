@@ -103,13 +103,13 @@ export const EventWiringPanel: React.FC<EventWiringPanelProps> = ({
   // Handle update event config
   const handleUpdateEvent = (
     eventName: string,
-    updates: Partial<ComponentNodeData['events']>
+    updates: NonNullable<ComponentNodeData['events']>[string]
   ) => {
     const updatedEvents = {
       ...events,
       [eventName]: {
         ...events[eventName],
-        ...updates[eventName],
+        ...updates,
       },
     };
 
@@ -303,7 +303,8 @@ export const EventWiringPanel: React.FC<EventWiringPanelProps> = ({
                         value={config?.emit || ''}
                         onChange={(e) =>
                           handleUpdateEvent(eventName, {
-                            [eventName]: { ...config, emit: e.target.value },
+                            emit: e.target.value,
+                            payload: config?.payload,
                           })
                         }
                         style={{
@@ -347,9 +348,15 @@ export const EventWiringPanel: React.FC<EventWiringPanelProps> = ({
                         value={JSON.stringify(config?.payload || {}, null, 2)}
                         onChange={(e) => {
                           try {
-                            const payload = JSON.parse(e.target.value);
+                            const payload = JSON.parse(e.target.value) as unknown;
                             handleUpdateEvent(eventName, {
-                              [eventName]: { ...config, payload },
+                              emit: config?.emit ?? '',
+                              payload:
+                                payload !== null &&
+                                typeof payload === 'object' &&
+                                !Array.isArray(payload)
+                                  ? (payload as Record<string, unknown>)
+                                  : {},
                             });
                           } catch {
                             // Invalid JSON, ignore

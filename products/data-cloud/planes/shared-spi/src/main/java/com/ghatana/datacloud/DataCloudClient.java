@@ -1,8 +1,12 @@
 package com.ghatana.datacloud;
 
 import com.ghatana.datacloud.spi.EntityStore;
-// PENDING: Migrate to com.ghatana.platform.domain.eventstore.EventLogStore when platform module is available
+// Architectural decision (DC-DRY-002): Data Cloud uses its own SPI EventLogStore
+// (com.ghatana.datacloud.spi.EventLogStore) as the canonical contract for this product layer.
+// Use EventLogStoreAdapters to bridge with com.ghatana.platform.domain.eventstore.EventLogStore
+// when interoperating with platform-layer consumers.
 import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.datacloud.entity.storage.FilterCriteria;
 import io.activej.promise.Promise;
 
 import java.util.List;
@@ -219,33 +223,33 @@ public interface DataCloudClient extends AutoCloseable {
     /**
      * Query filter.
      */
-    record Filter(String field, String operator, Object value) {
+    record Filter(String field, FilterCriteria.Operator operator, Object value) {
         public static Filter eq(String field, Object value) {
-            return new Filter(field, "eq", value);
+            return new Filter(field, FilterCriteria.Operator.EQ, value);
         }
 
         public static Filter ne(String field, Object value) {
-            return new Filter(field, "ne", value);
+            return new Filter(field, FilterCriteria.Operator.NE, value);
         }
 
         public static Filter gt(String field, Object value) {
-            return new Filter(field, "gt", value);
+            return new Filter(field, FilterCriteria.Operator.GT, value);
         }
 
         public static Filter gte(String field, Object value) {
-            return new Filter(field, "gte", value);
+            return new Filter(field, FilterCriteria.Operator.GTE, value);
         }
 
         public static Filter lt(String field, Object value) {
-            return new Filter(field, "lt", value);
+            return new Filter(field, FilterCriteria.Operator.LT, value);
         }
 
         public static Filter lte(String field, Object value) {
-            return new Filter(field, "lte", value);
+            return new Filter(field, FilterCriteria.Operator.LTE, value);
         }
 
         public static Filter like(String field, String pattern) {
-            return new Filter(field, "like", pattern);
+            return new Filter(field, FilterCriteria.Operator.LIKE, pattern);
         }
     }
 

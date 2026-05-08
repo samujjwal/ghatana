@@ -127,10 +127,6 @@ export {
   ProtectedRoute,
   withProtectedRoute,
   useRouteAccess,
-  AuthExamples,
-  LoginPage,
-  RegisterPage,
-  DashboardPage,
 } from './components/Auth';
 export type {
   LoginFormProps,
@@ -142,9 +138,6 @@ export type {
   // LoginFormData,
   // RegisterFormData,
   ProtectedRouteProps,
-  LoginPageProps,
-  RegisterPageProps,
-  DashboardPageProps,
 } from './components/Auth';
 
 // Toast Notifications
@@ -361,18 +354,7 @@ export type {
 } from './components/Search';
 
 // State management
-export {
-  useGlobalStateValue,
-  useSetGlobalState,
-  useResetGlobalState,
-  useToggleGlobalState,
-  useCounterGlobalState,
-  useArrayGlobalState,
-  useObjectGlobalState,
-  useBatchGlobalStateUpdate,
-  useGlobalStateKeys,
-  useGlobalStateStatistics,
-} from 'yappc-state';
+export { useStateValue, useStateSetter, useStateAtom } from 'yappc-state';
 export {
   configQueryKeys,
   usePersonas,
@@ -441,9 +423,7 @@ export {
   ModalManager,
 } from './interactions';
 
-// YAPPC-specific utils
-export * from './utils';
-export { cn } from './utils/cn';
+export { wrapForTooltip } from './utils/accessibility';
 
 // ============================================================================
 // PREVIOUSLY MUI-SOURCED COMPONENTS — now re-exported from @mui/material at top of file

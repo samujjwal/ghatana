@@ -648,31 +648,83 @@ public final class H2SovereignEntityStore implements EntityStore, AutoCloseable 
         return jdbcDataSource;
     }
 
+    // DC-P2-006: Ordered list of schema migrations. Each entry is applied once and tracked in
+    // dc_h2_schema_migrations. Migration IDs are 1-based and must be appended only — never reordered.
+    private static final List<String> SCHEMA_MIGRATIONS = List.of(
+        // Migration 1: initial dc_entities schema with collection-scoped primary key (DC-P0-001),
+        //              covering indexes for tenant/collection queries (DC-PERF-001).
+        """
+        CREATE TABLE IF NOT EXISTS dc_entities (
+            tenant_id VARCHAR(255) NOT NULL,
+            entity_id VARCHAR(255) NOT NULL,
+            collection_name VARCHAR(255) NOT NULL,
+            data_json CLOB NOT NULL,
+            created_at TIMESTAMP NOT NULL,
+            updated_at TIMESTAMP NOT NULL,
+            version BIGINT NOT NULL,
+            deleted BOOLEAN NOT NULL DEFAULT FALSE,
+            PRIMARY KEY (tenant_id, collection_name, entity_id)
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS idx_dc_entities_tenant_collection ON dc_entities(tenant_id, collection_name, deleted)",
+        "CREATE INDEX IF NOT EXISTS idx_dc_entities_tenant_updated ON dc_entities(tenant_id, collection_name, updated_at DESC)",
+        "CREATE INDEX IF NOT EXISTS idx_dc_entities_tenant_collections ON dc_entities(tenant_id, collection_name)"
+    );
+
+    // DC-P2-006: The total number of statements that constitute the initial schema (migration 1).
+    // All four statements above are grouped as a single logical migration version.
+    private static final int INITIAL_MIGRATION_VERSION = 1;
+
     private void initializeSchema() {
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
-            // DC-P0-001: PRIMARY KEY now includes collection_name to prevent cross-collection collision.
-            statement.execute("""
-                CREATE TABLE IF NOT EXISTS dc_entities (
-                    tenant_id VARCHAR(255) NOT NULL,
-                    entity_id VARCHAR(255) NOT NULL,
-                    collection_name VARCHAR(255) NOT NULL,
-                    data_json CLOB NOT NULL,
-                    created_at TIMESTAMP NOT NULL,
-                    updated_at TIMESTAMP NOT NULL,
-                    version BIGINT NOT NULL,
-                    deleted BOOLEAN NOT NULL DEFAULT FALSE,
-                    PRIMARY KEY (tenant_id, collection_name, entity_id)
-                )
-                """);
-            statement.execute("CREATE INDEX IF NOT EXISTS idx_dc_entities_tenant_collection ON dc_entities(tenant_id, collection_name, deleted)");
-            // DC-PERF-001: cover ORDER BY updated_at DESC, entity_id ASC queries
-            statement.execute("CREATE INDEX IF NOT EXISTS idx_dc_entities_tenant_updated ON dc_entities(tenant_id, collection_name, updated_at DESC)");
-            // DC-PERF-001: cover listCollections GROUP BY tenant_id, collection_name queries
-            statement.execute("CREATE INDEX IF NOT EXISTS idx_dc_entities_tenant_collections ON dc_entities(tenant_id, collection_name) WHERE deleted = FALSE");
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                // DC-P2-006: Create the schema-version tracking table first so all subsequent
+                // migrations are idempotent across restarts.
+                try (Statement stmt = connection.createStatement()) {
+                    stmt.execute("""
+                        CREATE TABLE IF NOT EXISTS dc_h2_schema_migrations (
+                            migration_id INTEGER PRIMARY KEY,
+                            applied_at TIMESTAMP NOT NULL
+                        )
+                        """);
+                }
+                applyMigrations(connection);
+                connection.commit();
+            } catch (Exception exception) {
+                connection.rollback();
+                throw exception;
+            }
         } catch (Exception exception) {
             throw new IllegalStateException("Failed to initialize sovereign entity store schema", exception);
         }
+    }
+
+    /**
+     * DC-P2-006: Applies any unapplied schema migrations in order.
+     * Migration 1 covers all statements in {@link #SCHEMA_MIGRATIONS}.
+     * Future schema changes should add new migration entries to {@link #SCHEMA_MIGRATIONS}
+     * and update {@code INITIAL_MIGRATION_VERSION} grouping accordingly.
+     */
+    private void applyMigrations(Connection connection) throws Exception {
+        int maxApplied;
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT MAX(migration_id) FROM dc_h2_schema_migrations")) {
+            maxApplied = rs.next() && rs.getObject(1) != null ? rs.getInt(1) : 0;
+        }
+
+        if (maxApplied < INITIAL_MIGRATION_VERSION) {
+            // Apply every statement in the initial migration group.
+            try (Statement stmt = connection.createStatement()) {
+                for (String sql : SCHEMA_MIGRATIONS) {
+                    stmt.execute(sql);
+                }
+                stmt.execute(
+                    "INSERT INTO dc_h2_schema_migrations (migration_id, applied_at) VALUES ("
+                    + INITIAL_MIGRATION_VERSION + ", CURRENT_TIMESTAMP())");
+            }
+        }
+        // Future migrations: add `if (maxApplied < 2) { ... }` blocks here for each new version.
     }
 
     private static void appendPlaceholders(StringBuilder sql, int count) {

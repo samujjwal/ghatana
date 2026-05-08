@@ -539,7 +539,7 @@ export const OnboardingTourUI: React.FC<OnboardingTourProps> = ({
   );
   const isDev =
     typeof import.meta !== 'undefined' &&
-    Boolean((import.meta as unknown).env?.DEV);
+    Boolean(import.meta.env?.DEV);
 
   return (
     <div

@@ -10,8 +10,8 @@
 interface StyleMapping {
   tokenCategory: string;
   cssProperty: string;
-  transform?: (value: unknown) => any;
-  reverse?: (value: unknown) => any;
+  transform?: (value: unknown) => unknown;
+  reverse?: (value: unknown) => unknown;
 }
 
 /**
@@ -37,8 +37,8 @@ export class DesignTokenMapper {
     fontSize: {
       tokenCategory: 'typography.fontSize',
       cssProperty: 'fontSize',
-      transform: (value) => (typeof value === 'number' ? `${value}px` : value),
-      reverse: (value) => parseInt(value, 10),
+      transform: (value) => DesignTokenMapper.toCssDimension(value),
+      reverse: (value) => DesignTokenMapper.toNumber(value),
     },
     fontFamily: {
       tokenCategory: 'typography.fontFamily',
@@ -55,74 +55,74 @@ export class DesignTokenMapper {
     padding: {
       tokenCategory: 'spacing',
       cssProperty: 'padding',
-      transform: (value) => (typeof value === 'number' ? `${value}px` : value),
-      reverse: (value) => parseInt(value, 10),
+      transform: (value) => DesignTokenMapper.toCssDimension(value),
+      reverse: (value) => DesignTokenMapper.toNumber(value),
     },
     paddingTop: {
       tokenCategory: 'spacing',
       cssProperty: 'paddingTop',
-      transform: (value) => (typeof value === 'number' ? `${value}px` : value),
-      reverse: (value) => parseInt(value, 10),
+      transform: (value) => DesignTokenMapper.toCssDimension(value),
+      reverse: (value) => DesignTokenMapper.toNumber(value),
     },
     paddingRight: {
       tokenCategory: 'spacing',
       cssProperty: 'paddingRight',
-      transform: (value) => (typeof value === 'number' ? `${value}px` : value),
-      reverse: (value) => parseInt(value, 10),
+      transform: (value) => DesignTokenMapper.toCssDimension(value),
+      reverse: (value) => DesignTokenMapper.toNumber(value),
     },
     paddingBottom: {
       tokenCategory: 'spacing',
       cssProperty: 'paddingBottom',
-      transform: (value) => (typeof value === 'number' ? `${value}px` : value),
-      reverse: (value) => parseInt(value, 10),
+      transform: (value) => DesignTokenMapper.toCssDimension(value),
+      reverse: (value) => DesignTokenMapper.toNumber(value),
     },
     paddingLeft: {
       tokenCategory: 'spacing',
       cssProperty: 'paddingLeft',
-      transform: (value) => (typeof value === 'number' ? `${value}px` : value),
-      reverse: (value) => parseInt(value, 10),
+      transform: (value) => DesignTokenMapper.toCssDimension(value),
+      reverse: (value) => DesignTokenMapper.toNumber(value),
     },
     margin: {
       tokenCategory: 'spacing',
       cssProperty: 'margin',
-      transform: (value) => (typeof value === 'number' ? `${value}px` : value),
-      reverse: (value) => parseInt(value, 10),
+      transform: (value) => DesignTokenMapper.toCssDimension(value),
+      reverse: (value) => DesignTokenMapper.toNumber(value),
     },
     marginTop: {
       tokenCategory: 'spacing',
       cssProperty: 'marginTop',
-      transform: (value) => (typeof value === 'number' ? `${value}px` : value),
-      reverse: (value) => parseInt(value, 10),
+      transform: (value) => DesignTokenMapper.toCssDimension(value),
+      reverse: (value) => DesignTokenMapper.toNumber(value),
     },
     marginRight: {
       tokenCategory: 'spacing',
       cssProperty: 'marginRight',
-      transform: (value) => (typeof value === 'number' ? `${value}px` : value),
-      reverse: (value) => parseInt(value, 10),
+      transform: (value) => DesignTokenMapper.toCssDimension(value),
+      reverse: (value) => DesignTokenMapper.toNumber(value),
     },
     marginBottom: {
       tokenCategory: 'spacing',
       cssProperty: 'marginBottom',
-      transform: (value) => (typeof value === 'number' ? `${value}px` : value),
-      reverse: (value) => parseInt(value, 10),
+      transform: (value) => DesignTokenMapper.toCssDimension(value),
+      reverse: (value) => DesignTokenMapper.toNumber(value),
     },
     marginLeft: {
       tokenCategory: 'spacing',
       cssProperty: 'marginLeft',
-      transform: (value) => (typeof value === 'number' ? `${value}px` : value),
-      reverse: (value) => parseInt(value, 10),
+      transform: (value) => DesignTokenMapper.toCssDimension(value),
+      reverse: (value) => DesignTokenMapper.toNumber(value),
     },
     borderRadius: {
       tokenCategory: 'borderRadius',
       cssProperty: 'borderRadius',
-      transform: (value) => (typeof value === 'number' ? `${value}px` : value),
-      reverse: (value) => parseInt(value, 10),
+      transform: (value) => DesignTokenMapper.toCssDimension(value),
+      reverse: (value) => DesignTokenMapper.toNumber(value),
     },
     borderWidth: {
       tokenCategory: 'borderWidth',
       cssProperty: 'borderWidth',
-      transform: (value) => (typeof value === 'number' ? `${value}px` : value),
-      reverse: (value) => parseInt(value, 10),
+      transform: (value) => DesignTokenMapper.toCssDimension(value),
+      reverse: (value) => DesignTokenMapper.toNumber(value),
     },
     boxShadow: {
       tokenCategory: 'shadow',
@@ -333,12 +333,27 @@ export class DesignTokenMapper {
     propName: string,
     tokenCategory: string,
     cssProperty: string,
-    transform?: (value: unknown) => any
+    transform?: (value: unknown) => unknown
   ): void {
     this.STYLE_MAPPINGS[propName] = {
       tokenCategory,
       cssProperty,
       transform,
     };
+  }
+
+  private static toCssDimension(value: unknown): unknown {
+    return typeof value === 'number' ? `${value}px` : value;
+  }
+
+  private static toNumber(value: unknown): number | undefined {
+    if (typeof value === 'number') {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const parsed = parseInt(value, 10);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    }
+    return undefined;
   }
 }

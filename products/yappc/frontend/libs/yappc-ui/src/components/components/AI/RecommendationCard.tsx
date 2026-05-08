@@ -26,10 +26,17 @@ import {
   Typography,
 } from '@ghatana/design-system';
 
-import { resolveMuiColor } from '../../utils/safePalette';
-
 import type { RecommendationCardProps } from './types';
 import { AIInsightsDashboardUtils } from './utils';
+
+const priorityToChipColor = (
+  priority: RecommendationCardProps['recommendation']['priority']
+): 'danger' | 'warning' | 'success' | 'default' => {
+  if (priority === 'critical') return 'danger';
+  if (priority === 'high' || priority === 'medium') return 'warning';
+  if (priority === 'low') return 'success';
+  return 'default';
+};
 
 /**
  * Get type-specific icon for recommendation
@@ -97,7 +104,7 @@ function renderImplementationSteps(
       <Typography as="p" className="text-sm font-medium" gutterBottom>
         Implementation ({implementation.effort} effort)
       </Typography>
-      <List dense>
+      <List>
         {implementation.steps.slice(0, 3).map((step, index) => (
           <ListItem key={index} className="py-1 px-0">
             <ListItemText primary={step} className="text-sm" />
@@ -154,10 +161,6 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
   onDismiss,
   isImplementing = false,
 }): React.ReactElement => {
-  const priorityColor = AIInsightsDashboardUtils.getPriorityColor(
-    recommendation.priority
-  );
-
   const handleImplementClick = (
     event: React.MouseEvent<HTMLButtonElement>
   ): void => {
@@ -172,8 +175,6 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
     onDismiss(recommendation.id);
   };
 
-  const theme = useTheme();
-
   return (
     <Card className="h-full flex flex-col">
       <CardContent className="grow">
@@ -187,20 +188,13 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
           <Chip
             size="sm"
             label={recommendation.priority}
-            color={
-              resolveMuiColor(
-                theme,
-                String(priorityColor),
-                'default'
-              ) as unknown
-            }
+            color={priorityToChipColor(recommendation.priority)}
             variant="filled"
           />
         </Box>
 
         <Typography
           as="p"
-          className="text-sm"
           color="text.secondary"
           className="mb-4"
         >

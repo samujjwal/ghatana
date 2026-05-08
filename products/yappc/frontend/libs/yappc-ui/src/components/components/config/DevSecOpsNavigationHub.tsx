@@ -28,8 +28,6 @@ import {
   Box,
   Card,
   CardContent,
-  Typography,
-  Chip,
   Button,
   Tabs,
   Tab,
@@ -39,7 +37,6 @@ import {
   IconButton,
   Tooltip,
   Divider,
-  Stack,
   Select,
   FormControl,
   InputLabel,
@@ -56,6 +53,7 @@ import {
 } from 'yappc-state';
 import { usePersonas } from 'yappc-state/config-hooks';
 
+import type { ConfigTask, Phase, TaskDomain, Workflow } from '../../hooks/useConfig';
 import {
   useTaskDomains,
   useWorkflows,
@@ -64,10 +62,9 @@ import {
   useAllTasks,
   useConfigRefresh,
 } from '../../hooks/useConfig';
-
-// DevSecOps persona integration - use canonical types and hook
-
-import { getPersonaDashboard } from './persona-configs';
+import { Chip } from '../Chip';
+import { Stack } from '../Stack';
+import { Typography } from '../Typography';
 
 // Domain icons mapping
 const DOMAIN_ICONS: Record<string, React.ReactNode> = {
@@ -90,6 +87,12 @@ const PHASE_COLORS: Record<string, string> = {
   operate: '#009688',
   govern: '#E91E63',
 };
+
+type ConfigViewMode = 'grid' | 'list' | 'detail';
+
+function isConfigViewMode(value: unknown): value is ConfigViewMode {
+  return value === 'grid' || value === 'list' || value === 'detail';
+}
 
 interface DevSecOpsNavigationHubProps {
   currentPersona: PersonaType;
@@ -116,7 +119,7 @@ export default function DevSecOpsNavigationHub({
   const domains = useTaskDomains();
   const workflows = useWorkflows();
   const lifecycleConfig = useLifecycleConfig();
-  const agents = useAgentCapabilities();
+  useAgentCapabilities();
   const tasks = useAllTasks();
   const { refreshAll } = useConfigRefresh();
 
@@ -125,7 +128,16 @@ export default function DevSecOpsNavigationHub({
 
   // Current persona metadata
   const currentPersonaData = useMemo(
-    () => PERSONAS.find((p: unknown) => p.id === currentPersona) || PERSONAS[0],
+    () =>
+      PERSONAS.find((p) => p.id === currentPersona) ??
+      PERSONAS[0] ?? {
+        id: currentPersona,
+        label: currentPersona.replace('-', ' '),
+        description: 'Persona-specific DevSecOps workspace',
+        icon: '👤',
+        color: '#2196F3',
+        focusAreas: [],
+      },
     [currentPersona, PERSONAS]
   );
 
@@ -192,7 +204,7 @@ export default function DevSecOpsNavigationHub({
     navigate(`/devsecops/tasks/${taskId}?persona=${currentPersona}`);
   };
 
-  const renderDomainCard = (domain: unknown) => (
+  const renderDomainCard = (domain: TaskDomain) => (
     <Card
       key={domain.id}
       className={`cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
@@ -237,7 +249,7 @@ export default function DevSecOpsNavigationHub({
     </Card>
   );
 
-  const renderWorkflowCard = (workflow: unknown) => (
+  const renderWorkflowCard = (workflow: Workflow) => (
     <Card
       key={workflow.id}
       className={`cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
@@ -282,7 +294,7 @@ export default function DevSecOpsNavigationHub({
     </Card>
   );
 
-  const renderPhaseCard = (phase: unknown) => (
+  const renderPhaseCard = (phase: Phase) => (
     <Card
       key={phase.id}
       className={`cursor-pointer transition-all duration-200 border-l-4 hover:-translate-y-0.5 hover:shadow-lg ${
@@ -338,7 +350,7 @@ export default function DevSecOpsNavigationHub({
     </Card>
   );
 
-  const renderTaskCard = (task: unknown) => (
+  const renderTaskCard = (task: ConfigTask) => (
     <Card
       key={task.id}
       className="cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
@@ -375,7 +387,7 @@ export default function DevSecOpsNavigationHub({
         </Stack>
 
         <Stack direction="row" spacing={1} mb={2}>
-          <Chip label={task.type} size="small" variant="outlined" />
+          <Chip label={task.type ?? 'task'} size="small" variant="outlined" />
           <Chip label={task.complexity || 'medium'} size="small" />
         </Stack>
 
@@ -405,7 +417,7 @@ export default function DevSecOpsNavigationHub({
             </Avatar>
             <Box>
               <Typography variant="h6" fontWeight="600">
-                {currentPersonaData.name} View
+                {currentPersonaData.label} View
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {currentPersonaData.description}
@@ -420,7 +432,12 @@ export default function DevSecOpsNavigationHub({
             <Select
               value={viewMode}
               label="View Mode"
-              onChange={(e) => setViewMode(e.target.value as unknown)}
+              onChange={(e) => {
+                const nextViewMode = e.target.value;
+                if (isConfigViewMode(nextViewMode)) {
+                  setViewMode(nextViewMode);
+                }
+              }}
             >
               <MenuItem value="list">List</MenuItem>
               <MenuItem value="grid">Grid</MenuItem>
@@ -456,7 +473,7 @@ export default function DevSecOpsNavigationHub({
       {activeTab === 0 && (
         <Box>
           <Typography variant="h6" fontWeight="600" mb={3}>
-            Available Domains for {currentPersonaData.name}
+            Available Domains for {currentPersonaData.label}
           </Typography>
           <Grid container spacing={3}>
             {personaFilteredData.domains.map((domain) => (
@@ -471,7 +488,7 @@ export default function DevSecOpsNavigationHub({
       {activeTab === 1 && (
         <Box>
           <Typography variant="h6" fontWeight="600" mb={3}>
-            Relevant Workflows for {currentPersonaData.name}
+            Relevant Workflows for {currentPersonaData.label}
           </Typography>
           <Grid container spacing={3}>
             {personaFilteredData.workflows.map((workflow) => (
@@ -486,7 +503,7 @@ export default function DevSecOpsNavigationHub({
       {activeTab === 2 && (
         <Box>
           <Typography variant="h6" fontWeight="600" mb={3}>
-            DevSecOps Phases for {currentPersonaData.name}
+            DevSecOps Phases for {currentPersonaData.label}
           </Typography>
           <Grid container spacing={3}>
             {personaFilteredData.phases.map((phase) => (
@@ -501,7 +518,7 @@ export default function DevSecOpsNavigationHub({
       {activeTab === 3 && (
         <Box>
           <Typography variant="h6" fontWeight="600" mb={3}>
-            Available Tasks for {currentPersonaData.name}
+            Available Tasks for {currentPersonaData.label}
           </Typography>
           <Grid container spacing={3}>
             {personaFilteredData.tasks.map((task) => (

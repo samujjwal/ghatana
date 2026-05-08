@@ -15,7 +15,7 @@ import {
   Drawer,
   IconButton,
   Typography,
-} from '@ghatana/design-system';
+} from '../../compat';
 
 import type { SidePanelProps } from './types';
 

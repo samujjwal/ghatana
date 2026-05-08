@@ -1,8 +1,8 @@
 import React from 'react';
 
-import { useGlobalStateValue } from 'yappc-state';
-
 import type { Platform } from './platform';
+
+const getDefaultPlatform = (): Platform => 'web' as Platform;
 
 /**
  * Native matchMedia-based media query hook (replaces MUI's useMediaQuery/useTheme)
@@ -52,7 +52,7 @@ export const useResponsive = () => {
  * @returns Object with platform and responsive information
  */
 export const usePlatformResponsive = () => {
-  const platform = useGlobalStateValue<Platform>('store:platform');
+  const platform = getDefaultPlatform();
   const responsive = useResponsive();
 
   return {

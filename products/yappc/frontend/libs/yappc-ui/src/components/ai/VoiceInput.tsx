@@ -26,7 +26,7 @@
 import {
   Mic as MicIcon,
   MicOff as MicOffIcon,
-  Stop as StopIcon,
+  Square as StopIcon,
 } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
@@ -44,8 +44,6 @@ import {
   Tooltip,
   Alert,
 } from '@ghatana/design-system';
-
-import { resolveMuiColor } from '../utils/safePalette';
 
 /**
  *
@@ -172,7 +170,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
   const [audioLevel, setAudioLevel] = useState(0);
 
   const recognitionRef = useRef<SpeechRecognitionInterface | null>(null);
-  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -413,7 +411,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
     >
       {/* Language Selector */}
       {showLanguageSelector && (
-        <FormControl fullWidth size="sm">
+        <FormControl fullWidth size="small">
           <InputLabel>Language</InputLabel>
           <Select
             value={selectedLanguage}
@@ -437,7 +435,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
         {isListening && mode === 'continuous' && (
           <IconButton
             onClick={stopListening}
-            color={resolveMuiColor(useTheme(), 'error', 'default') as unknown}
+            tone="danger"
           >
             <StopIcon />
           </IconButton>
@@ -448,13 +446,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
       <Box className="flex gap-2 flex-wrap justify-center">
         <Chip
           label={isListening ? 'Listening...' : 'Ready'}
-          color={
-            resolveMuiColor(
-              useTheme(),
-              isListening ? 'error' : 'default',
-              'default'
-            ) as unknown
-          }
+          color={isListening ? 'error' : 'default'}
           size="sm"
         />
 
@@ -466,7 +458,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
           <Chip
             label={`Confidence: ${Math.round(confidence * 100)}%`}
             size="sm"
-            color={resolveMuiColor(useTheme(), 'success', 'default') as unknown}
+            color="success"
           />
         )}
       </Box>
@@ -486,15 +478,11 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
             variant="determinate"
             value={audioLevel}
             color={
-              resolveMuiColor(
-                useTheme(),
-                audioLevel > 70
-                  ? 'error'
-                  : audioLevel > 40
-                    ? 'warning'
-                    : 'success',
-                'default'
-              ) as unknown
+              audioLevel > 70
+                ? 'error'
+                : audioLevel > 40
+                  ? 'warning'
+                  : 'success'
             }
           />
         </Box>
@@ -521,7 +509,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
         as="span"
         className="text-xs text-gray-500"
         color="text.secondary"
-        textAlign="center"
+        align="center"
       >
         {mode === 'push-to-talk' &&
           'Press and hold the microphone button to speak'}

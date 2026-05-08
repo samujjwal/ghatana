@@ -79,7 +79,6 @@ import {
 } from 'lucide-react';
 
 import { cn } from '@ghatana/design-system';
-import { Button } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
 
 import {
@@ -97,6 +96,8 @@ import {
   DropdownMenuLabel,
 } from 'yappc-ui';
 import { TooltipContent, TooltipTrigger } from 'yappc-ui';
+
+import { Button } from '../Button';
 
 // =============================================================================
 // Types
@@ -597,7 +598,7 @@ const ProjectCanvasInner = forwardRef<ProjectCanvasRef, ProjectCanvasProps>(
 
     // Handle node changes
     const handleNodesChange = useCallback(
-      (changes: NodeChange[]) => {
+      (changes: NodeChange<CanvasNode>[]) => {
         if (readOnly || isLocked) return;
         onNodesChange(changes);
         onNodesChangeProp?.(nodes);

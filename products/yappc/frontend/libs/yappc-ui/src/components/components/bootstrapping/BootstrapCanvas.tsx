@@ -28,8 +28,6 @@ import {
 import React, { useCallback, useMemo, useRef } from 'react';
 
 import { cn } from '@ghatana/design-system';
-import { Button } from '@ghatana/design-system';
-import { Badge } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
 
 import type {
@@ -41,12 +39,13 @@ import {
   canvasNodesAtom,
   canvasEdgesAtom,
   selectedCanvasNodeAtom,
-  canvasModeAtom,
-  canvasViewportAtom,
   validationReportAtom,
   commandSuggestionsAtom,
 } from 'yappc-state';
 import { TooltipContent, TooltipTrigger } from 'yappc-ui';
+
+import { Badge } from '../Badge';
+import { Button } from '../Button';
 
 // Reuse existing canvas component
 import { ProjectCanvas, type ProjectCanvasRef } from '../canvas/ProjectCanvas';
@@ -223,15 +222,65 @@ const ValidationOverlay: React.FC<ValidationOverlayProps> = ({
 // =============================================================================
 
 interface AISuggestionsPanelProps {
-  suggestions: Array<{
-    id: string;
-    command: string;
-    description: string;
-    confidence: number;
-  }>;
+  suggestions: CommandSuggestion[];
   onApply: (suggestionId: string) => void;
   onDismiss: (suggestionId: string) => void;
 }
+
+interface ValidationCheck {
+  status: 'passed' | 'failed' | 'warning';
+}
+
+interface ValidationReport {
+  overallScore: number;
+  checks: ValidationCheck[];
+}
+
+interface CommandSuggestion {
+  id: string;
+  command: string;
+  description: string;
+  confidence: number;
+}
+
+const isValidationCheck = (value: unknown): value is ValidationCheck => {
+  if (!value || typeof value !== 'object') return false;
+  const status = (value as { status?: unknown }).status;
+  return status === 'passed' || status === 'failed' || status === 'warning';
+};
+
+const toValidationReport = (
+  value: Record<string, unknown> | null
+): ValidationReport | null => {
+  if (!value) return null;
+  const checks = Array.isArray(value.checks)
+    ? value.checks.filter(isValidationCheck)
+    : [];
+  return {
+    overallScore:
+      typeof value.overallScore === 'number' ? value.overallScore : 0,
+    checks,
+  };
+};
+
+const toCommandSuggestion = (
+  value: Record<string, unknown>
+): CommandSuggestion | null => {
+  if (
+    typeof value.id !== 'string' ||
+    typeof value.command !== 'string' ||
+    typeof value.description !== 'string' ||
+    typeof value.confidence !== 'number'
+  ) {
+    return null;
+  }
+  return {
+    id: value.id,
+    command: value.command,
+    description: value.description,
+    confidence: value.confidence,
+  };
+};
 
 const AISuggestionsPanel: React.FC<AISuggestionsPanelProps> = ({
   suggestions,
@@ -391,22 +440,33 @@ export const BootstrapCanvas: React.FC<BootstrapCanvasProps> = ({
   const validationReport = useAtomValue(validationReportAtom);
   const commandSuggestions = useAtomValue(commandSuggestionsAtom);
   const setSelectedNode = useSetAtom(selectedCanvasNodeAtom);
+  const normalizedValidationReport = useMemo(
+    () => toValidationReport(validationReport),
+    [validationReport]
+  );
+  const normalizedCommandSuggestions = useMemo(
+    () => commandSuggestions.flatMap((suggestion) => {
+      const normalized = toCommandSuggestion(suggestion);
+      return normalized ? [normalized] : [];
+    }),
+    [commandSuggestions]
+  );
 
   // Determine active lane based on current phase
   const activeLane: PhaseLane | undefined = useMemo(() => {
-    if (currentPhase === 'enter' || currentPhase === 'explore') return 'mvp';
-    if (currentPhase === 'refine') return 'v2';
-    if (currentPhase === 'validate' || currentPhase === 'complete')
-      return undefined;
+    if (currentPhase === 'discover' || currentPhase === 'design') return 'mvp';
+    if (currentPhase === 'build') return 'v2';
+    if (currentPhase === 'test' || currentPhase === 'launch') return undefined;
     return undefined;
   }, [currentPhase]);
 
   // Handle canvas node selection
   const handleNodeSelect = useCallback(
     (nodeId: string | null) => {
-      setSelectedNode(nodeId);
+      const node = nodes.find((candidate) => candidate.id === nodeId) ?? null;
+      setSelectedNode(node);
     },
-    [setSelectedNode]
+    [nodes, setSelectedNode]
   );
 
   // Handle export
@@ -483,25 +543,27 @@ export const BootstrapCanvas: React.FC<BootstrapCanvasProps> = ({
         />
 
         {/* Validation Overlay */}
-        {showValidation && validationReport && (
+        {showValidation && normalizedValidationReport && (
           <ValidationOverlay
-            score={validationReport.overallScore}
+            score={normalizedValidationReport.overallScore}
             errorCount={
-              validationReport.checks.filter((c) => c.status === 'failed')
-                .length
+              normalizedValidationReport.checks.filter(
+                (check) => check.status === 'failed'
+              ).length
             }
             warningCount={
-              validationReport.checks.filter((c) => c.status === 'warning')
-                .length
+              normalizedValidationReport.checks.filter(
+                (check) => check.status === 'warning'
+              ).length
             }
             onOpenDetails={handleOpenValidationDetails}
           />
         )}
 
         {/* AI Suggestions Panel */}
-        {showAISuggestions && commandSuggestions.length > 0 && (
+        {showAISuggestions && normalizedCommandSuggestions.length > 0 && (
           <AISuggestionsPanel
-            suggestions={commandSuggestions}
+            suggestions={normalizedCommandSuggestions}
             onApply={handleApplySuggestion}
             onDismiss={handleDismissSuggestion}
           />

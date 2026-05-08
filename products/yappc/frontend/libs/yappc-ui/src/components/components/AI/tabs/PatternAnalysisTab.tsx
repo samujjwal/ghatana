@@ -53,13 +53,10 @@ export const PatternAnalysisTab: React.FC<Props> = ({ insights }) => {
                     >
                       Detected Patterns
                     </Typography>
-                    <List dense>
+                    <List>
                       {insights.detected.map((pattern, index) => (
                         <ListItem key={`pattern-${index}`}>
-                          <ListItemText
-                            primary={pattern}
-                            primaryTypographyProps={{ variant: 'body2' }}
-                          />
+                          <ListItemText primary={pattern} />
                         </ListItem>
                       ))}
                     </List>
@@ -75,16 +72,13 @@ export const PatternAnalysisTab: React.FC<Props> = ({ insights }) => {
                     >
                       Anomalies
                     </Typography>
-                    <List dense>
+                    <List>
                       {insights.anomalies.map((anomaly, index) => (
                         <ListItem key={`anomaly-${index}`}>
                           <ListItemIcon>
-                            <ErrorIcon tone="danger" size={16} />
+                            <ErrorIcon color="currentColor" size={16} />
                           </ListItemIcon>
-                          <ListItemText
-                            primary={anomaly}
-                            primaryTypographyProps={{ variant: 'body2' }}
-                          />
+                          <ListItemText primary={anomaly} />
                         </ListItem>
                       ))}
                     </List>
@@ -100,16 +94,13 @@ export const PatternAnalysisTab: React.FC<Props> = ({ insights }) => {
                     >
                       Trends
                     </Typography>
-                    <List dense>
+                    <List>
                       {insights.trends.map((trend, index) => (
                         <ListItem key={`trend-${index}`}>
                           <ListItemIcon>
-                            <TrendingUpIcon tone="primary" size={16} />
+                            <TrendingUpIcon color="currentColor" size={16} />
                           </ListItemIcon>
-                          <ListItemText
-                            primary={trend}
-                            primaryTypographyProps={{ variant: 'body2' }}
-                          />
+                          <ListItemText primary={trend} />
                         </ListItem>
                       ))}
                     </List>
@@ -119,7 +110,6 @@ export const PatternAnalysisTab: React.FC<Props> = ({ insights }) => {
             ) : (
               <Typography
                 as="p"
-                className="text-sm"
                 color="text.secondary"
                 className="mt-4"
               >

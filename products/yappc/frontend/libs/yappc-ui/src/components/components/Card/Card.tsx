@@ -91,7 +91,10 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     } = props;
 
     // Extract accessibility props
-    const { a11yProps, rest: otherProps } = getA11yProps(rest);
+    const { a11yProps, rest: otherProps } = getA11yProps(rest) as {
+      a11yProps: React.HTMLAttributes<HTMLDivElement>;
+      rest: React.HTMLAttributes<HTMLDivElement>;
+    };
 
     // Use accessibility hook for audit
     const { ref: a11yRef } = useAccessibility<HTMLDivElement>({

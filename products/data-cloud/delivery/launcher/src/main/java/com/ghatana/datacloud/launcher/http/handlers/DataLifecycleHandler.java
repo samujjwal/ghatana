@@ -1650,6 +1650,90 @@ public class DataLifecycleHandler {
     }
 
     /**
+     * POST /api/v1/governance/policies/simulate - Simulate policy impact without mutation.
+     *
+     * <p>Returns an impact forecast for a proposed policy using current tenant
+     * policy and collection inventory. This route is side-effect free and always
+     * marks output as dry-run.
+     */
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleSimulatePolicy(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
+        String requestId = resolveRequestId(request);
+        TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
+
+        return request.loadBody().then(buf -> {
+            try {
+                Map<String, Object> payload = objectMapper.readValue(
+                    buf.getString(StandardCharsets.UTF_8), Map.class);
+
+                String type = String.valueOf(payload.getOrDefault("type", "CUSTOM")).toUpperCase();
+                Map<String, Object> scope = payload.get("scope") instanceof Map<?, ?> scopeMap
+                    ? new LinkedHashMap<>((Map<String, Object>) scopeMap)
+                    : Map.of();
+                List<Map<String, Object>> rules = new ArrayList<>();
+                if (payload.get("rules") instanceof List<?> rawRules) {
+                    for (Object ruleCandidate : rawRules) {
+                        if (ruleCandidate instanceof Map<?, ?> ruleMap) {
+                            rules.add(new LinkedHashMap<>((Map<String, Object>) ruleMap));
+                        }
+                    }
+                }
+
+                Promise<List<Map<String, Object>>> existingPoliciesPromise = loadGovernancePolicies(tenantContext);
+                Promise<EntityStore.QueryResult> collectionsPromise = requireEntityStore().query(
+                    tenantContext,
+                    EntityStore.QuerySpec.builder()
+                        .collection("dc_collections")
+                        .limit(PURGE_QUERY_LIMIT)
+                        .build());
+
+                return existingPoliciesPromise.then(existingPolicies ->
+                    collectionsPromise.map(collectionResult -> {
+                        List<String> collections = collectionResult.entities().stream()
+                            .map(entity -> String.valueOf(entity.data().getOrDefault("id", entity.id().value())))
+                            .distinct()
+                            .toList();
+
+                        List<String> scopedCollections = extractScopedCollections(scope);
+                        int affectedCollections = scopedCollections.isEmpty() ? collections.size() : scopedCollections.size();
+                        int policyConflicts = countPolicyConflicts(existingPolicies, type, scopedCollections);
+                        int estimatedBlockedOperations = estimateBlockedOperations(rules, affectedCollections);
+                        String riskLevel = estimateRiskLevel(policyConflicts, estimatedBlockedOperations, rules);
+
+                        Map<String, Object> result = new LinkedHashMap<>();
+                        result.put("dryRun", true);
+                        result.put("simulatedAt", Instant.now().toString());
+                        result.put("policyType", type);
+                        result.put("affectedCollections", affectedCollections);
+                        result.put("totalCollections", collections.size());
+                        result.put("policyConflicts", policyConflicts);
+                        result.put("estimatedBlockedOperations", estimatedBlockedOperations);
+                        result.put("riskLevel", riskLevel);
+                        result.put("scope", scope);
+                        result.put("sampleCollections", scopedCollections.isEmpty()
+                            ? collections.stream().limit(10).toList()
+                            : scopedCollections.stream().limit(10).toList());
+                        result.put("recommendations", buildSimulationRecommendations(
+                            riskLevel,
+                            policyConflicts,
+                            estimatedBlockedOperations,
+                            scopedCollections.isEmpty()));
+
+                        return http.envelopeResponse(ApiResponse.success(result, tenantId, requestId), objectMapper);
+                    }));
+            } catch (Exception exception) {
+                log.error("[P3-004] Failed to simulate policy tenant={}", tenantId, exception);
+                return Promise.of(http.errorResponse(400, "Invalid simulation payload: " + exception.getMessage()));
+            }
+        });
+    }
+
+    /**
      * GET /api/v1/governance/policies/:id - Get a specific policy by ID.
      */
     public Promise<HttpResponse> handleGetPolicy(HttpRequest request) {
@@ -1848,6 +1932,94 @@ public class DataLifecycleHandler {
             .map(found -> found
                 .filter(entity -> GOVERNANCE_POLICIES_COLLECTION.equals(entity.collection()))
                 .map(this::normalizeGovernancePolicy));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> extractScopedCollections(Map<String, Object> scope) {
+        Object datasets = scope.get("datasets");
+        if (!(datasets instanceof List<?> list)) {
+            return List.of();
+        }
+
+        return list.stream()
+            .filter(String.class::isInstance)
+            .map(String.class::cast)
+            .map(String::trim)
+            .filter(value -> !value.isEmpty())
+            .distinct()
+            .toList();
+    }
+
+    private static int countPolicyConflicts(List<Map<String, Object>> existingPolicies,
+                                            String proposedType,
+                                            List<String> scopedCollections) {
+        return Math.toIntExact(existingPolicies.stream()
+            .filter(existing -> proposedType.equalsIgnoreCase(String.valueOf(existing.getOrDefault("type", "CUSTOM"))))
+            .filter(existing -> {
+                if (scopedCollections.isEmpty()) {
+                    return true;
+                }
+                Object scopeRaw = existing.get("scope");
+                if (!(scopeRaw instanceof Map<?, ?> scopeMap)) {
+                    return false;
+                }
+                Object datasetsRaw = scopeMap.get("datasets");
+                if (!(datasetsRaw instanceof List<?> datasets)) {
+                    return false;
+                }
+                return datasets.stream()
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .anyMatch(scopedCollections::contains);
+            })
+            .count());
+    }
+
+    private static int estimateBlockedOperations(List<Map<String, Object>> rules, int affectedCollections) {
+        long denyRules = rules.stream()
+            .map(rule -> String.valueOf(rule.getOrDefault("action", "ALLOW")))
+            .filter(action -> "DENY".equalsIgnoreCase(action) || "REQUIRE_APPROVAL".equalsIgnoreCase(action))
+            .count();
+        return (int) Math.max(0, denyRules * Math.max(affectedCollections, 1) * 10);
+    }
+
+    private static String estimateRiskLevel(int policyConflicts,
+                                            int estimatedBlockedOperations,
+                                            List<Map<String, Object>> rules) {
+        boolean hasErrorSeverity = rules.stream()
+            .map(rule -> String.valueOf(rule.getOrDefault("severity", "INFO")))
+            .anyMatch(severity -> "ERROR".equalsIgnoreCase(severity));
+
+        if (estimatedBlockedOperations >= 200 || policyConflicts >= 3 || hasErrorSeverity) {
+            return "high";
+        }
+        if (estimatedBlockedOperations >= 50 || policyConflicts >= 1) {
+            return "medium";
+        }
+        return "low";
+    }
+
+    private static List<String> buildSimulationRecommendations(String riskLevel,
+                                                               int policyConflicts,
+                                                               int estimatedBlockedOperations,
+                                                               boolean globalScope) {
+        List<String> recommendations = new ArrayList<>();
+        if (globalScope) {
+            recommendations.add("Scope targets all collections; prefer staged rollout per dataset group.");
+        }
+        if (policyConflicts > 0) {
+            recommendations.add("Review overlapping policies with the same type before enabling this change.");
+        }
+        if (estimatedBlockedOperations > 0) {
+            recommendations.add("Dry-run indicates potential blocked operations; validate allow-lists for critical flows.");
+        }
+        if ("high".equals(riskLevel)) {
+            recommendations.add("Require operator approval and maintenance-window rollout for high-risk policy changes.");
+        }
+        if (recommendations.isEmpty()) {
+            recommendations.add("Simulation indicates low risk; proceed with standard governance review.");
+        }
+        return recommendations;
     }
 
     private Map<String, Object> normalizeGovernancePolicy(EntityStore.Entity entity) {

@@ -15,7 +15,7 @@ import type {
   LifecycleStageConfig,
   WorkflowExecution,
   TaskDefinition,
-} from '@ghatana/types/tasks';
+} from 'yappc-core/types/tasks';
 
 // ============================================================================
 // Types
@@ -126,16 +126,15 @@ export function ContextPanel({
       const taskDef = taskDefinitions.get(execution.taskId);
       const taskName = taskDef?.name || execution.taskId;
 
-      if (execution.artifacts) {
-        for (const artifact of execution.artifacts) {
+      if (execution.auditArtifacts) {
+        for (const artifact of execution.auditArtifacts) {
           artifacts.push({
             id: `${execution.id}-${artifact.type}`,
             type: artifact.type,
             name: artifact.type,
-            path: artifact.path,
             taskId: execution.taskId,
             taskName,
-            timestamp: new Date(artifact.timestamp),
+            timestamp: new Date(artifact.capturedAt),
           });
         }
       }

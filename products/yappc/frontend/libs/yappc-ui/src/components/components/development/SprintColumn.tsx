@@ -16,6 +16,8 @@ import type { Story, StoryStatus } from './StoryCard';
 // Types
 // ============================================================================
 
+export type ColumnStatus = StoryStatus;
+
 export interface SprintColumnProps {
   id: string;
   title: string;

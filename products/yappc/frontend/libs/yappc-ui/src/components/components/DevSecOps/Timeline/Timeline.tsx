@@ -15,7 +15,7 @@ import {
   Surface as Paper,
   Tooltip,
   Typography,
-} from '@ghatana/design-system';
+} from '../../compat';
 
 import type { TimelineProps } from './types';
 import { TimelineUtils } from './utils';
@@ -108,9 +108,8 @@ export function Timeline({
         <LinearProgress />
         <Typography
           as="p"
-          className="text-sm"
+          className="mt-4 text-center text-sm"
           color="text.secondary"
-          className="mt-4 text-center"
         >
           Loading timeline...
         </Typography>
@@ -121,8 +120,9 @@ export function Timeline({
   return (
     <Paper
       ref={containerRef}
-      className={className}
-      className="overflow-auto relative bg-white dark:bg-gray-900"
+      className={[className, 'overflow-auto relative bg-white dark:bg-gray-900']
+        .filter(Boolean)
+        .join(' ')}
     >
       {/* Header with date labels */}
       <Box
@@ -242,8 +242,7 @@ export function Timeline({
             >
               <Typography
                 as="span"
-                className="text-xs text-gray-500"
-                className="font-medium whitespace-nowrap overflow-hidden text-ellipsis text-white"
+                className="overflow-hidden text-ellipsis whitespace-nowrap text-xs font-medium text-white"
               >
                 {pos.label}
               </Typography>

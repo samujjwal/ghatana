@@ -93,6 +93,29 @@ export * from './DataTable';
 export * from './Dashboard';
 export * from './WorkspaceCard';
 export * from './ThemeToggle';
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+  TooltipTrigger,
+  TooltipContent,
+  DialogHeader,
+  DialogTrigger,
+  ScrollArea,
+  AvatarFallback,
+  AvatarImage,
+  CardTitle,
+  CardDescription,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  TabsContent,
+  TabsTrigger,
+} from './compat';
 
 // Table Components
 export { SelectableTable } from './Table/SelectableTable';

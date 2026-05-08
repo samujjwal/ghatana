@@ -339,7 +339,12 @@ export const ValidationRuleEditor: React.FC<ValidationRuleEditorProps> = ({
                         </label>
                         <input
                           type={param.type === 'number' ? 'number' : 'text'}
-                          value={rule.params?.[paramIndex] || ''}
+                          value={
+                            typeof rule.params?.[paramIndex] === 'string' ||
+                            typeof rule.params?.[paramIndex] === 'number'
+                              ? rule.params[paramIndex]
+                              : ''
+                          }
                           onChange={(e) => {
                             const newParams = [...(rule.params || [])];
                             newParams[paramIndex] =

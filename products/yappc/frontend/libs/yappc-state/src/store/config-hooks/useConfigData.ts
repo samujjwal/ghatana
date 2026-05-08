@@ -96,7 +96,7 @@ async function graphql<T = unknown>(
   query: string,
   variables?: Record<string, unknown>
 ): Promise<T> {
-  const response = await fetch(GRAPHQL_URL, {
+  const response = await fetch(String(GRAPHQL_URL), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

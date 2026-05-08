@@ -7,6 +7,8 @@ import com.ghatana.datacloud.launcher.bootstrap.DataCloudHttpLauncherBootstrap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
+
 /**
  * Data-Cloud Standalone Launcher - Entry point for standalone deployment.
  *
@@ -76,6 +78,7 @@ public class DataCloudLauncher {
             log.info("  Max Connections: {}", config.maxConnectionsPerTenant());
             log.info("  Caching: {}", config.enableCaching() ? "enabled" : "disabled");
             log.info("  Metrics: {}", config.enableMetrics() ? "enabled" : "disabled");
+            nonDurableProfileWarning(profile).ifPresent(log::warn);
 
             // Register shutdown hook
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -113,5 +116,22 @@ public class DataCloudLauncher {
 
     private static void startHttpServer(DataCloudClient client) {
         DataCloudHttpLauncherBootstrap.start(client, log);
+    }
+
+    static Optional<String> nonDurableProfileWarning(DataCloud.DataCloudConfig.DataCloudProfile profile) {
+        // DC-P2-004: WARN developers when running non-durable profiles so data-loss risk is explicit.
+        if (profile == DataCloud.DataCloudConfig.DataCloudProfile.LOCAL) {
+            return Optional.of(
+                "[DC-P2-004] IN-MEMORY profile active: all entity and event-log data is non-durable and will be lost on restart. " +
+                "Do NOT use this profile in production. Set DATACLOUD_PROFILE=sovereign or production for durable storage."
+            );
+        }
+        if (profile == DataCloud.DataCloudConfig.DataCloudProfile.SOVEREIGN) {
+            return Optional.of(
+                "[DC-P2-004] SOVEREIGN/file-backed profile active: H2 on-disk store is non-durable across container rebuilds. " +
+                "Ensure the H2 file path is mounted to persistent storage before use in staging or production."
+            );
+        }
+        return Optional.empty();
     }
 }

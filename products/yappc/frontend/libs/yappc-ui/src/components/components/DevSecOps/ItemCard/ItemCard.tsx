@@ -19,7 +19,7 @@ import {
   Chip,
   LinearProgress,
   Typography,
-} from '@ghatana/design-system';
+} from '../../compat';
 
 import type { ItemCardProps } from './types';
 
@@ -141,9 +141,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         {item.description && (
           <Typography
             as="p"
-            className="text-sm"
+            className="mb-4 text-sm"
             color="text.secondary"
-            className="mb-4"
             noWrap
             title={item.description}
           >
@@ -208,8 +207,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                 size="sm"
                 variant="outlined"
                 tone="primary"
-                onClick={(e) => {
-                  e.stopPropagation();
+                onClick={() => {
                   if (item.workflowId) {
                     onWorkflowClick?.(item.workflowId);
                   }
@@ -239,9 +237,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         {item.dueDate && (
           <Typography
             as="span"
-            className="text-xs text-gray-500"
+            className="mt-2 block text-xs text-gray-500"
             color="text.secondary"
-            className="mt-2 block"
           >
             Due: {item.dueDate}
           </Typography>
@@ -250,9 +247,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         {item.artifacts && item.artifacts.length > 0 && (
           <Typography
             as="span"
-            className="text-xs text-gray-500"
+            className="mt-2 block text-xs text-gray-500"
             color="text.secondary"
-            className="mt-2 block"
           >
             {item.artifacts.length} artifact
             {item.artifacts.length !== 1 ? 's' : ''}

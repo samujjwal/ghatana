@@ -21,7 +21,7 @@ import com.ghatana.datacloud.spi.BatchError;
 import com.ghatana.datacloud.spi.BatchResult;
 import com.ghatana.datacloud.spi.StoragePlugin;
 import com.ghatana.datacloud.RecordQuery.FilterCondition;
-import com.ghatana.datacloud.RecordQuery.Operator;
+import com.ghatana.datacloud.entity.storage.FilterCriteria;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -254,7 +254,7 @@ public class VectorMemoryPlugin implements StoragePlugin<DataRecord>, Similarity
 
         // Check if there's an ID filter in the query
         Optional<FilterCondition> idFilter = query.getFilters().stream()
-                .filter(f -> "id".equals(f.getField()) && f.getOperator() == Operator.EQUALS)
+                .filter(f -> "id".equals(f.getField()) && f.getOperator() == FilterCriteria.Operator.EQ)
                 .findFirst();
 
         if (idFilter.isPresent()) {

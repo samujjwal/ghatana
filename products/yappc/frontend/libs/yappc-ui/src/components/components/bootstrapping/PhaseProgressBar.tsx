@@ -78,44 +78,44 @@ export interface PhaseProgressBarProps {
 
 const PHASES: PhaseConfig[] = [
   {
-    id: 'enter',
-    label: 'Enter',
+    id: 'discover',
+    label: 'Discover',
     description:
       'Provide your initial project idea or upload existing documents',
     icon: MessageSquare,
   },
   {
-    id: 'explore',
-    label: 'Explore',
+    id: 'design',
+    label: 'Design',
     description: 'AI explores requirements through interactive questions',
     icon: Search,
   },
   {
-    id: 'refine',
-    label: 'Refine',
+    id: 'build',
+    label: 'Build',
     description: 'Fine-tune features, priorities, and technical decisions',
     icon: Settings2,
   },
   {
-    id: 'validate',
-    label: 'Validate',
+    id: 'test',
+    label: 'Test',
     description: 'Review and validate the generated project blueprint',
     icon: CheckCircle2,
   },
   {
-    id: 'complete',
-    label: 'Complete',
+    id: 'launch',
+    label: 'Launch',
     description: 'Project blueprint is ready for initialization',
     icon: Rocket,
   },
 ];
 
 const PHASE_ORDER: Record<BootstrapPhase, number> = {
-  enter: 0,
-  explore: 1,
-  refine: 2,
-  validate: 3,
-  complete: 4,
+  discover: 0,
+  design: 1,
+  build: 2,
+  test: 3,
+  launch: 4,
 };
 
 // =============================================================================

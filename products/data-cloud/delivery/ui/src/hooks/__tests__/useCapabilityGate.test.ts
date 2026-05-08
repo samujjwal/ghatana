@@ -14,7 +14,7 @@ import type { CapabilityRegistrySnapshot, CapabilitySignal } from '../../api/cap
 // ---------------------------------------------------------------------------
 
 const { mockUseCapabilityRegistry } = vi.hoisted(() => ({
-  mockUseCapabilityRegistry: vi.fn<[], { data: CapabilityRegistrySnapshot | undefined; isLoading: boolean }>(),
+  mockUseCapabilityRegistry: vi.fn<() => { data: CapabilityRegistrySnapshot | undefined; isLoading: boolean }>(),
 }));
 
 vi.mock('../../api/capabilities.service', async (importOriginal) => {

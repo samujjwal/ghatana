@@ -2,6 +2,7 @@ package com.ghatana.datacloud.client;
 
 import com.ghatana.datacloud.*;
 
+import com.ghatana.datacloud.entity.storage.FilterCriteria;
 import com.ghatana.datacloud.spi.StoragePlugin;
 import com.ghatana.datacloud.spi.BatchError;
 import io.activej.promise.Promise;
@@ -151,7 +152,7 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
         if (query.signalType() != null) {
             filters.add(RecordQuery.FilterCondition.builder()
                     .field("signalType")
-                    .operator(RecordQuery.Operator.EQUALS)
+                    .operator(FilterCriteria.Operator.EQ)
                     .value(query.signalType().name())
                     .build());
         }
@@ -159,7 +160,7 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
         if (query.sourcePlugin() != null) {
             filters.add(RecordQuery.FilterCondition.builder()
                     .field("source.plugin")
-                    .operator(RecordQuery.Operator.EQUALS)
+                    .operator(FilterCriteria.Operator.EQ)
                     .value(query.sourcePlugin())
                     .build());
         }
@@ -189,7 +190,7 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
         if (query.signalType() != null) {
             filters.add(RecordQuery.FilterCondition.builder()
                     .field("signalType")
-                    .operator(RecordQuery.Operator.EQUALS)
+                    .operator(FilterCriteria.Operator.EQ)
                     .value(query.signalType().name())
                     .build());
         }
@@ -329,7 +330,7 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
         List<RecordQuery.FilterCondition> filters = List.of(
                 RecordQuery.FilterCondition.builder()
                         .field("timestamp")
-                        .operator(RecordQuery.Operator.LESS_THAN)
+                        .operator(FilterCriteria.Operator.LT)
                         .value(cutoffTime)
                         .build()
         );

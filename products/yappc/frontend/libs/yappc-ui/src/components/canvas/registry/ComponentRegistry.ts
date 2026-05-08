@@ -4,7 +4,7 @@
  * Central registry for all components available in the visual composer
  */
 
-import type { ComponentSchema } from '../adapters/ComponentNodeAdapter';
+import type { ComponentSchema } from '../types/ComponentSchema';
 
 /**
  * Component metadata

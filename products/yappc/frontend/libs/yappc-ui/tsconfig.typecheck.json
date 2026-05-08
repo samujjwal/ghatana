@@ -1,0 +1,65 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "noEmit": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "rootDir": "../../../../../",
+    "baseUrl": ".",
+    "paths": {
+      "@ghatana/design-system": [
+        "../../../../../libs/typescript/ui/src"
+      ],
+      "@ghatana/design-system/*": [
+        "../../../../../libs/typescript/ui/src/*"
+      ],
+      "@ghatana/platform-utils": [
+        "../../../../../platform/typescript/foundation/platform-utils/src"
+      ],
+      "@ghatana/platform-utils/*": [
+        "../../../../../platform/typescript/foundation/platform-utils/src/*"
+      ],
+      "@ghatana/ui-builder": [
+        "../../../../../platform/typescript/ui-builder/src"
+      ],
+      "@ghatana/ui-builder/*": [
+        "../../../../../platform/typescript/ui-builder/src/*"
+      ],
+      "yappc-core": ["../yappc-core/src"],
+      "yappc-core/*": ["../yappc-core/src/*"],
+      "yappc-state": ["../yappc-state/src"],
+      "yappc-state/aiAtoms": ["../yappc-state/src/store/aiAtoms.ts"],
+      "yappc-state/config-hooks": [
+        "../yappc-state/src/store/config-hooks/index.ts"
+      ],
+      "yappc-state/*": ["../yappc-state/src/*"],
+      "yappc-ui": ["./src/components/components/index.ts"],
+      "yappc-ui/base-ui": ["./src/components/base-ui/index.ts"],
+      "yappc-ui/development-ui": [
+        "./src/components/components/development/index.ts"
+      ],
+      "yappc-ui/initialization-ui": [
+        "./src/components/components/initialization/index.ts"
+      ],
+      "yappc-ui/navigation-ui": ["./src/components/navigation-ui/index.ts"],
+      "yappc-ui/*": ["./src/components/*", "./src/*"]
+    },
+    "types": ["node", "vite/client"]
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.stories.ts",
+    "**/*.stories.tsx",
+    "**/*.examples.ts",
+    "**/*.examples.tsx",
+    "**/__examples__/**",
+    "**/examples/**",
+    "src/components/test/**",
+    "src/components/test-utils/**",
+    "__tests__"
+  ]
+}
