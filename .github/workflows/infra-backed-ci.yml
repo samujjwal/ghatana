@@ -268,7 +268,7 @@ jobs:
           ./gradlew :products:yappc:core:agents:test \
             --tests "*AgentSchedulingBenchmark*" \
             -PincludeTags="benchmark" \
-            --continue || true
+            --continue
 
       - name: Upload YAPPC results
         if: always()
@@ -310,7 +310,7 @@ jobs:
             --tests "*MediaRetentionPolicyTest*" \
             --tests "*ConsentRevocationTest*" \
             --tests "*PiiLeakagePreventionTest*" \
-            --continue || true
+            --continue
 
       - name: Upload AV results
         if: always()

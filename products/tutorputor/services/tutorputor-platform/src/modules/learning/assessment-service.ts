@@ -248,6 +248,9 @@ export function createAssessmentService(
           feedback: grading.feedback as unknown as Prisma.InputJsonValue,
           submittedAt: new Date(),
           gradedAt: new Date(),
+          // Confidence-Based Marking (TODO 13)
+          averageConfidence: calculateAverageConfidence(responses),
+          confidenceBreakdown: calculateConfidenceBreakdown(responses) as Prisma.InputJsonValue,
         },
         include: {
           assessment: {
@@ -1045,4 +1048,68 @@ function createDomainError(
   error.code = code;
   error.statusCode = statusCode;
   return error;
+}
+
+// =============================================================================
+// Confidence-Based Marking Helpers (TODO 13)
+// =============================================================================
+
+function calculateAverageConfidence(responses: Record<string, unknown>): number | null {
+  if (!responses || typeof responses !== "object") {
+    return null;
+  }
+
+  const confidences: number[] = [];
+  
+  for (const [itemId, response] of Object.entries(responses)) {
+    const responseObj = response as Record<string, unknown>;
+    const confidence = responseObj.confidence;
+    
+    // Handle string confidence values (low/medium/high)
+    if (typeof confidence === "string") {
+      const confidenceMap: Record<string, number> = {
+        low: 0.33,
+        medium: 0.66,
+        high: 1.0,
+      };
+      confidences.push(confidenceMap[confidence.toLowerCase()] ?? 0.5);
+    } 
+    // Handle numeric confidence values (0.0 - 1.0)
+    else if (typeof confidence === "number") {
+      confidences.push(Math.max(0, Math.min(1, confidence)));
+    }
+  }
+
+  if (confidences.length === 0) {
+    return null;
+  }
+
+  return confidences.reduce((sum, conf) => sum + conf, 0) / confidences.length;
+}
+
+function calculateConfidenceBreakdown(responses: Record<string, unknown>): Record<string, number> {
+  const breakdown: Record<string, number> = {};
+  
+  if (!responses || typeof responses !== "object") {
+    return breakdown;
+  }
+
+  for (const [itemId, response] of Object.entries(responses)) {
+    const responseObj = response as Record<string, unknown>;
+    const confidence = responseObj.confidence;
+    
+    if (typeof confidence === "string") {
+      const confidenceMap: Record<string, number> = {
+        low: 0.33,
+        medium: 0.66,
+        high: 1.0,
+      };
+      breakdown[itemId] = confidenceMap[confidence.toLowerCase()] ?? 0.5;
+    } 
+    else if (typeof confidence === "number") {
+      breakdown[itemId] = Math.max(0, Math.min(1, confidence));
+    }
+  }
+
+  return breakdown;
 }

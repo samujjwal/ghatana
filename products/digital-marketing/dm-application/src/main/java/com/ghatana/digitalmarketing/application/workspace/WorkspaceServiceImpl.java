@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -209,7 +208,7 @@ public final class WorkspaceServiceImpl implements WorkspaceService {
     }
 
     @Override
-    public Promise<Map<String, Boolean>> getWorkspaceCapabilities(DmOperationContext ctx, String workspaceId) {
+    public Promise<List<WorkspaceCapability>> getWorkspaceCapabilities(DmOperationContext ctx, String workspaceId) {
         Objects.requireNonNull(ctx, "ctx must not be null");
         Objects.requireNonNull(workspaceId, "workspaceId must not be null");
         if (workspaceId.isBlank()) {
@@ -229,37 +228,34 @@ public final class WorkspaceServiceImpl implements WorkspaceService {
                                 new NoSuchElementException("Workspace not found: " + workspaceId));
                         }
                         
-                        // P0-002, P0-004: Return all capabilities from the registry
-                        // For now, enable core capabilities by default
-                        Map<String, Boolean> capabilities = new HashMap<>();
-                        DmosCapabilityRegistry.allCapabilities().forEach(cap -> {
-                            // Core capabilities are enabled by default for active workspaces
-                            boolean enabled = opt.get().getStatus() == WorkspaceStatus.ACTIVE && 
-                                (cap.key().equals(DmosCapabilityRegistry.CAMPAIGNS) ||
-                                 cap.key().equals(DmosCapabilityRegistry.STRATEGY) ||
-                                 cap.key().equals(DmosCapabilityRegistry.BUDGET) ||
-                                 cap.key().equals(DmosCapabilityRegistry.APPROVALS) ||
-                                 cap.key().equals(DmosCapabilityRegistry.AI_ACTIONS) ||
-                                 cap.key().equals(DmosCapabilityRegistry.AD_COPY_GENERATION) ||
-                                 cap.key().equals(DmosCapabilityRegistry.LANDING_PAGE_GENERATION) ||
-                                 cap.key().equals(DmosCapabilityRegistry.EMAIL_DRAFT_GENERATION) ||
-                                 cap.key().equals(DmosCapabilityRegistry.SOW_GENERATION));
-                            
-                            // P0-004: New capabilities are disabled by default (boundary features)
-                            if (cap.key().equals(DmosCapabilityRegistry.REPORTING) ||
-                                cap.key().equals(DmosCapabilityRegistry.SELF_MARKETING) ||
-                                cap.key().equals(DmosCapabilityRegistry.MARKET_RESEARCH) ||
-                                cap.key().equals(DmosCapabilityRegistry.ADVANCED_CHANNELS) ||
-                                cap.key().equals(DmosCapabilityRegistry.LOCALIZATION) ||
-                                cap.key().equals(DmosCapabilityRegistry.AGENCY)) {
-                                enabled = false;
-                            }
-                            
-                            capabilities.put(cap.key(), enabled);
-                        });
-                        
+                        boolean activeWorkspace = opt.get().getStatus() == WorkspaceStatus.ACTIVE;
+                        List<WorkspaceCapability> capabilities = DmosCapabilityRegistry.allCapabilities().stream()
+                            .map(cap -> new WorkspaceCapability(
+                                cap.key(),
+                                isCapabilityEnabledByDefault(cap.key(), activeWorkspace),
+                                cap.description(),
+                                cap.requiresRole(),
+                                cap.tier()
+                            ))
+                            .toList();
+
                         return Promise.of(capabilities);
                     });
             });
+    }
+
+    private static boolean isCapabilityEnabledByDefault(String capabilityKey, boolean activeWorkspace) {
+        if (!activeWorkspace) {
+            return false;
+        }
+        return capabilityKey.equals(DmosCapabilityRegistry.CAMPAIGNS)
+            || capabilityKey.equals(DmosCapabilityRegistry.STRATEGY)
+            || capabilityKey.equals(DmosCapabilityRegistry.BUDGET)
+            || capabilityKey.equals(DmosCapabilityRegistry.APPROVALS)
+            || capabilityKey.equals(DmosCapabilityRegistry.AI_ACTIONS)
+            || capabilityKey.equals(DmosCapabilityRegistry.AD_COPY_GENERATION)
+            || capabilityKey.equals(DmosCapabilityRegistry.LANDING_PAGE_GENERATION)
+            || capabilityKey.equals(DmosCapabilityRegistry.EMAIL_DRAFT_GENERATION)
+            || capabilityKey.equals(DmosCapabilityRegistry.SOW_GENERATION);
     }
 }

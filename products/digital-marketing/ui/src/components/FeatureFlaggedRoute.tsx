@@ -65,9 +65,10 @@ function getCapabilityDisplayName(capabilityKey: string): string {
     'dmos.approvals': 'Approvals',
     'dmos.ai_actions': 'AI Action Log',
     'dmos.reporting': 'Reporting',
-    'dmos.self-marketing': 'Self-Marketing',
-    'dmos.market-research': 'Market Research',
-    'dmos.advanced-channels': 'Advanced Channels',
+    'dmos.ai_optimization': 'AI Optimization',
+    'dmos.self_marketing': 'Self-Marketing',
+    'dmos.market_research': 'Market Research',
+    'dmos.advanced_channels': 'Advanced Channels',
     'dmos.localization': 'Localization',
     'dmos.agency': 'Agency Operations',
   };

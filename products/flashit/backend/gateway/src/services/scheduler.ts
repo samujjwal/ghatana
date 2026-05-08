@@ -20,6 +20,7 @@
  */
 
 import { prisma } from '../lib/prisma';
+import { systemLogger } from '../lib/logger';
 import { RefreshTokenService } from '../services/security/refresh-token-service';
 import { SessionManagementService } from '../services/security/session-management-service';
 import { PasswordResetService } from '../services/security/password-reset-service';
@@ -51,9 +52,9 @@ const rateLimitService = new RateLimitService();
 async function safeRun(name: string, fn: () => Promise<unknown>) {
   try {
     const result = await fn();
-    console.log(`[scheduler] ${name}: completed`, result);
+    systemLogger.info(`[scheduler] ${name}: completed`, { result });
   } catch (err) {
-    console.error(`[scheduler] ${name}: FAILED`, err);
+    systemLogger.error(`[scheduler] ${name}: FAILED`, { error: err });
   }
 }
 

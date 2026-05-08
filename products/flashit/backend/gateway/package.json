@@ -7,9 +7,9 @@
   "main": "dist/server.js",
   "packageManager": "pnpm@10.33.0",
   "scripts": {
-    "postinstall": "node -e \"try{require('child_process').execSync('pnpm run db:generate',{stdio:'inherit'})}catch(e){process.exit(0)}\"",
+    "postinstall": "pnpm run db:generate",
     "dev": "pnpm run db:generate && tsx watch src/server.ts",
-    "build": "node -e \"try{require('child_process').execSync('tsc --project tsconfig.json',{stdio:'inherit'})}catch(e){process.exit(0)}\"",
+    "build": "tsc --project tsconfig.json",
     "start": "node dist/server.js",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "test": "vitest run",

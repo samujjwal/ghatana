@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: ./.github/actions/setup-pnpm
         with:
-          node-version: "20"
+          node-version: "22"
           cache-pnpm-store: "true"
 
       - name: Run ESLint
@@ -89,7 +89,7 @@ jobs:
     steps:
       - uses: ./.github/actions/setup-pnpm
         with:
-          node-version: "20"
+          node-version: "22"
           cache-pnpm-store: "true"
 
       - name: Build Storybook

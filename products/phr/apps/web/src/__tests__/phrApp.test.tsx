@@ -129,19 +129,64 @@ describe('PHR web app', () => {
     });
   });
 
-  it('renders a FHIR record detail fallback for unknown records', () => {
+  it('renders a FHIR record detail fallback for unknown records when patient role grants access', async () => {
+    window.localStorage.setItem('phr.currentRole', 'patient');
+    const recordDetailRoute = {
+      path: '/records/:recordId',
+      label: 'Record detail',
+      minimumRole: 'patient' as PhrRole,
+      element: <RecordDetailPage />,
+    };
+
     render(
       <ThemeProvider>
-        <MemoryRouter initialEntries={['/records/record-missing-001']}>
-          <Routes>
-            <Route path="/records/:recordId" element={<RecordDetailPage />} />
-          </Routes>
-        </MemoryRouter>
+        <PhrAccessProvider>
+          <MemoryRouter initialEntries={['/records/record-missing-001']}>
+            <Routes>
+              <Route
+                path="/records/:recordId"
+                element={<ProtectedPhrRoute route={recordDetailRoute} />}
+              />
+            </Routes>
+          </MemoryRouter>
+        </PhrAccessProvider>
       </ThemeProvider>,
     );
 
-    expect(screen.getByText('FHIR resource rendering')).toBeInTheDocument();
-    expect(screen.getByText('No record payload is available for the requested identifier.')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('FHIR resource rendering')).toBeInTheDocument();
+      expect(screen.getByText('No record payload is available for the requested identifier.')).toBeInTheDocument();
+    });
+  });
+
+  it('denies direct URL access to records/:recordId for unauthenticated (no role) sessions', async () => {
+    window.localStorage.removeItem('phr.currentRole');
+    const recordDetailRoute = {
+      path: '/records/:recordId',
+      label: 'Record detail',
+      minimumRole: 'patient' as PhrRole,
+      element: <RecordDetailPage />,
+    };
+
+    render(
+      <ThemeProvider>
+        <PhrAccessProvider>
+          <MemoryRouter initialEntries={['/records/record-missing-001']}>
+            <Routes>
+              <Route
+                path="/records/:recordId"
+                element={<ProtectedPhrRoute route={recordDetailRoute} />}
+              />
+            </Routes>
+          </MemoryRouter>
+        </PhrAccessProvider>
+      </ThemeProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Permission denied')).toBeInTheDocument();
+      expect(screen.getByText(/not available for the current persona/i)).toBeInTheDocument();
+    });
   });
 
   it('hides clinician-only emergency route for patient persona in shell navigation', () => {

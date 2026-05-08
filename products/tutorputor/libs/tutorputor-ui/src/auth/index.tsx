@@ -14,7 +14,6 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 
 export const AUTH_TOKEN_KEY = "tutorputor_auth_token";
 export const REFRESH_TOKEN_KEY = "tutorputor_refresh_token";
-export const TENANT_ID_KEY = "tutorputor_tenant_id";
 
 export interface TutorPutorJwtUser {
   id: string;
@@ -58,7 +57,6 @@ export function readAccessToken(): string | null {
 export function clearAuthStorage(): void {
   localStorage.removeItem(AUTH_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
-  localStorage.removeItem(TENANT_ID_KEY);
 }
 
 export function getSafeStorage(): Storage | null {

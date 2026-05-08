@@ -7,6 +7,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { EmergencyAccessPage } from './pages/EmergencyAccessPage';
 import { LabsPage } from './pages/LabsPage';
 import { MedicationsPage } from './pages/MedicationsPage';
+import { RecordDetailPage } from './pages/RecordDetailPage';
 import { RecordsPage } from './pages/RecordsPage';
 import { SettingsPage } from './pages/SettingsPage';
 
@@ -128,5 +129,17 @@ export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
     actions: ['manage-profile-settings'],
     cards: ['profile-controls', 'integration-status'],
     element: <SettingsPage />,
+  },
+  {
+    path: '/records/:recordId',
+    label: 'Record detail',
+    description: 'FHIR resource rendering for a specific record.',
+    group: 'Care',
+    minimumRole: 'patient',
+    personas: ['patient', 'caregiver', 'clinician', 'admin'],
+    tiers: ['core'],
+    actions: ['view-records'],
+    cards: [],
+    element: <RecordDetailPage />,
   },
 ];

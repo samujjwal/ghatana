@@ -77,7 +77,7 @@ describe('ExampleGenerationProcessor', () => {
       expect(mockPrisma.claimExample.create).toHaveBeenCalledTimes(2);
     });
 
-    it('should delete existing examples before creating new ones', async () => {
+    it('should use versioned artifact revisioning for regeneration', async () => {
       const job = {
         id: 'job-1',
         data: {
@@ -92,15 +92,84 @@ describe('ExampleGenerationProcessor', () => {
         },
       };
 
+      const existingAsset = {
+        id: 'asset-1',
+        tenantId: 'tenant-1',
+        slug: 'c1-worked-solution-primary',
+        currentVersion: 1,
+      };
+
       mockGrpcClient.generateExamples.mockResolvedValue(createGrpcExamplesResponse());
-      mockPrisma.claimExample.deleteMany.mockResolvedValue({ count: 2 });
-      mockPrisma.claimExample.create.mockResolvedValue({ id: 'ex-1' });
+      mockPrisma.contentAsset.findUnique.mockResolvedValue(existingAsset);
+      mockPrisma.contentAsset.update.mockResolvedValue({ ...existingAsset, currentVersion: 2 });
+      mockPrisma.artifactManifest.create.mockResolvedValue({ id: 'manifest-1' });
+      mockPrisma.claimExample.upsert.mockResolvedValue({ id: 'ex-1' });
 
       await processor.process(job as any);
 
-      expect(mockPrisma.claimExample.deleteMany).toHaveBeenCalledWith({
-        where: { experienceId: 'exp-1', claimRef: 'C1' },
+      expect(mockPrisma.contentAsset.update).toHaveBeenCalledWith({
+        where: { id: 'asset-1' },
+        data: expect.objectContaining({
+          currentVersion: 2,
+          status: 'DRAFT',
+        }),
       });
+
+      expect(mockPrisma.artifactManifest.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          manifestType: 'WORKED_EXAMPLE',
+          version: '2.0.0',
+          schema: '1.0.0',
+        }),
+      );
+    });
+
+    it('should validate typed WorkedExampleManifest before persistence', async () => {
+      const job = {
+        id: 'job-1',
+        data: {
+          experienceId: 'exp-1',
+          tenantId: 'tenant-1',
+          claimRef: 'C1',
+          claimText: 'Test claim',
+          gradeLevel: 'GRADE_9_12',
+          domain: 'PHYSICS',
+          types: ['REAL_WORLD'],
+          count: 1,
+        },
+      };
+
+      const grpcResponse = createGrpcExamplesResponse({
+        examples: [
+          {
+            type: 'REAL_WORLD',
+            title: 'Valid Example',
+            content: {
+              problemStatement: 'What is 2+2?',
+              solution: { steps: [{ explanation: 'Add 2 and 2', checkpoint: 'Result is 4' }], finalAnswer: '4' },
+            },
+          },
+        ],
+      });
+
+      mockGrpcClient.generateExamples.mockResolvedValue(grpcResponse);
+      mockPrisma.contentAsset.findUnique.mockResolvedValue(null);
+      mockPrisma.contentAsset.create.mockResolvedValue({ id: 'asset-1', currentVersion: 1 });
+      mockPrisma.artifactManifest.create.mockResolvedValue({ id: 'manifest-1' });
+      mockPrisma.claimExample.upsert.mockResolvedValue({ id: 'ex-1' });
+
+      await processor.process(job as any);
+
+      expect(mockPrisma.artifactManifest.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          manifest: expect.objectContaining({
+            schemaVersion: '1.0.0',
+            manifestType: 'WorkedExample',
+          }),
+          isValid: true,
+          validationErrors: null,
+        }),
+      );
     });
   });
 });

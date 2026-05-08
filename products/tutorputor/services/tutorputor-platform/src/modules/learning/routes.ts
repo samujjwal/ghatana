@@ -49,6 +49,10 @@ import {
   roleGuard,
   respondWithErrors,
 } from "../../core/http/requestContext.js";
+import {
+  createStandardErrorResponse,
+  type StandardErrorResponse,
+} from "../../core/middleware/standard-error-response.js";
 import { buildSensitiveOperationAuditEntry } from "../policy/resource-access-helpers.js";
 import { writeSseEvent } from "../../core/http/sse.js";
 
@@ -98,7 +102,7 @@ async function learningRoutes(
   // ---------------------------------------------------------------------------
 
   fastify.get(
-    "/learning/dashboard",
+    "/dashboard",
     {
       schema: {
         description:
@@ -234,7 +238,7 @@ async function learningRoutes(
   // ---------------------------------------------------------------------------
 
   fastify.get(
-    "/learning/profile",
+    "/profile",
     {
       schema: {
         description: "Get or create the current learner profile",
@@ -267,7 +271,7 @@ async function learningRoutes(
       reason?: string;
     };
   }>(
-    "/learning/profile/preferences",
+    "/profile/preferences",
     {
       schema: {
         description: "Update learner preferences with audit tracking",
@@ -301,7 +305,7 @@ async function learningRoutes(
       sessionStartedAt?: string;
     };
   }>(
-    "/learning/profile/mastery",
+    "/profile/mastery",
     {
       schema: {
         description: "Record learner mastery evidence using Bayesian updates",
@@ -346,7 +350,7 @@ async function learningRoutes(
       evidence?: Record<string, unknown>;
     };
   }>(
-    "/learning/profile/knowledge-gaps",
+    "/profile/knowledge-gaps",
     {
       schema: {
         description: "Record a learner knowledge gap for personalization",
@@ -372,7 +376,7 @@ async function learningRoutes(
       availableTimeMinutes?: string;
     };
   }>(
-    "/learning/profile/recommendations",
+    "/profile/recommendations",
     {
       schema: {
         description: "Get personalized learning recommendations",
@@ -413,7 +417,7 @@ async function learningRoutes(
     Params: { learnerId: string };
     Querystring: { topic?: string };
   }>(
-    "/learning/learners/:learnerId/personalization",
+    "/learners/:learnerId/personalization",
     {
       preHandler: [roleGuard(["admin", "superadmin", "service"])],
       schema: {
@@ -482,7 +486,12 @@ async function learningRoutes(
         userId,
       });
       if (!path) {
-        return reply.status(404).send({ message: "No active pathway found" });
+        const error = createStandardErrorResponse(
+          "PATHWAY_NOT_FOUND",
+          "No active pathway found",
+          404,
+        );
+        return reply.status(404).send(error);
       }
       return reply.send(path);
     },
@@ -561,9 +570,12 @@ async function learningRoutes(
         });
         return reply.send(updated);
       } catch (e: unknown) {
-        return reply
-          .status(400)
-          .send({ message: e instanceof Error ? e.message : String(e) });
+        const error = createStandardErrorResponse(
+          "PATHWAY_ADVANCE_FAILED",
+          e instanceof Error ? e.message : String(e),
+          400,
+        );
+        return reply.status(400).send(error);
       }
     },
   );
@@ -650,23 +662,20 @@ async function learningRoutes(
         });
         return reply.send(assessment);
       } catch (e: unknown) {
-        if (e instanceof Error && e.message.includes("not found"))
-          return reply
-            .status(404)
-            .send({ message: e instanceof Error ? e.message : String(e) });
+        if (e instanceof Error && e.message.includes("not found")) {
+          const error = createStandardErrorResponse(
+            "ASSESSMENT_NOT_FOUND",
+            e.message,
+            404,
+          );
+          return reply.status(404).send(error);
+        }
         throw e;
       }
     },
   );
 
-  fastify.post<{
-    Body: {
-      moduleId: string;
-      count?: number;
-      difficulty?: string;
-      objectiveIds?: string[];
-    };
-  }>(
+  fastify.post<{ Body: { moduleId: string; count?: number; difficulty?: string; objectiveIds?: string[] } }>(
     "/assessments/generate",
     {
       preHandler: [roleGuard(["teacher", "admin", "superadmin"])],
@@ -702,14 +711,7 @@ async function learningRoutes(
     },
   );
 
-  fastify.post<{
-    Body: {
-      moduleId: string;
-      count?: number;
-      difficulty?: "INTRO" | "INTERMEDIATE" | "ADVANCED";
-      objectiveLabels?: string[];
-    };
-  }>(
+  fastify.post<{ Body: { moduleId: string; count?: number; difficulty?: "INTRO" | "INTERMEDIATE" | "ADVANCED"; objectiveLabels?: string[] } }>(
     "/assessments/simulations/preview",
     {
       preHandler: [roleGuard(["teacher", "admin", "superadmin"])],
@@ -732,31 +734,7 @@ async function learningRoutes(
     },
   );
 
-  fastify.post<{
-    Body: {
-      item: {
-        id: string;
-        points: number;
-        metadata?: Record<string, unknown>;
-      };
-      response: {
-        type: "simulation_interaction";
-        trace: {
-          interactions: Array<{
-            type: string;
-            parameterId?: string;
-            value?: string | number | boolean;
-            predictedOutcome?: string;
-            observedOutcome?: string;
-            note?: string;
-            timestampMs?: number;
-          }>;
-          durationMs?: number;
-          summary?: string;
-        };
-      };
-    };
-  }>(
+  fastify.post<{ Body: { item: { id: string; points: number; metadata?: Record<string, unknown> }; response: { type: "simulation_interaction"; trace: { interactions: Array<{ type: string; parameterId?: string; value?: string | number | boolean; predictedOutcome?: string; observedOutcome?: string; note?: string; timestampMs?: number }>; durationMs?: number; summary?: string } } } }>(
     "/assessments/simulations/score",
     {
       schema: {
@@ -793,10 +771,14 @@ async function learningRoutes(
         });
         return reply.status(201).send(attempt);
       } catch (e: unknown) {
-        if (e instanceof Error && e.message.includes("not found"))
-          return reply
-            .status(404)
-            .send({ message: e instanceof Error ? e.message : String(e) });
+        if (e instanceof Error && e.message.includes("not found")) {
+          const error = createStandardErrorResponse(
+            "ASSESSMENT_NOT_FOUND",
+            e.message,
+            404,
+          );
+          return reply.status(404).send(error);
+        }
         if (e instanceof Error && e.message.includes("validation"))
           return reply
             .status(400)
@@ -806,19 +788,30 @@ async function learningRoutes(
     },
   );
 
-  fastify.post<{
-    Params: { id: string };
-    Body: { responses: Record<string, unknown> };
-  }>(
+  fastify.post<{ Params: { id: string }; Body: { responses: Record<string, { type: string; selectedChoiceIds?: string[]; textAnswer?: string; confidence: number }> } }>(
     "/attempts/:id/submit",
     {
       schema: {
-        description: "Submit an assessment attempt for grading",
+        description: "Submit an assessment attempt for grading with confidence-based marking",
         tags: ["Assessments"],
         body: {
           type: "object",
           required: ["responses"],
-          properties: { responses: { type: "object" } },
+          properties: {
+            responses: {
+              type: "object",
+              additionalProperties: {
+                type: "object",
+                required: ["confidence"],
+                properties: {
+                  type: { type: "string" },
+                  selectedChoiceIds: { type: "array", items: { type: "string" } },
+                  textAnswer: { type: "string" },
+                  confidence: { type: "number", minimum: 0, maximum: 1 },
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -835,10 +828,14 @@ async function learningRoutes(
         });
         return reply.send(attempt);
       } catch (e: unknown) {
-        if (e instanceof Error && e.message.includes("not found"))
-          return reply
-            .status(404)
-            .send({ message: e instanceof Error ? e.message : String(e) });
+        if (e instanceof Error && e.message.includes("not found")) {
+          const error = createStandardErrorResponse(
+            "ATTEMPT_NOT_FOUND",
+            e.message,
+            404,
+          );
+          return reply.status(404).send(error);
+        }
         throw e;
       }
     },
@@ -868,9 +865,12 @@ async function learningRoutes(
       });
 
       if (!attempt) {
-        return reply
-          .status(404)
-          .send({ message: "Attempt not found for this user." });
+        const error = createStandardErrorResponse(
+          "ATTEMPT_NOT_FOUND",
+          "Attempt not found for this user",
+          404,
+        );
+        return reply.status(404).send(error);
       }
 
       const responses =
@@ -943,24 +943,7 @@ async function learningRoutes(
   // Session Adaptation
   // ---------------------------------------------------------------------------
 
-  fastify.post<{
-    Params: { sessionId: string };
-    Body: {
-      assetId: string;
-      eventType:
-        | "ANSWER_SUBMITTED"
-        | "HINT_REQUESTED"
-        | "CONTENT_VIEWED"
-        | "IDLE"
-        | "CHECKPOINT";
-      correct?: boolean;
-      hintsUsed?: number;
-      responseLatencyMs?: number;
-      inactivityMs?: number;
-      confidence?: number;
-      occurredAt?: string;
-    };
-  }>(
+  fastify.post<{ Params: { sessionId: string }; Body: { assetId: string; eventType: "ANSWER_SUBMITTED" | "HINT_REQUESTED" | "CONTENT_VIEWED" | "IDLE" | "CHECKPOINT"; correct?: boolean; hintsUsed?: number; responseLatencyMs?: number; inactivityMs?: number; confidence?: number; occurredAt?: string } }>(
     "/sessions/:sessionId/events",
     {
       schema: {
@@ -1019,10 +1002,7 @@ async function learningRoutes(
     },
   );
 
-  fastify.get<{
-    Params: { sessionId: string };
-    Querystring: { assetId: string };
-  }>(
+  fastify.get<{ Params: { sessionId: string }; Querystring: { assetId: string } }>(
     "/sessions/:sessionId/adaptation",
     {
       schema: {
@@ -1041,16 +1021,18 @@ async function learningRoutes(
         request.query.assetId,
       );
       if (!decision) {
-        return reply.status(404).send({ message: "No adaptation available" });
+        const error = createStandardErrorResponse(
+          "ADAPTATION_NOT_AVAILABLE",
+          "No adaptation available",
+          404,
+        );
+        return reply.status(404).send(error);
       }
       return reply.send(decision);
     },
   );
 
-  fastify.get<{
-    Params: { sessionId: string };
-    Querystring: { assetId: string };
-  }>(
+  fastify.get<{ Params: { sessionId: string }; Querystring: { assetId: string } }>(
     "/sessions/:sessionId/adaptation/stream",
     {
       schema: {
@@ -1108,10 +1090,7 @@ async function learningRoutes(
     },
   );
 
-  fastify.get<{
-    Params: { assetId: string };
-    Querystring: { family?: "difficulty" | "modality" | "explanation" };
-  }>(
+  fastify.get<{ Params: { assetId: string }; Querystring: { family?: "difficulty" | "modality" | "explanation" } }>(
     "/assets/:assetId/variations",
     {
       schema: {
@@ -1186,13 +1165,7 @@ async function learningRoutes(
   //   - superadmin: same as admin
   // ---------------------------------------------------------------------------
 
-  fastify.get<{
-    Querystring: {
-      moduleId?: string;
-      classroomId?: string;
-      period?: string;
-    };
-  }>(
+  fastify.get<{ Querystring: { moduleId?: string; classroomId?: string; period?: string } }>(
     "/analytics/summary",
     {
       schema: {
@@ -1313,7 +1286,7 @@ async function learningRoutes(
   // ---------------------------------------------------------------------------
 
   fastify.get(
-    "/learning/my-insights",
+    "/my-insights",
     {
       schema: {
         description:
@@ -1443,7 +1416,7 @@ async function learningRoutes(
   // Health
   // ---------------------------------------------------------------------------
 
-  fastify.get("/learning/health", async () => {
+  fastify.get("/health", async () => {
     const learningHealth = await learningService.checkHealth();
     const pathwaysHealth = await pathwaysService.checkHealth();
     const assessmentHealth = await assessmentService.checkHealth();

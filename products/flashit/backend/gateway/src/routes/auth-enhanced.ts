@@ -415,7 +415,7 @@ export const registerAuthRoutesEnhanced = async (app: FastifyInstance) => {
    */
   app.post(
     '/auth/logout',
-    { onRequest: [(app as any).authenticate] },
+    { onRequest: [app.authenticate] },
     async (request, reply) => {
       const user = request.user as JwtPayload;
       const refreshToken = request.headers['x-refresh-token'] as string | undefined;
@@ -520,7 +520,7 @@ export const registerAuthRoutesEnhanced = async (app: FastifyInstance) => {
    */
   app.post(
     '/auth/2fa/setup',
-    { onRequest: [(app as any).authenticate] },
+    { onRequest: [app.authenticate] },
     async (request, reply) => {
       const user = request.user as JwtPayload;
 
@@ -549,7 +549,7 @@ export const registerAuthRoutesEnhanced = async (app: FastifyInstance) => {
    */
   app.post(
     '/auth/2fa/enable',
-    { onRequest: [(app as any).authenticate] },
+    { onRequest: [app.authenticate] },
     async (request, reply) => {
       const user = request.user as JwtPayload;
       const body = enable2FASchema.parse(request.body);
@@ -573,7 +573,7 @@ export const registerAuthRoutesEnhanced = async (app: FastifyInstance) => {
    */
   app.post(
     '/auth/2fa/disable',
-    { onRequest: [(app as any).authenticate] },
+    { onRequest: [app.authenticate] },
     async (request, reply) => {
       const user = request.user as JwtPayload;
       const body = disable2FASchema.parse(request.body);
@@ -607,7 +607,7 @@ export const registerAuthRoutesEnhanced = async (app: FastifyInstance) => {
    */
   app.get(
     '/auth/sessions',
-    { onRequest: [(app as any).authenticate] },
+    { onRequest: [app.authenticate] },
     async (request, reply) => {
       const user = request.user as JwtPayload;
 
@@ -623,7 +623,7 @@ export const registerAuthRoutesEnhanced = async (app: FastifyInstance) => {
    */
   app.delete(
     '/auth/sessions/:sessionId',
-    { onRequest: [(app as any).authenticate] },
+    { onRequest: [app.authenticate] },
     async (request, reply) => {
       const { sessionId } = request.params as { sessionId: string };
       const user = request.user as JwtPayload;
@@ -646,7 +646,7 @@ export const registerAuthRoutesEnhanced = async (app: FastifyInstance) => {
    */
   app.get(
     '/auth/me',
-    { onRequest: [(app as any).authenticate] },
+    { onRequest: [app.authenticate] },
     async (request, reply) => {
       const jwtUser = request.user as JwtPayload;
 
@@ -717,7 +717,7 @@ export const registerAuthRoutesEnhanced = async (app: FastifyInstance) => {
    */
   app.post(
     '/auth/resend-verification',
-    { onRequest: [(app as any).authenticate] },
+    { onRequest: [app.authenticate] },
     async (request, reply) => {
       const user = request.user as JwtPayload;
 

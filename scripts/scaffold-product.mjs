@@ -403,7 +403,10 @@ configure<ProductPackValidationExtension> {
     policyPackTestPatterns.set(
         listOf("com.ghatana.${packageSegment}.kernel.${classPrefix}PackContractTest")
     )
-    complianceClassFileName.set("${classPrefix}ComplianceRulePack.class")
+    complianceSourceFile.set(layout.projectDirectory.file(
+        "src/main/java/com/ghatana/${packageSegment}/kernel/policy/${classPrefix}ComplianceRulePack.java"
+    ))
+    complianceRulePrefix.set("${rulePrefix}")
 }
 `
 );

@@ -34,6 +34,7 @@ import {
 import type { FlashItDataAccessContext } from "../lib/data-access-context";
 import { getClassificationService } from "../services/java-agents/classification-service.js";
 import { VectorEmbeddingService } from "../services/embeddings/vector-service.js";
+import { checkIdempotency } from "../lib/idempotency.js";
 
 const createMomentSchema = z.object({
   sphereId: z.string().uuid().optional(),
@@ -92,7 +93,7 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
    * Create a new Moment
    */
   app.post("/api/moments", {
-    onRequest: [(app as any).authenticate],
+    onRequest: [app.authenticate],
   }, async (request, reply) => {
     const logger = Logger.fromRequest(request);
     const userId = getUserIdFromRequest(request);
@@ -180,7 +181,24 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
       throw error;
     }
 
-    // Create Moment
+    // Create Moment. dataAccessContext is stored internally and never returned
+    // in the API response — it contains audit metadata not intended for callers.
+
+    // Idempotency check: return cached response for duplicate requests
+    if (dataAccessContext.idempotencyKey) {
+      const idempotencyResult = await checkIdempotency<{ moment: Record<string, unknown> }>(
+        userId,
+        "MOMENT_CREATED",
+        dataAccessContext.idempotencyKey,
+      );
+      if (idempotencyResult.found) {
+        logger.info('Idempotent create — returning cached moment response', {
+          idempotencyKey: dataAccessContext.idempotencyKey,
+        });
+        return reply.code(200).send(idempotencyResult.cachedResponse ?? { idempotent: true });
+      }
+    }
+
     const moment = await prisma.moment.create({
       data: {
         userId,
@@ -195,10 +213,8 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
         importance: body.signals?.importance,
         entities: body.signals?.entities ?? [],
         capturedAt: body.capturedAt ? new Date(body.capturedAt) : new Date(),
-        metadata: {
-          ...(body.metadata ?? {}),
-          dataAccessContext,
-        } as any,
+        metadata: body.metadata ?? {},
+        // dataAccessContext is persisted in the dedicated audit table only
       },
       include: {
         sphere: {
@@ -211,18 +227,37 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
       },
     });
 
-    // Audit log
+    // Audit log — use the resolved sphereId (post-classification), not body.sphereId which may be undefined
+    // cachedResponse is stored so idempotent retries can return the original payload.
+    const momentResponse = {
+      id: moment.id,
+      userId: moment.userId,
+      sphereId: moment.sphereId,
+      contentText: moment.contentText,
+      contentTranscript: moment.contentTranscript,
+      contentType: moment.contentType,
+      emotions: moment.emotions,
+      tags: moment.tags,
+      intent: moment.intent,
+      sentimentScore: moment.sentimentScore,
+      importance: moment.importance,
+      entities: moment.entities,
+      capturedAt: moment.capturedAt,
+      ingestedAt: moment.ingestedAt,
+      updatedAt: moment.updatedAt,
+      sphere: moment.sphere,
+    };
     await prisma.auditEvent.create({
       data: {
         eventType: "MOMENT_CREATED",
         userId,
         momentId: moment.id,
-        sphereId: body.sphereId,
+        sphereId: moment.sphereId, // resolved, never the raw (potentially absent) input field
         actor: (request.user as JwtPayload).email,
         action: "CREATE",
         resourceType: "MOMENT",
         resourceId: moment.id,
-        details: dataAccessContext,
+        details: { ...dataAccessContext, cachedResponse: { moment: momentResponse } },
         ipAddress: request.ip,
         userAgent: request.headers["user-agent"],
       },
@@ -237,7 +272,7 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
       hasTranscript: !!moment.contentTranscript,
       emotionsCount: moment.emotions.length,
       tagsCount: moment.tags.length,
-      dataAccessContext,
+      dataAccessClassification: dataAccessContext.auditClassification,
     });
 
     // Trigger vector embedding for semantic search
@@ -254,12 +289,11 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
       });
     } catch (err) {
       logger.error('Failed to enqueue embedding for new moment', err);
-      // Don't fail the request, just log
+      // Don't fail the request, embedding is best-effort
     }
 
-    return reply.code(201).send({
-      moment,
-    });
+    // Return moment without internal audit metadata
+    return reply.code(201).send({ moment: momentResponse });
   });
 
   /**
@@ -268,87 +302,41 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
    * Analyzes moment content and suggests the best sphere
    */
   app.post("/api/moments/classify-sphere", {
-    onRequest: [(app as any).authenticate],
+    onRequest: [app.authenticate],
   }, async (request, reply) => {
+    const logger = Logger.fromRequest(request);
     const userId = getUserIdFromRequest(request);
     const body = classifySphereSchema.parse(request.body);
 
     try {
-      // Get all user's spheres
-      const userSpheres = await prisma.sphere.findMany({
-        where: {
-          userId,
-          deletedAt: null,
-          sphereAccess: {
-            some: {
-              userId,
-              revokedAt: null,
-            },
-          },
-        },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          type: true,
-        },
+      const classificationService = getClassificationService();
+      const classification = await classificationService.classifyMoment({
+        content: body.content.text,
+        transcript: body.content.transcript,
+        contentType: body.content.type as 'TEXT' | 'VOICE' | 'IMAGE' | 'VIDEO',
+        emotions: body.signals?.emotions ?? [],
+        tags: body.signals?.tags ?? [],
+        userIntent: body.signals?.intent,
+        userId,
       });
 
-      if (userSpheres.length === 0) {
-        return reply.code(400).send({
-          error: "No spheres available",
-          message: "Create at least one Sphere before capturing moments",
-        });
-      }
-
-      // Simple keyword-based classification
-      // In production, this would use more sophisticated NLP/ML
-      const contentText = body.content.text?.toLowerCase() || "";
-      const keywords = [
-        ...(body.signals?.tags || []).map(t => t.toLowerCase()),
-        ...(body.signals?.emotions || []).map(e => e.toLowerCase()),
-      ];
-
-      let bestMatch = userSpheres[0];
-      let maxScore = 0;
-
-      for (const sphere of userSpheres) {
-        const sphereName = sphere.name.toLowerCase();
-        const sphereDesc = (sphere.description || "").toLowerCase();
-        const sphereContent = `${sphereName} ${sphereDesc}`;
-
-        let score = 0;
-
-        // Match against sphere name and description
-        if (contentText.includes(sphereName)) score += 10;
-        if (sphereContent.includes(contentText)) score += 5;
-
-        // Match against keywords/tags
-        for (const keyword of keywords) {
-          if (keyword.length > 2) {
-            if (sphereContent.includes(keyword)) score += 2;
-            if (contentText.includes(keyword) && sphereContent.includes(keyword)) score += 3;
-          }
-        }
-
-        // Type-based matching
-        if (sphere.type === "PERSONAL" && keywords.includes("personal")) score += 5;
-        if (sphere.type === "WORK" && (keywords.includes("work") || keywords.includes("professional"))) score += 5;
-        if (sphere.type === "FAMILY" && keywords.includes("family")) score += 5;
-
-        if (score > maxScore) {
-          maxScore = score;
-          bestMatch = sphere;
-        }
-      }
+      logger.info('Sphere classification complete', {
+        sphereId: classification.sphereId,
+        sphereName: classification.sphereName,
+        confidence: classification.confidence,
+        source: classification.source,
+      });
 
       return reply.send({
-        sphereId: bestMatch.id,
-        sphereName: bestMatch.name,
-        confidence: maxScore > 0 ? Math.min(100, 50 + maxScore) : 50,
+        sphereId: classification.sphereId,
+        sphereName: classification.sphereName,
+        confidence: classification.confidence,
+        reasoning: classification.reasoning,
+        alternatives: classification.alternatives,
+        source: classification.source,
       });
     } catch (error) {
-      console.error("Sphere classification error:", error);
+      logger.error('Sphere classification failed', error);
       return reply.code(500).send({
         error: "Classification failed",
         message: "Failed to classify sphere",
@@ -357,7 +345,7 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
   });
 
   app.get<{ Params: { id: string } }>("/api/moments/:id", {
-    onRequest: [(app as any).authenticate],
+    onRequest: [app.authenticate],
   }, async (request, reply) => {
     const userId = getUserIdFromRequest(request);
     const { id } = request.params;
@@ -445,7 +433,7 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
    * Search/query Moments
    */
   app.get("/api/moments", {
-    onRequest: [(app as any).authenticate],
+    onRequest: [app.authenticate],
   }, async (request, reply) => {
     const userId = getUserIdFromRequest(request);
     const query = searchMomentsSchema.parse(request.query);
@@ -550,7 +538,6 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
       moments: resultMoments,
       nextCursor,
       totalCount,
-      dataAccessContext,
     });
   });
 
@@ -559,7 +546,7 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
    * Soft delete a Moment
    */
   app.delete<{ Params: { id: string } }>("/api/moments/:id", {
-    onRequest: [(app as any).authenticate],
+    onRequest: [app.authenticate],
   }, async (request, reply) => {
     const userId = getUserIdFromRequest(request);
     const { id } = request.params;
@@ -618,6 +605,23 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
     }
 
     // Soft delete
+
+    // Idempotency check: if this deletion was already processed, return 204 immediately
+    if (dataAccessContext.idempotencyKey) {
+      const idempotencyResult = await checkIdempotency<null>(
+        userId,
+        "MOMENT_DELETED",
+        dataAccessContext.idempotencyKey,
+      );
+      if (idempotencyResult.found) {
+        logger.info('Idempotent delete — moment already deleted', {
+          momentId: id,
+          idempotencyKey: dataAccessContext.idempotencyKey,
+        });
+        return reply.code(204).send();
+      }
+    }
+
     await prisma.moment.update({
       where: { id },
       data: {
@@ -639,7 +643,7 @@ export const registerMomentRoutes = async (app: FastifyInstance) => {
         action: "DELETE",
         resourceType: "MOMENT",
         resourceId: id,
-        details: dataAccessContext,
+        details: { ...dataAccessContext },
       },
     });
 

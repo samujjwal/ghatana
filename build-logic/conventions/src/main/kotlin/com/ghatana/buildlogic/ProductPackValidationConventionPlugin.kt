@@ -9,6 +9,7 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.testing.Test
+import java.io.File
 import java.nio.file.Files
 import javax.inject.Inject
 
@@ -91,43 +92,29 @@ class ProductPackValidationConventionPlugin : Plugin<Project> {
                 if (extension.complianceSourceFile.isPresent) {
                     inputs.file(extension.complianceSourceFile)
                 }
-                if (extension.complianceClassFileName.isPresent) {
-                    dependsOn(project.tasks.named("compileJava"))
-                }
                 doLast {
                     if (extension.complianceSourceFile.isPresent) {
                         val sourceFile = extension.complianceSourceFile.get().asFile
                         require(sourceFile.exists()) {
                             "Compliance rule pack source is missing: ${sourceFile.absolutePath}"
                         }
-                        val text = sourceFile.readText()
-                        val ruleIds = Regex("new\\s+ComplianceRule\\(\\s*\"([^\"]+)\"")
-                            .findAll(text)
-                            .map { it.groupValues[1] }
+                        validateComplianceSourceFile(sourceFile, extension.complianceRulePrefix.get())
+                    } else {
+                        // No explicit source file configured: scan src/main/java for compliance rule sources
+                        val javaMainSrc = project.projectDir.resolve("src/main/java")
+                        require(javaMainSrc.exists()) {
+                            "No complianceSourceFile configured and src/main/java does not exist in ${project.projectDir}"
+                        }
+                        val complianceFiles = javaMainSrc.walk()
+                            .filter { it.isFile && it.extension == "java" && it.readText().contains("ComplianceRule") }
                             .toList()
-                        require(ruleIds.isNotEmpty()) {
-                            "No ComplianceRule IDs found in ${sourceFile.name}"
+                        require(complianceFiles.isNotEmpty()) {
+                            "No Java source files containing ComplianceRule declarations found under ${javaMainSrc.absolutePath}. " +
+                                "Configure 'complianceSourceFile' explicitly or add a ComplianceRule factory class."
                         }
                         val prefix = extension.complianceRulePrefix.get()
-                        if (prefix.isNotBlank()) {
-                            require(ruleIds.all { it.startsWith(prefix) }) {
-                                "All ComplianceRule IDs in ${sourceFile.name} must start with " + prefix
-                            }
-                        }
-                        require(ruleIds.distinct().size == ruleIds.size) {
-                            "Duplicate ComplianceRule IDs found in ${sourceFile.name}"
-                        }
-                    } else {
-                        val classFileName = extension.complianceClassFileName.get()
-                        val classesDir = buildDirProvider.get().asFile.toPath()
-                        require(Files.exists(classesDir)) {
-                            "Compiled classes directory does not exist: " + classesDir
-                        }
-                        val found = Files.walk(classesDir).use { paths ->
-                            paths.anyMatch { path -> path.fileName.toString() == classFileName }
-                        }
-                        require(found) {
-                            "Expected compliance rule pack class file was not found: $classFileName"
+                        for (file in complianceFiles) {
+                            validateComplianceSourceFile(file, prefix)
                         }
                     }
                 }
@@ -146,6 +133,71 @@ class ProductPackValidationConventionPlugin : Plugin<Project> {
             project.tasks.named("check").configure {
                 dependsOn("productConformanceCheck")
             }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Source-level compliance rule validation
+// ---------------------------------------------------------------------------
+
+private val KNOWN_SEVERITIES = setOf("CRITICAL", "HIGH", "MEDIUM", "LOW")
+
+private val PLACEHOLDER_EXPRESSIONS = setOf(
+    "TODO", "FIXME", "PLACEHOLDER", "STUB", "TBD", "NOT_IMPLEMENTED", "REPLACE_ME"
+)
+
+/**
+ * Validates a single Java source file containing ComplianceRule declarations.
+ *
+ * Checks performed:
+ *  - At least one ComplianceRule ID is declared
+ *  - All IDs start with the given prefix (if configured)
+ *  - No duplicate IDs
+ *  - Severity values are from the canonical set (CRITICAL/HIGH/MEDIUM/LOW)
+ *  - Expression strings are non-empty and not placeholder text
+ */
+private fun validateComplianceSourceFile(sourceFile: File, prefix: String) {
+    val text = sourceFile.readText()
+
+    val ruleIds = Regex("""new\s+ComplianceRule\(\s*"([^"]+)"""")
+        .findAll(text)
+        .map { it.groupValues[1] }
+        .toList()
+
+    require(ruleIds.isNotEmpty()) {
+        "No ComplianceRule IDs found in ${sourceFile.name}"
+    }
+
+    if (prefix.isNotBlank()) {
+        val badIds = ruleIds.filterNot { it.startsWith(prefix) }
+        require(badIds.isEmpty()) {
+            "ComplianceRule IDs must start with '$prefix' in ${sourceFile.name}, offending: $badIds"
+        }
+    }
+
+    require(ruleIds.distinct().size == ruleIds.size) {
+        val duplicates = ruleIds.groupBy { it }.filter { it.value.size > 1 }.keys
+        "Duplicate ComplianceRule IDs in ${sourceFile.name}: $duplicates"
+    }
+
+    // Validate severity values
+    val severityMatches = Regex("""Severity\.([A-Z_]+)""").findAll(text).map { it.groupValues[1] }.toList()
+    val unknownSeverities = severityMatches.filterNot { KNOWN_SEVERITIES.contains(it) }
+    require(unknownSeverities.isEmpty()) {
+        "Unknown severity values in ${sourceFile.name}: $unknownSeverities. Allowed: $KNOWN_SEVERITIES"
+    }
+
+    // Validate that expression strings are non-empty and not placeholder text
+    val expressionMatches = Regex("""\.expression\(\s*"([^"]*)"""").findAll(text).map { it.groupValues[1] }.toList()
+    for (expr in expressionMatches) {
+        val trimmed = expr.trim()
+        require(trimmed.isNotEmpty()) {
+            "Empty expression string found in ${sourceFile.name}. Compliance rule expressions must not be blank."
+        }
+        val isPlaceholder = PLACEHOLDER_EXPRESSIONS.any { ph -> trimmed.uppercase().contains(ph) }
+        require(!isPlaceholder) {
+            "Placeholder expression detected in ${sourceFile.name}: \"$trimmed\". Replace with a real rule expression."
         }
     }
 }

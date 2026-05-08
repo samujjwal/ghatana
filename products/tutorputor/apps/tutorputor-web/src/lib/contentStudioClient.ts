@@ -3,27 +3,20 @@
  *
  * Provides a single, consistent fetch wrapper for all Content Studio API calls.
  * Auth headers, base URL, and error handling live here — not in individual hooks.
+ * Uses shared API utilities for consistent header generation and error handling.
  */
+
+import {
+  getStandardHeaders,
+  handleResponse,
+} from "../api/sharedApiClient";
+import { readAccessToken } from "@tutorputor/ui";
 
 export const CONTENT_STUDIO_BASE = "/api/content-studio";
 
 export function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("auth_token");
-  const tenantId = localStorage.getItem("tenant_id");
-
-  if (!tenantId) {
-    throw new Error("Authentication required: No tenant context found");
-  }
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "X-Tenant-ID": tenantId,
-    "X-Correlation-ID": crypto.randomUUID(),
-  };
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  return headers;
+  const token = readAccessToken();
+  return getStandardHeaders(token);
 }
 
 export async function contentStudioFetch<T>(
@@ -34,18 +27,7 @@ export async function contentStudioFetch<T>(
     ...options,
     headers: { ...getAuthHeaders(), ...(options?.headers ?? {}) },
   });
-  if (!res.ok) {
-    const body = await res.json().catch(async () => ({
-      error: await res.text().catch(() => res.statusText),
-    }));
-    const err = new Error(
-      (body as { error?: string }).error ||
-        `Content Studio API error ${res.status}: ${res.statusText}`,
-    ) as Error & { statusCode: number };
-    err.statusCode = res.status;
-    throw err;
-  }
-  return res.json() as Promise<T>;
+  return handleResponse<T>(res);
 }
 
 export function buildQueryString(filters?: Record<string, unknown>): string {

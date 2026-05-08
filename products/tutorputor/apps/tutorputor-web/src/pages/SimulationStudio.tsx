@@ -18,6 +18,7 @@ import type {
   SimulationManifest,
   SimulationDomain,
 } from "@tutorputor/contracts/v1/simulation";
+import { readAccessToken } from "@tutorputor/ui";
 
 interface NLRefinementResult {
   success: boolean;
@@ -27,7 +28,7 @@ interface NLRefinementResult {
 }
 
 function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("auth_token");
+  const token = readAccessToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 

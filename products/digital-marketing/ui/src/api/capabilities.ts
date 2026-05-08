@@ -33,6 +33,7 @@ export const CapabilityKeys = {
 
   // P0-004: New route manifest capability keys
   REPORTING: 'dmos.reporting',
+  AI_OPTIMIZATION: 'dmos.ai_optimization',
   SELF_MARKETING: 'dmos.self_marketing',
   MARKET_RESEARCH: 'dmos.market_research',
   ADVANCED_CHANNELS: 'dmos.advanced_channels',
@@ -43,7 +44,7 @@ export const CapabilityKeys = {
 export type CapabilityKey = typeof CapabilityKeys[keyof typeof CapabilityKeys];
 
 export interface Capability {
-  key: string;
+  key: CapabilityKey;
   enabled: boolean;
   description?: string;
   requiresRole?: string;

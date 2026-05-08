@@ -2,7 +2,7 @@
  * Animation Generation Processor - Generates animation specs for claims.
  *
  * @doc.type class
- * @doc.purpose Process animation generation jobs
+ * @doc.purpose Process animation generation jobs with manifest validation
  * @doc.layer backend-worker
  * @doc.pattern JobProcessor
  */
@@ -16,6 +16,9 @@ import {
   type CorrelatedGenerationJobData,
   ContentWorkerTelemetryPublisher,
 } from "../generation-telemetry";
+import {
+  AnimationManifest,
+} from "@tutorputor/contracts/v1/artifact-manifests";
 
 function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -77,6 +80,7 @@ export class AnimationGenerationProcessor {
         durationSeconds,
         domain: domain ?? "TECH",
         gradeLevel: gradeLevel ?? "GRADE_6_8",
+        context: {},
       });
 
       const animation =

@@ -134,7 +134,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
             isLoading: false,
             isAuthenticated: true,
           });
-          localStorage.setItem(TENANT_ID_KEY, user.tenantId);
+          // tenantId is derived from JWT token on every request, no longer stored in localStorage
+          // to avoid stale-tenant and tenant-leak risks
           return;
         }
 
@@ -168,6 +169,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     persistTokens(token);
     // tenantId is derived from JWT token on every request, no longer stored in localStorage
+    // to avoid stale-tenant and tenant-leak risks
     
     setState({
       user,

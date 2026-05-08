@@ -159,5 +159,8 @@ configure<ProductPackValidationExtension> {
             "com.ghatana.phr.kernel.PhrKernelBoundaryContractTest"
         )
     )
-    complianceClassFileName.set("PhrComplianceRulePack.class")
+    complianceSourceFile.set(layout.projectDirectory.file(
+        "src/main/java/com/ghatana/phr/kernel/policy/PhrComplianceRulePack.java"
+    ))
+    complianceRulePrefix.set("PHR-")
 }

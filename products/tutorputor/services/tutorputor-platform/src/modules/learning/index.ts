@@ -31,10 +31,10 @@ export const learningModule: FastifyPluginAsync = async (fastify) => {
 
   // 1. Create Core Services
   const learningService = createLearningService(prisma);
-  const pathwaysService = createPathwaysService(prisma);
+  const learnerProfileService = createLearnerProfileService(prisma);
+  const pathwaysService = createPathwaysService(prisma, learnerProfileService);
   const assessmentService = createAssessmentService(prisma);
   const analyticsService = createAnalyticsService(prisma, redis);
-  const learnerProfileService = createLearnerProfileService(prisma);
   const assetReadService = new ContentAssetReadService(prisma);
   const contentVariationService = new ContentVariationService(assetReadService);
   const sessionAdaptationEngine = new SessionAdaptationEngine(

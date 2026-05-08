@@ -26,6 +26,24 @@ export interface ManifestGeneratorResult {
 }
 
 /**
+ * Convert TypeScript SimulationManifest to proto format (snake_case field names).
+ * The proto is the authoritative contract for gRPC communication and persistence.
+ */
+function manifestToProtoFormat(manifest: ContractSimulationManifest): Record<string, unknown> {
+  return {
+    manifest_id: manifest.id,
+    version: manifest.version,
+    domain: manifest.domain,
+    title: manifest.title,
+    description: manifest.description ?? null,
+    // Note: The proto has a simplified structure. For now, we serialize the full manifest
+    // as JSON in the domain_config field to preserve all TypeScript contract fields.
+    // This is a transitional approach until the proto is expanded to match the full contract.
+    domain_config: JSON.stringify(manifest),
+  };
+}
+
+/**
  * Persist simulation manifests and templates derived from domain concepts.
  */
 export async function generateSimulationTemplates(
@@ -89,13 +107,12 @@ export async function generateSimulationTemplates(
     }
 
     const manifest = result.manifest;
-    // Prisma Json fields expect a plain JSON-compatible object. Our contracts use branded types,
-    // which don't satisfy Prisma's InputJsonValue typing, so we serialize/deserialize.
-    const manifestJson = JSON.parse(JSON.stringify(manifest));
+    // Convert to proto format for persistence (authoritative contract)
+    const protoManifest = manifestToProtoFormat(manifest);
     const moduleId = mapping?.moduleId as unknown as string | undefined;
 
     try {
-      // Upsert SimulationManifest
+      // Upsert SimulationManifest using proto field names
       await prisma.simulationManifest.upsert({
         where: { id: manifest.id as unknown as string },
         create: {
@@ -106,7 +123,7 @@ export async function generateSimulationTemplates(
           title: manifest.title,
           description: manifest.description ?? null,
           moduleId: moduleId ?? null,
-          manifest: manifestJson,
+          manifest: protoManifest, // Store proto-formatted manifest
         },
         update: {
           domain: manifest.domain,
@@ -114,7 +131,7 @@ export async function generateSimulationTemplates(
           title: manifest.title,
           description: manifest.description ?? null,
           moduleId: moduleId ?? null,
-          manifest: manifestJson,
+          manifest: protoManifest, // Store proto-formatted manifest
         },
       });
       manifestsCreated++;

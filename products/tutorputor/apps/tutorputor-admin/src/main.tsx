@@ -7,21 +7,6 @@ import { MinimalThemeProvider } from './providers/MinimalThemeProvider';
 import { router } from './App';
 import './index.css';
 
-// Suppress expected 404 errors in development
-if (import.meta.env.DEV) {
-  const originalError = console.error;
-  console.error = (...args: any[]) => {
-    // Suppress fetch failed messages for expected 404s
-    if (
-      args[0]?.toString?.().includes('Failed') ||
-      args[0]?.toString?.().includes('404')
-    ) {
-      return;
-    }
-    originalError(...args);
-  };
-}
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

@@ -40,29 +40,15 @@ export function setAuthToken(token: string | null): void {
 /** Resolve the API base from env or fall back to same-origin. */
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const CS = `${BASE_URL}/api/content-studio`;
-const DEV_TENANT_ID = import.meta.env.VITE_TUTORPUTOR_TENANT_ID ?? "default";
-const DEV_ADMIN_ID = "user-admin-001";
-const TRUSTED_PROXY_SECRET =
-  import.meta.env.VITE_TRUST_PROXY_AUTH_SHARED_SECRET ?? null;
 
 function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
-  const isDevBypassToken = _authToken === "dev-token";
-  if (_authToken && !isDevBypassToken) {
+  if (_authToken) {
     headers["Authorization"] = `Bearer ${_authToken}`;
-    return headers;
-  }
-
-  if (import.meta.env.DEV || import.meta.env.VITE_DEV_AUTH_BYPASS === "true") {
-    headers["x-tenant-id"] = DEV_TENANT_ID;
-    headers["x-user-id"] = DEV_ADMIN_ID;
-    headers["x-user-role"] = "admin";
-    if (TRUSTED_PROXY_SECRET) {
-      headers["x-trusted-proxy-secret"] = TRUSTED_PROXY_SECRET;
-    }
+    headers["X-Correlation-ID"] = crypto.randomUUID();
   }
 
   return headers;
@@ -91,12 +77,24 @@ async function csRequest<T>(
     headers: authHeaders(),
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
+  
+  // Consistent error handling with other clients
   if (!response.ok) {
     const err = await response
       .json()
       .catch(() => ({ message: response.statusText }));
-    throw new Error(err.message ?? `HTTP ${response.status}`);
+    const error = new Error(
+      (err as { error?: string }).error ??
+        (err as { message?: string }).message ??
+        `HTTP ${response.status}`,
+    ) as Error & { statusCode: number; traceId?: string };
+    error.statusCode = response.status;
+    if (typeof (err as { traceId?: string }).traceId === "string") {
+      error.traceId = (err as { traceId?: string }).traceId;
+    }
+    throw error;
   }
+  
   // 204 No Content
   if (response.status === 204) return undefined as unknown as T;
   return response.json();

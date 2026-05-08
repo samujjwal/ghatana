@@ -71,6 +71,35 @@ export const GradeAdaptationRuleSchema = z.object({
   }),
 });
 
+export const ProvenanceSchema = z.object({
+  generatedBy: z.enum(['ai', 'human', 'hybrid']),
+  generationId: z.string().optional(),
+  model: z.string().optional(),
+  promptHash: z.string().optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime().optional(),
+  authorId: z.string().optional(),
+  reviewDecision: z.enum(['approved', 'rejected', 'pending']).optional(),
+  reviewNotes: z.string().optional(),
+});
+
+export const ValidatorSchema = z.object({
+  validatorId: z.string(),
+  validatorType: z.enum(['schema', 'content', 'pedagogy', 'safety']),
+  passed: z.boolean(),
+  validationAt: z.string().datetime(),
+  errors: z.array(z.string()).optional(),
+  warnings: z.array(z.string()).optional(),
+});
+
+export const TelemetryProfileSchema = z.object({
+  enabled: z.boolean(),
+  events: z.array(z.string()).optional(),
+  samplingRate: z.number().min(0).max(1).optional(),
+  privacyLevel: z.enum(['none', 'anonymous', 'user-id']).optional(),
+  retentionDays: z.number().int().optional(),
+});
+
 export const EvaluationHintsSchema = z.object({
   correctIndicators: z.array(z.string()),
   misconceptionIndicators: z.array(z.string()),
@@ -89,6 +118,7 @@ export const WorkedExampleManifestSchema = z.object({
   claimRef: z.string(),
   evidenceRefs: z.array(z.string()),
   objectiveRefs: z.array(z.string()).optional(),
+  provenance: ProvenanceSchema.optional(),
 
   // Context
   domain: z.string(),
@@ -117,10 +147,15 @@ export const WorkedExampleManifestSchema = z.object({
   // Scoring hints
   evaluationHints: EvaluationHintsSchema,
 
+  // Validators
+  validators: z.array(ValidatorSchema).optional(),
+
+  // Telemetry profile
+  telemetryProfile: TelemetryProfileSchema.optional(),
+
   // Metadata
   createdAt: z.string().datetime().optional(),
   updatedAt: z.string().datetime().optional(),
-  generatedBy: z.string().optional(),
   validationStatus: z.enum(['pending', 'valid', 'invalid']).optional(),
 });
 
@@ -137,6 +172,9 @@ export type MisconceptionCheckpoint = z.infer<typeof MisconceptionCheckpointSche
 export type TransferPrompt = z.infer<typeof TransferPromptSchema>;
 export type GradeAdaptationRule = z.infer<typeof GradeAdaptationRuleSchema>;
 export type EvaluationHints = z.infer<typeof EvaluationHintsSchema>;
+export type Provenance = z.infer<typeof ProvenanceSchema>;
+export type Validator = z.infer<typeof ValidatorSchema>;
+export type TelemetryProfile = z.infer<typeof TelemetryProfileSchema>;
 
 // =============================================================================
 // Validation Helpers
@@ -161,6 +199,7 @@ export function validateWorkedExampleManifest(data: unknown): {
  * Create a default empty manifest template.
  */
 export function createWorkedExampleTemplate(claimRef: string): WorkedExampleManifest {
+  const now = new Date().toISOString();
   return {
     schemaVersion: '1.0.0',
     manifestType: 'WorkedExample',
@@ -184,5 +223,15 @@ export function createWorkedExampleTemplate(claimRef: string): WorkedExampleMani
       correctIndicators: [],
       misconceptionIndicators: [],
     },
+    provenance: {
+      generatedBy: 'ai',
+      createdAt: now,
+    },
+    telemetryProfile: {
+      enabled: true,
+      privacyLevel: 'anonymous',
+    },
+    createdAt: now,
+    updatedAt: now,
   };
 }

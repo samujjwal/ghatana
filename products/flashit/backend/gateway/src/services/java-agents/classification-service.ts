@@ -9,6 +9,7 @@
  */
 
 import { prisma } from '../../lib/prisma.js';
+import { systemLogger } from '../../lib/logger.js';
 import {
   JavaAgentClient,
   getJavaAgentClient,
@@ -127,7 +128,7 @@ export class ClassificationService {
           };
         }
       } catch (error) {
-        console.warn('Java agent classification failed, falling back to local heuristic:', error);
+        systemLogger.warn('Java agent classification failed, falling back to local heuristic', { error });
       }
     }
 
@@ -169,7 +170,7 @@ export class ClassificationService {
           return await this.javaClient.suggestSpheres(javaRequest);
         }
       } catch (error) {
-        console.warn('Java agent suggest spheres failed, falling back to local heuristic:', error);
+        systemLogger.warn('Java agent suggest spheres failed, falling back to local heuristic', { error });
       }
     }
 

@@ -892,11 +892,12 @@ describe("learning routes", () => {
     });
   });
 
-  it("submits assessment attempts for grading", async () => {
+  it("submits assessment attempts for grading with confidence-based marking", async () => {
     assessmentService.submitAttempt.mockResolvedValue({
       id: "attempt-1",
       status: "GRADED",
       scorePercent: 80,
+      averageConfidence: 0.75,
     });
 
     const response = await app.inject({
@@ -911,6 +912,7 @@ describe("learning routes", () => {
           "item-1": {
             type: "multiple_choice",
             selectedChoiceIds: ["choice-a"],
+            confidence: 0.8,
           },
         },
       },
@@ -930,6 +932,7 @@ describe("learning routes", () => {
         "item-1": {
           type: "multiple_choice",
           selectedChoiceIds: ["choice-a"],
+          confidence: 0.8,
         },
       },
     });

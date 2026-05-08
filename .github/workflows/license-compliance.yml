@@ -40,7 +40,7 @@ jobs:
                     :platform-kernel:kernel-plugin:checkLicense \
                     :platform-kernel:kernel-persistence:checkLicense \
                     :platform-kernel:kernel-testing:checkLicense \
-                    --continue || true
+                    --continue
 
       - name: Run license report for plugins
         run: |
@@ -51,14 +51,14 @@ jobs:
                     :platform-plugins:plugin-fraud-detection:checkLicense \
                     :platform-plugins:plugin-human-approval:checkLicense \
                     :platform-plugins:plugin-risk-management:checkLicense \
-                    --continue || true
+                    --continue
 
       - name: Run license report for regulated products
         run: |
           ./gradlew :products:phr:checkLicense \
                     :products:finance:integration-testing:checkLicense \
                     :platform:contracts:checkLicense \
-                    --continue || true
+                    --continue
 
       - name: Check for problematic licenses
         run: |
@@ -165,9 +165,10 @@ jobs:
           cat gradle/libs.versions.toml | head -30
           
           # Verify BOM versions are aligned
-          ./gradlew --dry-run :platform-kernel:kernel-core:build 2>&1 | \
-            grep -i "duplicate.*jar\|version.*conflict" && \
-            echo "✗ Version conflicts detected" && exit 1 || true
+          if ./gradlew --dry-run :platform-kernel:kernel-core:build 2>&1 | \
+             grep -i "duplicate.*jar\|version.*conflict"; then
+            echo "✗ Version conflicts detected" && exit 1
+          fi
           
           echo "✓ Version catalog is consistent"
 
@@ -252,7 +253,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Check TypeScript licenses
         run: |

@@ -14,14 +14,14 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Module } from '@tutorputor/contracts';
 import {
   createOfflineSyncRecord,
-  loadOfflineSyncQueue,
-  markOfflineRecordSynced,
-  queueOfflineSyncRecord,
+  loadPendingMutations,
+  markMutationSynced,
+  queueOfflineMutation,
   resolveOfflineConflict,
   type OfflineMutationType,
   type OfflineMutationPayload,
-  type OfflineSyncRecord,
-} from '../offline/offlineSync';
+  type OfflineMutationRequest,
+} from '../offline/offlineSyncIndexedDB';
 
 // Re-export types from @ghatana/state for convenience
 // In a real implementation, these would come from the state library
@@ -312,21 +312,20 @@ export function useOfflineProgress(): {
 
   const queueMutation = useCallback(async (type: OfflineMutationType, payload: OfflineMutationPayload) => {
     try {
-      const db = await openDatabase();
-      const tx = db.transaction('mutations', 'readwrite');
-      const store = tx.objectStore('mutations');
+      const request: OfflineMutationRequest = {
+        url: '/api/v1/offline/sync',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+        },
+        body: JSON.stringify({ type, payload }),
+        idempotencyKey: `${type}:${Date.now()}`,
+        conflictPolicyVersion: '1.0',
+      };
 
-      const mutation = createOfflineSyncRecord(type, payload);
-      queueOfflineSyncRecord(mutation);
-
-      await new Promise<void>((resolve, reject) => {
-        const request = store.add({ id: mutation.metadata.clientMutationId, ...mutation });
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
-      });
-
+      await queueOfflineMutation(type, payload, request);
       setPendingUpdates((prev) => prev + 1);
-      db.close();
     } catch (err) {
       console.error('Failed to queue mutation:', err);
       throw err;
@@ -394,48 +393,35 @@ export function useOfflineProgress(): {
     if (!isOnline) return;
 
     try {
-      const db = await openDatabase();
-      const tx = db.transaction('mutations', 'readonly');
-      const store = tx.objectStore('mutations');
+      const mutations = await loadPendingMutations();
 
-      const indexedDbMutations = await new Promise<OfflineSyncRecord[]>((resolve, reject) => {
-        const request = store.getAll();
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-      });
-      const mutations = mergeOfflineMutationQueues(loadOfflineSyncQueue(), indexedDbMutations);
-
-      for (const mutation of mutations) {
-        const response = await fetch('/api/v1/offline/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(mutation),
+      for (const record of mutations) {
+        const response = await fetch(record.request.url, {
+          method: record.request.method,
+          headers: record.request.headers,
+          body: record.request.body,
         });
 
         if (response.status === 409) {
           const server = await response.json();
-          const resolution = resolveOfflineConflict(mutation, server.payload ?? null, server.serverVersion);
+          const resolution = resolveOfflineConflict(record, server.payload ?? null, server.serverVersion);
           if (resolution.status === 'conflict') {
-            queueOfflineSyncRecord({
-              ...mutation,
-              payload: resolution.payload,
-              metadata: {
-                ...mutation.metadata,
-                status: 'conflict',
-                updatedAt: new Date().toISOString(),
-              },
+            await queueOfflineMutation(record.type, resolution.payload, record.request, {
+              baseServerVersion: server.serverVersion,
+              localVersion: record.metadata.localVersion,
             });
+            await markMutationSynced(record.id!);
             continue;
           }
         }
 
         if (response.ok) {
-          markOfflineRecordSynced(mutation.metadata.clientMutationId);
+          await markMutationSynced(record.id!);
         }
       }
 
-      db.close();
-      setPendingUpdates(loadOfflineSyncQueue().length);
+      const pendingCount = await loadPendingMutations();
+      setPendingUpdates(pendingCount.length);
     } catch (err) {
       console.error('Failed to sync progress:', err);
     }
@@ -444,51 +430,17 @@ export function useOfflineProgress(): {
   return { updateProgress, completeLesson, pendingUpdates, syncProgress };
 }
 
-function mergeOfflineMutationQueues(
-  localStorageQueue: OfflineSyncRecord[],
-  indexedDbQueue: OfflineSyncRecord[],
-): OfflineSyncRecord[] {
-  const byId = new Map<string, OfflineSyncRecord>();
-  for (const record of [...indexedDbQueue, ...localStorageQueue]) {
-    byId.set(record.metadata.clientMutationId, record);
-  }
-  return [...byId.values()].sort((a, b) => a.metadata.createdAt.localeCompare(b.metadata.createdAt));
-}
-
-// ============================================================================
-// IndexedDB Helper Functions
-// ============================================================================
-
-const DB_NAME = 'tutorputor-offline';
-const DB_VERSION = 1;
-
-async function openDatabase(): Promise<IDBDatabase> {
+async function removeFromCache(db: IDBDatabase, moduleId: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    const tx = db.transaction('modules', 'readwrite');
+    const store = tx.objectStore('modules');
+    const request = store.delete(moduleId);
 
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-
-      if (!db.objectStoreNames.contains('modules')) {
-        const store = db.createObjectStore('modules', { keyPath: 'id' });
-        store.createIndex('downloadedAt', 'downloadedAt');
-        store.createIndex('category', 'category');
-      }
-
-      if (!db.objectStoreNames.contains('mutations')) {
-        const store = db.createObjectStore('mutations', { keyPath: 'id' });
-        store.createIndex('createdAt', 'createdAt');
-        store.createIndex('type', 'type');
-      }
-
-      if (!db.objectStoreNames.contains('cache')) {
-        const store = db.createObjectStore('cache', { keyPath: 'key' });
-        store.createIndex('expiresAt', 'expiresAt');
-      }
+    request.onsuccess = () => {
+      tx.objectStore('cache').delete(moduleId);
+      resolve();
     };
+    request.onerror = () => reject(request.error);
   });
 }
 
@@ -519,14 +471,30 @@ async function saveToCache(db: IDBDatabase, module: Module): Promise<void> {
   });
 }
 
-async function removeFromCache(db: IDBDatabase, moduleId: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('modules', 'readwrite');
-    const store = tx.objectStore('modules');
-    const request = store.delete(moduleId);
+const DB_NAME = 'tutorputor-offline';
+const DB_VERSION = 1;
 
-    request.onsuccess = () => resolve();
+async function openDatabase(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
     request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+
+      if (!db.objectStoreNames.contains('modules')) {
+        const store = db.createObjectStore('modules', { keyPath: 'id' });
+        store.createIndex('downloadedAt', 'downloadedAt');
+        store.createIndex('category', 'category');
+      }
+
+      if (!db.objectStoreNames.contains('cache')) {
+        const store = db.createObjectStore('cache', { keyPath: 'key' });
+        store.createIndex('expiresAt', 'expiresAt');
+      }
+    };
   });
 }
 

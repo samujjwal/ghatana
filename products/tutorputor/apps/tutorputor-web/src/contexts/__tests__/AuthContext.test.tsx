@@ -139,7 +139,8 @@ describe('AuthContext', () => {
       });
 
       expect(result.current.user).toEqual(serverUser);
-      expect(localStorage.getItem('tenant_id')).toBe('tenant-fresh');
+      // tenantId is derived from JWT token, no longer stored in localStorage
+      expect(result.current.user?.tenantId).toBe('tenant-fresh');
       expect(fetch).toHaveBeenCalledWith('/api/v1/auth/me', {
         headers: {
           Authorization: `Bearer ${validToken}`,
@@ -190,7 +191,8 @@ describe('AuthContext', () => {
       expect(result.current.token).toBe(validToken);
       expect(result.current.isAuthenticated).toBe(true);
       expect(localStorage.getItem('auth_token')).toBe(validToken);
-      expect(localStorage.getItem('tenant_id')).toBe('tenant-abc');
+      // tenantId is derived from JWT token, no longer stored in localStorage
+      expect(result.current.user?.tenantId).toBe('tenant-abc');
     });
 
     it('should throw error on invalid token', async () => {
@@ -242,7 +244,8 @@ describe('AuthContext', () => {
       expect(result.current.token).toBeNull();
       expect(result.current.isAuthenticated).toBe(false);
       expect(localStorage.getItem('auth_token')).toBeNull();
-      expect(localStorage.getItem('tenant_id')).toBeNull();
+      // tenantId is derived from JWT token, no longer stored in localStorage
+      expect(result.current.user).toBeNull();
       expect(localStorage.getItem('refresh_token')).toBeNull();
       expect(fetchMock).toHaveBeenCalledWith('/api/v1/auth/logout', {
         method: 'POST',
@@ -328,7 +331,8 @@ describe('AuthContext', () => {
       expect(result.current.isAuthenticated).toBe(true);
       expect(localStorage.getItem('auth_token')).toBe(nextAccessToken);
       expect(localStorage.getItem('refresh_token')).toBe(nextRefreshToken);
-      expect(localStorage.getItem('tenant_id')).toBe('tenant-refresh');
+      // tenantId is derived from JWT token, no longer stored in localStorage
+      expect(result.current.user?.tenantId).toBe('tenant-refresh');
     });
 
     it('should reject refresh when no refresh token is stored', async () => {
@@ -364,10 +368,11 @@ describe('AuthContext', () => {
         <AuthProvider>{children}</AuthProvider>
       );
       
-      renderHook(() => useAuth(), { wrapper });
+      const { result } = renderHook(() => useAuth(), { wrapper });
       
       await waitFor(() => {
-        expect(localStorage.getItem('tenant_id')).toBe('tenant-abc');
+        // tenantId is derived from JWT token, no longer stored in localStorage
+        expect(result.current.user?.tenantId).toBe('tenant-abc');
       });
     });
 

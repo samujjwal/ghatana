@@ -15,6 +15,7 @@ import type { PrismaClient } from "@tutorputor/core/db";
 import type { KnowledgeBaseService } from "../../knowledge-base/service.js";
 import { FActScoreEvaluator } from "./factscore-evaluator.js";
 import { IndependentGeneratedContentValidator } from "./independent-validator-service.js";
+import { AtomicClaimExtractor } from "./atomic-claim-extractor.js";
 import {
   computeTrustScore,
   type SchemaValidationCheck,
@@ -78,6 +79,7 @@ export class UnifiedContentEvaluator {
   private readonly config: UnifiedEvaluatorConfig;
   private readonly factScoreEvaluator: FActScoreEvaluator;
   private readonly independentValidator: IndependentGeneratedContentValidator;
+  private readonly atomicClaimExtractor: AtomicClaimExtractor;
   private provenanceGraphs = new Map<string, ContentProvenanceGraph>();
   private regressionScorecards = new Map<string, RegressionScorecard>();
 
@@ -96,6 +98,7 @@ export class UnifiedContentEvaluator {
       prisma,
       knowledgeBaseService,
     );
+    this.atomicClaimExtractor = new AtomicClaimExtractor(logger);
   }
 
   /**
@@ -360,80 +363,94 @@ export class UnifiedContentEvaluator {
         confidence_score: 0.8,
         issues: [],
         score: 0.8,
+        atomic_claims_validated: 0,
+        evidence_coverage_score: 0.8,
       };
     }
 
-    // Use FActScore to evaluate content against evidence
-    try {
-      const factScoreResult = await this.factScoreEvaluator.evaluate(
-        request.content,
-        {
-          bundleId: `eval-${request.artifactId}`,
-          claimRef: request.domain,
-          domain: request.domain,
-          gradeBand: String(request.gradeLevel),
-          evidences: [],
-          bundleConfidence: 0,
-          coverageScore: 0,
-          coverageGaps: [],
-          contradictionDetected: false,
-          freshnessOverall: "CURRENT" as const,
-          sourceDistribution: {} as Record<string, number>,
-          generatedAt: new Date(),
-        },
-      );
+    // TODO 26: Extract atomic claims for granular validation
+    const atomicClaims = await this.atomicClaimExtractor.extractFromContent(request.content);
 
-      const hallucinated =
-        factScoreResult.contradictingFacts.length > 0 &&
-        factScoreResult.contradictingFacts.length >
-          factScoreResult.supportedFacts.length;
+    this.logger.info(
+      {
+        artifactId: request.artifactId,
+        totalAtomicClaims: atomicClaims.totalClaims,
+        extractionConfidence: atomicClaims.extractionConfidence,
+      },
+      "Extracted atomic claims for factual validation",
+    );
 
-      const issues: string[] = [];
-      if (factScoreResult.contradictingFacts.length > 0) {
-        issues.push(
-          `Found ${factScoreResult.contradictingFacts.length} contradicting facts`,
+    // Validate each atomic claim against evidence bundles
+    const supportedFacts: string[] = [];
+    const unsupportedFacts: string[] = [];
+    const contradictingFacts: string[] = [];
+    const issues: string[] = [];
+
+    let totalConfidence = 0;
+    let validatedCount = 0;
+
+    for (const claim of atomicClaims.claims) {
+      try {
+        // Look up evidence bundle for this claim
+        const evidenceBundle = await this.prisma.evidenceBundle.findFirst({
+          where: {
+            claimId: claim.id,
+            tenantId: request.tenantId,
+          },
+        });
+
+        if (!evidenceBundle) {
+          // No evidence bundle - mark as unsupported
+          unsupportedFacts.push(JSON.stringify({ claim: claim.text, reason: "No evidence bundle found" }));
+          issues.push(`Atomic claim "${claim.text.substring(0, 50)}..." has no evidence bundle`);
+          continue;
+        }
+
+        // Score support/contradiction from evidence bundle
+        if (evidenceBundle.contradictionDetected) {
+          contradictingFacts.push(JSON.stringify({ claim: claim.text, evidenceBundleId: evidenceBundle.id }));
+          issues.push(`Atomic claim "${claim.text.substring(0, 50)}..." contradicts evidence`);
+        } else if (evidenceBundle.coverageScore >= 0.7) {
+          supportedFacts.push(JSON.stringify({ claim: claim.text, evidenceBundleId: evidenceBundle.id, coverageScore: evidenceBundle.coverageScore }));
+          totalConfidence += evidenceBundle.confidenceScore * claim.confidence;
+          validatedCount++;
+        } else {
+          unsupportedFacts.push(JSON.stringify({ claim: claim.text, evidenceBundleId: evidenceBundle.id, coverageScore: evidenceBundle.coverageScore }));
+          issues.push(`Atomic claim "${claim.text.substring(0, 50)}..." has insufficient evidence coverage (${evidenceBundle.coverageScore.toFixed(2)})`);
+        }
+      } catch (error) {
+        this.logger.error(
+          { error, claimId: claim.id },
+          "Failed to validate atomic claim",
         );
+        unsupportedFacts.push(JSON.stringify({ claim: claim.text, reason: "Validation error" }));
       }
-      if (factScoreResult.unsupportedFacts.length > 0) {
-        issues.push(
-          `Found ${factScoreResult.unsupportedFacts.length} unsupported facts`,
-        );
-      }
-
-      return {
-        type: "FACTUAL",
-        passed: !hallucinated && issues.length === 0,
-        supported_facts: factScoreResult.supportedFacts.map((f) =>
-          JSON.stringify(f),
-        ),
-        unsupported_facts: factScoreResult.unsupportedFacts.map((f) =>
-          JSON.stringify(f),
-        ),
-        contradicting_facts: factScoreResult.contradictingFacts.map((f) =>
-          JSON.stringify(f),
-        ),
-        hallucination_detected: hallucinated,
-        confidence_score: factScoreResult.precision,
-        issues,
-        score: factScoreResult.precision,
-      };
-    } catch (error) {
-      this.logger.error(
-        { error, domain: request.domain },
-        "FActScore evaluation failed",
-      );
-      return {
-        type: "FACTUAL",
-        passed: false,
-        supported_facts: [],
-        unsupported_facts: [],
-        contradicting_facts: [],
-        hallucination_detected: true,
-        confidence_score: 0.0,
-        issues: ["Factual validation failed"],
-        score: 0.5,
-      };
     }
+
+    // Calculate overall scores
+    const avgConfidence = validatedCount > 0 ? totalConfidence / validatedCount : 0;
+    const evidenceCoverageScore = atomicClaims.totalClaims > 0 
+      ? validatedCount / atomicClaims.totalClaims 
+      : 0;
+    const hallucinated = contradictingFacts.length > 0 && contradictingFacts.length > supportedFacts.length;
+
+    // Block auto-publish below threshold (TODO 26 requirement)
+    const AUTO_PUBLISH_THRESHOLD = 0.7;
+    const passed = !hallucinated && evidenceCoverageScore >= AUTO_PUBLISH_THRESHOLD && avgConfidence >= 0.6;
+
+    return {
+      type: "FACTUAL",
+      passed,
+      supported_facts: supportedFacts,
+      unsupported_facts: unsupportedFacts,
+      contradicting_facts: contradictingFacts,
+      hallucination_detected: hallucinated,
+      confidence_score: avgConfidence,
+      issues,
+      score: evidenceCoverageScore,
+      atomic_claims_validated: validatedCount,
+      evidence_coverage_score: evidenceCoverageScore,
+    };
   }
 
   private async validateSimulation(

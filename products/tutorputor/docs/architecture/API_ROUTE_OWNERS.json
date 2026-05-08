@@ -2,29 +2,1146 @@
   "runtimeModel": "primary-platform-with-worker-runtimes",
   "canonicalBackend": "services/tutorputor-platform",
   "routes": {
-    "/content/generate": {
+    "DELETE /api/v1/auth/admin/users/roles": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auth/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "DELETE",
+      "module": "auth"
+    },
+    "DELETE /api/v1/engagement/social/follow/:followUserId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "DELETE",
+      "module": "engagement-social"
+    },
+    "DELETE /api/v1/integration/lti/platforms/:platformId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/lti/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "DELETE",
+      "module": "integration-lti"
+    },
+    "DELETE /api/v1/plugins/:pluginId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/kernel-registry/fastify-routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "DELETE",
+      "module": "kernel-registry"
+    },
+    "GET /api/knowledge-base/concepts/search": {
+      "backendOwner": "services/tutorputor-platform/src/modules/knowledge-base/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "knowledge-base"
+    },
+    "GET /api/knowledge-base/curriculum/:concept": {
+      "backendOwner": "services/tutorputor-platform/src/modules/knowledge-base/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "knowledge-base"
+    },
+    "GET /api/knowledge-base/examples/:concept": {
+      "backendOwner": "services/tutorputor-platform/src/modules/knowledge-base/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "knowledge-base"
+    },
+    "GET /api/knowledge-base/health": {
+      "backendOwner": "services/tutorputor-platform/src/modules/knowledge-base/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "knowledge-base"
+    },
+    "GET /api/knowledge-base/stats": {
+      "backendOwner": "services/tutorputor-platform/src/modules/knowledge-base/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "knowledge-base"
+    },
+    "GET /api/v1/auth/admin/permissions": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auth/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "auth"
+    },
+    "GET /api/v1/auth/admin/roles": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auth/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "auth"
+    },
+    "GET /api/v1/auth/admin/users/with-roles": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auth/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "auth"
+    },
+    "GET /api/v1/auth/consents": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auth/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "auth"
+    },
+    "GET /api/v1/auth/health": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auth/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "auth"
+    },
+    "GET /api/v1/auth/me": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auth/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "auth"
+    },
+    "GET /api/v1/auth/sso/callback/:providerId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auth/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "auth"
+    },
+    "GET /api/v1/auth/sso/login/:providerId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auth/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "auth"
+    },
+    "GET /api/v1/auth/sso/providers": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auth/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "auth"
+    },
+    "GET /api/v1/auto-revision/ab-experiments/:experimentId/results": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auto-revision/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "auto-revision"
+    },
+    "GET /api/v1/auto-revision/experiences/:experienceId/drift": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auto-revision/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "auto-revision"
+    },
+    "GET /api/v1/auto-revision/experiences/:experienceId/history": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auto-revision/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "auto-revision"
+    },
+    "GET /api/v1/collaboration/health": {
+      "backendOwner": "services/tutorputor-platform/src/modules/collaboration/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "collaboration"
+    },
+    "GET /api/v1/collaboration/notes": {
+      "backendOwner": "services/tutorputor-platform/src/modules/collaboration/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "collaboration"
+    },
+    "GET /api/v1/collaboration/notes/:noteId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/collaboration/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "collaboration"
+    },
+    "GET /api/v1/collaboration/threads": {
+      "backendOwner": "services/tutorputor-platform/src/modules/collaboration/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "collaboration"
+    },
+    "GET /api/v1/collaboration/threads/:threadId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/collaboration/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "collaboration"
+    },
+    "GET /api/v1/content-needs/drift/thresholds": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content-needs/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content-needs"
+    },
+    "GET /api/v1/content-needs/experience/:experienceId/history": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content-needs/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content-needs"
+    },
+    "GET /api/v1/content/cms${prefix}/health": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/cms/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content-cms"
+    },
+    "GET /api/v1/content/evaluation/evaluation/discovery-system/validate": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/evaluation/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content-evaluation"
+    },
+    "GET /api/v1/content/experiments/experiments/ab": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/experiments/ab-testing/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content-experiments"
+    },
+    "GET /api/v1/content/generation/generation/notifications/stream": {
       "backendOwner": "services/tutorputor-platform/src/modules/content/generation/routes.ts",
       "apiContract": "api/tutorputor-api.openapi.yaml",
       "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
-      "test": "services/tutorputor-platform/src/modules/content/generation/__tests__/routes.test.ts"
+      "method": "GET",
+      "module": "content-generation"
     },
-    "/content/generate/{contentId}": {
-      "backendOwner": "services/tutorputor-platform/src/modules/content/generation/routes.ts",
+    "GET /api/v1/content/recommendation/remediation-policy/tenant": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/recommendation/routes.ts",
       "apiContract": "api/tutorputor-api.openapi.yaml",
       "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
-      "test": "services/tutorputor-platform/src/modules/content/generation/__tests__/routes.test.ts"
+      "method": "GET",
+      "module": "content-recommendation"
     },
-    "/libraries": {
-      "backendOwner": "services/tutorputor-platform/src/modules/content/routes.ts",
+    "GET /api/v1/content/recommendation/remediation-policy/tenant/causal-model": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/recommendation/routes.ts",
       "apiContract": "api/tutorputor-api.openapi.yaml",
-      "typedClient": "apps/tutorputor-web/src/api/contentApi.ts",
-      "test": "services/tutorputor-platform/src/modules/content/__tests__/routes.test.ts"
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content-recommendation"
     },
-    "/learning-paths/{userId}": {
+    "GET /api/v1/content/recommendation/remediation-policy/tenant/model": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/recommendation/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content-recommendation"
+    },
+    "GET /api/v1/content/recommendation/remediation-policy/tenant/portfolio": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/recommendation/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content-recommendation"
+    },
+    "GET /api/v1/content/recommendation/remediation-policy/tenant/scenarios": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/recommendation/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content-recommendation"
+    },
+    "GET /api/v1/content/studio${prefix}/automation-rules": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/studio/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content-studio"
+    },
+    "GET /api/v1/content/studio${prefix}/experiences/search-similar": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/studio/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content-studio"
+    },
+    "GET /api/v1/content/studio${prefix}/health": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/studio/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content-studio"
+    },
+    "GET /api/v1/content/studio${prefix}/templates": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/studio/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content-studio"
+    },
+    "GET /api/v1/content/studio${prefix}/templates/categories": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/studio/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content-studio"
+    },
+    "GET /api/v1/engagement/credentials/badges": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/credentials/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-credentials"
+    },
+    "GET /api/v1/engagement/credentials/certificates": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/credentials/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-credentials"
+    },
+    "GET /api/v1/engagement/credentials/health": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/credentials/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-credentials"
+    },
+    "GET /api/v1/engagement/credentials/users/:userId/badges": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/credentials/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-credentials"
+    },
+    "GET /api/v1/engagement/engagement/health": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement"
+    },
+    "GET /api/v1/engagement/gamification/achievements": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/gamification/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-gamification"
+    },
+    "GET /api/v1/engagement/gamification/health": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/gamification/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-gamification"
+    },
+    "GET /api/v1/engagement/gamification/leaderboard": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/gamification/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-gamification"
+    },
+    "GET /api/v1/engagement/gamification/progress": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/gamification/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-gamification"
+    },
+    "GET /api/v1/engagement/gamification/streaks/:userId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/gamification/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-gamification"
+    },
+    "GET /api/v1/engagement/gamification/users/:userId/achievements": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/gamification/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-gamification"
+    },
+    "GET /api/v1/engagement/gamification/users/:userId/points": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/gamification/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-gamification"
+    },
+    "GET /api/v1/engagement/social/chat/rooms": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-social"
+    },
+    "GET /api/v1/engagement/social/chat/rooms/:roomId/messages": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-social"
+    },
+    "GET /api/v1/engagement/social/feed": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-social"
+    },
+    "GET /api/v1/engagement/social/forums": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-social"
+    },
+    "GET /api/v1/engagement/social/forums/:forumId/topics": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-social"
+    },
+    "GET /api/v1/engagement/social/health": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-social"
+    },
+    "GET /api/v1/engagement/social/peer-tutoring/sessions": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-social"
+    },
+    "GET /api/v1/engagement/social/study-groups/:id": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-social"
+    },
+    "GET /api/v1/engagement/social/users/:userId/followers": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-social"
+    },
+    "GET /api/v1/engagement/social/users/:userId/following": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-social"
+    },
+    "GET /api/v1/engagement/social/users/:userId/profile": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "engagement-social"
+    },
+    "GET /api/v1/integration/billing/capabilities": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/billing/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "integration-billing"
+    },
+    "GET /api/v1/integration/billing/purchased/:moduleId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/billing/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "integration-billing"
+    },
+    "GET /api/v1/integration/billing/purchases": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/billing/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "integration-billing"
+    },
+    "POST /api/v1/integration/billing/checkout": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/billing/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "integration-billing"
+    },
+    "GET /api/integration/health": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "integration"
+    },
+    "GET /api/v1/integration/lti/config/:platform": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/lti/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "integration-lti"
+    },
+    "GET /api/v1/integration/lti/health": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/lti/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "integration-lti"
+    },
+    "GET /api/v1/integration/lti/jwks": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/lti/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "integration-lti"
+    },
+    "GET /api/v1/integration/lti/platforms": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/lti/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "integration-lti"
+    },
+    "GET /api/v1/integration/lti/platforms/:platformId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/lti/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "integration-lti"
+    },
+    "GET /api/v1/integration/marketplace/health": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/marketplace/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "integration-marketplace"
+    },
+    "GET /api/v1/integration/marketplace/listings": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/marketplace/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "integration-marketplace"
+    },
+    "GET /api/v1/integration/marketplace/templates": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/marketplace/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "integration-marketplace"
+    },
+    "GET /api/v1/learning/dashboard": {
       "backendOwner": "services/tutorputor-platform/src/modules/learning/routes.ts",
       "apiContract": "api/tutorputor-api.openapi.yaml",
       "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
-      "test": "services/tutorputor-platform/src/modules/learning/__tests__/routes.test.ts"
+      "method": "GET",
+      "module": "learning"
+    },
+    "GET /api/v1/learning/health": {
+      "backendOwner": "services/tutorputor-platform/src/modules/learning/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "learning"
+    },
+    "GET /api/v1/learning/my-insights": {
+      "backendOwner": "services/tutorputor-platform/src/modules/learning/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "learning"
+    },
+    "GET /api/v1/learning/pathways/active": {
+      "backendOwner": "services/tutorputor-platform/src/modules/learning/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "learning"
+    },
+    "GET /api/v1/learning/profile": {
+      "backendOwner": "services/tutorputor-platform/src/modules/learning/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "learning"
+    },
+    "POST /api/v1/learning/enrollments": {
+      "backendOwner": "services/tutorputor-platform/src/modules/learning/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "learning"
+    },
+    "PATCH /api/v1/learning/enrollments/{id}/progress": {
+      "backendOwner": "services/tutorputor-platform/src/modules/learning/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "PATCH",
+      "module": "learning"
+    },
+    "PATCH /api/v1/learning/profile/preferences": {
+      "backendOwner": "services/tutorputor-platform/src/modules/learning/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "PATCH",
+      "module": "learning"
+    },
+    "POST /api/v1/learning/pathways/generate": {
+      "backendOwner": "services/tutorputor-platform/src/modules/learning/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "learning"
+    },
+    "POST /api/v1/learning/pathways": {
+      "backendOwner": "services/tutorputor-platform/src/modules/learning/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "learning"
+    },
+    "POST /api/v1/learning/pathways/advance": {
+      "backendOwner": "services/tutorputor-platform/src/modules/learning/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "learning"
+    },
+    "GET /api/v1/modules": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content"
+    },
+    "GET /api/v1/modules/:slug": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content"
+    },
+    "GET /api/assets": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/asset/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content"
+    },
+    "GET /api/assets/:assetId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/asset/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content"
+    },
+    "GET /api/assets/:assetId/recommendations": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/recommendation/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content"
+    },
+    "GET /api/assets/:assetId/next-steps": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/recommendation/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content"
+    },
+    "GET /api/recommendations/personalized": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/recommendation/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "content"
+    },
+    "POST /api/telemetry/events": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/telemetry/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "content"
+    },
+    "POST /api/telemetry/events/batch": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/telemetry/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "content"
+    },
+    "GET /api/v1/payments/payments/plans": {
+      "backendOwner": "services/tutorputor-platform/src/modules/payments/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "payments"
+    },
+    "GET /api/v1/payments/payments/subscription": {
+      "backendOwner": "services/tutorputor-platform/src/modules/payments/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "payments"
+    },
+    "GET /api/v1/plugins": {
+      "backendOwner": "services/tutorputor-platform/src/modules/kernel-registry/fastify-routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "kernel-registry"
+    },
+    "GET /api/v1/plugins/:pluginId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/kernel-registry/fastify-routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "kernel-registry"
+    },
+    "GET /api/v1/plugins/health": {
+      "backendOwner": "services/tutorputor-platform/src/modules/kernel-registry/fastify-routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "kernel-registry"
+    },
+    "GET /api/v1/search/health": {
+      "backendOwner": "services/tutorputor-platform/src/modules/search/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "search"
+    },
+    "GET /api/v1/users/user/health": {
+      "backendOwner": "services/tutorputor-platform/src/modules/user/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "GET",
+      "module": "user"
+    },
+    "PATCH /api/v1/collaboration/notes/:noteId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/collaboration/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "PATCH",
+      "module": "collaboration"
+    },
+    "PATCH /api/v1/integration/lti/platforms/:platformId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/lti/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "PATCH",
+      "module": "integration-lti"
+    },
+    "PATCH /api/v1/integration/marketplace/listings/:listingId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/marketplace/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "PATCH",
+      "module": "integration-marketplace"
+    },
+    "POST /api/knowledge-base/batch-verify": {
+      "backendOwner": "services/tutorputor-platform/src/modules/knowledge-base/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "knowledge-base"
+    },
+    "POST /api/knowledge-base/validate": {
+      "backendOwner": "services/tutorputor-platform/src/modules/knowledge-base/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "knowledge-base"
+    },
+    "POST /api/knowledge-base/verify-fact": {
+      "backendOwner": "services/tutorputor-platform/src/modules/knowledge-base/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "knowledge-base"
+    },
+    "POST /api/v1/ai/generate-concept": {
+      "backendOwner": "services/tutorputor-platform/src/modules/ai/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "ai"
+    },
+    "POST /api/v1/ai/generate-questions": {
+      "backendOwner": "services/tutorputor-platform/src/modules/ai/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "ai"
+    },
+    "POST /api/v1/ai/generate-simulation": {
+      "backendOwner": "services/tutorputor-platform/src/modules/ai/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "ai"
+    },
+    "POST /api/v1/ai/tutor/query": {
+      "backendOwner": "services/tutorputor-platform/src/modules/ai/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "ai"
+    },
+    "POST /api/v1/auth/admin/users/roles": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auth/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "auth"
+    },
+    "POST /api/v1/auth/consents": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auth/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "auth"
+    },
+    "POST /api/v1/auth/logout": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auth/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "auth"
+    },
+    "POST /api/v1/auth/refresh": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auth/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "auth"
+    },
+    "POST /api/v1/auth/revoke-all-sessions": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auth/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "auth"
+    },
+    "POST /api/v1/auth/sso/exchange": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auth/index.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "auth"
+    },
+    "POST /api/v1/auto-revision/evaluate-ab-experiments": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auto-revision/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "auto-revision"
+    },
+    "POST /api/v1/auto-revision/experiences/:experienceId/ab-experiment": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auto-revision/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "auto-revision"
+    },
+    "POST /api/v1/auto-revision/experiences/:experienceId/regenerate": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auto-revision/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "auto-revision"
+    },
+    "POST /api/v1/auto-revision/monitor-drift": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auto-revision/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "auto-revision"
+    },
+    "POST /api/v1/auto-revision/process-queue": {
+      "backendOwner": "services/tutorputor-platform/src/modules/auto-revision/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "auto-revision"
+    },
+    "POST /api/v1/collaboration/notes": {
+      "backendOwner": "services/tutorputor-platform/src/modules/collaboration/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "collaboration"
+    },
+    "POST /api/v1/collaboration/notes/:noteId/share": {
+      "backendOwner": "services/tutorputor-platform/src/modules/collaboration/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "collaboration"
+    },
+    "POST /api/v1/collaboration/threads": {
+      "backendOwner": "services/tutorputor-platform/src/modules/collaboration/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "collaboration"
+    },
+    "POST /api/v1/collaboration/threads/:threadId/close": {
+      "backendOwner": "services/tutorputor-platform/src/modules/collaboration/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "collaboration"
+    },
+    "POST /api/v1/collaboration/threads/:threadId/mark-answer": {
+      "backendOwner": "services/tutorputor-platform/src/modules/collaboration/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "collaboration"
+    },
+    "POST /api/v1/collaboration/threads/:threadId/reply": {
+      "backendOwner": "services/tutorputor-platform/src/modules/collaboration/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "collaboration"
+    },
+    "POST /api/v1/content-needs/analyze-claim": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content-needs/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "content-needs"
+    },
+    "POST /api/v1/content-needs/analyze-experience/:experienceId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content-needs/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "content-needs"
+    },
+    "POST /api/v1/content-needs/batch-analyze": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content-needs/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "content-needs"
+    },
+    "POST /api/v1/content-needs/drift/scan/:experienceId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content-needs/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "content-needs"
+    },
+    "POST /api/v1/content-needs/drift/scan/:experienceId/apply-quality": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content-needs/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "content-needs"
+    },
+    "POST /api/v1/content-needs/generate-content/:claimId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content-needs/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "content-needs"
+    },
+    "POST /api/v1/content/candidates/candidates/detect-from-feedback": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/candidates/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "content-candidates"
+    },
+    "POST /api/v1/content/telemetry/telemetry/learning/batch": {
+      "backendOwner": "services/tutorputor-platform/src/modules/content/telemetry/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "content-telemetry"
+    },
+    "POST /api/v1/engagement/credentials/badges/award": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/credentials/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "engagement-credentials"
+    },
+    "POST /api/v1/engagement/credentials/certificates/generate": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/credentials/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "engagement-credentials"
+    },
+    "POST /api/v1/engagement/gamification/achievements/unlock": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/gamification/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "engagement-gamification"
+    },
+    "POST /api/v1/engagement/gamification/points/award": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/gamification/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "engagement-gamification"
+    },
+    "POST /api/v1/engagement/social/activity": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "engagement-social"
+    },
+    "POST /api/v1/engagement/social/chat/rooms": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "engagement-social"
+    },
+    "POST /api/v1/engagement/social/chat/rooms/:roomId/messages": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "engagement-social"
+    },
+    "POST /api/v1/engagement/social/follow": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "engagement-social"
+    },
+    "POST /api/v1/engagement/social/forums": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "engagement-social"
+    },
+    "POST /api/v1/engagement/social/forums/:forumId/topics": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "engagement-social"
+    },
+    "POST /api/v1/engagement/social/peer-tutoring/sessions": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "engagement-social"
+    },
+    "POST /api/v1/engagement/social/study-groups": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "engagement-social"
+    },
+    "POST /api/v1/engagement/social/study-groups/:id/join": {
+      "backendOwner": "services/tutorputor-platform/src/modules/engagement/social/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "engagement-social"
+    },
+    "POST /api/v1/integration/billing/portal": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/billing/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "integration-billing"
+    },
+    "POST /api/v1/integration/billing/verify": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/billing/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "integration-billing"
+    },
+    "POST /api/v1/integration/billing/webhook": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/billing/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "integration-billing"
+    },
+    "POST /api/v1/integration/lti/deep-linking": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/lti/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "integration-lti"
+    },
+    "POST /api/v1/integration/lti/grade-passback": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/lti/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "integration-lti"
+    },
+    "POST /api/v1/integration/lti/launch": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/lti/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "integration-lti"
+    },
+    "POST /api/v1/integration/lti/register": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/lti/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "integration-lti"
+    },
+    "POST /api/v1/integration/marketplace/listings": {
+      "backendOwner": "services/tutorputor-platform/src/modules/integration/marketplace/routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "integration-marketplace"
+    },
+    "POST /api/v1/plugins": {
+      "backendOwner": "services/tutorputor-platform/src/modules/kernel-registry/fastify-routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "POST",
+      "module": "kernel-registry"
+    },
+    "PUT /api/v1/plugins/:pluginId": {
+      "backendOwner": "services/tutorputor-platform/src/modules/kernel-registry/fastify-routes.ts",
+      "apiContract": "api/tutorputor-api.openapi.yaml",
+      "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
+      "method": "PUT",
+      "module": "kernel-registry"
     }
   }
 }

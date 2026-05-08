@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Canonical OpenAPI contract checks for Data Cloud and AEP.
+ * Canonical OpenAPI contract checks for Data Cloud, AEP, DMOS, and FlashIt.
  *
  * ARCH-P1-002 guardrails:
  * - required canonical OpenAPI files must exist
@@ -27,6 +27,8 @@ const files = {
   ),
   aepContracts: join(repoRoot, 'products', 'aep', 'contracts', 'openapi.yaml'),
   aepServer: join(repoRoot, 'products', 'aep', 'server', 'src', 'main', 'resources', 'openapi.yaml'),
+  dmosApi: join(repoRoot, 'products', 'digital-marketing', 'dm-api', 'src', 'main', 'resources', 'openapi.json'),
+  flashitGateway: join(repoRoot, 'products', 'flashit', 'backend', 'gateway', 'openapi.yaml'),
 };
 
 const requiredPaths = {
@@ -39,9 +41,25 @@ const requiredPaths = {
     '/api/v1/agents/{agentId}/execute',
     '/api/v1/runs',
   ],
+  dmos: [
+    '/v1/workspaces/{workspaceId}/campaigns',
+    '/v1/workspaces/{workspaceId}/campaigns/{id}',
+  ],
+  flashit: [
+    '/health',
+    '/metrics',
+    '/auth/register',
+    '/auth/login',
+    '/moments',
+    '/moments/{momentId}',
+    '/route-entitlements',
+  ],
 };
 
 const violations = [];
+
+// JSON-format OpenAPI specs use "openapi": "3.x.x" property keys
+const jsonFormatFiles = new Set(['dmosApi']);
 
 for (const [name, fullPath] of Object.entries(files)) {
   if (!existsSync(fullPath)) {
@@ -50,7 +68,12 @@ for (const [name, fullPath] of Object.entries(files)) {
   }
 
   const content = readFileSync(fullPath, 'utf8');
-  if (!/\bopenapi:\s*["']?3\./.test(content)) {
+  // YAML: `openapi: "3.x"`, JSON: `"openapi": "3.x"`
+  const hasValidHeader = jsonFormatFiles.has(name)
+    ? /"openapi"\s*:\s*"3\./.test(content)
+    : /\bopenapi:\s*["']?3\./.test(content);
+
+  if (!hasValidHeader) {
     violations.push(`Invalid OpenAPI header in ${relativePath(fullPath)}`);
   }
 }
@@ -88,6 +111,35 @@ if (aepContractsSpec != null && aepServerSpec != null) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// DMOS OpenAPI validation
+// ---------------------------------------------------------------------------
+
+const dmosSpec = safeRead(files.dmosApi);
+if (dmosSpec === null) {
+  violations.push(`Missing DMOS OpenAPI file: ${relativePath(files.dmosApi)}`);
+} else {
+  // DMOS spec is JSON (OpenAPI 3.0.3)
+  if (!dmosSpec.includes('"openapi"') && !dmosSpec.includes("openapi:")) {
+    violations.push(`Invalid OpenAPI header in DMOS spec: ${relativePath(files.dmosApi)}`);
+  }
+  assertPathSetJson('DMOS API', files.dmosApi, dmosSpec, requiredPaths.dmos);
+}
+
+// ---------------------------------------------------------------------------
+// FlashIt OpenAPI validation
+// ---------------------------------------------------------------------------
+
+const flashitSpec = safeRead(files.flashitGateway);
+if (flashitSpec === null) {
+  violations.push(`Missing FlashIt OpenAPI file: ${relativePath(files.flashitGateway)}`);
+} else {
+  if (!/\bopenapi:\s*["']?3\./.test(flashitSpec)) {
+    violations.push(`Invalid OpenAPI header in FlashIt spec: ${relativePath(files.flashitGateway)}`);
+  }
+  assertPathSet('FlashIt Gateway API', files.flashitGateway, flashitSpec, requiredPaths.flashit);
+}
+
 if (violations.length > 0) {
   console.error('Canonical OpenAPI checks failed:');
   for (const violation of violations) {
@@ -108,6 +160,21 @@ function safeRead(filePath) {
 function assertPathSet(label, filePath, content, paths) {
   for (const apiPath of paths) {
     if (!containsPathKey(content, apiPath)) {
+      violations.push(`${label} is missing path ${apiPath} in ${relativePath(filePath)}`);
+    }
+  }
+}
+
+/**
+ * Check required paths in a JSON-format OpenAPI spec.
+ * Matches the path key as a JSON property name.
+ */
+function assertPathSetJson(label, filePath, content, paths) {
+  for (const apiPath of paths) {
+    const escaped = apiPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // JSON property key — e.g. "/v1/workspaces/{workspaceId}/campaigns": {
+    const pattern = new RegExp(`"${escaped}"\\s*:`);
+    if (!pattern.test(content)) {
       violations.push(`${label} is missing path ${apiPath} in ${relativePath(filePath)}`);
     }
   }

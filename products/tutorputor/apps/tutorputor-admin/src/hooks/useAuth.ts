@@ -72,29 +72,8 @@ export function useAuth() {
           setAuthToken(resolvedToken);
           setAuth({
             user: resolvedUser,
-            tenantId: (data.tenantId ?? (resolvedUser as unknown as { tenantId?: TenantId }).tenantId ?? DEV_TENANT_ID ?? null) as TenantId | null,
+            tenantId: (data.tenantId ?? (resolvedUser as unknown as { tenantId?: TenantId }).tenantId ?? null) as TenantId | null,
             accessToken: resolvedToken,
-            isLoading: false,
-          });
-        } else if (
-          (response.status === 401 ||
-            response.status === 404 ||
-            response.status === 500) &&
-          import.meta.env.VITE_DEV_AUTH_BYPASS === "true"
-        ) {
-          // In development, if auth endpoint fails or doesn't exist, use seeded admin user
-          setAuthToken("dev-token");
-          setAuth({
-            user: {
-              id: "user-admin-001",
-              email: "admin@demo.tutorputor.com",
-              role: "admin",
-              firstName: "Sarah",
-              lastName: "Admin",
-              fullName: "Sarah Admin",
-            } as unknown as UserSummary,
-            tenantId: DEV_TENANT_ID as TenantId,
-            accessToken: "dev-token",
             isLoading: false,
           });
         } else {
@@ -106,31 +85,13 @@ export function useAuth() {
           });
         }
       } catch {
-        if (import.meta.env.VITE_DEV_AUTH_BYPASS === "true") {
-          // In development, use seeded admin user on any error
-          setAuthToken("dev-token");
-          setAuth({
-            user: {
-              id: "user-admin-001",
-              email: "admin@demo.tutorputor.com",
-              role: "admin",
-              firstName: "Sarah",
-              lastName: "Admin",
-              fullName: "Sarah Admin",
-            } as unknown as UserSummary,
-            tenantId: DEV_TENANT_ID as TenantId,
-            accessToken: "dev-token",
-            isLoading: false,
-          });
-        } else {
-          setAuthToken(null);
-          setAuth({
-            user: null,
-            tenantId: null,
-            accessToken: null,
-            isLoading: false,
-          });
-        }
+        setAuthToken(null);
+        setAuth({
+          user: null,
+          tenantId: null,
+          accessToken: null,
+          isLoading: false,
+        });
       }
       setIsChecked(true);
     }

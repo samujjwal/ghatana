@@ -24,6 +24,7 @@ import type {
   TemplateDetailResponse,
   TemplateSortField,
 } from "../types";
+import { getStandardHeaders } from "../../../api/sharedApiClient";
 
 // =============================================================================
 // Query Keys
@@ -50,23 +51,7 @@ const API_BASE_URL = "/api/v1/marketplace";
 
 function getRequestHeaders(): Record<string, string> {
   const token = localStorage.getItem("auth_token");
-  const tenantId = localStorage.getItem("tenant_id");
-
-  if (!tenantId) {
-    throw new Error("Authentication required: No tenant context found");
-  }
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "X-Tenant-ID": tenantId,
-    "X-Correlation-ID": crypto.randomUUID(),
-  };
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  return headers;
+  return getStandardHeaders(token) as Record<string, string>;
 }
 
 const STUB_TEMPLATES: SimulationTemplate[] = [

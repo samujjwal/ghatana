@@ -189,8 +189,9 @@ export function useDownloadManager(): UseDownloadManagerResult {
       storageQuotaBytes: 500 * 1024 * 1024, // 500 MB
       chunkSizeBytes: 1024 * 1024, // 1 MB chunks
       getAuthToken: async () => {
-        // Get token from wherever it's stored
-        return localStorage.getItem('auth_token');
+        // Use canonical auth token source from @tutorputor/ui
+        const { readAccessToken } = await import('@tutorputor/ui');
+        return readAccessToken();
       },
       storage,
     });

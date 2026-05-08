@@ -120,20 +120,14 @@ function AppShell() {
     );
   }
 
-  // Allow bypass in development mode for easier testing
-  const isDevelopment = import.meta.env.DEV;
-  const allowBypass =
-    isDevelopment &&
-    typeof window !== "undefined" &&
-    !window.location.search.includes("?requireAuth");
-
-  if (!isAuthenticated && !allowBypass) {
-    // Redirect to main app login
+  // Require authentication - no development bypass
+  if (!isAuthenticated) {
     window.location.href = "/login?redirect=/admin";
     return null;
   }
 
-  if (!isAdmin && !allowBypass) {
+  // Require admin role - no development bypass
+  if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

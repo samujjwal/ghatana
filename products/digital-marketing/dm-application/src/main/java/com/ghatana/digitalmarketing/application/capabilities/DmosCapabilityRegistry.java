@@ -36,6 +36,7 @@ public final class DmosCapabilityRegistry {
     public static final String SELF_MARKETING = "dmos.self_marketing";
     public static final String MARKET_RESEARCH = "dmos.market_research";
     public static final String ADVANCED_CHANNELS = "dmos.advanced_channels";
+    public static final String AI_OPTIMIZATION = "dmos.ai_optimization";
     public static final String LOCALIZATION = "dmos.localization";
     public static final String AGENCY = "dmos.agency";
 
@@ -128,6 +129,13 @@ public final class DmosCapabilityRegistry {
             ADVANCED_CHANNELS,
             "Advanced channel management",
             "Multi-channel campaign management across platforms",
+            null,
+            null
+        )),
+        Map.entry(AI_OPTIMIZATION, new CapabilityDefinition(
+            AI_OPTIMIZATION,
+            "AI optimization",
+            "AI recommendations, anomaly detection, and optimization workflows",
             null,
             null
         )),

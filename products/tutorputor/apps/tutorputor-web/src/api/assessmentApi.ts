@@ -10,6 +10,7 @@
  */
 
 import { createLogger } from '@/utils/logger.js';
+import { readAccessToken } from '@tutorputor/ui';
 
 const logger = createLogger('assessmentApi');
 
@@ -88,11 +89,10 @@ export interface AssessmentFilter {
 }
 
 /**
- * Get auth token from localStorage
+ * Get auth token from canonical source
  */
 function getAuthToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('auth_token');
+  return readAccessToken();
 }
 
 /**

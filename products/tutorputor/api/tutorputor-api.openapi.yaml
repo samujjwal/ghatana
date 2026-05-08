@@ -545,6 +545,723 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /learning/dashboard:
+    get:
+      summary: Get learner dashboard
+      operationId: getDashboard
+      x-tutorputor-contract:
+        requestType: null
+        responseType: DashboardSummary
+        serviceInterface: LearningService
+        serviceMethod: getDashboard
+        backendOwner: services/tutorputor-platform/src/modules/learning/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Learning
+      description: Get learner dashboard with active enrollments and recommendations
+      responses:
+        '200':
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSummary'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /learning/enrollments:
+    post:
+      summary: Enroll in a module
+      operationId: enrollInModule
+      x-tutorputor-contract:
+        requestType: EnrollInModuleRequest
+        responseType: Enrollment
+        serviceInterface: LearningService
+        serviceMethod: enrollInModule
+        backendOwner: services/tutorputor-platform/src/modules/learning/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Learning
+      description: Enroll current user in a module
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrollInModuleRequest'
+      responses:
+        '201':
+          description: Enrollment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Enrollment'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /learning/enrollments/{id}/progress:
+    patch:
+      summary: Update enrollment progress
+      operationId: updateEnrollmentProgress
+      x-tutorputor-contract:
+        requestType: UpdateProgressRequest
+        responseType: Enrollment
+        serviceInterface: LearningService
+        serviceMethod: updateProgress
+        backendOwner: services/tutorputor-platform/src/modules/learning/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Learning
+      description: Update progress for an enrollment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProgressRequest'
+      responses:
+        '200':
+          description: Progress updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Enrollment'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /learning/profile:
+    get:
+      summary: Get learner profile
+      operationId: getLearnerProfile
+      x-tutorputor-contract:
+        requestType: null
+        responseType: LearnerProfile
+        serviceInterface: LearnerProfileService
+        serviceMethod: getOrCreateProfile
+        backendOwner: services/tutorputor-platform/src/modules/learning/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Learning
+      description: Get or create the current learner profile
+      responses:
+        '200':
+          description: Learner profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearnerProfile'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /learning/profile/preferences:
+    patch:
+      summary: Update learner preferences
+      operationId: updateLearnerPreferences
+      x-tutorputor-contract:
+        requestType: UpdatePreferencesRequest
+        responseType: LearnerProfile
+        serviceInterface: LearnerProfileService
+        serviceMethod: updatePreferences
+        backendOwner: services/tutorputor-platform/src/modules/learning/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Learning
+      description: Update learner preferences with audit tracking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePreferencesRequest'
+      responses:
+        '200':
+          description: Preferences updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearnerProfile'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /learning/pathways/generate:
+    post:
+      summary: Generate learning pathway
+      operationId: generatePathway
+      x-tutorputor-contract:
+        requestType: GeneratePathwayRequest
+        responseType: LearningPath
+        serviceInterface: PathwaysService
+        serviceMethod: generatePathway
+        backendOwner: services/tutorputor-platform/src/modules/learning/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Pathways
+      description: Generate a personalized learning path based on a goal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeneratePathwayRequest'
+      responses:
+        '200':
+          description: Pathway generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningPath'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /learning/pathways/active:
+    get:
+      summary: Get active pathway
+      operationId: getActivePathway
+      x-tutorputor-contract:
+        requestType: null
+        responseType: LearningPath
+        serviceInterface: PathwaysService
+        serviceMethod: getPathwayForUser
+        backendOwner: services/tutorputor-platform/src/modules/learning/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Pathways
+      description: Get the current active learning path for the user
+      responses:
+        '200':
+          description: Active pathway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningPath'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /learning/pathways:
+    post:
+      summary: Create learning pathway
+      operationId: createPathway
+      x-tutorputor-contract:
+        requestType: CreatePathwayRequest
+        responseType: LearningPath
+        serviceInterface: PathwaysService
+        serviceMethod: createPathway
+        backendOwner: services/tutorputor-platform/src/modules/learning/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Pathways
+      description: Create a new active learning path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePathwayRequest'
+      responses:
+        '201':
+          description: Pathway created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningPath'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /learning/pathways/advance:
+    post:
+      summary: Advance pathway
+      operationId: advancePathway
+      x-tutorputor-contract:
+        requestType: AdvancePathwayRequest
+        responseType: LearningPath
+        serviceInterface: PathwaysService
+        serviceMethod: advancePathway
+        backendOwner: services/tutorputor-platform/src/modules/learning/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Pathways
+      description: Advance the current pathway by marking a module as complete
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdvancePathwayRequest'
+      responses:
+        '200':
+          description: Pathway advanced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningPath'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /learning/my-insights:
+    get:
+      summary: Get learner engagement insights
+      operationId: getMyInsights
+      x-tutorputor-contract:
+        requestType: null
+        responseType: LearnerInsights
+        serviceInterface: LearningService
+        serviceMethod: getMyInsights
+        backendOwner: services/tutorputor-platform/src/modules/learning/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Learning
+      description: Return the authenticated learner's engagement score with actionable suggestions
+      responses:
+        '200':
+          description: Learner insights
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearnerInsights'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /engagement/gamification/progress:
+    get:
+      summary: Get gamification progress
+      operationId: getGamificationProgress
+      x-tutorputor-contract:
+        requestType: null
+        responseType: GamificationProgress
+        serviceInterface: GamificationService
+        serviceMethod: getProgress
+        backendOwner: services/tutorputor-platform/src/modules/engagement/gamification/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Engagement
+      description: Get current user's gamification progress including points, level, and achievements
+      responses:
+        '200':
+          description: Gamification progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GamificationProgress'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /engagement/gamification/leaderboard:
+    get:
+      summary: Get leaderboard
+      operationId: getLeaderboard
+      x-tutorputor-contract:
+        requestType: LeaderboardQuery
+        responseType: Leaderboard
+        serviceInterface: GamificationService
+        serviceMethod: getLeaderboard
+        backendOwner: services/tutorputor-platform/src/modules/engagement/gamification/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Engagement
+      description: Get leaderboard rankings for the current tenant
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Leaderboard data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Leaderboard'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /engagement/gamification/achievements:
+    get:
+      summary: Get achievements
+      operationId: getAchievements
+      x-tutorputor-contract:
+        requestType: null
+        responseType: Achievements
+        serviceInterface: GamificationService
+        serviceMethod: getAchievements
+        backendOwner: services/tutorputor-platform/src/modules/engagement/gamification/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Engagement
+      description: Get achievements for the current user
+      responses:
+        '200':
+          description: User achievements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Achievements'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /integration/marketplace/listings:
+    get:
+      summary: Get marketplace listings
+      operationId: getMarketplaceListings
+      x-tutorputor-contract:
+        requestType: MarketplaceQuery
+        responseType: MarketplaceListings
+        serviceInterface: MarketplaceService
+        serviceMethod: getListings
+        backendOwner: services/tutorputor-platform/src/modules/integration/marketplace/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Integration
+      description: Get marketplace listings for integrations and plugins
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Marketplace listings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketplaceListings'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /integration/billing/checkout:
+    post:
+      summary: Initiate checkout
+      operationId: initiateCheckout
+      x-tutorputor-contract:
+        requestType: CheckoutRequest
+        responseType: CheckoutSession
+        serviceInterface: BillingService
+        serviceMethod: initiateCheckout
+        backendOwner: services/tutorputor-platform/src/modules/integration/billing/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Integration
+      description: Initiate a checkout session for purchasing modules or subscriptions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+      responses:
+        '200':
+          description: Checkout session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutSession'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /integration/billing/purchases:
+    get:
+      summary: Get purchases
+      operationId: getPurchases
+      x-tutorputor-contract:
+        requestType: null
+        responseType: Purchases
+        serviceInterface: BillingService
+        serviceMethod: getPurchases
+        backendOwner: services/tutorputor-platform/src/modules/integration/billing/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Integration
+      description: Get current user's purchase history
+      responses:
+        '200':
+          description: Purchase history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Purchases'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /assets:
+    get:
+      summary: List content assets
+      operationId: listAssets
+      x-tutorputor-contract:
+        requestType: AssetListQuery
+        responseType: AssetListResponse
+        serviceInterface: ContentAssetService
+        serviceMethod: listAssets
+        backendOwner: services/tutorputor-platform/src/modules/content/asset/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Content
+      description: List content assets with filtering
+      parameters:
+        - name: assetType
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["explainer", "module", "example_set", "simulation", "animation", "assessment", "pathway", "reference_pack"]
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: domain
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Asset list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /assets/{assetId}:
+    get:
+      summary: Get asset details
+      operationId: getAsset
+      x-tutorputor-contract:
+        requestType: null
+        responseType: AssetDetail
+        serviceInterface: ContentAssetService
+        serviceMethod: getAssetDetail
+        backendOwner: services/tutorputor-platform/src/modules/content/asset/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Content
+      description: Get asset detail with blocks and manifests
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Asset detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetDetail'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /assets/{assetId}/recommendations:
+    get:
+      summary: Get asset recommendations
+      operationId: getAssetRecommendations
+      x-tutorputor-contract:
+        requestType: AssetRecommendationQuery
+        responseType: RelatedAssets
+        serviceInterface: RecommendationService
+        serviceMethod: getRecommendations
+        backendOwner: services/tutorputor-platform/src/modules/content/recommendation/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Content
+      description: Get related assets grouped by type
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Related assets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelatedAssets'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /assets/{assetId}/next-steps:
+    get:
+      summary: Get next steps
+      operationId: getNextSteps
+      x-tutorputor-contract:
+        requestType: NextStepQuery
+        responseType: NextStepSuggestions
+        serviceInterface: RecommendationService
+        serviceMethod: getNextSteps
+        backendOwner: services/tutorputor-platform/src/modules/content/recommendation/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Content
+      description: Get next-step suggestions
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 5
+      responses:
+        '200':
+          description: Next-step suggestions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NextStepSuggestions'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /recommendations/personalized:
+    get:
+      summary: Get personalized recommendations
+      operationId: getPersonalizedRecommendations
+      x-tutorputor-contract:
+        requestType: PersonalizedRecommendationQuery
+        responseType: PersonalizedRecommendations
+        serviceInterface: RecommendationService
+        serviceMethod: getPersonalizedRecommendations
+        backendOwner: services/tutorputor-platform/src/modules/content/recommendation/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Content
+      description: AI-powered personalized recommendations
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 6
+      responses:
+        '200':
+          description: Personalized recommendations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalizedRecommendations'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /telemetry/events:
+    post:
+      summary: Track explorer event
+      operationId: trackExplorerEvent
+      x-tutorputor-contract:
+        requestType: TrackExplorerEventInput
+        responseType: TelemetryEvent
+        serviceInterface: TelemetryService
+        serviceMethod: trackEvent
+        backendOwner: services/tutorputor-platform/src/modules/content/telemetry/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Telemetry
+      description: Track a single explorer event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrackExplorerEventInput'
+      responses:
+        '201':
+          description: Event tracked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelemetryEvent'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /telemetry/events/batch:
+    post:
+      summary: Track batch events
+      operationId: trackExplorerEvents
+      x-tutorputor-contract:
+        requestType: TrackBatchEventsInput
+        responseType: BatchTrackingResult
+        serviceInterface: TelemetryService
+        serviceMethod: trackBatch
+        backendOwner: services/tutorputor-platform/src/modules/content/telemetry/routes.ts
+        typedClient: apps/tutorputor-web/src/api/tutorputorClient.ts
+      tags:
+        - Telemetry
+      description: Track a batch of explorer events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrackBatchEventsInput'
+      responses:
+        '200':
+          description: Events tracked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchTrackingResult'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   /learning-paths/{userId}:
     get:
       summary: Get user learning paths
@@ -1026,6 +1743,654 @@ components:
         isPublic:
           type: boolean
           default: false
+
+    DashboardSummary:
+      type: object
+      required:
+        - user
+        - currentEnrollments
+        - recommendedModules
+      properties:
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+            email:
+              type: string
+            displayName:
+              type: string
+            avatarUrl:
+              type: string
+        currentEnrollments:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              moduleId:
+                type: string
+              moduleSlug:
+                type: string
+              moduleTitle:
+                type: string
+              status:
+                type: string
+                enum: ["active", "completed", "paused", "expired"]
+              progressPercent:
+                type: number
+              timeSpentSeconds:
+                type: integer
+        recommendedModules:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              slug:
+                type: string
+              description:
+                type: string
+              estimatedMinutes:
+                type: integer
+              difficulty:
+                type: string
+
+    Enrollment:
+      type: object
+      required:
+        - id
+        - moduleId
+        - userId
+        - status
+        - progressPercent
+        - enrolledAt
+      properties:
+        id:
+          type: string
+        moduleId:
+          type: string
+        moduleSlug:
+          type: string
+        moduleTitle:
+          type: string
+        userId:
+          type: string
+        status:
+          type: string
+          enum: ["active", "completed", "paused", "expired"]
+        progressPercent:
+          type: number
+          minimum: 0
+          maximum: 100
+        currentSectionId:
+          type: string
+        timeSpentSeconds:
+          type: integer
+        enrolledAt:
+          type: string
+          format: date-time
+        lastAccessedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+
+    LearnerProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        tenantId:
+          type: string
+        preferredDifficulty:
+          type: string
+          enum: ["BEGINNER", "EASY", "MEDIUM", "HARD", "EXPERT"]
+        preferredModality:
+          type: string
+          enum: ["VISUAL", "AUDITORY", "KINESTHETIC", "READING", "MIXED"]
+        preferredPacing:
+          type: string
+          enum: ["SELF_PACED", "GUIDED", "ADAPTIVE", "INTENSIVE"]
+        preferredSessionMinutes:
+          type: integer
+        adjustedDifficulty:
+          type: string
+        masteryEvidence:
+          type: array
+          items:
+            type: object
+        knowledgeGaps:
+          type: array
+          items:
+            type: object
+
+    LearnerInsights:
+      type: object
+      required:
+        - engagementScore
+        - tier
+        - headline
+        - tips
+        - showTeacherCta
+        - computedAt
+      properties:
+        engagementScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        tier:
+          type: string
+          enum: ["high", "medium", "low"]
+        headline:
+          type: string
+        tips:
+          type: array
+          items:
+            type: string
+        showTeacherCta:
+          type: boolean
+        computedAt:
+          type: string
+          format: date-time
+
+    EnrollInModuleRequest:
+      type: object
+      required:
+        - moduleId
+      properties:
+        moduleId:
+          type: string
+
+    UpdateProgressRequest:
+      type: object
+      required:
+        - progressPercent
+      properties:
+        progressPercent:
+          type: number
+          minimum: 0
+          maximum: 100
+        timeSpentSecondsDelta:
+          type: integer
+          minimum: 0
+
+    UpdatePreferencesRequest:
+      type: object
+      properties:
+        preferredDifficulty:
+          type: string
+          enum: ["BEGINNER", "EASY", "MEDIUM", "HARD", "EXPERT"]
+        preferredModality:
+          type: string
+          enum: ["VISUAL", "AUDITORY", "KINESTHETIC", "READING", "MIXED"]
+        preferredPacing:
+          type: string
+          enum: ["SELF_PACED", "GUIDED", "ADAPTIVE", "INTENSIVE"]
+        preferredSessionMinutes:
+          type: integer
+        notificationFrequency:
+          type: string
+        reason:
+          type: string
+
+    GeneratePathwayRequest:
+      type: object
+      required:
+        - goal
+      properties:
+        goal:
+          type: string
+        constraints:
+          type: object
+          properties:
+            maxModules:
+              type: integer
+            maxDurationMinutes:
+              type: integer
+
+    CreatePathwayRequest:
+      type: object
+      required:
+        - title
+        - goal
+        - moduleIds
+      properties:
+        title:
+          type: string
+        goal:
+          type: string
+        moduleIds:
+          type: array
+          items:
+            type: string
+
+    AdvancePathwayRequest:
+      type: object
+      required:
+        - completedModuleId
+      properties:
+        completedModuleId:
+          type: string
+
+    GamificationProgress:
+      type: object
+      properties:
+        userId:
+          type: string
+        points:
+          type: integer
+        level:
+          type: integer
+        experienceToNextLevel:
+          type: integer
+        streakDays:
+          type: integer
+        achievements:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              description:
+                type: string
+              earnedAt:
+                type: string
+                format: date-time
+
+    Leaderboard:
+      type: object
+      properties:
+        entries:
+          type: array
+          items:
+            type: object
+            properties:
+              rank:
+                type: integer
+              userId:
+                type: string
+              displayName:
+                type: string
+              points:
+                type: integer
+              level:
+                type: integer
+        period:
+          type: string
+          enum: ["daily", "weekly", "monthly", "all_time"]
+
+    Achievements:
+      type: object
+      properties:
+        unlocked:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              description:
+                type: string
+              icon:
+                type: string
+              earnedAt:
+                type: string
+                format: date-time
+        available:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              description:
+                type: string
+              icon:
+                type: string
+              progress:
+                type: number
+              requiredProgress:
+                type: number
+
+    MarketplaceListings:
+      type: object
+      properties:
+        listings:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              description:
+                type: string
+              category:
+                type: string
+              version:
+                type: string
+              publisher:
+                type: string
+              rating:
+                type: number
+              downloads:
+                type: integer
+              pricing:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    enum: ["free", "paid", "freemium"]
+                  price:
+                    type: number
+        total:
+          type: integer
+
+    CheckoutRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: ["module", "subscription"]
+              id:
+                type: string
+              quantity:
+                type: integer
+                default: 1
+
+    CheckoutSession:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        checkoutUrl:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    Purchases:
+      type: object
+      properties:
+        purchases:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+                enum: ["module", "subscription"]
+              itemId:
+                type: string
+              itemName:
+                type: string
+              amount:
+                type: number
+              currency:
+                type: string
+              purchasedAt:
+                type: string
+                format: date-time
+              status:
+                type: string
+                enum: ["completed", "pending", "failed", "refunded"]
+
+    AssetListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              assetType:
+                type: string
+              title:
+                type: string
+              slug:
+                type: string
+              status:
+                type: string
+              domain:
+                type: string
+              createdAt:
+                type: string
+                format: date-time
+        total:
+          type: integer
+
+    AssetDetail:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            assetType:
+              type: string
+            title:
+              type: string
+            slug:
+              type: string
+            status:
+              type: string
+            domain:
+              type: string
+            content:
+              type: array
+            manifests:
+              type: array
+            metadata:
+              type: object
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    RelatedAssets:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            prerequisites:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  slug:
+                    type: string
+                  assetType:
+                    type: string
+                  relationStrength:
+                    type: number
+            nextSteps:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  slug:
+                    type: string
+                  assetType:
+                    type: string
+                  relationStrength:
+                    type: number
+            similarContent:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  slug:
+                    type: string
+                  assetType:
+                    type: string
+                  relationStrength:
+                    type: number
+
+    NextStepSuggestions:
+      type: array
+      items:
+        type: object
+        properties:
+          assetId:
+            type: string
+          title:
+            type: string
+          slug:
+            type: string
+          assetType:
+            type: string
+          reason:
+            type: string
+          priority:
+            type: number
+
+    PersonalizedRecommendations:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              slug:
+                type: string
+              description:
+                type: string
+              assetType:
+                type: string
+              isAiRecommended:
+                type: boolean
+              recommendationReason:
+                type: string
+              matchScore:
+                type: number
+              reasoning:
+                type: object
+                properties:
+                  basedOn:
+                    type: string
+                  userLevel:
+                    type: string
+                  suggestedDomains:
+                    type: array
+                    items:
+                      type: string
+
+    TrackExplorerEventInput:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        eventType:
+          type: string
+        query:
+          type: string
+        assetId:
+          type: string
+        assetType:
+          type: string
+        position:
+          type: integer
+        score:
+          type: number
+        feedbackLabel:
+          type: string
+        feedbackScore:
+          type: number
+        metadata:
+          type: object
+          additionalProperties: true
+        occurredAt:
+          type: string
+          format: date-time
+
+    TrackBatchEventsInput:
+      type: object
+      required:
+        - events
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackExplorerEventInput'
+
+    TelemetryEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        sessionId:
+          type: string
+        eventType:
+          type: string
+        metadata:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+
+    BatchTrackingResult:
+      type: object
+      properties:
+        processed:
+          type: integer
+        failed:
+          type: integer
+        total:
+          type: integer
 
     LearningPath:
       type: object

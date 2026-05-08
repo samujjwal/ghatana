@@ -226,6 +226,67 @@ for (const file of forbiddenProductStackFiles) {
 
 validateFlowManifest();
 
+// ---------------------------------------------------------------------------
+// Behavioral coverage checks — verify runtime test files exist and invoke real
+// production observability modules (anti-theater rule, Section 29/35.3).
+// ---------------------------------------------------------------------------
+
+/**
+ * Each entry requires a test file that:
+ *  - imports at least one symbol from the listed production module, and
+ *  - contains all listed tokens (method names, assertion patterns) proving
+ *    that the test exercises real behaviour, not object-literal stubs.
+ */
+const behavioralCoverageChecks = [
+  {
+    name: 'FlashIt observability contract behavioral test',
+    testFile: 'products/flashit/backend/gateway/src/__tests__/observability-contract.test.ts',
+    required: [
+      'lib/logger.js',
+      'plugins/prometheus.js',
+      'registerLoggerPlugin',
+      'Logger',
+      '/metrics',
+      'flashit_http_requests_total',
+      '[REDACTED]',
+      'registerTracingMiddleware',
+    ],
+  },
+  {
+    name: 'FlashIt logger behavioral test',
+    testFile: 'products/flashit/backend/gateway/src/lib/__tests__/logger.test.ts',
+    required: [
+      'logger',
+      'Logger',
+      'registerLoggerPlugin',
+      'correlationId',
+    ],
+  },
+  {
+    name: 'FlashIt session token redaction behavioral test',
+    testFile: 'products/flashit/backend/gateway/src/lib/__tests__/session.test.ts',
+    required: [
+      '[REDACTED]',
+      'accessToken',
+      'refreshToken',
+    ],
+  },
+];
+
+for (const check of behavioralCoverageChecks) {
+  const absolutePath = path.join(repoRoot, check.testFile);
+  if (!existsSync(absolutePath)) {
+    violations.push(`${check.name}: behavioral test file is missing — ${check.testFile}`);
+    continue;
+  }
+  const testSource = readFileSync(absolutePath, 'utf8');
+  for (const token of check.required) {
+    if (!testSource.includes(token)) {
+      violations.push(`${check.name}: behavioral test is missing evidence of "${token}" in ${check.testFile}`);
+    }
+  }
+}
+
 if (violations.length > 0) {
   console.error(`❌ Observability conformance check failed with ${violations.length} violation(s):\n`);
   for (const violation of violations) {

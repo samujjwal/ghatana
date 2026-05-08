@@ -14,12 +14,21 @@
 
 import type { AnimationContentType, ExampleType } from "./learning-unit";
 import type { SimulationManifest } from "./simulation";
+import type { AnimationManifest } from "./artifact-manifests/animation-manifest";
+import { validateAnimationManifest } from "./artifact-manifests/animation-manifest";
 
 // ============================================================================
 // Re-export the Simulation manifest (already fully typed)
 // ============================================================================
 
 export type { SimulationManifest } from "./simulation";
+
+// ============================================================================
+// Re-export the Animation manifest from animation-manifest (fully typed with Zod)
+// ============================================================================
+
+export type { AnimationManifest } from "./artifact-manifests/animation-manifest";
+export { validateAnimationManifest } from "./artifact-manifests/animation-manifest";
 
 // ============================================================================
 // Worked Example Manifest
@@ -83,87 +92,6 @@ export interface WorkedExampleManifest {
     altTexts?: Record<string, string>;
     screenReaderNarration?: boolean;
   };
-}
-
-// ============================================================================
-// Animation Manifest
-// ============================================================================
-
-/**
- * A keyframe in an animation timeline.
- */
-export interface AnimationKeyframe {
-  /** Time offset in milliseconds from timeline start */
-  timeMs: number;
-  /** Entity states at this keyframe */
-  entities: Record<
-    string,
-    {
-      x?: number;
-      y?: number;
-      rotation?: number;
-      scale?: number;
-      opacity?: number;
-      color?: string;
-      label?: string;
-      props?: Record<string, unknown>;
-    }
-  >;
-  /** Narration text for this keyframe */
-  narration?: string;
-  /** Whether the animation pauses at this keyframe */
-  pause?: boolean;
-}
-
-/**
- * Canonical manifest for educational animations.
- *
- * Describes a time-based visual sequence that illustrates a concept.
- */
-export interface AnimationManifest {
-  /** Manifest schema version (e.g., "1.0.0") */
-  schemaVersion: string;
-  /** Animation content type */
-  animationType: AnimationContentType;
-  /** Domain the animation belongs to */
-  domain: string;
-  /** Canvas dimensions */
-  canvas: {
-    width: number;
-    height: number;
-    backgroundColor?: string;
-  };
-  /** Total duration in milliseconds */
-  durationMs: number;
-  /** Frames per second hint for renderers */
-  fps?: number;
-  /** Playback controls */
-  playback: {
-    autoPlay: boolean;
-    loop: boolean;
-    allowScrub: boolean;
-    playbackRates?: number[];
-  };
-  /** Timeline keyframes */
-  keyframes: AnimationKeyframe[];
-  /** Visual design configuration */
-  visualDesign?: {
-    theme: string;
-    fontFamily?: string;
-    primaryColor?: string;
-    secondaryColor?: string;
-  };
-  /** Accessibility configuration */
-  accessibility?: {
-    screenReaderNarration?: boolean;
-    reducedMotion?: boolean;
-    highContrast?: boolean;
-    altText?: string;
-  };
-  /** Claims this animation supports */
-  claimRefs?: string[];
-  /** Estimated learning duration in seconds */
-  estimatedTimeSeconds?: number;
 }
 
 // ============================================================================

@@ -446,10 +446,35 @@ components:
 
     Error:
       type: object
+      required:
+        - error
+        - traceId
+        - timestamp
+        - statusCode
       properties:
         error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable error message
+            details:
+              type: object
+              description: Additional error details
+              additionalProperties: true
+        traceId:
           type: string
-        message:
+          description: Correlation ID for tracing
+        timestamp:
           type: string
+          format: date-time
+          description: ISO 8601 timestamp
         statusCode:
           type: integer
+          description: HTTP status code

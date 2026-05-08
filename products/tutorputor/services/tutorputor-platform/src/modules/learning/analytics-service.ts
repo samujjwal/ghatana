@@ -24,6 +24,11 @@ import type {
   LearningEventType,
   ModuleId,
   UserId,
+  LearningEventInput,
+} from "@tutorputor/contracts/v1/types";
+import {
+  parseLearningEventInput,
+  LEARNING_EVENT_SCHEMA_VERSION,
 } from "@tutorputor/contracts/v1/types";
 import type { TutorPrismaClient } from "@tutorputor/core/db";
 import { Prisma } from "@tutorputor/core/db";
@@ -56,6 +61,20 @@ export function createAnalyticsService(
 ): HealthAwareAnalyticsService {
   return {
     async recordEvent({ tenantId, event }) {
+      // Validate event against schema version
+      try {
+        parseLearningEventInput(event);
+      } catch (error) {
+        logger.error({
+          message: "Learning event validation failed",
+          error: error instanceof Error ? error.message : String(error),
+          tenantId,
+          eventType: event.type,
+          userId: event.userId,
+        });
+        throw new Error(`Invalid learning event: ${error instanceof Error ? error.message : String(error)}`);
+      }
+
       // 1. Persistent Storage (Postgres)
       await prisma.learningEvent.create({
         data: {

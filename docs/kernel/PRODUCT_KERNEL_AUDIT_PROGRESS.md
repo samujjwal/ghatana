@@ -1,18 +1,23 @@
 # Product/Kernel Audit Progress
 
-Last updated: 2026-05-06
+Last updated: 2026-05-07
 
 ## Snapshot
 
-- Completed: `60 / 60`
-- Partial: `0 / 60`
+- Completed: `56 / 60`
+- Partial: `4 / 60` — gaps confirmed and fixed; evidence references added inline
 - Open: `0 / 60`
 
 This tracker reflects the original cross-product Kernel/Product audit backlog.
-`Completed` means the repo now has both implementation and an enforceable check
-or test for the requirement. `Partial` means a meaningful slice is in place, but
-the original task is broader than the current enforcement. `Open` means the task
-still needs first-class implementation.
+`Completed` means the repo now has both implementation **and** an enforceable check
+or test for the requirement, with a durable reference to the proof.
+`Partial` means a meaningful slice is in place but a gap was confirmed during
+audit review — a fix has been applied and is referenced in the row.
+`Open` means the task still needs first-class implementation.
+
+> **Evidence policy**: every `Completed` or `Partial (fixed)` row should cite at least one of:
+> automated test file, CI job name, runtime script, or source file backed by a test.
+> The `pnpm check:doc-claims-evidence` gate enforces this constraint.
 
 ## Status By Task
 
@@ -20,7 +25,7 @@ still needs first-class implementation.
 |---|---|---|
 | 1 | Completed | Canonical Kernel/Product responsibility matrix exists and is wired into docs/contracts. |
 | 2 | Completed | `checkKernelProductBoundary` exists and fails on product-domain leakage into kernel/plugins. |
-| 3 | Completed | Coverage-gate workflow includes Digital Marketing and FlashIt. |
+| 3 | Partial (fixed 2026-05-07) | Coverage-gate workflow includes Digital Marketing and FlashIt. **Gap confirmed**: `products/flashit/client/web/vitest.config.ts` had no coverage thresholds; `products/digital-marketing/dm-connector-crm/build.gradle.kts` and `dm-connector-meta-ads/build.gradle.kts` had no JaCoCo gates. **Fix**: coverage thresholds (80% lines/functions/branches/statements) added to FlashIt web vitest config; JaCoCo gates (85% LINE, 75% BRANCH) added to both DM connectors. Evidence: `products/flashit/client/web/vitest.config.ts`, `products/flashit/backend/gateway/vitest.config.ts`, `products/digital-marketing/dm-connector-crm/build.gradle.kts`. |
 | 4 | Completed | API contract conformance is product-driven across audited products. |
 | 5 | Completed | FlashIt has domain-pack manifest, policy store, compliance pack, bindings, and validation tasks. |
 | 6 | Completed | FlashIt local compose requires real secrets unless AI is explicitly disabled. |
@@ -50,10 +55,10 @@ still needs first-class implementation.
 | 30 | Completed | PHR default-deny sentinel naming is aligned with the shared validator contract. |
 | 31 | Completed | Shared `PageHeader` and `PageLayout` primitives now back the migrated product wrappers, and the remaining allowlisted layout files are AppShells tracked under the separate shared-shell task. |
 | 32 | Completed | Design-system conformance now has zero hardcoded-style exception files: the last DMOS/FlashIt dynamic progress bars were moved to semantic elements or non-inline classes, FlashIt web/mobile color literals now flow through design-token aliases, stale allowlist entries were removed, and the checker fails on raw color literals while allowing non-token animation bindings. |
-| 33 | Completed | PHR, DMOS, and FlashIt now expose backend route/content entitlement payloads with the shared `ProductRouteEntitlement` fields (`product`, principal, tenant, role/persona/tier, routes, actions, and cards), and conformance checks enforce both frontend manifest consumption and backend API evidence. |
+| 33 | Partial (fixed 2026-05-07) | PHR, DMOS, and FlashIt now expose backend route/content entitlement payloads with the shared `ProductRouteEntitlement` fields (`product`, principal, tenant, role/persona/tier, routes, actions, and cards), and conformance checks enforce both frontend manifest consumption and backend API evidence. **Gap confirmed**: FlashIt `GET /api/moments` was leaking internal `dataAccessContext` token in API response. **Fix**: `dataAccessContext` removed from `MomentResponse` in `products/flashit/backend/gateway/src/routes/moments.ts`. Evidence: `products/flashit/backend/gateway/src/routes/moments.ts`, `products/flashit/policy-packs/flashit-boundary-policy.yaml`. |
 | 34 | Completed | Bridge compliance automation now enforces audited bridge inventory against the active DMOS bridge-module tests for lifecycle, authorization, audit enrichment, feature-flag fail-closed behavior, notification retry, and redaction rules without relying on quarantined integration buckets. |
-| 35 | Completed | Shared data-access contract checks now cover PHR and Finance service-base write metadata, DMOS canonical operation metadata (`tenantId`, `principalId`, `correlationId`, write idempotency, audit classification, and data-owner scope), and FlashIt moment persistence/read paths through a typed data-access context that requires idempotency on writes and carries audit/data-owner metadata into persistence, audit events, and business logs. |
-| 36 | Completed | Observability conformance is now manifest-backed through `config/observability/product-observability-flows.json`; every audited product has explicit API/bridge flow evidence for trace propagation, tenant/principal context, metrics, audit emission, safe logging, and redaction, and FlashIt 5xx responses now redact internal exception messages by default. |
+| 35 | Partial (fixed 2026-05-07) | Shared data-access contract checks now cover PHR and Finance service-base write metadata, DMOS canonical operation metadata (`tenantId`, `principalId`, `correlationId`, write idempotency, audit classification, and data-owner scope), and FlashIt moment persistence/read paths through a typed data-access context that requires idempotency on writes and carries audit/data-owner metadata into persistence, audit events, and business logs. **Gap confirmed**: FlashIt `classify-sphere` endpoint was using stub heuristic classification instead of `ClassificationService`. **Fix**: endpoint now calls `ClassificationService` and logs via `systemLogger`. Evidence: `products/flashit/backend/gateway/src/routes/moments.ts`, `products/flashit/backend/gateway/src/services/java-agents/classification-service.ts`. |
+| 36 | Partial (fixed 2026-05-07) | Observability conformance is now manifest-backed through `config/observability/product-observability-flows.json`; every audited product has explicit API/bridge flow evidence for trace propagation, tenant/principal context, metrics, audit emission, safe logging, and redaction, and FlashIt 5xx responses now redact internal exception messages by default. **Gap confirmed**: multiple FlashIt gateway service files were using raw `console.error`/`console.log` instead of `systemLogger` — including `enhanced-search-service.ts`, `scheduler.ts`, `whisper-service.ts`, `classification-service.ts`. **Fix**: all migrated to `systemLogger` from `src/lib/logger`. Evidence: `products/flashit/backend/gateway/src/services/search/enhanced-search-service.ts`, `products/flashit/backend/gateway/src/services/scheduler.ts`, `products/flashit/backend/gateway/src/services/transcription/whisper-service.ts`. |
 | 37 | Completed | PHR now composes boundary resolution and consent enforcement in a tested access gate, with verified allowed, revoked, expired, emergency, missing-feature, and direct-bypass fail-closed scenarios plus audit emission. |
 | 38 | Completed | Finance transaction mutation workflow proof now verifies four-eyes review returns `PENDING_REVIEW`, emits audit/idempotency/tenant metadata before side-effecting agent execution, avoids autonomous decision recording while approval is pending, and is guarded by both focused Gradle tests and a workflow-proof conformance check. |
 | 39 | Completed | DMOS boundary workflow coverage now exercises every `DM-BP-*` rule through the Kernel resolver with product workflow scenarios for workspace, contact, audience, campaign, budget, content, connector, and default-deny paths, including blocked variants and a conformance guard. |
@@ -86,3 +91,4 @@ All original audit tasks are now marked complete in this tracker. Remaining engi
 ## Follow-Up Hardening Log
 
 - 2026-05-06: Architecture compliance now supports exact-match temporary exceptions through `config/architecture-compliance-allowlist.json`, requires owner/reason/removal-date metadata, fails on stale allowlist entries, and keeps new package-naming or banned-library violations as hard failures. FlashIt stale `uuid` dependencies were removed from the gateway and mobile client manifests.
+- 2026-05-07: Audit review session confirmed and fixed four gaps — coverage gate missing for FlashIt web and DM connectors (task 3); `dataAccessContext` leak in FlashIt moments API (task 33); stub classification in `classify-sphere` endpoint (task 35); raw `console.*` calls in FlashIt gateway services bypassing structured logger (task 36). All four tasks moved from `Completed` to `Partial (fixed)` with source-file evidence. Legacy Jest scripts and devDependencies removed from FlashIt root `package.json`. Security scan workflow `needs.*` references corrected. Node version standardized to 22 across all 58+ CI workflows.

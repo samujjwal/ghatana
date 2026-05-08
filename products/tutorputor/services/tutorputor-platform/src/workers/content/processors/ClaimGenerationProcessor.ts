@@ -86,16 +86,21 @@ export class ClaimGenerationProcessor {
             // Step 1: Call Java agent to generate claims
             const requestId = crypto.randomUUID();
             const response = await this.grpcClient.generateClaims({
-                requestId,
-                tenantId,
+                context: {
+                    requestId,
+                    tenantId,
+                    timestamp: new Date(),
+                    metadata: {
+                        title,
+                        targetGrades: targetGrades.join(','),
+                    },
+                },
                 topic,
                 gradeLevel,
                 domain,
                 maxClaims,
-                context: {
-                    title,
-                    targetGrades: targetGrades.join(','),
-                },
+                contextParams: {},
+                language: 'en',
             });
 
             this.logger.info(
@@ -252,25 +257,29 @@ export class ClaimGenerationProcessor {
 
                         contentNeeds = analysisResponse.contentNeeds;
 
-                        this.logger.info(
-                            { claimRef: claim.claim_ref },
-                            'Content needs analysis completed'
-                        );
+                        // Validate the response
+                        if (!contentNeeds || !this.isValidContentNeeds(contentNeeds)) {
+                            throw new Error('AnalyzeContentNeeds returned incomplete or invalid content needs');
+                        }
                     } catch (error) {
-                        this.logger.warn(
-                            { err: error, claimRef: claim.claim_ref },
-                            'Failed to analyze content needs, using defaults'
+                        this.logger.error(
+                            { err: error, claimRef: claim.claim_ref, experienceId: context.experienceId, domain: context.domain, gradeLevel: context.gradeLevel, bloomLevel: claim.bloom_level },
+                            'Failed to analyze content needs - explicit planner failure, skipping claim'
                         );
 
-                        // Provide default content needs as fallback
-                        contentNeeds = this.getDefaultContentNeeds(context.domain);
+                        // Explicit planner failure: skip this claim and continue with others
+                        // No silent fallback to default content needs
+                        continue;
                     }
                 } else {
-                    this.logger.info(
-                        { claimRef: claim.claim_ref },
-                        'Auto content needs analysis disabled, using defaults'
+                    this.logger.warn(
+                        { claimRef: claim.claim_ref, experienceId: context.experienceId, domain: context.domain, gradeLevel: context.gradeLevel, bloomLevel: claim.bloom_level },
+                        'Auto content needs analysis disabled - explicit planner failure, skipping claim'
                     );
-                    contentNeeds = this.getDefaultContentNeeds(context.domain);
+
+                    // Explicit planner failure when auto analysis is disabled
+                    // No silent fallback to default content needs
+                    continue;
                 }
             }
 
@@ -289,29 +298,6 @@ export class ClaimGenerationProcessor {
             contentNeeds.simulation?.required ||
             contentNeeds.animation?.required
         );
-    }
-
-    /**
-     * Get default content needs based on domain.
-     */
-    private getDefaultContentNeeds(domain: string): ContentNeeds {
-        const upperDomain = domain.toUpperCase();
-
-        // STEM domains benefit from simulations
-        if (['MATH', 'SCIENCE', 'PHYSICS', 'CHEMISTRY', 'BIOLOGY'].includes(upperDomain)) {
-            return {
-                examples: { required: true, types: ['REAL_WORLD', 'PROBLEM_SOLVING'], count: 2, necessity: 0.8, rationale: 'Default: STEM domain requires worked examples' },
-                simulation: { required: true, interactionType: 'PARAMETER_EXPLORATION', complexity: 'MEDIUM', necessity: 0.7, rationale: 'Default: STEM domain benefits from simulations' },
-                animation: { required: false, animationType: 'TWO_D', durationSeconds: 30, necessity: 0.3, rationale: 'Default: Optional animation support' },
-            };
-        }
-
-        // Default for other domains
-        return {
-            examples: { required: true, types: ['REAL_WORLD'], count: 2, necessity: 0.8, rationale: 'Default: Examples support learning' },
-            simulation: { required: false, interactionType: 'PARAMETER_EXPLORATION', complexity: 'MEDIUM', necessity: 0.3, rationale: 'Default: Simulation optional' },
-            animation: { required: false, animationType: 'TWO_D', durationSeconds: 30, necessity: 0.2, rationale: 'Default: Animation optional' },
-        };
     }
 
     /**

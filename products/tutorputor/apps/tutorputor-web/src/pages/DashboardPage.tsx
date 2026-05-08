@@ -149,10 +149,8 @@ export function DashboardPage() {
           />
         </div>
 
-        {/* Engagement Insights Panel */}
-        <LearnerInsightPanel className="mb-8" />
-
-        <ActionableLearnerStatePanel state={actionState} />
+        {/* Engagement Insights Panel - Actionable Mastery Evidence */}
+        <LearnerInsightPanel actionState={actionState} className="mb-8" />
 
         {/* Primary CTA: Continue Learning */}
         {hasActiveEnrollments && topEnrollment && (

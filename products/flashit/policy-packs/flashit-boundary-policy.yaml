@@ -1,8 +1,9 @@
 packId: flashit-boundary-policy
-version: 1.0.0
+version: 1.1.0
 owner: flashit
 defaultDenyRuleId: FLASHIT-BP-999
 rules:
+  # Moments
   - ruleId: FLASHIT-BP-001
     resource: moments/**
     actions: [read]
@@ -11,6 +12,138 @@ rules:
     resource: moments/**
     actions: [write, delete, export]
     effect: REQUIRE_APPROVAL
+
+  # Spheres
+  - ruleId: FLASHIT-BP-010
+    resource: spheres/**
+    actions: [read]
+    effect: ALLOW
+  - ruleId: FLASHIT-BP-011
+    resource: spheres/**
+    actions: [write, delete, manage-access]
+    effect: REQUIRE_APPROVAL
+
+  # Search and analytics (read-only, no approval needed)
+  - ruleId: FLASHIT-BP-020
+    resource: search/**
+    actions: [read]
+    effect: ALLOW
+  - ruleId: FLASHIT-BP-021
+    resource: analytics/**
+    actions: [read]
+    effect: ALLOW
+
+  # Recommendations and reflections
+  - ruleId: FLASHIT-BP-030
+    resource: recommendations/**
+    actions: [read]
+    effect: ALLOW
+  - ruleId: FLASHIT-BP-031
+    resource: reflection/**
+    actions: [read, write]
+    effect: ALLOW
+
+  # Media uploads
+  - ruleId: FLASHIT-BP-040
+    resource: media/**
+    actions: [read]
+    effect: ALLOW
+  - ruleId: FLASHIT-BP-041
+    resource: media/**
+    actions: [write, delete]
+    effect: REQUIRE_APPROVAL
+
+  # Knowledge graph
+  - ruleId: FLASHIT-BP-050
+    resource: knowledge-graph/**
+    actions: [read]
+    effect: ALLOW
+
+  # Templates
+  - ruleId: FLASHIT-BP-060
+    resource: templates/**
+    actions: [read]
+    effect: ALLOW
+  - ruleId: FLASHIT-BP-061
+    resource: templates/**
+    actions: [write, delete]
+    effect: REQUIRE_APPROVAL
+
+  # Collaboration
+  - ruleId: FLASHIT-BP-070
+    resource: collaboration/**
+    actions: [read, write]
+    effect: ALLOW
+  - ruleId: FLASHIT-BP-071
+    resource: collaboration/**
+    actions: [delete, manage-members]
+    effect: REQUIRE_APPROVAL
+
+  # Memory expansion
+  - ruleId: FLASHIT-BP-080
+    resource: memory-expansion/**
+    actions: [read, write]
+    effect: ALLOW
+
+  # Moment links
+  - ruleId: FLASHIT-BP-090
+    resource: moment-links/**
+    actions: [read]
+    effect: ALLOW
+  - ruleId: FLASHIT-BP-091
+    resource: moment-links/**
+    actions: [write, delete]
+    effect: REQUIRE_APPROVAL
+
+  # API keys (admin-scoped write; read allowed for own keys)
+  - ruleId: FLASHIT-BP-100
+    resource: api-keys/**
+    actions: [read]
+    effect: ALLOW
+  - ruleId: FLASHIT-BP-101
+    resource: api-keys/**
+    actions: [write, delete, rotate]
+    effect: REQUIRE_APPROVAL
+
+  # Notifications (own user only)
+  - ruleId: FLASHIT-BP-110
+    resource: notifications/**
+    actions: [read, write]
+    effect: ALLOW
+
+  # Privacy settings
+  - ruleId: FLASHIT-BP-120
+    resource: privacy/**
+    actions: [read, write]
+    effect: ALLOW
+
+  # Billing (read own; write is admin-gated)
+  - ruleId: FLASHIT-BP-130
+    resource: billing/**
+    actions: [read]
+    effect: ALLOW
+  - ruleId: FLASHIT-BP-131
+    resource: billing/**
+    actions: [write, cancel, upgrade]
+    effect: REQUIRE_APPROVAL
+
+  # Admin operations (explicit deny for non-admin principals; RBAC enforced in app layer)
+  - ruleId: FLASHIT-BP-200
+    resource: admin/**
+    actions: ["*"]
+    effect: REQUIRE_APPROVAL
+
+  # Health/readiness probes (no auth required)
+  - ruleId: FLASHIT-BP-900
+    resource: health
+    actions: [read]
+    effect: ALLOW
+  - ruleId: FLASHIT-BP-901
+    resource: ready
+    actions: [read]
+    effect: ALLOW
+
+  # Default deny
   - ruleId: FLASHIT-BP-999
     resource: "**"
     actions: ["*"]

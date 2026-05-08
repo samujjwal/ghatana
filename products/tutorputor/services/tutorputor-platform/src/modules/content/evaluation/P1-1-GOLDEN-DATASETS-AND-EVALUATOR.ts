@@ -310,13 +310,15 @@ export interface PedagogicalValidationCheck {
   has_worked_examples: boolean;
   grade_fit_score: number; // [0, 1]
   misconception_addresses: boolean;
-  issues: string[];
-  score: number; // [0, 1]
+  issues?: string[];
+  score?: number; // [0, 1]
 }
 
 /**
- * Factual/Source Validator — FActScore, evidence grounding, hallucination detection.
+ * Factual Validation Validator — Evidence-based fact checking using FActScore.
  * Weight: 0.25 (critical for trust)
+ * 
+ * TODO 26: Enhanced with atomic claim extraction and evidence bundle validation
  */
 export interface FactualValidationCheck {
   type: "FACTUAL";
@@ -328,6 +330,9 @@ export interface FactualValidationCheck {
   confidence_score: number; // [0, 1] from FActScore
   issues: string[];
   score: number; // [0, 1]
+  // Atomic claim validation fields (TODO 26)
+  atomic_claims_validated?: number;
+  evidence_coverage_score?: number;
 }
 
 /**
@@ -384,10 +389,10 @@ export function computeTrustScore(
   simulationCheck: SimulationValidationCheck,
   accessibilityCheck: AccessibilityValidationCheck,
 ): TrustScoreResult {
-  // Weighted sum
+  // Weighted sum with fallback scores for optional fields
   const overall_score =
     schemaCheck.score * 0.15 +
-    pedagogicalCheck.score * 0.3 +
+    (pedagogicalCheck.score ?? pedagogicalCheck.grade_fit_score) * 0.3 +
     factualCheck.score * 0.25 +
     simulationCheck.score * 0.15 +
     accessibilityCheck.score * 0.15;
@@ -409,7 +414,7 @@ export function computeTrustScore(
   return {
     overall_score,
     schema_score: schemaCheck.score,
-    pedagogical_score: pedagogicalCheck.score,
+    pedagogical_score: pedagogicalCheck.score ?? pedagogicalCheck.grade_fit_score,
     factual_score: factualCheck.score,
     simulation_score: simulationCheck.score,
     accessibility_score: accessibilityCheck.score,

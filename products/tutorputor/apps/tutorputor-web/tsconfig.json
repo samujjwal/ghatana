@@ -62,7 +62,6 @@
     "src/features/simulation-authoring/**",
     "src/features/simulation-tutor/**",
     "src/features/assessments/**",
-    "src/pages/SimulationStudio.tsx",
     "src/hooks/useOffline.ts",
     "src/sw.ts",
     "src/workers/**",

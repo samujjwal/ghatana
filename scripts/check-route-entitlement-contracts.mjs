@@ -164,6 +164,49 @@ const checks = [
   },
 ];
 
+/**
+ * Behavioral test coverage checks.
+ * Each entry asserts that a co-located behavioral test file exists AND
+ * that it imports real production code (not object-literal theater).
+ */
+const behavioralCoverageChecks = [
+  {
+    name: 'FlashIt entitlements behavioral test',
+    testFile: 'products/flashit/backend/gateway/src/routes/__tests__/entitlements.test.ts',
+    // Must import the real route module, not a hand-rolled stub
+    required: [
+      "from '../entitlements.js'",
+      'route-entitlements',
+      'principalId',
+      'role',
+      'tier',
+      'routes',
+    ],
+  },
+  {
+    name: 'FlashIt data-access-context behavioral test',
+    testFile: 'products/flashit/backend/gateway/src/lib/__tests__/data-access-context.test.ts',
+    required: [
+      "from '../../lib/data-access-context.js'",
+      'buildFlashItDataAccessContext',
+      'FlashItDataAccessContextError',
+      'requireIdempotencyKey',
+    ],
+  },
+  {
+    name: 'FlashIt idempotency behavioral test',
+    testFile: 'products/flashit/backend/gateway/src/lib/__tests__/idempotency.test.ts',
+    required: [
+      "from '../../idempotency.js'",
+      'checkIdempotency',
+      'found: false',
+      'found: true',
+    ],
+  },
+];
+
+import { existsSync } from 'node:fs';
+
 const errors = [];
 
 for (const check of checks) {
@@ -183,6 +226,20 @@ for (const check of checks) {
   }
 }
 
+for (const check of behavioralCoverageChecks) {
+  const absolutePath = path.join(repoRoot, check.testFile);
+  if (!existsSync(absolutePath)) {
+    errors.push(`${check.name}: behavioral test file is missing — ${check.testFile}`);
+    continue;
+  }
+  const testSource = readFileSync(absolutePath, 'utf8');
+  for (const token of check.required) {
+    if (!testSource.includes(token)) {
+      errors.push(`${check.name}: behavioral test is missing evidence of "${token}" in ${check.testFile}`);
+    }
+  }
+}
+
 if (errors.length > 0) {
   console.error('Route entitlement contract check failed:\n');
   for (const error of errors) {
@@ -191,4 +248,5 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log('Route entitlement contract check passed.');
+console.log('Route entitlement contract check passed (token + behavioral coverage).');
+

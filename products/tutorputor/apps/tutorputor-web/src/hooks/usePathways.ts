@@ -2,61 +2,61 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "../api/tutorputorClient";
 
 /**
- * Hook to recommend a learning path based on goals.
+ * Hook to get the active pathway for the current user.
+ * Uses the adaptive learning model: diagnostic → learner profile → prerequisite graph → pathway
  */
-export function useRecommendPath() {
-    return useMutation({
-        mutationFn: ({ goals, currentSkills }: { goals: string[]; currentSkills?: string[] }) =>
-            apiClient.recommendPath(goals, currentSkills)
+export function useActivePathway() {
+    return useQuery({
+        queryKey: ["activePathway"],
+        queryFn: () => apiClient.getActivePathway()
     });
 }
 
 /**
- * Hook to enroll in a learning path.
+ * Hook to generate a personalized learning pathway based on a goal.
+ * Integrates with learner profile for mastery-aware recommendations.
  */
-export function useEnrollInPath() {
+export function useGeneratePathway() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (pathId: string) => apiClient.enrollInPath(pathId),
+        mutationFn: ({ goal, constraints }: { goal: string; constraints?: { maxModules?: number; maxDurationMinutes?: number } }) =>
+            apiClient.generatePathway(goal, constraints),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["pathEnrollments"] });
+            queryClient.invalidateQueries({ queryKey: ["activePathway"] });
         }
     });
 }
 
 /**
- * Hook to get a specific path enrollment.
+ * Hook to create a new active learning pathway.
  */
-export function usePathEnrollment(pathId: string) {
-    return useQuery({
-        queryKey: ["pathEnrollment", pathId],
-        queryFn: () => apiClient.getPathEnrollment(pathId),
-        enabled: !!pathId
-    });
-}
-
-/**
- * Hook to list all path enrollments.
- */
-export function usePathEnrollments() {
-    return useQuery({
-        queryKey: ["pathEnrollments"],
-        queryFn: () => apiClient.listPathEnrollments()
-    });
-}
-
-/**
- * Hook to update path progress.
- */
-export function useUpdatePathProgress() {
+export function useCreatePathway() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ pathId, nodeId, status }: { pathId: string; nodeId: string; status: string }) =>
-            apiClient.updatePathProgress(pathId, nodeId, status),
-        onSuccess: (_, { pathId }) => {
-            queryClient.invalidateQueries({ queryKey: ["pathEnrollment", pathId] });
+        mutationFn: ({ title, goal, moduleIds }: { title: string; goal: string; moduleIds: string[] }) =>
+            apiClient.createPathway(title, goal, moduleIds),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["activePathway"] });
         }
     });
 }
+
+/**
+ * Hook to advance the current pathway by marking a module as complete.
+ * This triggers mastery updates and remediation recommendations in the adaptive learning model.
+ */
+export function useAdvancePathway() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ completedModuleId }: { completedModuleId: string }) =>
+            apiClient.advancePathway(completedModuleId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["activePathway"] });
+            queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+        }
+    });
+}
+

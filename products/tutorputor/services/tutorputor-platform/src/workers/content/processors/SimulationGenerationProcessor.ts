@@ -17,35 +17,137 @@ import {
     ContentWorkerTelemetryPublisher,
 } from '../generation-telemetry';
 
-type SimulationDomainValue =
-    | 'CS_DISCRETE'
-    | 'PHYSICS'
-    | 'CHEMISTRY'
-    | 'BIOLOGY'
-    | 'MEDICINE'
-    | 'ECONOMICS'
-    | 'ENGINEERING'
-    | 'MATHEMATICS';
-
-function toSimulationDomain(value: string): SimulationDomainValue {
-    const normalized = value.trim().toUpperCase();
-    switch (normalized) {
-        case 'CS_DISCRETE':
-        case 'PHYSICS':
-        case 'CHEMISTRY':
-        case 'BIOLOGY':
-        case 'MEDICINE':
-        case 'ECONOMICS':
-        case 'ENGINEERING':
-        case 'MATHEMATICS':
-            return normalized;
-        default:
-            return 'PHYSICS';
-    }
+/**
+ * Normalize domain to full TutorPutor domain set.
+ * Aligns with RealContentGenerationClient.normalizeDomain for consistency.
+ */
+function normalizeDomain(value: string): string {
+    const normalized = String(value || '').toUpperCase().replace(/[-\s]/g, '_');
+    const mapping: Record<string, string> = {
+        // Full TutorPutor domain set
+        MATH: 'MATHEMATICS',
+        MATHEMATICS: 'MATHEMATICS',
+        SCIENCE: 'SCIENCE',
+        TECH: 'TECH',
+        ENGINEERING: 'ENGINEERING',
+        MEDICINE: 'MEDICINE',
+        HEALTH: 'HEALTH',
+        BUSINESS: 'BUSINESS',
+        MANAGEMENT: 'MANAGEMENT',
+        ECONOMICS: 'ECONOMICS',
+        COMPUTER_SCIENCE: 'COMPUTER_SCIENCE',
+        INTERDISCIPLINARY: 'INTERDISCIPLINARY',
+        
+        // Alternative mappings for backward compatibility
+        CS: 'COMPUTER_SCIENCE',
+        CS_DISCRETE: 'COMPUTER_SCIENCE',
+        'CS-DISCRETE': 'COMPUTER_SCIENCE',
+        PHYSICS: 'SCIENCE',
+        CHEMISTRY: 'SCIENCE',
+        BIOLOGY: 'SCIENCE',
+        
+        // Legacy fallbacks (prefer explicit domain selection)
+        ARTS: 'INTERDISCIPLINARY',
+        LANGUAGE: 'INTERDISCIPLINARY',
+        GENERAL: 'INTERDISCIPLINARY',
+    };
+    return mapping[normalized] || 'INTERDISCIPLINARY';
 }
 
 function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
     return value as Prisma.InputJsonValue;
+}
+
+/**
+ * Validate SimulationManifest against proto schema requirements
+ */
+function validateSimulationManifest(manifest: {
+    manifest_id?: string;
+    version?: string;
+    domain?: string;
+    title?: string;
+    description?: string;
+    entities?: unknown[];
+    steps?: unknown[];
+    keyframes?: unknown[];
+    domain_config?: string;
+}): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    if (!manifest.manifest_id) {
+        errors.push('manifest_id is required');
+    }
+    if (!manifest.version) {
+        errors.push('version is required');
+    }
+    if (!manifest.domain) {
+        errors.push('domain is required');
+    }
+    if (!manifest.title) {
+        errors.push('title is required');
+    }
+    if (!manifest.description) {
+        errors.push('description is required');
+    }
+    if (!manifest.entities || !Array.isArray(manifest.entities) || manifest.entities.length === 0) {
+        errors.push('entities must be a non-empty array');
+    }
+    if (!manifest.steps || !Array.isArray(manifest.steps) || manifest.steps.length === 0) {
+        errors.push('steps must be a non-empty array');
+    }
+    if (!manifest.keyframes || !Array.isArray(manifest.keyframes) || manifest.keyframes.length === 0) {
+        errors.push('keyframes must be a non-empty array');
+    }
+
+    // Validate domain_config is valid JSON if present
+    if (manifest.domain_config) {
+        try {
+            JSON.parse(manifest.domain_config);
+        } catch {
+            errors.push('domain_config must be valid JSON');
+        }
+    }
+
+    return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Extract goal from manifest - prefer explicit goal from domain_config, fall back to title
+ */
+function extractGoal(manifest: { title?: string; description?: string; domain_config?: string }): string {
+    if (manifest.domain_config) {
+        try {
+            const domainConfig = JSON.parse(manifest.domain_config) as Record<string, unknown>;
+            if (typeof domainConfig.goal === 'string' && domainConfig.goal.trim()) {
+                return domainConfig.goal.trim();
+            }
+        } catch {
+            // If domain_config is invalid JSON, fall back to title
+        }
+    }
+    // Fall back to title if no explicit goal in domain_config
+    return manifest.title || 'Explore simulation';
+}
+
+/**
+ * Extract success criteria from manifest domain_config
+ * Throws error if no valid success criteria found
+ */
+function extractSuccessCriteria(manifest: { domain_config?: string }): Record<string, unknown> {
+    if (!manifest.domain_config) {
+        throw new Error('domain_config is required for success criteria');
+    }
+
+    try {
+        const domainConfig = JSON.parse(manifest.domain_config) as Record<string, unknown>;
+        if (domainConfig.successCriteria && typeof domainConfig.successCriteria === 'object') {
+            return domainConfig.successCriteria as Record<string, unknown>;
+        }
+    } catch (e) {
+        throw new Error(`Invalid domain_config JSON: ${e instanceof Error ? e.message : String(e)}`);
+    }
+
+    throw new Error('successCriteria not found in domain_config');
 }
 
 export interface SimulationGenerationJobData extends CorrelatedGenerationJobData {
@@ -117,34 +219,41 @@ export class SimulationGenerationProcessor {
                 throw new Error('No simulation manifest returned');
             }
 
+            // Validate manifest against proto schema before persistence
+            const validation = validateSimulationManifest(response.manifest);
+            if (!validation.valid) {
+                throw new Error(`Invalid simulation manifest: ${validation.errors.join(', ')}`);
+            }
+
+            this.logger.info(
+                { jobId: job.id, manifestId: response.manifest.manifest_id },
+                'Simulation manifest validated successfully'
+            );
+
             // Store simulation manifest in database
-            // Schema requires ID. Using manifest_id if available or generate one?
-            // Schema says @id without default(cuid())? No wait:
-            // model SimulationManifest {
-            //   id          String           @id // Stable manifest ID generated from concept
-            const manifestId = response.manifest.manifest_id || crypto.randomUUID();
-            const persistedDomain = toSimulationDomain(domain);
+            const manifestId = response.manifest.manifest_id;
+            const persistedDomain = normalizeDomain(domain) as any; // TODO: Regenerate Prisma types after schema update
             const persistedManifest = toInputJsonValue(response.manifest);
+
+            // Extract goal and success criteria from validated manifest
+            const goal = extractGoal(response.manifest);
+            const successCriteria = extractSuccessCriteria(response.manifest);
 
             const manifest = await this.prisma.simulationManifest.upsert({
                 where: { id: manifestId },
                 create: {
                     id: manifestId,
                     tenantId,
-                    title: response.manifest.name, // Mapped name -> title
-                    description: response.manifest.description,
-                    version: '1.0.0',
+                    title: response.manifest.title,
+                    description: response.manifest.description || '',
+                    version: response.manifest.version || '1.0.0',
                     domain: persistedDomain,
-                    // gradeLevel: removed as not in schema
                     manifest: persistedManifest,
-                    // status: 'DRAFT', // status not in schema for SimulationManifest?
-                    // Schema has `status SimulationTemplateStatus` for Template, but Manifest?
-                    // Manifest has `title`, `description`, `domain`, `version`. No `status`.
                 },
                 update: {
-                    title: response.manifest.name,
-                    description: response.manifest.description,
-                    version: '1.0.0',
+                    title: response.manifest.title,
+                    description: response.manifest.description || '',
+                    version: response.manifest.version || '1.0.0',
                     domain: persistedDomain,
                     manifest: persistedManifest,
                 },
@@ -168,15 +277,15 @@ export class SimulationGenerationProcessor {
                     claimRef,
                     simulationManifestId: manifest.id,
                     interactionType,
-                    goal: response.manifest.goals?.[0]?.description || 'Explore the concept',
-                    successCriteria: {},
+                    goal,
+                    successCriteria: toInputJsonValue(successCriteria),
                     estimatedMinutes: 10,
                 },
                 update: {
                     simulationManifestId: manifest.id,
                     interactionType,
-                    goal: response.manifest.goals?.[0]?.description || 'Explore the concept',
-                    successCriteria: {},
+                    goal,
+                    successCriteria: toInputJsonValue(successCriteria),
                     estimatedMinutes: 10,
                 },
             });

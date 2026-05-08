@@ -20,6 +20,7 @@ import { prisma } from '../../lib/prisma';
 import { Readable } from 'stream';
 import { VectorEmbeddingService } from '../embeddings/vector-service.js';
 import { requireAiSecret, isAiDisabled } from '../../lib/ai-mode.js';
+import { systemLogger } from '../../lib/logger.js';
 
 // Redis connection
 const redis = new Redis({
@@ -185,7 +186,7 @@ class AudioPreprocessor {
       try {
         unlinkSync(filePath);
       } catch (error) {
-        console.warn(`Failed to cleanup file ${filePath}:`, error);
+        systemLogger.warn(`Failed to cleanup file ${filePath}`, { error });
       }
     }
   }
@@ -440,7 +441,7 @@ const transcriptionWorker = new Worker<TranscriptionJobData>(
           });
         }
       } catch (embError) {
-        console.error('Failed to trigger embedding after transcription:', embError);
+        systemLogger.error('Failed to trigger embedding after transcription', { error: embError });
       }
 
       
@@ -451,7 +452,7 @@ const transcriptionWorker = new Worker<TranscriptionJobData>(
       return result;
 
     } catch (error: any) {
-      console.error('Transcription job failed:', error);
+      systemLogger.error('Transcription job failed', { error });
 
       // Update database with failure
       try {
@@ -474,7 +475,7 @@ const transcriptionWorker = new Worker<TranscriptionJobData>(
 
         await prisma.$disconnect();
       } catch (dbError) {
-        console.error('Failed to update database with transcription failure:', dbError);
+        systemLogger.error('Failed to update database with transcription failure', { error: dbError });
       }
 
       throw error;
@@ -488,20 +489,20 @@ const transcriptionWorker = new Worker<TranscriptionJobData>(
 
 // Worker event handlers
 transcriptionWorker.on('completed', (job) => {
-  console.log(`Transcription job ${job.id} completed successfully`);
+  systemLogger.info(`Transcription job ${job.id} completed successfully`);
 });
 
 transcriptionWorker.on('failed', (job, err) => {
-  console.error(`Transcription job ${job?.id} failed:`, err);
+  systemLogger.error(`Transcription job ${job?.id} failed`, { error: err });
 });
 
 transcriptionWorker.on('progress', (job, progress) => {
-  console.log(`Transcription job ${job.id} progress: ${progress}%`);
+  systemLogger.info(`Transcription job ${job.id} progress: ${progress}%`);
 });
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-  console.log('Shutting down transcription worker...');
+  systemLogger.info('Shutting down transcription worker...');
   await transcriptionWorker.close();
   await redis.quit();
   process.exit(0);

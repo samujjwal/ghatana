@@ -10,6 +10,7 @@
 
 import { prisma } from '../../lib/prisma.js';
 import { VectorEmbeddingService } from '../embeddings/vector-service.js';
+import { systemLogger } from '../../lib/logger.js';
 
 // Search types
 export type SearchType = 'semantic' | 'text' | 'hybrid' | 'similar';
@@ -242,7 +243,7 @@ export class EnhancedSearchService {
       };
 
     } catch (error) {
-      console.error('Search failed:', error);
+      systemLogger.error('Search failed', { error });
       throw new Error('Search service temporarily unavailable');
     }
   }
@@ -698,7 +699,7 @@ export class EnhancedSearchService {
         },
       });
     } catch (error) {
-      console.error('Failed to log search analytics:', error);
+      systemLogger.error('Failed to log search analytics', { error });
     }
   }
 
@@ -736,7 +737,7 @@ export class EnhancedSearchService {
       return commonTerms.map((term: any) => term.term);
 
     } catch (error) {
-      console.error('Failed to get search suggestions:', error);
+      systemLogger.error('Failed to get search suggestions', { error });
       return [];
     }
   }

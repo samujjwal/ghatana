@@ -12,6 +12,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
 import { dmosRouteManifest, isRouteAllowedForRoles } from '@/routeManifest';
+import { CapabilityKeys } from '@/api/capabilities';
 
 vi.mock('@/lib/feature-flags', () => ({
   FEATURE_FLAGS: {
@@ -62,6 +63,17 @@ function renderRoute(
 }
 
 describe('Route contracts', () => {
+  it('requires every route capability key to be defined in CapabilityKeys', () => {
+    const knownCapabilities = new Set(Object.values(CapabilityKeys));
+    const routeCapabilityKeys = dmosRouteManifest
+      .map((route) => route.capabilityKey)
+      .filter((key): key is string => Boolean(key));
+
+    routeCapabilityKeys.forEach((key) => {
+      expect(knownCapabilities.has(key)).toBe(true);
+    });
+  });
+
   it('exposes role/persona/tier metadata for every manifest route', () => {
     dmosRouteManifest.forEach((route) => {
       expect(route.path).toBeTruthy();

@@ -6,7 +6,6 @@ import com.ghatana.digitalmarketing.domain.workspace.Workspace;
 import io.activej.promise.Promise;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Application service contract for DMOS workspace management.
@@ -80,11 +79,22 @@ public interface WorkspaceService {
      *
      * @param ctx         operation context
      * @param workspaceId the workspace identifier string
-     * @return promise resolving to a map of capability keys to their enabled status
+     * @return promise resolving to capability entries with metadata and enabled state
      * @throws SecurityException if the actor is not authorized to read the workspace
      * @throws java.util.NoSuchElementException if the workspace does not exist
      */
-    Promise<Map<String, Boolean>> getWorkspaceCapabilities(DmOperationContext ctx, String workspaceId);
+    Promise<List<WorkspaceCapability>> getWorkspaceCapabilities(DmOperationContext ctx, String workspaceId);
+
+    /**
+     * API-facing capability entry for workspace capability responses.
+     */
+    record WorkspaceCapability(
+        String key,
+        boolean enabled,
+        String description,
+        String requiresRole,
+        String tier
+    ) {}
 
     // -----------------------------------------------------------------------
     // Command record

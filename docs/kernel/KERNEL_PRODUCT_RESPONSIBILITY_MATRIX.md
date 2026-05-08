@@ -1,7 +1,11 @@
 # Kernel / Product Responsibility Matrix
 
 > **Canonical owner map** for Kernel, shared libraries, design system, infrastructure, and product modules.
-> **Last Updated:** 2026-05-04
+> **Last Updated:** 2026-05-08
+>
+> **Scope decisions** (what enters or leaves the kernel) are governed by
+> [KERNEL_PROMOTION_CRITERIA.md](./KERNEL_PROMOTION_CRITERIA.md) — consult that document
+> before proposing any capability for kernel promotion or de-promotion.
 
 ## Ownership Rules
 

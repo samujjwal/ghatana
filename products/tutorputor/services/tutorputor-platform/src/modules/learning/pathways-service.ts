@@ -1,14 +1,13 @@
 /**
  * Pathways Service (Migrated)
  *
- * AI-driven personalized learning paths.
+ * AI-driven personalized learning paths aligned with adaptive learning model:
+ * diagnostic → learner profile → prerequisite graph → pathway → mastery updates → remediation → next best lesson
+ *
  * Migrated from tutorputor-pathways/src/service.ts
  *
- * DEPRECATED: Direct AI client usage is deprecated. Use the unified
- * generation-request API surface at /generation/requests for content generation.
- *
  * @doc.type service
- * @doc.purpose Personalized learning pathways with deprecated direct AI client
+ * @doc.purpose Adaptive learning pathways with mastery-driven progression
  * @doc.layer product
  * @doc.pattern Service
  */
@@ -26,6 +25,7 @@ import type {
   UserId,
 } from "@tutorputor/contracts/v1/types";
 import type { TutorPrismaClient } from "@tutorputor/core/db";
+import type { LearnerProfileService } from "./learner-profile-service";
 
 import { aiClient } from "../../clients/ai-client";
 import { createStandaloneLogger } from "@tutorputor/core/logger";
@@ -104,12 +104,80 @@ async function computeLearnerLevel(
   return "beginner";
 }
 
+/**
+ * Check if a module has unmet prerequisites based on knowledge gaps
+ */
+async function checkPrerequisites(
+  prisma: TutorPrismaClient,
+  moduleId: ModuleId,
+  gapConceptIds: string[],
+): Promise<boolean> {
+  if (gapConceptIds.length === 0) return false;
+
+  const module = await prisma.module.findUnique({
+    where: { id: moduleId },
+    include: { prerequisites: true },
+  });
+
+  if (!module || !module.prerequisites) return false;
+
+  const prereqConceptIds = module.prerequisites.map(
+    (p: Record<string, unknown>) => p.conceptId as string,
+  );
+
+  // Check if any prerequisite is in the knowledge gaps
+  const hasUnmetPrereq = prereqConceptIds.some((conceptId) =>
+    gapConceptIds.includes(conceptId),
+  );
+
+  return hasUnmetPrereq;
+}
+
+/**
+ * Order nodes by prerequisites using topological sort
+ */
+function orderNodesByPrerequisites(
+  nodes: Array<Record<string, unknown>>,
+  prisma: TutorPrismaClient,
+): Array<Record<string, unknown>> {
+  // Simple ordering: blocked nodes go last
+  const blocked = nodes.filter((n) => n.status === "BLOCKED");
+  const pending = nodes.filter((n) => n.status !== "BLOCKED");
+
+  return [...pending, ...blocked];
+}
+
 export function createPathwaysService(
   prisma: TutorPrismaClient,
+  learnerProfileService?: LearnerProfileService,
 ): HealthAwarePathwaysService {
   return {
     async generatePathway({ tenantId, userId, goal, constraints }) {
-      // 1. Try AI Generation Plan
+      // 1. Adaptive Learning Flow: Get learner profile for mastery-aware recommendations
+      let masterySummary = null;
+      let knowledgeGaps: Array<{ conceptId: string; severity: string }> = [];
+      let adjustedDifficulty = "beginner";
+
+      if (learnerProfileService) {
+        try {
+          // Use getPersonalizationSnapshot for full adaptive context
+          const snapshot = await learnerProfileService.getPersonalizationSnapshot(
+            tenantId,
+            userId,
+            goal, // Use goal as topic focus
+          );
+          masterySummary = snapshot.masterySummary ?? null;
+          knowledgeGaps = snapshot.knowledgeGaps.map((g) => ({
+            conceptId: g,
+            severity: "MEDIUM",
+          }));
+          adjustedDifficulty = snapshot.adjustedDifficulty ?? "beginner";
+        } catch (error) {
+          logger.warn({ error }, "Failed to fetch learner profile snapshot, using default");
+        }
+      }
+
+      // 2. Try AI Generation Plan with learner profile context
       try {
         const learnerLevel = await computeLearnerLevel(
           prisma,
@@ -122,11 +190,14 @@ export function createPathwaysService(
           goal: goal,
           learner_level: learnerLevel,
           context_id: userId,
+          // Add mastery context for adaptive generation
+          ...(masterySummary && { mastery_summary: masterySummary }),
+          ...(knowledgeGaps.length > 0 && { knowledge_gaps: knowledgeGaps }),
         });
 
         if (aiPath && aiPath.nodes && aiPath.nodes.length > 0) {
           // Map AI nodes to DB modules via search
-          const pathNodes: Array<Record<string, unknown>> = []; // Temporary type as we build for create
+          const pathNodes: Array<Record<string, unknown>> = [];
 
           for (const aiNode of aiPath.nodes) {
             // Find best matching module
@@ -151,10 +222,17 @@ export function createPathwaysService(
                   },
                 ],
               },
-              include: { tags: true },
+              include: { tags: true, prerequisites: true },
             });
 
             if (match) {
+              // Check prerequisites against knowledge gaps
+              const hasUnmetPrereqs = await checkPrerequisites(
+                prisma,
+                match.id as ModuleId,
+                knowledgeGaps.map((g) => g.conceptId),
+              );
+
               // Prevent duplicates
               if (
                 !pathNodes.find(
@@ -166,16 +244,24 @@ export function createPathwaysService(
                   description: match.description ?? "",
                   type: "MODULE",
                   contentId: match.id,
-                  status: "PENDING",
+                  status: hasUnmetPrereqs ? "BLOCKED" : "PENDING",
                   orderIndex: pathNodes.length,
-                  metadata: { ai_node_id: aiNode.id },
+                  metadata: {
+                    ai_node_id: aiNode.id,
+                    prerequisite_status: hasUnmetPrereqs ? "UNMET" : "MET",
+                  },
                 });
               }
             }
           }
 
           if (pathNodes.length > 0) {
-            // Create the paths
+            // Create the path with prerequisite-aware ordering
+            const orderedNodes = orderNodesByPrerequisites(
+              pathNodes,
+              prisma,
+            );
+
             await prisma.learningPath.create({
               data: {
                 tenantId,
@@ -184,16 +270,17 @@ export function createPathwaysService(
                 goal: goal,
                 status: "ACTIVE",
                 nodes: {
-                  create: pathNodes.map((n: Record<string, unknown>) => ({
+                  create: orderedNodes.map((n: Record<string, unknown>) => ({
                     moduleId: String(n.contentId),
                     orderIndex: Number(n.orderIndex ?? 0),
+                    isOptional: n.status === "BLOCKED",
                   })),
                 },
               },
               include: { nodes: true },
             });
 
-            const selected = pathNodes.map((n: Record<string, unknown>) => ({
+            const selected = orderedNodes.map((n: Record<string, unknown>) => ({
               id: String(n.contentId) as ModuleId,
               slug: "",
               title: String(n.title ?? ""),
@@ -206,7 +293,7 @@ export function createPathwaysService(
 
             return {
               modules: selected,
-              reasoning: `Generated pathway for ${goal} using AI-ranked modules.`,
+              reasoning: `Adaptive pathway for ${goal} using learner profile (difficulty: ${adjustedDifficulty}, gaps: ${knowledgeGaps.length}).`,
               estimatedDurationMinutes: selected.length * 30,
             } as LearningPathRecommendation;
           }

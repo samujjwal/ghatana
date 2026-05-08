@@ -67,5 +67,8 @@ configure<ProductPackValidationExtension> {
             "com.ghatana.flashit.kernel.FlashItKernelBoundaryContractTest"
         )
     )
-    complianceClassFileName.set("FlashItComplianceRulePack.class")
+    complianceSourceFile.set(layout.projectDirectory.file(
+        "src/main/java/com/ghatana/flashit/kernel/policy/FlashItComplianceRulePack.java"
+    ))
+    complianceRulePrefix.set("FLASHIT-")
 }

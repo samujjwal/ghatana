@@ -30,7 +30,11 @@ describe("TutorPutorApiClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
-    window.localStorage.setItem("tenant_id", "tenant-42");
+    // tenantId is derived from JWT token, no longer stored in localStorage
+    // Set a valid token with tenantId instead
+    const tokenPayload = btoa(JSON.stringify({ tenantId: "tenant-42", sub: "user-123" }));
+    const jwt = `header.${tokenPayload}.signature`;
+    window.localStorage.setItem("auth_token", jwt);
 
     fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
@@ -72,7 +76,7 @@ describe("TutorPutorApiClient", () => {
   });
 
   it("rejects requests when no tenant context is stored", async () => {
-    window.localStorage.removeItem("tenant_id");
+    window.localStorage.removeItem("auth_token");
 
     await expect(client.getDashboard()).rejects.toThrow(
       "Authentication required: No tenant context found",

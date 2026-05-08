@@ -1,10 +1,9 @@
 import React from 'react';
 import { Navigate, createBrowserRouter } from 'react-router-dom';
 import { AppShell } from './layout/AppShell';
-import { usePhrAccess, type PhrRole } from './auth/PhrAccessContext';
+import { usePhrAccess } from './auth/PhrAccessContext';
 import { isRouteAllowedForRole, phrRouteManifest, type PhrRouteManifestEntry } from './routeManifest';
 import { LoginPage } from './pages/LoginPage';
-import { RecordDetailPage } from './pages/RecordDetailPage';
 
 export function ProtectedPhrRoute({ route }: { route: PhrRouteManifestEntry }): React.ReactElement {
   const { role } = usePhrAccess();
@@ -40,20 +39,6 @@ export const router = createBrowserRouter([
     element: <AppShell />,
     children: [
       ...phrRouteManifest.map(protectedRoute),
-      { path: 'records/:recordId', element: <RecordDetailPage /> },
-      {
-        path: 'records/:recordId',
-        element: (
-          <ProtectedPhrRoute
-            route={{
-              path: '/records/:recordId',
-              label: 'Record detail',
-              minimumRole: 'patient' as PhrRole,
-              element: <RecordDetailPage />,
-            }}
-          />
-        ),
-      },
     ],
   },
 ]);

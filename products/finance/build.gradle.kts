@@ -92,5 +92,8 @@ configure<ProductPackValidationExtension> {
             "com.ghatana.finance.kernel.FinanceKernelBoundaryContractTest"
         )
     )
-    complianceClassFileName.set("FinanceComplianceRulePack.class")
+    complianceSourceFile.set(layout.projectDirectory.file(
+        "src/main/java/com/ghatana/finance/kernel/policy/FinanceComplianceRulePack.java"
+    ))
+    complianceRulePrefix.set("FIN-")
 }

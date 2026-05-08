@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.ghatana.digitalmarketing.application.capabilities.DmosCapabilityRegistry;
 import com.ghatana.digitalmarketing.application.workspace.WorkspaceService;
 import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
@@ -316,7 +315,7 @@ public final class DmosWorkspaceServlet {
     record WorkspaceCapabilitiesResponse(
         String workspaceId,
         String lastUpdated,
-        java.util.Map<String, Boolean> capabilities
+        java.util.List<WorkspaceService.WorkspaceCapability> capabilities
     ) { }
 
     /** Error response body. */

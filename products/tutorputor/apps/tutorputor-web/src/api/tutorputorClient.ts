@@ -9,6 +9,12 @@ import {
   buildAITutorGroundingPayload,
   type AITutorGroundingPayload,
 } from "./aiTutorGrounding";
+import {
+  getStandardHeaders,
+  handleResponse,
+  standardRequest,
+} from "./sharedApiClient";
+import { readAccessToken } from "@tutorputor/ui";
 
 // Using native fetch instead of axios due to monorepo aliasing
 
@@ -309,52 +315,23 @@ export class TutorPutorApiClient {
     this.baseURL = baseURL;
   }
 
-  private getHeaders(): HeadersInit {
-    const token = localStorage.getItem("auth_token");
-    const tenantId = localStorage.getItem("tenant_id");
-
-    if (!tenantId) {
-      throw new Error("Authentication required: No tenant context found");
-    }
-
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      "X-Tenant-ID": tenantId,
-      "X-Correlation-ID": crypto.randomUUID(),
-    };
-
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    return headers;
+  private getToken(): string | null {
+    return readAccessToken();
   }
 
   private async request<T>(url: string, options?: RequestInit): Promise<T> {
+    const token = this.getToken();
+    const headers = getStandardHeaders(token);
+
     const response = await fetch(`${this.baseURL}${url}`, {
       ...options,
       headers: {
-        ...this.getHeaders(),
+        ...headers,
         ...options?.headers,
       },
     });
 
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => ({})) as Record<string, unknown>;
-      const error = new Error(
-        (errorBody?.error as string) ||
-          (errorBody?.message as string) ||
-          `HTTP ${response.status}: ${response.statusText}`,
-      ) as Error & { statusCode: number; requestId?: string };
-      error.statusCode = response.status;
-      // Propagate the server-assigned requestId so it can be shown in the UI
-      if (typeof errorBody?.requestId === "string") {
-        error.requestId = errorBody.requestId;
-      }
-      throw error;
-    }
-
-    return response.json();
+    return handleResponse<T>(response);
   }
 
   async getDashboard(): Promise<DashboardSummary> {
@@ -389,7 +366,7 @@ export class TutorPutorApiClient {
   async enrollInModule(
     moduleId: ModuleId,
   ): Promise<{ enrollment: Enrollment }> {
-    return await this.request<{ enrollment: Enrollment }>("/v1/enrollments", {
+    return await this.request<{ enrollment: Enrollment }>("/v1/learning/enrollments", {
       method: "POST",
       body: JSON.stringify({ moduleId }),
     });
@@ -401,7 +378,7 @@ export class TutorPutorApiClient {
     timeSpentSecondsDelta: number,
   ): Promise<{ enrollment: Enrollment }> {
     return await this.request<{ enrollment: Enrollment }>(
-      `/v1/enrollments/${enrollmentId}/progress`,
+      `/v1/learning/enrollments/${enrollmentId}/progress`,
       {
         method: "PATCH",
         body: JSON.stringify({ progressPercent, timeSpentSecondsDelta }),
@@ -449,46 +426,38 @@ export class TutorPutorApiClient {
     });
   }
 
-  // ========== Learning Pathways ==========
+  // ========== Learning Pathways (Adaptive Learning Model) ==========
 
-  async recommendPath(
-    goals: string[],
-    currentSkills?: string[],
+  async generatePathway(
+    goal: string,
+    constraints?: { maxModules?: number; maxDurationMinutes?: number },
+  ): Promise<LearningPathRecommendation> {
+    return await this.request<LearningPathRecommendation>("/v1/learning/pathways/generate", {
+      method: "POST",
+      body: JSON.stringify({ goal, ...constraints }),
+    });
+  }
+
+  async createPathway(
+    title: string,
+    goal: string,
+    moduleIds: string[],
   ): Promise<LearningPath> {
-    return await this.request<LearningPath>("/v1/pathways/recommend", {
+    return await this.request<LearningPath>("/v1/learning/pathways", {
       method: "POST",
-      body: JSON.stringify({ goals, currentSkills }),
+      body: JSON.stringify({ title, goal, moduleIds }),
     });
   }
 
-  async enrollInPath(pathId: string): Promise<LearningPathEnrollment> {
-    return await this.request<LearningPathEnrollment>("/v1/pathways/enroll", {
+  async getActivePathway(): Promise<LearningPath | null> {
+    return await this.request<LearningPath>("/v1/learning/pathways/active");
+  }
+
+  async advancePathway(completedModuleId: string): Promise<LearningPath> {
+    return await this.request<LearningPath>("/v1/learning/pathways/advance", {
       method: "POST",
-      body: JSON.stringify({ pathId }),
+      body: JSON.stringify({ completedModuleId }),
     });
-  }
-
-  async getPathEnrollment(pathId: string): Promise<LearningPathEnrollment> {
-    return await this.request<LearningPathEnrollment>(`/v1/pathways/${pathId}`);
-  }
-
-  async updatePathProgress(
-    pathId: string,
-    nodeId: string,
-    status: string,
-  ): Promise<void> {
-    await this.request(`/v1/pathways/${pathId}/progress`, {
-      method: "PATCH",
-      body: JSON.stringify({ nodeId, status }),
-    });
-  }
-
-  async listPathEnrollments(): Promise<{
-    enrollments: LearningPathEnrollment[];
-  }> {
-    return await this.request<{ enrollments: LearningPathEnrollment[] }>(
-      "/v1/pathways",
-    );
   }
 
   // ========== Teacher/Classroom ==========
@@ -591,7 +560,7 @@ export class TutorPutorApiClient {
     xpToNextLevel: number;
     badges: Achievement[];
   }> {
-    return await this.request("/v1/gamification/progress");
+    return await this.request("/v1/engagement/gamification/progress");
   }
 
   async getLeaderboard(period?: string): Promise<{
@@ -604,14 +573,14 @@ export class TutorPutorApiClient {
     }>;
   }> {
     const url = period
-      ? `/v1/gamification/leaderboard?period=${period}`
-      : "/v1/gamification/leaderboard";
+      ? `/v1/engagement/gamification/leaderboard?period=${period}`
+      : "/v1/engagement/gamification/leaderboard";
     return await this.request(url);
   }
 
   async getUserAchievements(): Promise<{ achievements: Achievement[] }> {
     return await this.request<{ achievements: Achievement[] }>(
-      "/v1/gamification/achievements",
+      "/v1/engagement/gamification/achievements",
     );
   }
 
@@ -693,7 +662,7 @@ export class TutorPutorApiClient {
       }
     }
 
-    return await this.request<HybridSearchResponse>(`/search?${params}`);
+    return await this.request<HybridSearchResponse>(`/v1/search?${params}`);
   }
 
   async getSearchSuggestions(query: string): Promise<{
@@ -771,7 +740,7 @@ export class TutorPutorApiClient {
           suggestedDomains: string[];
         };
       };
-    }>(`/v1/recommendations/personalized?limit=${limit}`);
+    }>(`/recommendations/personalized?limit=${limit}`);
     return result.data;
   }
 
@@ -800,7 +769,7 @@ export class TutorPutorApiClient {
       totalEvents: number;
       activeLearners: number;
       eventsByType: Record<string, number>;
-    }>(`/v1/analytics/summary?period=${period}`);
+    }>(`/v1/learning/analytics/summary?period=${period}`);
   }
 
   async getUsageTrends(period: "daily" | "weekly" | "monthly" = "weekly"): Promise<{
@@ -814,7 +783,7 @@ export class TutorPutorApiClient {
         periodStart: string;
         eventCount: number;
       }>;
-    }>(`/v1/analytics/usage-trends?period=${period}`);
+    }>(`/v1/learning/analytics/advanced?period=${period}`);
   }
 
   async getAtRiskStudents(): Promise<Array<{
@@ -828,14 +797,14 @@ export class TutorPutorApiClient {
       displayName: string;
       riskLevel: string;
       riskFactors?: string[];
-    }>>("/v1/analytics/at-risk");
+    }>>("/v1/learning/analytics/risk");
   }
 
   /**
    * Fetch a specific assessment by ID.
    */
   async getAssessment(assessmentId: string): Promise<Assessment> {
-    return await this.request<Assessment>(`/v1/assessments/${assessmentId}`);
+    return await this.request<Assessment>(`/v1/learning/assessments/${assessmentId}`);
   }
 
   /**
@@ -843,7 +812,7 @@ export class TutorPutorApiClient {
    * Returns the attempt record including the server-generated attempt ID.
    */
   async startAssessmentAttempt(assessmentId: string): Promise<AttemptResponse> {
-    return await this.request<AttemptResponse>(`/v1/assessments/${assessmentId}/attempts`, {
+    return await this.request<AttemptResponse>(`/v1/learning/assessments/${assessmentId}/attempt`, {
       method: "POST",
     });
   }
@@ -855,7 +824,7 @@ export class TutorPutorApiClient {
     attemptId: string,
     responses: Record<string, { type: string; selectedChoiceIds?: string[]; answer?: string }>,
   ): Promise<void> {
-    await this.request<void>(`/v1/assessment-attempts/${attemptId}/submit`, {
+    await this.request<void>(`/v1/learning/attempts/${attemptId}/submit`, {
       method: "POST",
       body: JSON.stringify({ responses }),
     });
@@ -865,30 +834,10 @@ export class TutorPutorApiClient {
 export const apiClient = new TutorPutorApiClient();
 
 /**
- * Simplified client for direct HTTP calls (e.g., for CMS pages)
- * This provides get/post/patch/delete methods using native fetch
+ * Simplified client for direct HTTP calls.
+ * This provides get/post/patch/delete methods using the shared API utilities.
+ * Uses the same header logic and error handling as TutorPutorApiClient.
  */
-function getHeaders(): HeadersInit {
-  const token = localStorage.getItem("auth_token");
-  const tenantId = localStorage.getItem("tenant_id");
-
-  if (!tenantId) {
-    throw new Error("Authentication required: No tenant context found");
-  }
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    "X-Tenant-ID": tenantId,
-    "X-Correlation-ID": crypto.randomUUID(),
-  };
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  return headers;
-}
-
 export const tutorputorClient = {
   get: async <T = unknown>(
     url: string,
@@ -897,43 +846,43 @@ export const tutorputorClient = {
     const queryString = params
       ? `?${new URLSearchParams(params as Record<string, string>)}`
       : "";
-    const response = await fetch(`/api/v1${url}${queryString}`, {
+    const token = readAccessToken();
+    const data = await standardRequest<T>(`/api/v1${url}${queryString}`, {
       method: "GET",
-      headers: getHeaders(),
+      token,
     });
-    const data = await response.json();
     return { data };
   },
   post: async <T = unknown>(
     url: string,
     data?: object,
   ): Promise<{ data: T }> => {
-    const response = await fetch(`/api/v1${url}`, {
+    const token = readAccessToken();
+    const responseData = await standardRequest<T>(`/api/v1${url}`, {
       method: "POST",
-      headers: getHeaders(),
-      body: JSON.stringify(data),
+      token,
+      body: data,
     });
-    const responseData = await response.json();
     return { data: responseData };
   },
   patch: async <T = unknown>(
     url: string,
     data?: object,
   ): Promise<{ data: T }> => {
-    const response = await fetch(`/api/v1${url}`, {
+    const token = readAccessToken();
+    const responseData = await standardRequest<T>(`/api/v1${url}`, {
       method: "PATCH",
-      headers: getHeaders(),
-      body: JSON.stringify(data),
+      token,
+      body: data,
     });
-    const responseData = await response.json();
     return { data: responseData };
   },
   delete: async <T = unknown>(url: string): Promise<{ data: T }> => {
-    const response = await fetch(`/api/v1${url}`, {
+    const token = readAccessToken();
+    const responseData = await standardRequest<T>(`/api/v1${url}`, {
       method: "DELETE",
-      headers: getHeaders(),
+      token,
     });
-    const data = await response.json();
-    return { data };
+    return { data: responseData };
   },
 };

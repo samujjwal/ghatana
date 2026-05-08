@@ -34,6 +34,29 @@ const DOC_ROOTS = [
   join(REPO_ROOT, 'products', 'aep', 'docs'),
 ];
 
+/**
+ * Audit-tracker-specific files that must have evidence references on every
+ * "Completed" or "Partial (fixed)" status row.
+ */
+const AUDIT_TRACKER_FILES = [
+  join(REPO_ROOT, 'docs', 'kernel', 'PRODUCT_KERNEL_AUDIT_PROGRESS.md'),
+];
+
+/**
+ * Matches a Markdown table row whose status column is "Partial (fixed ...)".
+ * These rows MUST cite a source file or script path as evidence.
+ * "Completed" rows are warned but not failed (evidence backfill in progress).
+ */
+const AUDIT_ROW_PARTIAL_FIXED_PATTERN = /^\|\s*\d+\s*\|\s*Partial\s*\(fixed[^)]*\)\s*\|/i;
+const AUDIT_ROW_COMPLETED_PATTERN = /^\|\s*\d+\s*\|\s*Completed\s*\|/i;
+
+/**
+ * An evidence reference inside an audit row — a path segment that points to a
+ * real file location.
+ */
+const AUDIT_ROW_EVIDENCE_PATTERN =
+  /`?(products\/|scripts\/|src\/|\.github\/workflows\/|platform\/|config\/)[^\s`|,]+`?/i;
+
 const CLAIM_PATTERNS = [
   /\bready for production\b/i,
   /\bverified\b/i,
@@ -102,8 +125,50 @@ function hasClaim(line) {
 }
 
 /***********************
- * Main execution
+ * Audit tracker evidence validation
  ***********************/
+
+const warnings = [];
+
+for (const trackerFile of AUDIT_TRACKER_FILES) {
+  if (!existsSync(trackerFile)) {
+    failures.push(`Audit tracker file missing: ${relative(REPO_ROOT, trackerFile).replace(/\\/g, '/')}`);
+    continue;
+  }
+
+  const relPath = relative(REPO_ROOT, trackerFile).replace(/\\/g, '/');
+  if (CHANGED_ONLY && changedFiles && !changedFiles.has(relPath)) {
+    continue;
+  }
+
+  const text = readFileSync(trackerFile, 'utf8');
+  const lines = text.split('\n');
+
+  lines.forEach((line, index) => {
+    const isPartialFixed = AUDIT_ROW_PARTIAL_FIXED_PATTERN.test(line);
+    const isCompleted = AUDIT_ROW_COMPLETED_PATTERN.test(line);
+
+    if (!isPartialFixed && !isCompleted) {
+      return;
+    }
+
+    const hasEvidence = AUDIT_ROW_EVIDENCE_PATTERN.test(line);
+
+    if (!hasEvidence) {
+      if (isPartialFixed) {
+        // Partial (fixed) rows MUST have evidence — hard failure
+        failures.push(
+          `${relPath}:${index + 1} "Partial (fixed)" row is missing an evidence path reference (need "products/...", "scripts/...", etc.): ${line.slice(0, 80).trim()}`,
+        );
+      } else {
+        // Completed rows should have evidence — warn only (backfill in progress)
+        warnings.push(
+          `${relPath}:${index + 1} "Completed" row has no evidence path reference (backfill needed): ${line.slice(0, 80).trim()}`,
+        );
+      }
+    }
+  });
+}
 
 const changedFiles = getChangedFiles();
 const markdownFiles = DOC_ROOTS.flatMap((root) => walkMarkdownFiles(root));
@@ -135,8 +200,20 @@ for (const markdownFile of markdownFiles) {
   });
 }
 
-if (failures.length === 0) {
+if (failures.length === 0 && warnings.length === 0) {
   console.log('OK: documentation claim-evidence checks passed.');
+  process.exit(0);
+}
+
+if (warnings.length > 0) {
+  console.warn('WARN: audit tracker rows missing evidence references (backfill in progress):');
+  for (const warning of warnings) {
+    console.warn(` - ${warning}`);
+  }
+}
+
+if (failures.length === 0) {
+  console.log('OK: no hard failures. See warnings above for evidence backfill items.');
   process.exit(0);
 }
 

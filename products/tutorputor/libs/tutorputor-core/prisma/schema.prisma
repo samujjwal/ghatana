@@ -356,7 +356,11 @@ model AssessmentAttempt {
   submittedAt      DateTime?
   gradedAt         DateTime?
   timeSpentSeconds Int?
-
+  
+  // Confidence-Based Marking (TODO 13)
+  averageConfidence Float? @default(null) // 0.0 - 1.0 average confidence across all responses
+  confidenceBreakdown Json? // Detailed confidence per item: { itemId: confidence, ... }
+  
   @@index([tenantId, userId])
   @@index([tenantId, assessmentId])
 }
@@ -374,17 +378,19 @@ model AssessmentDraft {
 }
 
 model LearningEvent {
-  id        String   @id @default(cuid())
-  tenantId  String
-  userId    String
-  moduleId  String?
-  eventType String
-  payload   Json?
-  timestamp DateTime @default(now())
+  id          String   @id @default(cuid())
+  tenantId    String
+  userId      String
+  moduleId    String?
+  eventType   String
+  payload     Json?
+  timestamp   DateTime @default(now())
+  schemaVersion String @default("1.0.0") // Versioned JSON schema for event validation (TODO 14)
 
   @@index([tenantId, eventType])
   @@index([tenantId, userId])
   @@index([tenantId, timestamp])
+  @@index([schemaVersion])
 }
 
 model MarketplaceListing {
@@ -1736,14 +1742,17 @@ enum CurriculumLevel {
 }
 
 enum SimulationDomain {
-  CS_DISCRETE
-  PHYSICS
-  CHEMISTRY
-  BIOLOGY
-  MEDICINE
-  ECONOMICS
-  ENGINEERING
   MATHEMATICS
+  SCIENCE
+  TECH
+  ENGINEERING
+  MEDICINE
+  HEALTH
+  BUSINESS
+  MANAGEMENT
+  ECONOMICS
+  COMPUTER_SCIENCE
+  INTERDISCIPLINARY
 }
 
 enum AnimationDomain {
@@ -1773,8 +1782,8 @@ model DomainConcept {
   description            String
   domain                 SimulationDomain
   level                  CurriculumLevel
-  keywords               String // JSON array
-  audienceTags           String // JSON array
+  keywords               Json // JSON array
+  audienceTags           Json // JSON array
   simulationMetadata     Json
   learningObjectMetadata Json
   pedagogicalMetadata    Json
@@ -1809,7 +1818,7 @@ model ConceptModuleMapping {
   concept               DomainConcept @relation(fields: [conceptId], references: [id], onDelete: Cascade)
   conceptId             String        @unique
   moduleId              String
-  simulationManifestIds String // JSON array of manifest IDs
+  simulationManifestIds Json // JSON array of manifest IDs
   createdAt             DateTime      @default(now())
 
   @@index([moduleId])
@@ -1869,7 +1878,7 @@ model SimulationTemplate {
   description         String
   domain              SimulationDomain
   difficulty          SimulationTemplateDifficulty
-  tags                String // JSON array of tags
+  tags                Json // JSON array of tags
   thumbnailUrl        String?
   license             SimulationTemplateLicense    @default(FREE)
   isPremium           Boolean                      @default(false)
@@ -2111,7 +2120,7 @@ model ABACPolicy {
   enabled     Boolean  @default(true)
   effect      String   @default("allow") // "allow" or "deny"
   priority    Int      @default(0) // Higher priority policies evaluated first
-  conditions  String   // JSON string of policy conditions
+  conditions  Json     // JSON string of policy conditions
   actions     String[] // Array of actions this policy applies to
   resourceTypes String[] // Array of resource types this policy applies to
   createdAt   DateTime @default(now())
@@ -2200,7 +2209,7 @@ model GoldenDataset {
   inputType      String   // "question", "concept", "simulation"
   input          String
   expectedOutput String
-  qualityMetrics  String   // JSON: { clarity, accuracy, completeness }
+  qualityMetrics  Json // JSON: { clarity, accuracy, completeness }
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -2220,7 +2229,7 @@ model RegressionTestResult {
   actualOutput    String
   expectedOutput  String
   passed          Boolean
-  qualityDiff     String   // JSON: { clarity, accuracy, completeness }
+  qualityDiff     Json // JSON: { clarity, accuracy, completeness }
   regressionDetected Boolean
   timestamp       DateTime @default(now())
 
@@ -2241,7 +2250,7 @@ model QualityBaseline {
   id            String   @id @default(cuid())
   contentId     String   @unique
   contentType   String
-  baselineMetrics String // JSON: { clarity, accuracy, completeness, engagement }
+  baselineMetrics Json // JSON: { clarity, accuracy, completeness, engagement }
   establishedAt DateTime @default(now())
 
   @@index([contentType])
@@ -2274,8 +2283,8 @@ model QualityAlert {
 model ContentGenerationBenchmark {
   id          String   @id @default(cuid())
   tenantId    String
-  metrics     String   // JSON: BenchmarkMetrics
-  baseline    String?  // JSON: BenchmarkMetrics (baseline for comparison)
+  metrics     Json // JSON: BenchmarkMetrics
+  baseline    Json? // JSON: BenchmarkMetrics (baseline for comparison)
   regressionDetected Boolean
   regressionDetails String[] // JSON array of regression detail strings
   isBaseline  Boolean  @default(false)
@@ -2651,10 +2660,10 @@ model DomainAuthorConcept {
   description        String
   level              CurriculumLevel
   orderIndex         Int             @default(0)
-  learningObjectives String // JSON array of strings
-  prerequisites      String // JSON array of concept IDs
-  competencies       String // JSON array of competency tags
-  keywords           String // JSON array of keywords
+  learningObjectives Json // JSON array of strings
+  prerequisites      Json // JSON array of concept IDs
+  competencies       Json // JSON array of competency tags
+  keywords           Json // JSON array of keywords
   status             ContentStatus   @default(DRAFT)
   version            Int             @default(1)
   createdAt          DateTime        @default(now())
@@ -2710,7 +2719,7 @@ model ContentExample {
   description          String
   problemStatement     String // Markdown format
   solutionContent      String // Markdown format with steps
-  keyLearningPoints    String // JSON array of key points
+  keyLearningPoints    Json // JSON array of key points
   difficulty           CurriculumLevel
   estimatedTimeMinutes Int                 @default(20)
   orderIndex           Int                 @default(0)
@@ -3112,6 +3121,34 @@ model ValidationRecord {
   validatedAt DateTime @default(now())
 
   @@index([experienceId])
+}
+
+// =============================================================================
+// Atomic Factual Validation (TODO 26)
+// =============================================================================
+
+model FactualValidation {
+  id           String       @id @default(cuid())
+  experienceId String
+  claimRef     String
+  tenantId     String
+
+  // Atomic fact checks
+  factText     String       // The specific fact being validated
+  factSource   String?      // Where the fact came from (e.g., claim text, example)
+  isValid      Boolean      // Whether the fact is factually correct
+  confidence   Float        // 0.0 - 1.0 confidence in the validation
+  errorMessage String?      // Error message if invalid
+
+  // Metadata
+  validatedBy  String       // "ai_validator" | "human_reviewer" | "external_api"
+  validatedAt  DateTime     @default(now())
+  metadata     Json?        // Additional validation metadata
+
+  @@unique([experienceId, claimRef, factText])
+  @@index([experienceId])
+  @@index([claimRef])
+  @@index([tenantId])
 }
 
 model AIGenerationLog {
@@ -3553,6 +3590,9 @@ model ClaimExample {
   manifestId      String   // References ArtifactManifest
   manifestVersion String
 
+  // Evidence linkage (TODO 8)
+  evidenceRefs String[] // References to evidence items supporting this example
+
   // Materialized content (derived from manifest)
   title       String
   description String
@@ -3588,6 +3628,9 @@ model ClaimSimulation {
   simulationManifestId String
   simulationManifest   SimulationManifest @relation(fields: [simulationManifestId], references: [id])
 
+  // Evidence linkage (TODO 8)
+  evidenceRefs String[] // References to evidence items supporting this simulation
+
   interactionType  String // "parameter_exploration" | "prediction" | "construction"
   goal             String
   successCriteria  Json // { rmse?: string, maxAttempts?: number, timeLimit?: number }
@@ -3610,6 +3653,9 @@ model ClaimAnimation {
   // Manifest reference (source of truth) - Phase 2
   manifestId      String   // References ArtifactManifest
   manifestVersion String
+
+  // Evidence linkage (TODO 8)
+  evidenceRefs String[] // References to evidence items supporting this animation
 
   // Variant support - Phase 2 (allow multiple animations per claim)
   variantKey      String   @default("primary") // 'primary', 'simplified', 'advanced', etc.

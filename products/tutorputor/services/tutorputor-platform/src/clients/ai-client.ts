@@ -177,34 +177,12 @@ export interface ContentClaim {
 
 export interface ContentExample {
   example_id: string;
-  claim_ref: string;
-  scenario: string;
-  question: string;
-  answer: string;
-  explanation: string;
-  difficulty: string;
-  concepts: string[];
-}
-
-export interface SimulationStep {
-  step_id: string;
-  order_index: number;
+  type: string;
   title: string;
   description: string;
-  action_type: string;
-  parameters: Record<string, string>;
-  expected_outcomes: string[];
-}
-
-export interface SimulationContent {
-  simulation_id: string;
-  claim_ref: string;
-  title: string;
-  description: string;
-  steps: SimulationStep[];
-  parameters: Record<string, string>;
-  difficulty: string;
-  estimated_duration_minutes: number;
+  content: string;
+  tags: string[];
+  relevance_score: number;
 }
 
 export interface GenerateClaimsRequest {
@@ -219,19 +197,59 @@ export interface GenerateClaimsRequest {
 
 export interface GenerateClaimsResponse {
   context: RequestContext;
-  claims: ContentClaim[];
-  generation_model: string;
-  generated_at?: unknown;
-  confidence_score: number;
-  warnings: string[];
+  claims: Array<{
+    claim_ref: string;
+    text: string;
+    bloom_level: string;
+    order_index: number;
+    content_needs?: {
+      examples?: {
+        required: boolean;
+        types: string[];
+        count: number;
+        necessity: number;
+        rationale: string;
+      };
+      simulation?: {
+        required: boolean;
+        interaction_type: string;
+        complexity: string;
+        necessity: number;
+        rationale: string;
+      };
+      animation?: {
+        required: boolean;
+        animation_type: string;
+        duration_seconds: number;
+        necessity: number;
+        rationale: string;
+      };
+    };
+  }>;
+  validation: {
+    valid: boolean;
+    confidence_score: number;
+    issues: string[];
+    suggestions: string[];
+  };
+  metadata: {
+    model_name: string;
+    tokens_used: number;
+    generation_time_ms: number;
+    temperature: number;
+    prompt_hash: string;
+    timestamp: string;
+  };
 }
 
 export interface AnalyzeContentNeedsRequest {
-  context: RequestContext;
-  claims: ContentClaim[];
-  target_grade_level: string;
-  learning_objective: string;
-  available_resources: string[];
+  request_id: string;
+  tenant_id: string;
+  claim_text: string;
+  bloom_level: string;
+  domain: string;
+  grade_level: string;
+  context: Record<string, string>;
 }
 
 export interface ContentGap {
@@ -257,79 +275,178 @@ export interface ContentNeedsAnalysis {
 }
 
 export interface AnalyzeContentNeedsResponse {
-  context: RequestContext;
-  analysis: ContentNeedsAnalysis;
-  analyzed_at?: unknown;
+  request_id: string;
+  content_needs: {
+    examples?: {
+      required: boolean;
+      types: string[];
+      count: number;
+      necessity: number;
+      rationale: string;
+    };
+    simulation?: {
+      required: boolean;
+      interaction_type: string;
+      complexity: string;
+      necessity: number;
+      rationale: string;
+    };
+    animation?: {
+      required: boolean;
+      animation_type: string;
+      duration_seconds: number;
+      necessity: number;
+      rationale: string;
+    };
+  };
+  metadata: {
+    model_name: string;
+    tokens_used: number;
+    generation_time_ms: number;
+    temperature: number;
+    prompt_hash: string;
+    timestamp: string;
+  };
 }
 
 export interface GenerateExamplesRequest {
-  context: RequestContext;
+  request_id: string;
+  tenant_id: string;
   claim_ref: string;
   claim_text: string;
-  grade_level: string;
-  count: number;
   example_types: string[];
-  context_params: Record<string, string>;
+  count: number;
+  domain: string;
+  grade_level: string;
+  context: Record<string, string>;
 }
 
 export interface GenerateExamplesResponse {
-  context: RequestContext;
+  request_id: string;
   examples: ContentExample[];
-  generation_model: string;
-  generated_at?: unknown;
-  confidence_score: number;
-  warnings: string[];
+  metadata: {
+    model_name: string;
+    tokens_used: number;
+    generation_time_ms: number;
+    temperature: number;
+    prompt_hash: string;
+    timestamp: string;
+  };
 }
 
 export interface GenerateSimulationRequest {
-  context: RequestContext;
+  request_id: string;
+  tenant_id: string;
   claim_ref: string;
   claim_text: string;
+  interaction_type: string;
+  complexity: string;
+  domain: string;
   grade_level: string;
-  simulation_type: string;
-  max_steps: number;
-  duration_minutes: number;
-  context_params: Record<string, string>;
+  context: Record<string, string>;
 }
 
 export interface GenerateSimulationResponse {
-  context: RequestContext;
-  simulation: SimulationContent;
-  generation_model: string;
-  generated_at?: unknown;
-  confidence_score: number;
-  warnings: string[];
+  request_id: string;
+  manifest: {
+    manifest_id: string;
+    version: string;
+    domain: string;
+    title: string;
+    description: string;
+    domain_config: string;
+  };
+  metadata: {
+    model_name: string;
+    tokens_used: number;
+    generation_time_ms: number;
+    temperature: number;
+    prompt_hash: string;
+    timestamp: string;
+  };
+}
+
+export interface GenerateAnimationRequest {
+  request_id: string;
+  tenant_id: string;
+  claim_ref: string;
+  claim_text: string;
+  animation_type: string;
+  duration_seconds: number;
+  domain: string;
+  grade_level: string;
+  context: Record<string, string>;
+}
+
+export interface GenerateAnimationResponse {
+  request_id: string;
+  manifest: {
+    manifest_id: string;
+    version: string;
+    title: string;
+    description: string;
+    duration_seconds: number;
+    scenes: Array<{
+      scene_id: string;
+      start_time_ms: number;
+      end_time_ms: number;
+      description: string;
+      visual_elements: string[];
+    }>;
+    cues: Array<{
+      cue_id: string;
+      time_ms: number;
+      type: string;
+      target: string;
+      effect: string;
+    }>;
+    narration_script: string;
+  };
+  metadata: {
+    model_name: string;
+    tokens_used: number;
+    generation_time_ms: number;
+    temperature: number;
+    prompt_hash: string;
+    timestamp: string;
+  };
 }
 
 export interface ValidateContentRequest {
-  context: RequestContext;
-  claim?: ContentClaim;
-  example?: ContentExample;
-  simulation?: SimulationContent;
-  validation_type: string;
-  validation_rules: string[];
+  request_id: string;
+  tenant_id: string;
+  experience_id: string;
+  title: string;
+  description: string;
+  claim_texts: string[];
+  domain: string;
+  metadata: Record<string, string>;
 }
 
 export interface ValidationIssue {
-  issue_type: string;
+  issue_id: string;
+  dimension: string;
   severity: string;
-  description: string;
-  location: string;
-  suggested_fixes: string[];
-}
-
-export interface ValidationResult {
-  is_valid: boolean;
-  confidence_score: number;
-  issues: ValidationIssue[];
-  suggestions: string[];
-  overall_assessment: string;
+  message: string;
+  suggestion: string;
 }
 
 export interface ValidateContentResponse {
-  context: RequestContext;
-  result: ValidationResult;
-  validated_at?: unknown;
+  request_id: string;
+  status: 'valid' | 'invalid' | 'warning';
+  overall_score: number;
+  can_publish: boolean;
+  dimension_scores: Record<string, number>;
+  issues: ValidationIssue[];
+  issue_count: number;
+  metadata: {
+    model_name: string;
+    tokens_used: number;
+    generation_time_ms: number;
+    temperature: number;
+    prompt_hash: string;
+    timestamp: string;
+  };
 }
 
 // ─── Internal gRPC plumbing types ─────────────────────────────────────────────
@@ -632,6 +749,17 @@ export class AiClient {
       request,
     );
     return result as GenerateSimulationResponse | null;
+  }
+
+  async generateAnimation(
+    request: GenerateAnimationRequest,
+  ): Promise<GenerateAnimationResponse | null> {
+    const result = await this.breaker.fire(
+      this.contentClient,
+      "GenerateAnimation",
+      request,
+    );
+    return result as GenerateAnimationResponse | null;
   }
 }
 

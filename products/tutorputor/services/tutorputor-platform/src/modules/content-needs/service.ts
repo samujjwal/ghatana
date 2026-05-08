@@ -99,7 +99,8 @@ export class ContentNeedsAnalyzer {
   constructor(private readonly prisma: PrismaClient) {}
 
   /**
-   * Analyze content needs for a specific claim
+   * Analyze content needs for a specific claim.
+   * Throws explicit error when analysis cannot determine meaningful content needs.
    */
   async analyzeClaimNeeds(
     claim: { id: string; text: string; bloomLevel: string },
@@ -142,6 +143,29 @@ export class ContentNeedsAnalyzer {
 
     // Prerequisite analysis
     this.analyzePrerequisites(context.prerequisites, needs);
+
+    // Explicit failure: check if any meaningful content needs were determined
+    const hasExamples = needs.examples.required && needs.examples.count > 0;
+    const hasSimulation = needs.simulation.required;
+    const hasAnimation = needs.animation.required;
+
+    if (!hasExamples && !hasSimulation && !hasAnimation) {
+      const confidence = this.calculateConfidence(claim.text, needs, context);
+      if (confidence < 0.5) {
+        throw new Error(
+          `Content needs analysis failed for claim "${claim.text.substring(0, 50)}...": ` +
+            `Unable to determine required content types with sufficient confidence (${confidence.toFixed(2)}). ` +
+            `Claim may be too abstract, ambiguous, or lack domain-specific keywords. ` +
+            `Please refine the claim text or provide additional context.`,
+        );
+      }
+      // Even with higher confidence, if no content is required, this may indicate a problem
+      throw new Error(
+        `Content needs analysis produced no required content for claim "${claim.text.substring(0, 50)}...": ` +
+          `No examples, simulations, or animations were identified as needed. ` +
+          `This may indicate the claim is too simple for interactive content or the heuristics failed to detect content needs.`,
+      );
+    }
 
     return needs;
   }
@@ -611,11 +635,13 @@ export class ContentNeedsAnalyzer {
   ): Promise<unknown[]> {
     const generated = await this.generateExamples(claim, needs);
 
-    await this.prisma.claimExample.deleteMany({
+    // Find existing examples for this claim to preserve version history
+    const existingExamples = await this.prisma.claimExample.findMany({
       where: {
         experienceId: claim.experienceId,
         claimRef: claim.claimRef,
       },
+      orderBy: { createdAt: 'desc' },
     });
 
     const created: unknown[] = [];
@@ -625,30 +651,68 @@ export class ContentNeedsAnalyzer {
       const exampleType = String(example.type ?? "worked");
       const exampleTitle = String(example.title ?? "Generated Example");
       const exampleContent = example.content;
-      const row = await this.prisma.claimExample.create({
-        data: {
-          experienceId: claim.experienceId,
-          claimRef: claim.claimRef,
-          manifestId,
-          manifestVersion: "1.0.0",
-          type: exampleType.toUpperCase(),
-          title: exampleTitle,
-          description: `${exampleType} example for ${claim.text}`,
-          content: toInputJsonValue({
-            scaffolding: needs.examples.scaffolding,
-            complexity: needs.examples.complexity,
-            body: exampleContent,
-          }),
-          difficulty:
-            needs.examples.complexity === "simple"
-              ? "BEGINNER"
-              : needs.examples.complexity === "complex"
-                ? "ADVANCED"
-                : "INTERMEDIATE",
-          orderIndex,
-        },
-      });
-      created.push(row);
+      const now = new Date().toISOString();
+
+      // Check if an example with this manifestId already exists (regeneration case)
+      const existingExample = existingExamples.find((ex) => ex.manifestId === manifestId);
+
+      if (existingExample) {
+        // Update existing example with new version
+        const currentVersion = parseFloat(existingExample.manifestVersion || "1.0.0");
+        const newVersion = (currentVersion + 0.1).toFixed(1);
+
+        const row = await this.prisma.claimExample.update({
+          where: { id: existingExample.id },
+          data: {
+            manifestVersion: newVersion,
+            title: exampleTitle,
+            description: `${exampleType} example for ${claim.text}`,
+            content: toInputJsonValue({
+              scaffolding: needs.examples.scaffolding,
+              complexity: needs.examples.complexity,
+              body: exampleContent,
+              previousVersion: existingExample.manifestVersion,
+              regeneratedAt: now,
+            }),
+            difficulty:
+              needs.examples.complexity === "simple"
+                ? "BEGINNER"
+                : needs.examples.complexity === "complex"
+                  ? "ADVANCED"
+                  : "INTERMEDIATE",
+            orderIndex,
+            updatedAt: new Date(),
+          },
+        });
+        created.push(row);
+      } else {
+        // Create new example
+        const row = await this.prisma.claimExample.create({
+          data: {
+            experienceId: claim.experienceId,
+            claimRef: claim.claimRef,
+            manifestId,
+            manifestVersion: "1.0.0",
+            type: exampleType.toUpperCase(),
+            title: exampleTitle,
+            description: `${exampleType} example for ${claim.text}`,
+            content: toInputJsonValue({
+              scaffolding: needs.examples.scaffolding,
+              complexity: needs.examples.complexity,
+              body: exampleContent,
+            }),
+            difficulty:
+              needs.examples.complexity === "simple"
+                ? "BEGINNER"
+                : needs.examples.complexity === "complex"
+                  ? "ADVANCED"
+                  : "INTERMEDIATE",
+            orderIndex,
+          },
+        });
+        created.push(row);
+      }
+
       orderIndex += 1;
     }
 

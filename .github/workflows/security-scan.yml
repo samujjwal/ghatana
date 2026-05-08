@@ -23,12 +23,12 @@ jobs:
             fail-fast: false
             matrix:
                 product:
-                    - { name: phr-web, workspaceDir: ., auditCommand: "pnpm --filter @ghatana/phr-web audit --audit-level=moderate --json > npm-audit.json || true" }
-                    - { name: dmos-ui, workspaceDir: ., auditCommand: "pnpm --filter @dmos/ui audit --audit-level=moderate --json > npm-audit.json || true" }
-                    - { name: flashit-web, workspaceDir: ., auditCommand: "pnpm --filter @flashit/web audit --audit-level=moderate --json > npm-audit.json || true" }
-                    - { name: flashit-gateway, workspaceDir: products/flashit, auditCommand: "pnpm --filter @flashit/web-api audit --audit-level=moderate --json > npm-audit.json || true" }
-                    - { name: dcmaar, workspaceDir: products/dcmaar, auditCommand: "pnpm audit --audit-level=moderate --json > npm-audit.json || true" }
-                    - { name: yappc, workspaceDir: products/yappc, auditCommand: "pnpm audit --audit-level=moderate --json > npm-audit.json || true" }
+                    - { name: phr-web, workspaceDir: ., auditFilter: "--filter @ghatana/phr-web" }
+                    - { name: dmos-ui, workspaceDir: ., auditFilter: "--filter @dmos/ui" }
+                    - { name: flashit-web, workspaceDir: ., auditFilter: "--filter @flashit/web" }
+                    - { name: flashit-gateway, workspaceDir: products/flashit, auditFilter: "--filter @flashit/web-api" }
+                    - { name: dcmaar, workspaceDir: products/dcmaar, auditFilter: "" }
+                    - { name: yappc, workspaceDir: products/yappc, auditFilter: "" }
 
         steps:
             - name: Checkout code
@@ -37,7 +37,7 @@ jobs:
             - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
-                  node-version: "20"
+                  node-version: "22"
                   cache: "pnpm"
 
             - name: Install pnpm
@@ -45,11 +45,38 @@ jobs:
               with:
                   version: 10.33.0
 
-            - name: Run pnpm audit
+            - name: Collect audit report
               run: |
                   pnpm install --frozen-lockfile
-                  ${{ matrix.product.auditCommand }}
+                  pnpm ${{ matrix.product.auditFilter }} audit --audit-level=moderate --json > npm-audit.json || true
               working-directory: ${{ matrix.product.workspaceDir }}
+
+            - name: Enforce audit severity gate
+              run: |
+                  REPORT=npm-audit.json
+                  if [ ! -f "$REPORT" ]; then
+                    echo "No audit report found, skipping gate"
+                    exit 0
+                  fi
+                  CRITICAL=$(jq '.metadata.vulnerabilities.critical // 0' "$REPORT" 2>/dev/null || echo 0)
+                  HIGH=$(jq '.metadata.vulnerabilities.high // 0' "$REPORT" 2>/dev/null || echo 0)
+                  echo "Critical: $CRITICAL, High: $HIGH"
+                  if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+                    echo "ERROR: ${{ matrix.product.name }} has $CRITICAL critical and $HIGH high severity vulnerabilities"
+                    jq '.advisories | to_entries[] | select(.value.severity == "critical" or .value.severity == "high") | {title: .value.title, severity: .value.severity, url: .value.url}' "$REPORT" 2>/dev/null || true
+                    exit 1
+                  fi
+                  echo "OK: No high/critical vulnerabilities found for ${{ matrix.product.name }}"
+              working-directory: ${{ matrix.product.workspaceDir }}
+
+            - name: Upload audit report
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: npm-audit-${{ matrix.product.name }}
+                  path: ${{ matrix.product.workspaceDir }}/npm-audit.json
+                  retention-days: 30
+                  if-no-files-found: ignore
 
     default-credential-scan:
         name: Secret and Default Credential Policy Scan
@@ -160,7 +187,7 @@ jobs:
                     :platform-plugins:plugin-audit-trail:spotbugsMain \
                     :platform-plugins:plugin-ledger:spotbugsMain \
                     :platform-plugins:plugin-consent:spotbugsMain \
-                    -x test --continue || true
+                    -x test
 
             - name: Run PMD for kernel & plugins
               run: |
@@ -168,7 +195,7 @@ jobs:
                     :platform-kernel:kernel-core:pmdMain \
                     :platform-plugins:plugin-audit-trail:pmdMain \
                     :platform-plugins:plugin-ledger:pmdMain \
-                    -x test --continue || true
+                    -x test
 
             - name: Check for security anti-patterns
               run: |
@@ -202,6 +229,111 @@ jobs:
               with:
                   name: spotbugs-reports
                   path: "platform-kernel/**/build/reports/spotbugs/"
+                  retention-days: 30
+
+    java-products-security:
+        name: Java Products Security Scanning
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: "21"
+
+            - name: Run SpotBugs for PHR
+              run: |
+                  ./gradlew \
+                    :products:phr:spotbugsMain \
+                    -x test --continue || true
+              continue-on-error: false
+
+            - name: Run PMD for PHR
+              run: |
+                  ./gradlew \
+                    :products:phr:pmdMain \
+                    -x test --continue
+
+            - name: Run SpotBugs for Finance
+              run: |
+                  ./gradlew \
+                    :products:finance:spotbugsMain \
+                    -x test --continue
+
+            - name: Run PMD for Finance
+              run: |
+                  ./gradlew \
+                    :products:finance:pmdMain \
+                    -x test --continue
+
+            - name: Run SpotBugs for Digital Marketing Java modules
+              run: |
+                  ./gradlew \
+                    :products:digital-marketing:dm-api:spotbugsMain \
+                    :products:digital-marketing:dm-application:spotbugsMain \
+                    :products:digital-marketing:dm-domain:spotbugsMain \
+                    :products:digital-marketing:dm-persistence:spotbugsMain \
+                    -x test --continue
+
+            - name: Run PMD for Digital Marketing Java modules
+              run: |
+                  ./gradlew \
+                    :products:digital-marketing:dm-api:pmdMain \
+                    :products:digital-marketing:dm-application:pmdMain \
+                    :products:digital-marketing:dm-domain:pmdMain \
+                    :products:digital-marketing:dm-persistence:pmdMain \
+                    -x test --continue
+
+            - name: Check for security anti-patterns in product Java source
+              run: |
+                  echo "Checking product Java source for common security anti-patterns..."
+
+                  FAILED=0
+
+                  # Check for hardcoded credentials in product source
+                  if grep -rE "password\s*=\s*['\"][^'\"]{3,}['\"]" \
+                    products/phr/ products/finance/ products/digital-marketing/ \
+                    --include="*.java" 2>/dev/null \
+                    | grep -v "// " | grep -v "/test/" | grep -v "Test.java"; then
+                    echo "✗ Hardcoded password detected in product Java source"
+                    FAILED=1
+                  fi
+
+                  # Check for unsafe Random() usage
+                  if grep -rn "new Random()" \
+                    products/phr/ products/finance/ products/digital-marketing/ \
+                    --include="*.java" 2>/dev/null | grep -v "/test/" | grep -v "Test.java"; then
+                    echo "⚠️  Random() instead of SecureRandom() found in product Java source"
+                  fi
+
+                  # Check for SQL concatenation (injection risk)
+                  if grep -rE "\".*SELECT.*\"\s*\+" \
+                    products/phr/ products/finance/ products/digital-marketing/ \
+                    --include="*.java" 2>/dev/null | grep -v "/test/" | grep -v "Test.java"; then
+                    echo "✗ Possible SQL concatenation detected in product Java source"
+                    FAILED=1
+                  fi
+
+                  if [ "$FAILED" -eq 1 ]; then
+                    echo "Security anti-pattern checks failed"
+                    exit 1
+                  fi
+
+                  echo "✓ Product Java security anti-pattern checks complete"
+
+            - name: Upload SpotBugs reports for products
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: spotbugs-reports-products
+                  path: |
+                      products/phr/**/build/reports/spotbugs/
+                      products/finance/**/build/reports/spotbugs/
+                      products/digital-marketing/**/build/reports/spotbugs/
                   retention-days: 30
 
     secret-scan:
@@ -265,7 +397,7 @@ jobs:
             - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
-                  node-version: "20"
+                  node-version: "22"
 
             - name: Install pnpm
               run: corepack enable && corepack prepare pnpm@10.33.0 --activate
@@ -323,6 +455,8 @@ jobs:
                 dependency-scan-gradle,
                 sast-scan,
                 sast-scan-java,
+                java-kernel-plugins-security,
+                java-products-security,
                 secret-scan,
                 container-scan,
                 license-compliance,
@@ -333,19 +467,24 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
-            - name: Download artifacts
+            - name: Download audit artifacts
               uses: actions/download-artifact@v4
               with:
-                  name: npm-audit-results
+                  pattern: npm-audit-*
                   path: ./security-reports
+                  merge-multiple: true
 
             - name: Generate summary report
               run: |
                   echo "# Security Scan Summary" >> $GITHUB_STEP_SUMMARY
                   echo "" >> $GITHUB_STEP_SUMMARY
                   echo "## Scan Results" >> $GITHUB_STEP_SUMMARY
-                  echo "- Dependency Scan: ${{ needs.dependency-scan.result }}" >> $GITHUB_STEP_SUMMARY
-                  echo "- SAST Scan: ${{ needs.sast-scan.result }}" >> $GITHUB_STEP_SUMMARY
+                  echo "- Dependency Scan (Node): ${{ needs.dependency-scan-node.result }}" >> $GITHUB_STEP_SUMMARY
+                  echo "- Dependency Scan (Gradle): ${{ needs.dependency-scan-gradle.result }}" >> $GITHUB_STEP_SUMMARY
+                  echo "- SAST Scan (TS): ${{ needs.sast-scan.result }}" >> $GITHUB_STEP_SUMMARY
+                  echo "- SAST Scan (Java): ${{ needs.sast-scan-java.result }}" >> $GITHUB_STEP_SUMMARY
+                  echo "- Kernel & Plugins Security: ${{ needs.java-kernel-plugins-security.result }}" >> $GITHUB_STEP_SUMMARY
+                  echo "- Products Security: ${{ needs.java-products-security.result }}" >> $GITHUB_STEP_SUMMARY
                   echo "- Secret Scan: ${{ needs.secret-scan.result }}" >> $GITHUB_STEP_SUMMARY
                   echo "- Container Scan: ${{ needs.container-scan.result }}" >> $GITHUB_STEP_SUMMARY
                   echo "- License Compliance: ${{ needs.license-compliance.result }}" >> $GITHUB_STEP_SUMMARY

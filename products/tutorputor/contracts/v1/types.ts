@@ -509,13 +509,89 @@ export type LearningEventType =
   | "assessment_completed"
   | "ai_tutor_message";
 
-export interface LearningEventInput {
-  type: LearningEventType;
-  userId: UserId;
-  moduleId?: ModuleId;
-  payload?: Record<string, unknown>;
-  timestamp?: string;
-  schemaVersion: string;
+import { z } from "zod";
+import {
+  TelemetryEvent,
+  BaseTelemetryEvent,
+  type TelemetryEventType,
+} from "./telemetry-events.js";
+
+/**
+ * Learning Event Input with versioned schema validation
+ * 
+ * @doc.type interface
+ * @doc.purpose Typed learning event input with schema versioning
+ * @doc.layer contracts
+ * @doc.pattern ValueObject
+ */
+
+/**
+ * Current schema version for learning events
+ * Increment when breaking changes are made to the event structure
+ */
+export const LEARNING_EVENT_SCHEMA_VERSION = "1.0.0" as const;
+
+/**
+ * Zod schema for validating learning events
+ */
+export const LearningEventInputSchema = z.object({
+  type: z.enum([
+    "sim.start",
+    "sim.control.change",
+    "sim.goal.achieved",
+    "sim.goal.failed",
+    "sim.pause",
+    "sim.resume",
+    "sim.snapshot",
+    "sim.capture",
+    "assess.answer",
+    "assess.answer.submit",
+    "assess.confidence.submit",
+    "assist.hint",
+    "content.video.start",
+    "content.video.complete",
+    "content.video.pause",
+    "content.article.open",
+    "content.article.complete",
+    "credential.badge.issued",
+    "credential.skill.mastered",
+    "ai.tutor.response",
+    "ai.generation.created",
+    "ai.governance.blocked",
+  ]),
+  userId: z.string(),
+  moduleId: z.string().optional(),
+  payload: z.record(z.string(), z.unknown()),
+  timestamp: z.string().optional(),
+  schemaVersion: z.string(),
+}).refine(
+  (data) => data.schemaVersion === LEARNING_EVENT_SCHEMA_VERSION,
+  {
+    message: `Schema version must be ${LEARNING_EVENT_SCHEMA_VERSION}`,
+    path: ["schemaVersion"],
+  }
+);
+
+export type LearningEventInput = z.infer<typeof LearningEventInputSchema>;
+
+/**
+ * Parse and validate a learning event input
+ * Throws ZodError if validation fails
+ */
+export function parseLearningEventInput(
+  data: unknown
+): LearningEventInput {
+  return LearningEventInputSchema.parse(data);
+}
+
+/**
+ * Safely parse a learning event input
+ * Returns result with validation errors if any
+ */
+export function safeParseLearningEventInput(
+  data: unknown
+): z.ZodSafeParseSuccess<LearningEventInput> | z.ZodSafeParseError<LearningEventInput> {
+  return LearningEventInputSchema.safeParse(data);
 }
 
 export interface AnalyticsSummary {

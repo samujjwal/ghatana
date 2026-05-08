@@ -211,6 +211,147 @@ function validateManifest(entry, manifest) {
   }
 
   validatePluginOwnership(entry, manifest);
+  validateManifestFieldValues(entry, manifest);
+  validateShapeManifestAlignment(entry, manifest);
+}
+
+// ---------------------------------------------------------------------------
+// Cross-validation: product-shape.json uiMode vs manifest uiSurfaces
+// ---------------------------------------------------------------------------
+
+/**
+ * Validates that the `uiMode` declared in product-shape.json is consistent
+ * with the `uiSurfaces` array in the product domain-pack manifest.
+ *
+ * Alignment rules:
+ *  - "backend-only" → uiSurfaces must be empty
+ *  - "web"          → uiSurfaces must include "web"
+ *  - "multi-surface"→ uiSurfaces must include both "web" and "mobile"
+ */
+function validateShapeManifestAlignment(entry, manifest) {
+  const shape = productShape.products[entry.product];
+  if (!shape) {
+    return; // already reported by validateManifest
+  }
+
+  const uiMode = shape.uiMode;
+  const uiSurfaces = Array.isArray(manifest.uiSurfaces) ? manifest.uiSurfaces : [];
+
+  if (uiMode === 'backend-only') {
+    if (uiSurfaces.length > 0) {
+      addViolation(
+        entry.file,
+        `product-shape.json declares uiMode "backend-only" but manifest declares uiSurfaces: [${uiSurfaces.join(', ')}]`,
+      );
+    }
+  } else if (uiMode === 'web') {
+    if (!uiSurfaces.includes('web')) {
+      addViolation(
+        entry.file,
+        `product-shape.json declares uiMode "web" but manifest uiSurfaces does not include "web" — got: [${uiSurfaces.join(', ')}]`,
+      );
+    }
+  } else if (uiMode === 'multi-surface') {
+    const missing = ['web', 'mobile'].filter((s) => !uiSurfaces.includes(s));
+    if (missing.length > 0) {
+      addViolation(
+        entry.file,
+        `product-shape.json declares uiMode "multi-surface" but manifest uiSurfaces is missing: [${missing.join(', ')}]`,
+      );
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Schema-aware field value validation (type, enum, pattern constraints)
+// ---------------------------------------------------------------------------
+
+const KNOWN_DATA_SENSITIVITY = new Set([
+  // Generic classification levels
+  'HIGH', 'MEDIUM', 'LOW', 'RESTRICTED', 'PUBLIC',
+  // Domain-specific regulatory labels used in product manifests
+  'regulated-health',
+  'regulated-finance',
+  'marketing-consent',
+  'personal-journal',
+]);
+
+/** Semver pattern: x.y.z with optional pre-release / build metadata */
+const SEMVER_PATTERN = /^\d+\.\d+\.\d+(?:[-+].+)?$/;
+
+/** Kebab-case slug pattern for manifest ids */
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/**
+ * Validates schema-level constraints on manifest field values — not just
+ * presence.  Reports violations for:
+ *  - `id`           must be a non-empty kebab-case slug
+ *  - `version`      must match semver x.y.z
+ *  - `dataSensitivity` must be one of the canonical enum values
+ *  - All array fields must contain only string items (not nested objects)
+ *  - `kernelCapabilitiesConsumed` items must be non-empty strings
+ */
+function validateManifestFieldValues(entry, manifest) {
+  // id — must be a non-empty slug
+  const id = manifest.id;
+  if (id !== undefined && id !== null && typeof id === 'string') {
+    if (!SLUG_PATTERN.test(id)) {
+      addViolation(entry.file, `'id' must be a kebab-case slug, got: "${id}"`);
+    }
+  }
+
+  // version — must match semver
+  const version = manifest.version;
+  if (version !== undefined && version !== null && typeof version === 'string') {
+    if (!SEMVER_PATTERN.test(version)) {
+      addViolation(entry.file, `'version' must match semver x.y.z, got: "${version}"`);
+    }
+  }
+
+  // dataSensitivity — must be one of the canonical enum values
+  const dataSensitivity = manifest.dataSensitivity;
+  if (dataSensitivity !== undefined && dataSensitivity !== null) {
+    const val = String(dataSensitivity).trim();
+    // Accept exact match OR uppercase match (both casing conventions present in repo)
+    if (!KNOWN_DATA_SENSITIVITY.has(val) && !KNOWN_DATA_SENSITIVITY.has(val.toUpperCase())) {
+      addViolation(
+        entry.file,
+        `'dataSensitivity' must be one of ${[...KNOWN_DATA_SENSITIVITY].join(', ')}, got: "${dataSensitivity}"`,
+      );
+    }
+  }
+
+  // All array fields must contain only string items
+  for (const field of REQUIRED_FIELDS) {
+    const value = manifest[field];
+    if (!Array.isArray(value)) {
+      continue;
+    }
+    for (const item of value) {
+      if (typeof item !== 'string') {
+        addViolation(
+          entry.file,
+          `'${field}' array must contain only strings, found item of type '${typeof item}'`,
+        );
+        break; // one violation per field is enough
+      }
+      if (item.trim() === '') {
+        addViolation(entry.file, `'${field}' array must not contain blank string items`);
+        break;
+      }
+    }
+  }
+
+  // kernelCapabilitiesConsumed items must be non-empty, non-whitespace strings
+  const caps = manifest.kernelCapabilitiesConsumed;
+  if (Array.isArray(caps)) {
+    for (const cap of caps) {
+      if (typeof cap !== 'string' || cap.trim() === '') {
+        addViolation(entry.file, `'kernelCapabilitiesConsumed' must contain non-empty capability name strings`);
+        break;
+      }
+    }
+  }
 }
 
 function validatePluginOwnership(entry, manifest) {

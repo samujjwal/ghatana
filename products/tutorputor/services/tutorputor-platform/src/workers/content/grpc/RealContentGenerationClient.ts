@@ -54,14 +54,21 @@ export interface GrpcClientConfig {
 // Request Types
 // =============================================================================
 
-export interface GenerateClaimsRequest {
+export interface RequestContext {
     requestId: string;
     tenantId: string;
+    timestamp?: Date;
+    metadata?: Record<string, string>;
+}
+
+export interface GenerateClaimsRequest {
+    context: RequestContext;
     topic: string;
     gradeLevel: string;
     domain: string;
     maxClaims: number;
-    context: Record<string, string>;
+    contextParams?: Record<string, string>;
+    language?: string;
 }
 
 export interface AnalyzeContentNeedsRequest {
@@ -79,10 +86,11 @@ export interface GenerateExamplesRequest {
     tenantId: string;
     claimText: string;
     claimRef: string;
-    gradeLevel: string;
-    domain: string;
-    types: string[];
+    exampleTypes: string[];
     count: number;
+    domain: string;
+    gradeLevel: string;
+    context?: Record<string, string>;
 }
 
 export interface GenerateSimulationRequest {
@@ -94,6 +102,7 @@ export interface GenerateSimulationRequest {
     domain: string;
     interactionType: string;
     complexity: string;
+    context?: Record<string, string>;
 }
 
 export interface GenerateAnimationRequest {
@@ -105,6 +114,7 @@ export interface GenerateAnimationRequest {
     durationSeconds: number;
     domain: string;
     gradeLevel: string;
+    context?: Record<string, string>;
 }
 
 export interface ValidateContentRequest {
@@ -269,17 +279,36 @@ function normalizeGradeLevel(input: string): string {
 }
 
 function normalizeDomain(input: string): string {
-    const normalized = String(input || '').toUpperCase();
+    const normalized = String(input || '').toUpperCase().replace(/[-\s]/g, '_');
     const mapping: Record<string, string> = {
-        MATH: 'MATH',
+        // Full TutorPutor domain set
+        MATH: 'MATHEMATICS',
+        MATHEMATICS: 'MATHEMATICS',
         SCIENCE: 'SCIENCE',
         TECH: 'TECH',
-        ENGINEERING: 'TECH',
-        ARTS: 'TECH',
-        LANGUAGE: 'TECH',
-        GENERAL: 'TECH',
+        ENGINEERING: 'ENGINEERING',
+        MEDICINE: 'MEDICINE',
+        HEALTH: 'HEALTH',
+        BUSINESS: 'BUSINESS',
+        MANAGEMENT: 'MANAGEMENT',
+        ECONOMICS: 'ECONOMICS',
+        COMPUTER_SCIENCE: 'COMPUTER_SCIENCE',
+        INTERDISCIPLINARY: 'INTERDISCIPLINARY',
+        
+        // Alternative mappings for backward compatibility
+        CS: 'COMPUTER_SCIENCE',
+        CS_DISCRETE: 'COMPUTER_SCIENCE',
+        'CS-DISCRETE': 'COMPUTER_SCIENCE',
+        PHYSICS: 'SCIENCE',
+        CHEMISTRY: 'SCIENCE',
+        BIOLOGY: 'SCIENCE',
+        
+        // Legacy fallbacks (prefer explicit domain selection)
+        ARTS: 'INTERDISCIPLINARY',
+        LANGUAGE: 'INTERDISCIPLINARY',
+        GENERAL: 'INTERDISCIPLINARY',
     };
-    return mapping[normalized] || 'TECH';
+    return mapping[normalized] || 'INTERDISCIPLINARY';
 }
 
 function normalizeBloom(input: string): string {
@@ -473,13 +502,21 @@ export class RealContentGenerationClient {
         if (!this.isReady) throw new Error('gRPC client not initialized');
 
         const grpcRequest = {
-            request_id: request.requestId,
-            tenant_id: request.tenantId,
+            context: {
+                request_id: request.context.requestId,
+                tenant_id: request.context.tenantId,
+                timestamp: request.context.timestamp ? {
+                    seconds: Math.floor(request.context.timestamp.getTime() / 1000),
+                    nanos: (request.context.timestamp.getTime() % 1000) * 1_000_000,
+                } : undefined,
+                metadata: request.context.metadata || {},
+            },
             topic: request.topic,
             grade_level: normalizeGradeLevel(request.gradeLevel),
             domain: normalizeDomain(request.domain),
             max_claims: request.maxClaims,
-            context: request.context || {},
+            context_params: request.contextParams || {},
+            language: request.language || 'en',
         };
 
         if (!this.contentClient) {
@@ -501,10 +538,11 @@ export class RealContentGenerationClient {
             tenant_id: request.tenantId,
             claim_text: request.claimText,
             claim_ref: request.claimRef,
-            grade_level: normalizeGradeLevel(request.gradeLevel),
-            domain: normalizeDomain(request.domain),
-            types: (request.types || []).map(normalizeExampleType),
+            example_types: (request.exampleTypes || []).map(normalizeExampleType),
             count: request.count,
+            domain: normalizeDomain(request.domain),
+            grade_level: normalizeGradeLevel(request.gradeLevel),
+            context: request.context || {},
         };
 
         if (!this.contentClient) {
@@ -600,6 +638,7 @@ export class RealContentGenerationClient {
             domain: normalizeDomain(request.domain),
             interaction_type: normalizeInteractionType(request.interactionType),
             complexity: normalizeComplexity(request.complexity),
+            context: request.context || {},
         };
 
         if (!this.contentClient) {
@@ -623,6 +662,9 @@ export class RealContentGenerationClient {
             claim_ref: request.claimRef,
             animation_type: normalizeAnimationType(request.animationType),
             duration_seconds: request.durationSeconds,
+            domain: normalizeDomain(request.domain),
+            grade_level: normalizeGradeLevel(request.gradeLevel),
+            context: request.context || {},
         };
 
         if (!this.contentClient) {

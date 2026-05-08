@@ -60,11 +60,11 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
   const service = new GamificationService(prisma);
 
   /**
-   * GET /gamification/progress
+   * GET /progress
    * Get current authenticated user's full gamification progress.
-   * Alias consistent with frontend GET /api/v1/gamification/progress.
+   * Full path: /api/v1/engagement/gamification/progress
    */
-  app.get("/gamification/progress", async (request, reply) => {
+  app.get("/progress", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
     const userId = getUserId(request) as UserId;
 
@@ -78,10 +78,11 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
   });
 
   /**
-   * GET /gamification/achievements
+   * GET /achievements
    * Get current authenticated user's achievements.
+   * Full path: /api/v1/engagement/gamification/achievements
    */
-  app.get("/gamification/achievements", async (request, reply) => {
+  app.get("/achievements", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
     const userId = getUserId(request) as UserId;
 
@@ -95,10 +96,10 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
   });
 
   /**
-   * GET /gamification/leaderboard
-   * Alias consistent with frontend GET /api/v1/gamification/leaderboard.
+   * GET /leaderboard
+   * Full path: /api/v1/engagement/gamification/leaderboard
    */
-  app.get("/gamification/leaderboard", async (request, reply) => {
+  app.get("/leaderboard", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
     const queryResult = leaderboardQuerySchema.safeParse(request.query);
     if (!queryResult.success) {

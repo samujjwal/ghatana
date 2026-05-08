@@ -5,6 +5,7 @@
  * - Cache-first for static assets
  * - Network-first for API calls with fallback
  * - Stale-while-revalidate for dynamic content
+ * - IndexedDB-backed offline mutation queue (using centralized offlineSyncIndexedDB module)
  *
  * @doc.type service-worker
  * @doc.purpose PWA offline support
@@ -15,6 +16,89 @@
 /// <reference lib="webworker" />
 
 import { logger } from './components/utils/logger';
+import {
+  queueOfflineMutation,
+  loadPendingMutations,
+  markMutationSynced,
+  markMutationFailed,
+  type OfflineMutationType,
+  type OfflineMutationRequest,
+  type OfflineMutationRecord,
+} from './offline/offlineSyncIndexedDB';
+
+/**
+ * Infer mutation type from URL
+ */
+function inferMutationType(url: string): OfflineMutationType {
+  if (url.includes('/progress')) return 'module.progress';
+  if (url.includes('/simulations')) return 'simulation.capture';
+  if (url.includes('/assessments')) return 'assessment.attempt';
+  if (url.includes('/telemetry')) return 'telemetry.batch';
+  return 'module.progress'; // Default to progress for unknown types
+}
+
+/**
+ * Queue a mutation using the centralized IndexedDB module
+ */
+async function queueMutation(
+  url: string,
+  method: string,
+  headers: Headers,
+  body: string | null,
+): Promise<void> {
+  // Extract auth header for replay
+  const authHeader = headers.get('authorization') || '';
+  const contentType = headers.get('content-type') || 'application/json';
+  
+  // Generate idempotency key from URL + method + body hash
+  const bodyHash = body ? btoa(body).slice(0, 16) : 'no-body';
+  const idempotencyKey = `${method}:${url}:${bodyHash}`;
+  
+  const request: OfflineMutationRequest = {
+    url,
+    method,
+    headers: {
+      authorization: authHeader,
+      'content-type': contentType,
+    },
+    body,
+    idempotencyKey,
+    conflictPolicyVersion: 'offline-sync-v1',
+  };
+  
+  const type = inferMutationType(url);
+  const payload = body ? JSON.parse(body) : {};
+  
+  await queueOfflineMutation(type, payload, request);
+}
+
+/**
+ * Replay a single mutation
+ */
+async function replayMutation(record: OfflineMutationRecord): Promise<boolean> {
+  const { request } = record;
+  
+  try {
+    const replayRequest = new Request(request.url, {
+      method: request.method,
+      headers: request.headers,
+      body: request.body,
+    });
+    
+    const response = await fetch(replayRequest);
+    
+    if (response.ok) {
+      await markMutationSynced(record.id!);
+      return true;
+    } else {
+      throw new Error(`Replay failed with status ${response.status}`);
+    }
+  } catch (error) {
+    logger.error('[SW] Failed to replay mutation:', { id: record.id, error });
+    await markMutationFailed(record.id!, error instanceof Error ? error.message : String(error));
+    return false;
+  }
+}
 
 // Service worker global scope types
 declare const self: ServiceWorkerGlobalScope & typeof globalThis;
@@ -180,33 +264,62 @@ function isStaticAsset(pathname: string): boolean {
 async function networkMutationStrategy(request: Request): Promise<Response> {
   try {
     return await fetch(request);
-  } catch {
-    const clients = await self.clients.matchAll();
-    clients.forEach((client) => {
-      client.postMessage({
-        type: 'OFFLINE_MUTATION_CAPTURED',
-        payload: {
-          url: request.url,
-          method: request.method,
-          timestamp: Date.now(),
-        },
+  } catch (networkError) {
+    // Persist the mutation to IndexedDB for later replay
+    const body = request.method !== 'GET' && request.method !== 'HEAD'
+      ? await request.clone().text()
+      : null;
+    
+    try {
+      await queueMutation(
+        request.url,
+        request.method,
+        request.headers,
+        body,
+      );
+      
+      // Notify clients that mutation was queued
+      const clients = await self.clients.matchAll();
+      clients.forEach((client) => {
+        client.postMessage({
+          type: 'OFFLINE_MUTATION_QUEUED',
+          payload: {
+            url: request.url,
+            method: request.method,
+            timestamp: Date.now(),
+          },
+        });
       });
-    });
 
-    return new Response(
-      JSON.stringify({
-        status: 'queued',
-        conflictPolicyVersion: 'offline-sync-v1',
-        message: 'Offline mutation queued for conflict-aware replay.',
-      }),
-      {
-        status: 202,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-TutorPutor-Offline-Queued': 'true',
+      return new Response(
+        JSON.stringify({
+          status: 'queued',
+          conflictPolicyVersion: 'offline-sync-v1',
+          message: 'Offline mutation queued for conflict-aware replay.',
+        }),
+        {
+          status: 202,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-TutorPutor-Offline-Queued': 'true',
+          },
         },
-      },
-    );
+      );
+    } catch (dbError) {
+      logger.error('[SW] Failed to queue mutation:', dbError);
+      
+      // If IndexedDB fails, return a fallback response
+      return new Response(
+        JSON.stringify({
+          error: 'offline_storage_failed',
+          message: 'Failed to queue offline mutation. Please retry when online.',
+        }),
+        {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+    }
   }
 }
 
@@ -330,19 +443,61 @@ self.addEventListener('sync', (event) => {
 
 /**
  * Sync pending mutations with the server.
+ * This is called by the background sync API when the device comes back online.
  */
 async function syncPendingMutations(): Promise<void> {
   try {
-    // Notify all clients to trigger sync
+    logger.info('[SW] Starting offline mutation sync');
+    
+    const pendingMutations = await loadPendingMutations();
+    logger.info(`[SW] Found ${pendingMutations.length} pending mutations to sync`);
+    
+    let synced = 0;
+    let failed = 0;
+    
+    for (const record of pendingMutations) {
+      // Skip mutations that have exceeded retry limit
+      if (record.metadata.retryCount >= 3) {
+        logger.warn('[SW] Skipping mutation with too many retries:', record.id);
+        continue;
+      }
+      
+      const success = await replayMutation(record);
+      if (success) {
+        synced++;
+      } else {
+        failed++;
+      }
+    }
+    
+    logger.info(`[SW] Sync complete: ${synced} synced, ${failed} failed`);
+    
+    // Notify all clients about sync completion
     const clients = await self.clients.matchAll();
     clients.forEach((client) => {
       client.postMessage({
-        type: 'SYNC_TRIGGERED',
-        timestamp: Date.now(),
+        type: 'SYNC_COMPLETED',
+        payload: {
+          synced,
+          failed,
+          timestamp: Date.now(),
+        },
       });
     });
   } catch (error) {
     logger.error('[SW] Failed to sync mutations:', error);
+    
+    // Notify clients about sync failure
+    const clients = await self.clients.matchAll();
+    clients.forEach((client) => {
+      client.postMessage({
+        type: 'SYNC_FAILED',
+        payload: {
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: Date.now(),
+        },
+      });
+    });
   }
 }
 

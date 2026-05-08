@@ -82,6 +82,14 @@ export interface MockPrisma {
   enrollment: {
     findUnique: ReturnType<typeof vi.fn>;
   };
+  contentAsset: {
+    findUnique: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+  };
+  artifactManifest: {
+    create: ReturnType<typeof vi.fn>;
+  };
 }
 
 export function createMockPrisma(): MockPrisma {
@@ -131,6 +139,14 @@ export function createMockPrisma(): MockPrisma {
     },
     enrollment: {
       findUnique: vi.fn(),
+    },
+    contentAsset: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+    artifactManifest: {
+      create: vi.fn(),
     },
   };
 }

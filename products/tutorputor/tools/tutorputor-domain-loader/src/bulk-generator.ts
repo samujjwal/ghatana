@@ -285,12 +285,23 @@ export class BulkSimulationGenerator {
               },
             };
 
-            // Persist to database
+            // Convert to proto format for persistence (authoritative contract)
+            const protoManifest = {
+              manifest_id: enrichedManifest.id,
+              version: enrichedManifest.version,
+              domain: enrichedManifest.domain,
+              title: enrichedManifest.title,
+              description: enrichedManifest.description ?? null,
+              // Store full manifest in domain_config to preserve all TypeScript contract fields
+              domain_config: JSON.stringify(enrichedManifest),
+            };
+
+            // Persist to database using proto field names
             await this.prisma.simulationManifest.create({
               data: {
                 id: `sim_${manifest.domain}_${concept.id}_${Date.now()}`,
                 tenantId: request.tenantId,
-                manifest: JSON.stringify(enrichedManifest),
+                manifest: protoManifest,
                 domain: manifest.domain,
                 title: manifest.title,
                 version: manifest.version,
