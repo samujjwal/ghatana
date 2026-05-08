@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -124,10 +125,10 @@ public final class DmosNextBestActionRecommendationServlet {
                         });
                 }
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(errorResponse(400, e.getMessage(), resolveCorrelationId(request), Map.of("request", e.getMessage())));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to publish next-best-action recommendation", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(errorResponse(500, "Internal error", resolveCorrelationId(request), Map.of()));
             }
         });
     }
@@ -155,10 +156,10 @@ public final class DmosNextBestActionRecommendationServlet {
                         });
                 }
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(errorResponse(400, e.getMessage(), resolveCorrelationId(request), Map.of("request", e.getMessage())));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to approve next-best-action recommendation", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(errorResponse(500, "Internal error", resolveCorrelationId(request), Map.of()));
             }
         });
     }
@@ -186,10 +187,10 @@ public final class DmosNextBestActionRecommendationServlet {
                         });
                 }
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(errorResponse(400, e.getMessage(), resolveCorrelationId(request), Map.of("request", e.getMessage())));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to reject next-best-action recommendation", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(errorResponse(500, "Internal error", resolveCorrelationId(request), Map.of()));
             }
         });
     }
@@ -202,10 +203,10 @@ public final class DmosNextBestActionRecommendationServlet {
                 .map(recs -> jsonResponse(200, recs.stream().map(NextBestActionResponse::from).collect(Collectors.toList())))
                 .then(r -> Promise.of(r), e -> mapServiceError("list recommendations", e));
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(errorResponse(400, e.getMessage(), resolveCorrelationId(request), Map.of("request", e.getMessage())));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to list next-best-action recommendations", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(errorResponse(500, "Internal error", resolveCorrelationId(request), Map.of()));
         }
     }
 
@@ -218,28 +219,29 @@ public final class DmosNextBestActionRecommendationServlet {
                 .map(opt -> opt.map(rec -> jsonResponse(200, NextBestActionResponse.from(rec))).orElse(errorResponse(404, "Recommendation not found")))
                 .then(r -> Promise.of(r), e -> mapServiceError("get recommendation", e));
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(errorResponse(400, e.getMessage(), resolveCorrelationId(request), Map.of("request", e.getMessage())));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to get next-best-action recommendation", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(errorResponse(500, "Internal error", resolveCorrelationId(request), Map.of()));
         }
     }
 
     private Promise<HttpResponse> mapServiceError(String operation, Throwable error) {
+        String correlationId = UUID.randomUUID().toString();
         if (error instanceof SecurityException) {
-            return Promise.of(errorResponse(403, error.getMessage()));
+            return Promise.of(errorResponse(403, error.getMessage(), correlationId, Map.of()));
         }
         if (error instanceof NoSuchElementException) {
-            return Promise.of(errorResponse(404, error.getMessage()));
+            return Promise.of(errorResponse(404, error.getMessage(), correlationId, Map.of()));
         }
         if (error instanceof IllegalArgumentException) {
-            return Promise.of(errorResponse(400, error.getMessage()));
+            return Promise.of(errorResponse(400, error.getMessage(), correlationId, Map.of("request", error.getMessage())));
         }
         if (error instanceof IllegalStateException) {
-            return Promise.of(errorResponse(409, error.getMessage()));
+            return Promise.of(errorResponse(409, error.getMessage(), correlationId, Map.of()));
         }
         LOG.error("[DMOS] Failed to {}", operation, error);
-        return Promise.of(errorResponse(500, "Internal error"));
+        return Promise.of(errorResponse(500, "Internal error", correlationId, Map.of()));
     }
 
     private HttpResponse jsonResponse(int code, Object body) {
@@ -254,8 +256,31 @@ public final class DmosNextBestActionRecommendationServlet {
         }
     }
 
-    private HttpResponse errorResponse(int code, String message) {
-        return jsonResponse(code, new ErrorBody(code, message));
+    private HttpResponse errorResponse(int code, String safeMessage, String correlationId, Map<String, String> details) {
+        try {
+            StandardErrorEnvelope envelope = StandardErrorEnvelope.withDetails(
+                code,
+                safeMessage,
+                correlationId,
+                details
+            );
+            return HttpResponse.ofCode(code)
+                .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_JSON)
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), correlationId)
+                .withBody(MAPPER.writeValueAsBytes(envelope))
+                .build();
+        } catch (Exception e) {
+            LOG.error("[DMOS] Error serialization failure", e);
+            return HttpResponse.ofCode(500).build();
+        }
+    }
+
+    private static String resolveCorrelationId(HttpRequest request) {
+        String header = request.getHeader(HttpHeaders.of("X-Correlation-ID"));
+        if (header != null && !header.isBlank()) {
+            return header;
+        }
+        return UUID.randomUUID().toString();
     }
 
     record PublishRequest(String campaignId, String actionType, String title, String description, Map<String, Object> parameters, double confidenceScore, String rationale, Instant expiresAt) {}
@@ -302,5 +327,4 @@ public final class DmosNextBestActionRecommendationServlet {
         }
     }
 
-    record ErrorBody(int status, String message) {}
 }

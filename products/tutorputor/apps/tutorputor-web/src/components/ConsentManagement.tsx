@@ -11,6 +11,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth, useTenantId } from "../contexts/AuthContext";
+import { readAccessToken } from "@tutorputor/ui";
 
 export interface ConsentCategory {
   id: string;
@@ -36,9 +37,10 @@ export function ConsentManagement() {
 
   const fetchConsents = async () => {
     try {
+      const token = readAccessToken();
       const response = await fetch("/api/v1/auth/consents", {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("tutorputor_auth_token")}`,
+          Authorization: token ? `Bearer ${token}` : "",
         },
       });
       if (response.ok) {
@@ -55,11 +57,12 @@ export function ConsentManagement() {
   const toggleConsent = async (consentId: string, granted: boolean) => {
     setSaving(consentId);
     try {
+      const token = readAccessToken();
       const response = await fetch("/api/v1/auth/consents", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("tutorputor_auth_token")}`,
+          Authorization: token ? `Bearer ${token}` : "",
         },
         body: JSON.stringify({
           consentId,

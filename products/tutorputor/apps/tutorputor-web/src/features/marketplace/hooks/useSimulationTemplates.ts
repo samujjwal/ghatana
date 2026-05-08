@@ -24,6 +24,7 @@ import type {
   TemplateDetailResponse,
   TemplateSortField,
 } from "../types";
+import { readAccessToken } from "@tutorputor/ui";
 import { getStandardHeaders } from "../../../api/sharedApiClient";
 
 // =============================================================================
@@ -50,7 +51,7 @@ export const templateQueryKeys = {
 const API_BASE_URL = "/api/v1/marketplace";
 
 function getRequestHeaders(): Record<string, string> {
-  const token = localStorage.getItem("auth_token");
+  const token = readAccessToken();
   return getStandardHeaders(token) as Record<string, string>;
 }
 

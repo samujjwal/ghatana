@@ -200,6 +200,7 @@ public final class DmosApiServer extends Launcher {
         String[] requiredVars = {
             "DATABASE_URL",
             "DMOS_PII_HMAC_KEY",
+            "DMOS_CONTACT_ENCRYPTION_KEY",
         };
 
         for (String var : requiredVars) {
@@ -320,6 +321,8 @@ public final class DmosApiServer extends Launcher {
         }
 
         String piiHmacKey = System.getenv("DMOS_PII_HMAC_KEY");
+        String contactEncryptionKey = System.getenv("DMOS_CONTACT_ENCRYPTION_KEY");
+        DmCommandService commandService = getIfExists(DmCommandService.class);
 
         ProductionBootstrapValidator validator = new ProductionBootstrapValidator.Builder()
             .isProduction(true)
@@ -327,6 +330,8 @@ public final class DmosApiServer extends Launcher {
             .campaignRepository(campaignRepository)
             .kernelAdapter(kernelAdapter)
             .piiHmacKey(piiHmacKey)
+            .contactEncryptionKey(contactEncryptionKey)
+            .googleAdsOutboxExecutor(commandService)
             .build();
 
         try {
@@ -485,7 +490,11 @@ public final class DmosApiServer extends Launcher {
 
         // Campaign Service
         CampaignRepository campaignRepo = get(CampaignRepository.class);
-        // No-op preflight data provider for composition root wiring
+        if (environment.equals(PRODUCTION)) {
+            throw new IllegalStateException("CampaignPreflightDataProvider must be backed by production readiness checks in production mode");
+        }
+
+        // Development-only fallback preflight provider.
         CampaignPreflightDataProvider preflightProvider =
             (ctx, campaign) -> io.activej.promise.Promise.of(
                 new CampaignPreflightDataProvider.CampaignPreflightData(true, 1, 1, 0.0, 10000.0));
@@ -593,7 +602,11 @@ public final class DmosApiServer extends Launcher {
         // KERNEL-P1-4: Use Micrometer-backed collector registered in wireObservability()
         DmosMetricsCollector dmosMetrics = get(DmosMetricsCollector.class);
 
-        // In-memory EventLogStore implementation for development/testing
+        if (environment.equals(PRODUCTION)) {
+            throw new IllegalStateException("Durable EventLogStore implementation is required in production mode");
+        }
+
+        // Development-only in-memory EventLogStore implementation.
         EventLogStore eventLogStore = new EventLogStore() {
             private final java.util.Map<String, java.util.List<EventEntry>> store = new java.util.concurrent.ConcurrentHashMap<>();
             private final java.util.Map<String, Long> offsets = new java.util.concurrent.ConcurrentHashMap<>();
@@ -724,6 +737,9 @@ public final class DmosApiServer extends Launcher {
 
         // Strategy Generator Service
         MarketingStrategyRepository strategyRepo = get(MarketingStrategyRepository.class);
+        if (environment.equals(PRODUCTION)) {
+            throw new IllegalStateException("GovernedAgentWorkflowService must be configured in production mode");
+        }
         GovernedAgentWorkflowService governedWorkflowService = null;
         StrategyGeneratorService strategyService = new StrategyGeneratorServiceImpl(
             kernelAdapter, strategyRepo, governedWorkflowService);
@@ -761,9 +777,7 @@ public final class DmosApiServer extends Launcher {
         boolean productionMode = environment.equals(PRODUCTION);
         com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory.IdentityProvider identityProvider = null;
         if (productionMode) {
-            // P1-001: In production, use a real identity provider to derive roles/permissions server-side
-            // For now, use a no-op implementation that requires explicit configuration
-            LOG.warn("[PRODUCTION] IdentityProvider not configured; using no-op. Enable via DMOS_IDENTITY_PROVIDER_ENABLED.");
+            throw new IllegalStateException("Production identity provider is required. Startup blocked because no IdentityProvider is configured.");
         }
         com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory httpContextFactory =
             new com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory(productionMode, identityProvider);

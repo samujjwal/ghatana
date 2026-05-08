@@ -13,15 +13,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Module } from '@tutorputor/contracts';
 import {
-  createOfflineSyncRecord,
+  queueOfflineMutation,
   loadPendingMutations,
   markMutationSynced,
-  queueOfflineMutation,
   resolveOfflineConflict,
   type OfflineMutationType,
   type OfflineMutationPayload,
   type OfflineMutationRequest,
 } from '../offline/offlineSyncIndexedDB';
+import { readAccessToken } from '@tutorputor/ui';
 
 // Re-export types from @ghatana/state for convenience
 // In a real implementation, these would come from the state library
@@ -312,12 +312,13 @@ export function useOfflineProgress(): {
 
   const queueMutation = useCallback(async (type: OfflineMutationType, payload: OfflineMutationPayload) => {
     try {
+      const token = readAccessToken();
       const request: OfflineMutationRequest = {
         url: '/api/v1/offline/sync',
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ type, payload }),
         idempotencyKey: `${type}:${Date.now()}`,
@@ -345,9 +346,10 @@ export function useOfflineProgress(): {
       if (isOnline) {
         try {
           // Try immediate sync
+          const token = readAccessToken();
           await fetch('/api/progress', {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
             body: JSON.stringify(payload),
           });
         } catch {
@@ -411,6 +413,21 @@ export function useOfflineProgress(): {
               localVersion: record.metadata.localVersion,
             });
             await markMutationSynced(record.id!);
+            continue;
+          } else {
+            // Conflict was resolved, retry with resolved payload
+            const retryRequest = {
+              ...record.request,
+              body: JSON.stringify({ type: record.type, payload: resolution.payload }),
+            };
+            const retryResponse = await fetch(record.request.url, {
+              method: record.request.method,
+              headers: record.request.headers,
+              body: retryRequest.body,
+            });
+            if (retryResponse.ok) {
+              await markMutationSynced(record.id!);
+            }
             continue;
           }
         }

@@ -20,20 +20,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * ActiveJ HTTP servlet exposing the DMOS workspace management API.
  *
  * <h2>Endpoints</h2>
  * <pre>
- *   POST   /v1/workspaces                            — Create workspace
- *   GET    /v1/workspaces                            — List workspaces for tenant
- *   GET    /v1/workspaces/:workspaceId               — Get a workspace
- *   POST   /v1/workspaces/:workspaceId/suspend       — Suspend a workspace
- *   POST   /v1/workspaces/:workspaceId/reactivate    — Reactivate a workspace
- *   GET    /v1/workspaces/:workspaceId/capabilities  — Get workspace capabilities (P0-002, P0-004)
+ *   POST   /v1/workspaces                            - Create workspace
+ *   GET    /v1/workspaces                            - List workspaces for tenant
+ *   GET    /v1/workspaces/:workspaceId               - Get a workspace
+ *   POST   /v1/workspaces/:workspaceId/suspend       - Suspend a workspace
+ *   POST   /v1/workspaces/:workspaceId/reactivate    - Reactivate a workspace
+ *   GET    /v1/workspaces/:workspaceId/capabilities  - Get workspace capabilities (P0-002, P0-004)
  * </pre>
  *
  * <p>Tenant isolation is enforced through the {@code X-Tenant-ID} header.
@@ -65,13 +67,6 @@ public final class DmosWorkspaceServlet {
     private final Eventloop eventloop;
     private final DmosHttpContextFactory httpContextFactory;
 
-    /**
-     * Creates the DMOS workspace servlet.
-     *
-     * @param workspaceService the workspace application service; must not be null
-     * @param eventloop the ActiveJ eventloop; must not be null
-     * @param httpContextFactory the shared HTTP context factory for fail-closed security; must not be null
-     */
     public DmosWorkspaceServlet(WorkspaceService workspaceService, Eventloop eventloop, DmosHttpContextFactory httpContextFactory) {
         this.workspaceService = Objects.requireNonNull(workspaceService, "workspaceService must not be null");
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
@@ -82,33 +77,18 @@ public final class DmosWorkspaceServlet {
         this(workspaceService, eventloop, new DmosHttpContextFactory(false, null));
     }
 
-    /**
-     * Returns the {@link AsyncServlet} routing for the DMOS workspace API.
-     *
-     * @return routing servlet; never null
-     */
     public AsyncServlet getServlet() {
         return DmosApiRateLimiter.wrap(
-        RoutingServlet.builder(eventloop)
-            .with(HttpMethod.POST, "/v1/workspaces",
-                this::handleCreateWorkspace)
-            .with(HttpMethod.GET, "/v1/workspaces",
-                this::handleListWorkspaces)
-            .with(HttpMethod.GET, "/v1/workspaces/:workspaceId",
-                this::handleGetWorkspace)
-            .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/suspend",
-                this::handleSuspendWorkspace)
-            .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/reactivate",
-                this::handleReactivateWorkspace)
-            .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/capabilities",
-                this::handleGetWorkspaceCapabilities)
-            .build()
+            RoutingServlet.builder(eventloop)
+                .with(HttpMethod.POST, "/v1/workspaces", this::handleCreateWorkspace)
+                .with(HttpMethod.GET, "/v1/workspaces", this::handleListWorkspaces)
+                .with(HttpMethod.GET, "/v1/workspaces/:workspaceId", this::handleGetWorkspace)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/suspend", this::handleSuspendWorkspace)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/reactivate", this::handleReactivateWorkspace)
+                .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/capabilities", this::handleGetWorkspaceCapabilities)
+                .build()
         );
     }
-
-    // -------------------------------------------------------------------------
-    // Handlers
-    // -------------------------------------------------------------------------
 
     private Promise<HttpResponse> handleCreateWorkspace(HttpRequest request) {
         return request.loadBody().then(__ -> {
@@ -119,15 +99,15 @@ public final class DmosWorkspaceServlet {
                     CreateWorkspaceRequest.class);
 
                 return workspaceService.createWorkspace(
-                    ctx,
-                    new WorkspaceService.CreateWorkspaceCommand(body.name(), body.description()))
+                        ctx,
+                        new WorkspaceService.CreateWorkspaceCommand(body.name(), body.description()))
                     .map(ws -> jsonResponse(201, WorkspaceResponse.from(ws)))
-                    .then(r -> Promise.of(r), e -> handleError("create workspace", e));
+                    .then(r -> Promise.of(r), e -> handleError("create workspace", e, request));
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(errorResponse(400, e.getMessage(), resolveCorrelationId(request), Map.of("request", e.getMessage())));
             } catch (Exception e) {
                 LOG.error("[DMOS] Unexpected error creating workspace", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(errorResponse(500, "Internal error", resolveCorrelationId(request), Map.of()));
             }
         });
     }
@@ -138,12 +118,12 @@ public final class DmosWorkspaceServlet {
 
             return workspaceService.listWorkspaces(ctx)
                 .map(list -> jsonResponse(200, list.stream().map(WorkspaceResponse::from).toList()))
-                .then(r -> Promise.of(r), e -> handleError("list workspaces", e));
+                .then(r -> Promise.of(r), e -> handleError("list workspaces", e, request));
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(errorResponse(400, e.getMessage(), resolveCorrelationId(request), Map.of("request", e.getMessage())));
         } catch (Exception e) {
             LOG.error("[DMOS] Unexpected error listing workspaces", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(errorResponse(500, "Internal error", resolveCorrelationId(request), Map.of()));
         }
     }
 
@@ -156,15 +136,15 @@ public final class DmosWorkspaceServlet {
                 .map(ws -> jsonResponse(200, WorkspaceResponse.from(ws)))
                 .then(r -> Promise.of(r), e -> {
                     if (e instanceof NoSuchElementException) {
-                        return Promise.of(errorResponse(404, "Workspace not found: " + workspaceId));
+                        return Promise.of(errorResponse(404, "Workspace not found: " + workspaceId, resolveCorrelationId(request), Map.of()));
                     }
-                    return handleError("get workspace", e);
+                    return handleError("get workspace", e, request);
                 });
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(errorResponse(400, e.getMessage(), resolveCorrelationId(request), Map.of("request", e.getMessage())));
         } catch (Exception e) {
             LOG.error("[DMOS] Unexpected error getting workspace", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(errorResponse(500, "Internal error", resolveCorrelationId(request), Map.of()));
         }
     }
 
@@ -177,18 +157,18 @@ public final class DmosWorkspaceServlet {
                 .map(ws -> jsonResponse(200, WorkspaceResponse.from(ws)))
                 .then(r -> Promise.of(r), e -> {
                     if (e instanceof NoSuchElementException) {
-                        return Promise.of(errorResponse(404, "Workspace not found: " + workspaceId));
+                        return Promise.of(errorResponse(404, "Workspace not found: " + workspaceId, resolveCorrelationId(request), Map.of()));
                     }
                     if (e instanceof IllegalStateException) {
-                        return Promise.of(errorResponse(409, e.getMessage()));
+                        return Promise.of(errorResponse(409, e.getMessage(), resolveCorrelationId(request), Map.of()));
                     }
-                    return handleError("suspend workspace", e);
+                    return handleError("suspend workspace", e, request);
                 });
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(errorResponse(400, e.getMessage(), resolveCorrelationId(request), Map.of("request", e.getMessage())));
         } catch (Exception e) {
             LOG.error("[DMOS] Unexpected error suspending workspace", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(errorResponse(500, "Internal error", resolveCorrelationId(request), Map.of()));
         }
     }
 
@@ -201,18 +181,18 @@ public final class DmosWorkspaceServlet {
                 .map(ws -> jsonResponse(200, WorkspaceResponse.from(ws)))
                 .then(r -> Promise.of(r), e -> {
                     if (e instanceof NoSuchElementException) {
-                        return Promise.of(errorResponse(404, "Workspace not found: " + workspaceId));
+                        return Promise.of(errorResponse(404, "Workspace not found: " + workspaceId, resolveCorrelationId(request), Map.of()));
                     }
                     if (e instanceof IllegalStateException) {
-                        return Promise.of(errorResponse(409, e.getMessage()));
+                        return Promise.of(errorResponse(409, e.getMessage(), resolveCorrelationId(request), Map.of()));
                     }
-                    return handleError("reactivate workspace", e);
+                    return handleError("reactivate workspace", e, request);
                 });
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(errorResponse(400, e.getMessage(), resolveCorrelationId(request), Map.of("request", e.getMessage())));
         } catch (Exception e) {
             LOG.error("[DMOS] Unexpected error reactivating workspace", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(errorResponse(500, "Internal error", resolveCorrelationId(request), Map.of()));
         }
     }
 
@@ -232,36 +212,26 @@ public final class DmosWorkspaceServlet {
                 })
                 .then(r -> Promise.of(r), e -> {
                     if (e instanceof NoSuchElementException) {
-                        return Promise.of(errorResponse(404, "Workspace not found: " + workspaceId));
+                        return Promise.of(errorResponse(404, "Workspace not found: " + workspaceId, resolveCorrelationId(request), Map.of()));
                     }
-                    return handleError("get workspace capabilities", e);
+                    return handleError("get workspace capabilities", e, request);
                 });
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(errorResponse(400, e.getMessage(), resolveCorrelationId(request), Map.of("request", e.getMessage())));
         } catch (Exception e) {
             LOG.error("[DMOS] Unexpected error getting workspace capabilities", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(errorResponse(500, "Internal error", resolveCorrelationId(request), Map.of()));
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Error helpers
-    // -------------------------------------------------------------------------
-
-    // P2-025: Using shared DmosHttpContextFactory for server-side identity derivation
-    // instead of parsing headers directly. This prevents spoofed identity attacks (P0-015).
-
-    private Promise<HttpResponse> handleError(String operation, Throwable e) {
+    private Promise<HttpResponse> handleError(String operation, Throwable e, HttpRequest request) {
+        String correlationId = resolveCorrelationId(request);
         if (e instanceof SecurityException) {
-            return Promise.of(errorResponse(403, e.getMessage()));
+            return Promise.of(errorResponse(403, e.getMessage(), correlationId, Map.of()));
         }
         LOG.error("[DMOS] Failed to {}", operation, e);
-        return Promise.of(errorResponse(500, "Internal error"));
+        return Promise.of(errorResponse(500, "Internal error", correlationId, Map.of()));
     }
-
-    // -------------------------------------------------------------------------
-    // Response helpers
-    // -------------------------------------------------------------------------
 
     private HttpResponse jsonResponse(int code, Object body) {
         try {
@@ -275,18 +245,35 @@ public final class DmosWorkspaceServlet {
         }
     }
 
-    private HttpResponse errorResponse(int code, String message) {
-        return jsonResponse(code, new ErrorBody(code, message));
+    private HttpResponse errorResponse(int code, String safeMessage, String correlationId, Map<String, String> details) {
+        try {
+            StandardErrorEnvelope envelope = StandardErrorEnvelope.withDetails(
+                code,
+                safeMessage,
+                correlationId,
+                details
+            );
+            return HttpResponse.ofCode(code)
+                .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_JSON)
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), correlationId)
+                .withBody(MAPPER.writeValueAsBytes(envelope))
+                .build();
+        } catch (Exception e) {
+            LOG.error("[DMOS] Error serialization failure", e);
+            return HttpResponse.ofCode(500).build();
+        }
     }
 
-    // -------------------------------------------------------------------------
-    // DTOs
-    // -------------------------------------------------------------------------
+    private static String resolveCorrelationId(HttpRequest request) {
+        String header = request.getHeader(HttpHeaders.of("X-Correlation-ID"));
+        if (header != null && !header.isBlank()) {
+            return header;
+        }
+        return UUID.randomUUID().toString();
+    }
 
-    /** Request body for workspace creation. */
     record CreateWorkspaceRequest(String name, String description) { }
 
-    /** API response representation of a workspace. */
     record WorkspaceResponse(
         String id,
         String tenantId,
@@ -311,13 +298,9 @@ public final class DmosWorkspaceServlet {
         }
     }
 
-    /** P0-002, P0-004: API response for workspace capabilities. */
     record WorkspaceCapabilitiesResponse(
         String workspaceId,
         String lastUpdated,
         java.util.List<WorkspaceService.WorkspaceCapability> capabilities
     ) { }
-
-    /** Error response body. */
-    record ErrorBody(int status, String message) { }
 }
