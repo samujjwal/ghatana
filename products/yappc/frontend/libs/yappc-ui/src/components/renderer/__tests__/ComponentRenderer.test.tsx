@@ -5,16 +5,21 @@
 
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { ThemeProvider as PlatformThemeProvider } from '@ghatana/theme';
 import { describe, it, expect, vi } from 'vitest';
 
 import { ThemeProvider } from '../../theme/ThemeProvider';
-import { ComponentRenderer } from './ComponentRenderer';
+import { ComponentRenderer } from '../ComponentRenderer';
 
-import type { ComponentSchema } from './ComponentRenderer';
+import type { ComponentSchema } from '../ComponentRenderer';
 
 // Helper to render with theme
 const renderWithTheme = (ui: React.ReactElement) => {
-  return render(<ThemeProvider>{ui}</ThemeProvider>);
+  return render(
+    <PlatformThemeProvider defaultTheme="light">
+      <ThemeProvider>{ui}</ThemeProvider>
+    </PlatformThemeProvider>
+  );
 };
 
 describe('ComponentRenderer', () => {
@@ -297,14 +302,28 @@ describe('ComponentRenderer', () => {
       componentTypes.forEach((type) => {
         const schema: ComponentSchema = {
           type,
-          props: {},
+          props:
+            type === 'TextField'
+              ? { label: 'Test TextField' }
+              : type === 'Select'
+                ? {
+                    label: 'Test Select',
+                    options: [{ value: 'test', label: 'Test Select' }],
+                  }
+                : {},
           children: `Test ${type}`,
         };
 
         const { unmount } = renderWithTheme(
           <ComponentRenderer schema={schema} />
         );
-        expect(screen.getByText(`Test ${type}`)).toBeInTheDocument();
+        if (type === 'TextField') {
+          expect(screen.getByLabelText('Test TextField')).toBeInTheDocument();
+        } else if (type === 'Select') {
+          expect(screen.getByLabelText('Test Select')).toBeInTheDocument();
+        } else {
+          expect(screen.getByText(`Test ${type}`)).toBeInTheDocument();
+        }
         unmount();
       });
     });
@@ -462,7 +481,7 @@ describe('ComponentRenderer', () => {
     });
 
     it('handles circular references in data', () => {
-      const circularData: any = { name: 'Test' };
+      const circularData: { name: string; self?: unknown } = { name: 'Test' };
       circularData.self = circularData;
 
       const schema: ComponentSchema = {

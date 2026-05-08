@@ -180,5 +180,5 @@ export const KeyCodes = {
  * Check if key is navigation key
  */
 export function isNavigationKey(key: string): boolean {
-  return Object.values(KeyCodes).includes(key as unknown);
+  return (Object.values(KeyCodes) as string[]).includes(key);
 }

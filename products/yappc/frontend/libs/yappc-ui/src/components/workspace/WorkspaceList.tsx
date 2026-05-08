@@ -9,7 +9,6 @@
  * @doc.pattern Presentational Component
  */
 
-import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import React from 'react';
 
 import type { Workspace } from 'yappc-core/types';
@@ -42,47 +41,45 @@ export const WorkspaceList: React.FC<WorkspaceListProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <Box display="flex" justifyContent="center" py={4}>
-        <CircularProgress size={32} />
-      </Box>
+      <div className="flex justify-center py-8" aria-label="Loading workspaces">
+        <span
+          className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600"
+          aria-hidden="true"
+        />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ m: 1 }}>
+      <div
+        role="alert"
+        className="m-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+      >
         {error.message}
-      </Alert>
+      </div>
     );
   }
 
   if (workspaces.length === 0) {
     return (
-      <Box display="flex" justifyContent="center" py={4}>
-        <Typography variant="body2" color="text.secondary">
-          {emptyMessage}
-        </Typography>
-      </Box>
+      <div className="flex justify-center py-8 text-sm text-slate-500">
+        {emptyMessage}
+      </div>
     );
   }
 
   return (
-    <Box
-      className={className}
-      display="flex"
-      flexDirection="column"
-      gap={1}
-      sx={{ overflowY: 'auto' }}
-    >
-      {workspaces.map((ws) => (
+    <div className={`flex flex-col gap-2 overflow-y-auto ${className ?? ''}`}>
+      {workspaces.map((workspace) => (
         <WorkspaceCard
-          key={ws.id}
-          workspace={ws}
-          isSelected={ws.id === selectedId}
+          key={workspace.id}
+          workspace={workspace}
+          isSelected={workspace.id === selectedId}
           onSelect={onSelect}
           onSettings={onSettings}
         />
       ))}
-    </Box>
+    </div>
   );
 };

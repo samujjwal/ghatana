@@ -9,16 +9,6 @@
  * @doc.pattern Presentational Component
  */
 
-import {
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  Avatar,
-  Chip,
-  IconButton,
-  Tooltip,
-} from '@mui/material';
 import { Settings as SettingsIcon, Star as StarIcon } from 'lucide-react';
 import React from 'react';
 
@@ -32,6 +22,14 @@ export interface WorkspaceCardProps {
   className?: string;
 }
 
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
 /**
  * Card component for a single workspace.
  */
@@ -42,98 +40,86 @@ export const WorkspaceCard: React.FC<WorkspaceCardProps> = ({
   onSettings,
   className,
 }) => {
-  const initials = workspace.name
-    .split(' ')
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
+    if (!onSelect || (event.key !== 'Enter' && event.key !== ' ')) {
+      return;
+    }
+    event.preventDefault();
+    onSelect(workspace);
+  };
 
   return (
-    <Card
-      className={className}
-      variant="outlined"
-      sx={{
-        cursor: onSelect ? 'pointer' : 'default',
-        border: isSelected ? 2 : 1,
-        borderColor: isSelected ? 'primary.main' : 'divider',
-        transition: 'all 0.15s ease',
-        '&:hover': onSelect
-          ? { borderColor: 'primary.light', boxShadow: 1 }
-          : {},
-      }}
+    <article
+      className={`rounded-xl border bg-white p-4 shadow-sm transition ${
+        isSelected ? 'border-blue-500 ring-2 ring-blue-100' : 'border-slate-200'
+      } ${onSelect ? 'cursor-pointer hover:border-blue-300 hover:shadow-md' : ''} ${
+        className ?? ''
+      }`}
+      role={onSelect ? 'button' : undefined}
+      tabIndex={onSelect ? 0 : undefined}
       onClick={onSelect ? () => onSelect(workspace) : undefined}
+      onKeyDown={handleKeyDown}
     >
-      <CardContent>
-        <Box display="flex" alignItems="flex-start" gap={1.5}>
-          <Avatar
-            sx={{
-              bgcolor: isSelected ? 'primary.main' : 'secondary.main',
-              width: 40,
-              height: 40,
-              fontSize: 14,
-              fontWeight: 700,
+      <div className="flex items-start gap-3">
+        <span
+          className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${
+            isSelected ? 'bg-blue-600' : 'bg-slate-700'
+          }`}
+        >
+          {getInitials(workspace.name)}
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1">
+            <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">
+              {workspace.name}
+            </h3>
+            {workspace.isDefault && (
+              <span title="Default workspace">
+                <StarIcon
+                  size={14}
+                  className="text-amber-500"
+                  aria-label="Default workspace"
+                />
+              </span>
+            )}
+          </div>
+
+          {workspace.description && (
+            <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+              {workspace.description}
+            </p>
+          )}
+
+          {workspace.aiTags && workspace.aiTags.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {workspace.aiTags.slice(0, 3).map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full border border-slate-200 px-2 py-0.5 text-[0.65rem] font-medium text-slate-600"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {onSettings && (
+          <button
+            type="button"
+            aria-label={`Open settings for ${workspace.name}`}
+            title="Workspace settings"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onClick={(event) => {
+              event.stopPropagation();
+              onSettings(workspace);
             }}
           >
-            {initials}
-          </Avatar>
-
-          <Box flexGrow={1} minWidth={0}>
-            <Box display="flex" alignItems="center" gap={0.5}>
-              <Typography
-                variant="subtitle2"
-                fontWeight={600}
-                noWrap
-                sx={{ flexGrow: 1 }}
-              >
-                {workspace.name}
-              </Typography>
-              {workspace.isDefault && (
-                <Tooltip title="Default workspace">
-                  <StarIcon size={14} color="orange" />
-                </Tooltip>
-              )}
-            </Box>
-
-            {workspace.description && (
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                }}
-              >
-                {workspace.description}
-              </Typography>
-            )}
-
-            {workspace.aiTags && workspace.aiTags.length > 0 && (
-              <Box display="flex" flexWrap="wrap" gap={0.5} mt={0.5}>
-                {workspace.aiTags.slice(0, 3).map((tag) => (
-                  <Chip key={tag} label={tag} size="small" variant="outlined" />
-                ))}
-              </Box>
-            )}
-          </Box>
-
-          {onSettings && (
-            <Tooltip title="Workspace settings">
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSettings(workspace);
-                }}
-              >
-                <SettingsIcon size={16} />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Box>
-      </CardContent>
-    </Card>
+            <SettingsIcon size={16} aria-hidden="true" />
+          </button>
+        )}
+      </div>
+    </article>
   );
 };

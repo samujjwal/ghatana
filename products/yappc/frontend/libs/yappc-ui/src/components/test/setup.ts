@@ -32,19 +32,26 @@ if (typeof (globalThis as unknown).jest === 'undefined') {
   };
 }
 
-// Mock browser APIs
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+// Mock browser APIs. These are constructible because dnd-kit calls
+// `new ResizeObserver(...)` during layout observation.
+class MockResizeObserver implements ResizeObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
 
-global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-  takeRecords: vi.fn(),
-}));
+class MockIntersectionObserver implements IntersectionObserver {
+  readonly root: Element | Document | null = null;
+  readonly rootMargin = '';
+  readonly thresholds: readonly number[] = [];
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+  takeRecords = vi.fn<() => IntersectionObserverEntry[]>(() => []);
+}
+
+global.ResizeObserver = MockResizeObserver;
+global.IntersectionObserver = MockIntersectionObserver;
 
 global.matchMedia = vi.fn().mockImplementation((query: string) => ({
   matches: false,

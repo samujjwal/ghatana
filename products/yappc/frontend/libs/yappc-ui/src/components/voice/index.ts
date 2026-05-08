@@ -7,6 +7,8 @@
 export { useVoiceCommands, VOICE_COMMAND_HELP } from './useVoiceCommands';
 
 // Voice UI
+import { voiceOverlayStyles } from './VoiceOverlay';
+
 export { VoiceOverlay, voiceOverlayStyles } from './VoiceOverlay';
 
 // Intent processing

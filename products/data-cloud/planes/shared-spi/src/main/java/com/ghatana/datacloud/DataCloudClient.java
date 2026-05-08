@@ -308,7 +308,11 @@ public interface DataCloudClient extends AutoCloseable {
             traceContext  = traceContext  != null ? traceContext           : Optional.empty();
         }
 
-        /** Minimal factory — retained for backward compatibility. */
+        /**
+         * Minimal factory retained for backward compatibility.
+         * Prefer {@link Builder#source(String)} and explicit envelope fields.
+         */
+        @Deprecated(since = "2026.05", forRemoval = false)
         public static Event of(String type, Map<String, Object> payload) {
             return builder().type(type).payload(payload).build();
         }

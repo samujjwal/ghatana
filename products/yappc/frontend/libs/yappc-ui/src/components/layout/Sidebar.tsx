@@ -11,22 +11,11 @@
  */
 
 import {
-  Box,
-  Drawer,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Divider,
-  Typography,
-  Skeleton,
-} from '@mui/material';
-import {
-  LayoutDashboard as DashboardIcon,
-  Layers as CanvasIcon,
   Bot as CopilotIcon,
-  Settings as SettingsIcon,
   FolderOpen as ProjectIcon,
+  Layers as CanvasIcon,
+  LayoutDashboard as DashboardIcon,
+  Settings as SettingsIcon,
 } from 'lucide-react';
 import React from 'react';
 
@@ -43,7 +32,7 @@ export interface NavItem {
 export interface SidebarProps {
   open: boolean;
   drawerWidth?: number;
-  /** MUI responsive variant — 'temporary' for mobile, 'permanent' for desktop */
+  /** Responsive variant: 'temporary' for mobile, 'permanent' for desktop. */
   variant?: 'temporary' | 'permanent' | 'persistent';
   onClose?: () => void;
   projects?: Project[];
@@ -58,28 +47,32 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
   {
     id: 'dashboard',
     label: 'Dashboard',
-    icon: <DashboardIcon size={18} />,
+    icon: <DashboardIcon size={18} aria-hidden="true" />,
     path: '/',
   },
   {
     id: 'canvas',
     label: 'Canvas',
-    icon: <CanvasIcon size={18} />,
+    icon: <CanvasIcon size={18} aria-hidden="true" />,
     path: '/canvas',
   },
   {
     id: 'copilot',
     label: 'AI Copilot',
-    icon: <CopilotIcon size={18} />,
+    icon: <CopilotIcon size={18} aria-hidden="true" />,
     path: '/copilot',
   },
   {
     id: 'settings',
     label: 'Settings',
-    icon: <SettingsIcon size={18} />,
+    icon: <SettingsIcon size={18} aria-hidden="true" />,
     path: '/settings',
   },
 ];
+
+function cx(...classes: Array<string | false | null | undefined>): string {
+  return classes.filter(Boolean).join(' ');
+}
 
 /**
  * Application drawer sidebar with project list and nav links.
@@ -96,140 +89,105 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onProjectSelect,
   onNavItemClick,
 }) => {
-  const drawerContent = (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        overflow: 'hidden',
-      }}
-    >
-      {/* App brand */}
-      <Box sx={{ px: 2, py: 1.5 }}>
-        <Typography variant="subtitle2" fontWeight={700} letterSpacing={0.5}>
-          YAPPC
-        </Typography>
-      </Box>
+  const isTemporary = variant === 'temporary';
+  const isVisible = isTemporary ? open : true;
 
-      <Divider />
-
-      {/* Primary nav */}
-      <List dense disablePadding sx={{ py: 0.5 }}>
-        {DEFAULT_NAV_ITEMS.map((item) => (
-          <ListItemButton
-            key={item.id}
-            selected={activePath === item.path}
-            onClick={() => onNavItemClick?.(item)}
-            sx={{ borderRadius: 1, mx: 0.5, my: 0.25 }}
-          >
-            <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
-              {item.icon}
-            </ListItemIcon>
-            <ListItemText
-              primary={item.label}
-              primaryTypographyProps={{ variant: 'body2' }}
-            />
-          </ListItemButton>
-        ))}
-      </List>
-
-      <Divider sx={{ mt: 0.5 }} />
-
-      {/* Projects section */}
-      <Box sx={{ flexGrow: 1, overflowY: 'auto', py: 0.5 }}>
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{
-            px: 2,
-            py: 0.5,
-            display: 'block',
-            textTransform: 'uppercase',
-            letterSpacing: 0.8,
-          }}
-        >
-          Projects
-        </Typography>
-
-        {projectsLoading ? (
-          <Box sx={{ px: 2 }}>
-            {[1, 2, 3].map((i) => (
-              <Skeleton
-                key={i}
-                variant="rounded"
-                height={32}
-                sx={{ mb: 0.5 }}
-              />
-            ))}
-          </Box>
-        ) : projects.length === 0 ? (
-          <Typography variant="caption" color="text.secondary" sx={{ px: 2 }}>
-            No projects yet
-          </Typography>
-        ) : (
-          <List dense disablePadding>
-            {projects.map((project) => (
-              <ListItemButton
-                key={project.id}
-                selected={activeProjectId === project.id}
-                onClick={() => onProjectSelect?.(project)}
-                sx={{ borderRadius: 1, mx: 0.5, my: 0.25 }}
-              >
-                <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
-                  <ProjectIcon size={16} />
-                </ListItemIcon>
-                <ListItemText
-                  primary={project.name}
-                  primaryTypographyProps={{
-                    variant: 'body2',
-                    noWrap: true,
-                    title: project.name,
-                  }}
-                />
-              </ListItemButton>
-            ))}
-          </List>
-        )}
-      </Box>
-    </Box>
-  );
+  if (!isVisible) {
+    return null;
+  }
 
   return (
-    <Box
-      component="nav"
-      sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-    >
-      {/* Mobile temporary drawer */}
-      <Drawer
-        variant="temporary"
-        open={open}
-        onClose={onClose}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: 'block', sm: 'none' },
-          '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box' },
-        }}
-      >
-        {drawerContent}
-      </Drawer>
+    <nav aria-label="Primary" className="yappc-app-sidebar">
+      {isTemporary && (
+        <button
+          type="button"
+          aria-label="Close navigation"
+          className="fixed inset-0 z-30 bg-slate-950/40"
+          onClick={onClose}
+        />
+      )}
 
-      {/* Desktop permanent drawer */}
-      <Drawer
-        variant={variant === 'temporary' ? 'temporary' : 'permanent'}
-        open={variant === 'temporary' ? open : true}
-        sx={{
-          display: { xs: 'none', sm: 'block' },
-          '& .MuiDrawer-paper': {
-            width: drawerWidth,
-            boxSizing: 'border-box',
-            borderRight: 1,
-            borderColor: 'divider',
-          },
-        }}
+      <aside
+        className={cx(
+          'fixed left-0 top-0 z-40 flex h-screen flex-col overflow-hidden border-r border-slate-200 bg-white text-slate-900 shadow-sm',
+          isTemporary ? 'shadow-xl' : 'hidden sm:flex'
+        )}
+        style={{ width: drawerWidth }}
       >
-        {drawerContent}
-      </Drawer>
-    </Box>
+        <div className="px-4 py-3">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-700">
+            YAPPC
+          </p>
+        </div>
+
+        <div className="border-t border-slate-200 py-1">
+          {DEFAULT_NAV_ITEMS.map((item) => {
+            const isActive = activePath === item.path;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                className={cx(
+                  'mx-2 my-1 flex w-[calc(100%-1rem)] items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500',
+                  isActive
+                    ? 'bg-blue-50 font-semibold text-blue-700'
+                    : 'text-slate-700 hover:bg-slate-100'
+                )}
+                aria-current={isActive ? 'page' : undefined}
+                onClick={() => onNavItemClick?.(item)}
+              >
+                <span className="flex h-5 w-5 items-center justify-center">
+                  {item.icon}
+                </span>
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex min-h-0 flex-1 flex-col border-t border-slate-200 py-2">
+          <p className="px-4 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Projects
+          </p>
+
+          {projectsLoading ? (
+            <div className="space-y-2 px-4 py-2" aria-label="Loading projects">
+              {[0, 1, 2].map((item) => (
+                <div
+                  key={item}
+                  className="h-8 animate-pulse rounded-lg bg-slate-100"
+                />
+              ))}
+            </div>
+          ) : projects.length === 0 ? (
+            <p className="px-4 py-2 text-xs text-slate-500">No projects yet</p>
+          ) : (
+            <div className="min-h-0 flex-1 overflow-y-auto pb-3">
+              {projects.map((project) => {
+                const isActive = activeProjectId === project.id;
+                return (
+                  <button
+                    key={project.id}
+                    type="button"
+                    className={cx(
+                      'mx-2 my-1 flex w-[calc(100%-1rem)] items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500',
+                      isActive
+                        ? 'bg-slate-900 font-semibold text-white'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    )}
+                    title={project.name}
+                    aria-current={isActive ? 'page' : undefined}
+                    onClick={() => onProjectSelect?.(project)}
+                  >
+                    <ProjectIcon size={16} aria-hidden="true" />
+                    <span className="truncate">{project.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </aside>
+    </nav>
   );
 };

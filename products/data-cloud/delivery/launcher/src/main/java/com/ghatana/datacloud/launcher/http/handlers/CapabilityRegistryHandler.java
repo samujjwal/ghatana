@@ -40,10 +40,7 @@ public final class CapabilityRegistryHandler {
         this.capabilitySnapshotSupplier = capabilitySnapshotSupplier;
     }
 
-    /**
-     * Handle GET /api/v1/capabilities - returns runtime capability registry
-     */
-    public Promise<HttpResponse> handleCapabilities(HttpRequest request) {
+    private Promise<HttpResponse> handleRuntimeTruthSnapshot(HttpRequest request) {
         String tenantId = httpSupport.requireTenantIdOrFail(request);
         if (tenantId == null) {
             return Promise.of(httpSupport.errorResponse(400, "X-Tenant-Id header is required"));
@@ -57,6 +54,20 @@ public final class CapabilityRegistryHandler {
         return Promise.of(httpSupport.envelopeResponse(
             ApiResponse.success(response, tenantId, requestId),
             objectMapper));
+    }
+
+    /**
+     * Handle GET /api/v1/capabilities - compatibility runtime truth endpoint.
+     */
+    public Promise<HttpResponse> handleCapabilities(HttpRequest request) {
+        return handleRuntimeTruthSnapshot(request);
+    }
+
+    /**
+     * Handle GET /api/v1/surfaces - canonical runtime truth endpoint.
+     */
+    public Promise<HttpResponse> handleSurfaces(HttpRequest request) {
+        return handleRuntimeTruthSnapshot(request);
     }
 
     /**
@@ -79,5 +90,12 @@ public final class CapabilityRegistryHandler {
         return Promise.of(httpSupport.envelopeResponse(
             ApiResponse.success(schema, tenantId, requestId),
             objectMapper));
+    }
+
+    /**
+     * Handle GET /api/v1/surfaces/schema - canonical runtime truth schema endpoint.
+     */
+    public Promise<HttpResponse> handleSurfaceSchema(HttpRequest request) {
+        return handleCapabilitySchema(request);
     }
 }

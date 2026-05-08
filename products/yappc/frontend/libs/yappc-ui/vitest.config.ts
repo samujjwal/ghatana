@@ -18,6 +18,23 @@ export default defineConfig({
       'yappc-core/*': resolve(__dirname, '../yappc-core/src/*'),
       'yappc-state': resolve(__dirname, '../yappc-state/src'),
       'yappc-state/*': resolve(__dirname, '../yappc-state/src/*'),
+      'yappc-ui': resolve(__dirname, './src/components/components/index.ts'),
+      'yappc-ui/base-ui': resolve(
+        __dirname,
+        './src/components/base-ui/index.ts'
+      ),
+      'yappc-ui/development-ui': resolve(
+        __dirname,
+        './src/components/components/development/index.ts'
+      ),
+      'yappc-ui/initialization-ui': resolve(
+        __dirname,
+        './src/components/components/initialization/index.ts'
+      ),
+      'yappc-ui/navigation-ui': resolve(
+        __dirname,
+        './src/components/navigation-ui/index.ts'
+      ),
       '@ghatana/platform-utils': resolve(
         __dirname,
         '../../../../../platform/typescript/platform-utils/src'

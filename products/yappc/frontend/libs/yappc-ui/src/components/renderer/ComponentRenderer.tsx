@@ -29,10 +29,17 @@ import { Switch } from '../components/Switch';
 import { Tabs } from '../components/Tabs';
 import { TextField } from '../components/TextField';
 import { Tooltip } from '../components/Tooltip';
+import { Typography } from '../components/Typography';
 
 // Import molecules
 
 // Import organisms
+
+type RenderableComponent = React.ElementType<Record<string, unknown>>;
+
+function asRenderable(component: React.ElementType): RenderableComponent {
+  return component as unknown as RenderableComponent;
+}
 
 /**
  * Component schema definition
@@ -81,33 +88,59 @@ export interface ComponentSchema {
 /**
  * Component registry mapping type names to React components
  */
-const COMPONENT_REGISTRY: Record<string, React.ComponentType<unknown>> = {
+const COMPONENT_REGISTRY: Record<string, RenderableComponent> = {
   // Layout
-  Box,
-  Grid,
-  Stack,
+  Box: asRenderable(Box),
+  Grid: asRenderable(Grid),
+  Stack: asRenderable(Stack),
 
   // Atoms
-  Button,
-  Input,
-  Checkbox,
-  Radio,
-  Switch,
-  Badge,
-  Chip,
-  Avatar,
-  Tooltip,
+  Button: asRenderable(Button),
+  Input: asRenderable(Input),
+  Checkbox: asRenderable(Checkbox),
+  Radio: asRenderable(Radio),
+  Switch: asRenderable(Switch),
+  Badge: asRenderable(Badge),
+  Chip: asRenderable(Chip),
+  Avatar: asRenderable(Avatar),
+  Tooltip: asRenderable(Tooltip),
 
   // Molecules
-  TextField,
-  Select,
-  Alert,
+  TextField: asRenderable(TextField),
+  Select: asRenderable(Select),
+  Alert: asRenderable(Alert),
+  Typography: asRenderable(Typography),
 
   // Organisms
-  Card,
-  Form,
-  Tabs,
+  Card: asRenderable(Card),
+  Form: asRenderable(Form),
+  Tabs: asRenderable(Tabs),
 };
+
+const VALUE_BOUND_COMPONENT_TYPES = new Set([
+  'Input',
+  'TextField',
+  'Select',
+  'Checkbox',
+  'Radio',
+  'Switch',
+]);
+
+function toRenderableNode(value: unknown): React.ReactNode {
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  ) {
+    return String(value);
+  }
+
+  if (React.isValidElement(value)) {
+    return value;
+  }
+
+  return null;
+}
 
 /**
  * Context for data binding and event handling
@@ -141,7 +174,7 @@ export interface RendererOptions {
   /**
    * Custom component registry
    */
-  components?: Record<string, React.ComponentType<unknown>>;
+  components?: Record<string, RenderableComponent>;
 
   /**
    * Enable debugging output
@@ -194,7 +227,10 @@ function evaluateCondition(
       const path = match[1].split('.');
       let value: unknown = context.data;
       for (const key of path) {
-        value = (value as Record<string, unknown>)?.[key];
+        if (typeof value !== 'object' || value === null) {
+          return false;
+        }
+        value = (value as Record<string, unknown>)[key];
       }
       return Boolean(value);
     }
@@ -224,7 +260,10 @@ function resolveDataBinding(
     if (path && value) {
       const pathParts = path.split('.');
       for (const part of pathParts) {
-        value = value[part];
+        if (typeof value !== 'object' || value === null) {
+          return undefined;
+        }
+        value = (value as Record<string, unknown>)[part];
       }
     }
 
@@ -238,7 +277,10 @@ function resolveDataBinding(
           value = value.toLowerCase();
           break;
         case 'capitalize':
-          value = value.charAt(0).toUpperCase() + value.slice(1);
+          value =
+            value.length > 0
+              ? value.charAt(0).toUpperCase() + value.slice(1)
+              : value;
           break;
       }
     }
@@ -340,12 +382,15 @@ function renderComponent(
   let props: Record<string, unknown> = {
     ...schema.props,
   };
+  let boundValue: unknown;
 
   // Apply data binding
   if (schema.dataBinding) {
-    const boundValue = resolveDataBinding(schema.dataBinding, context);
+    boundValue = resolveDataBinding(schema.dataBinding, context);
     if (boundValue !== undefined) {
-      props.value = boundValue;
+      if (VALUE_BOUND_COMPONENT_TYPES.has(schema.type)) {
+        props.value = boundValue;
+      }
     }
   }
 
@@ -377,11 +422,15 @@ function renderComponent(
     );
   }
 
-  return (
-    <Component key={key} {...props}>
-      {children}
-    </Component>
-  );
+  if (
+    boundValue !== undefined &&
+    !VALUE_BOUND_COMPONENT_TYPES.has(schema.type) &&
+    (children === null || children === '')
+  ) {
+    children = toRenderableNode(boundValue);
+  }
+
+  return React.createElement(Component, { key, ...props }, children);
 }
 
 /**
@@ -511,7 +560,14 @@ export default ComponentRenderer;
  */
 export function useRenderer(
   initialSchema: ComponentSchema | ComponentSchema[]
-) {
+): {
+  schema: ComponentSchema | ComponentSchema[];
+  context: RendererContext;
+  updateSchema: (newSchema: ComponentSchema | ComponentSchema[]) => void;
+  updateContext: (newContext: Partial<RendererContext>) => void;
+  setData: (data: Record<string, unknown>) => void;
+  setHandlers: (handlers: Record<string, (...args: unknown[]) => void>) => void;
+} {
   const [schema, setSchema] = React.useState(initialSchema);
   const [context, setContext] = React.useState<RendererContext>({});
 

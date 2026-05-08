@@ -650,7 +650,7 @@ public final class DataSourceRegistryHandler {
                 "preview", true,
                 "disabled", true,
                 "message", "Data Fabric metrics are not available in this deployment. " +
-                    "Check the dataFabric entry at GET /api/v1/capabilities for current capability status."
+                    "Check the dataFabric entry at GET /api/v1/surfaces for current capability status."
             )));
         }
 

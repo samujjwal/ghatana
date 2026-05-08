@@ -6,7 +6,7 @@
  *
  */
 export interface WebVitalsMetric {
-  name: string;
+  name: 'CLS' | 'FCP' | 'INP' | 'LCP' | 'TTFB' | string;
   value: number;
   rating: 'good' | 'needs-improvement' | 'poor';
   delta: number;
@@ -42,11 +42,13 @@ export function reportWebVitals(onReport: ReportHandler): void {
   void (async () => {
     try {
       // Dynamically import web-vitals to avoid bundling it
-      const { onCLS, onFID, onFCP, onLCP, onTTFB } = await import('web-vitals');
+      const { onCLS, onFCP, onINP, onLCP, onTTFB } = await import(
+        'web-vitals'
+      );
 
       onCLS(onReport);
-      onFID(onReport);
       onFCP(onReport);
+      onINP(onReport);
       onLCP(onReport);
       onTTFB(onReport);
     } catch (error) {
@@ -65,7 +67,7 @@ export function getPerformanceRating(
   const thresholds: Record<string, [number, number]> = {
     FCP: [1800, 3000],
     LCP: [2500, 4000],
-    FID: [100, 300],
+    INP: [200, 500],
     CLS: [0.1, 0.25],
     TTFB: [800, 1800],
   };

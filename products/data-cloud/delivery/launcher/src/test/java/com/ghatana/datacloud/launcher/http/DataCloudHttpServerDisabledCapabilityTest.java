@@ -174,11 +174,11 @@ class DataCloudHttpServerDisabledCapabilityTest {
         }
 
         @Test
-        @DisplayName("POST /api/v1/analytics/suggest uses heuristic fallback (200) when LLM absent — no hard gate")
+        @DisplayName("POST /api/v1/analytics/suggest uses heuristic fallback (200) when LLM absent in local mode")
         void analyticsSuggest_withoutLlm_usesFallbackHeuristics_returns200() throws Exception {
             // The /api/v1/analytics/suggest route is handled by AiAssistHandler, not AnalyticsHandler.
-            // When completionService is null, the handler degrades gracefully to static heuristics
-            // and returns 200 rather than a 503 gate — this is the documented production design.
+            // In local mode, when completionService is null, the handler degrades gracefully
+            // to static heuristics and returns 200.
             startServer();
 
             HttpResponse<String> response = post("/api/v1/analytics/suggest");
@@ -194,11 +194,10 @@ class DataCloudHttpServerDisabledCapabilityTest {
     class AiNotConfiguredTests {
 
         @Test
-        @DisplayName("POST /api/v1/ai/suggestions uses heuristic fallback (200) when LLM absent — no hard gate")
+        @DisplayName("POST /api/v1/ai/suggestions uses heuristic fallback (200) when LLM absent in local mode")
         void aiSuggestions_withoutLlm_usesFallbackHeuristics_returns200() throws Exception {
             // AiAssistHandler is always wired; when completionService is null it degrades to
-            // static-heuristic mode and returns 200.  Hard-gating (503) applies only to
-            // capabilities backed by optional connectors (analytics engine, brain, OpenSearch).
+            // static-heuristic mode and returns 200 in local mode.
             startServer(); // no withCompletionService call
 
             HttpResponse<String> response = post("/api/v1/ai/suggestions");

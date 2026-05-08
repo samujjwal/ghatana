@@ -240,14 +240,14 @@ export {
   TabNavigation,
   StageNavigation,
   stageNavigationStyles,
-} from 'yappc-ui/navigation-ui';
+} from './navigation-ui';
 export type {
   BreadcrumbItemType,
   BreadcrumbProps,
   TabNavigationItem,
   TabNavigationProps,
   StageNavigationProps,
-} from 'yappc-ui/navigation-ui';
+} from './navigation-ui';
 
 // Error Boundary
 export { ErrorBoundary } from './components/ErrorBoundary';
@@ -279,19 +279,19 @@ export type {
 } from './patterns/ResponsiveLayout';
 
 // Select Components
-export { SelectTailwind, SelectOption, SelectGroup } from 'yappc-ui/base-ui';
+export { SelectTailwind, SelectOption, SelectGroup } from './base-ui';
 export type {
   SelectProps as SelectTailwindProps,
   SelectOptionProps,
   SelectGroupProps,
-} from 'yappc-ui/base-ui';
-export { Popover, PopoverTrigger, PopoverClose } from 'yappc-ui/base-ui';
-export type { PopoverProps, PopoverPlacement } from 'yappc-ui/base-ui';
+} from './base-ui';
+export { Popover, PopoverTrigger, PopoverClose } from './base-ui';
+export type { PopoverProps, PopoverPlacement } from './base-ui';
 export {
   StoryCard,
   VelocityChart,
   BurndownChart,
-} from 'yappc-ui/development-ui';
+} from './components/development';
 export type {
   Story,
   StoryType,
@@ -305,8 +305,8 @@ export type {
   VelocityChartProps,
   BurndownDataPoint,
   BurndownChartProps,
-} from 'yappc-ui/development-ui';
-export { PresetCard, ResourcesList } from 'yappc-ui/initialization-ui';
+} from './components/development';
+export { PresetCard, ResourcesList } from './components/initialization';
 export type {
   PresetCategory,
   TechStack,
@@ -321,7 +321,7 @@ export type {
   Resource,
   ResourceAction,
   ResourcesListProps,
-} from 'yappc-ui/initialization-ui';
+} from './components/initialization';
 
 // Action Components
 export { BulkActionBar } from './components/Actions/BulkActionBar';

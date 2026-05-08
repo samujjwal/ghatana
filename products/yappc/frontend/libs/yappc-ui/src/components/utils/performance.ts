@@ -92,14 +92,14 @@ export function useDetectReRenders(
  * @param wait Wait time in milliseconds
  * @returns Debounced function
  */
-export function debounce<T extends (...args: unknown[]) => any>(
-  func: T,
+export function debounce<TArgs extends unknown[]>(
+  func: (...args: TArgs) => void,
   wait: number
-): (...args: Parameters<T>) => void {
+): (...args: TArgs) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
 
-  return function (...args: Parameters<T>): void {
-    const later = () => {
+  return function (...args: TArgs): void {
+    const later = (): void => {
       timeout = null;
       func(...args);
     };
@@ -118,14 +118,14 @@ export function debounce<T extends (...args: unknown[]) => any>(
  * @param limit Limit time in milliseconds
  * @returns Throttled function
  */
-export function throttle<T extends (...args: unknown[]) => any>(
-  func: T,
+export function throttle<TArgs extends unknown[]>(
+  func: (...args: TArgs) => void,
   limit: number
-): (...args: Parameters<T>) => void {
+): (...args: TArgs) => void {
   let inThrottle = false;
-  let lastArgs: Parameters<T> | null = null;
+  let lastArgs: TArgs | null = null;
 
-  return function (...args: Parameters<T>): void {
+  return function (...args: TArgs): void {
     if (!inThrottle) {
       func(...args);
       inThrottle = true;
@@ -168,13 +168,15 @@ export function memoWithLogging<P extends object>(
       if (!areEqual) {
         const changedProps: Record<string, { prev: unknown; next: unknown }> =
           {};
+        const prevRecord = prevProps as Readonly<Record<string, unknown>>;
+        const nextRecord = nextProps as Readonly<Record<string, unknown>>;
 
         // Find changed props
         Object.keys(prevProps).forEach((key) => {
-          if ((prevProps as unknown)[key] !== (nextProps as unknown)[key]) {
+          if (prevRecord[key] !== nextRecord[key]) {
             changedProps[key] = {
-              prev: (prevProps as unknown)[key],
-              next: (nextProps as unknown)[key],
+              prev: prevRecord[key],
+              next: nextRecord[key],
             };
           }
         });

@@ -19,6 +19,8 @@ import type { ViewMode } from 'yappc-core/types/devsecops';
 
 describe('ViewModeSwitcher Component', () => {
   const mockOnChange = vi.fn();
+  const setupUser = (): ReturnType<typeof userEvent.setup> =>
+    userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
   const defaultProps: ViewModeSwitcherProps = {
     value: 'kanban',
@@ -87,7 +89,7 @@ describe('ViewModeSwitcher Component', () => {
 
   describe('Mode Switching', () => {
     it('should call onChange when canvas button clicked', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(<ViewModeSwitcher {...defaultProps} value="kanban" />);
 
       const canvasButton = screen.getByRole('button', { name: /canvas/i });
@@ -97,7 +99,7 @@ describe('ViewModeSwitcher Component', () => {
     });
 
     it('should call onChange when kanban button clicked', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(<ViewModeSwitcher {...defaultProps} value="canvas" />);
 
       const kanbanButton = screen.getByRole('button', { name: /kanban/i });
@@ -107,7 +109,7 @@ describe('ViewModeSwitcher Component', () => {
     });
 
     it('should call onChange when timeline button clicked', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(<ViewModeSwitcher {...defaultProps} value="kanban" />);
 
       const timelineButton = screen.getByRole('button', { name: /timeline/i });
@@ -117,7 +119,7 @@ describe('ViewModeSwitcher Component', () => {
     });
 
     it('should call onChange when table button clicked', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(<ViewModeSwitcher {...defaultProps} value="kanban" />);
 
       const tableButton = screen.getByRole('button', { name: /table/i });
@@ -127,7 +129,7 @@ describe('ViewModeSwitcher Component', () => {
     });
 
     it('should not call onChange when clicking already selected mode', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(<ViewModeSwitcher {...defaultProps} value="kanban" />);
 
       const kanbanButton = screen.getByRole('button', { name: /kanban/i });
@@ -420,7 +422,7 @@ describe('ViewModeSwitcher Component', () => {
     });
 
     it('should be keyboard navigable', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(<ViewModeSwitcher {...defaultProps} />);
 
       const firstButton = screen.getByRole('button', { name: /canvas/i });
@@ -475,7 +477,7 @@ describe('ViewModeSwitcher Component', () => {
     });
 
     it('should handle null onChange', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(<ViewModeSwitcher {...defaultProps} onChange={null as unknown} />);
 
       const canvasButton = screen.getByRole('button', { name: /canvas/i });

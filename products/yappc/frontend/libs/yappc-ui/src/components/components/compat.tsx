@@ -55,9 +55,7 @@ const renderTrigger = ({
       onClick?: React.MouseEventHandler<HTMLElement>;
     }>;
     return React.cloneElement(children, {
-      className: [child.props.className, className]
-        .filter(Boolean)
-        .join(' '),
+      className: [child.props.className, className].filter(Boolean).join(' '),
       onClick: onClick ?? child.props.onClick,
     } as Partial<React.HTMLAttributes<HTMLElement>>);
   }
@@ -233,14 +231,17 @@ export function Collapsible({
   return (
     <div
       className={className}
-      data-state={open ?? defaultOpen ? 'open' : 'closed'}
+      data-state={(open ?? defaultOpen) ? 'open' : 'closed'}
     >
       {children}
     </div>
   );
 }
 
-export function CollapsibleContent({ children, className }: CompatElementProps) {
+export function CollapsibleContent({
+  children,
+  className,
+}: CompatElementProps) {
   return <div className={className}>{children}</div>;
 }
 
@@ -256,7 +257,17 @@ type IconButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ children, className, size = 'md', color: _color, type = 'button', ...props }, ref) => (
+  (
+    {
+      children,
+      className,
+      size = 'md',
+      color: _color,
+      type = 'button',
+      ...props
+    },
+    ref
+  ) => (
     <button
       ref={ref}
       type={type}
@@ -285,7 +296,10 @@ type TooltipProps = CompatElementProps & {
 
 export function Tooltip({ children, className, title }: TooltipProps) {
   return (
-    <span className={className} title={typeof title === 'string' ? title : undefined}>
+    <span
+      className={className}
+      title={typeof title === 'string' ? title : undefined}
+    >
       {children}
     </span>
   );
@@ -303,7 +317,11 @@ export function FormControlLabel({
   className,
 }: FormControlLabelProps) {
   return (
-    <label className={['inline-flex items-center gap-2', className].filter(Boolean).join(' ')}>
+    <label
+      className={['inline-flex items-center gap-2', className]
+        .filter(Boolean)
+        .join(' ')}
+    >
       {control}
       <span>{label}</span>
     </label>
@@ -335,7 +353,9 @@ export function LinearProgress({
     >
       <div
         className="h-full rounded-full bg-primary-500 transition-all"
-        style={{ width: variant === 'determinate' ? `${progressValue}%` : '35%' }}
+        style={{
+          width: variant === 'determinate' ? `${progressValue}%` : '35%',
+        }}
       />
     </div>
   );
@@ -347,12 +367,23 @@ type SurfaceProps = React.HTMLAttributes<HTMLDivElement> & {
 };
 
 export const Surface = React.forwardRef<HTMLDivElement, SurfaceProps>(
-  ({ children, className, variant = 'default', elevation: _elevation, ...props }, ref) => (
+  (
+    {
+      children,
+      className,
+      variant = 'default',
+      elevation: _elevation,
+      ...props
+    },
+    ref
+  ) => (
     <div
       ref={ref}
       className={[
         'rounded-lg bg-white dark:bg-grey-900',
-        variant === 'outlined' ? 'border border-grey-200 dark:border-grey-700' : '',
+        variant === 'outlined'
+          ? 'border border-grey-200 dark:border-grey-700'
+          : '',
         variant === 'raised' || variant === 'elevated' ? 'shadow-md' : '',
         className,
       ]
@@ -374,7 +405,12 @@ type CompatMenuProps = React.HTMLAttributes<HTMLDivElement> & {
   PaperProps?: Record<string, unknown>;
 };
 
-export function Menu({ children, open = true, className, ...props }: CompatMenuProps) {
+export function Menu({
+  children,
+  open = true,
+  className,
+  ...props
+}: CompatMenuProps) {
   if (!open) return null;
   return (
     <div className={className} role="menu" {...props}>
@@ -440,7 +476,10 @@ type ToggleButtonGroupProps = {
   className?: string;
   value?: string | string[];
   exclusive?: boolean;
-  onChange?: (event: React.MouseEvent<HTMLElement>, value: string | null) => void;
+  onChange?: (
+    event: React.MouseEvent<HTMLElement>,
+    value: string | null
+  ) => void;
   size?: 'small' | 'medium' | 'large' | string;
   disabled?: boolean;
   orientation?: 'horizontal' | 'vertical' | string;
@@ -476,7 +515,7 @@ export function ToggleButtonGroup({
       onClick: (event: React.MouseEvent<HTMLButtonElement>) => {
         child.props.onClick?.(event);
         if (childValue !== undefined) {
-          onChange?.(event, childValue);
+          onChange?.(event, selected ? null : childValue);
         }
       },
     });
@@ -485,7 +524,15 @@ export function ToggleButtonGroup({
   return (
     <div
       aria-label={ariaLabel}
-      className={className}
+      className={[
+        'MuiToggleButtonGroup-root',
+        orientation === 'vertical'
+          ? 'MuiToggleButtonGroup-vertical'
+          : 'MuiToggleButtonGroup-horizontal',
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
       data-orientation={orientation}
       data-value={Array.isArray(value) ? value.join(',') : value}
       role="group"
@@ -510,7 +557,10 @@ export function ToggleButton({
 }: ToggleButtonProps) {
   return (
     <button
-      className={className}
+      aria-pressed={selected ? 'true' : 'false'}
+      className={[selected ? 'Mui-selected' : '', className]
+        .filter(Boolean)
+        .join(' ')}
       data-selected={selected}
       data-value={value}
       type={type}
@@ -528,14 +578,24 @@ type DisclosureProps = CompatElementProps & {
   action?: React.ReactNode;
 };
 
-export function Collapse({ children, in: open = true, className }: DisclosureProps) {
+export function Collapse({
+  children,
+  in: open = true,
+  className,
+}: DisclosureProps) {
   if (!open) return null;
   return <div className={className}>{children}</div>;
 }
 
-export function Fade({ children, in: open = true, className }: DisclosureProps) {
+export function Fade({
+  children,
+  in: open = true,
+  className,
+}: DisclosureProps) {
   if (!open) return null;
-  return <>{className ? <span className={className}>{children}</span> : children}</>;
+  return (
+    <>{className ? <span className={className}>{children}</span> : children}</>
+  );
 }
 
 export function Alert({
@@ -567,7 +627,12 @@ type ListItemProps = CompatElementProps & {
   onClick?: React.MouseEventHandler<HTMLDivElement>;
 };
 
-export function ListItem({ children, className, dense: _dense, onClick }: ListItemProps) {
+export function ListItem({
+  children,
+  className,
+  dense: _dense,
+  onClick,
+}: ListItemProps) {
   return (
     <div className={className} onClick={onClick}>
       {children}
@@ -593,7 +658,9 @@ export function ListItemText({
       {children ?? (
         <>
           {primary && <span className="block">{primary}</span>}
-          {secondary && <span className="block text-xs text-grey-500">{secondary}</span>}
+          {secondary && (
+            <span className="block text-xs text-grey-500">{secondary}</span>
+          )}
         </>
       )}
     </span>
@@ -604,7 +671,11 @@ type FormControlProps = CompatElementProps & {
   fullWidth?: boolean;
 };
 
-export function FormControl({ children, className, fullWidth }: FormControlProps) {
+export function FormControl({
+  children,
+  className,
+  fullWidth,
+}: FormControlProps) {
   const resolvedClassName = [fullWidth ? 'w-full' : '', className]
     .filter(Boolean)
     .join(' ');
@@ -708,7 +779,8 @@ type AvatarProps = CompatElementProps & {
 };
 
 export function Avatar({ children, className, alt, src }: AvatarProps) {
-  const fallbackAlt = alt ?? (typeof children === 'string' ? children : 'Avatar');
+  const fallbackAlt =
+    alt ?? (typeof children === 'string' ? children : 'Avatar');
   return (
     <BaseAvatar alt={fallbackAlt} src={src} className={className}>
       {children}
@@ -764,9 +836,18 @@ type PopperProps = CompatElementProps & {
   style?: React.CSSProperties;
 };
 
-export function Popper({ children, className, open = true, style }: PopperProps) {
+export function Popper({
+  children,
+  className,
+  open = true,
+  style,
+}: PopperProps) {
   if (!open) return null;
-  return <div className={className} style={style}>{children}</div>;
+  return (
+    <div className={className} style={style}>
+      {children}
+    </div>
+  );
 }
 
 export {

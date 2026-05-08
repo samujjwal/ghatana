@@ -495,8 +495,8 @@ public class AnalyticsHandler {
      * Handles DELETE /api/v1/analytics/queries/{queryId} — cancel a running query.
      *
      * <p>When {@link #cancellationSupported} is {@code false} (the default), this endpoint
-     * returns {@code 501 Not Implemented}. The runtime capability registry
-     * ({@code GET /api/v1/capabilities}) will expose {@code analytics.cancellation.configured=false}
+    * returns {@code 501 Not Implemented}. The runtime truth registry
+    * ({@code GET /api/v1/surfaces}) will expose {@code analytics.cancellation.configured=false}
      * so that UI clients can disable the cancel action before reaching this endpoint.
      *
      * <p>When cancellation is supported, this endpoint delegates to the
@@ -517,7 +517,7 @@ public class AnalyticsHandler {
                 queryId, traceId);
             return Promise.of(http.errorResponse(501,
                 "Analytics query cancellation is not supported. " +
-                "Check the analytics.cancellation entry at GET /api/v1/capabilities for current support status.",
+                "Check the analytics.cancellation entry at GET /api/v1/surfaces for current support status.",
                 traceId));
         }
 

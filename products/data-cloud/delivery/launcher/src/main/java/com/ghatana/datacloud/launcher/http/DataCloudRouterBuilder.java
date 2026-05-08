@@ -452,6 +452,8 @@ public class DataCloudRouterBuilder {
     }
 
     public DataCloudRouterBuilder withCapabilityRoutes(CapabilityRegistryHandler capabilityRegistryHandler) {
+        builder.with(HttpMethod.GET, "/api/v1/surfaces", capabilityRegistryHandler::handleSurfaces);
+        builder.with(HttpMethod.GET, "/api/v1/surfaces/schema", capabilityRegistryHandler::handleSurfaceSchema);
         builder.with(HttpMethod.GET, "/api/v1/capabilities", capabilityRegistryHandler::handleCapabilities);
         builder.with(HttpMethod.GET, "/api/v1/capabilities/schema", capabilityRegistryHandler::handleCapabilitySchema);
         return this;

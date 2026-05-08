@@ -326,12 +326,13 @@ public final class DataCloud {
     private static class DefaultDataCloudClient implements DataCloudClient {
         private final EntityStore entityStore;
         private final EventLogStore eventLogStore;
+        private final DataCloudConfig.DataCloudProfile profile;
         private volatile boolean closed = false;
 
         DefaultDataCloudClient(EntityStore entityStore, EventLogStore eventLogStore, DataCloudConfig config) {
             this.entityStore = Objects.requireNonNull(entityStore, "entityStore required");
             this.eventLogStore = Objects.requireNonNull(eventLogStore, "eventLogStore required");
-            Objects.requireNonNull(config, "config required");
+            this.profile = Objects.requireNonNull(config, "config required").profile();
         }
 
         @Override
@@ -441,6 +442,14 @@ public final class DataCloud {
             checkNotClosed();
             TenantContext tenant = TenantContext.of(tenantId);
 
+            if (profile != DataCloudConfig.DataCloudProfile.LOCAL) {
+                try {
+                    event.validate();
+                } catch (IllegalArgumentException exception) {
+                    return Promise.ofException(exception);
+                }
+            }
+
             String payloadJson;
             try {
                 payloadJson = MAPPER.writeValueAsString(event.payload());
@@ -477,8 +486,22 @@ public final class DataCloud {
         public Promise<List<Event>> queryEvents(String tenantId, EventQuery query) {
             checkNotClosed();
             TenantContext tenant = TenantContext.of(tenantId);
+            Optional<String> singleType = query.eventTypes().size() == 1
+                ? Optional.of(query.eventTypes().getFirst())
+                : Optional.empty();
 
             if (query.startTime() != null && query.endTime() != null) {
+                if (singleType.isPresent()) {
+                    return eventLogStore.readByType(
+                            tenant,
+                            singleType.get(),
+                            com.ghatana.platform.types.identity.Offset.zero(),
+                            query.limit())
+                        .map(entries -> entries.stream()
+                            .filter(e -> !e.timestamp().isBefore(query.startTime()) && e.timestamp().isBefore(query.endTime()))
+                            .map(this::toEvent)
+                            .toList());
+                }
                 return eventLogStore.readByTimeRange(
                     tenant,
                     query.startTime(), query.endTime(), query.limit())
@@ -488,9 +511,20 @@ public final class DataCloud {
                         .toList());
             }
 
+            if (singleType.isPresent()) {
+                return eventLogStore.readByType(
+                        tenant,
+                        singleType.get(),
+                        com.ghatana.platform.types.identity.Offset.zero(),
+                        query.limit())
+                    .map(entries -> entries.stream()
+                        .map(this::toEvent)
+                        .toList());
+            }
+
             return eventLogStore.read(
-                tenant,
-                com.ghatana.platform.types.identity.Offset.zero(), query.limit())
+                    tenant,
+                    com.ghatana.platform.types.identity.Offset.zero(), query.limit())
                 .map(entries -> entries.stream()
                     .filter(e -> query.eventTypes().isEmpty() || query.eventTypes().contains(e.eventType()))
                     .map(this::toEvent)

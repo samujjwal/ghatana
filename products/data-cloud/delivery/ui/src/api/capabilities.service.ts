@@ -127,7 +127,12 @@ function normalizeCapabilityEntry(key: string, rawValue: unknown): CapabilitySig
 }
 
 export async function fetchCapabilityRegistry(): Promise<CapabilityRegistrySnapshot> {
-  const rawResponse = await apiClient.get<unknown>('/capabilities');
+  let rawResponse: unknown;
+  try {
+    rawResponse = await apiClient.get<unknown>('/surfaces');
+  } catch {
+    rawResponse = await apiClient.get<unknown>('/capabilities');
+  }
   const envelope = CapabilityRegistryEnvelopeSchema.parse(rawResponse);
   const capabilities = Object.entries(envelope.data.capabilities)
     .map(([key, value]) => normalizeCapabilityEntry(key, value))

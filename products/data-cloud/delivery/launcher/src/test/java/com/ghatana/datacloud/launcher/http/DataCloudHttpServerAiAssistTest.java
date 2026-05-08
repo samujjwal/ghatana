@@ -8,6 +8,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.application.observability.TraceExportService;
+import com.ghatana.datacloud.launcher.settings.SettingsStore;
+import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
+import com.ghatana.governance.PolicyEngine;
+import com.ghatana.platform.audit.AuditService;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.governance.security.Principal;
+import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,12 +33,15 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 /**
@@ -57,6 +68,14 @@ class DataCloudHttpServerAiAssistTest {
 
     private DataCloudClient mockClient;
     private CompletionService mockCompletion;
+    private AuditService mockAuditService;
+    private PolicyEngine mockPolicyEngine;
+    private SettingsStore mockSettingsStore;
+    private EntityWriteIdempotencyStore mockIdempotencyStore;
+    private EventLogStore mockEventLogStore;
+    private MetricsCollector mockMetricsCollector;
+    private TraceExportService mockTraceExportService;
+    private com.ghatana.platform.governance.security.ApiKeyResolver mockApiKeyResolver;
     private DataCloudHttpServer server;
     private int port;
     private HttpClient httpClient;
@@ -66,6 +85,21 @@ class DataCloudHttpServerAiAssistTest {
     void setUp() throws Exception { 
         mockClient    = mock(DataCloudClient.class); 
         mockCompletion = mock(CompletionService.class); 
+        mockAuditService = mock(AuditService.class);
+        mockPolicyEngine = mock(PolicyEngine.class);
+        mockSettingsStore = mock(SettingsStore.class);
+        mockIdempotencyStore = mock(EntityWriteIdempotencyStore.class);
+        mockEventLogStore = mock(EventLogStore.class);
+        mockMetricsCollector = mock(MetricsCollector.class);
+        mockTraceExportService = mock(TraceExportService.class);
+        mockApiKeyResolver = mock(com.ghatana.platform.governance.security.ApiKeyResolver.class);
+        lenient().when(mockApiKeyResolver.resolve(any())).thenReturn(
+            Optional.of(new Principal("test-user", List.of("OPERATOR"), "tenant-a"))
+        );
+        lenient().when(mockClient.entityStore()).thenReturn(mock(com.ghatana.datacloud.spi.EntityStore.class));
+        lenient().when(mockClient.eventLogStore()).thenReturn(mock(com.ghatana.datacloud.spi.EventLogStore.class));
+        lenient().when(mockAuditService.record(any())).thenReturn(Promise.complete());
+        lenient().when(mockTraceExportService.exportSpans(any(), any())).thenReturn(Promise.complete());
         port          = findFreePort(); 
         httpClient    = HttpClient.newBuilder().build(); 
     }
@@ -130,6 +164,29 @@ class DataCloudHttpServerAiAssistTest {
         }
 
         @Test
+        @DisplayName("returns 503 when LLM is not wired in production mode")
+        void withoutLlm_inProduction_returns503() throws Exception {
+            when(mockSettingsStore.getStorageMode()).thenReturn("jdbc");
+            server = new DataCloudHttpServer(mockClient, port)
+                .withDeploymentMode("production")
+                .withApiKeyResolver(mockApiKeyResolver)
+                .withSettingsStore(mockSettingsStore)
+                .withAuditService(mockAuditService)
+                .withPolicyEngine(mockPolicyEngine)
+                .withIdempotencyStore(mockIdempotencyStore)
+                .withEventLogStore(mockEventLogStore)
+                .withMetricsCollector(mockMetricsCollector)
+                .withTraceExportService(mockTraceExportService);
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = post("/api/v1/entities/orders/suggest",
+                "{\"collection\":\"orders\",\"fields\":[\"id\",\"amount\"]}");
+
+            assertThat(resp.statusCode()).isEqualTo(503);
+        }
+
+        @Test
         @DisplayName("returns 200 with heuristic fallback when LLM throws")
         void withLlmError_fallsBackGracefully() throws Exception { 
             // Use Promise.ofException() so the Eventloop propagates the failure to the handler 
@@ -148,6 +205,33 @@ class DataCloudHttpServerAiAssistTest {
             Map<String, Object> body = readJsonObject(resp.body()); 
             Map<String, Object> ai = readChildObject(body, "ai"); 
             assertThat(ai).containsEntry("fallback", true); 
+        }
+
+        @Test
+        @DisplayName("returns 503 when LLM throws in production mode")
+        void withLlmError_inProduction_returns503() throws Exception {
+            when(mockCompletion.complete(any()))
+                .thenReturn(Promise.ofException(new RuntimeException("LLM timeout")));
+            when(mockSettingsStore.getStorageMode()).thenReturn("jdbc");
+
+            server = new DataCloudHttpServer(mockClient, port)
+                .withCompletionService(mockCompletion)
+                .withDeploymentMode("production")
+                .withApiKeyResolver(mockApiKeyResolver)
+                .withSettingsStore(mockSettingsStore)
+                .withAuditService(mockAuditService)
+                .withPolicyEngine(mockPolicyEngine)
+                .withIdempotencyStore(mockIdempotencyStore)
+                .withEventLogStore(mockEventLogStore)
+                .withMetricsCollector(mockMetricsCollector)
+                .withTraceExportService(mockTraceExportService);
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = post("/api/v1/entities/products/suggest",
+                "{\"collection\":\"products\",\"fields\":[\"sku\"]}");
+
+            assertThat(resp.statusCode()).isEqualTo(503);
         }
     }
 
@@ -292,6 +376,7 @@ class DataCloudHttpServerAiAssistTest {
             .uri(URI.create("http://127.0.0.1:" + port + path)) 
             .header("Content-Type", "application/json") 
             .header("X-Tenant-ID", "tenant-a") 
+            .header("X-API-Key", "valid-api-key")
             .build(); 
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }

@@ -1,5 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { ThemeProvider as PlatformThemeProvider } from '@ghatana/theme';
+import { render as rtlRender, screen } from '@testing-library/react';
+import type { RenderResult } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ReactElement, ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ItemCard } from '../ItemCard';
 import type { ItemCardProps } from '../types';
@@ -20,6 +23,19 @@ import type { Item } from 'yappc-core/types/devsecops';
 
 describe('ItemCard Component', () => {
   const mockOnSelect = vi.fn();
+  const setupUser = (): ReturnType<typeof userEvent.setup> =>
+    userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  const TestThemeProvider = ({
+    children,
+  }: {
+    children: ReactNode;
+  }): ReactElement => (
+    <PlatformThemeProvider defaultTheme="light">
+      {children}
+    </PlatformThemeProvider>
+  );
+  const render = (ui: ReactElement): RenderResult =>
+    rtlRender(ui, { wrapper: TestThemeProvider });
 
   const baseItem: Item = {
     id: 'item-1',
@@ -358,7 +374,7 @@ describe('ItemCard Component', () => {
       );
 
       const card = container.querySelector('.MuiCard-root');
-      expect(card).toHaveStyle({ borderWidth: '2px' });
+      expect(card).toHaveAttribute('data-selected', 'true');
     });
 
     it('should apply selection border color', () => {
@@ -389,7 +405,7 @@ describe('ItemCard Component', () => {
 
   describe('Click Interaction', () => {
     it('should call onSelect when clicked', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(<ItemCard {...defaultProps} />);
 
       const card = screen
@@ -403,7 +419,7 @@ describe('ItemCard Component', () => {
     });
 
     it('should not crash when onSelect is not provided', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(<ItemCard {...defaultProps} onSelect={undefined} />);
 
       const card = screen

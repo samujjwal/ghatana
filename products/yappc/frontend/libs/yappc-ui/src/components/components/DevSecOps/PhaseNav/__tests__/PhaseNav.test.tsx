@@ -1,5 +1,8 @@
+import { ThemeProvider as PlatformThemeProvider } from '@ghatana/theme';
 import { render, screen } from '@testing-library/react';
+import type { RenderResult } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ReactElement, ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PhaseNav } from '../PhaseNav';
 import type { PhaseNavProps } from '../types';
@@ -18,6 +21,19 @@ import type { PhaseNavProps } from '../types';
 
 describe('PhaseNav Component', () => {
   const mockOnPhaseClick = vi.fn();
+  const setupUser = (): ReturnType<typeof userEvent.setup> =>
+    userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  const TestThemeProvider = ({
+    children,
+  }: {
+    children: ReactNode;
+  }): ReactElement => (
+    <PlatformThemeProvider defaultTheme="light">
+      {children}
+    </PlatformThemeProvider>
+  );
+  const renderPhaseNav = (ui: ReactElement): RenderResult =>
+    render(ui, { wrapper: TestThemeProvider });
 
   const samplePhases = [
     { id: 'plan', title: 'Plan', key: 'plan', order: 1, icon: '📋' },
@@ -40,7 +56,7 @@ describe('PhaseNav Component', () => {
 
   describe('Basic Rendering', () => {
     it('should render all phases', () => {
-      render(<PhaseNav {...defaultProps} />);
+      renderPhaseNav(<PhaseNav {...defaultProps} />);
 
       expect(screen.getByText('Plan')).toBeInTheDocument();
       expect(screen.getByText('Code')).toBeInTheDocument();
@@ -50,14 +66,14 @@ describe('PhaseNav Component', () => {
     });
 
     it('should render as chips', () => {
-      const { container } = render(<PhaseNav {...defaultProps} />);
+      const { container } = renderPhaseNav(<PhaseNav {...defaultProps} />);
 
-      const chips = container.querySelectorAll('.MuiChip-root');
+      const chips = container.querySelectorAll('[data-phase-id]');
       expect(chips).toHaveLength(5);
     });
 
     it('should render phases in correct order', () => {
-      render(<PhaseNav {...defaultProps} />);
+      renderPhaseNav(<PhaseNav {...defaultProps} />);
 
       const chips = screen.getAllByRole('button');
       expect(chips[0]).toHaveTextContent('Plan');
@@ -68,7 +84,7 @@ describe('PhaseNav Component', () => {
     });
 
     it('should handle empty phases array', () => {
-      render(<PhaseNav {...defaultProps} phases={[]} />);
+      renderPhaseNav(<PhaseNav {...defaultProps} phases={[]} />);
 
       const chips = screen.queryAllByRole('button');
       expect(chips).toHaveLength(0);
@@ -76,7 +92,7 @@ describe('PhaseNav Component', () => {
 
     it('should render single phase', () => {
       const singlePhase = [samplePhases[0]];
-      render(<PhaseNav {...defaultProps} phases={singlePhase} />);
+      renderPhaseNav(<PhaseNav {...defaultProps} phases={singlePhase} />);
 
       expect(screen.getByText('Plan')).toBeInTheDocument();
       expect(screen.getAllByRole('button')).toHaveLength(1);
@@ -85,67 +101,69 @@ describe('PhaseNav Component', () => {
 
   describe('Active Phase Highlighting', () => {
     it('should highlight active phase', () => {
-      render(<PhaseNav {...defaultProps} activePhaseId="code" />);
+      renderPhaseNav(<PhaseNav {...defaultProps} activePhaseId="code" />);
 
-      const codeChip = screen.getByText('Code').closest('.MuiChip-root');
-      expect(codeChip).toHaveClass('MuiChip-colorPrimary');
-      expect(codeChip).toHaveClass('MuiChip-filled');
+      const codeChip = screen.getByRole('button', { name: /code/i });
+      expect(codeChip).toHaveAttribute('data-active', 'true');
+      expect(codeChip).toHaveAttribute('aria-current', 'step');
     });
 
     it('should not highlight non-active phases', () => {
-      render(<PhaseNav {...defaultProps} activePhaseId="code" />);
+      renderPhaseNav(<PhaseNav {...defaultProps} activePhaseId="code" />);
 
-      const planChip = screen.getByText('Plan').closest('.MuiChip-root');
-      expect(planChip).toHaveClass('MuiChip-colorDefault');
-      expect(planChip).toHaveClass('MuiChip-outlined');
+      const planChip = screen.getByRole('button', { name: /plan/i });
+      expect(planChip).toHaveAttribute('data-active', 'false');
+      expect(planChip).not.toHaveAttribute('aria-current');
     });
 
     it('should update active phase when prop changes', () => {
-      const { rerender } = render(
+      const { rerender } = renderPhaseNav(
         <PhaseNav {...defaultProps} activePhaseId="code" />
       );
 
-      let codeChip = screen.getByText('Code').closest('.MuiChip-root');
-      expect(codeChip).toHaveClass('MuiChip-colorPrimary');
+      let codeChip = screen.getByRole('button', { name: /code/i });
+      expect(codeChip).toHaveAttribute('data-active', 'true');
 
       rerender(<PhaseNav {...defaultProps} activePhaseId="test" />);
 
-      codeChip = screen.getByText('Code').closest('.MuiChip-root');
-      const testChip = screen.getByText('Test').closest('.MuiChip-root');
+      codeChip = screen.getByRole('button', { name: /code/i });
+      const testChip = screen.getByRole('button', { name: /test/i });
 
-      expect(codeChip).toHaveClass('MuiChip-colorDefault');
-      expect(testChip).toHaveClass('MuiChip-colorPrimary');
+      expect(codeChip).toHaveAttribute('data-active', 'false');
+      expect(testChip).toHaveAttribute('data-active', 'true');
     });
 
     it('should handle no active phase', () => {
-      render(<PhaseNav {...defaultProps} activePhaseId={undefined} />);
+      renderPhaseNav(<PhaseNav {...defaultProps} activePhaseId={undefined} />);
 
       const chips = screen.getAllByRole('button');
       chips.forEach((chip) => {
-        expect(chip).toHaveClass('MuiChip-colorDefault');
+        expect(chip).toHaveAttribute('data-active', 'false');
       });
     });
 
     it('should handle invalid active phase ID', () => {
-      render(<PhaseNav {...defaultProps} activePhaseId="invalid" />);
+      renderPhaseNav(<PhaseNav {...defaultProps} activePhaseId="invalid" />);
 
       const chips = screen.getAllByRole('button');
       chips.forEach((chip) => {
-        expect(chip).toHaveClass('MuiChip-colorDefault');
+        expect(chip).toHaveAttribute('data-active', 'false');
       });
     });
   });
 
   describe('Completed Phase Indicators', () => {
     it('should show check icon for completed phase', () => {
-      render(<PhaseNav {...defaultProps} completedPhaseIds={['plan']} />);
+      renderPhaseNav(
+        <PhaseNav {...defaultProps} completedPhaseIds={['plan']} />
+      );
 
       const checkIcon = screen.getByTestId('CheckCircleIcon');
       expect(checkIcon).toBeInTheDocument();
     });
 
     it('should show check icons for multiple completed phases', () => {
-      render(
+      renderPhaseNav(
         <PhaseNav {...defaultProps} completedPhaseIds={['plan', 'code']} />
       );
 
@@ -154,14 +172,16 @@ describe('PhaseNav Component', () => {
     });
 
     it('should not show check icon for non-completed phases', () => {
-      render(<PhaseNav {...defaultProps} completedPhaseIds={['plan']} />);
+      renderPhaseNav(
+        <PhaseNav {...defaultProps} completedPhaseIds={['plan']} />
+      );
 
       const checkIcons = screen.getAllByTestId('CheckCircleIcon');
       expect(checkIcons).toHaveLength(1);
     });
 
     it('should handle empty completed phases array', () => {
-      render(<PhaseNav {...defaultProps} completedPhaseIds={[]} />);
+      renderPhaseNav(<PhaseNav {...defaultProps} completedPhaseIds={[]} />);
 
       const checkIcons = screen.queryAllByTestId('CheckCircleIcon');
       expect(checkIcons).toHaveLength(0);
@@ -169,17 +189,22 @@ describe('PhaseNav Component', () => {
 
     it('should handle all phases completed', () => {
       const allPhaseIds = samplePhases.map((p) => p.id);
-      render(<PhaseNav {...defaultProps} completedPhaseIds={allPhaseIds} />);
+      renderPhaseNav(
+        <PhaseNav {...defaultProps} completedPhaseIds={allPhaseIds} />
+      );
 
       const checkIcons = screen.getAllByTestId('CheckCircleIcon');
       expect(checkIcons).toHaveLength(5);
     });
 
     it('should apply completed styling to completed phases', () => {
-      render(<PhaseNav {...defaultProps} completedPhaseIds={['plan']} />);
+      renderPhaseNav(
+        <PhaseNav {...defaultProps} completedPhaseIds={['plan']} />
+      );
 
-      const planChip = screen.getByText('Plan').closest('.MuiChip-root');
+      const planChip = screen.getByRole('button', { name: /plan/i });
       const styles = planChip && window.getComputedStyle(planChip);
+      expect(planChip).toHaveAttribute('data-completed', 'true');
       expect(styles?.backgroundColor).toBeTruthy();
       // Color can be 'white' or 'rgb(255, 255, 255)' depending on browser
       expect(styles?.color).toMatch(/white|rgb\(255,\s*255,\s*255\)/);
@@ -188,8 +213,8 @@ describe('PhaseNav Component', () => {
 
   describe('Click Interactions', () => {
     it('should call onPhaseClick when phase clicked', async () => {
-      const user = userEvent.setup();
-      render(<PhaseNav {...defaultProps} />);
+      const user = setupUser();
+      renderPhaseNav(<PhaseNav {...defaultProps} />);
 
       const buildChip = screen.getByText('Build');
       await user.click(buildChip);
@@ -198,8 +223,8 @@ describe('PhaseNav Component', () => {
     });
 
     it('should call onPhaseClick with correct phase ID', async () => {
-      const user = userEvent.setup();
-      render(<PhaseNav {...defaultProps} />);
+      const user = setupUser();
+      renderPhaseNav(<PhaseNav {...defaultProps} />);
 
       await user.click(screen.getByText('Plan'));
       expect(mockOnPhaseClick).toHaveBeenCalledWith('plan');
@@ -209,8 +234,8 @@ describe('PhaseNav Component', () => {
     });
 
     it('should allow clicking active phase', async () => {
-      const user = userEvent.setup();
-      render(<PhaseNav {...defaultProps} activePhaseId="code" />);
+      const user = setupUser();
+      renderPhaseNav(<PhaseNav {...defaultProps} activePhaseId="code" />);
 
       await user.click(screen.getByText('Code'));
 
@@ -218,8 +243,10 @@ describe('PhaseNav Component', () => {
     });
 
     it('should allow clicking completed phase', async () => {
-      const user = userEvent.setup();
-      render(<PhaseNav {...defaultProps} completedPhaseIds={['plan']} />);
+      const user = setupUser();
+      renderPhaseNav(
+        <PhaseNav {...defaultProps} completedPhaseIds={['plan']} />
+      );
 
       await user.click(screen.getByText('Plan'));
 
@@ -227,8 +254,8 @@ describe('PhaseNav Component', () => {
     });
 
     it('should handle multiple clicks', async () => {
-      const user = userEvent.setup();
-      render(<PhaseNav {...defaultProps} />);
+      const user = setupUser();
+      renderPhaseNav(<PhaseNav {...defaultProps} />);
 
       await user.click(screen.getByText('Build'));
       await user.click(screen.getByText('Test'));
@@ -243,40 +270,40 @@ describe('PhaseNav Component', () => {
 
   describe('Visual States', () => {
     it('should have minimum width on chips', () => {
-      const { container } = render(<PhaseNav {...defaultProps} />);
+      const { container } = renderPhaseNav(<PhaseNav {...defaultProps} />);
 
-      const chip = container.querySelector('.MuiChip-root');
+      const chip = container.querySelector('[data-phase-id]');
       expect(chip).toHaveStyle({ minWidth: '120px' });
     });
 
     it('should have consistent height on chips', () => {
-      const { container } = render(<PhaseNav {...defaultProps} />);
+      const { container } = renderPhaseNav(<PhaseNav {...defaultProps} />);
 
-      const chip = container.querySelector('.MuiChip-root');
+      const chip = container.querySelector('[data-phase-id]');
       expect(chip).toHaveStyle({ height: '40px' });
     });
 
     it('should have border on chips', () => {
-      const { container } = render(<PhaseNav {...defaultProps} />);
+      const { container } = renderPhaseNav(<PhaseNav {...defaultProps} />);
 
-      const chip = container.querySelector('.MuiChip-root');
+      const chip = container.querySelector('[data-phase-id]');
       expect(chip).toHaveStyle({ borderWidth: '2px' });
     });
 
     it('should apply different font weight for active phase', () => {
-      render(<PhaseNav {...defaultProps} activePhaseId="code" />);
+      renderPhaseNav(<PhaseNav {...defaultProps} activePhaseId="code" />);
 
-      const codeChip = screen.getByText('Code').closest('.MuiChip-root');
-      const planChip = screen.getByText('Plan').closest('.MuiChip-root');
+      const codeChip = screen.getByRole('button', { name: /code/i });
+      const planChip = screen.getByRole('button', { name: /plan/i });
 
       expect(codeChip).toHaveStyle({ fontWeight: 600 });
       expect(planChip).toHaveStyle({ fontWeight: 400 });
     });
 
     it('should have transition styles', () => {
-      const { container } = render(<PhaseNav {...defaultProps} />);
+      const { container } = renderPhaseNav(<PhaseNav {...defaultProps} />);
 
-      const chip = container.querySelector('.MuiChip-root');
+      const chip = container.querySelector('[data-phase-id]');
       const styles = chip && window.getComputedStyle(chip);
       expect(styles?.transition).toBeTruthy();
     });
@@ -284,17 +311,17 @@ describe('PhaseNav Component', () => {
 
   describe('Scrolling Behavior', () => {
     it('should render horizontal scrollable container', () => {
-      const { container } = render(<PhaseNav {...defaultProps} />);
+      const { container } = renderPhaseNav(<PhaseNav {...defaultProps} />);
 
-      const stack = container.querySelector('.MuiStack-root');
+      const stack = screen.getByTestId('phase-nav');
       expect(stack).toHaveStyle({ overflowX: 'auto' });
     });
 
     it('should have horizontal spacing between chips', () => {
-      const { container } = render(<PhaseNav {...defaultProps} />);
+      renderPhaseNav(<PhaseNav {...defaultProps} />);
 
-      const stack = container.querySelector('.MuiStack-root');
-      expect(stack).toHaveClass('MuiStack-root');
+      const stack = screen.getByTestId('phase-nav');
+      expect(stack).toHaveAttribute('role', 'group');
     });
 
     it('should handle many phases without overflow issues', () => {
@@ -306,7 +333,7 @@ describe('PhaseNav Component', () => {
         icon: '🔧',
       }));
 
-      render(<PhaseNav {...defaultProps} phases={manyPhases} />);
+      renderPhaseNav(<PhaseNav {...defaultProps} phases={manyPhases} />);
 
       const chips = screen.getAllByRole('button');
       expect(chips).toHaveLength(20);
@@ -315,7 +342,7 @@ describe('PhaseNav Component', () => {
 
   describe('Accessibility', () => {
     it('should have clickable chips', () => {
-      render(<PhaseNav {...defaultProps} />);
+      renderPhaseNav(<PhaseNav {...defaultProps} />);
 
       const chips = screen.getAllByRole('button');
       chips.forEach((chip) => {
@@ -324,7 +351,7 @@ describe('PhaseNav Component', () => {
     });
 
     it('should have accessible labels', () => {
-      render(<PhaseNav {...defaultProps} />);
+      renderPhaseNav(<PhaseNav {...defaultProps} />);
 
       expect(screen.getByRole('button', { name: /plan/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /code/i })).toBeInTheDocument();
@@ -334,8 +361,8 @@ describe('PhaseNav Component', () => {
     });
 
     it('should be keyboard navigable', async () => {
-      const user = userEvent.setup();
-      render(<PhaseNav {...defaultProps} />);
+      const user = setupUser();
+      renderPhaseNav(<PhaseNav {...defaultProps} />);
 
       const firstChip = screen.getByText('Plan').closest('button');
       if (firstChip) {
@@ -348,7 +375,7 @@ describe('PhaseNav Component', () => {
     });
 
     it('should have proper focus indicators', () => {
-      render(<PhaseNav {...defaultProps} />);
+      renderPhaseNav(<PhaseNav {...defaultProps} />);
 
       const chips = screen.getAllByRole('button');
       chips.forEach((chip) => {
@@ -372,21 +399,21 @@ describe('PhaseNav Component', () => {
         },
       ];
 
-      render(<PhaseNav {...defaultProps} phases={longTitlePhase} />);
+      renderPhaseNav(<PhaseNav {...defaultProps} phases={longTitlePhase} />);
 
       expect(screen.getByText(/very long phase title/)).toBeInTheDocument();
     });
 
     it('should handle missing icon', () => {
       const noIconPhases = samplePhases.map((p) => ({ ...p, icon: undefined }));
-      render(<PhaseNav {...defaultProps} phases={noIconPhases} />);
+      renderPhaseNav(<PhaseNav {...defaultProps} phases={noIconPhases} />);
 
       expect(screen.getAllByRole('button')).toHaveLength(5);
     });
 
     it('should handle null onPhaseClick', async () => {
-      const user = userEvent.setup();
-      render(
+      const user = setupUser();
+      renderPhaseNav(
         <PhaseNav {...defaultProps} onPhaseClick={undefined as unknown} />
       );
 
@@ -404,7 +431,7 @@ describe('PhaseNav Component', () => {
         samplePhases[1],
       ];
 
-      render(<PhaseNav {...defaultProps} phases={duplicatePhases} />);
+      renderPhaseNav(<PhaseNav {...defaultProps} phases={duplicatePhases} />);
 
       // Should still render (React will warn about duplicate keys)
       const planChips = screen.getAllByText('Plan');
@@ -412,7 +439,7 @@ describe('PhaseNav Component', () => {
     });
 
     it('should handle active and completed being the same phase', () => {
-      render(
+      renderPhaseNav(
         <PhaseNav
           {...defaultProps}
           activePhaseId="code"
@@ -420,10 +447,11 @@ describe('PhaseNav Component', () => {
         />
       );
 
-      const codeChip = screen.getByText('Code').closest('.MuiChip-root');
+      const codeChip = screen.getByRole('button', { name: /code/i });
 
       // Should show both active (primary color) and completed (check icon)
-      expect(codeChip).toHaveClass('MuiChip-colorPrimary');
+      expect(codeChip).toHaveAttribute('data-active', 'true');
+      expect(codeChip).toHaveAttribute('data-completed', 'true');
       const checkIcons = screen.getAllByTestId('CheckCircleIcon');
       expect(checkIcons.length).toBeGreaterThan(0);
     });
@@ -439,7 +467,7 @@ describe('PhaseNav Component', () => {
         },
       ];
 
-      render(<PhaseNav {...defaultProps} phases={noTitlePhase} />);
+      renderPhaseNav(<PhaseNav {...defaultProps} phases={noTitlePhase} />);
 
       const chips = screen.getAllByRole('button');
       expect(chips).toHaveLength(1);
@@ -448,7 +476,7 @@ describe('PhaseNav Component', () => {
 
   describe('Dynamic Updates', () => {
     it('should update when phases prop changes', () => {
-      const { rerender } = render(
+      const { rerender } = renderPhaseNav(
         <PhaseNav {...defaultProps} phases={samplePhases.slice(0, 3)} />
       );
 
@@ -460,7 +488,7 @@ describe('PhaseNav Component', () => {
     });
 
     it('should update completed phases dynamically', () => {
-      const { rerender } = render(
+      const { rerender } = renderPhaseNav(
         <PhaseNav {...defaultProps} completedPhaseIds={['plan']} />
       );
 
@@ -477,7 +505,7 @@ describe('PhaseNav Component', () => {
     });
 
     it('should handle phase removal', () => {
-      const { rerender } = render(
+      const { rerender } = renderPhaseNav(
         <PhaseNav {...defaultProps} phases={samplePhases} />
       );
 

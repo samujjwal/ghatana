@@ -10,36 +10,32 @@
  */
 
 import {
-  Box,
-  Typography,
-  Alert,
-  AlertTitle,
-  Chip,
-  CircularProgress,
-  Button,
-  Divider,
-  Tooltip,
-  IconButton,
-} from '@mui/material';
-import {
-  X as CloseIcon,
   BrainCircuit as BrainIcon,
   Lightbulb as LightbulbIcon,
+  X as CloseIcon,
 } from 'lucide-react';
 import React from 'react';
 
 import type { AIInsight } from 'yappc-state/aiAtoms';
 
-type Severity = 'error' | 'warning' | 'info' | 'success';
+type SeverityTone = 'critical' | 'warning' | 'info' | 'success';
 
-const SEVERITY_MAP: Record<string, Severity> = {
-  critical: 'error',
-  high: 'error',
+const SEVERITY_TONE_BY_VALUE: Record<string, SeverityTone> = {
+  critical: 'critical',
+  high: 'critical',
+  error: 'critical',
   warning: 'warning',
   medium: 'warning',
   low: 'info',
   info: 'info',
   success: 'success',
+};
+
+const SEVERITY_CLASSES: Record<SeverityTone, string> = {
+  critical: 'border-red-200 bg-red-50 text-red-900',
+  warning: 'border-amber-200 bg-amber-50 text-amber-900',
+  info: 'border-blue-200 bg-blue-50 text-blue-900',
+  success: 'border-emerald-200 bg-emerald-50 text-emerald-900',
 };
 
 export interface ProjectAIInsightsProps {
@@ -48,6 +44,10 @@ export interface ProjectAIInsightsProps {
   onDismiss?: (insightId: string) => void;
   onRefresh?: () => void;
   className?: string;
+}
+
+function getSeverityTone(severity: string): SeverityTone {
+  return SEVERITY_TONE_BY_VALUE[severity.toLowerCase()] ?? 'info';
 }
 
 /**
@@ -62,118 +62,102 @@ export const ProjectAIInsights: React.FC<ProjectAIInsightsProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <Box
-        display="flex"
-        alignItems="center"
-        gap={1}
-        py={2}
-        justifyContent="center"
-      >
-        <CircularProgress size={20} />
-        <Typography variant="body2" color="text.secondary">
-          Analysing project…
-        </Typography>
-      </Box>
+      <div className="flex items-center justify-center gap-2 py-4 text-sm text-slate-600">
+        <span
+          className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600"
+          aria-hidden="true"
+        />
+        <span>Analyzing project...</span>
+      </div>
     );
   }
 
   if (insights.length === 0) {
     return (
-      <Box
-        className={className}
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        py={3}
-        gap={1}
+      <div
+        className={`flex flex-col items-center gap-2 py-6 text-center text-sm text-slate-500 ${className ?? ''}`}
       >
-        <BrainIcon size={32} opacity={0.4} />
-        <Typography variant="body2" color="text.secondary">
-          No insights yet.
-        </Typography>
+        <BrainIcon size={32} opacity={0.45} aria-hidden="true" />
+        <p>No insights yet.</p>
         {onRefresh && (
-          <Button size="small" variant="text" onClick={onRefresh}>
-            Analyse now
-          </Button>
+          <button
+            type="button"
+            className="rounded-md px-2 py-1 text-sm font-medium text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onClick={onRefresh}
+          >
+            Analyze now
+          </button>
         )}
-      </Box>
+      </div>
     );
   }
 
   return (
-    <Box className={className} display="flex" flexDirection="column" gap={1}>
-      <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        mb={0.5}
-      >
-        <Box display="flex" alignItems="center" gap={0.5}>
-          <LightbulbIcon size={16} />
-          <Typography variant="subtitle2" fontWeight={600}>
+    <section className={`flex flex-col gap-3 ${className ?? ''}`}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <LightbulbIcon size={16} aria-hidden="true" />
+          <h2 className="text-sm font-semibold text-slate-900">
             AI Insights ({insights.length})
-          </Typography>
-        </Box>
+          </h2>
+        </div>
         {onRefresh && (
-          <Button size="small" variant="text" onClick={onRefresh}>
+          <button
+            type="button"
+            className="rounded-md px-2 py-1 text-sm font-medium text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onClick={onRefresh}
+          >
             Refresh
-          </Button>
+          </button>
         )}
-      </Box>
+      </div>
 
-      <Divider />
+      <div className="border-t border-slate-200" />
 
-      {insights.map((insight) => (
-        <Alert
-          key={insight.id}
-          severity={SEVERITY_MAP[insight.severity?.toLowerCase()] ?? 'info'}
-          sx={{ position: 'relative', pr: onDismiss ? 5 : 2 }}
-        >
-          {onDismiss && (
-            <Tooltip title="Dismiss">
-              <IconButton
-                size="small"
-                sx={{ position: 'absolute', top: 4, right: 4 }}
+      {insights.map((insight) => {
+        const tone = getSeverityTone(insight.severity);
+        return (
+          <article
+            key={insight.id}
+            className={`relative rounded-lg border p-3 pr-10 ${SEVERITY_CLASSES[tone]}`}
+          >
+            {onDismiss && (
+              <button
+                type="button"
+                aria-label={`Dismiss insight ${insight.title}`}
+                title="Dismiss"
+                className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full hover:bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 onClick={() => onDismiss(insight.id)}
               >
-                <CloseIcon size={14} />
-              </IconButton>
-            </Tooltip>
-          )}
+                <CloseIcon size={14} aria-hidden="true" />
+              </button>
+            )}
 
-          <AlertTitle sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-            {insight.title}
-            <Chip
-              label={insight.category}
-              size="small"
-              sx={{ height: 16, fontSize: 10 }}
-            />
-            <Chip
-              label={`${Math.round(insight.confidence * 100)}%`}
-              size="small"
-              variant="outlined"
-              sx={{ height: 16, fontSize: 10 }}
-            />
-          </AlertTitle>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-semibold">{insight.title}</h3>
+              <span className="rounded-full bg-white/70 px-2 py-0.5 text-[0.68rem] font-medium uppercase tracking-wide">
+                {insight.category}
+              </span>
+              <span className="rounded-full border border-current/20 px-2 py-0.5 text-[0.68rem] font-medium">
+                {Math.round(insight.confidence * 100)}%
+              </span>
+            </div>
 
-          <Typography variant="body2">{insight.description}</Typography>
+            <p className="mt-2 text-sm leading-5">{insight.description}</p>
 
-          {insight.actionItems.length > 0 && (
-            <Box mt={0.75}>
-              <Typography variant="caption" fontWeight={600}>
-                Action items:
-              </Typography>
-              <ul style={{ margin: '2px 0 0 16px', padding: 0 }}>
-                {insight.actionItems.map((item, i) => (
-                  <li key={i}>
-                    <Typography variant="caption">{item}</Typography>
-                  </li>
-                ))}
-              </ul>
-            </Box>
-          )}
-        </Alert>
-      ))}
-    </Box>
+            {insight.actionItems.length > 0 && (
+              <div className="mt-2">
+                <p className="text-xs font-semibold">Action items:</p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs">
+                  {insight.actionItems.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </article>
+        );
+      })}
+    </section>
   );
 };

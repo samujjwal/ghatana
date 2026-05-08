@@ -1,9 +1,9 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, HTMLAttributes } from 'react';
 
 /**
  *
  */
-export interface SpinnerProps {
+export interface SpinnerProps extends HTMLAttributes<HTMLDivElement> {
   /**
    * Spinner size
    */
@@ -38,6 +38,8 @@ export function Spinner({
   color = '#2196f3',
   className = '',
   label = 'Loading...',
+  role = 'status',
+  ...props
 }: SpinnerProps) {
   const sizeMap = {
     small: 16,
@@ -66,8 +68,9 @@ export function Spinner({
     <div
       style={containerStyle}
       className={className}
-      role="status"
-      aria-label={label}
+      role={role}
+      aria-label={props['aria-label'] ?? label}
+      {...props}
     >
       <div style={spinnerStyle} />
       <style>{`

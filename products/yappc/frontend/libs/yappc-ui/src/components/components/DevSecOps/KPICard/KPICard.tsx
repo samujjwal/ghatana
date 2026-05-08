@@ -65,8 +65,10 @@ export const KPICard: React.FC<KPICardProps> = ({
 
   return (
     <Card
+      data-testid="kpi-card"
       className="h-full min-w-0 transition-all hover:shadow-xl hover:-translate-y-1 hover:bg-gray-50 dark:hover:bg-gray-800"
       style={{
+        minHeight: 200,
         transitionDuration: 'var(--ds-duration-base)',
         transitionTimingFunction: 'var(--ds-ease-in-out)',
         borderRadius: 'var(--ds-radius-full)',
@@ -83,8 +85,23 @@ export const KPICard: React.FC<KPICardProps> = ({
             {unit}
           </Typography>
           {trend && (
-            <Box display="flex" alignItems="center" color={trendColor}>
-              {TrendIcon && <TrendIcon size={16} />}
+            <Box
+              data-trend-direction={trend.direction}
+              display="flex"
+              alignItems="center"
+              color={trendColor}
+            >
+              {TrendIcon && (
+                <TrendIcon
+                  aria-hidden="true"
+                  data-testid={
+                    trend.direction === 'up'
+                      ? 'TrendingUpIcon'
+                      : 'TrendingDownIcon'
+                  }
+                  size={16}
+                />
+              )}
               <Typography as="p" className="text-sm ml-1">
                 {trend.value > 0 ? '+' : ''}
                 {trend.value}%

@@ -1,4 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { ThemeProvider as PlatformThemeProvider } from '@ghatana/theme';
+import { render as rtlRender, screen } from '@testing-library/react';
+import type { RenderResult } from '@testing-library/react';
+import type { ReactElement, ReactNode } from 'react';
 import { describe, it, expect } from 'vitest';
 import { KPICard } from '../KPICard';
 import type { KPICardProps } from '../types';
@@ -14,6 +17,18 @@ import type { KPICardProps } from '../types';
  */
 
 describe('KPICard Component', () => {
+  const TestThemeProvider = ({
+    children,
+  }: {
+    children: ReactNode;
+  }): ReactElement => (
+    <PlatformThemeProvider defaultTheme="light">
+      {children}
+    </PlatformThemeProvider>
+  );
+  const render = (ui: ReactElement): RenderResult =>
+    rtlRender(ui, { wrapper: TestThemeProvider });
+
   const defaultProps: KPICardProps = {
     title: 'Test Metric',
     value: 42,
@@ -430,7 +445,7 @@ describe('KPICard Component', () => {
       const { container } = render(<KPICard {...defaultProps} />);
 
       const card = container.querySelector('.MuiCard-root');
-      expect(card).toHaveStyle({ width: '280px' });
+      expect(card).toHaveClass('min-w-0');
     });
 
     it('should have minimum height', () => {

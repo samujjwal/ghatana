@@ -14,13 +14,13 @@ export interface ViewModeSwitcherProps {
   value: ViewMode;
 
   /** Callback when view mode changes */
-  onChange: (mode: ViewMode) => void;
+  onChange?: ((mode: ViewMode) => void) | null;
 
   /** Available view modes to display */
   modes?: ViewMode[];
 
   /** Display mode - buttons with text or icon-only */
-  variant?: 'full' | 'compact';
+  variant?: 'full' | 'compact' | 'icon-only';
 
   /** Size of the switcher */
   size?: 'small' | 'medium' | 'large';
@@ -45,5 +45,6 @@ export interface ViewModeMetadata {
   id: ViewMode;
   label: string;
   icon: React.ComponentType;
+  testId: string;
   description: string;
 }

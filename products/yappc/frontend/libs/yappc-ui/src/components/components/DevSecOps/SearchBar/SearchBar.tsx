@@ -127,6 +127,7 @@ export function SearchBar({
         fullWidth
         size="sm"
         value={inputValue}
+        type="text"
         onChange={handleInputChange}
         onFocus={handleFocus}
         onBlur={handleBlur}
@@ -135,7 +136,11 @@ export function SearchBar({
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <SearchIcon color="action" />
+              <SearchIcon
+                aria-hidden="true"
+                color="action"
+                data-testid="SearchIcon"
+              />
             </InputAdornment>
           ),
           endAdornment: (
@@ -143,7 +148,8 @@ export function SearchBar({
               {loading && (
                 <CircularProgress
                   size={20}
-                  aria-label="Loading search results"
+                  label="Loading search results"
+                  role="progressbar"
                 />
               )}
               {inputValue && !loading && (
@@ -153,7 +159,11 @@ export function SearchBar({
                   edge="end"
                   aria-label="Clear search"
                 >
-                  <ClearIcon size={16} />
+                  <ClearIcon
+                    aria-hidden="true"
+                    data-testid="ClearIcon"
+                    size={16}
+                  />
                 </IconButton>
               )}
             </InputAdornment>
@@ -197,6 +207,8 @@ export function SearchBar({
                 onClick={() => handleRecentClick(search)}
               >
                 <HistoryIcon
+                  aria-hidden="true"
+                  data-testid="HistoryIcon"
                   size={16}
                   className="mr-2 text-gray-500 dark:text-gray-400"
                 />

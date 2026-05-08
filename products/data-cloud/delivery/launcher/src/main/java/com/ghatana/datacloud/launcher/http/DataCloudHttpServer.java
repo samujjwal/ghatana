@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Locale;
 import java.util.Set;
 import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
@@ -258,6 +259,8 @@ public class DataCloudHttpServer {
      * via {@link #withMetricsCollector(MetricsCollector)}.
      */
     private MetricsCollector metricsCollector = MetricsCollectorFactory.createNoop();
+    /** True only when metrics collector has been explicitly configured by caller. */
+    private boolean metricsCollectorConfigured = false;
     private long storageCompactionIntervalSeconds = 300L;
     private int storageCompactionTombstoneThreshold = 25;
     private AnomalyDetectionTask anomalyDetectionTask;
@@ -623,6 +626,7 @@ public class DataCloudHttpServer {
      */
     public DataCloudHttpServer withMetricsCollector(MetricsCollector collector) {
         this.metricsCollector = collector;
+        this.metricsCollectorConfigured = true;
         return this;
     }
 
@@ -1052,14 +1056,55 @@ public class DataCloudHttpServer {
      */
     static void validateProductionDependencies(boolean strictTenantResolution,
                                                 String deploymentMode,
+                                                boolean authConfigured,
                                                 boolean auditAvailable,
                                                 boolean policyAvailable,
+                                                boolean idempotencyStoreAvailable,
+                                                boolean eventStoreAvailable,
+                                                boolean entityStoreDurable,
+                                                boolean metricsConfigured,
+                                                boolean traceExportAvailable,
+                                                boolean tenantResolverAvailable,
+                                                Logger logger) {
+        validateProductionDependencies(
+            strictTenantResolution,
+            deploymentMode,
+            authConfigured,
+            auditAvailable,
+            policyAvailable,
+            idempotencyStoreAvailable,
+            eventStoreAvailable,
+            entityStoreDurable,
+            eventStoreAvailable,
+            metricsConfigured,
+            traceExportAvailable,
+            tenantResolverAvailable,
+            logger);
+    }
+
+    static void validateProductionDependencies(boolean strictTenantResolution,
+                                                String deploymentMode,
+                                                boolean authConfigured,
+                                                boolean auditAvailable,
+                                                boolean policyAvailable,
+                                                boolean idempotencyStoreAvailable,
+                                                boolean eventStoreAvailable,
+                                                boolean entityStoreDurable,
+                                                boolean coreEventStoreDurable,
+                                                boolean metricsConfigured,
+                                                boolean traceExportAvailable,
                                                 boolean tenantResolverAvailable,
                                                 Logger logger) {
         requireNonNull(logger, "logger");
         boolean isProduction = isProductionMode(deploymentMode);
         if (!isProduction && !strictTenantResolution) {
             return;
+        }
+        if (isProduction && !authConfigured) {
+            throw new IllegalStateException(
+                "P1.18: Authentication is required for production profiles. "
+                    + "Call withApiKeyResolver() and/or withJwtProvider() before start()."
+            );
         }
         if (!auditAvailable) {
             throw new IllegalStateException(
@@ -1073,13 +1118,66 @@ public class DataCloudHttpServer {
                 "Call withPolicyEngine() before start()."
             );
         }
+        if (isProduction && !idempotencyStoreAvailable) {
+            throw new IllegalStateException(
+                "P0.5: Durable entity idempotency store is required for production profiles. "
+                    + "Call withIdempotencyStore() before start()."
+            );
+        }
+        if (isProduction && !eventStoreAvailable) {
+            throw new IllegalStateException(
+                "P1.18: Durable event log store is required for production profiles. "
+                    + "Call withEventLogStore() before start()."
+            );
+        }
+        if (isProduction && !entityStoreDurable) {
+            throw new IllegalStateException(
+                "P1.18: Durable entity store backing is required for production profiles. "
+                    + "Configure DataCloudClient with a non in-memory EntityStore provider."
+            );
+        }
+        if (isProduction && !coreEventStoreDurable) {
+            throw new IllegalStateException(
+                "P1.18: Durable core event store backing is required for production profiles. "
+                    + "Configure DataCloudClient with a non in-memory EventLogStore provider."
+            );
+        }
+        if (isProduction && !metricsConfigured) {
+            throw new IllegalStateException(
+                "P1.18: Metrics collector must be explicitly configured for production profiles. "
+                    + "Call withMetricsCollector() before start()."
+            );
+        }
+        if (isProduction && !traceExportAvailable) {
+            throw new IllegalStateException(
+                "P1.18: Trace export service is required for production profiles. "
+                    + "Call withTraceExportService() before start()."
+            );
+        }
         if (!tenantResolverAvailable && strictTenantResolution) {
             throw new IllegalStateException(
                 "P0.5: Tenant resolver is required when strict tenant resolution is enabled."
             );
         }
-        logger.info("[DC-P0.5] Production dependencies validated: audit={}, policy={}, tenantResolver={}",
-            auditAvailable, policyAvailable, tenantResolverAvailable);
+        logger.info("[DC-P0.5][DC-P1.18] Production dependencies validated: auth={}, audit={}, policy={}, idempotency={}, eventStore={}, entityStoreDurable={}, coreEventStoreDurable={}, metrics={}, traceExport={}, tenantResolver={}",
+            authConfigured,
+            auditAvailable,
+            policyAvailable,
+            idempotencyStoreAvailable,
+            eventStoreAvailable,
+            entityStoreDurable,
+            coreEventStoreDurable,
+            metricsConfigured,
+            traceExportAvailable,
+            tenantResolverAvailable);
+    }
+
+    static boolean isDurableStoreBacking(Object store) {
+        if (store == null) {
+            return false;
+        }
+        String className = store.getClass().getName().toLowerCase(Locale.ROOT);
+        return !className.contains("inmemory");
     }
 
     /**
@@ -1143,11 +1241,24 @@ public class DataCloudHttpServer {
      * @throws Exception if the server fails to start
      */
     public void start() throws Exception {
+        boolean authConfigured = apiKeyResolver != null || jwtProvider != null;
+        boolean entityStoreDurable = isDurableStoreBacking(client != null ? client.entityStore() : null);
+        boolean coreEventStoreDurable = isDurableStoreBacking(client != null ? client.eventLogStore() : null);
         validateSecurityConfiguration(apiKeyResolver != null || jwtProvider != null, strictTenantResolution, log);
-        enforceLoopbackInInsecureMode(apiKeyResolver != null || jwtProvider != null, strictTenantResolution, listenHost, log);
+        enforceLoopbackInInsecureMode(authConfigured, strictTenantResolution, listenHost, log);
         validateSettingsStorageConfiguration(strictTenantResolution, deploymentMode, settingsStore, log);
         validateProductionDependencies(strictTenantResolution, deploymentMode,
-            auditService != null, policyEngine != null, true, log);
+            authConfigured,
+            auditService != null,
+            policyEngine != null,
+            entityWriteIdempotencyStore != null,
+            eventLogStore != null,
+            entityStoreDurable,
+            coreEventStoreDurable,
+            metricsCollectorConfigured,
+            traceExportService != null,
+            true,
+            log);
         corsAllowOrigin = resolveCorsAllowOrigin(System.getenv("DATACLOUD_CORS_ALLOWED_ORIGINS"), strictTenantResolution, log);
 
         platformRateLimiter = new RateLimitFilter(
@@ -1568,10 +1679,33 @@ public class DataCloudHttpServer {
     private Map<String, Object> buildCapabilitySnapshot() {
         Map<String, Object> capabilities = new LinkedHashMap<>();
         // DC-AUD-024: Expose deployment mode for UI/consumer awareness
+        boolean authConfigured = apiKeyResolver != null || jwtProvider != null;
+        String settingsStorageMode = settingsStore != null ? settingsStore.getStorageMode() : "in-memory";
+        boolean settingsDurable = settingsStorageMode != null
+            && !settingsStorageMode.isBlank()
+            && !"in-memory".equalsIgnoreCase(settingsStorageMode.trim());
+        boolean entityStoreDurable = isDurableStoreBacking(client != null ? client.entityStore() : null);
+        boolean coreEventStoreDurable = isDurableStoreBacking(client != null ? client.eventLogStore() : null);
+
+        Map<String, Object> runtimePosture = new LinkedHashMap<>();
+        runtimePosture.put("productionLikeProfile", isProductionMode(deploymentMode));
+        runtimePosture.put("authenticationConfigured", authConfigured);
+        runtimePosture.put("settingsStorageMode", settingsStorageMode);
+        runtimePosture.put("settingsDurable", settingsDurable);
+        runtimePosture.put("entityStoreDurable", entityStoreDurable);
+        runtimePosture.put("eventStoreWired", eventLogStore != null);
+        runtimePosture.put("coreEventStoreDurable", coreEventStoreDurable);
+        runtimePosture.put("idempotencyStoreDurable", entityWriteIdempotencyStore != null);
+        runtimePosture.put("auditConfigured", auditService != null);
+        runtimePosture.put("policyConfigured", policyEngine != null);
+        runtimePosture.put("metricsConfigured", metricsCollectorConfigured);
+        runtimePosture.put("traceConfigured", traceExportService != null);
+
         capabilities.put("_meta", Map.of(
             "deploymentMode", deploymentMode,
             "strictTenantResolution", strictTenantResolution,
-            "generatedAt", Instant.now().toString()
+            "generatedAt", Instant.now().toString(),
+            "runtimePosture", runtimePosture
         ));
         boolean workflowExecutionAvailable = runtimePluginManager.findCapability(WorkflowExecutionCapability.class).isPresent();
         Map<String, Object> workflowExecution = capabilityEntry(workflowExecutionAvailable, null);

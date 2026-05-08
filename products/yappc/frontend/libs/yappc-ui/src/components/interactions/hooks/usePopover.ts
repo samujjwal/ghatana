@@ -9,21 +9,64 @@
  */
 
 import {
-  useFloating,
   autoUpdate,
-  offset,
-  flip,
-  shift,
   arrow as arrowMiddleware,
+  flip,
+  offset,
+  shift,
   useClick,
   useDismiss,
-  useRole,
-  useInteractions,
+  useFloating,
   useId,
+  useInteractions,
+  useRole,
 } from '@floating-ui/react';
+import type { FloatingContext, UseFloatingReturn } from '@floating-ui/react';
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 
 import type { PopoverOptions } from '../types';
+
+export interface PopoverReturn {
+  referenceProps: Record<string, unknown>;
+  floatingProps: Record<string, unknown>;
+  arrowProps: {
+    ref: React.RefObject<HTMLDivElement | null>;
+    'data-placement': string;
+  } | null;
+  isOpen: boolean;
+  placement: string;
+  context: FloatingContext<Element>;
+  focusManagerProps: {
+    context: FloatingContext<Element>;
+    modal: boolean;
+    initialFocus: NonNullable<PopoverOptions['initialFocus']>;
+    returnFocus: boolean;
+  };
+  portalProps: { id: string } | null;
+  open: () => void;
+  close: () => void;
+  toggle: () => void;
+  refs: UseFloatingReturn<Element>['refs'];
+}
+
+export interface PopoverGroupReturn {
+  activeId: string | null;
+  register: (
+    id: string,
+    options?: PopoverOptions
+  ) => PopoverOptions & {
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+  };
+  closeAll: () => void;
+}
+
+export interface ConfirmPopoverReturn extends PopoverReturn {
+  triggerProps: Record<string, unknown>;
+  popoverProps: Record<string, unknown>;
+  confirm: () => void;
+  cancel: () => void;
+}
 
 // ============================================================================
 // Default Options
@@ -80,7 +123,7 @@ const DEFAULT_POPOVER_OPTIONS: Required<Omit<PopoverOptions, 'onOpenChange'>> =
  * );
  * ```
  */
-export function usePopover(options: PopoverOptions = {}) {
+export function usePopover(options: PopoverOptions = {}): PopoverReturn {
   const mergedOptions = useMemo(
     () => ({ ...DEFAULT_POPOVER_OPTIONS, ...options }),
     [options]
@@ -115,7 +158,7 @@ export function usePopover(options: PopoverOptions = {}) {
   );
 
   // FloatingUI setup
-  const { refs, floatingStyles, context, placement } = useFloating({
+  const { refs, floatingStyles, context, placement } = useFloating<Element>({
     open: isOpen && !disabled,
     onOpenChange: handleOpenChange,
     placement: initialPlacement,
@@ -263,7 +306,7 @@ export function usePopover(options: PopoverOptions = {}) {
 export function useControlledPopover(
   setIsOpen: (open: boolean) => void,
   options: PopoverOptions = {}
-) {
+): PopoverReturn {
   return usePopover({
     ...options,
     onOpenChange: setIsOpen,
@@ -284,11 +327,17 @@ export function useControlledPopover(
  * // Only one popover will be shown at a time
  * ```
  */
-export function usePopoverGroup() {
+export function usePopoverGroup(): PopoverGroupReturn {
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const register = useCallback(
-    (id: string, options: PopoverOptions = {}) => {
+    (
+      id: string,
+      options: PopoverOptions = {}
+    ): PopoverOptions & {
+      isOpen: boolean;
+      onOpenChange: (open: boolean) => void;
+    } => {
       return {
         ...options,
         isOpen: activeId === id,
@@ -320,7 +369,9 @@ export function usePopoverGroup() {
  * // Child won't dismiss parent when opened
  * ```
  */
-export function useNestedPopover(options: PopoverOptions = {}) {
+export function useNestedPopover(
+  options: PopoverOptions = {}
+): PopoverReturn {
   const popover = usePopover(options);
 
   // Prevent parent dismissal when child is opened
@@ -374,7 +425,7 @@ export function useConfirmPopover(options: {
   onConfirm?: () => void;
   onCancel?: () => void;
   popoverOptions?: PopoverOptions;
-}) {
+}): ConfirmPopoverReturn {
   const { onConfirm, onCancel, popoverOptions = {} } = options;
   const popover = usePopover(popoverOptions);
 

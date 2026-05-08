@@ -270,7 +270,7 @@ export function AvatarGroup({
   };
 
   return (
-    <div className={cn('flex items-center', className)}>
+    <div className={cn('MuiAvatarGroup-root flex items-center', className)}>
       {visibleChildren.map((child, index) => (
         <div
           key={index}

@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -52,6 +53,8 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
     private final Path databasePath;
     private final DataSource dataSource;
     private final Executor executor;
+
+    private static final String SQLSTATE_UNIQUE_VIOLATION = "23505";
 
     public H2SovereignEventLogStore(Path sovereignDirectory) {
         this(sovereignDirectory, Executors.newVirtualThreadPerTaskExecutor());
@@ -160,7 +163,18 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
 
     private Offset appendSync(String tenantId, EventEntry entry) throws Exception {
         try (Connection connection = dataSource.getConnection()) {
-            return appendSync(connection, tenantId, entry);
+            boolean originalAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            try {
+                Offset offset = appendSync(connection, tenantId, entry);
+                connection.commit();
+                return offset;
+            } catch (Exception exception) {
+                connection.rollback();
+                throw exception;
+            } finally {
+                connection.setAutoCommit(originalAutoCommit);
+            }
         }
     }
 
@@ -169,7 +183,6 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
      * returns the existing offset rather than inserting a duplicate.
      */
     private Offset appendSync(Connection connection, String tenantId, EventEntry entry) throws Exception {
-        // DC-P0-004: Check idempotency key before insert if one is provided.
         if (entry.idempotencyKey().isPresent()) {
             Optional<Offset> existing = findByIdempotencyKey(connection, tenantId, entry.idempotencyKey().get());
             if (existing.isPresent()) {
@@ -177,25 +190,33 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
             }
         }
 
+        long nextOffset = allocateNextOffset(connection, tenantId);
+
         try (PreparedStatement statement = connection.prepareStatement("""
                  INSERT INTO dc_event_log (
-                     tenant_id, event_id, event_type, event_version, payload, content_type, headers_json, idempotency_key, created_at
-                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                 """, Statement.RETURN_GENERATED_KEYS)) {
+                     tenant_id, offset_value, event_id, event_type, event_version, payload, content_type, headers_json, idempotency_key, created_at
+                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 """)) {
             statement.setString(1, tenantId);
-            statement.setString(2, entry.eventId().toString());
-            statement.setString(3, entry.eventType());
-            statement.setString(4, entry.eventVersion());
-            statement.setBytes(5, toByteArray(entry.payload()));
-            statement.setString(6, entry.contentType());
-            statement.setString(7, OBJECT_MAPPER.writeValueAsString(entry.headers()));
-            statement.setString(8, entry.idempotencyKey().orElse(null));
-            statement.setTimestamp(9, Timestamp.from(entry.timestamp()));
+            statement.setLong(2, nextOffset);
+            statement.setString(3, entry.eventId().toString());
+            statement.setString(4, entry.eventType());
+            statement.setString(5, entry.eventVersion());
+            statement.setBytes(6, toByteArray(entry.payload()));
+            statement.setString(7, entry.contentType());
+            statement.setString(8, OBJECT_MAPPER.writeValueAsString(entry.headers()));
+            statement.setString(9, entry.idempotencyKey().orElse(null));
+            statement.setTimestamp(10, Timestamp.from(entry.timestamp()));
             statement.executeUpdate();
-            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-                generatedKeys.next();
-                return Offset.of(generatedKeys.getLong(1));
+            return Offset.of(nextOffset);
+        } catch (SQLException exception) {
+            if (SQLSTATE_UNIQUE_VIOLATION.equals(exception.getSQLState()) && entry.idempotencyKey().isPresent()) {
+                Optional<Offset> existing = findByIdempotencyKey(connection, tenantId, entry.idempotencyKey().get());
+                if (existing.isPresent()) {
+                    return existing.get();
+                }
             }
+            throw exception;
         }
     }
 
@@ -212,6 +233,41 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
                 return Optional.empty();
             }
         }
+    }
+
+    private long allocateNextOffset(Connection connection, String tenantId) throws Exception {
+        try (PreparedStatement insert = connection.prepareStatement(
+                "INSERT INTO dc_event_log_offsets (tenant_id, next_offset) VALUES (?, ?)")) {
+            insert.setString(1, tenantId);
+            insert.setLong(2, 1L);
+            try {
+                insert.executeUpdate();
+            } catch (SQLException exception) {
+                if (!SQLSTATE_UNIQUE_VIOLATION.equals(exception.getSQLState())) {
+                    throw exception;
+                }
+            }
+        }
+
+        long allocatedOffset;
+        try (PreparedStatement select = connection.prepareStatement(
+                "SELECT next_offset FROM dc_event_log_offsets WHERE tenant_id = ? FOR UPDATE")) {
+            select.setString(1, tenantId);
+            try (ResultSet resultSet = select.executeQuery()) {
+                if (!resultSet.next()) {
+                    throw new IllegalStateException("Missing offset state for tenant: " + tenantId);
+                }
+                allocatedOffset = resultSet.getLong(1);
+            }
+        }
+
+        try (PreparedStatement update = connection.prepareStatement(
+                "UPDATE dc_event_log_offsets SET next_offset = ? WHERE tenant_id = ?")) {
+            update.setLong(1, allocatedOffset + 1L);
+            update.setString(2, tenantId);
+            update.executeUpdate();
+        }
+        return allocatedOffset;
     }
 
     private List<EventEntry> readWithPredicate(String tenantId, String suffix, SqlBinder binder) throws Exception {
@@ -334,7 +390,67 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
                     + INITIAL_MIGRATION_VERSION + ", CURRENT_TIMESTAMP())");
             }
         }
-        // Future migrations: add `if (maxApplied < 2) { ... }` blocks here for each new version.
+        if (maxApplied < 2) {
+            try (Statement stmt = connection.createStatement()) {
+                stmt.execute("""
+                    CREATE TABLE dc_event_log_v2 (
+                        row_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        tenant_id VARCHAR(255) NOT NULL,
+                        offset_value BIGINT NOT NULL,
+                        event_id VARCHAR(64) NOT NULL,
+                        event_type VARCHAR(255) NOT NULL,
+                        event_version VARCHAR(64) NOT NULL,
+                        payload BLOB NOT NULL,
+                        content_type VARCHAR(255) NOT NULL,
+                        headers_json CLOB NOT NULL,
+                        idempotency_key VARCHAR(255),
+                        created_at TIMESTAMP NOT NULL,
+                        CONSTRAINT uk_dc_event_log_tenant_offset UNIQUE (tenant_id, offset_value),
+                        CONSTRAINT uk_dc_event_log_tenant_idempotency UNIQUE (tenant_id, idempotency_key)
+                    )
+                    """);
+
+                stmt.execute("""
+                    INSERT INTO dc_event_log_v2 (
+                        tenant_id, offset_value, event_id, event_type, event_version, payload, content_type, headers_json, idempotency_key, created_at
+                    )
+                    SELECT
+                        tenant_id,
+                        ROW_NUMBER() OVER (PARTITION BY tenant_id ORDER BY offset_value),
+                        event_id,
+                        event_type,
+                        event_version,
+                        payload,
+                        content_type,
+                        headers_json,
+                        idempotency_key,
+                        created_at
+                    FROM dc_event_log
+                    """);
+
+                stmt.execute("DROP TABLE dc_event_log");
+                stmt.execute("ALTER TABLE dc_event_log_v2 RENAME TO dc_event_log");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_dc_event_log_tenant_offset ON dc_event_log(tenant_id, offset_value)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_dc_event_log_tenant_type ON dc_event_log(tenant_id, event_type, offset_value)");
+
+                stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS dc_event_log_offsets (
+                        tenant_id VARCHAR(255) PRIMARY KEY,
+                        next_offset BIGINT NOT NULL
+                    )
+                    """);
+                stmt.execute("DELETE FROM dc_event_log_offsets");
+                stmt.execute("""
+                    INSERT INTO dc_event_log_offsets (tenant_id, next_offset)
+                    SELECT tenant_id, COALESCE(MAX(offset_value), 0) + 1
+                    FROM dc_event_log
+                    GROUP BY tenant_id
+                    """);
+
+                stmt.execute(
+                    "INSERT INTO dc_h2_schema_migrations (migration_id, applied_at) VALUES (2, CURRENT_TIMESTAMP())");
+            }
+        }
     }
 
     private DataSource createDataSource(Path path) {
@@ -395,11 +511,26 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
                 return thread;
             });
             this.cancelled = new AtomicBoolean(false);
-            this.nextOffset = Math.max(0L, parseOffset(from));
+            long parsedOffset = parseOffset(from);
+            if (parsedOffset < 0L) {
+                this.nextOffset = resolveLatestOffsetSnapshot(tenantId) + 1L;
+            } else {
+                this.nextOffset = parsedOffset;
+            }
         }
 
         private void start() {
             schedulePoll(BASE_POLL_MS);
+        }
+
+        private long resolveLatestOffsetSnapshot(String tenantId) {
+            try {
+                Offset latest = queryOffset(tenantId, "SELECT MAX(offset_value) FROM dc_event_log WHERE tenant_id = ?");
+                return parseOffset(latest);
+            } catch (Exception exception) {
+                log.warn("Failed to resolve latest offset snapshot for tenant {}: {}", tenantId, exception.getMessage());
+                return 0L;
+            }
         }
 
         private void schedulePoll(long delayMs) {

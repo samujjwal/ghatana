@@ -11,18 +11,9 @@
  */
 
 import {
-  Box,
-  Button,
-  Menu,
-  MenuItem,
-  Avatar,
-  Typography,
-  Divider,
-} from '@mui/material';
-import {
+  Check as CheckIcon,
   ChevronDown as ChevronDownIcon,
   Plus as PlusIcon,
-  Check as CheckIcon,
 } from 'lucide-react';
 import React, { useState } from 'react';
 
@@ -31,8 +22,17 @@ import type { Workspace } from 'yappc-core/types';
 export interface WorkspaceSwitcherProps {
   workspaces: Workspace[];
   currentWorkspace?: Workspace | null;
-  onSelect: (workspace: Workspace) => void;
+  onSelect?: (workspace: Workspace) => void;
   onCreateNew?: () => void;
+  onCreate?: () => void;
+}
+
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase() ?? '')
+    .join('');
 }
 
 /**
@@ -43,123 +43,86 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({
   currentWorkspace,
   onSelect,
   onCreateNew,
+  onCreate,
 }) => {
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const open = Boolean(anchorEl);
+  const [open, setOpen] = useState(false);
+  const createHandler = onCreateNew ?? onCreate;
 
-  const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
+  const handleSelect = (workspace: Workspace): void => {
+    onSelect?.(workspace);
+    setOpen(false);
   };
 
-  const handleClose = () => {
-    setAnchorEl(null);
+  const handleCreate = (): void => {
+    createHandler?.();
+    setOpen(false);
   };
-
-  const handleSelect = (workspace: Workspace) => {
-    onSelect(workspace);
-    handleClose();
-  };
-
-  const initials = (name: string) =>
-    name
-      .split(' ')
-      .map((w) => w[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
 
   return (
-    <>
-      <Button
-        variant="text"
-        color="inherit"
-        onClick={handleOpen}
-        endIcon={<ChevronDownIcon size={14} />}
-        sx={{
-          textTransform: 'none',
-          fontWeight: 600,
-          px: 1,
-          gap: 0.75,
-        }}
+    <div className="relative inline-flex min-w-0">
+      <button
+        type="button"
+        className="inline-flex max-w-xs items-center gap-2 rounded-lg px-2 py-1 text-sm font-semibold text-slate-800 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
       >
         {currentWorkspace ? (
           <>
-            <Avatar
-              sx={{
-                width: 22,
-                height: 22,
-                fontSize: 10,
-                bgcolor: 'primary.main',
-              }}
-            >
-              {initials(currentWorkspace.name)}
-            </Avatar>
-            <Typography
-              variant="body2"
-              fontWeight={600}
-              noWrap
-              sx={{ maxWidth: 160 }}
-            >
-              {currentWorkspace.name}
-            </Typography>
+            <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[0.65rem] font-bold text-white">
+              {getInitials(currentWorkspace.name)}
+            </span>
+            <span className="truncate">{currentWorkspace.name}</span>
           </>
         ) : (
-          <Typography variant="body2" color="text.secondary">
-            Select workspace
-          </Typography>
+          <span className="text-slate-500">Select workspace</span>
         )}
-      </Button>
+        <ChevronDownIcon size={14} aria-hidden="true" />
+      </button>
 
-      <Menu
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleClose}
-        PaperProps={{ sx: { minWidth: 220, maxHeight: 360 } }}
-      >
-        {workspaces.map((ws) => (
-          <MenuItem
-            key={ws.id}
-            selected={ws.id === currentWorkspace?.id}
-            onClick={() => handleSelect(ws)}
-            sx={{ gap: 1 }}
-          >
-            <Avatar
-              sx={{
-                width: 24,
-                height: 24,
-                fontSize: 11,
-                bgcolor: 'secondary.main',
-              }}
-            >
-              {initials(ws.name)}
-            </Avatar>
-            <Box flexGrow={1} minWidth={0}>
-              <Typography variant="body2" noWrap fontWeight={500}>
-                {ws.name}
-              </Typography>
-            </Box>
-            {ws.id === currentWorkspace?.id && (
-              <CheckIcon size={14} color="inherit" />
-            )}
-          </MenuItem>
-        ))}
+      {open && (
+        <div
+          role="menu"
+          className="absolute left-0 top-full z-50 mt-2 max-h-80 w-64 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-xl"
+        >
+          {workspaces.map((workspace) => {
+            const selected = workspace.id === currentWorkspace?.id;
+            return (
+              <button
+                key={workspace.id}
+                type="button"
+                role="menuitemradio"
+                aria-checked={selected}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none"
+                onClick={() => handleSelect(workspace)}
+              >
+                <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-700 text-[0.65rem] font-bold text-white">
+                  {getInitials(workspace.name)}
+                </span>
+                <span className="min-w-0 flex-1 truncate font-medium">
+                  {workspace.name}
+                </span>
+                {selected && <CheckIcon size={14} aria-hidden="true" />}
+              </button>
+            );
+          })}
 
-        {onCreateNew && (
-          <>
-            <Divider />
-            <MenuItem
-              onClick={() => {
-                onCreateNew();
-                handleClose();
-              }}
-              sx={{ gap: 1 }}
-            >
-              <PlusIcon size={16} />
-              <Typography variant="body2">New workspace</Typography>
-            </MenuItem>
-          </>
-        )}
-      </Menu>
-    </>
+          {createHandler && (
+            <>
+              <div className="my-1 border-t border-slate-200" />
+              <button
+                type="button"
+                role="menuitem"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-blue-700 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none"
+                onClick={handleCreate}
+              >
+                <PlusIcon size={16} aria-hidden="true" />
+                New workspace
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
   );
 };

@@ -11,13 +11,9 @@ import { Grid3x3 as GridViewIcon } from 'lucide-react';
 import { Table as TableChartIcon } from 'lucide-react';
 import { Activity as TimelineIcon } from 'lucide-react';
 import { Kanban as ViewKanbanIcon } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-import {
-  Box,
-  ToggleButton,
-  ToggleButtonGroup,
-  Tooltip,
-} from '../../compat';
+import { Box, ToggleButton, ToggleButtonGroup, Tooltip } from '../../compat';
 
 import type { ViewMode } from 'yappc-core/types/devsecops';
 
@@ -28,24 +24,28 @@ const VIEW_MODE_METADATA: Record<ViewMode, ViewModeMetadata> = {
     id: 'canvas',
     label: 'Canvas',
     icon: GridViewIcon,
+    testId: 'GridViewIcon',
     description: 'Phase-based canvas view with drag-and-drop',
   },
   kanban: {
     id: 'kanban',
     label: 'Kanban',
     icon: ViewKanbanIcon,
+    testId: 'ViewKanbanIcon',
     description: 'Status-based kanban board',
   },
   timeline: {
     id: 'timeline',
     label: 'Timeline',
     icon: TimelineIcon,
+    testId: 'TimelineIcon',
     description: 'Gantt-style timeline view',
   },
   table: {
     id: 'table',
     label: 'Table',
     icon: TableChartIcon,
+    testId: 'TableChartIcon',
     description: 'Detailed table view with sorting',
   },
 };
@@ -87,9 +87,9 @@ export function ViewModeSwitcher({
   const handleChange = (
     _event: React.MouseEvent<HTMLElement>,
     newMode: string | null
-  ) => {
-    if (isViewMode(newMode)) {
-      onChange?.(newMode); // Use optional chaining to prevent crash
+  ): void => {
+    if (isViewMode(newMode) && newMode !== value) {
+      onChange?.(newMode);
     }
   };
 
@@ -107,7 +107,7 @@ export function ViewModeSwitcher({
       >
         {modes.map((mode) => {
           const metadata = VIEW_MODE_METADATA[mode];
-          const IconComponent = metadata.icon;
+          const IconComponent = metadata.icon as LucideIcon;
           const label = labels?.[mode] || metadata.label;
 
           return (
@@ -115,6 +115,7 @@ export function ViewModeSwitcher({
               key={mode}
               value={mode}
               aria-label={metadata.description}
+              aria-current={mode === value ? 'true' : undefined}
               className={variant === 'compact' ? 'px-2 gap-0' : 'px-4 gap-2'}
             >
               <Tooltip title={metadata.description} placement="top">
@@ -129,7 +130,10 @@ export function ViewModeSwitcher({
                             : '24px',
                     }}
                   >
-                    <IconComponent />
+                    <IconComponent
+                      aria-hidden="true"
+                      data-testid={metadata.testId}
+                    />
                   </Box>
                   {variant === 'full' && (
                     <Box

@@ -9,29 +9,16 @@
  * @doc.pattern Presentational Component
  */
 
-import {
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  Chip,
-  LinearProgress,
-  Tooltip,
-  IconButton,
-} from '@mui/material';
-import { Settings as SettingsIcon, Brain as BrainIcon } from 'lucide-react';
+import { Brain as BrainIcon, Settings as SettingsIcon } from 'lucide-react';
 import React from 'react';
 
 import type { Project, ProjectStatus } from 'yappc-core/types';
 
-const STATUS_COLORS: Record<
-  ProjectStatus,
-  'default' | 'success' | 'warning' | 'error' | 'info'
-> = {
-  DRAFT: 'default',
-  ACTIVE: 'success',
-  ARCHIVED: 'warning',
-  COMPLETED: 'info',
+const STATUS_CLASSES: Record<ProjectStatus, string> = {
+  DRAFT: 'border-slate-200 bg-slate-50 text-slate-700',
+  ACTIVE: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  ARCHIVED: 'border-amber-200 bg-amber-50 text-amber-800',
+  COMPLETED: 'border-blue-200 bg-blue-50 text-blue-700',
 };
 
 export interface ProjectCardProps {
@@ -40,6 +27,20 @@ export interface ProjectCardProps {
   onSelect?: (project: Project) => void;
   onSettings?: (project: Project) => void;
   className?: string;
+}
+
+function formatProjectLabel(value: string): string {
+  return value.replace(/_/g, ' ');
+}
+
+function getHealthClass(score: number): string {
+  if (score >= 70) {
+    return 'bg-emerald-500';
+  }
+  if (score >= 40) {
+    return 'bg-amber-500';
+  }
+  return 'bg-red-500';
 }
 
 /**
@@ -54,116 +55,94 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 }) => {
   const healthScore = project.aiHealthScore ?? null;
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+    if (!onSelect || (event.key !== 'Enter' && event.key !== ' ')) {
+      return;
+    }
+    event.preventDefault();
+    onSelect(project);
+  };
+
   return (
-    <Card
-      className={className}
-      variant="outlined"
-      sx={{
-        cursor: onSelect ? 'pointer' : 'default',
-        border: isSelected ? 2 : 1,
-        borderColor: isSelected ? 'primary.main' : 'divider',
-        transition: 'all 0.15s ease',
-        '&:hover': onSelect
-          ? { borderColor: 'primary.light', boxShadow: 1 }
-          : {},
-      }}
+    <article
+      className={`rounded-xl border bg-white p-3 shadow-sm transition ${
+        isSelected ? 'border-blue-500 ring-2 ring-blue-100' : 'border-slate-200'
+      } ${onSelect ? 'cursor-pointer hover:border-blue-300 hover:shadow-md' : ''} ${
+        className ?? ''
+      }`}
+      role={onSelect ? 'button' : undefined}
+      tabIndex={onSelect ? 0 : undefined}
       onClick={onSelect ? () => onSelect(project) : undefined}
+      onKeyDown={handleKeyDown}
     >
-      <CardContent sx={{ pb: '12px !important' }}>
-        <Box display="flex" alignItems="flex-start" gap={1}>
-          <Box flexGrow={1} minWidth={0}>
-            <Box display="flex" alignItems="center" gap={0.75} mb={0.25}>
-              <Typography
-                variant="subtitle2"
-                fontWeight={600}
-                noWrap
-                sx={{ flexGrow: 1 }}
-              >
-                {project.name}
-              </Typography>
-              <Chip
-                label={project.status}
-                size="small"
-                color={STATUS_COLORS[project.status]}
-                variant="outlined"
-                sx={{ height: 18, fontSize: 10 }}
-              />
-            </Box>
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">
+              {project.name}
+            </h3>
+            <span
+              className={`shrink-0 rounded-full border px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide ${STATUS_CLASSES[project.status]}`}
+            >
+              {project.status}
+            </span>
+          </div>
 
-            {project.description && (
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{
-                  display: '-webkit-box',
-                  WebkitLineClamp: 1,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                }}
-              >
-                {project.description}
-              </Typography>
-            )}
-
-            <Box display="flex" alignItems="center" gap={1} mt={0.75}>
-              <Chip
-                label={project.type.replace('_', ' ')}
-                size="small"
-                variant="outlined"
-                sx={{ height: 16, fontSize: 10 }}
-              />
-              {project.lifecyclePhase && (
-                <Chip
-                  label={project.lifecyclePhase}
-                  size="small"
-                  variant="outlined"
-                  sx={{ height: 16, fontSize: 10 }}
-                />
-              )}
-            </Box>
-
-            {healthScore !== null && (
-              <Tooltip title={`AI health score: ${healthScore}%`}>
-                <Box display="flex" alignItems="center" gap={0.5} mt={0.75}>
-                  <BrainIcon size={11} />
-                  <LinearProgress
-                    variant="determinate"
-                    value={healthScore}
-                    color={
-                      healthScore >= 70
-                        ? 'success'
-                        : healthScore >= 40
-                          ? 'warning'
-                          : 'error'
-                    }
-                    sx={{ flexGrow: 1, height: 4, borderRadius: 2 }}
-                  />
-                  <Typography
-                    variant="caption"
-                    sx={{ minWidth: 28, textAlign: 'right' }}
-                  >
-                    {healthScore}%
-                  </Typography>
-                </Box>
-              </Tooltip>
-            )}
-          </Box>
-
-          {onSettings && (
-            <Tooltip title="Project settings">
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSettings(project);
-                }}
-              >
-                <SettingsIcon size={15} />
-              </IconButton>
-            </Tooltip>
+          {project.description && (
+            <p className="mt-1 line-clamp-1 text-xs text-slate-500">
+              {project.description}
+            </p>
           )}
-        </Box>
-      </CardContent>
-    </Card>
+
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-slate-200 px-2 py-0.5 text-[0.65rem] font-medium uppercase tracking-wide text-slate-600">
+              {formatProjectLabel(project.type)}
+            </span>
+            {project.lifecyclePhase && (
+              <span className="rounded-full border border-slate-200 px-2 py-0.5 text-[0.65rem] font-medium uppercase tracking-wide text-slate-600">
+                {formatProjectLabel(project.lifecyclePhase)}
+              </span>
+            )}
+          </div>
+
+          {healthScore !== null && (
+            <div
+              className="mt-3 flex items-center gap-2"
+              title={`AI health score: ${healthScore}%`}
+            >
+              <BrainIcon
+                size={12}
+                className="text-slate-500"
+                aria-hidden="true"
+              />
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className={`h-full rounded-full ${getHealthClass(healthScore)}`}
+                  style={{ width: `${Math.max(0, Math.min(100, healthScore))}%` }}
+                />
+              </div>
+              <span className="w-8 text-right text-xs font-medium text-slate-600">
+                {healthScore}%
+              </span>
+            </div>
+          )}
+        </div>
+
+        {onSettings && (
+          <button
+            type="button"
+            aria-label={`Open settings for ${project.name}`}
+            title="Project settings"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onClick={(event) => {
+              event.stopPropagation();
+              onSettings(project);
+            }}
+          >
+            <SettingsIcon size={15} aria-hidden="true" />
+          </button>
+        )}
+      </div>
+    </article>
   );
 };

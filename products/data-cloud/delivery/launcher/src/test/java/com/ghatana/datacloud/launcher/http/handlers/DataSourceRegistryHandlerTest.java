@@ -96,7 +96,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
         assertThat(body.get("preview")).isEqualTo(true);
         assertThat(body.get("capability")).isEqualTo("unavailable");
         assertThat(body.get("tiers")).isEqualTo(List.of());
-        assertThat(body.get("message")).asString().contains("/api/v1/capabilities");
+        assertThat(body.get("message")).asString().contains("/api/v1/surfaces");
     }
 
     @Test

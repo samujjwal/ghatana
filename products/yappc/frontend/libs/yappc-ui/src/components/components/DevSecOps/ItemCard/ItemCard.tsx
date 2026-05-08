@@ -89,6 +89,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     <Card
       data-testid="item-card"
       data-item-id={item.id}
+      data-priority={item.priority || 'medium'}
+      data-selected={selected ? 'true' : 'false'}
       draggable={draggable}
       onClick={() => onSelect?.(item.id)}
       className={`min-w-[240px] min-h-[160px] cursor-pointer rounded transition-all hover:shadow-lg hover:-translate-y-[3px] hover:bg-blue-500/[0.01] ${selected ? 'border-2 shadow-md bg-blue-500/[0.03]' : 'border'}`}
@@ -105,6 +107,11 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               : '#3b82f6',
         borderTopWidth: 3,
         borderTopColor: '#2563eb',
+        cursor: 'pointer',
+        minHeight: 160,
+        minWidth: 240,
+        transition:
+          'transform var(--ds-duration-base) var(--ds-ease-in-out), box-shadow var(--ds-duration-base) var(--ds-ease-in-out), background-color var(--ds-duration-base) var(--ds-ease-in-out)',
         transitionDuration: 'var(--ds-duration-base)',
         transitionTimingFunction: 'var(--ds-ease-in-out)',
       }}

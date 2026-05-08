@@ -72,6 +72,49 @@ class DataCloudHttpServerCapabilityTest {
         assertThat(searchCapability).containsEntry("status", "NOT_CONFIGURED"); 
     }
 
+    @Test
+    @DisplayName("surfaces endpoint matches compatibility capabilities payload")
+    @SuppressWarnings("unchecked")
+    void surfacesEndpointMatchesCapabilitiesPayload() throws Exception {
+        JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L);
+        String token = provider.createToken("ui-user", List.of("viewer"), Map.of("tenant_id", "tenant-a"));
+
+        server = new DataCloudHttpServer(mock(DataCloudClient.class), port)
+            .withJwtProvider(provider)
+            .withHealthSubsystem("database", () -> Map.of("status", "DOWN"));
+        server.start();
+
+        HttpResponse<String> surfacesResponse = get("/api/v1/surfaces", token);
+        HttpResponse<String> capabilitiesResponse = get("/api/v1/capabilities", token);
+
+        assertThat(surfacesResponse.statusCode()).isEqualTo(200);
+        assertThat(capabilitiesResponse.statusCode()).isEqualTo(200);
+
+        Map<String, Object> surfacesBody = mapper.readValue(surfacesResponse.body(), Map.class);
+        Map<String, Object> capabilitiesBody = mapper.readValue(capabilitiesResponse.body(), Map.class);
+
+        Map<String, Object> surfacesData = (Map<String, Object>) surfacesBody.get("data");
+        Map<String, Object> capabilitiesData = (Map<String, Object>) capabilitiesBody.get("data");
+        Map<String, Object> surfacesCapabilities = (Map<String, Object>) surfacesData.get("capabilities");
+        Map<String, Object> compatibilityCapabilities = (Map<String, Object>) capabilitiesData.get("capabilities");
+
+        assertThat(surfacesCapabilities.keySet()).containsAll(compatibilityCapabilities.keySet());
+        assertThat(compatibilityCapabilities.keySet()).containsAll(surfacesCapabilities.keySet());
+
+        Map<String, Object> surfacesRuntimePosture = (Map<String, Object>) ((Map<String, Object>) surfacesCapabilities.get("_meta")).get("runtimePosture");
+        Map<String, Object> capabilitiesRuntimePosture = (Map<String, Object>) ((Map<String, Object>) compatibilityCapabilities.get("_meta")).get("runtimePosture");
+        assertThat(surfacesRuntimePosture.get("authenticationConfigured")).isEqualTo(true);
+        assertThat(capabilitiesRuntimePosture.get("authenticationConfigured")).isEqualTo(true);
+        assertThat(surfacesRuntimePosture.get("productionLikeProfile")).isEqualTo(capabilitiesRuntimePosture.get("productionLikeProfile"));
+
+        assertThat(((Map<String, Object>) surfacesCapabilities.get("authentication.jwt")).get("status"))
+            .isEqualTo(((Map<String, Object>) compatibilityCapabilities.get("authentication.jwt")).get("status"));
+        assertThat(((Map<String, Object>) surfacesCapabilities.get("health.database")).get("status"))
+            .isEqualTo(((Map<String, Object>) compatibilityCapabilities.get("health.database")).get("status"));
+        assertThat(((Map<String, Object>) surfacesBody.get("meta")).get("tenantId"))
+            .isEqualTo(((Map<String, Object>) capabilitiesBody.get("meta")).get("tenantId"));
+    }
+
     private HttpResponse<String> get(String path, String token) throws Exception { 
         HttpRequest request = HttpRequest.newBuilder() 
             .uri(URI.create("http://localhost:" + port + path)) 

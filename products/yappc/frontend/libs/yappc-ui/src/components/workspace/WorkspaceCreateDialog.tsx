@@ -1,7 +1,7 @@
 /**
  * WorkspaceCreateDialog
  *
- * Modal dialog for creating a new workspace.  Validates the name client-side
+ * Modal dialog for creating a new workspace. Validates the name client-side
  * before calling `onCreate`.
  *
  * @doc.type component
@@ -10,17 +10,6 @@
  * @doc.pattern Form Component
  */
 
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  Box,
-  Typography,
-  CircularProgress,
-} from '@mui/material';
 import React, { useState } from 'react';
 
 export interface WorkspaceCreateDialogProps {
@@ -43,93 +32,145 @@ export const WorkspaceCreateDialog: React.FC<WorkspaceCreateDialogProps> = ({
   const [description, setDescription] = useState('');
   const [nameError, setNameError] = useState('');
 
+  const resetForm = (): void => {
+    setName('');
+    setDescription('');
+    setNameError('');
+  };
+
+  const handleClose = (): void => {
+    resetForm();
+    onClose();
+  };
+
   const submitForm = async (): Promise<void> => {
-    if (!name.trim()) {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
       setNameError('Workspace name is required.');
       return;
     }
-    if (name.trim().length < 2) {
+    if (trimmedName.length < 2) {
       setNameError('Name must be at least 2 characters.');
       return;
     }
+
     try {
       await onCreate({
-        name: name.trim(),
+        name: trimmedName,
         description: description.trim() || undefined,
       });
       handleClose();
-    } catch (err) {
+    } catch (error) {
       setNameError(
-        err instanceof Error ? err.message : 'Failed to create workspace.'
+        error instanceof Error ? error.message : 'Failed to create workspace.'
       );
     }
   };
 
-  const handleSubmit = (e: React.FormEvent): void => {
-    e.preventDefault();
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
     void submitForm();
   };
 
-  const handleClose = () => {
-    setName('');
-    setDescription('');
-    setNameError('');
-    onClose();
-  };
+  if (!open) {
+    return null;
+  }
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <form onSubmit={handleSubmit}>
-        <DialogTitle>Create workspace</DialogTitle>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="workspace-create-title"
+        className="w-full max-w-lg rounded-2xl bg-white shadow-2xl"
+      >
+        <form onSubmit={handleSubmit}>
+          <div className="border-b border-slate-200 px-6 py-4">
+            <h2
+              id="workspace-create-title"
+              className="text-lg font-semibold text-slate-900"
+            >
+              Create workspace
+            </h2>
+          </div>
 
-        <DialogContent>
-          <Box display="flex" flexDirection="column" gap={2} pt={1}>
-            <Typography variant="body2" color="text.secondary">
+          <div className="space-y-4 px-6 py-5">
+            <p className="text-sm leading-6 text-slate-600">
               A workspace groups projects and allows you to collaborate with
               team members.
-            </Typography>
+            </p>
 
-            <TextField
-              label="Workspace name"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (nameError) setNameError('');
-              }}
-              error={Boolean(nameError)}
-              helperText={nameError}
-              required
-              autoFocus
-              fullWidth
-              inputProps={{ maxLength: 80 }}
-            />
+            <label className="block">
+              <span className="text-sm font-medium text-slate-700">
+                Workspace name
+              </span>
+              <input
+                value={name}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  if (nameError) {
+                    setNameError('');
+                  }
+                }}
+                required
+                autoFocus
+                maxLength={80}
+                aria-invalid={Boolean(nameError)}
+                aria-describedby={
+                  nameError ? 'workspace-name-error' : undefined
+                }
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {nameError && (
+                <span
+                  id="workspace-name-error"
+                  role="alert"
+                  className="mt-1 block text-xs text-red-600"
+                >
+                  {nameError}
+                </span>
+              )}
+            </label>
 
-            <TextField
-              label="Description (optional)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              multiline
-              rows={3}
-              fullWidth
-              inputProps={{ maxLength: 500 }}
-            />
-          </Box>
-        </DialogContent>
+            <label className="block">
+              <span className="text-sm font-medium text-slate-700">
+                Description (optional)
+              </span>
+              <textarea
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                rows={3}
+                maxLength={500}
+                className="mt-1 block w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </label>
+          </div>
 
-        <DialogActions>
-          <Button onClick={handleClose} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={isLoading || !name.trim()}
-            startIcon={isLoading ? <CircularProgress size={16} /> : undefined}
-          >
-            Create
-          </Button>
-        </DialogActions>
-      </form>
-    </Dialog>
+          <div className="flex justify-end gap-2 border-t border-slate-200 px-6 py-4">
+            <button
+              type="button"
+              disabled={isLoading}
+              className="rounded-lg px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onClick={handleClose}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading || !name.trim()}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {isLoading && (
+                <span
+                  className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                  aria-hidden="true"
+                />
+              )}
+              Create
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
   );
 };

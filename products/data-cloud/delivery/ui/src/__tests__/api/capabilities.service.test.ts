@@ -41,6 +41,8 @@ describe('capabilities.service', () => {
 
     const snapshot = await fetchCapabilityRegistry();
 
+    expect(apiClientGet).toHaveBeenCalledWith('/surfaces');
+
     expect(snapshot.requestId).toBe('req-capabilities');
     expect(snapshot.capabilities).toEqual(
       expect.arrayContaining([
@@ -72,5 +74,30 @@ describe('capabilities.service', () => {
     );
 
     expect(capability?.key).toBe('ai_assist');
+  });
+
+  it('falls back to compatibility endpoint when surfaces endpoint is unavailable', async () => {
+    apiClientGet
+      .mockRejectedValueOnce(new Error('not found'))
+      .mockResolvedValueOnce({
+        data: {
+          capabilities: {
+            analytics: 'ACTIVE',
+          },
+          generatedAt: '2026-04-17T10:00:00Z',
+        },
+        meta: {
+          requestId: 'req-fallback',
+          tenantId: TEST_TENANT_ID,
+          timestamp: '2026-04-17T10:00:00Z',
+          apiVersion: 'v1',
+        },
+      });
+
+    const snapshot = await fetchCapabilityRegistry();
+
+    expect(snapshot.requestId).toBe('req-fallback');
+    expect(apiClientGet).toHaveBeenNthCalledWith(1, '/surfaces');
+    expect(apiClientGet).toHaveBeenNthCalledWith(2, '/capabilities');
   });
 });

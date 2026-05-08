@@ -64,6 +64,19 @@ class CapabilityRegistryHandlerTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("returns surfaces envelope when tenant header is present")
+    void returnsSurfacesEnvelopeWhenTenantPresent() {
+        when(httpSupport.requireTenantIdOrFail(request)).thenReturn("tenant-surfaces");
+        when(httpSupport.resolveCorrelationId(request)).thenReturn("req-2");
+        when(httpSupport.envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class))).thenReturn(successResponse);
+
+        HttpResponse response = runPromise(() -> handler.handleSurfaces(request));
+
+        assertThat(response).isSameAs(successResponse);
+        verify(httpSupport).envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class));
+    }
+
+    @Test
     @DisplayName("returns 400 when tenant header is missing")
     void returns400WhenTenantHeaderMissing() { 
         when(httpSupport.requireTenantIdOrFail(request)).thenReturn(null); 
@@ -73,5 +86,30 @@ class CapabilityRegistryHandlerTest extends EventloopTestBase {
 
         assertThat(response).isSameAs(errorResponse); 
         verify(httpSupport).errorResponse(400, "X-Tenant-Id header is required"); 
+    }
+
+    @Test
+    @DisplayName("returns 400 from surfaces endpoint when tenant header is missing")
+    void returns400WhenTenantHeaderMissingForSurfaces() {
+        when(httpSupport.requireTenantIdOrFail(request)).thenReturn(null);
+        when(httpSupport.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
+
+        HttpResponse response = runPromise(() -> handler.handleSurfaces(request));
+
+        assertThat(response).isSameAs(errorResponse);
+        verify(httpSupport).errorResponse(400, "X-Tenant-Id header is required");
+    }
+
+    @Test
+    @DisplayName("returns schema envelope from canonical surfaces schema endpoint")
+    void returnsSurfaceSchemaEnvelopeWhenTenantPresent() {
+        when(httpSupport.requireTenantIdOrFail(request)).thenReturn("tenant-schema");
+        when(httpSupport.resolveCorrelationId(request)).thenReturn("req-3");
+        when(httpSupport.envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class))).thenReturn(successResponse);
+
+        HttpResponse response = runPromise(() -> handler.handleSurfaceSchema(request));
+
+        assertThat(response).isSameAs(successResponse);
+        verify(httpSupport).envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class));
     }
 }

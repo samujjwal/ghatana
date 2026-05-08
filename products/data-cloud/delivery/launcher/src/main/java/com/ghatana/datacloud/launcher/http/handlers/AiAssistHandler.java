@@ -60,7 +60,7 @@ import java.util.concurrent.Executor;
  *   <li>Suggestions default to static ruleset-based heuristics.</li>
  *   <li>The {@code ai.fallback} field is set to {@code true}.</li>
  *   <li>Confidence drops to 0.2 (heuristics baseline).</li>
- *   <li>The caller receives a 200 response — never a 5xx from AI unavailability.</li>
+ *   <li>In production mode, provider outages fail closed with HTTP 503 instead of heuristic output.</li>
  * </ul>
  *
  * <h2>Privacy and Governance</h2>
@@ -188,6 +188,17 @@ public class AiAssistHandler {
         return null;
     }
 
+    private Promise<HttpResponse> providerErrorOrNull(String route, String tenantId, String requestId, Throwable error) {
+        if (!productionMode) {
+            return null;
+        }
+        log.error("[DC-P0-007] AI provider failure in production route={} tenant={} requestId={} error={}",
+            route, tenantId, requestId, error == null ? "unknown" : error.getMessage());
+        return Promise.of(http.errorResponse(503,
+            "AI assist is temporarily unavailable: the configured AI provider returned an error. "
+                + "Retry later or inspect provider health."));
+    }
+
     /**
      * P0.5: Check tenant AI token quota before AI assist operations.
      * Returns an error promise if quota is exceeded, otherwise null.
@@ -267,6 +278,11 @@ public class AiAssistHandler {
                     })
                     .then(Promise::of,
                           e -> {
+                              Promise<HttpResponse> providerError = providerErrorOrNull(
+                                  "/api/v1/entities/:collection/suggest", tenantId, requestId, e);
+                              if (providerError != null) {
+                                  return providerError;
+                              }
                               // P2-2: Explicit logging for AI Operations fallback due to error
                               log.warn("[P2-2] AI Operations fallback: entity-suggest AI call failed for collection={} tenant={} requestId={} error={}", 
                                         collection, tenantId, requestId, e.getMessage());
@@ -437,6 +453,11 @@ public class AiAssistHandler {
                     })
                     .then(Promise::of,
                           e -> {
+                              Promise<HttpResponse> providerError = providerErrorOrNull(
+                                  "/api/v1/analytics/suggest", tenantId, requestId, e);
+                              if (providerError != null) {
+                                  return providerError;
+                              }
                               log.warn("[DC-E3] analytics suggest AI call failed tenant={}: {}", tenantId, e.getMessage());
                               recommendationMetrics.recordError(
                                   AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, e);
@@ -516,6 +537,11 @@ public class AiAssistHandler {
                     })
                     .then(Promise::of,
                           e -> {
+                              Promise<HttpResponse> providerError = providerErrorOrNull(
+                                  "/api/v1/analytics/automate", tenantId, requestId, e);
+                              if (providerError != null) {
+                                  return providerError;
+                              }
                               log.warn("[DC-E3] analytics automate AI call failed tenant={}: {}", tenantId, e.getMessage());
                               recommendationMetrics.recordError(
                                   AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, e);
@@ -596,6 +622,11 @@ public class AiAssistHandler {
                     })
                     .then(Promise::of,
                         e -> {
+                            Promise<HttpResponse> providerError = providerErrorOrNull(
+                                "/api/v1/pipelines/draft", tenantId, requestId, e);
+                            if (providerError != null) {
+                                return providerError;
+                            }
                             log.warn("[DC-E3] pipeline draft AI call failed tenant={}: {}", tenantId, e.getMessage());
                             recommendationMetrics.recordError(
                                 AiRecommendationMetrics.TYPE_PIPELINE_DRAFT,
@@ -684,6 +715,11 @@ public class AiAssistHandler {
                     })
                     .then(Promise::of,
                         e -> {
+                            Promise<HttpResponse> providerError = providerErrorOrNull(
+                                "/api/v1/pipelines/:draftId/refine", tenantId, requestId, e);
+                            if (providerError != null) {
+                                return providerError;
+                            }
                             log.warn("[DC-E3] pipeline refine AI call failed draftId={} tenant={}: {}", draftId, tenantId, e.getMessage());
                             recommendationMetrics.recordError(
                                 AiRecommendationMetrics.TYPE_PIPELINE_DRAFT,
@@ -800,6 +836,11 @@ public class AiAssistHandler {
                     })
                     .then(Promise::of,
                           e -> {
+                              Promise<HttpResponse> providerError = providerErrorOrNull(
+                                  "/api/v1/pipelines/:pipelineId/optimise-hint", tenantId, requestId, e);
+                              if (providerError != null) {
+                                  return providerError;
+                              }
                               log.warn("[DC-E3] pipeline hint AI call failed pipelineId={} tenant={}: {}",
                                         pipelineId, tenantId, e.getMessage());
                               recommendationMetrics.recordError(
@@ -868,6 +909,11 @@ public class AiAssistHandler {
                     })
                     .then(Promise::of,
                           e -> {
+                              Promise<HttpResponse> providerError = providerErrorOrNull(
+                                  "/api/v1/brain/explain", tenantId, requestId, e);
+                              if (providerError != null) {
+                                  return providerError;
+                              }
                               log.warn("[DC-E3] brain explain AI call failed itemId={} tenant={}: {}",
                                         itemId, tenantId, e.getMessage());
                               recommendationMetrics.recordError(
@@ -2049,6 +2095,11 @@ public class AiAssistHandler {
                         })
                         .then(Promise::of,
                               e -> {
+                                  Promise<HttpResponse> providerError = providerErrorOrNull(
+                                      "/api/v1/ai/suggestions", tenantId, requestId, e);
+                                  if (providerError != null) {
+                                      return providerError;
+                                  }
                                   log.warn("[DC-E3] ai suggestions cross-surface call failed tenant={}: {}", tenantId, e.getMessage());
                                   recommendationMetrics.recordError(
                                       AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, e);
@@ -2225,6 +2276,11 @@ public class AiAssistHandler {
             })
             .then(Promise::of,
                   e -> {
+                      Promise<HttpResponse> providerError = providerErrorOrNull(
+                          "/api/v1/ai/advisories/workflows/:workflowId", tenantId, requestId, e);
+                      if (providerError != null) {
+                          return providerError;
+                      }
                       log.warn("[DC-E3] workflow advisory AI call failed workflowId={} tenant={}: {}", workflowId, tenantId, e.getMessage());
                       recommendationMetrics.recordError(
                           AiRecommendationMetrics.TYPE_PIPELINE_HINT, tenantId, e);

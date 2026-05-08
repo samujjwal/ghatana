@@ -1,5 +1,14 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { ThemeProvider as PlatformThemeProvider } from '@ghatana/theme';
+import {
+  act,
+  fireEvent,
+  render as rtlRender,
+  screen,
+  waitFor,
+} from '@testing-library/react';
+import type { RenderResult } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ReactElement, ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SearchBar } from '../SearchBar';
 import type { SearchBarProps } from '../types';
@@ -20,6 +29,19 @@ describe('SearchBar Component', () => {
   const mockOnChange = vi.fn();
   const mockOnRecentSearchClick = vi.fn();
   const mockOnClear = vi.fn();
+  const setupUser = (): ReturnType<typeof userEvent.setup> =>
+    userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  const TestThemeProvider = ({
+    children,
+  }: {
+    children: ReactNode;
+  }): ReactElement => (
+    <PlatformThemeProvider defaultTheme="light">
+      {children}
+    </PlatformThemeProvider>
+  );
+  const render = (ui: ReactElement): RenderResult =>
+    rtlRender(ui, { wrapper: TestThemeProvider });
 
   const defaultProps: SearchBarProps = {
     value: '',
@@ -65,7 +87,7 @@ describe('SearchBar Component', () => {
 
   describe('Input Changes', () => {
     it('should update input value on typing', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(<SearchBar {...defaultProps} />);
 
       const input = screen.getByPlaceholderText('Search items...');
@@ -75,7 +97,7 @@ describe('SearchBar Component', () => {
     });
 
     it('should call onChange after debounce delay', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(<SearchBar {...defaultProps} debounceMs={300} />);
 
       const input = screen.getByPlaceholderText('Search items...');
@@ -85,6 +107,9 @@ describe('SearchBar Component', () => {
       expect(mockOnChange).not.toHaveBeenCalled();
 
       // Should call after debounce
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
       await waitFor(
         () => {
           expect(mockOnChange).toHaveBeenCalledWith('test');
@@ -94,7 +119,7 @@ describe('SearchBar Component', () => {
     });
 
     it('should debounce rapid typing', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(<SearchBar {...defaultProps} debounceMs={300} />);
 
       const input = screen.getByPlaceholderText('Search items...');
@@ -105,6 +130,9 @@ describe('SearchBar Component', () => {
       await user.type(input, 'i');
 
       // Should only call once after debounce
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
       await waitFor(
         () => {
           expect(mockOnChange).toHaveBeenCalledTimes(1);
@@ -115,17 +143,22 @@ describe('SearchBar Component', () => {
     });
 
     it('should respect custom debounce time', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(<SearchBar {...defaultProps} debounceMs={500} />);
 
       const input = screen.getByPlaceholderText('Search items...');
       await user.type(input, 'query');
 
       // Should not call before 500ms
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
       expect(mockOnChange).not.toHaveBeenCalled();
 
       // Should call after 500ms
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
       await waitFor(
         () => {
           expect(mockOnChange).toHaveBeenCalledWith('query');
@@ -135,16 +168,21 @@ describe('SearchBar Component', () => {
     });
 
     it('should cancel previous debounce when typing continues', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(<SearchBar {...defaultProps} debounceMs={300} />);
 
       const input = screen.getByPlaceholderText('Search items...');
 
       await user.type(input, 'test');
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
       await user.type(input, '123');
 
       // Should only call once with final value
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
       await waitFor(
         () => {
           expect(mockOnChange).toHaveBeenCalledTimes(1);
@@ -171,7 +209,7 @@ describe('SearchBar Component', () => {
     });
 
     it('should clear input when clear button clicked', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(
         <SearchBar
           {...defaultProps}
@@ -189,7 +227,7 @@ describe('SearchBar Component', () => {
     });
 
     it('should call onChange with empty string on clear', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(<SearchBar {...defaultProps} value="search term" />);
 
       const clearButton = screen.getByTestId('ClearIcon').closest('button');
@@ -219,7 +257,7 @@ describe('SearchBar Component', () => {
     });
 
     it('should show loading spinner during debounce', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(<SearchBar {...defaultProps} loading={true} />);
 
       const input = screen.getByPlaceholderText('Search items...');
@@ -270,7 +308,7 @@ describe('SearchBar Component', () => {
     const recentSearches = ['authentication', 'payment', 'api'];
 
     it('should show recent searches when input is focused and empty', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(
         <SearchBar
           {...defaultProps}
@@ -290,7 +328,7 @@ describe('SearchBar Component', () => {
     });
 
     it('should not show recent searches when showRecent is false', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(
         <SearchBar
           {...defaultProps}
@@ -302,12 +340,14 @@ describe('SearchBar Component', () => {
       const input = screen.getByPlaceholderText('Search items...');
       await user.click(input);
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
       expect(screen.queryByText('authentication')).not.toBeInTheDocument();
     });
 
     it('should call onRecentSearchClick when recent search clicked', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(
         <SearchBar
           {...defaultProps}
@@ -331,7 +371,7 @@ describe('SearchBar Component', () => {
     });
 
     it('should hide recent searches when typing', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(
         <SearchBar
           {...defaultProps}
@@ -355,7 +395,7 @@ describe('SearchBar Component', () => {
     });
 
     it('should show history icon for recent searches', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(
         <SearchBar
           {...defaultProps}
@@ -374,7 +414,7 @@ describe('SearchBar Component', () => {
     });
 
     it('should handle empty recent searches array', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(
         <SearchBar {...defaultProps} showRecent={true} recentSearches={[]} />
       );
@@ -382,7 +422,9 @@ describe('SearchBar Component', () => {
       const input = screen.getByPlaceholderText('Search items...');
       await user.click(input);
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
       expect(screen.queryByTestId('HistoryIcon')).not.toBeInTheDocument();
     });
   });
@@ -396,7 +438,7 @@ describe('SearchBar Component', () => {
     });
 
     it('should clear input on Escape key', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(<SearchBar {...defaultProps} value="test query" />);
 
       const input = screen.getByPlaceholderText('Search items...');
@@ -434,14 +476,16 @@ describe('SearchBar Component', () => {
 
   describe('Edge Cases', () => {
     it('should handle very long search queries', async () => {
-      const user = userEvent.setup();
       const longQuery = 'a'.repeat(1000);
 
       render(<SearchBar {...defaultProps} />);
 
       const input = screen.getByPlaceholderText('Search items...');
-      await user.type(input, longQuery);
+      fireEvent.change(input, { target: { value: longQuery } });
 
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
       await waitFor(
         () => {
           expect(mockOnChange).toHaveBeenCalledWith(longQuery);
@@ -451,7 +495,7 @@ describe('SearchBar Component', () => {
     });
 
     it('should handle special characters', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       const specialQuery = '!@#$%^&*()';
 
       render(<SearchBar {...defaultProps} />);
@@ -459,6 +503,9 @@ describe('SearchBar Component', () => {
       const input = screen.getByPlaceholderText('Search items...');
       await user.type(input, specialQuery);
 
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
       await waitFor(
         () => {
           expect(mockOnChange).toHaveBeenCalledWith(specialQuery);
@@ -468,7 +515,7 @@ describe('SearchBar Component', () => {
     });
 
     it('should handle unicode characters', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       const unicodeQuery = '你好世界';
 
       render(<SearchBar {...defaultProps} />);
@@ -476,6 +523,9 @@ describe('SearchBar Component', () => {
       const input = screen.getByPlaceholderText('Search items...');
       await user.type(input, unicodeQuery);
 
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
       await waitFor(
         () => {
           expect(mockOnChange).toHaveBeenCalledWith(unicodeQuery);
@@ -485,7 +535,7 @@ describe('SearchBar Component', () => {
     });
 
     it('should handle rapid clear and type', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       render(<SearchBar {...defaultProps} value="test" />);
 
       const input = screen.getByPlaceholderText('Search items...');
@@ -496,6 +546,9 @@ describe('SearchBar Component', () => {
         await user.type(input, 'new query');
       }
 
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
       await waitFor(
         () => {
           expect(mockOnChange).toHaveBeenCalledWith('new query');
@@ -507,7 +560,7 @@ describe('SearchBar Component', () => {
 
   describe('Controlled vs Uncontrolled', () => {
     it('should work as controlled component', async () => {
-      const user = userEvent.setup();
+      const user = setupUser();
       const { rerender } = render(
         <SearchBar {...defaultProps} value="initial" />
       );

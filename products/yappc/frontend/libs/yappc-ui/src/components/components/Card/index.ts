@@ -40,7 +40,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
       ref,
       variant: mappedVariant as GlobalCardProps['variant'],
       elevation,
-      className,
+      className: ['MuiCard-root', className].filter(Boolean).join(' '),
       style: {
         transition: hover
           ? 'transform 180ms ease, box-shadow 180ms ease'
@@ -71,7 +71,10 @@ export const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
       'h3',
       {
         ref,
-        className: ['text-lg font-semibold leading-none tracking-tight', className]
+        className: [
+          'text-lg font-semibold leading-none tracking-tight',
+          className,
+        ]
           .filter(Boolean)
           .join(' '),
         ...props,
@@ -81,8 +84,7 @@ export const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
 );
 CardTitle.displayName = 'CardTitle';
 
-export interface CardDescriptionProps
-  extends React.HTMLAttributes<HTMLParagraphElement> {
+export interface CardDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {
   children?: React.ReactNode;
 }
 

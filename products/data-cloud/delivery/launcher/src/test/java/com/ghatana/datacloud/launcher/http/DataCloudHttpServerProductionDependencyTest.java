@@ -58,7 +58,7 @@ class DataCloudHttpServerProductionDependencyTest {
         Logger logger = mock(Logger.class);
 
         assertThatThrownBy(() -> DataCloudHttpServer.validateProductionDependencies(
-            true, "production", false, true, true, logger))
+            true, "production", true, false, true, true, true, true, true, true, true, true, logger))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("P0.5: Audit service is required");
     }
@@ -69,7 +69,7 @@ class DataCloudHttpServerProductionDependencyTest {
         Logger logger = mock(Logger.class);
 
         assertThatThrownBy(() -> DataCloudHttpServer.validateProductionDependencies(
-            true, "production", true, false, true, logger))
+            true, "production", true, true, false, true, true, true, true, true, true, true, logger))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("P0.5: Policy engine is required");
     }
@@ -80,9 +80,87 @@ class DataCloudHttpServerProductionDependencyTest {
         Logger logger = mock(Logger.class);
 
         assertThatThrownBy(() -> DataCloudHttpServer.validateProductionDependencies(
-            true, "production", true, true, false, logger))
+            true, "production", true, true, true, true, true, true, true, true, true, false, logger))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("P0.5: Tenant resolver is required");
+    }
+
+    @Test
+    @DisplayName("blocks startup when idempotency store is missing in production profile")
+    void blocksStartupWhenIdempotencyStoreMissingInProduction() {
+        Logger logger = mock(Logger.class);
+
+        assertThatThrownBy(() -> DataCloudHttpServer.validateProductionDependencies(
+            true, "production", true, true, true, false, true, true, true, true, true, true, logger))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("P0.5: Durable entity idempotency store is required");
+    }
+
+    @Test
+    @DisplayName("blocks startup when authentication is missing in production profile")
+    void blocksStartupWhenAuthMissingInProduction() {
+        Logger logger = mock(Logger.class);
+
+        assertThatThrownBy(() -> DataCloudHttpServer.validateProductionDependencies(
+            true, "production", false, true, true, true, true, true, true, true, true, true, logger))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("P1.18: Authentication is required for production profiles");
+    }
+
+    @Test
+    @DisplayName("blocks startup when event store is missing in production profile")
+    void blocksStartupWhenEventStoreMissingInProduction() {
+        Logger logger = mock(Logger.class);
+
+        assertThatThrownBy(() -> DataCloudHttpServer.validateProductionDependencies(
+            true, "production", true, true, true, true, false, true, true, true, true, true, logger))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("P1.18: Durable event log store is required for production profiles");
+    }
+
+    @Test
+    @DisplayName("blocks startup when metrics are not explicitly configured in production profile")
+    void blocksStartupWhenMetricsNotConfiguredInProduction() {
+        Logger logger = mock(Logger.class);
+
+        assertThatThrownBy(() -> DataCloudHttpServer.validateProductionDependencies(
+            true, "production", true, true, true, true, true, true, true, false, true, true, logger))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("P1.18: Metrics collector must be explicitly configured");
+    }
+
+    @Test
+    @DisplayName("blocks startup when trace export is missing in production profile")
+    void blocksStartupWhenTraceExportMissingInProduction() {
+        Logger logger = mock(Logger.class);
+
+        assertThatThrownBy(() -> DataCloudHttpServer.validateProductionDependencies(
+            true, "production", true, true, true, true, true, true, true, true, false, true, logger))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("P1.18: Trace export service is required for production profiles");
+
+    }
+
+    @Test
+    @DisplayName("blocks startup when entity store backing is non-durable in production profile")
+    void blocksStartupWhenEntityStoreBackingNonDurableInProduction() {
+        Logger logger = mock(Logger.class);
+
+        assertThatThrownBy(() -> DataCloudHttpServer.validateProductionDependencies(
+            true, "production", true, true, true, true, true, false, true, true, true, true, logger))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("P1.18: Durable entity store backing is required");
+    }
+
+    @Test
+    @DisplayName("blocks startup when core event store backing is non-durable in production profile")
+    void blocksStartupWhenCoreEventStoreBackingNonDurableInProduction() {
+        Logger logger = mock(Logger.class);
+
+        assertThatThrownBy(() -> DataCloudHttpServer.validateProductionDependencies(
+            true, "production", true, true, true, true, true, true, false, true, true, true, logger))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("P1.18: Durable core event store backing is required");
     }
 
     @Test
@@ -91,7 +169,7 @@ class DataCloudHttpServerProductionDependencyTest {
         Logger logger = mock(Logger.class);
 
         assertThatCode(() -> DataCloudHttpServer.validateProductionDependencies(
-            false, "local", false, false, false, logger))
+            false, "local", false, false, false, false, false, false, false, false, false, false, logger))
             .doesNotThrowAnyException();
     }
 
@@ -101,7 +179,7 @@ class DataCloudHttpServerProductionDependencyTest {
         Logger logger = mock(Logger.class);
 
         assertThatCode(() -> DataCloudHttpServer.validateProductionDependencies(
-            true, "production", true, true, true, logger))
+            true, "production", true, true, true, true, true, true, true, true, true, true, logger))
             .doesNotThrowAnyException();
     }
 }

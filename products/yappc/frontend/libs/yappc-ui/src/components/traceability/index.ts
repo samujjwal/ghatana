@@ -75,6 +75,19 @@ export class TraceabilityManager {
     }
   }
 
+  private shouldIncludeLink(link: TraceabilityLink): boolean {
+    if (link.status === 'active') {
+      return true;
+    }
+    if (link.status === 'deprecated') {
+      return this.options.includeDeprecated;
+    }
+    if (link.status === 'archived') {
+      return this.options.includeArchived;
+    }
+    return false;
+  }
+
   /**
    * Subscribe to traceability events.
    *
@@ -193,9 +206,7 @@ export class TraceabilityManager {
     for (const link of this.links.values()) {
       if (
         link.componentId === componentId &&
-        link.status === 'active' &&
-        (this.options.includeDeprecated || link.status !== 'deprecated') &&
-        (this.options.includeArchived || link.status !== 'archived')
+        this.shouldIncludeLink(link)
       ) {
         requirementIds.push(link.requirementId);
       }
@@ -221,9 +232,7 @@ export class TraceabilityManager {
     for (const link of this.links.values()) {
       if (
         link.requirementId === requirementId &&
-        link.status === 'active' &&
-        (this.options.includeDeprecated || link.status !== 'deprecated') &&
-        (this.options.includeArchived || link.status !== 'archived')
+        this.shouldIncludeLink(link)
       ) {
         componentIds.push(link.componentId);
       }

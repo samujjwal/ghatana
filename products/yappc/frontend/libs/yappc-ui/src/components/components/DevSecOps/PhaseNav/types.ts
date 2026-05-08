@@ -7,14 +7,7 @@
 /**
  * DevSecOps phase keys
  */
-export type PhaseKey =
-  | 'ideation'
-  | 'planning'
-  | 'development'
-  | 'security'
-  | 'testing'
-  | 'deployment'
-  | 'operations';
+export type PhaseKey = string;
 
 /**
  * Phase information for navigation
@@ -60,11 +53,11 @@ export interface PhaseNavProps {
   phases: Phase[];
 
   /** Active phase ID */
-  activePhaseId: string;
+  activePhaseId?: string;
 
   /** Completed phase IDs */
   completedPhaseIds?: string[];
 
   /** Phase click handler */
-  onPhaseClick: (phaseId: string) => void;
+  onPhaseClick?: ((phaseId: string) => void) | null;
 }

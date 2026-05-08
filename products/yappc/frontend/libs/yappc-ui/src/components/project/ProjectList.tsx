@@ -9,7 +9,6 @@
  * @doc.pattern Presentational Component
  */
 
-import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import React from 'react';
 
 import type { Project } from 'yappc-core/types';
@@ -42,38 +41,36 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <Box display="flex" justifyContent="center" py={4}>
-        <CircularProgress size={32} />
-      </Box>
+      <div className="flex justify-center py-8" aria-label="Loading projects">
+        <span
+          className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600"
+          aria-hidden="true"
+        />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ m: 1 }}>
+      <div
+        role="alert"
+        className="m-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+      >
         {error.message}
-      </Alert>
+      </div>
     );
   }
 
   if (projects.length === 0) {
     return (
-      <Box display="flex" justifyContent="center" py={4}>
-        <Typography variant="body2" color="text.secondary">
-          {emptyMessage}
-        </Typography>
-      </Box>
+      <div className="flex justify-center py-8 text-sm text-slate-500">
+        {emptyMessage}
+      </div>
     );
   }
 
   return (
-    <Box
-      className={className}
-      display="flex"
-      flexDirection="column"
-      gap={1}
-      sx={{ overflowY: 'auto' }}
-    >
+    <div className={`flex flex-col gap-2 overflow-y-auto ${className ?? ''}`}>
       {projects.map((project) => (
         <ProjectCard
           key={project.id}
@@ -83,6 +80,6 @@ export const ProjectList: React.FC<ProjectListProps> = ({
           onSettings={onSettings}
         />
       ))}
-    </Box>
+    </div>
   );
 };
