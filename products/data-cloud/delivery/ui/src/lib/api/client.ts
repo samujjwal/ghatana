@@ -261,6 +261,29 @@ export class ApiClient {
   }
 
   /**
+   * Derives all cache paths to invalidate for a mutated URL.
+   *
+   * Domain rules:
+   * - Always invalidate the exact URL.
+   * - For any detail endpoint (last segment is a non-slash value after a
+   *   collection segment), also invalidate the parent list endpoint.
+   *   e.g. /entities/dc_collections/abc   → /entities/dc_collections
+   *   e.g. /tenants/t1/collections/c1/records/r1 → /tenants/t1/collections/c1/records
+   * - For search/query sub-paths under a resource family, invalidate the
+   *   family root so stale query results are not served.
+   *   e.g. /entities/dc_collections/search → /entities/dc_collections
+   */
+  static deriveInvalidationTargets(url: string): readonly string[] {
+    const targets = new Set<string>([url]);
+    const segments = url.replace(/^\//u, "").split("/").filter(Boolean);
+    if (segments.length > 1) {
+      // Always bubble up to the immediate parent collection/list.
+      targets.add("/" + segments.slice(0, -1).join("/"));
+    }
+    return Array.from(targets);
+  }
+
+  /**
    * Clear all cache entries for current tenant
    */
   clearCache(): void {
@@ -432,7 +455,8 @@ export class ApiClient {
   }
 
   /**
-   * POST request with cache invalidation
+   * POST request with domain-aware cache invalidation.
+   * Invalidates the mutated URL and its parent list endpoint.
    */
   async post<T, D = unknown>(
     url: string,
@@ -445,13 +469,15 @@ export class ApiClient {
       body: data == null ? null : JSON.stringify(data),
     });
 
-    // Invalidate cache for the affected resource
-    this.cache.invalidate(url);
+    for (const target of ApiClient.deriveInvalidationTargets(url)) {
+      this.cache.invalidate(target);
+    }
     return result;
   }
 
   /**
-   * PUT request with cache invalidation
+   * PUT request with domain-aware cache invalidation.
+   * Invalidates the mutated URL and its parent list endpoint.
    */
   async put<T, D = unknown>(
     url: string,
@@ -464,13 +490,15 @@ export class ApiClient {
       body: data == null ? null : JSON.stringify(data),
     });
 
-    // Invalidate cache for the affected resource
-    this.cache.invalidate(url);
+    for (const target of ApiClient.deriveInvalidationTargets(url)) {
+      this.cache.invalidate(target);
+    }
     return result;
   }
 
   /**
-   * PATCH request with cache invalidation
+   * PATCH request with domain-aware cache invalidation.
+   * Invalidates the mutated URL and its parent list endpoint.
    */
   async patch<T, D = unknown>(
     url: string,
@@ -483,13 +511,15 @@ export class ApiClient {
       body: data == null ? null : JSON.stringify(data),
     });
 
-    // Invalidate cache for the affected resource
-    this.cache.invalidate(url);
+    for (const target of ApiClient.deriveInvalidationTargets(url)) {
+      this.cache.invalidate(target);
+    }
     return result;
   }
 
   /**
-   * DELETE request with cache invalidation
+   * DELETE request with domain-aware cache invalidation.
+   * Invalidates the mutated URL and its parent list endpoint.
    */
   async delete<T>(url: string, config?: ApiRequestConfig): Promise<T> {
     const result = await this.request<T>(url, {
@@ -497,8 +527,9 @@ export class ApiClient {
       method: "DELETE",
     });
 
-    // Invalidate cache for the affected resource
-    this.cache.invalidate(url);
+    for (const target of ApiClient.deriveInvalidationTargets(url)) {
+      this.cache.invalidate(target);
+    }
     return result;
   }
 }

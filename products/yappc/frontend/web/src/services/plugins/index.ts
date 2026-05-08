@@ -34,6 +34,22 @@ export type {
 } from './PluginRuntimePolicy';
 
 export {
+  COMPONENT_PACKAGE_SIGNATURE_ALGORITHM,
+  buildComponentPackageSigningPayload,
+  computeComponentPackageIntegrityDigest,
+  validateComponentPackageSignature,
+} from './ComponentPackageSigning';
+
+export type {
+  ComponentPackageSignatureAlgorithm,
+  ComponentPackageSignatureSubject,
+  ComponentPackageSignature,
+  ComponentPackageSigningPayload,
+  ComponentPackageSigningValidationResult,
+  ComponentPackageSigningInput,
+} from './ComponentPackageSigning';
+
+export {
   validateComponentCompatibility,
   applyPropAdapters,
   validatePreviewPolicy,

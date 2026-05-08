@@ -8,6 +8,7 @@ import com.ghatana.datacloud.launcher.ai.AiRecommendationMetrics;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
 import com.ghatana.datacloud.launcher.anomaly.AnomalyDetectionTask;
 import com.ghatana.datacloud.launcher.compaction.StorageCompactionTask;
+import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
 import com.ghatana.datacloud.storage.H2SovereignEntityStore;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -290,6 +291,12 @@ public class DataCloudHttpServer {
      * When {@code null}, an {@link InMemorySettingsStore} is used.
      */
     private SettingsStore settingsStore;
+
+    /**
+     * Optional durable idempotency store for entity writes (DC-P1-008).
+     * When {@code null}, falls back to an in-memory ConcurrentHashMap (local/embedded only).
+     */
+    private EntityWriteIdempotencyStore entityWriteIdempotencyStore;
 
     /**
      * Optional JWT provider for bearer authentication (DC-E1).
@@ -660,6 +667,26 @@ public class DataCloudHttpServer {
      */
     public DataCloudHttpServer withSettingsStore(SettingsStore store) {
         this.settingsStore = store;
+        return this;
+    }
+
+    /**
+     * Attaches a durable {@link EntityWriteIdempotencyStore} so idempotency entries survive
+     * process restarts (DC-P1-008).
+     *
+     * <p>When not called, the entity handler falls back to an in-memory store which is
+     * lost on restart. Non-embedded deployments must call this with a durable implementation.
+     *
+     * @param store the idempotency store implementation; must not be {@code null}
+     * @return {@code this} for method chaining
+     *
+     * @doc.type method
+     * @doc.purpose Enable durable entity-write idempotency storage
+     * @doc.layer product
+     * @doc.pattern Builder
+     */
+    public DataCloudHttpServer withIdempotencyStore(EntityWriteIdempotencyStore store) {
+        this.entityWriteIdempotencyStore = store;
         return this;
     }
 
@@ -1161,6 +1188,7 @@ public class DataCloudHttpServer {
         dataProductHandler = new DataProductHandler(client, httpSupport, objectMapper, lineagePlugin);
 
         entityHandler = new EntityCrudHandler(client, httpSupport, sseHandler.broadcastFunction());
+        if (entityWriteIdempotencyStore != null) entityHandler.withIdempotencyStore(entityWriteIdempotencyStore);
         if (schemaValidator != null) entityHandler.withSchemaValidator(schemaValidator);
         if (openSearchConnector != null) entityHandler.withOpenSearchConnector(openSearchConnector);
         if (tenantQuotaService != null) entityHandler.withTenantQuotaService(tenantQuotaService);
@@ -1218,6 +1246,8 @@ public class DataCloudHttpServer {
             new AiRecommendationMetrics(metricsCollector));
         if (tenantQuotaService != null) aiAssistHandler.withTenantQuotaService(tenantQuotaService);
         if (client != null) aiAssistHandler.withClient(client);
+        // DC-P0-007: Disable heuristic fallback when running in production/staging/sovereign profile
+        aiAssistHandler.withProductionMode(isProductionMode(deploymentMode));
 
         // DC-E4: Voice gateway handler — wire Whisper STT adapter if DC_STT_URL is configured
         WhisperSttConfig sttConfig = WhisperSttConfig.fromEnv();

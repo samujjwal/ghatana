@@ -12,75 +12,75 @@ const workspaceAliases = {
   ),
   "@ghatana/design-system": path.resolve(
     __dirname,
-    "../../../platform/typescript/design-system/src/index.ts",
+    "../../../../platform/typescript/design-system/src/index.ts",
   ),
   "@ghatana/domain-components/privacy": path.resolve(
     __dirname,
-    "../../../platform/typescript/domain-components/src/privacy/index.ts",
+    "../../../../platform/typescript/domain-components/src/privacy/index.ts",
   ),
   "@ghatana/domain-components/security": path.resolve(
     __dirname,
-    "../../../platform/typescript/domain-components/src/security/index.ts",
+    "../../../../platform/typescript/domain-components/src/security/index.ts",
   ),
   "@ghatana/domain-components/selection": path.resolve(
     __dirname,
-    "../../../platform/typescript/domain-components/src/selection/index.ts",
+    "../../../../platform/typescript/domain-components/src/selection/index.ts",
   ),
   "@ghatana/domain-components": path.resolve(
     __dirname,
-    "../../../platform/typescript/domain-components/src/index.ts",
+    "../../../../platform/typescript/domain-components/src/index.ts",
   ),
   "@ghatana/theme": path.resolve(
     __dirname,
-    "../../../platform/typescript/theme/src/index.ts",
+    "../../../../platform/typescript/theme/src/index.ts",
   ),
   "@ghatana/tokens": path.resolve(
     __dirname,
-    "../../../platform/typescript/tokens/src/index.ts",
+    "../../../../platform/typescript/tokens/src/index.ts",
   ),
   "@ghatana/platform-utils": path.resolve(
     __dirname,
-    "../../../platform/typescript/platform-utils/src/index.ts",
+    "../../../../platform/typescript/platform-utils/src/index.ts",
   ),
   "@ghatana/product-shell": path.resolve(
     __dirname,
-    "../../../platform/typescript/product-shell/src/index.ts",
+    "../../../../platform/typescript/product-shell/src/index.ts",
   ),
   "@ghatana/canvas": path.resolve(
     __dirname,
-    "../../../platform/typescript/canvas",
+    "../../../../platform/typescript/canvas",
   ),
   "@ghatana/realtime": path.resolve(
     __dirname,
-    "../../../platform/typescript/realtime/src/index.ts",
+    "../../../../platform/typescript/realtime/src/index.ts",
   ),
   "@ghatana/privacy-ui": path.resolve(
     __dirname,
-    "../../../platform/typescript/privacy-ui/src/index.ts",
+    "../../../../platform/typescript/privacy-ui/src/index.ts",
   ),
   "@ghatana/security-ui": path.resolve(
     __dirname,
-    "../../../platform/typescript/security-ui/src/index.ts",
+    "../../../../platform/typescript/security-ui/src/index.ts",
   ),
   "@ghatana/selection-ui": path.resolve(
     __dirname,
-    "../../../platform/typescript/selection-ui/src/index.ts",
+    "../../../../platform/typescript/selection-ui/src/index.ts",
   ),
   "@ghatana/audit-ui": path.resolve(
     __dirname,
-    "../../../platform/typescript/audit-ui/src/index.ts",
+    "../../../../platform/typescript/audit-ui/src/index.ts",
   ),
   "@ghatana/nlp-ui": path.resolve(
     __dirname,
-    "../../../platform/typescript/nlp-ui/src/index.ts",
+    "../../../../platform/typescript/nlp-ui/src/index.ts",
   ),
   "@ghatana/voice-ui": path.resolve(
     __dirname,
-    "../../../platform/typescript/voice-ui/src/index.ts",
+    "../../../../platform/typescript/voice-ui/src/index.ts",
   ),
   "@ghatana/wizard": path.resolve(
     __dirname,
-    "../../../platform/typescript/wizard/src/index.ts",
+    "../../../../platform/typescript/wizard/src/index.ts",
   ),
 };
 

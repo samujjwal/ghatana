@@ -193,6 +193,7 @@ export default function Component() {
         dashboardActionsLoading === true,
         dashboardActionsError,
     );
+    const dashboardDecisionAction = dashboardDecisionBrief.action;
     const executeDashboardAction = useMutation({
         mutationFn: async (action: ProjectDashboardAction) => {
             const workspaceId = currentWorkspace?.id ?? action.workspaceId;
@@ -460,11 +461,11 @@ export default function Component() {
                                 {pluralize(blockedWork.length, 'blocked item')} · {pluralize(reviewRequired.length, 'review item')} · {pluralize(safeToContinue.length, 'safe continuation')}
                             </p>
                         </div>
-                        {dashboardDecisionBrief.action && dashboardDecisionBrief.ctaLabel && (
+                        {dashboardDecisionAction !== null && dashboardDecisionBrief.ctaLabel && (
                             <Button
                                 type="button"
                                 variant="solid"
-                                onClick={() => openDashboardAction(dashboardDecisionBrief.action)}
+                                onClick={() => openDashboardAction(dashboardDecisionAction)}
                                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-700"
                             >
                                 {dashboardDecisionBrief.ctaLabel}

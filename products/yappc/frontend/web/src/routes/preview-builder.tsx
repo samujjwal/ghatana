@@ -33,6 +33,7 @@ import type {
 import { PRESET_VIEWPORTS } from '@ghatana/ui-builder/preview';
 import { ComponentRenderer } from '../components/canvas/page/ComponentRenderer';
 import { validatePreviewSessionToken } from '../services/preview/PreviewSessionApi';
+import { getPreviewLocaleFixture } from '../services/preview/PreviewLocaleFixtures';
 import { cspConfigToHeader } from '../security/ContentSecurityPolicy';
 
 const PREVIEW_RUNTIME_VERSION = '1.1.0';
@@ -406,17 +407,20 @@ export default function BuilderPreviewRoute() {
   }
 
   const themePack = PREVIEW_THEME_PACKS[runtimeEnvironment.theme as PreviewThemeName] ?? PREVIEW_THEME_PACKS.default;
-  const textDirection = /^(ar|fa|he|ur)(-|$)/i.test(runtimeEnvironment.locale) ? 'rtl' : 'ltr';
+  const localeFixture = getPreviewLocaleFixture(runtimeEnvironment.locale);
 
   return (
     <div
       className="min-h-screen transition-colors duration-200"
       data-preview-theme={runtimeEnvironment.theme}
       data-preview-locale={runtimeEnvironment.locale}
+      data-preview-locale-direction={localeFixture.direction}
+      data-preview-locale-date={localeFixture.dateExample}
+      data-preview-locale-currency={localeFixture.currencyExample}
       data-preview-viewport-width={runtimeEnvironment.viewport.width}
       data-preview-viewport-height={runtimeEnvironment.viewport.height}
       data-testid="preview-runtime-shell"
-      dir={textDirection}
+      dir={localeFixture.direction}
       lang={runtimeEnvironment.locale}
       style={{
         backgroundColor: themePack.background,
@@ -433,6 +437,13 @@ export default function BuilderPreviewRoute() {
           width: '100%',
         }}
       >
+        <div
+          className="sr-only"
+          data-testid="preview-runtime-locale-fixture"
+          lang={localeFixture.locale}
+        >
+          {localeFixture.headline} {localeFixture.primaryCta} {localeFixture.dateExample} {localeFixture.currencyExample}
+        </div>
         {document.rootNodes.map((nodeId) => (
           <ComponentRenderer
             key={nodeId}

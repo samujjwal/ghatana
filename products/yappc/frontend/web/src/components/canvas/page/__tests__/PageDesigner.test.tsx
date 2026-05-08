@@ -562,6 +562,7 @@ describe('PageDesigner', () => {
       />,
     );
 
+    onComponentsChange.mockClear();
     fireEvent.click(screen.getByText('Button'));
     fireEvent.click(screen.getByTestId('page-designer-import-btn'));
 
@@ -1052,6 +1053,31 @@ describe('PageDesigner — import panel', () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         residualIslandIds: ['island-a'],
+        artifactGraph: {
+          graphId: 'art-1:graph',
+          projectId: 'proj-1',
+          sourceType: 'semantic-model',
+          source: 'semantic-model',
+          importedAt: '2026-05-07T00:00:00.000Z',
+          nodes: [
+            { id: 'art-1:page', kind: 'page', label: 'Imported Page' },
+            { id: 'art-1:residual:island-a', kind: 'residual', label: 'island-a' },
+          ],
+          edges: [
+            {
+              id: 'art-1:page-residual-island-a',
+              from: 'art-1:residual:island-a',
+              to: 'art-1:page',
+              kind: 'residual-of',
+            },
+          ],
+          provenance: {
+            createdBy: 'import',
+            compiler: 'yappc-artifact-compiler',
+            confidence: 0.72,
+            residualIslandIds: ['island-a'],
+          },
+        },
       },
     ]);
     importSourceToPageArtifactsMock.mockResolvedValue({
@@ -1085,6 +1111,21 @@ describe('PageDesigner — import panel', () => {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           residualIslandIds: [],
+          artifactGraph: {
+            graphId: 'imported-project-imported-remote-page:graph',
+            projectId: 'proj-1',
+            sourceType: 'tsx',
+            source: 'https://example.com/Page.tsx',
+            importedAt: '2026-05-07T00:00:00.000Z',
+            nodes: [{ id: 'imported-project-imported-remote-page:page', kind: 'page', label: 'ImportedRemotePage' }],
+            edges: [],
+            provenance: {
+              createdBy: 'import',
+              compiler: 'yappc-artifact-compiler',
+              confidence: 0.8,
+              residualIslandIds: [],
+            },
+          },
         },
       ],
     });
@@ -1172,6 +1213,96 @@ describe('PageDesigner — import panel', () => {
     expect(screen.getByTestId('residual-island-explanation')).toHaveTextContent(
       /could not be mapped to a reviewed registry contract/i,
     );
+    expect(screen.getByTestId('page-designer-graph-merge-review')).toHaveTextContent(
+      'Artifact graph merge review: required',
+    );
+  });
+
+  it('runs graph-wide merge review for imported artifact graphs and exposes retryable failures', async () => {
+    let graphMergeCalls = 0;
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (!url.includes('/api/v1/yappc/artifact/graph/merge')) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ id: 'audit-1' }), {
+            status: 202,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
+      }
+
+      graphMergeCalls += 1;
+      if (graphMergeCalls === 1) {
+        return Promise.resolve(
+          new Response('graph merge unavailable', {
+            status: 503,
+            headers: { 'Content-Type': 'text/plain' },
+          }),
+        );
+      }
+
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            success: true,
+            operation: 'merge',
+            result: {
+              mergedModel: { nodeIds: ['art-1:page', 'art-1:residual:island-a'] },
+              conflicts: [],
+              fieldProvenance: { nodeIds: 'right' },
+              conflictCount: 0,
+            },
+            message: 'Three-way merge completed with 0 conflicts',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <PageDesigner
+        projectId="proj-1"
+        auditContext={{
+          tenantId: 'tenant-1',
+          workspaceId: 'workspace-1',
+          projectId: 'proj-1',
+          userId: 'reviewer-1',
+        }}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('page-designer-import-btn'));
+    const textarea = screen.getByTestId('page-designer-import-textarea') as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: '{ "pages": [] }' } });
+    fireEvent.click(screen.getByTestId('page-designer-import-confirm'));
+
+    fireEvent.click(screen.getByTestId('page-designer-graph-merge-review-run'));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/v1/yappc/artifact/graph/merge',
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include',
+          body: expect.stringContaining('"tenantId":"tenant-1"'),
+        }),
+      );
+    });
+    expect(await screen.findByTestId('page-designer-graph-merge-review-error')).toHaveTextContent(
+      'graph merge unavailable',
+    );
+    expect(screen.getByTestId('page-designer-graph-merge-review-run')).toHaveTextContent(
+      'Retry graph merge review',
+    );
+
+    fireEvent.click(screen.getByTestId('page-designer-graph-merge-review-run'));
+
+    expect(await screen.findByTestId('page-designer-graph-merge-review-result')).toHaveTextContent(
+      'Merge result: 0 conflicts',
+    );
+    expect(screen.getByTestId('page-designer-graph-merge-review')).toHaveTextContent(
+      'Artifact graph merge review: passed',
+    );
   });
 
   it('persists import review queue decisions for loss points before marking them decided', async () => {
@@ -1203,7 +1334,13 @@ describe('PageDesigner — import panel', () => {
     expect(screen.getByTestId('import-review-gate-explanation')).toHaveTextContent(
       /need an explicit apply or skip decision/i,
     );
-    expect(screen.getByText(/Hero animation could not be represented/)).toBeInTheDocument();
+    expect(
+      screen.getByTestId('page-designer-import-review-diff-loss-0-unsupported-pattern-section.hero'),
+    ).toHaveTextContent('Source path: section.hero');
+    expect(
+      screen.getByTestId('page-designer-import-review-diff-loss-0-unsupported-pattern-section.hero'),
+    ).toHaveTextContent('Governed builder impact');
+    expect(screen.getAllByText(/Hero animation could not be represented/).length).toBeGreaterThan(0);
 
     fireEvent.click(
       screen.getByTestId(

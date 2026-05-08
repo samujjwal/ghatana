@@ -612,7 +612,6 @@ export class ConflictResolutionEngine {
    * @returns Merge result
    */
   public threeWayMerge(input: ThreeWayMergeInput): ThreeWayMergeResult {
-    const startTime = Date.now();
     const conflicts: Conflict[] = [];
 
     // Check for conflicts

@@ -2,6 +2,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.spi.EntityStore;
+import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
 import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
 import com.ghatana.datacloud.entity.validation.ValidationResult;
@@ -67,8 +68,10 @@ public class EntityCrudHandler {
     private OpenSearchConnector openSearchConnector;
     private TenantQuotaService tenantQuotaService;
 
-    /** P0.2: In-memory idempotency key store for entity writes — bounded, tenant-scoped. */
-    private final Map<String, IdempotencyEntry> idempotencyStore = new ConcurrentHashMap<>();
+    /** P0.2: Idempotency key store for entity writes — backed by durable store in non-embedded profiles. */
+    private EntityWriteIdempotencyStore idempotencyStore;
+    // In-memory fallback for embedded/local profiles (lost on restart, bounded by IDEMPOTENCY_MAX_ENTRIES).
+    private final Map<String, IdempotencyEntry> inMemoryIdempotencyStore = new ConcurrentHashMap<>();
     private static final int IDEMPOTENCY_MAX_ENTRIES = 10_000;
     private static final long IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000L; // 24 hours
 
@@ -87,6 +90,11 @@ public class EntityCrudHandler {
         this.client = client;
         this.http = http;
         this.wsBroadcaster = wsBroadcaster;
+    }
+
+    public EntityCrudHandler withIdempotencyStore(EntityWriteIdempotencyStore store) {
+        this.idempotencyStore = store;
+        return this;
     }
 
     public EntityCrudHandler withSchemaValidator(EntitySchemaValidator validator) {
@@ -136,18 +144,28 @@ public class EntityCrudHandler {
         return null;
     }
 
-    // ==================== Idempotency Key Support (P0.2) ====================
+    // ==================== Idempotency Key Support (P0.2 / DC-P1-008) ====================
 
-    private String idempotencyKey(String tenantId, String collection, String idempotencyKey) {
+    private String inMemoryIdempotencyKey(String tenantId, String collection, String idempotencyKey) {
         return tenantId + "/" + collection + "/" + idempotencyKey;
     }
 
     private Promise<HttpResponse> checkIdempotencyOrNull(String tenantId, String collection, String idempotencyKey) {
         if (idempotencyKey == null || idempotencyKey.isBlank()) return null;
-        String key = idempotencyKey(tenantId, collection, idempotencyKey);
-        IdempotencyEntry entry = idempotencyStore.get(key);
+        // Prefer durable store when available (non-embedded profiles).
+        if (idempotencyStore != null) {
+            Optional<Map<String, Object>> cached = idempotencyStore.get(tenantId, collection, idempotencyKey);
+            if (cached.isPresent()) {
+                log.info("[idempotency] Returning durable cached response for key={}", idempotencyKey);
+                return Promise.of(http.jsonResponse(cached.get()));
+            }
+            return null;
+        }
+        // Fall back to in-memory store for local/embedded profiles.
+        String key = inMemoryIdempotencyKey(tenantId, collection, idempotencyKey);
+        IdempotencyEntry entry = inMemoryIdempotencyStore.get(key);
         if (entry != null && Instant.now().minusMillis(IDEMPOTENCY_TTL_MS).isBefore(entry.storedAt())) {
-            log.info("[idempotency] Returning cached response for key={}", key);
+            log.info("[idempotency] Returning in-memory cached response for key={}", key);
             return Promise.of(http.jsonResponse(entry.responseBody()));
         }
         return null;
@@ -155,12 +173,19 @@ public class EntityCrudHandler {
 
     private void storeIdempotency(String tenantId, String collection, String idempotencyKey, Map<String, Object> responseBody) {
         if (idempotencyKey == null || idempotencyKey.isBlank()) return;
-        if (idempotencyStore.size() >= IDEMPOTENCY_MAX_ENTRIES) {
-            // Evict oldest entries by removing expired ones first
-            Instant cutoff = Instant.now().minusMillis(IDEMPOTENCY_TTL_MS);
-            idempotencyStore.entrySet().removeIf(e -> e.getValue().storedAt().isBefore(cutoff));
+        // Prefer durable store when available.
+        if (idempotencyStore != null) {
+            idempotencyStore.put(tenantId, collection, idempotencyKey, responseBody);
+            return;
         }
-        idempotencyStore.put(idempotencyKey(tenantId, collection, idempotencyKey), new IdempotencyEntry(responseBody, Instant.now()));
+        // In-memory fallback: evict expired entries when approaching capacity.
+        if (inMemoryIdempotencyStore.size() >= IDEMPOTENCY_MAX_ENTRIES) {
+            Instant cutoff = Instant.now().minusMillis(IDEMPOTENCY_TTL_MS);
+            inMemoryIdempotencyStore.entrySet().removeIf(e -> e.getValue().storedAt().isBefore(cutoff));
+        }
+        inMemoryIdempotencyStore.put(
+            inMemoryIdempotencyKey(tenantId, collection, idempotencyKey),
+            new IdempotencyEntry(responseBody, Instant.now()));
     }
 
     // ==================== Entity CRUD ====================
@@ -687,9 +712,19 @@ public class EntityCrudHandler {
 
             return Promises.toList(savePromises)
                 .then(savedEntities -> {
-                    // Skip semantic indexing for batch save to avoid issues with null promises
-                    // Individual entity saves handle semantic indexing separately
-                    return Promise.of(savedEntities);
+                    // DC-P1-009: Trigger semantic indexing for each saved entity if available,
+                    // consistent with single-save behaviour.
+                    if (semanticIndexPort == null) {
+                        return Promise.of(savedEntities);
+                    }
+                    List<Promise<DataCloudClient.Entity>> indexPromises = savedEntities.stream()
+                        .map(entity -> semanticIndexPort.index(resolvedTenant, collection, entity)
+                            .map(v -> entity, err -> {
+                                log.warn("Semantic indexing failed for entity {} in batch; continuing", entity.id(), err);
+                                return entity; // non-fatal: entity is already saved
+                            }))
+                        .toList();
+                    return Promises.toList(indexPromises);
                 })
                 .then(savedEntities -> {
                     List<String> ids = savedEntities.stream()

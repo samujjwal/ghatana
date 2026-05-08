@@ -43,7 +43,7 @@ export {
   gql,
   getGraphQLClient,
 } from './graphql/client';
-export type { ApolloClient, NormalizedCacheObject } from './graphql/client';
+export type { ApolloClient } from './graphql/client';
 
 export interface GraphQLProviderProps {
   children: ReactNode;
@@ -52,19 +52,17 @@ export interface GraphQLProviderProps {
 export function GraphQLProvider({ children }: GraphQLProviderProps) {
   return createElement(
     ApolloProvider,
-    { client: getGraphQLClient() },
-    children
+    { client: getGraphQLClient(), children }
   );
 }
 
 // ─── GraphQL Operations ──────────────────────────────────────────────────────
-export * from './graphql/operations/bootstrapping.operations';
-export * from './graphql/operations/initialization.operations';
-export * from './graphql/operations/development.operations';
-export * from './graphql/operations/operations.operations';
-export * from './graphql/operations/collaboration.operations';
-export * from './graphql/operations/security.operations';
-// Aliases removed - using direct operation exports
+export * as BootstrappingOperations from './graphql/operations/bootstrapping.operations';
+export * as InitializationOperations from './graphql/operations/initialization.operations';
+export * as DevelopmentOperations from './graphql/operations/development.operations';
+export * as OperationsOperations from './graphql/operations/operations.operations';
+export * as CollaborationOperations from './graphql/operations/collaboration.operations';
+export * as SecurityOperations from './graphql/operations/security.operations';
 
 // ─── Apollo Client Hooks (re-exported for convenience) ───────────────────────
 export {
@@ -80,5 +78,7 @@ export {
 export * from './ai';
 export { aiClient } from './ai';
 
-// ─── Apollo Hooks ────────────────────────────────────────────────────────────
-export * from './hooks';
+// Legacy Apollo hook modules remain available as source files, but are not
+// re-exported from the runtime API barrel until their contracts are migrated to
+// Apollo Client v4. Pulling them into every consumer makes mounted app typecheck
+// depend on unrelated initialization/development/operations/security surfaces.

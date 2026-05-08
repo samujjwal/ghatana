@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from '@/test-utils/test-utils';
 import { PageDesigner } from '../PageDesigner';
@@ -82,6 +83,82 @@ describe('Page Builder interactions', () => {
     await waitFor(() => {
       const [document] = onDocumentChange.mock.calls.at(-1) as [{ rootNodes: string[] }];
       expect(document.rootNodes).toHaveLength(0);
+    });
+  });
+
+  it('applies responsive variant edits through the real PageDesigner DOM and ui-builder command path', async () => {
+    const user = userEvent.setup();
+    const onDocumentChange = vi.fn();
+
+    render(
+      <PageDesigner
+        initialComponents={[]}
+        onDocumentChange={onDocumentChange}
+        onImportArtifacts={vi.fn()}
+        onAIChangeRecord={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('page-component-box'));
+
+    const designArea = screen.getByTestId('page-design-area');
+    fireEvent.click(await within(designArea).findByTestId('page-box'));
+    fireEvent.click(await screen.findByTitle('Edit Properties'));
+
+    fireEvent.change(await screen.findByLabelText('Responsive breakpoint'), {
+      target: { value: 'md' },
+    });
+    fireEvent.change(screen.getByLabelText('Responsive props JSON'), {
+      target: { value: '{ "display": "grid", "gap": 2 }' },
+    });
+    const reviewSwitch = screen.getByRole('switch', { name: 'I have reviewed the governed change' });
+    await user.click(reviewSwitch);
+    await waitFor(() => {
+      expect(reviewSwitch).toHaveAttribute('aria-checked', 'true');
+    });
+    const telemetrySwitch = screen.queryByRole('switch', { name: 'Telemetry consent has been confirmed for this change' });
+    if (telemetrySwitch) {
+      await user.click(telemetrySwitch);
+    }
+    const privacySwitch = screen.queryByRole('switch', { name: 'Privacy classification has been reviewed for this change' });
+    if (privacySwitch) {
+      await user.click(privacySwitch);
+    }
+    const applyButton = screen.getByRole('button', { name: 'Apply' });
+    await waitFor(() => {
+      expect(applyButton).not.toBeDisabled();
+    });
+    fireEvent.click(applyButton);
+
+    await waitFor(() => {
+      const responsiveCall = onDocumentChange.mock.calls.findLast(([candidateDocument]) => {
+        const document = candidateDocument as {
+          rootNodes: string[];
+          nodes: Map<string, { metadata: { responsiveVariants?: readonly { breakpoint: string; props: Record<string, unknown> }[] } }>;
+        };
+        const firstNode = document.nodes.get(document.rootNodes[0] ?? '');
+        return Boolean(firstNode?.metadata.responsiveVariants);
+      }) as
+        | [
+            {
+              rootNodes: string[];
+              nodes: Map<string, { metadata: { responsiveVariants?: readonly { breakpoint: string; props: Record<string, unknown> }[] } }>;
+            },
+          ]
+        | undefined;
+      const [document] = responsiveCall ?? [
+        onDocumentChange.mock.calls.at(-1)?.[0] as {
+          rootNodes: string[];
+          nodes: Map<string, { metadata: { responsiveVariants?: readonly { breakpoint: string; props: Record<string, unknown> }[] } }>;
+        },
+      ];
+      const firstNode = document.nodes.get(document.rootNodes[0] ?? '');
+      expect(firstNode?.metadata.responsiveVariants).toEqual([
+        {
+          breakpoint: 'md',
+          props: { display: 'grid', gap: 2 },
+        },
+      ]);
     });
   });
 

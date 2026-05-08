@@ -15,6 +15,7 @@ import {
   Button,
   Typography,
 } from '@ghatana/design-system';
+import { CanvasOutlineMap } from '../../../../components/canvas/outline/CanvasOutlineMap';
 
 interface CanvasNodeData {
   title?: string;
@@ -25,10 +26,12 @@ interface CanvasNodeData {
 interface CanvasNode {
   id: string;
   type: string;
+  position?: { x: number; y: number };
+  size?: { width: number; height: number };
   data: CanvasNodeData;
 }
 
-interface CanvasOutlinePanelProps {
+export interface CanvasOutlinePanelProps {
   nodes: CanvasNode[];
   selectedNodeIds: string[];
   selectNodes: (ids: string[]) => void;
@@ -50,6 +53,14 @@ export const CanvasOutlinePanel = memo(function CanvasOutlinePanel({
 
   return (
     <Box className="p-4 h-full overflow-auto">
+      <Box className="mb-4">
+        <CanvasOutlineMap
+          nodes={nodes}
+          selectedNodeIds={selectedNodeIds}
+          onSelectNode={(nodeId: string) => selectNodes([nodeId])}
+        />
+      </Box>
+
       <Box className="font-semibold mb-4">📋 Frames ({frames.length})</Box>
       {frames.length === 0 ? (
         <Typography variant="body2" color="text.secondary">

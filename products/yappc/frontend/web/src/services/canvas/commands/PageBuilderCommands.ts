@@ -15,7 +15,6 @@ import {
   insertNode,
   moveNode,
   removeBinding,
-  setResponsiveVariant,
   serializeDocument,
   updateNodeProps,
   type BuilderDocument,
@@ -608,7 +607,7 @@ export class PageBuilderCommands {
 
   private applySetResponsiveVariant(document: BuilderDocument, command: SetResponsiveVariantCommand): ApplyCommandOutput {
     return {
-      document: setResponsiveVariant(document, command.data.nodeId, command.data.variant),
+      document: setComponentResponsiveVariant(document, command.data.nodeId, command.data.variant),
       changedNodeIds: [command.data.nodeId],
     };
   }
@@ -929,6 +928,39 @@ function setStateVariant(
     metadata: {
       ...node.metadata,
       stateVariants: [...filtered, variant],
+    },
+  };
+
+  const updatedNodes = new Map(document.nodes);
+  updatedNodes.set(nodeId, updatedNode);
+
+  return {
+    ...document,
+    nodes: updatedNodes,
+    metadata: {
+      ...document.metadata,
+      updatedAt: new Date().toISOString(),
+    },
+  };
+}
+
+function setComponentResponsiveVariant(
+  document: BuilderDocument,
+  nodeId: NodeId,
+  variant: ResponsiveVariant
+): BuilderDocument {
+  const node = document.nodes.get(nodeId);
+  if (!node) {
+    return document;
+  }
+
+  const existing = node.metadata.responsiveVariants ?? [];
+  const filtered = existing.filter((candidate) => candidate.breakpoint !== variant.breakpoint);
+  const updatedNode: ComponentInstance = {
+    ...node,
+    metadata: {
+      ...node.metadata,
+      responsiveVariants: [...filtered, variant],
     },
   };
 

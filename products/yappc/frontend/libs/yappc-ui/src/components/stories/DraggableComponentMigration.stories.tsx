@@ -160,7 +160,7 @@ const CodeComparison = () => {
               </Typography>
               <Paper
                 className="p-4 text-sm overflow-auto font-mono bg-gray-900" >
-                <pre style={{ margin: 0, color: 'common.white', color: 'common.white', color: 'common.white', color: 'common.white' }}>
+                <pre style={{ margin: 0, color: 'white' }}>
 {`<Box
   draggable
   style={{
@@ -181,7 +181,7 @@ const CodeComparison = () => {
                 ✅ After (Theme-Aware)
               </Typography>
               <Paper
-                clbgcolor: 'grey.900', color: 'common.white' */
+                className="p-4 text-sm overflow-auto font-mono bg-gray-900 text-white"
               >
                 <pre style={{ margin: 0 }}>
 {`<Box
@@ -207,9 +207,9 @@ const CodeComparison = () => {
                 ❌ Before (Hardcoded Hex)
               </Typography>
               <Paper
-                className="p-4 text-sm ovolor: 'common.white' */
+                className="p-4 text-sm overflow-auto font-mono bg-gray-900 text-white"
               >
-                <pre style={{ margin: 0, color: 'common.white', borderRight: '1px solid #e0e0e0', color: 'common.white' }}>
+                <pre style={{ margin: 0, color: 'white' }}>
 {`<Box
   className="bg-[#f5f5f5] border-[#e0e0e0] hover:bg-[#eeeeee]"
 />`}
@@ -243,7 +243,7 @@ const CodeComparison = () => {
               <Typography as="h6" color="error.main" gutterBottom>
                 ❌ Before (Mixed Approach)
               </Typography>
-              <Paper maining sx: bgcolor: 'grey.900', color: 'common.white' */
+              <Paper className="p-4 text-sm overflow-auto font-mono bg-gray-900 text-white"
               >
                 <pre style={{ margin: 0 }}>
 {`'1px solid #e0e0e0' */

@@ -198,7 +198,7 @@ export function autoGroupProps(props: PropMetadata[]): Map<string, PropMetadata[
       groupName = 'accessibility';
     } else if (prop.name.includes('style') || prop.name.includes('color') || prop.name.includes('size')) {
       groupName = 'appearance';
-    } else if (prop.name.includes('on') && prop.type === 'function') {
+    } else if (prop.name.includes('on')) {
       groupName = 'behavior';
     } else if (prop.name === 'id' || prop.name === 'className' || prop.name === 'testId') {
       groupName = 'basic';

@@ -15,8 +15,10 @@ import type {
   AIInsight,
   Prediction,
   AnomalyAlert,
-  RecommendationSuggestion,
-} from 'yappc-core/types';
+  Recommendation,
+} from '../../types/ai';
+
+type RecommendationSuggestion = Recommendation;
 
 /**
  * Copilot chat message

@@ -58,6 +58,8 @@
       "@ghatana/yappc-ide/*": ["libs/ide/src/*"],
       "@yappc/core/types": ["libs/yappc-core/src/types"],
       "@yappc/core/types/*": ["libs/yappc-core/src/types/*"],
+      "yappc-core": ["libs/yappc-core/src"],
+      "yappc-core/*": ["libs/yappc-core/src/*"],
 
       "@yappc/core/api": ["libs/api/src"],
       "@yappc/core/api/*": ["libs/api/src/*"],

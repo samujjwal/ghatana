@@ -16,7 +16,24 @@
 // readFromStorage, writeToStorage, removeFromStorage, clearMemoryStore,
 // useStateAtom, useStateValue, useStateSetter, useAsyncStateAtom, useBooleanAtom,
 // platform-shell atoms (authAtom, notificationAtom, tenantAtom)
-export * from '@ghatana/state';
+export {
+  clearMemoryStore,
+  createAsyncAtom,
+  createAtom,
+  createDerivedAtom,
+  createPersistentAtom,
+  createStateMachine,
+  createWritableAtom,
+  getRegisteredAtoms,
+  readFromStorage,
+  removeFromStorage,
+  useAsyncStateAtom,
+  useBooleanAtom,
+  useStateAtom,
+  useStateSetter,
+  useStateValue,
+  writeToStorage,
+} from '@ghatana/state';
 
 // Re-export store modules (YAPPC-specific atoms and state management)
 export * from './store';

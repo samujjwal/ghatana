@@ -17,6 +17,11 @@ import {
   getCurrentPluginRuntimeEnvironment,
   type ComponentPackageManifest,
 } from '../pluginLoader';
+import {
+  COMPONENT_PACKAGE_SIGNATURE_ALGORITHM,
+  computeComponentPackageIntegrityDigest,
+  type ComponentPackageSignature,
+} from '../../../../services/plugins/ComponentPackageSigning';
 import { rendererManifestRegistry } from '../rendererManifest';
 import type { ComponentInstance } from '@ghatana/ui-builder';
 import type { BuilderRendererManifest } from '../rendererManifest';
@@ -168,6 +173,237 @@ describe('ComponentPluginLoader', () => {
 
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
+    });
+
+    it('rejects marketplace packages without a signature envelope', () => {
+      const renderer: BuilderRendererManifest = {
+        contractName: 'MarketplaceCard',
+        render: () => null,
+      };
+      const manifest: ComponentPackageManifest = {
+        packageName: '@marketplace/card-pack',
+        version: '1.0.0',
+        minBuilderVersion: '1.0.0',
+        renderers: [renderer],
+        distribution: {
+          source: 'marketplace',
+          marketplacePackageId: 'pkg_card_pack',
+        },
+      };
+
+      const result = loader.validatePackage(manifest);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Marketplace package signature is required');
+    });
+
+    it('accepts marketplace packages only when signature subject and digest match', () => {
+      const renderer: BuilderRendererManifest = {
+        contractName: 'MarketplaceCard',
+        render: () => null,
+      };
+      const unsignedManifest: ComponentPackageManifest = {
+        packageName: '@marketplace/card-pack',
+        version: '1.0.0',
+        minBuilderVersion: '1.0.0',
+        renderers: [renderer],
+        securityPolicy: {
+          allowedDomains: ['api.ghatana.com'],
+        },
+        distribution: {
+          source: 'marketplace',
+          marketplacePackageId: 'pkg_card_pack',
+        },
+      };
+      const manifest: ComponentPackageManifest = {
+        ...unsignedManifest,
+        distribution: {
+          ...unsignedManifest.distribution,
+          signature: createMarketplaceSignature(unsignedManifest),
+        },
+      };
+
+      const result = loader.validatePackage(manifest);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('rejects marketplace packages when the signature was issued for another package', () => {
+      const renderer: BuilderRendererManifest = {
+        contractName: 'MarketplaceCard',
+        render: () => null,
+      };
+      const manifest: ComponentPackageManifest = {
+        packageName: '@marketplace/card-pack',
+        version: '1.0.0',
+        minBuilderVersion: '1.0.0',
+        renderers: [renderer],
+        distribution: {
+          source: 'marketplace',
+          marketplacePackageId: 'pkg_card_pack',
+        },
+      };
+      const signature = createMarketplaceSignature(manifest, {
+        subject: {
+          packageName: '@marketplace/other-pack',
+          version: '1.0.0',
+          marketplacePackageId: 'pkg_card_pack',
+        },
+      });
+
+      const result = loader.validatePackage({
+        ...manifest,
+        distribution: {
+          ...manifest.distribution,
+          signature,
+        },
+      });
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Package signature subject package name does not match manifest');
+    });
+
+    it('rejects expired marketplace package signatures before loading renderers', () => {
+      const renderer: BuilderRendererManifest = {
+        contractName: 'ExpiredMarketplaceCard',
+        render: () => null,
+      };
+      const manifest: ComponentPackageManifest = {
+        packageName: '@marketplace/expired-card-pack',
+        version: '1.0.0',
+        minBuilderVersion: '1.0.0',
+        renderers: [renderer],
+        distribution: {
+          source: 'marketplace',
+          marketplacePackageId: 'pkg_expired_card_pack',
+        },
+      };
+      const result = loader.loadPackage({
+        ...manifest,
+        distribution: {
+          ...manifest.distribution,
+          signature: createMarketplaceSignature(manifest, {
+            expiresAt: '2024-01-01T00:00:00.000Z',
+          }),
+        },
+      });
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Package signature has expired');
+      expect(loader.getLoadedPackages()).toHaveLength(0);
+      expect(rendererManifestRegistry.get('ExpiredMarketplaceCard')).toBeNull();
+    });
+
+    it('rejects marketplace packages when signed digest no longer matches manifest payload', () => {
+      const renderer: BuilderRendererManifest = {
+        contractName: 'MarketplaceCard',
+        render: () => null,
+      };
+      const manifest: ComponentPackageManifest = {
+        packageName: '@marketplace/card-pack',
+        version: '1.0.0',
+        minBuilderVersion: '1.0.0',
+        renderers: [renderer],
+        distribution: {
+          source: 'marketplace',
+          marketplacePackageId: 'pkg_card_pack',
+        },
+      };
+      const signature = createMarketplaceSignature({
+        ...manifest,
+        renderers: [
+          {
+            contractName: 'DifferentMarketplaceCard',
+            render: () => null,
+          },
+        ],
+      });
+
+      const result = loader.validatePackage({
+        ...manifest,
+        distribution: {
+          ...manifest.distribution,
+          signature,
+        },
+      });
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Package signature digest does not match manifest payload');
+    });
+
+    it('loads marketplace packages only after caller-provided signature verification succeeds', async () => {
+      const renderer: BuilderRendererManifest = {
+        contractName: 'VerifiedMarketplaceCard',
+        render: () => null,
+      };
+      const unsignedManifest: ComponentPackageManifest = {
+        packageName: '@marketplace/verified-card-pack',
+        version: '1.0.0',
+        minBuilderVersion: '1.0.0',
+        renderers: [renderer],
+        distribution: {
+          source: 'marketplace',
+          marketplacePackageId: 'pkg_verified_card_pack',
+        },
+      };
+      const manifest: ComponentPackageManifest = {
+        ...unsignedManifest,
+        distribution: {
+          ...unsignedManifest.distribution,
+          signature: createMarketplaceSignature(unsignedManifest),
+        },
+      };
+      const verifier = vi.fn(async () => ({ valid: true }));
+
+      const result = await loader.loadMarketplacePackage(manifest, verifier);
+
+      expect(result.isValid).toBe(true);
+      expect(loader.getLoadedPackages()).toHaveLength(1);
+      expect(rendererManifestRegistry.get('VerifiedMarketplaceCard')).toBe(renderer);
+      expect(verifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          packageName: '@marketplace/verified-card-pack',
+          marketplacePackageId: 'pkg_verified_card_pack',
+          rendererContracts: ['VerifiedMarketplaceCard'],
+        }),
+        manifest.distribution?.signature,
+      );
+    });
+
+    it('does not register marketplace renderers when external signature verification fails', async () => {
+      const renderer: BuilderRendererManifest = {
+        contractName: 'RejectedMarketplaceCard',
+        render: () => null,
+      };
+      const unsignedManifest: ComponentPackageManifest = {
+        packageName: '@marketplace/rejected-card-pack',
+        version: '1.0.0',
+        minBuilderVersion: '1.0.0',
+        renderers: [renderer],
+        distribution: {
+          source: 'marketplace',
+          marketplacePackageId: 'pkg_rejected_card_pack',
+        },
+      };
+      const manifest: ComponentPackageManifest = {
+        ...unsignedManifest,
+        distribution: {
+          ...unsignedManifest.distribution,
+          signature: createMarketplaceSignature(unsignedManifest),
+        },
+      };
+      const verifier = vi.fn(async () => ({
+        valid: false,
+        errors: ['Marketplace trust service rejected package signature'],
+      }));
+
+      const result = await loader.loadMarketplacePackage(manifest, verifier);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Marketplace trust service rejected package signature');
+      expect(loader.getLoadedPackages()).toHaveLength(0);
+      expect(rendererManifestRegistry.get('RejectedMarketplaceCard')).toBeNull();
     });
   });
 
@@ -509,3 +745,34 @@ describe('ComponentPluginLoader', () => {
     });
   });
 });
+
+function createMarketplaceSignature(
+  manifest: ComponentPackageManifest,
+  override: Partial<ComponentPackageSignature> = {},
+): ComponentPackageSignature {
+  const marketplacePackageId = manifest.distribution?.marketplacePackageId;
+  const digest = computeComponentPackageIntegrityDigest({
+    packageName: manifest.packageName,
+    version: manifest.version,
+    minBuilderVersion: manifest.minBuilderVersion,
+    maxBuilderVersion: manifest.maxBuilderVersion,
+    rendererContracts: manifest.renderers.map((renderer) => renderer.contractName),
+    securityPolicy: manifest.securityPolicy,
+    marketplacePackageId,
+  });
+
+  return {
+    algorithm: COMPONENT_PACKAGE_SIGNATURE_ALGORITHM,
+    keyId: 'yappc-marketplace-root-2026',
+    issuedAt: '2026-01-01T00:00:00.000Z',
+    expiresAt: '2099-01-01T00:00:00.000Z',
+    subject: {
+      packageName: manifest.packageName,
+      version: manifest.version,
+      ...(marketplacePackageId ? { marketplacePackageId } : {}),
+    },
+    digest,
+    signature: `yappc-sig-v1:${digest}`,
+    ...override,
+  };
+}

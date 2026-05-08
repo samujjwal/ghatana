@@ -25,6 +25,7 @@
     "test:e2e:canvas": "playwright test e2e/canvas-refactoring.spec.ts",
     "test:e2e:a11y": "playwright test e2e/accessibility-contracts.spec.ts",
     "test:e2e:visual": "playwright test e2e/visual-regression.spec.ts",
+    "test:e2e:performance-memory": "playwright test e2e/performance-memory.spec.ts",
     "test:e2e": "playwright test",
     "test:canvas:all": "node ../../test-runner.js",
     "test:canvas:unit": "node ../../test-runner.js --unit",

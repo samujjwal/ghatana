@@ -15,8 +15,20 @@ import java.util.function.Consumer;
 /**
  * Platform event log storage contract.
  *
+ * <h2>Offset semantics</h2>
+ * <p>Offsets are <strong>per-tenant</strong>. An {@link Offset} returned from
+ * {@link #append} or {@link #appendBatch} is meaningful only within the scope of
+ * the same {@link TenantContext} that produced it.  Callers MUST NOT
+ * use an offset obtained for tenant A when reading from tenant B.</p>
+ *
+ * <p>Implementations MUST enforce this contract by scoping every storage access
+ * to the tenant identifier supplied in {@link TenantContext#tenantId()} (e.g.
+ * via a {@code WHERE tenant_id = ?} predicate in SQL, or a per-tenant map key
+ * in memory).  Global, cross-tenant offsets are explicitly not supported and
+ * constitute a data-isolation violation.</p>
+ *
  * @doc.type interface
- * @doc.purpose Platform-owned append-only event log abstraction
+ * @doc.purpose Platform-owned append-only event log abstraction with per-tenant offset scoping
  * @doc.layer platform
  * @doc.pattern Service Provider Interface, Event Store
  */

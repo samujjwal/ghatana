@@ -4,13 +4,24 @@
  */
 import { vi } from 'vitest';
 
-export const init = vi.fn();
-export const captureException = vi.fn();
-export const captureMessage = vi.fn();
-export const withScope = vi.fn((fn: (scope: unknown) => void) => fn({ setExtras: vi.fn(), setTag: vi.fn() }));
-export const browserTracingIntegration = vi.fn(() => ({}));
-export const replayIntegration = vi.fn(() => ({}));
-export const setUser = vi.fn();
-export const setTag = vi.fn();
-export const setExtra = vi.fn();
-export const addBreadcrumb = vi.fn();
+type MockCallback = (...args: unknown[]) => unknown;
+type SentryIntegration = Record<string, never>;
+
+interface SentryScopeMock {
+  setExtras: MockCallback;
+  setTag: MockCallback;
+}
+
+const createMockCallback = (): MockCallback => vi.fn() as MockCallback;
+
+export const init: MockCallback = createMockCallback();
+export const captureException: MockCallback = createMockCallback();
+export const captureMessage: MockCallback = createMockCallback();
+export const withScope = (fn: (scope: SentryScopeMock) => void): void =>
+  fn({ setExtras: createMockCallback(), setTag: createMockCallback() });
+export const browserTracingIntegration = (): SentryIntegration => ({});
+export const replayIntegration = (): SentryIntegration => ({});
+export const setUser: MockCallback = createMockCallback();
+export const setTag: MockCallback = createMockCallback();
+export const setExtra: MockCallback = createMockCallback();
+export const addBreadcrumb: MockCallback = createMockCallback();

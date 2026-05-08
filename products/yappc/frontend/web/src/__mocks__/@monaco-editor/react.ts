@@ -5,6 +5,10 @@
 import React from 'react';
 import { vi } from 'vitest';
 
+type MockCallback = (...args: unknown[]) => unknown;
+
+const createMockCallback = (): MockCallback => vi.fn() as MockCallback;
+
 interface EditorProps {
   value?: string;
   onChange?: (value: string | undefined) => void;
@@ -25,9 +29,15 @@ const Editor = ({ value, onChange, 'data-testid': testId }: EditorProps) =>
 
 export default Editor;
 export { Editor };
-export const DiffEditor = vi.fn(() => null);
-export const useMonaco = vi.fn(() => null);
-export const loader = {
-  init: vi.fn(() => Promise.resolve()),
-  config: vi.fn(),
+export const DiffEditor = (): null => null;
+export const useMonaco = (): null => null;
+
+interface MonacoLoaderMock {
+  init: () => Promise<void>;
+  config: MockCallback;
+}
+
+export const loader: MonacoLoaderMock = {
+  init: () => Promise.resolve(),
+  config: createMockCallback(),
 };

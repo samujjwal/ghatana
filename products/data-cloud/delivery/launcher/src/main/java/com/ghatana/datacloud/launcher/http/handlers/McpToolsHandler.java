@@ -161,7 +161,11 @@ public final class McpToolsHandler {
         Map<String, Object> payload = (Map<String, Object>) arguments.getOrDefault("payload", Map.of());
         @SuppressWarnings("unchecked")
         Map<String, String> headers = (Map<String, String>) arguments.getOrDefault("headers", Map.of());
-        DataCloudClient.Event event = new DataCloudClient.Event(eventType, payload, headers, null);
+        DataCloudClient.Event event = DataCloudClient.Event.builder()
+            .type(eventType)
+            .payload(payload)
+            .headers(headers)
+            .build();
         return client.appendEvent(tenantId, event)
             .map(offset -> Map.of(
                 "type", eventType,

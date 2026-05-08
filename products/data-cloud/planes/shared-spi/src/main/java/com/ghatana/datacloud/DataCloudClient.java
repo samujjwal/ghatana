@@ -263,23 +263,109 @@ public interface DataCloudClient extends AutoCloseable {
     }
 
     /**
-     * Event data structure.
+     * Canonical event envelope (DC-P0-003).
+     *
+     * <p>Required fields: {@code type}, {@code source}.
+     * All other fields are optional and default to empty/safe values.
      */
     record Event(
         String type,
         Map<String, Object> payload,
         Map<String, String> headers,
-        java.time.Instant timestamp
+        java.time.Instant timestamp,
+        // DC-P0-003: canonical envelope fields
+        Optional<String> source,
+        Optional<String> subjectType,
+        Optional<String> subjectId,
+        Optional<String> schemaVersion,
+        Optional<String> correlationId,
+        Optional<String> causationId,
+        Optional<String> actor,
+        Optional<String> classification,
+        Optional<String> policyContext,
+        Optional<String> provenance,
+        Optional<String> traceContext
     ) {
         public Event {
             java.util.Objects.requireNonNull(type, "type required");
-            payload = payload != null ? Map.copyOf(payload) : Map.of();
-            headers = headers != null ? Map.copyOf(headers) : Map.of();
-            timestamp = timestamp != null ? timestamp : java.time.Instant.now();
+            payload       = payload       != null ? Map.copyOf(payload)   : Map.of();
+            headers       = headers       != null ? Map.copyOf(headers)   : Map.of();
+            timestamp     = timestamp     != null ? timestamp             : java.time.Instant.now();
+            source        = source        != null ? source                : Optional.empty();
+            subjectType   = subjectType   != null ? subjectType           : Optional.empty();
+            subjectId     = subjectId     != null ? subjectId             : Optional.empty();
+            schemaVersion = schemaVersion != null ? schemaVersion         : Optional.empty();
+            correlationId = correlationId != null ? correlationId         : Optional.empty();
+            causationId   = causationId   != null ? causationId           : Optional.empty();
+            actor         = actor         != null ? actor                 : Optional.empty();
+            classification = classification != null ? classification      : Optional.empty();
+            policyContext = policyContext != null ? policyContext          : Optional.empty();
+            provenance    = provenance    != null ? provenance            : Optional.empty();
+            traceContext  = traceContext  != null ? traceContext           : Optional.empty();
         }
 
+        /** Minimal factory — retained for backward compatibility. */
         public static Event of(String type, Map<String, Object> payload) {
-            return new Event(type, payload, Map.of(), null);
+            return builder().type(type).payload(payload).build();
+        }
+
+        /**
+         * DC-P0-003: Validate required envelope fields.
+         *
+         * @throws IllegalArgumentException when a required field is absent
+         */
+        public void validate() {
+            if (type == null || type.isBlank()) {
+                throw new IllegalArgumentException("event.type is required");
+            }
+            if (source.isEmpty() || source.get().isBlank()) {
+                throw new IllegalArgumentException("event.source is required for production use");
+            }
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder {
+            private String type;
+            private Map<String, Object> payload = Map.of();
+            private Map<String, String> headers = Map.of();
+            private java.time.Instant timestamp = java.time.Instant.now();
+            private Optional<String> source        = Optional.empty();
+            private Optional<String> subjectType   = Optional.empty();
+            private Optional<String> subjectId     = Optional.empty();
+            private Optional<String> schemaVersion = Optional.empty();
+            private Optional<String> correlationId = Optional.empty();
+            private Optional<String> causationId   = Optional.empty();
+            private Optional<String> actor         = Optional.empty();
+            private Optional<String> classification = Optional.empty();
+            private Optional<String> policyContext = Optional.empty();
+            private Optional<String> provenance    = Optional.empty();
+            private Optional<String> traceContext  = Optional.empty();
+
+            public Builder type(String type)                     { this.type = type; return this; }
+            public Builder payload(Map<String, Object> payload)  { this.payload = payload; return this; }
+            public Builder headers(Map<String, String> headers)  { this.headers = headers; return this; }
+            public Builder timestamp(java.time.Instant ts)       { this.timestamp = ts; return this; }
+            public Builder source(String source)                 { this.source = Optional.ofNullable(source); return this; }
+            public Builder subjectType(String subjectType)       { this.subjectType = Optional.ofNullable(subjectType); return this; }
+            public Builder subjectId(String subjectId)           { this.subjectId = Optional.ofNullable(subjectId); return this; }
+            public Builder schemaVersion(String schemaVersion)   { this.schemaVersion = Optional.ofNullable(schemaVersion); return this; }
+            public Builder correlationId(String correlationId)   { this.correlationId = Optional.ofNullable(correlationId); return this; }
+            public Builder causationId(String causationId)       { this.causationId = Optional.ofNullable(causationId); return this; }
+            public Builder actor(String actor)                   { this.actor = Optional.ofNullable(actor); return this; }
+            public Builder classification(String classification) { this.classification = Optional.ofNullable(classification); return this; }
+            public Builder policyContext(String policyContext)   { this.policyContext = Optional.ofNullable(policyContext); return this; }
+            public Builder provenance(String provenance)         { this.provenance = Optional.ofNullable(provenance); return this; }
+            public Builder traceContext(String traceContext)      { this.traceContext = Optional.ofNullable(traceContext); return this; }
+
+            public Event build() {
+                return new Event(type, payload, headers, timestamp,
+                    source, subjectType, subjectId, schemaVersion,
+                    correlationId, causationId, actor, classification,
+                    policyContext, provenance, traceContext);
+            }
         }
     }
 

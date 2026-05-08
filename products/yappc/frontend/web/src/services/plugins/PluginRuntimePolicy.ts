@@ -290,8 +290,9 @@ export function enforceNetworkPolicy(
     return { allowed: false, reason: 'Domain is blocked' };
   }
 
-  if (policy.allowedDomains?.length > 0) {
-    const allowed = policy.allowedDomains.some(domain => matchesAllowedDomain(parsedUrl, domain));
+  const allowedDomains = policy.allowedDomains ?? [];
+  if (allowedDomains.length > 0) {
+    const allowed = allowedDomains.some(domain => matchesAllowedDomain(parsedUrl, domain));
     if (!allowed) {
       return { allowed: false, reason: 'Domain not in allowlist' };
     }
@@ -395,7 +396,8 @@ export function enforceBrowserAPIPolicy(
   api: string,
   policy: BrowserAPIPolicy
 ): { allowed: boolean; reason?: string } {
-  if (policy.allowedAPIs?.length > 0 && !policy.allowedAPIs.includes(api)) {
+  const allowedAPIs = policy.allowedAPIs ?? [];
+  if (allowedAPIs.length > 0 && !allowedAPIs.includes(api)) {
     return { allowed: false, reason: 'API not in allowlist' };
   }
 
@@ -446,7 +448,8 @@ export function enforceTelemetryPolicy(
     return { allowed: false, reason: 'Event is blocked' };
   }
 
-  if (policy.eventAllowlist?.length > 0 && !policy.eventAllowlist.includes(eventName)) {
+  const eventAllowlist = policy.eventAllowlist ?? [];
+  if (eventAllowlist.length > 0 && !eventAllowlist.includes(eventName)) {
     return { allowed: false, reason: 'Event not in allowlist' };
   }
 

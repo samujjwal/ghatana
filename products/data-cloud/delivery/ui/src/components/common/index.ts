@@ -19,6 +19,7 @@ export {
   UnavailableState,
   PreviewState,
   NotFoundState,
+  DegradedState,
 } from "./AsyncStates";
 
 // DS-004: Re-export legacy local duplicates pending migration to @ghatana/ui
@@ -43,3 +44,5 @@ export { AIAssistSuggestion } from "./AIAssistSuggestion";
 export type { AIAssistSuggestionProps } from "./AIAssistSuggestion";
 export { RolePermissionNotice } from "./RolePermissionNotice";
 export type { RolePermissionNoticeProps } from "./RolePermissionNotice";
+export { BackendAuthErrorPanel } from "./BackendAuthErrorPanel";
+export type { BackendAuthErrorPanelProps, AuthDenialCode } from "./BackendAuthErrorPanel";

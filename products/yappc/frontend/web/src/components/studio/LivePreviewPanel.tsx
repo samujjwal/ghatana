@@ -15,6 +15,7 @@ import {
   issuePreviewSession,
   type PreviewSessionContext,
 } from '@/services/preview/PreviewSessionApi';
+import { getPreviewLocaleFixture, getPreviewLocaleFixtures } from '@/services/preview/PreviewLocaleFixtures';
 
 /**
  * Live Preview Panel component.
@@ -285,6 +286,11 @@ export function LivePreviewPanel({
   }, [currentLocale, currentTheme, currentViewport, previewPolicy.fallbackState, previewPolicy.profile]);
 
   const currentViewportSpec = PRESET_VIEWPORTS[currentViewport];
+  const currentLocaleFixture = getPreviewLocaleFixture(currentLocale);
+  const previewLocaleOptions = getPreviewLocaleFixtures().map((fixture) => ({
+    value: fixture.locale,
+    label: `${fixture.locale} · ${fixture.label}`,
+  }));
 
   return (
     <div
@@ -334,12 +340,7 @@ export function LivePreviewPanel({
             value={currentLocale}
             onChange={(e) => setCurrentLocale(e.target.value)}
             className="text-xs"
-            options={[
-              { value: 'en-US', label: 'en-US' },
-              { value: 'en-GB', label: 'en-GB' },
-              { value: 'ar-SA', label: 'ar-SA' },
-              { value: 'he-IL', label: 'he-IL' },
-            ]}
+            options={previewLocaleOptions}
           />
           <span className="text-xs text-fg-muted">
             {lastUpdate.toLocaleTimeString()}
@@ -361,6 +362,18 @@ export function LivePreviewPanel({
           {previewPolicy.diagnostics.join(' ')}
         </div>
       )}
+
+      <div
+        className="border-b border-border bg-surface px-3 py-2 text-xs text-fg-muted"
+        data-testid="live-preview-locale-fixture"
+        dir={currentLocaleFixture.direction}
+        lang={currentLocaleFixture.locale}
+      >
+        <span className="font-semibold text-fg">{currentLocaleFixture.headline}</span>
+        <span className="ml-2">{currentLocaleFixture.primaryCta}</span>
+        <span className="ml-2">{currentLocaleFixture.dateExample}</span>
+        <span className="ml-2">{currentLocaleFixture.currencyExample}</span>
+      </div>
 
       {validation && !validation.valid ? (
         <div className="border-b border-destructive-border bg-destructive-bg px-3 py-2 text-xs text-destructive dark:border-destructive-border/50 dark:bg-destructive-bg/40 dark:text-destructive">

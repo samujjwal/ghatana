@@ -234,7 +234,7 @@ function createPropAdapter(
   expectedType: PropType['type']
 ): PropAdapter | null {
   // Define common type conversions
-  const conversions: Record<string, Record<string, (value: unknown) => unknown>> = {
+  const conversions: Record<string, Pick<PropAdapter, 'transform' | 'reverseTransform'>> = {
     'string->number': { transform: (v) => Number(v), reverseTransform: (v) => String(v) },
     'number->string': { transform: (v) => String(v), reverseTransform: (v) => Number(v) },
     'boolean->string': { transform: (v) => String(v), reverseTransform: (v) => v === 'true' },

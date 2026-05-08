@@ -17,11 +17,11 @@ import {
   HttpLink,
   from,
   ApolloLink,
-  type NormalizedCacheObject,
-  Observable,
 } from '@apollo/client';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { onError } from '@apollo/client/link/error';
 import { RetryLink } from '@apollo/client/link/retry';
+import { Observable } from 'rxjs';
 
 // =============================================================================
 // CONFIGURATION
@@ -127,8 +127,17 @@ function getTelemetryRecorder(): TelemetryRecorder | null {
 
   const candidate = (window as Window & { __YAPPC_TELEMETRY__?: unknown })
     .__YAPPC_TELEMETRY__;
-  if (isRecord(candidate) && typeof candidate.recordMetric === 'function') {
-    return candidate as TelemetryRecorder;
+  const recordMetric = isRecord(candidate) ? candidate.recordMetric : null;
+  if (typeof recordMetric === 'function') {
+    return {
+      recordMetric: (
+        name: string,
+        value: number,
+        tags?: Record<string, string>
+      ) => {
+        recordMetric(name, value, tags);
+      },
+    };
   }
 
   return null;
@@ -254,10 +263,6 @@ const timingLink = new ApolloLink((operation, forward) => {
   const startTime = performance.now();
   operation.setContext({ startTime });
 
-  if (!forward) {
-    return null;
-  }
-
   const forwarded = forward(operation) as Observable<
     FetchResult<Record<string, unknown>>
   >;
@@ -266,7 +271,7 @@ const timingLink = new ApolloLink((operation, forward) => {
     const subscription = forwarded.subscribe({
       next: (response: FetchResult<Record<string, unknown>>) => {
         const duration = performance.now() - startTime;
-        const operationName = operation.operationName;
+        const operationName = operation.operationName ?? 'anonymous';
 
         if (import.meta.env.DEV && duration > 1000) {
           console.warn(
@@ -308,12 +313,16 @@ const authLink = new ApolloLink((operation, forward) => {
     );
   }
 
-  return forward ? forward(operation) : null;
+  return forward(operation);
 });
 
 // Error handling link with token refresh
 const errorLink = onError(
-  ({ graphQLErrors, networkError, operation, forward }) => {
+  ({ error, operation, forward }) => {
+    const graphQLErrors = CombinedGraphQLErrors.is(error)
+      ? error.errors
+      : undefined;
+
     if (graphQLErrors) {
       for (const graphQLError of graphQLErrors as readonly GraphQLErrorLike[]) {
         const message = graphQLError.message;
@@ -352,13 +361,6 @@ const errorLink = onError(
 
                 if (!newToken) {
                   observer.error(new Error(message));
-                  return;
-                }
-
-                if (!forward) {
-                  observer.error(
-                    new Error('Unable to retry GraphQL operation')
-                  );
                   return;
                 }
 
@@ -407,10 +409,10 @@ const errorLink = onError(
       }
     }
 
-    if (networkError) {
+    if (!graphQLErrors) {
       const networkErrorMessage =
-        networkError instanceof Error
-          ? networkError.message
+        error instanceof Error
+          ? error.message
           : 'Unknown network error';
       console.error(`[Network Error]: ${networkErrorMessage}`);
 
@@ -465,7 +467,7 @@ const requestIdLink = new ApolloLink((operation, forward) => {
     })
   );
 
-  return forward ? forward(operation) : null;
+  return forward(operation);
 });
 
 // HTTP link
@@ -488,44 +490,28 @@ const cache = new InMemoryCache({
         // Pagination for stories list
         stories: {
           keyArgs: ['projectId', 'filter', 'sort'],
-          merge(
-            existing: PaginatedConnection | undefined,
-            incoming: PaginatedConnection,
-            { args }: { args?: PaginationArgs }
-          ): PaginatedConnection {
+          merge(existing, incoming, { args }) {
             return mergePaginatedConnection(existing, incoming, args);
           },
         },
         // Pagination for incidents
         incidents: {
           keyArgs: ['projectId', 'filter'],
-          merge(
-            existing: PaginatedConnection | undefined,
-            incoming: PaginatedConnection,
-            { args }: { args?: PaginationArgs }
-          ): PaginatedConnection {
+          merge(existing, incoming, { args }) {
             return mergePaginatedConnection(existing, incoming, args);
           },
         },
         // Pagination for vulnerabilities
         vulnerabilities: {
           keyArgs: ['projectId', 'filter'],
-          merge(
-            existing: PaginatedConnection | undefined,
-            incoming: PaginatedConnection,
-            { args }: { args?: PaginationArgs }
-          ): PaginatedConnection {
+          merge(existing, incoming, { args }) {
             return mergePaginatedConnection(existing, incoming, args);
           },
         },
         // Pagination for audit logs
         auditLogs: {
           keyArgs: ['filter'],
-          merge(
-            existing: PaginatedConnection | undefined,
-            incoming: PaginatedConnection,
-            { args }: { args?: PaginationArgs }
-          ): PaginatedConnection {
+          merge(existing, incoming, { args }) {
             return mergePaginatedConnection(existing, incoming, args);
           },
         },
@@ -579,7 +565,7 @@ const cache = new InMemoryCache({
 // CLIENT CREATION
 // =============================================================================
 
-export const createGraphQLClient = (): ApolloClient<NormalizedCacheObject> => {
+export const createGraphQLClient = (): ApolloClient => {
   return new ApolloClient({
     link: from([
       timingLink,
@@ -604,18 +590,21 @@ export const createGraphQLClient = (): ApolloClient<NormalizedCacheObject> => {
         errorPolicy: 'all',
       },
     },
-    connectToDevTools: import.meta.env.DEV,
+    devtools: {
+      enabled: import.meta.env.DEV,
+      name: 'YAPPC GraphQL',
+    },
   });
 };
 
 // Singleton client instance
 let clientInstance: unknown = null;
 
-export const getGraphQLClient = (): ApolloClient<NormalizedCacheObject> => {
+export const getGraphQLClient = (): ApolloClient => {
   if (!clientInstance) {
     clientInstance = createGraphQLClient();
   }
-  return clientInstance as ApolloClient<NormalizedCacheObject>;
+  return clientInstance as ApolloClient;
 };
 
 // Reset client (useful for logout)
@@ -634,7 +623,7 @@ export const resetGraphQLClient = () => {
 // =============================================================================
 
 export { gql } from '@apollo/client';
-export type { ApolloClient, NormalizedCacheObject };
+export type { ApolloClient };
 
 // Default export
 export default getGraphQLClient;

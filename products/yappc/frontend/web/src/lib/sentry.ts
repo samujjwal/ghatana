@@ -72,24 +72,27 @@ export function initSentry(): void {
   }
 
   // Dynamic import avoids bundling Sentry in environments where it isn't used.
-  // @ts-expect-error optional dependency in local dev
-  void import('@sentry/react').then((Sentry) => {
-    Sentry.init({
-      dsn: SENTRY_DSN,
-      // release MUST be set — this is the F-Y049 contract requirement.
-      release: APP_VERSION,
-      environment: APP_ENV,
-      // Sample 100 % in dev/staging, 10 % in prod to keep cost in check.
-      tracesSampleRate: APP_ENV === 'production' ? 0.1 : 1.0,
-      // Replay 1 % of sessions in prod, 10 % on errors.
-      replaysSessionSampleRate: APP_ENV === 'production' ? 0.01 : 0.1,
-      replaysOnErrorSampleRate: 1.0,
-      integrations: [
-        Sentry.browserTracingIntegration(),
-        Sentry.replayIntegration(),
-      ],
+  void import('@sentry/react')
+    .then((Sentry) => {
+      Sentry.init({
+        dsn: SENTRY_DSN,
+        // release MUST be set — this is the F-Y049 contract requirement.
+        release: APP_VERSION,
+        environment: APP_ENV,
+        // Sample 100 % in dev/staging, 10 % in prod to keep cost in check.
+        tracesSampleRate: APP_ENV === 'production' ? 0.1 : 1.0,
+        // Replay 1 % of sessions in prod, 10 % on errors.
+        replaysSessionSampleRate: APP_ENV === 'production' ? 0.01 : 0.1,
+        replaysOnErrorSampleRate: 1.0,
+        integrations: [
+          Sentry.browserTracingIntegration(),
+          Sentry.replayIntegration(),
+        ],
+      });
+    })
+    .catch((error: unknown) => {
+      console.warn('Sentry initialisation failed', error);
     });
-  });
 }
 
 /**
@@ -104,13 +107,16 @@ export function captureHandledException(
 ): void {
   if (!SENTRY_DSN) return;
 
-  // @ts-expect-error optional dependency in local dev
-  void import('@sentry/react').then((Sentry) => {
-    Sentry.withScope((scope: { setExtras: (extras: Record<string, unknown>) => void }) => {
-      if (context) {
-        scope.setExtras(context);
-      }
-      Sentry.captureException(error);
+  void import('@sentry/react')
+    .then((Sentry) => {
+      Sentry.withScope((scope: { setExtras: (extras: Record<string, unknown>) => void }) => {
+        if (context) {
+          scope.setExtras(context);
+        }
+        Sentry.captureException(error);
+      });
+    })
+    .catch((captureError: unknown) => {
+      console.warn('Sentry exception capture failed', captureError);
     });
-  });
 }

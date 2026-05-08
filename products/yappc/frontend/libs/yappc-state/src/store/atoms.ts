@@ -11,7 +11,7 @@ import type {
   Workspace as StoreWorkspace,
   Project as StoreProject,
   Task as StoreTask,
-} from 'yappc-core/types';
+} from 'yappc-core/types/common';
 import { atom } from 'jotai';
 
 import {

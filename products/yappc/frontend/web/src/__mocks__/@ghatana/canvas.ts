@@ -7,34 +7,64 @@ import React from 'react';
 import { vi } from 'vitest';
 import { atom } from 'jotai';
 
+type MockCallback = (...args: unknown[]) => unknown;
+
+const createMockCallback = (): MockCallback => vi.fn() as MockCallback;
+
 export const CanvasChromeLayout = ({ children }: { children: React.ReactNode }) => children as React.ReactElement;
-export const useCanvasCommands = () => ({
-  executeCommand: vi.fn(),
+interface CanvasCommandsMock {
+  executeCommand: MockCallback;
+  canUndo: boolean;
+  canRedo: boolean;
+  undo: MockCallback;
+  redo: MockCallback;
+}
+
+export const useCanvasCommands = (): CanvasCommandsMock => ({
+  executeCommand: createMockCallback(),
   canUndo: false,
   canRedo: false,
-  undo: vi.fn(),
-  redo: vi.fn(),
+  undo: createMockCallback(),
+  redo: createMockCallback(),
 });
-export const useCanvasTelemetry = () => ({
-  trackEvent: vi.fn(),
-  trackError: vi.fn(),
+
+interface CanvasTelemetryMock {
+  trackEvent: MockCallback;
+  trackError: MockCallback;
+}
+
+export const useCanvasTelemetry = (): CanvasTelemetryMock => ({
+  trackEvent: createMockCallback(),
+  trackError: createMockCallback(),
 });
 
 // Hybrid exports (used via @ghatana/canvas/hybrid)
 export const GraphLayer = ({ children }: { children?: React.ReactNode }) =>
   React.createElement('div', { 'data-testid': 'graph-layer' }, children);
 
-export const CanvasEngine = vi.fn(() => ({
-  mount: vi.fn(),
-  unmount: vi.fn(),
-  render: vi.fn(),
-}));
+interface CanvasEngineMock {
+  mount: MockCallback;
+  unmount: MockCallback;
+  render: MockCallback;
+}
 
-export const SpatialIndex = vi.fn(() => ({
-  index: vi.fn(),
-  query: vi.fn(),
-  clear: vi.fn(),
-}));
+export const CanvasEngine = (): CanvasEngineMock => ({
+  mount: createMockCallback(),
+  unmount: createMockCallback(),
+  render: createMockCallback(),
+});
+
+interface SpatialIndexMock {
+  index: MockCallback;
+  query: MockCallback;
+  clear: MockCallback;
+}
+
+export const SpatialIndex = (): SpatialIndexMock => ({
+  index: createMockCallback(),
+  query: createMockCallback(),
+  clear: createMockCallback(),
+});
 
 // Chrome atoms (used by canvas.tsx route)
 export const chromeCalmModeAtom = atom<boolean>(false);

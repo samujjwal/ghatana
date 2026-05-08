@@ -50,20 +50,60 @@ public interface EntityStore {
     /**
      * Find an entity by ID.
      *
+     * <p><strong>Deprecated</strong>: Use {@link #findByRef(TenantContext, EntityRef)} for
+     * collection-scoped look-up (DC-P0-001). This overload cannot disambiguate entities with the
+     * same ID in different collections and will return {@link Optional#empty()} in that case.
+     *
      * @param tenant tenant context
      * @param id entity ID
      * @return promise of entity if found
+     * @deprecated Use {@link #findByRef(TenantContext, EntityRef)} instead.
      */
+    @Deprecated
     Promise<Optional<Entity>> findById(TenantContext tenant, EntityId id);
+
+    /**
+     * Find an entity by collection-scoped reference (DC-P0-001).
+     *
+     * @param tenant tenant context
+     * @param ref collection-scoped entity reference
+     * @return promise of entity if found
+     */
+    default Promise<Optional<Entity>> findByRef(TenantContext tenant, EntityRef ref) {
+        // Default: delegate to findById for backward compatibility with legacy providers.
+        // Override in new providers to use collection-scoped key.
+        return findById(tenant, ref.entityId());
+    }
 
     /**
      * Find multiple entities by IDs.
      *
+     * <p><strong>Deprecated</strong>: Use {@link #findByRefs(TenantContext, List)} for
+     * collection-scoped look-up (DC-P0-001).
+     *
      * @param tenant tenant context
      * @param ids entity IDs
      * @return promise of found entities
+     * @deprecated Use {@link #findByRefs(TenantContext, List)} instead.
      */
+    @Deprecated
     Promise<List<Entity>> findByIds(TenantContext tenant, List<EntityId> ids);
+
+    /**
+     * Find multiple entities by collection-scoped references (DC-P0-001).
+     *
+     * @param tenant tenant context
+     * @param refs collection-scoped entity references
+     * @return promise of found entities
+     */
+    default Promise<List<Entity>> findByRefs(TenantContext tenant, List<EntityRef> refs) {
+        // Default: delegate one by one for backward compatibility.
+        return io.activej.promise.Promises.toList(
+            refs.stream()
+                .map(ref -> findByRef(tenant, ref).map(opt -> opt.orElse(null)))
+                .toList()
+        ).map(list -> list.stream().filter(java.util.Objects::nonNull).toList());
+    }
 
     /**
      * Query entities with criteria.
@@ -77,20 +117,60 @@ public interface EntityStore {
     /**
      * Delete an entity by ID.
      *
+     * <p><strong>Deprecated</strong>: Use {@link #deleteByRef(TenantContext, EntityRef)} for
+     * collection-scoped delete (DC-P0-001). This overload cannot safely target a specific
+     * collection when the same entity ID exists in multiple collections.
+     *
      * @param tenant tenant context
      * @param id entity ID
      * @return promise completing when deleted
+     * @deprecated Use {@link #deleteByRef(TenantContext, EntityRef)} instead.
      */
+    @Deprecated
     Promise<Void> delete(TenantContext tenant, EntityId id);
+
+    /**
+     * Delete an entity by collection-scoped reference (DC-P0-001).
+     *
+     * @param tenant tenant context
+     * @param ref collection-scoped entity reference
+     * @return promise completing when deleted
+     */
+    default Promise<Void> deleteByRef(TenantContext tenant, EntityRef ref) {
+        return delete(tenant, ref.entityId());
+    }
 
     /**
      * Delete multiple entities by IDs.
      *
+     * <p><strong>Deprecated</strong>: Use {@link #deleteByRefs(TenantContext, List)} for
+     * collection-scoped batch delete (DC-P0-001).
+     *
      * @param tenant tenant context
      * @param ids entity IDs
      * @return promise of batch result
+     * @deprecated Use {@link #deleteByRefs(TenantContext, List)} instead.
      */
+    @Deprecated
     Promise<BatchResult<String>> deleteBatch(TenantContext tenant, List<EntityId> ids);
+
+    /**
+     * Delete multiple entities by collection-scoped references (DC-P0-001).
+     *
+     * @param tenant tenant context
+     * @param refs collection-scoped entity references
+     * @return promise of batch result with actual deleted count
+     */
+    default Promise<BatchResult<String>> deleteByRefs(TenantContext tenant, List<EntityRef> refs) {
+        return io.activej.promise.Promises.toList(
+            refs.stream()
+                .map(ref -> deleteByRef(tenant, ref).map(v -> 1, e -> 0))
+                .toList()
+        ).map(results -> {
+            int deleted = results.stream().mapToInt(Integer::intValue).sum();
+            return new BatchResult<>(refs.size(), deleted, refs.size() - deleted, List.of());
+        });
+    }
 
     /**
      * Count entities matching a query.
@@ -104,11 +184,27 @@ public interface EntityStore {
     /**
      * Check if an entity exists.
      *
+     * <p><strong>Deprecated</strong>: Use {@link #existsByRef(TenantContext, EntityRef)} for
+     * collection-scoped existence check (DC-P0-001).
+     *
      * @param tenant tenant context
      * @param id entity ID
      * @return promise of existence check
+     * @deprecated Use {@link #existsByRef(TenantContext, EntityRef)} instead.
      */
+    @Deprecated
     Promise<Boolean> exists(TenantContext tenant, EntityId id);
+
+    /**
+     * Check if an entity exists by collection-scoped reference (DC-P0-001).
+     *
+     * @param tenant tenant context
+     * @param ref collection-scoped entity reference
+     * @return promise of existence check
+     */
+    default Promise<Boolean> existsByRef(TenantContext tenant, EntityRef ref) {
+        return exists(tenant, ref.entityId());
+    }
 
     /**
      * List all distinct collection names for a tenant.
@@ -119,6 +215,32 @@ public interface EntityStore {
     Promise<List<String>> listCollections(TenantContext tenant);
 
     // ==================== Supporting Types ====================
+
+    /**
+     * Collection-scoped entity reference. Combines collection name and entity ID to uniquely
+     * identify an entity within a tenant (DC-P0-001).
+     *
+     * @param collection the collection the entity belongs to
+     * @param entityId   the entity's ID within that collection
+     */
+    record EntityRef(String collection, EntityId entityId) {
+
+        public EntityRef {
+            Objects.requireNonNull(collection, "collection must not be null");
+            Objects.requireNonNull(entityId, "entityId must not be null");
+        }
+
+        /**
+         * Convenience factory.
+         *
+         * @param collection collection name
+         * @param entityId   raw entity id string
+         * @return EntityRef instance
+         */
+        public static EntityRef of(String collection, String entityId) {
+            return new EntityRef(collection, EntityId.of(entityId));
+        }
+    }
 
     /**
      * Entity identifier.

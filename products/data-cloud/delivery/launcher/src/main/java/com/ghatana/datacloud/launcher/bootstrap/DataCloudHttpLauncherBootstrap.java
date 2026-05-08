@@ -29,7 +29,9 @@ import com.ghatana.datacloud.launcher.audit.EventLogAuditService;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
 import com.ghatana.datacloud.launcher.settings.JdbcSettingsStore;
+import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
 import com.ghatana.datacloud.spi.EventLogStoreAdapters;
+import com.ghatana.datacloud.storage.H2EntityWriteIdempotencyStore;
 import com.ghatana.datacloud.client.autonomy.AutonomyController;
 import com.ghatana.datacloud.client.autonomy.DefaultAutonomyController;
 import com.ghatana.platform.observability.MetricsCollector;
@@ -49,14 +51,14 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -166,6 +168,7 @@ public final class DataCloudHttpLauncherBootstrap {
 
                 EventLogStore eventLogStore = EventLogStoreAdapters.toPlatformStore(client.eventLogStore());
                 DataCloudHttpServer httpServer = new DataCloudHttpServer(client, port, brain, learningBridge, analyticsEngine)
+                    .withDeploymentMode(profile.name().toLowerCase())
                     .withReportService(reportService)
                     .withAiModelManager(aiModelManager)
                     .withFeatureStoreService(featureStoreService)
@@ -190,6 +193,8 @@ public final class DataCloudHttpLauncherBootstrap {
                     httpServer.withSettingsStore(new JdbcSettingsStore(
                         databaseDataSource,
                         new ObjectMapper().findAndRegisterModules()));
+                    httpServer.withIdempotencyStore(
+                        new H2EntityWriteIdempotencyStore(databaseDataSource, Duration.ofHours(24)));
                 }
 
                 if (eventLogStore != null) {
@@ -246,9 +251,17 @@ public final class DataCloudHttpLauncherBootstrap {
     /**
      * Builds an {@link ApiKeyResolver} from the {@code DATACLOUD_API_KEYS} environment variable.
      *
-     * <p>The variable accepts a comma-separated list of static API keys.  Each valid key resolves
-     * to a {@link Principal} with the {@code "api-client"} role and {@code "service"} tenant.
-     * Returns {@code null} when the variable is absent or blank, leaving the security
+     * <p>The variable accepts a comma-separated list of entries in the format
+     * {@code <raw-key>:<tenant-id>} (e.g. {@code secret123:acme-corp}).  Each entry binds the
+     * raw API key to a specific tenant so that the resolved {@link Principal} carries the
+     * tenant identifier and the security filter can enforce {@code X-Tenant-ID} alignment.
+     *
+     * <p>In embedded/local profiles only, a plain key without a tenant suffix is accepted for
+     * developer convenience and resolves to the {@code "service"} tenant; a deprecation warning
+     * is emitted.  This form is rejected at startup for all non-embedded profiles to prevent
+     * silent cross-tenant access.
+     *
+     * <p>Returns {@code null} when the variable is absent or blank, leaving the security
      * filter inactive (acceptable in {@code local} profile; a warning is logged otherwise).
      *
      * @param env environment variables map
@@ -265,36 +278,63 @@ public final class DataCloudHttpLauncherBootstrap {
                 throw new IllegalStateException(
                     "DATACLOUD_API_KEYS environment variable must be set for non-embedded deployment profiles. " +
                     "API key authentication cannot be disabled in production environments. " +
-                    "Set DATACLOUD_API_KEYS to a comma-separated list of valid API keys.");
+                    "Set DATACLOUD_API_KEYS to a comma-separated list of '<key>:<tenant-id>' entries.");
             }
             log.warn("[DC-E1] DATACLOUD_API_KEYS not set in embedded/local profile — " +
                      "API key authentication is DISABLED. Set DATACLOUD_API_KEYS to enable.");
             return null;
         }
 
-        Set<String> validKeys = Arrays.stream(keysEnv.split(","))
-                .map(String::trim)
-                .filter(k -> !k.isBlank())
-                .collect(Collectors.toUnmodifiableSet());
+        // DC-P1-005: parse key:tenant bindings. Each entry format: "<raw-key>:<tenant-id>"
+        Map<String, Principal> keyToPrincipal = new LinkedHashMap<>();
+        for (String entry : keysEnv.split(",")) {
+            String trimmed = entry.trim();
+            if (trimmed.isBlank()) continue;
 
-        if (validKeys.isEmpty()) {
+            String rawKey;
+            String boundTenant;
+            int colonIdx = trimmed.indexOf(':');
+            if (colonIdx > 0) {
+                rawKey = trimmed.substring(0, colonIdx);
+                boundTenant = trimmed.substring(colonIdx + 1).trim();
+                if (rawKey.isBlank() || boundTenant.isBlank()) {
+                    throw new IllegalStateException(
+                        "DATACLOUD_API_KEYS entry '" + trimmed + "' has a blank key or tenant. " +
+                        "Expected format: '<raw-key>:<tenant-id>'.");
+                }
+            } else {
+                // Plain key without tenant — allowed only in embedded/local profiles.
+                if (!embeddedProfile) {
+                    throw new IllegalStateException(
+                        "DATACLOUD_API_KEYS entry '" + trimmed + "' is missing a tenant binding. " +
+                        "Non-embedded profiles require the '<raw-key>:<tenant-id>' format so that " +
+                        "each API key is bound to exactly one tenant and cannot access arbitrary tenants.");
+                }
+                rawKey = trimmed;
+                boundTenant = "service";
+                log.warn("[DC-P1-005] API key without tenant binding in local profile — " +
+                         "key fingerprint={} will be bound to 'service' tenant. " +
+                         "Use '<key>:<tenant-id>' format in non-local environments.",
+                         apiKeyFingerprint(rawKey));
+            }
+
+            String keyId = "key-" + apiKeyFingerprint(rawKey);
+            keyToPrincipal.put(rawKey, new Principal(keyId, List.of("api-client"), boundTenant));
+        }
+
+        if (keyToPrincipal.isEmpty()) {
             if (!embeddedProfile) {
                 throw new IllegalStateException(
-                    "DATACLOUD_API_KEYS must contain at least one non-blank API key for non-embedded deployment profiles. " +
-                    "API key authentication cannot be configured with an empty key set in production environments.");
+                    "DATACLOUD_API_KEYS must contain at least one non-blank '<key>:<tenant-id>' entry " +
+                    "for non-embedded deployment profiles.");
             }
-            log.warn("[DC-E1] DATACLOUD_API_KEYS is set but contains no valid keys — API key authentication is DISABLED");
+            log.warn("[DC-E1] DATACLOUD_API_KEYS is set but contains no valid entries — API key authentication is DISABLED");
             return null;
         }
 
-        log.info("[DC-E1] API key authentication enabled ({} key(s) registered)", validKeys.size());
-        return apiKey -> {
-            if (validKeys.contains(apiKey)) {
-                String keyId = "key-" + apiKeyFingerprint(apiKey);
-                return Optional.of(new Principal(keyId, List.of("api-client"), "service"));
-            }
-            return Optional.empty();
-        };
+        Map<String, Principal> immutableKeyMap = Collections.unmodifiableMap(keyToPrincipal);
+        log.info("[DC-E1] API key authentication enabled ({} key(s) registered)", immutableKeyMap.size());
+        return apiKey -> Optional.ofNullable(immutableKeyMap.get(apiKey));
     }
 
     private static String apiKeyFingerprint(String apiKey) {
@@ -418,7 +458,8 @@ public final class DataCloudHttpLauncherBootstrap {
                     .modelName(model)
                     .build();
             Eventloop eventloop = Eventloop.create();
-            DnsClient dnsClient = DnsClient.create(eventloop, InetAddress.getByName("8.8.8.8"));
+            // DC-P1-006: DNS resolver is configurable; sovereign profile must not use public resolvers
+            DnsClient dnsClient = DnsClient.create(eventloop, InetAddress.getByName(resolveDnsHost(env, log)));
             HttpClient httpClient = HttpClient.create(eventloop, dnsClient);
             log.info("LLM backend: Ollama at {} model={}", host, model);
             return new OllamaCompletionService(config, httpClient, metrics);
@@ -432,7 +473,8 @@ public final class DataCloudHttpLauncherBootstrap {
                     .modelName(model)
                     .build();
             Eventloop eventloop = Eventloop.create();
-            DnsClient dnsClient = DnsClient.create(eventloop, InetAddress.getByName("8.8.8.8"));
+            // DC-P1-006: DNS resolver is configurable; sovereign profile must not use public resolvers
+            DnsClient dnsClient = DnsClient.create(eventloop, InetAddress.getByName(resolveDnsHost(env, log)));
             HttpClient httpClient = HttpClient.create(eventloop, dnsClient);
             log.info("LLM backend: OpenAI model={}", model);
             return new OpenAICompletionService(config, httpClient, metrics);
@@ -440,6 +482,43 @@ public final class DataCloudHttpLauncherBootstrap {
 
         log.warn("No LLM backend configured (AI_PROVIDER / OPENAI_API_KEY not set). AI assist routes will return stubs.");
         return null;
+    }
+
+    /**
+     * DC-P1-006: Resolves the DNS server host from env.
+     * {@code DATACLOUD_DNS_RESOLVER} — explicit DNS host (e.g. "192.168.1.1").
+     * Defaults to the loopback/system resolver (127.0.0.53 for systemd-resolved, else 127.0.0.1).
+     * In sovereign profile, public resolvers (8.8.8.8, 8.8.4.4, 1.1.1.1) are forbidden unless
+     * {@code DATACLOUD_ALLOW_PUBLIC_DNS=true} is set.
+     */
+    private static String resolveDnsHost(Map<String, String> env, Logger log) {
+        String configured = env.get("DATACLOUD_DNS_RESOLVER");
+        boolean sovereignProfile = DataCloudLauncherSettings.resolveProfile(new String[0], env)
+                == com.ghatana.datacloud.DataCloud.DataCloudConfig.DataCloudProfile.SOVEREIGN;
+        boolean allowPublicDns = "true".equalsIgnoreCase(env.getOrDefault("DATACLOUD_ALLOW_PUBLIC_DNS", "false"));
+
+        if (configured != null && !configured.isBlank()) {
+            if (sovereignProfile && !allowPublicDns && isPublicDnsAddress(configured)) {
+                throw new IllegalStateException(
+                    "DC-P1-006: Sovereign profile forbids public DNS resolver '" + configured +
+                    "'. Set DATACLOUD_DNS_RESOLVER to a private resolver or set DATACLOUD_ALLOW_PUBLIC_DNS=true to override.");
+            }
+            log.info("DNS resolver configured: {}", configured);
+            return configured;
+        }
+
+        // Default: use localhost system resolver
+        String systemDefault = "127.0.0.1";
+        if (sovereignProfile) {
+            log.info("DC-P1-006: Sovereign profile — using system DNS resolver ({})", systemDefault);
+        }
+        return systemDefault;
+    }
+
+    private static boolean isPublicDnsAddress(String host) {
+        return host.equals("8.8.8.8") || host.equals("8.8.4.4")
+            || host.equals("1.1.1.1") || host.equals("1.0.0.1")
+            || host.equals("9.9.9.9") || host.equals("208.67.222.222");
     }
 
     private static void recordAiProviderStateMetric(MetricsCollector metrics,

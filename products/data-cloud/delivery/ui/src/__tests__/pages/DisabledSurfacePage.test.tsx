@@ -1,69 +1,83 @@
 /**
  * DisabledSurfacePage Component Tests
  *
- * Verifies that the DisabledSurfacePage component provides meaningful messaging
- * for unavailable capability-gated surfaces instead of a generic 404.
- *
- * Note: Full component import tests are skipped due to test environment constraints
- * with @ghatana/design-system availability. Component integration is validated 
- * through route tests and source-level assertions.
+ * Verifies that the DisabledSurfacePage component renders correctly for
+ * unavailable capability-gated surfaces (DC-UI-001).
  */
-import { describe, expect, it } from 'vitest';
+import React from 'react';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router';
+import { DisabledSurfacePage } from '../../pages/DisabledSurfacePage';
+
+// react-router navigate is called internally — provide a router context
+const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <MemoryRouter>{children}</MemoryRouter>
+);
+
+beforeEach(() => {
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+});
 
 describe('DisabledSurfacePage', () => {
-  it.skip('module exports DisabledSurfacePage component', async () => {
-    // Skipped: Requires @ghatana/design-system which is not available in test environment
-    // Dynamic import to avoid full environment setup
-    const module = await import('../../pages/DisabledSurfacePage');
-    expect(module.DisabledSurfacePage).toBeDefined();
-    expect(typeof module.DisabledSurfacePage).toBe('function');
+  it('renders with default props', () => {
+    render(<DisabledSurfacePage />, { wrapper: Wrapper });
+    expect(screen.getByText(/is not available/i)).toBeInTheDocument();
   });
 
-  it.skip('exports a memoized React component', async () => {
-    // Skipped: Requires @ghatana/design-system
-    const module = await import('../../pages/DisabledSurfacePage');
-    expect(module.DisabledSurfacePage.displayName).toBe('DisabledSurfacePage');
+  it('renders surfaceName in heading', () => {
+    render(<DisabledSurfacePage surfaceName="Alerts" />, { wrapper: Wrapper });
+    expect(screen.getByText(/Alerts is not available/i)).toBeInTheDocument();
   });
 
-  it.skip('accepts expected prop types: surfaceName, surfaceDescription, actionHint', async () => {
-    // Skipped: Requires @ghatana/design-system
-    const module = await import('../../pages/DisabledSurfacePage');
-    // Component should be importable and callable (proof that props interface is correct)
-    expect(module.DisabledSurfacePage).toBeDefined();
+  it('renders surfaceDescription when provided', () => {
+    render(
+      <DisabledSurfacePage surfaceDescription="Alerting is not provisioned." />,
+      { wrapper: Wrapper }
+    );
+    expect(screen.getByText('Alerting is not provisioned.')).toBeInTheDocument();
   });
 
-  it('source code includes meaningful messaging for unavailable surfaces', async () => {
-    // Read the component source to verify messaging
-    const { readFileSync } = await import('node:fs');
-    const path = await import('node:path');
-    const componentPath = path.resolve(__dirname, '../../pages/DisabledSurfacePage.tsx');
-    const source = readFileSync(componentPath, 'utf8');
-
-    // Verify key messaging elements are present
-    expect(source).toContain('is not available');
-    expect(source).toContain('not enabled in your current Data Cloud configuration');
-    expect(source).toContain('Contact your administrator');
-    expect(source).toContain('DisabledSurfacePage');
+  it('renders actionHint text', () => {
+    render(
+      <DisabledSurfacePage actionHint="Ask your admin." />,
+      { wrapper: Wrapper }
+    );
+    expect(screen.getByText(/Ask your admin\./i)).toBeInTheDocument();
   });
 
-  it('includes accessibility attributes for status roles', async () => {
-    const { readFileSync } = await import('node:fs');
-    const path = await import('node:path');
-    const componentPath = path.resolve(__dirname, '../../pages/DisabledSurfacePage.tsx');
-    const source = readFileSync(componentPath, 'utf8');
-
-    expect(source).toContain('role="status"');
-    expect(source).toContain('aria-live="polite"');
-    expect(source).toContain('data-testid');
+  it('has role="status" and aria-live="polite" for accessibility', () => {
+    render(<DisabledSurfacePage />, { wrapper: Wrapper });
+    const el = screen.getByRole('status');
+    expect(el).toHaveAttribute('aria-live', 'polite');
   });
 
-  it('provides navigation buttons for recovery', async () => {
-    const { readFileSync } = await import('node:fs');
-    const path = await import('node:path');
-    const componentPath = path.resolve(__dirname, '../../pages/DisabledSurfacePage.tsx');
-    const source = readFileSync(componentPath, 'utf8');
+  it('has a data-testid attribute', () => {
+    render(<DisabledSurfacePage />, { wrapper: Wrapper });
+    expect(screen.getByTestId('disabled-surface-page')).toBeInTheDocument();
+  });
 
-    expect(source).toContain('Go back');
-    expect(source).toContain('Go to Home');
+  it('respects custom data-testid', () => {
+    render(<DisabledSurfacePage data-testid="custom-id" />, { wrapper: Wrapper });
+    expect(screen.getByTestId('custom-id')).toBeInTheDocument();
+  });
+
+  it('renders Go back and Go to Home buttons', () => {
+    render(<DisabledSurfacePage />, { wrapper: Wrapper });
+    expect(screen.getByRole('button', { name: /Go back/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Go to Home/i })).toBeInTheDocument();
+  });
+
+  it('has displayName set', () => {
+    expect(DisabledSurfacePage.displayName).toBe('DisabledSurfacePage');
+  });
+
+  it('Go to Home button is clickable', async () => {
+    const user = userEvent.setup();
+    render(<DisabledSurfacePage />, { wrapper: Wrapper });
+    const homeBtn = screen.getByRole('button', { name: /Go to Home/i });
+    // Should not throw
+    await user.click(homeBtn);
   });
 });

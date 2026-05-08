@@ -164,6 +164,7 @@ export function UnifiedLeftRail({
       context,
       nodes,
       selectedNodeIds,
+      hoveredNodeId,
       onInsertNode,
       onSelectNode,
       onUpdateNode,

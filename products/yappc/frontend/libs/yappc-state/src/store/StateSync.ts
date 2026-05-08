@@ -161,7 +161,7 @@ export class StateSync {
   /**
    * Handle state request message
    */
-  private handleStateRequest(message: SyncMessage): void {
+  private handleStateRequest(_message: SyncMessage): void {
     // Respond with current state (would need to be implemented with actual state access)
     // This is a placeholder for the architecture
   }
@@ -169,7 +169,7 @@ export class StateSync {
   /**
    * Handle state response message
    */
-  private handleStateResponse(message: SyncMessage): void {
+  private handleStateResponse(_message: SyncMessage): void {
     // Handle response to state request
   }
 

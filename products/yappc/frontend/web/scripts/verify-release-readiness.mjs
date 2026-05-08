@@ -108,11 +108,19 @@ const requiredEvidence = [
       'products/yappc/frontend/web/src/components/canvas/page/__tests__/PageDesigner.test.tsx',
     ],
   },
+  {
+    area: 'performance-memory',
+    files: [
+      'products/yappc/frontend/web/e2e/performance-memory.spec.ts',
+      'products/yappc/frontend/web/src/services/performance/__tests__/canvasPerformanceBudgets.test.ts',
+    ],
+  },
 ];
 
 const requiredScripts = [
   'test:e2e:a11y',
   'test:e2e:visual',
+  'test:e2e:performance-memory',
   'test:performance:budgets',
   'verify:release-readiness',
 ];

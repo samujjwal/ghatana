@@ -13,7 +13,7 @@
 
 import { atom } from 'jotai';
 
-import type { Workspace, Project } from 'yappc-core/types';
+import type { Workspace, Project } from 'yappc-core/types/common';
 
 import {
   createAtom,

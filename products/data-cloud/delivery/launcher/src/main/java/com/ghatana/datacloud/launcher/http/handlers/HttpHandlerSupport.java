@@ -590,4 +590,30 @@ public class HttpHandlerSupport {
                 .build();
         }
     }
+
+    /**
+     * Extracts the workspace identifier from an HTTP request.
+     *
+     * <p>Reads the {@code X-Workspace-Id} header. Returns {@code null} when the
+     * header is absent, blank, or fails the workspace-id length/format check
+     * (1–64 non-whitespace characters).
+     *
+     * <p>Workspace is an optional sub-partition inside a tenant. Callers should
+     * propagate the returned value into {@link com.ghatana.datacloud.spi.TenantContext}
+     * via {@code withWorkspace(workspaceId)} when non-null.
+     *
+     * @param request inbound HTTP request
+     * @return workspace ID if present and valid; {@code null} otherwise
+     */
+    public String extractWorkspaceId(HttpRequest request) {
+        String raw = request.getHeader(HttpHeaders.of("X-Workspace-Id"));
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        String candidate = raw.trim();
+        if (candidate.length() < 1 || candidate.length() > 64) {
+            return null;
+        }
+        return candidate;
+    }
 }

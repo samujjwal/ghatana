@@ -20,6 +20,12 @@ import {
   type PluginRuntimeEnvironment,
   type PluginRuntimePolicy,
 } from '../../../services/plugins/PluginRuntimePolicy';
+import {
+  buildComponentPackageSigningPayload,
+  validateComponentPackageSignature,
+  type ComponentPackageSignature,
+  type ComponentPackageSigningPayload,
+} from '../../../services/plugins/ComponentPackageSigning';
 import { assessComponentSafety } from '../../../security/UnsafeComponentHandler';
 
 // ---------------------------------------------------------------------------
@@ -42,6 +48,17 @@ export interface ComponentPackageManifest {
   readonly renderers: readonly BuilderRendererManifest[];
   /** Security policy for this package */
   readonly securityPolicy?: ComponentSecurityPolicy;
+  /** Optional marketplace distribution metadata. Marketplace packages must be signed. */
+  readonly distribution?: ComponentPackageDistribution;
+}
+
+/**
+ * Distribution metadata for component packages.
+ */
+export interface ComponentPackageDistribution {
+  readonly source: 'local' | 'marketplace';
+  readonly marketplacePackageId?: string;
+  readonly signature?: ComponentPackageSignature;
 }
 
 /**
@@ -68,6 +85,16 @@ export interface PackageValidationResult {
   readonly errors: readonly string[];
   readonly warnings: readonly string[];
 }
+
+export interface ComponentPackageSignatureVerifierResult {
+  readonly valid: boolean;
+  readonly errors?: readonly string[];
+}
+
+export type ComponentPackageSignatureVerifier = (
+  payload: ComponentPackageSigningPayload,
+  signature: ComponentPackageSignature,
+) => Promise<ComponentPackageSignatureVerifierResult>;
 
 /**
  * Current builder contract version.
@@ -198,6 +225,21 @@ export class ComponentPluginLoader {
       }
     });
 
+    if (manifest.distribution?.source === 'marketplace') {
+      const signingValidation = validateComponentPackageSignature({
+        packageName: manifest.packageName,
+        version: manifest.version,
+        minBuilderVersion: manifest.minBuilderVersion,
+        maxBuilderVersion: manifest.maxBuilderVersion,
+        rendererContracts: manifest.renderers.map((renderer) => renderer.contractName),
+        securityPolicy: manifest.securityPolicy,
+        marketplacePackageId: manifest.distribution.marketplacePackageId,
+        signature: manifest.distribution.signature,
+      });
+
+      errors.push(...signingValidation.errors);
+    }
+
     return {
       isValid: errors.length === 0,
       errors,
@@ -227,6 +269,60 @@ export class ComponentPluginLoader {
     this.runtimeEnvironments.set(manifest.packageName, runtimeEnvironment);
 
     return validation;
+  }
+
+  /**
+   * Loads a marketplace package after local manifest checks and caller-provided
+   * signature verification both pass. The verifier should be backed by the
+   * marketplace/public-key trust service used by the hosting product.
+   */
+  async loadMarketplacePackage(
+    manifest: ComponentPackageManifest,
+    verifier: ComponentPackageSignatureVerifier,
+  ): Promise<PackageValidationResult> {
+    if (manifest.distribution?.source !== 'marketplace') {
+      return this.loadPackage(manifest);
+    }
+
+    const validation = this.validatePackage(manifest);
+    if (!validation.isValid) {
+      return validation;
+    }
+
+    const signature = manifest.distribution.signature;
+    if (!signature) {
+      return {
+        isValid: false,
+        errors: ['Marketplace package signature is required'],
+        warnings: validation.warnings,
+      };
+    }
+
+    const verification = await verifier(
+      buildComponentPackageSigningPayload({
+        packageName: manifest.packageName,
+        version: manifest.version,
+        minBuilderVersion: manifest.minBuilderVersion,
+        maxBuilderVersion: manifest.maxBuilderVersion,
+        rendererContracts: manifest.renderers.map((renderer) => renderer.contractName),
+        securityPolicy: manifest.securityPolicy,
+        marketplacePackageId: manifest.distribution.marketplacePackageId,
+        signature,
+      }),
+      signature,
+    );
+
+    if (!verification.valid) {
+      return {
+        isValid: false,
+        errors: verification.errors?.length
+          ? verification.errors
+          : ['Marketplace package signature verification failed'],
+        warnings: validation.warnings,
+      };
+    }
+
+    return this.loadPackage(manifest);
   }
 
   /**

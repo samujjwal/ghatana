@@ -105,6 +105,13 @@ public class AiAssistHandler {
     private DataCloudClient client;
 
     /**
+     * DC-P0-007: When {@code true}, AI assist routes return HTTP 503 instead of heuristic
+     * fallback when no real {@link CompletionService} is configured. Must be {@code true}
+     * for production profiles; defaults to {@code false} for local/preview compatibility.
+     */
+    private boolean productionMode = false;
+
+    /**
      * Creates a handler backed by a real LLM completion service.
      *
      * @param completionService AI completion service; may be null (fallback mode)
@@ -158,6 +165,30 @@ public class AiAssistHandler {
     }
 
     /**
+     * DC-P0-007: Enables production mode — disables static heuristic fallback when no real
+     * {@link CompletionService} is present. Routes return 503 instead of heuristic output.
+     */
+    public AiAssistHandler withProductionMode(boolean productionMode) {
+        this.productionMode = productionMode;
+        return this;
+    }
+
+    /**
+     * DC-P0-007: Returns a 503 promise when production mode is active and no CompletionService
+     * is available. Returns {@code null} when heuristic fallback is permitted or AI is wired.
+     */
+    private Promise<HttpResponse> checkAiServiceOrUnavailable() {
+        if (productionMode && completionService == null) {
+            log.error("[DC-P0-007] AI assist unavailable in production: no CompletionService configured. " +
+                "Configure DATACLOUD_AI_COMPLETION_URL or disable AI routes.");
+            return Promise.of(http.errorResponse(503,
+                "AI assist is not available: the AI completion service is not configured " +
+                "for this deployment. Enable the service or use local/preview mode."));
+        }
+        return null;
+    }
+
+    /**
      * P0.5: Check tenant AI token quota before AI assist operations.
      * Returns an error promise if quota is exceeded, otherwise null.
      */
@@ -196,6 +227,9 @@ public class AiAssistHandler {
 
         Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
         if (quotaErr != null) return quotaErr;
+        // DC-P0-007: fail closed when AI service unavailable in production
+        Promise<HttpResponse> aiUnavail = checkAiServiceOrUnavailable();
+        if (aiUnavail != null) return aiUnavail;
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
@@ -265,6 +299,9 @@ public class AiAssistHandler {
 
         Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
         if (quotaErr != null) return quotaErr;
+        // DC-P0-007: fail closed when AI service unavailable in production
+        Promise<HttpResponse> aiUnavail = checkAiServiceOrUnavailable();
+        if (aiUnavail != null) return aiUnavail;
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
@@ -361,6 +398,9 @@ public class AiAssistHandler {
 
         Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
         if (quotaErr != null) return quotaErr;
+        // DC-P0-007: fail closed when AI service unavailable in production
+        Promise<HttpResponse> aiUnavail = checkAiServiceOrUnavailable();
+        if (aiUnavail != null) return aiUnavail;
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
@@ -435,6 +475,9 @@ public class AiAssistHandler {
 
         Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
         if (quotaErr != null) return quotaErr;
+        // DC-P0-007: fail closed when AI service unavailable in production
+        Promise<HttpResponse> aiUnavail = checkAiServiceOrUnavailable();
+        if (aiUnavail != null) return aiUnavail;
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
@@ -504,6 +547,9 @@ public class AiAssistHandler {
 
         Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
         if (quotaErr != null) return quotaErr;
+        // DC-P0-007: fail closed when AI service unavailable in production
+        Promise<HttpResponse> aiUnavail = checkAiServiceOrUnavailable();
+        if (aiUnavail != null) return aiUnavail;
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
@@ -591,6 +637,9 @@ public class AiAssistHandler {
 
         Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
         if (quotaErr != null) return quotaErr;
+        // DC-P0-007: fail closed when AI service unavailable in production
+        Promise<HttpResponse> aiUnavail = checkAiServiceOrUnavailable();
+        if (aiUnavail != null) return aiUnavail;
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
@@ -716,6 +765,9 @@ public class AiAssistHandler {
 
         Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
         if (quotaErr != null) return quotaErr;
+        // DC-P0-007: fail closed when AI service unavailable in production
+        Promise<HttpResponse> aiUnavail = checkAiServiceOrUnavailable();
+        if (aiUnavail != null) return aiUnavail;
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
@@ -779,6 +831,9 @@ public class AiAssistHandler {
 
         Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
         if (quotaErr != null) return quotaErr;
+        // DC-P0-007: fail closed when AI service unavailable in production
+        Promise<HttpResponse> aiUnavail = checkAiServiceOrUnavailable();
+        if (aiUnavail != null) return aiUnavail;
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
@@ -846,6 +901,9 @@ public class AiAssistHandler {
 
         Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
         if (quotaErr != null) return quotaErr;
+        // DC-P0-007: fail closed when AI service unavailable in production
+        Promise<HttpResponse> aiUnavail = checkAiServiceOrUnavailable();
+        if (aiUnavail != null) return aiUnavail;
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
@@ -1952,6 +2010,9 @@ public class AiAssistHandler {
 
         Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
         if (quotaErr != null) return quotaErr;
+        // DC-P0-007: fail closed when AI service unavailable in production
+        Promise<HttpResponse> aiUnavail = checkAiServiceOrUnavailable();
+        if (aiUnavail != null) return aiUnavail;
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {

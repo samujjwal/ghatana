@@ -20,6 +20,10 @@ import { useWorkspace } from '../useWorkspace';
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+beforeEach(() => {
+  mockFetch.mockReset();
+});
+
 function makeGqlResponse(data: unknown) {
   return {
     ok: true,

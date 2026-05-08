@@ -413,6 +413,7 @@ export class CRDTCore {
       },
       resolved: true,
       resolutionStrategy: this.config.mergeStrategy,
+      resolution: resolved,
       timestamp: Date.now(),
     };
   }

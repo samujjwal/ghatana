@@ -1,319 +1,465 @@
-# End-to-End Data Cloud + Shared Libraries Correctness Audit
+# End-to-End Data Cloud Correctness + Shared Libraries Audit
 
+**Intended repository path:** `products/data-cloud/docs/audits/end-to-end-data-cloud-correctness-shared-libraries-audit.md`  
 **Repository:** `samujjwal/ghatana`  
-**Reviewed commit/tree:** `0e609f7171965dbfc156fa4b43a77cd5e26b897b`  
-**Target scope:** `products/data-cloud` plus directly used Data Cloud shared libraries and shared platform surfaces  
-**Requested output target in repo:** `products/data-cloud/docs/audits/end-to-end-data-cloud-correctness-shared-libraries-audit.md`  
-**Execution method:** source-evidence audit through the connected GitHub repository at the exact commit tree. I did **not** run Gradle, pnpm, Playwright, Docker, database migrations, Testcontainers, browsers, or live services. Runtime/build/test-only conclusions are marked as requiring execution proof.
+**Target commit/ref:** `3ac6b0226e48e784e6c4c44e3c426adcb833de7e`  
+**Audit mode:** Evidence-backed targeted execution of the requested Data Cloud + shared-libraries prompt.
+
+> Important limitation: I could validate the target commit, canonical Data Cloud docs, key runtime/shared SPI/storage/server/UI files, and major route/runtime-truth surfaces. The GitHub file-search index was not available for full-tree enumeration, and the GitHub API tool could not list a recursive tree directly. Therefore, this report is a strong targeted audit, but not a mathematically complete inventory of every file under `products/data-cloud`. Any area marked **Unknown due to insufficient evidence** must be inspected with a local checkout or repository-wide grep/build/test run.
 
 ---
 
 ## 1. Executive Summary
 
-### 1.1 Readiness ratings
+### Ratings
 
-| Dimension | Rating | Evidence-backed rationale |
+| Dimension | Rating | Notes |
 |---|---:|---|
-| Overall correctness | **B-** | Several prior analytics correctness blockers appear fixed, but production profile safety, stale scripts/docs, runtime-gating proof, and durable-provider proof remain release blockers. |
-| Overall completeness | **B-** | Broad product surfaces exist across docs, launcher, UI, contracts, planes, deployment, and tests, but Data Fabric, Runtime Truth consistency, compatibility-route gating, and durable restart journeys are not fully proven. |
-| Production readiness | **No** | The production runbook requires explicit production profile, durable stores, auth, and readiness checks, but the container image does not set `DATACLOUD_PROFILE`, and the launcher defaults to `LOCAL` when absent. |
-| Mock/stub/demo risk | **Medium** | Local stack disables MSW/mock data, and analytics placeholders appear reduced, but Data Fabric docs overclaim production readiness and production-stub scanning is incomplete. |
-| Reuse/DRY/source-of-truth | **B-** | Plane architecture and shared-library rules are strong, but Data Cloud vs AEP terminology remains inconsistent across docs/CI/CODEOWNERS, and platform split rules still need enforcement. |
-| Shared-library boundary | **B-** | Shared platform rules exist, but platform modules such as agent/workflow/messaging/AI/governance still need a concrete dependency audit and move/split decisions. |
-| Test authenticity | **B-** | Analytics unit/metrics tests exist; production/durable/browser/contract/runtime-truth proof still needs execution and additional integration coverage. |
-| Safe to release? | **No** | Internal demo is reasonable with explicit preview/degraded disclosures. Unrestricted production should be blocked until P0/P1 tasks are closed. |
+| Correctness | 5/10 | Strong architecture intent, but critical implementation gaps exist in entity identity, collection isolation, query behavior, event semantics, AI fallback behavior, and production fail-closed rules. |
+| Completeness | 5/10 | Many surfaces exist, but several are optional/fallback/stubbed, and some canonical migrations are incomplete. |
+| Production readiness | 4/10 | Not production-safe until P0 blockers are fixed. |
+| Mock/stub/shortcut risk | High | AI assist returns 200 heuristic fallbacks when LLM is missing; optional audit/trace/settings paths silently degrade. |
+| Reuse/DRY/source-of-truth | 5/10 | Good plane/SPI direction, but duplicated query/filter/status/event abstractions are already drifting. |
+| Shared-library boundary | 6/10 | Docs define good rules, but platform-kernel Data Cloud adapter and duplicated event-store abstractions require review/consolidation. |
+| Safe for production | **No** | P0 blockers exist. |
+| Safe for internal demo | **Yes, with explicit local/preview labeling only** | Must not claim production readiness or complete runtime truth. |
 
-### 1.2 Top production blockers
+### Commit validation
 
-| ID | Severity | Area | Finding | Required fix |
-|---|---|---|---|---|
-| DC-P0-001 | P0 | Production profile safety | `DataCloudLauncherSettings.resolveProfile(...)` defaults to `LOCAL` when `DATACLOUD_PROFILE` is absent, while the production Dockerfile does not set `DATACLOUD_PROFILE`. This creates a credible risk of a container starting with local/in-memory semantics if deployment config omits the profile. | Make production/container startup fail closed unless an explicit non-local profile is set, or set/validate `DATACLOUD_PROFILE=production` in all production deployment assets. |
-| DC-P1-001 | P1 | Local stack correctness | `run-local-stack.sh` resolves `UI_DIR="${PRODUCT_ROOT}/ui"`, but the active UI is under `products/data-cloud/delivery/ui`. The documented local stack command can fail before proving backend/UI integration. | Update the script to `delivery/ui`, add a smoke test, and ensure docs match. |
-| DC-P1-002 | P1 | Documentation source of truth | `DEVELOPER_MANUAL.md` says Data Cloud does not own higher-level orchestration and AEP integrates externally, while current canonical docs say AEP is the Action Plane runtime inside Data Cloud. | Align all docs to the plane model and mark historical content as historical. |
-| DC-P1-003 | P1 | Data Fabric preview/production boundary | Data Fabric feature docs say it is ready for production and mention “52 example tests,” but product docs/developer manual describe `/fabric` as preview-only. | Either implement all live backend endpoints/tests or mark it preview and disable production exposure by Runtime Truth. |
-| DC-P1-004 | P1 | UI route gating | Compatibility routes in `routes.tsx` appear to mount pages directly, while canonical routes use role/runtime gates in places. Aliases may bypass capability/role gating. | Wrap all aliases in the same `RoleProtectedRoute` and `RuntimeCapabilityRouteGate` semantics as canonical routes. |
-| DC-P1-005 | P1 | CI/build/test authenticity | AEP is still modeled as a product in CI despite being the Action Plane runtime, and one CI step can echo “No integration tests configured, skipping.” | Fold/rename action-plane CI into Data Cloud component CI and fail when required integration tests are missing. |
+Target commit `3ac6b0226e48e784e6c4c44e3c426adcb833de7e` exists, but it only changes `products/yappc/CHANGELOG.md`; the Data Cloud audit is therefore an audit of the repository state at that commit, not a Data Cloud-specific diff. Evidence: target commit metadata and file list show only the YAPPC changelog change. fileciteturn3file0
+
+### Top P0 issues
+
+1. **Entity identity is not collection-scoped.** `EntityStore` operations find/delete/exist by tenant + entity id only; in-memory and H2 stores also key by tenant + entity id only. Same `id` in two collections can overwrite, read, or delete the wrong entity. fileciteturn16file0 fileciteturn21file0 fileciteturn25file0 fileciteturn35file0
+2. **H2 sovereign query/count ignores filters, sorts, search, projection, and freshness semantics.** Query and count SQL only use tenant + collection + deleted, causing incorrect results and incorrect pagination metadata. fileciteturn25file0
+3. **Event envelope and event-store guarantees are incomplete.** Architecture requires tenant, subject, source, schema version, correlation/causation, actor, classification, policy context, provenance, and trace context; current client/SPI exposes only a reduced event entry. H2 idempotency is stored but not enforced; batch append is not atomic despite SPI documentation. fileciteturn8file0 fileciteturn19file0 fileciteturn22file0 fileciteturn26file0
+4. **Production-path AI assist can return static heuristic/fallback success.** Bootstrap logs that AI routes return stubs when no LLM backend is configured, and `AiAssistHandler` intentionally returns 200 static heuristic responses with `ai.fallback=true`. fileciteturn31file0 fileciteturn39file0
+5. **Production fail-closed is incomplete.** Architecture requires production profiles to fail closed for missing security, policy, audit, durability, and runtime dependencies, but multiple optional paths silently degrade: audit emission can be skipped, settings can use in-memory storage, trace spans can be discarded, and AI can fall back to heuristics. fileciteturn8file0 fileciteturn29file0 fileciteturn32file0
 
 ---
 
 ## 2. Scope and Method
 
-### 2.1 Reviewed evidence
+### Included evidence
 
-| Area | Evidence |
-|---|---|
-| Product boundary and planes | `products/data-cloud/README.md` defines Data Cloud as an AI-native operational data fabric, organized by planes, with AEP as the Action Plane runtime and not a separate customer-facing product boundary. fileciteturn5file0 |
-| Plane architecture | `PLANE_ARCHITECTURE.md` defines planes, surfaces, modules, runtime truth, dependency rules, target layout, and shared-platform move/split rules. fileciteturn11file1 |
-| Product design | `03_data_cloud_unified_high_level_design.md` requires one coherent product, runtime-truth-gated surfaces, evidence-first automation, no demo-visible production data, and tenant-safe/policy-aware actions. fileciteturn11file2 |
-| Detailed architecture | The detailed architecture requires one product boundary, centralized contracts, runtime truth, fail-closed production profiles, and UI/SDK/docs/tests aligned with runtime truth. fileciteturn10file0 |
-| Contracts build | `products/data-cloud/contracts/build.gradle.kts` validates Data Cloud/AEP/Action specs and checks OpenAPI sync against runtime/platform copies. fileciteturn11file0 |
-| Launcher/profile safety | `DataCloudLauncher.java` validates non-embedded profiles before creating resources, while `DataCloudLauncherSettings` defaults to `LOCAL` when no profile is set. fileciteturn12file1 fileciteturn12file14 |
-| Production runbook | `RUNBOOK.md` requires production profile, durable DB/Kafka, auth, readiness, migrations, and tenant isolation checks. fileciteturn12file10 fileciteturn12file12 |
-| Docker runtime | `products/data-cloud/deploy/Dockerfile` sets ports/DB/Kafka defaults but does not set `DATACLOUD_PROFILE=production`. fileciteturn12file5 |
-| Local stack | `run-local-stack.sh` starts backend and UI with mocks disabled but points `UI_DIR` at `${PRODUCT_ROOT}/ui`. fileciteturn12file17 |
-| UI routes | `routes.tsx` shows role/runtime-gated surfaces plus direct compatibility aliases. fileciteturn16file10 |
-| Data Fabric docs | Feature docs claim production readiness and example tests while developer docs say `/fabric` remains preview-only. fileciteturn16file5 fileciteturn16file2 |
-| Analytics handler | `AnalyticsHandler.java` uses direct ActiveJ `request.loadBody().then(...)`, supports trace IDs, row-limit parameters, unsupported cancellation flag, and metrics. fileciteturn15file0 |
-| Analytics tests | `AnalyticsHandlerTest.java`, `AnalyticsHandlerMetricsTest.java`, and `DataCloudHttpMetricsTest.java` provide focused unit/metrics coverage. fileciteturn15file1 fileciteturn14file10 fileciteturn14file13 |
-| Production placeholder scan | `scan-production-placeholders.sh` scans Data Cloud and Action Plane production paths for comment-based placeholder markers. fileciteturn13file1 |
-| CI/product boundaries | Product-isolated CI still exposes an `aep` product label for `products/data-cloud/planes/action/**`. fileciteturn17file8 |
-| CODEOWNERS | CODEOWNERS has Data Cloud, Action Plane, and shared SPI ownership patterns whose order needs validation. fileciteturn17file9 |
+- Commit metadata for `3ac6b0226e48e784e6c4c44e3c426adcb833de7e`
+- `products/data-cloud/README.md`
+- `products/data-cloud/OWNER.md`
+- `products/data-cloud/docs/architecture/PLANE_ARCHITECTURE.md`
+- `products/data-cloud/docs/product/01_data_cloud_unified_vision_market_positioning.md`
+- `products/data-cloud/docs/product/02_data_cloud_unified_detailed_architecture.md`
+- `products/data-cloud/docs/api/REST_API_DOCUMENTATION.md`
+- Data Cloud shared SPI:
+  - `DataCloudClient.java`
+  - `EntityStore.java`
+  - `EventLogStore.java`
+  - `TenantContext.java`
+- Runtime composition:
+  - `DataCloud.java`
+  - `H2SovereignEntityStore.java`
+  - `H2SovereignEventLogStore.java`
+- Launcher/server:
+  - `DataCloudLauncher.java`
+  - `DataCloudLauncherSettings.java`
+  - `DataCloudConfigValidator.java`
+  - `DataCloudHttpLauncherBootstrap.java`
+  - `DataCloudHttpServer.java`
+  - `EntityCrudHandler.java`
+  - `AiAssistHandler.java`
+- UI:
+  - `App.tsx`
+  - `routes.tsx`
+  - `RoleProtectedRoute.tsx`
+  - `RuntimeCapabilityRouteGate.tsx`
+  - `capabilities.service.ts`
+  - `api/client.ts`
 
-### 2.2 Excluded
+### Excluded / unknown
 
-- Full clone with grep over every file.
-- Build/test execution.
-- Browser execution.
-- Docker image build.
-- Live DB/Kafka/H2/Trino/Ollama/OpenAI execution.
-- Security/vulnerability/license scan execution.
+The following must be completed with a local checkout or full repository tree search:
 
-### 2.3 Confidence terms
-
-| Term | Meaning |
-|---|---|
-| Source-proven | Exact source evidence directly shows the behavior. |
-| Source-partial | Source shows structure/intent, but runtime execution is needed. |
-| Documented-only | Product docs claim it; implementation/test proof was not fully inspected. |
-| Unknown | Insufficient evidence in inspected files. |
+- Full recursive inventory of all `products/data-cloud/**` files.
+- Full OpenAPI parity check for `data-cloud.yaml`, `action-plane.yaml`, and `aep.yaml`.
+- Full Gradle dependency graph / ArchUnit boundary validation.
+- Full test execution.
+- Full UI compile/typecheck.
+- Full shared-library import graph across `platform-kernel`, `@ghatana/theme`, `@ghatana/canvas`, and platform Java libraries.
+- Full route registration parity between `DataCloudHttpServer`, OpenAPI, SDK, and REST docs.
 
 ---
 
-## 3. Product Behavior and Vision Map
+## 3. Data Cloud Vision and Capability Map
 
-| Capability / use case | Expected behavior | Current evidence | Status | Gaps |
-|---|---|---|---|---|
-| Operational data fabric | Unified trusted data, events, governed context, intelligence, policy, and action in one product. | README and plane architecture are explicit. fileciteturn5file0 fileciteturn11file1 | Source-proven vision | Must ensure docs/CI no longer imply AEP peer product. |
-| Runtime Truth | `/api/v1/surfaces` reports live/degraded/disabled/preview/unavailable state; `/api/v1/capabilities` is temporary compatibility. | README defines target and compatibility endpoint. fileciteturn5file0 | Source-partial | Need API/UI/SDK E2E proof and universal UI gating. |
-| Entity storage/query | Entity CRUD, schema/history, tenant isolation, durable provider outside local. | Developer manual and runbook identify entity storage and provider expectations. fileciteturn16file7 fileciteturn12file10 | Source-partial | Need executed DB/provider/restart/tenant tests. |
-| Event append/replay/stream | Durable event log, replay/streaming, tenant isolation. | Plane docs and runbook define it. fileciteturn11file1 fileciteturn12file10 | Source-partial | Need executed Kafka/EventLog durability tests. |
-| Analytics/query | Query, result retrieval, aggregate/explain/plan, bounded rows, trace IDs, no sensitive error leaks. | Handler and unit/metrics tests exist. fileciteturn15file0 fileciteturn15file1 | Improved from prior audit; still partial | Submit path must defensively enforce row cap; timeout constant must be enforced or removed. |
-| Action Plane | Pipelines, agents, reviews, learning powered by AEP runtime under Data Cloud. | README/plane docs define boundary. fileciteturn5file0 fileciteturn11file1 | Source-proven architecture | CI/docs still use AEP as product label. |
-| Data Fabric | Admin/fabric topology, connectors, metrics. | Developer manual says `/fabric` preview-only; feature docs say ready for production. fileciteturn16file2 fileciteturn16file5 | Inconsistent | Must either implement live production backend or disable/preview-gate. |
-| Governance/trust | Policy, classification, audit, retention, redaction, tenant isolation. | Runbook defines tenant isolation verification and production checks. fileciteturn12file12 | Source-partial | Need destructive action and audit-event E2E proof. |
-| Local developer loop | Backend + UI together with mock data disabled. | Script disables MSW/mock data but references wrong UI directory. fileciteturn12file17 | Incorrect | Fix path and add smoke test. |
+Canonical docs define Data Cloud as an AI-native operational data fabric that unifies trusted data, durable events, governed context, intelligence, policy, and action. AEP is not a separate customer-facing product; it is the runtime implementation behind the Action Plane. fileciteturn4file0
+
+| Vision / Use Case | Expected Capability | Current Status | Gap |
+|---|---|---|---|
+| Trusted operational entities | Tenant/workspace/collection-safe entity CRUD/query/history | Partially implemented | Entity identity is tenant+id only in stores; collection-scoped semantics are broken. |
+| Durable event history | Append-only event envelope with replay, idempotency, trace/provenance | Partially implemented | Envelope lacks required typed fields; idempotency not enforced; batch append not atomic. |
+| Runtime Truth | `/api/v1/surfaces` target; `/api/v1/capabilities` compatibility only | Partially implemented | UI still calls `/capabilities`; capability naming persists. |
+| Governed AI/action | AI assistance and automation with HITL, evidence, review, fallback transparency | Partially implemented | Heuristic/static fallback returns 200 in production path; must be gated or disabled. |
+| Multi-tenant sovereignty | Tenant/workspace/region/policy isolation and fail-closed production profiles | Partially implemented | Workspace not propagated broadly; production fail-closed does not cover audit/policy/durability comprehensively. |
+| Operator visibility | health/readiness/metrics/runtime truth/audit/alerts | Partially implemented | Optional audit/trace/settings paths silently degrade. |
+| Reusable product contracts | OpenAPI/SDK/SPI as canonical source | Partially implemented | Duplicated filters/status/envelope/client abstractions drift. |
 
 ---
 
 ## 4. Plane Architecture Audit
 
-| Plane | Path(s) / owner | Assessment | Severity | Required fix |
-|---|---|---|---|---|
-| Experience | `delivery/ui`, `delivery/sdk`, docs/scripts | UI and docs exist; route gating must be normalized across compatibility aliases; local-stack script points to stale UI path. | P1 | Fix script path and enforce role/runtime gates on all routes and aliases. |
-| Contract | `contracts/openapi/*`, SDK generation | Contracts are centralized and validated; AEP/action/platform spec copies are sync-checked. | P2 | Keep compatibility copies temporary, define retirement date, and prove Data Cloud SDK generation consumes `data-cloud.yaml`. |
-| Runtime Truth | `/api/v1/surfaces`, `/api/v1/capabilities` | Strong target in docs, but universal UI/API/SDK consumption not fully proven. | P1 | Add SurfaceRegistryCompositionTest, UI gating tests, and generated route/action gate drift checks. |
-| Data | `planes/data/entity` | Owned by Data Cloud; durable provider and tenant proof documented. | P1 | Execute provider/restart/tenant tests and persist artifacts. |
-| Event | `planes/event/core`, `planes/event/store` | Durable event plane documented. | P1 | Execute Kafka/EventLog append/replay/stream durability and tenant tests. |
-| Context | `planes/context` | README calls it placeholder and ownership boundary. | P2 | Define minimal v1 context/provenance/memory scope and contracts. |
-| Intelligence | `planes/intelligence/analytics`, `feature-ingest` | Analytics handler/test evidence exists; AI/ML-native features are partly documented. | P1 | Enforce analytics timeout/row limits; add contract/UI tests; define feature/model metadata E2E. |
-| Governance | `planes/governance/core` | Runbook has strong tenant/auth guardrails. | P1 | Add destructive governance action tests, audit event assertions, and policy/retention E2E. |
-| Action | `planes/action/*` | Correctly positioned as runtime implementation behind Action Plane. | P1/P2 | Rename CI/product labels from AEP to Data Cloud Action Plane; verify no core → action implementation dependencies. |
-| Operations | `planes/operations`, runbook, deploy | Runbook is strong; Docker profile default is unsafe if deployment forgets profile. | P0 | Fail closed unless explicit production profile/durable deps are configured. |
+The canonical architecture defines ten planes and explicitly forbids Data/Event/Context/Governance/Intelligence planes from depending on Action implementation internals. fileciteturn6file0
+
+| Plane | Status | Key finding |
+|---|---|---|
+| Experience | Partial | UI exists with outcome-first routes; some routes use runtime capability gates, but gates still use compatibility `/capabilities` and allow children while loading. |
+| Contract | Unknown / Partial | README identifies canonical contracts, but OpenAPI parity was not fully verified. |
+| Runtime Truth | Partial | Target `/surfaces` exists in docs; UI still consumes `/capabilities`. |
+| Data | Incorrect | Entity identity and query semantics are broken in core storage providers. |
+| Event | Incorrect / Partial | Event envelope, idempotency, atomic append, and offset semantics need hardening. |
+| Context | Unknown / Partial | Routes and docs exist; implementation not fully audited. |
+| Intelligence | Partial | AI assist exists but falls back to heuristics/stubs. |
+| Governance | Partial | TenantContext exists; enforcement/audit fail-closed is incomplete. |
+| Action | Unknown / Partial | Pipelines/action surfaces exist but deeper Action Plane runtime was not fully audited. |
+| Operations | Partial | Health/metrics/runtime signals exist, but trace/audit can silently degrade. |
 
 ---
 
-## 5. Inventory Summary
+## 5. Complete Inventory
 
 ### 5.1 Documentation inventory
 
-| Document | Status | Issue |
+| Document | Purpose | Status |
 |---|---|---|
-| `products/data-cloud/README.md` | Canonical and aligned with plane model. | Keep as top-level product source. |
-| `docs/architecture/PLANE_ARCHITECTURE.md` | Canonical target architecture. | Enforce with CI/ArchUnit/import checks. |
-| `docs/product/02_data_cloud_unified_detailed_architecture.md` | Strong detailed architecture. | Use as acceptance basis for runtime truth and production fail-closed gates. |
-| `docs/product/03_data_cloud_unified_high_level_design.md` | Strong HLD, UX/API/test goals. | Ensure implementation matches HLD routes/gates. |
-| `DEVELOPER_MANUAL.md` | Useful but partially stale. | Align AEP/Action Plane ownership language and local stack paths. |
-| `docs/operations/RUNBOOK.md` | Strong production guardrails. | Make Docker/Helm/K8s enforce these defaults. |
-| `delivery/ui/src/features/data-fabric/*` | Overclaims production readiness. | Mark preview or implement backend+tests. |
-| Historical AEP migration docs | Mostly historical. | Keep clearly historical; do not use as canonical. |
+| `README.md` | Canonical product overview, plane model, runtime truth and contracts | Mostly aligned, but `/capabilities` migration still incomplete. |
+| `OWNER.md` | Product ownership and boundary | Good; boundary score already 6/10. |
+| `docs/architecture/PLANE_ARCHITECTURE.md` | Canonical target architecture | Strong; implementation does not fully meet it. |
+| `docs/product/01...vision...md` | Vision/market/product boundary | Strong; implementation gaps remain. |
+| `docs/product/02...architecture.md` | Detailed architecture/runtime/governance | Strong; implementation gaps remain. |
+| `docs/api/REST_API_DOCUMENTATION.md` | Human-readable API inventory | Useful but likely stale in parts; claims strict tenant/audit behavior not proven by code. |
 
 ### 5.2 Contract inventory
 
-| Contract | Status | Issue |
+| Contract | Status |
+|---|---|
+| `contracts/openapi/data-cloud.yaml` | Identified as canonical, parity not fully verified. |
+| `contracts/openapi/action-plane.yaml` | Identified as canonical, parity not fully verified. |
+| `contracts/openapi/aep.yaml` | Compatibility contract; equivalence not verified. |
+| UI schema contracts | `capabilities.service.ts` parses capability envelope, but still uses compatibility naming and endpoint. |
+
+### 5.3 UI inventory
+
+| UI route/surface | Status |
+|---|---|
+| `/` Home | Present |
+| `/data` + nested data routes | Present |
+| `/pipelines` + nested pipeline routes | Present |
+| `/query` | Present |
+| `/trust`, `/insights`, `/operations`, `/alerts` | Present, role-protected |
+| `/events`, `/memory`, `/entities`, `/context`, `/fabric`, `/agents` | Present; some runtime gated |
+| `/settings`, `/plugins`, `/connectors` | Present; settings/connectors gated, plugins not runtime-gated |
+| Compatibility aliases (`/dashboard`, `/collections`, `/workflows`, etc.) | Present |
+
+### 5.4 Backend/API inventory
+
+The REST docs list routes for probes, entities/search, events, pipelines/checkpoints, memory/brain/learning, analytics/reports/models/features, governance/lineage/context/data-products, capabilities/plugins/autonomy/agents, operations/streaming, voice, federation, and migration. fileciteturn34file0
+
+High-risk backend flows inspected:
+
+- Entity CRUD and batch operations.
+- Event append/query/tail.
+- Runtime truth/capability registry client path.
+- AI assist.
+- Launcher startup, auth, trace, audit, settings, production validation.
+
+### 5.5 Data/Event/Storage inventory
+
+| Item | Status | Finding |
 |---|---|---|
-| `contracts/openapi/data-cloud.yaml` | Canonical Data Cloud REST contract per README. | Need prove route drift checks and SDK consume only canonical path. |
-| `contracts/openapi/action-plane.yaml` | Canonical Action Plane contract. | Keep distinct from runtime implementation internals. |
-| `contracts/openapi/aep.yaml` | Compatibility contract. | Keep sync only temporarily and add retirement criteria. |
-| Platform AEP copy | Sync-checked in contracts build. | Avoid letting platform copy become source of truth. |
+| `DataCloudClient` | Public facade | Too thin for required event envelope and query semantics. |
+| `EntityStore` SPI | Shared SPI | Missing collection in identity operations. |
+| `EventLogStore` SPI | Shared SPI | Missing typed required envelope fields and idempotency semantics. |
+| `InMemoryEntityStore` | Local/testing provider | Collection overwrite/delete risk. |
+| `InMemoryEventLogStore` | Local/testing provider | Offset semantics need conformance tests. |
+| `H2SovereignEntityStore` | File-backed provider | Collection isolation and query correctness broken. |
+| `H2SovereignEventLogStore` | File-backed provider | Batch atomicity/idempotency incomplete; offsets global. |
 
-### 5.3 UI/action inventory highlights
+### 5.6 Shared library inventory
 
-| UI / action surface | Status | Issue |
-|---|---|---|
-| Home/Data/Query/Pipelines/Trust/Operations | Broadly present by docs/routes. | Need full E2E against live backend. |
-| Compatibility routes | Present. | Must not bypass route/capability/role gates. |
-| Data Fabric `/fabric` | Preview per developer manual. | Feature docs claim production readiness. |
-| Alerts | Launcher-backed per developer manual. | Need triage/ack/resolve/stream E2E proof. |
-| Query analytics | Handler and tests exist. | Need contract/UI E2E; enforce row cap and timeout. |
-
-### 5.4 Backend/data/event/storage inventory highlights
-
-| Backend/data item | Status | Issue |
-|---|---|---|
-| Launcher profile validation | Non-embedded profiles validate before resource creation. | Missing profile defaults to local. |
-| HTTP/gRPC transport startup | Explicit transport required. | Good; keep tests. |
-| Entity/event stores | Local/durable modes documented. | Need executed durable/restart tests. |
-| Analytics handler | Improved; no visible prior async P0. | Timeout constant and submit row cap need enforcement. |
-| Runtime truth/capabilities | Documented and partially scripted. | Need universal UI/SDK consumption proof. |
-
-### 5.5 Shared-library inventory highlights
-
-| Shared library / dependency | Use | Boundary assessment |
-|---|---|---|
-| `platform:java:observability` | Launcher metrics/traces. | Valid shared infra; keep generic. |
-| `platform:java:config/http/security/audit/governance` | Launcher and production guardrails. | Valid shared infra; ensure Data Cloud-specific policy stays in Data Cloud. |
-| `platform:java:ai-integration` | AI/model/feature integration. | Plane architecture explicitly says move query assist/schema inference/action suggestions into Data Cloud Intelligence if product-specific. |
-| `platform:java:workflow`, `agent-*`, `messaging`, `data-governance` | Shared action/event/governance primitives. | Must be audited for Data Cloud/Action semantics that should move into `products/data-cloud`. |
-| `@ghatana/theme`, design system packages | UI theme/shell. | Valid shared UI infra; route/page-specific logic should remain in Data Cloud UI. |
+| Library / surface | Status |
+|---|---|
+| `planes/shared-spi` | Product-owned shared SPI; needs stronger canonical modeling. |
+| `delivery/sdk` | Not audited; must be checked against OpenAPI. |
+| `platform-kernel/kernel-core/.../datacloud` | Search found direct Data Cloud adapter types; surface not deeply audited. |
+| platform governance/security | Used by launcher/server; must be audited for authz/tenant enforcement. |
+| platform AI integration | Used by LLM bootstrap; includes hardcoded DNS concern. |
+| `@ghatana/theme` | Used by UI provider; not deeply audited. |
+| `@ghatana/canvas` | Listed as jointly owned in OWNER, but no direct UI usage was validated in this run. |
 
 ---
 
 ## 6. Requirement-to-Implementation Traceability Matrix
 
-| Capability | UI | API/backend | Data/store | Tests | Observability | Status |
-|---|---|---|---|---|---|---|
-| Runtime Truth | Status banner/gates expected | `/api/v1/surfaces`, compatibility `/capabilities` | dependency probes | Needed | Runtime state/audit | Partially implemented/proven |
-| Entity CRUD | `/data`, `/entities` | entity handlers | EntityStore | Needed DB/provider tests | metrics/logs | Source-partial |
-| Event append/query | `/events` | event handlers/SSE | EventLogStore | Needed durable tests | streams/metrics | Source-partial |
-| Analytics query | `/query` | `AnalyticsHandler` | analytics engine/result store | Unit/metrics tests exist | metrics/trace ID | Partially complete |
-| Analytics cancellation | query cancel action if exposed | `handleAnalyticsCancelQuery` | engine cancellation if supported | Unit tests exist | trace/error | Capability alignment needed |
-| Data Fabric | `/fabric`, `/connectors` | fabric/connector APIs claimed | connector/fabric store | Docs say examples | unknown | Preview/inconsistent |
-| Pipelines/workflows | `/pipelines` | workflow capability | execution snapshots/logs | Need provider/restart tests | logs/metrics | Partially proven |
-| Governance/trust | `/trust` | governance handlers | audit/governance store | Needed | audit events | Partial |
-| Production startup | Docker/Helm/K8s | launcher validation | durable stores/settings | Some docs/tests claimed | readiness/metrics | P0 gap due profile default |
-| Shared library boundaries | n/a | Gradle/import graph | n/a | Needed ArchUnit/scripts | CI checks | Partial |
+| Capability | UI | API/Backend | Data/Event | Tests | Status |
+|---|---|---|---|---|---|
+| Entity save/read/query/delete | `/data`, `/entities` | `EntityCrudHandler`, `DataCloudClient` | EntityStore/H2/InMemory | Unknown | **Complete but incorrect** |
+| Event append/query/tail | `/events` | Event handler/client | EventLogStore/H2/InMemory | Unknown | **Partial/incorrect** |
+| Runtime truth | Runtime gates | `/surfaces` target, `/capabilities` compatibility | Capability registry | Unknown | **Partial/migration incomplete** |
+| AI assist | Query/pipeline/entity assist | `AiAssistHandler` | Optional AI action audit | Unknown | **Stub/fallback risk** |
+| Governance/privacy/audit | `/trust` | governance routes, optional audit | TenantContext, policy/audit optional | Unknown | **Partial** |
+| Settings | `/settings` | Settings handler/store | InMemory/JDBC | Unknown | **Partial; production persistence risk** |
+| Plugins/connectors | `/plugins`, `/connectors` | plugin/connectors handlers | plugin manager | Unknown | **Partial** |
+| Operations | `/operations`, `/alerts` | health/metrics/trace | optional trace/audit | Unknown | **Partial** |
 
 ---
 
 ## 7. End-to-End Journey Audit
 
-| Journey | Expected outcome | Actual / evidence | Correct? | Complete? | Severity | Required tests |
-|---|---|---|---:|---:|---|---|
-| Production container startup | Fail closed unless production profile, durable DB/Kafka/settings, and auth are configured. | Runbook requires this, but Dockerfile omits profile and launcher defaults absent profile to LOCAL. | No | No | P0 | container startup tests, Helm/K8s config tests, launcher profile tests |
-| Local backend + UI stack | `run-local-stack.sh` starts backend and `delivery/ui`, disables mocks, and verifies both. | Mocks disabled, but script points to `${PRODUCT_ROOT}/ui`. | No | No | P1 | shellcheck + smoke E2E |
-| Open Data Cloud UI | Runtime-truth-gated shell and core routes. | Routes exist; compatibility aliases may mount pages directly. | Partial | Partial | P1 | route matrix with role/capability gates |
-| Run analytics query | Tenant-required query, row bounded, trace/correlation, stable errors. | Handler supports tenant, trace, unit/metrics tests; submit path trusts engine for row limit and timeout not proven. | Partial | Partial | P1 | API contract + large-result + timeout tests |
-| Cancel analytics query | Only shown when supported; backend and capability registry agree. | Handler defaults unsupported; tests cover 501 and supported mode; UI/OpenAPI proof missing. | Partial | Partial | P1/P2 | UI/API/capability tests |
-| Create/update entity | Persist tenant-isolated data. | Docs/manual/runbook support; runtime not executed. | Unknown | Unknown | P1/P2 | DB integration + Playwright journey |
-| Append/replay event | Durable event survives restart and remains tenant-scoped. | Docs/manual/runbook support; runtime not executed. | Unknown | Unknown | P1 | Kafka/EventLog integration |
-| Data Fabric | Either real fabric metrics or clear preview boundary. | Docs conflict: preview-only vs production-ready. | No | No | P1 | production-off feature gate + docs tests |
-| Governance destructive action | Confirmed, authorized, audited, tenant-safe. | Runbook has tenant isolation; exact destructive flow proof not inspected. | Partial | Partial | P1/P2 | API E2E + audit-event assertions |
-| Action Plane runtime | Native Data Cloud surface, not peer AEP product. | Docs align; CI/product labels still use AEP as product. | Partial | Partial | P1/P2 | boundary CI + docs/CI rename checks |
+| Journey | Actual behavior | Severity | Required fix |
+|---|---|---:|---|
+| Save entity in two collections with same id | Underlying stores key by tenant+id; one collection can overwrite another. | P0 | Make entity identity tenant/workspace/collection/id across SPI, stores, APIs, tests. |
+| Query entities with filters/sorts in sovereign profile | H2 query ignores filters/sorts/search/projections; count ignores filters. | P0 | Implement full QuerySpec or reject unsupported query options with 400/422. |
+| Delete entity by collection/id | Handler validates collection, but store delete ignores collection. | P0 | Collection-scoped delete and find. |
+| Append event with required envelope | Client/SPI do not require canonical envelope fields. | P0 | Introduce canonical event envelope and validation. |
+| Idempotent event append | H2 stores idempotency key but does not enforce it. | P0 | Unique constraint and idempotent replay response. |
+| Batch append | SPI says atomic; H2 loops append without transaction. | P0 | Single transaction with rollback. |
+| AI suggest without LLM | Returns static heuristic 200 fallback. | P0/P1 | Disable/gate in production; return explicit unavailable or preview state. |
+| Runtime truth route gating | UI still fetches `/capabilities`; gate renders children while loading. | P1 | Move to `/surfaces`; deny/placeholder while loading for non-core optional routes. |
+| Production startup | Validates selected env toggles, not all required production trust deps. | P0 | Profile-aware production preflight enforcing auth, policy, audit, durable stores, trace/metrics. |
 
 ---
 
-## 8. Findings and Remediation Plan
+## 8. UI/UX Audit
 
-| ID | Priority | Area | Finding | Evidence | Required fix | Acceptance criteria | Tests required |
-|---|---|---|---|---|---|---|---|
-| DC-P0-001 | P0 | Production startup | Production/container startup can silently default to local profile if `DATACLOUD_PROFILE` is absent. | Launcher defaults missing profile to LOCAL; Dockerfile omits `DATACLOUD_PROFILE`; runbook requires production profile. fileciteturn12file14 fileciteturn12file5 fileciteturn12file10 | Require explicit profile for container/non-dev deployments; set `DATACLOUD_PROFILE=production` in production Helm/K8s/Terraform; fail closed if profile missing outside local dev. | Production image cannot start with local/in-memory semantics unless explicitly running local dev image/profile. | launcher unit tests; container smoke; Helm/K8s config tests |
-| DC-P1-001 | P1 | Scripts/local dev | `run-local-stack.sh` points to `${PRODUCT_ROOT}/ui` instead of `delivery/ui`. | Script evidence. fileciteturn12file17 | Change UI dir to `products/data-cloud/delivery/ui`; update docs; add smoke check. | `bash products/data-cloud/scripts/run-local-stack.sh` starts backend and UI from clean checkout. | shellcheck; local stack smoke |
-| DC-P1-002 | P1 | Docs/source of truth | Developer manual contradicts canonical Data Cloud/Action Plane boundary. | Developer manual says Data Cloud does not own higher-level agent orchestration; README/architecture says AEP is Action Plane runtime. fileciteturn16file7 fileciteturn5file0 fileciteturn11file1 | Rewrite manual to match plane architecture; move historical wording to historical migration docs. | No active docs describe AEP as peer product or external product boundary. | doc truth scan |
-| DC-P1-003 | P1 | Data Fabric | Data Fabric feature docs overclaim production readiness while active manual marks `/fabric` preview-only. | Feature docs and developer manual conflict. fileciteturn16file5 fileciteturn16file2 | Either implement live APIs/tests or mark preview and production-disable through Runtime Truth. | No demo/preview feature is presented as production-live. | UI feature-gate tests; doc truth tests |
-| DC-P1-004 | P1 | UI authorization/gating | Compatibility aliases may bypass role/runtime gates. | Route snippet shows direct alias elements. fileciteturn16file10 | Ensure every compatibility alias delegates through same gate stack as canonical route. | Route matrix proves canonical and alias paths have identical auth/capability behavior. | route unit tests; Playwright role/capability tests |
-| DC-P1-005 | P1 | Analytics performance/correctness | Analytics submit path passes `_rowLimit` to engine but does not defensively cap `rows` before response; timeout constant appears unused. | Handler evidence. fileciteturn15file0 | Enforce local response cap and timeout/cancellation behavior, or remove unused timeout claim. | Responses cannot exceed configured max even if engine misbehaves; long-running queries fail/cancel predictably. | large-result tests; timeout tests |
-| DC-P1-006 | P1 | Analytics contract/UI parity | Analytics unit tests exist, but contract/UI/generated-client parity still needs proof. | Handler/tests evidence. fileciteturn15file0 fileciteturn15file1 | Add OpenAPI route alignment and UI mapping tests for analytics responses and cancellation support. | UI, OpenAPI, handler, and SDK agree on query/result/plan/cancel behavior. | API contract tests; UI mapping tests |
-| DC-P1-007 | P1 | CI/product boundary | CI still has separate `aep` product label for `products/data-cloud/planes/action/**`. | Product isolated CI evidence. fileciteturn17file8 | Rename to Data Cloud Action Plane component or fold into Data Cloud product matrix. | CI terminology matches one product boundary with internal components. | CI config tests |
-| DC-P1-008 | P1 | CI authenticity | AEP/action CI can skip missing integration tests with echo instead of failing. | Gitea CI evidence. fileciteturn17file17 | Remove `|| echo` skip for required gates; explicitly mark optional tests by feature flag and fail required missing suites. | Required integration tests cannot be silently skipped. | CI dry-run / workflow lint |
-| DC-P1-009 | P1 | CODEOWNERS/governance | CODEOWNERS ordering likely makes Action Plane ownership ambiguous because general Data Cloud owner can override earlier action rule. | CODEOWNERS evidence. fileciteturn17file9 | Place specific `planes/action`, `contracts`, and `shared-spi` rules after general Data Cloud rule. | GitHub owner resolution shows correct owners for action/contracts/shared-spi paths. | CODEOWNERS resolver test |
-| DC-P1-010 | P1 | Runtime Truth | Runtime Truth is canonical in docs but universal UI/API/SDK consumption is not proven. | README/HLD evidence. fileciteturn5file0 fileciteturn11file2 | Add runtime truth registry composition and route/action gate generation tests. | Every gated route/action reads Runtime Truth or generated gate metadata. | SurfaceRegistryCompositionTest; UI gate tests |
-| DC-P1-011 | P1 | Durable proof | Entity/event/workflow durability and restart behavior are documented but need executed proof. | Runbook/manual evidence. fileciteturn12file10 fileciteturn16file7 | Run/add Testcontainers-backed durability and restart tests. | Entity/event/workflow data survives restart in durable profiles and remains tenant-isolated. | DB/Kafka integration; restart tests |
-| DC-P1-012 | P1 | Browser E2E portability | Playwright config uses Windows-specific Gradle command/cwd. | Playwright config evidence. fileciteturn12file8 | Make commands cross-platform or script-backed. | E2E runs on Linux CI, macOS, and Windows. | Playwright CI on Linux |
-| DC-P1-013 | P1 | Production mock/stub scan | Placeholder scanner only catches comment markers and a narrow set of words. | Scanner evidence. fileciteturn13file1 | Extend scanner to production `return []/null/true`, static JSON live data, console logging, hardcoded demo data, mock imports, fixture imports, and UI mock flags. | Production placeholder scan catches all rubric-prohibited patterns with narrow allowlist. | scanner unit tests; CI gate |
-| DC-P2-001 | P2 | Test coverage threshold | Launcher coverage gate allows 50% instruction coverage. | Build file evidence. fileciteturn13file14 | Raise thresholds for critical modules and require branch coverage for changed code. | Critical launcher/handlers/guards meet release coverage target. | Jacoco verification |
-| DC-P2-002 | P2 | Contract compatibility debt | `aep.yaml`, `action-plane.yaml`, runtime, and platform spec copies are sync-checked but still duplicated. | Contracts build evidence. fileciteturn11file0 | Add retirement plan for compatibility specs and keep platform copy non-canonical. | Single canonical contract remains after callers migrate. | OpenAPI sync and migration tests |
-| DC-P2-003 | P2 | Shared platform split | Plane architecture lists platform modules to move/split, but concrete import inventory was not proven. | Shared platform review rules. fileciteturn11file1 | Inventory Data Cloud imports from agent/workflow/messaging/AI/governance/platform-contracts and split product semantics into Data Cloud. | Generic platform libs contain only reusable infrastructure; Data Cloud semantics live in Data Cloud planes/extensions. | dependency graph + ArchUnit |
-| DC-P2-004 | P2 | Root workspace scripts | Root package scripts use product-level UI globs that may miss nested Data Cloud `delivery/ui` unless package filters compensate. | Root scripts evidence. fileciteturn15file2 | Audit root `build`, `dev`, `test:ui`, `typecheck` filters for nested Data Cloud UI. | Data Cloud UI is always included in root UI gates. | script tests |
-| DC-P2-005 | P2 | Historical docs | Some general build/kernel docs still mention AEP as standalone product or old paths. | Build guide evidence. fileciteturn17file2 | Mark historical or update to Data Cloud Action Plane. | Active docs use one product boundary. | doc truth check |
+### Strengths
+
+- The route map mostly follows the outcome-first navigation model: Home, Data, Pipelines, Query, Trust, Operations, plus contextual surfaces. fileciteturn42file0
+- RoleProtectedRoute explicitly separates shell disclosure from backend authorization, which is a good security/UX distinction. fileciteturn43file0
+- SessionBootstrap rejects reserved tenant IDs such as `default` and `default-tenant`, reducing accidental ambiguous tenant context. fileciteturn44file0
+
+### Issues
+
+| Issue | Severity | Evidence | Required fix |
+|---|---:|---|---|
+| UI runtime truth still uses `/capabilities`, not `/surfaces`. | P1 | `capabilities.service.ts` calls `/capabilities`; README says `/surfaces` is target and `/capabilities` is compatibility. | Create `surfaces.service.ts`, migrate gates and UI labels to Runtime Truth terminology. |
+| Runtime gate renders children while capabilities are loading. | P1 | `RuntimeCapabilityRouteGate` returns children when loading without data. | Render safe disabled/loading shell for optional surfaces until runtime truth loads. |
+| Some optional surfaces are not runtime-gated. | P1 | `events` and `plugins` routes are role-protected but not capability-gated. | Apply runtime truth gates consistently. |
+| API cache invalidation is too narrow. | P2 | Mutation invalidates exact URL only. | Invalidate collection/list/detail query families after writes. |
+| Potential type issue in route fallback lambdas. | P1/P2 | `withSuspense` expects lazy component but is passed inline function in fallback. | Replace with direct fallback element or typed lazy component. |
 
 ---
 
-## 9. Production Mock/Stub/Shortcut Audit
+## 9. Frontend Action/State/Data Flow Audit
 
-| Area | Status | Required action |
+| Flow | Finding | Severity | Fix |
+|---|---|---:|---|
+| API client tenant propagation | Adds `X-Tenant-ID` from SessionBootstrap; good. | — | Keep. |
+| API error correlation | Parses `X-Correlation-ID`; good. | — | Keep. |
+| Cache invalidation | Exact-url invalidation can leave list/detail data stale. | P2 | Add query-key based invalidation per domain operation. |
+| Runtime gating | Uses compatibility capability registry and allow-while-loading behavior. | P1 | Move to surfaces and safe-loading behavior. |
+| Shell role | UI disclosure only, not backend auth; good if backend enforcement is real. | — | Add integration tests proving backend denies unauthorized access regardless shell role. |
+
+---
+
+## 10. Backend/API/Domain/Event/Storage Audit
+
+### Entity model and storage
+
+**Finding P0 — collection identity is broken.**
+
+- `EntityStore.findById`, `delete`, `exists`, and related methods accept tenant + entity id only, not collection. fileciteturn21file0
+- `DataCloudClient.findById/delete` accept collection at API level, but pass only id into the store. fileciteturn16file0
+- `H2SovereignEntityStore` primary key is `(tenant_id, entity_id)`, and select/update/delete use only tenant + id. fileciteturn25file0
+- `EntityCrudHandler` validates collection, then calls `client.findById` and `client.delete`, which currently cannot enforce collection-scoped identity. fileciteturn35file0
+
+### Query model
+
+**Finding P0 — H2 QuerySpec is not honored.**
+
+`H2SovereignEntityStore.query` and `count` only use tenant, collection, deleted flag, limit, and offset; filters, sorts, search, projections, consistency, and freshness hints are ignored. fileciteturn25file0
+
+### Event model
+
+**Finding P0 — event envelope is too weak.**
+
+The architecture requires a full event envelope with tenant, event id, subject, source, schema version, correlation/causation, actor, classification, policy context, timestamp, provenance, and trace context. Current `DataCloudClient.Event` and `EventLogStore.EventEntry` do not model most of those as mandatory fields. fileciteturn8file0 fileciteturn19file0 fileciteturn22file0
+
+### Production profile
+
+**Finding P0/P1 — production fail-closed is incomplete.**
+
+Docs require production profiles to fail closed for missing security, policy, audit, durability, and runtime dependencies. Config validation covers selected env variables but not all production trust dependencies. Optional audit/trace/settings/AI paths can silently degrade. fileciteturn8file0 fileciteturn29file0 fileciteturn32file0
+
+---
+
+## 11. Contract/API/SDK/Runtime Truth Audit
+
+| Area | Status | Finding |
 |---|---|---|
-| Analytics placeholders | Prior `Promise.ofBlocking` and `FIXME` issues appear resolved in inspected source; direct ActiveJ chaining and tests exist. | Keep static scan and contract tests. |
-| Analytics cancellation | Unsupported by default and unit-tested as capability-consistent; UI/OpenAPI proof still needed. | Do not show cancel unless Runtime Truth says supported. |
-| Local in-memory profile | Valid for local dev only; dangerous if production container defaults there. | P0 fail-closed profile fix. |
-| Data Fabric | Feature docs can create false production confidence. | Preview-gate or implement production endpoints/tests. |
-| Production placeholder scan | Existing script is good start but too narrow. | Extend scan patterns and make release gate mandatory. |
+| `data-cloud.yaml` | Unknown | Must be checked against runtime route inventory. |
+| `action-plane.yaml` | Unknown | Must be checked against action routes and `aep.yaml`. |
+| `/api/v1/surfaces` | Partial | Target exists in docs, but UI still consumes `/capabilities`. |
+| `/api/v1/capabilities` | Compatibility path | Still primary UI dependency. |
+| Runtime state naming | Partial | Docs say avoid capability truth/registry; implementation still uses capability types. |
+| SDK generation | Unknown | Must verify generated SDK uses product-level contracts and UI uses generated/adapted clients. |
 
 ---
 
-## 10. Security, Privacy, Governance, and Tenant Isolation
+## 12. Production Mock/Stub/Shortcut Audit
 
-| Area | Assessment | Required fix |
-|---|---|---|
-| Auth/profile guardrails | Strong runbook and launcher validation for non-embedded profiles; unsafe default profile remains. | P0 explicit profile requirement. |
-| Tenant isolation | Runbook documents strict tenant isolation verification and tests. | Execute and publish provider/HTTP-level test evidence for this commit. |
-| Insecure/local mode | Local/embedded exceptions are documented. | Ensure container/production cannot accidentally use local/insecure defaults. |
-| Secrets | Dockerfile avoids default DB credentials. | Verify Helm/K8s/Terraform secrets references. |
-| Governance/destructive actions | Documented but not fully inspected. | Add purge/redaction/retention API E2E with audit assertions. |
-
----
-
-## 11. Observability and Operability
-
-| Flow | Logs | Metrics | Traces/correlation | Gaps |
-|---|---|---|---|---|
-| Analytics query | Server logs sanitized errors. | Metrics tests exist. | Trace ID included in response. | Add API contract tests proving trace/correlation shape. |
-| Startup/readiness | Runbook defines health/ready/live/metrics checks. | Metrics endpoint documented. | Runtime truth expected. | Container/startup profile P0; execute readiness tests. |
-| Runtime Truth | Target docs are strong. | Unknown. | Unknown. | Surface registry composition and UI/SDK gating proof. |
-| Durable recovery | Runbook includes recovery notes. | Load suite artifacts documented. | Unknown. | Execute load/restart/recovery suites for exact commit. |
+| Evidence | Production reachable? | Severity | Required action |
+|---|---:|---:|---|
+| `DataCloudHttpLauncherBootstrap` warns AI routes will return stubs when no backend configured. | Yes | P0/P1 | Disable/gate AI routes in production when no real completion service exists. |
+| `AiAssistHandler` returns static heuristic fallback with 200 and `ai.fallback=true`. | Yes | P0/P1 | Return explicit unavailable or preview-only response unless route is configured as non-critical preview. |
+| `AuditService` null means audit emission silently skipped. | Yes | P0 | Production must fail closed for audit-required mutations. |
+| `TraceExportService` null means spans generated but discarded. | Yes | P1 | Production runtime truth must mark traces degraded/unavailable, or fail closed for production SLO mode. |
+| `SettingsStore` null means in-memory settings store. | Yes | P1 | Production must require persistent settings storage. |
+| Batch entity save skips semantic indexing to avoid null promise issues. | Yes | P1 | Implement batch semantic indexing or explicitly disable semantic features for batch with runtime truth and tests. |
+| In-memory entity idempotency store for writes. | Yes | P1 | Use durable idempotency store in production. |
 
 ---
 
-## 12. Performance and Scalability
+## 13. Reusability, Abstraction, and DRY Audit
 
-| Area | Risk | Required fix |
-|---|---|---|
-| Analytics large results | Submit path depends on engine honoring `_rowLimit`; response does not cap defensively. | Sublist/cap rows before response and assert `truncated`. |
-| Analytics timeout | `QUERY_TIMEOUT_MS` constant appears defined but not proven enforced. | Enforce timeout or remove claim; add timeout tests. |
-| Local/dev stack | Broken UI path blocks fast feedback loop. | Fix script and add smoke test. |
-| Durable load | Runbook describes load suite. | Execute suite and store results as CI artifact. |
-| UI E2E | Windows-only Playwright backend command can block Linux CI. | Make cross-platform. |
-
----
-
-## 13. Test Correctness and Coverage
-
-| Test area | Existing evidence | Gap |
-|---|---|---|
-| Analytics unit tests | `AnalyticsHandlerTest.java` covers engine absent, valid/invalid JSON, missing/blank query, invalid limit, engine error, tenant, caps, cancellation. fileciteturn15file1 | Add route-level API/OpenAPI/UI client tests. |
-| Analytics metrics tests | Metrics tests exist. fileciteturn14file10 | Add trace/correlation and failure-envelope contract tests. |
-| Production startup tests | Runbook claims tests; exact execution not performed. | Execute under exact commit and add container/Helm tests. |
-| UI route tests | Some route specs/docs exist. | Add canonical-vs-alias gate parity matrix. |
-| Data Fabric tests | Feature docs say examples, not necessarily integrated tests. | Replace example-only claims with real integrated tests or preview flag. |
-| Durable DB/Kafka tests | Runbook references provider/load tests. | Execute and publish artifacts for release. |
-| Coverage gates | Launcher threshold 50%. | Raise for critical paths and changed code. |
+| Duplicate / drift area | Severity | Evidence | Required fix |
+|---|---:|---|---|
+| Entity identity split between API collection-aware methods and store collection-unaware methods | P0 | `DataCloudClient` vs `EntityStore` vs H2 schema. | Introduce canonical `EntityRef(tenant, workspace, collection, id)`. |
+| Query/filter models duplicated | P1 | `DataCloudClient.Filter` uses strings; `EntityStore.Filter` uses enum and more operators. | Generate/adapt from canonical query contract. |
+| Event store abstractions duplicated | P1 | `DataCloudClient` has pending migration note; Bootstrap adapts Data Cloud event store to platform event store. | Decide canonical event-store SPI and remove legacy duplication. |
+| Runtime truth vs capability naming | P1 | Docs say runtime truth; UI still `CapabilityRegistry`. | Rename service/types and migrate endpoint. |
+| Optional subsystem behavior scattered | P1 | Server fields independently decide 501/503/fallback/silent skip. | Central Runtime Truth Registry should own availability and UI/API gating. |
 
 ---
 
-## 14. Production Readiness Gate
+## 14. Shared Library Boundary and Enhancement Audit
 
-| Gate | Verdict |
+### Findings
+
+1. `planes/shared-spi` is the correct product-owned location for Data Cloud public SPI, but it needs stronger contracts for entity identity, query semantics, event envelope, idempotency, tenant/workspace propagation, and production conformance.
+2. Platform kernel has Data Cloud adapter types found in `platform-kernel/kernel-core/src/main/java/com/ghatana/kernel/adapter/datacloud/...`; these must be reviewed to ensure Data Cloud-specific behavior does not leak into generic kernel libraries.
+3. `@ghatana/theme` is appropriately consumed by UI provider, but no deep design-system audit was completed.
+4. `@ghatana/canvas` is listed as jointly owned in OWNER but direct Data Cloud usage was not validated in this run.
+
+### Required enhancements
+
+| Enhancement | Owner |
+|---|---|
+| Canonical `EntityRef` / `CollectionRef` / `TenantWorkspaceContext` | `planes/shared-spi` |
+| Canonical event envelope and idempotency semantics | `planes/shared-spi` + contracts |
+| QuerySpec conformance suite for all stores | `delivery/runtime-composition/conformance` or `planes/shared-spi/testing` |
+| Runtime Truth client and UI gate package | `delivery/ui` + `libs/ui-components` if reusable |
+| Production profile validation framework | `planes/operations/config` |
+| Durable idempotency/audit/settings abstractions | shared SPI / operations/governance planes |
+
+---
+
+## 15. Security, Privacy, Governance, and Sovereignty Audit
+
+| Area | Finding | Severity | Required fix |
+|---|---|---:|---|
+| Tenant isolation | Entity storage is tenant-scoped but not collection/workspace-scoped. | P0 | Include workspace/collection in identity and storage keys. |
+| Auth | Non-embedded deployments require API keys or JWT unless insecure mode. | Good baseline | Add tests and explicit production profile gates. |
+| API key tenant binding | API key resolver maps all keys to tenant `service`; X-Tenant-ID may still select tenant. | P1 | Bind keys to allowed tenants/scopes or require JWT tenant claim for production. |
+| Audit | Audit service can be null and skipped. | P0 | Fail closed for sensitive mutations. |
+| Sovereignty | LLM bootstrap uses hardcoded DNS `8.8.8.8`. | P1 | Use configurable DNS/resolver; disallow public DNS in sovereign/production unless explicit. |
+| Trace/privacy | Trace export can be absent and silently discarded. | P1 | Runtime truth + production profile gating. |
+
+---
+
+## 16. Observability and Operability Audit
+
+| Flow | Finding | Severity | Required fix |
+|---|---|---:|---|
+| Health/readiness | Health handlers and subsystem probes exist. | — | Keep and expand. |
+| Runtime truth | `/surfaces` target documented but UI not migrated. | P1 | Complete migration and retirement plan. |
+| Traces | Trace service optional; absence discards spans. | P1 | Production runtime truth/fail-closed. |
+| Audit | Optional audit service means critical action evidence can be missing. | P0 | Require audit writer for sensitive routes. |
+| Metrics | Metrics collector wired, but no full SLO/dashboard parity verified. | P2 | Add route/flow metrics coverage tests. |
+| Runbooks | RUNBOOK exists but not fully audited. | P2 | Verify runbook against launcher profiles and health endpoints. |
+
+---
+
+## 17. Performance and Scalability Audit
+
+| Area | Risk | Severity | Required fix |
+|---|---|---:|---|
+| H2 query | Ignores filters/sorts and lacks indexes for query operators. | P0/P1 | Implement query planner/SQL builder and indexes. |
+| In-memory local store | Unbounded tenant/entity/event maps. | P2 | Add local limits, warnings, and test-only constraints. |
+| Event tailing H2 | Polling every 250ms per subscription. | P2 | Add scalable subscription model or bounded polling controls. |
+| UI cache | Exact URL invalidation can stale data. | P2 | Domain-aware invalidation. |
+| Batch writes | Per-item saves/events without transaction. | P1 | Define atomic/best-effort semantics and implement accordingly. |
+| AI prompt body | Request load body limited by token heuristic; good baseline. | — | Add payload redaction tests. |
+
+---
+
+## 18. Test Correctness and Coverage Audit
+
+### Required tests
+
+| Capability/Flow | Required test |
+|---|---|
+| Collection-scoped identity | Save same id in two collections; verify read/delete/update isolation in in-memory and H2. |
+| H2 query semantics | Filters, sorts, search, projection, count, hasMore, invalid operators. |
+| Event envelope | Append rejects missing required envelope fields; stores trace/provenance/classification. |
+| Event idempotency | Repeated idempotency key returns same offset/result. |
+| Event appendBatch | Atomic success and rollback on one invalid/failing entry. |
+| Production startup | Production refuses missing durable entity/event stores, auth, policy, audit, metrics/traces where required. |
+| AI fallback | Production with no LLM disables/gates AI routes; local may return explicit preview fallback. |
+| Runtime Truth UI | Optional surfaces do not render until `/surfaces` confirms availability. |
+| Contract parity | OpenAPI route inventory equals `DataCloudHttpServer` registrations. |
+| SDK parity | UI generated/adapted clients match OpenAPI. |
+| Tenant auth | Shell role changes do not grant backend access. |
+| Audit evidence | Sensitive mutations emit durable audit events. |
+| Cache invalidation | Entity writes invalidate list/detail/search queries. |
+
+---
+
+## 19. Prioritized Remediation Plan
+
+| Priority | Area | Issue | Evidence/File(s) | Required Fix | Acceptance Criteria | Tests Required |
+|---|---|---|---|---|---|---|
+| P0 | Data Plane | Entity identity not collection-scoped | `DataCloud.java`, `EntityStore.java`, `H2SovereignEntityStore.java`, `EntityCrudHandler.java` | Introduce canonical `EntityRef` and update stores/schema/API | Same id can exist safely in multiple collections | Unit + integration + API E2E |
+| P0 | Data Plane | H2 query ignores filters/sorts/search | `H2SovereignEntityStore.java` | Implement full QuerySpec or reject unsupported options | Query/count match requested filters/sorts | H2 integration tests |
+| P0 | Event Plane | Missing canonical event envelope | `DataCloudClient.java`, `EventLogStore.java` | Add typed envelope and validation | Missing required fields rejected | Contract + unit + integration |
+| P0 | Event Plane | H2 idempotency and batch atomicity missing | `H2SovereignEventLogStore.java` | Enforce unique idempotency and transactional appendBatch | Duplicate idempotency stable; rollback works | H2 integration tests |
+| P0 | Governance/Ops | Audit can be skipped | `DataCloudHttpServer.java` | Require audit writer for sensitive production routes | Sensitive mutation fails without audit | Startup + API tests |
+| P0/P1 | Intelligence | AI routes return heuristic/stub 200 | `DataCloudHttpLauncherBootstrap.java`, `AiAssistHandler.java` | Gate/disable in production unless real provider configured | No fake AI success in production | API + UI gate tests |
+| P1 | Runtime Truth | UI uses `/capabilities` | `capabilities.service.ts` | Migrate to `/surfaces` | `/capabilities` not used by UI | UI/API tests |
+| P1 | UI | Runtime gate shows children while loading | `RuntimeCapabilityRouteGate.tsx` | Render safe loading/disabled placeholder | Disabled surfaces never flash | UI tests |
+| P1 | Security | API key principal not tenant-bound | `DataCloudHttpLauncherBootstrap.java` | Bind keys to tenant/scope or require JWT tenant claim | Cross-tenant access denied | Security tests |
+| P1 | Sovereignty | Hardcoded DNS `8.8.8.8` | `DataCloudHttpLauncherBootstrap.java` | Make DNS configurable and forbidden in sovereign profile | Sovereign never uses public DNS | Unit + startup tests |
+| P1 | Settings | In-memory settings default can be production-reachable | `DataCloudHttpServer.java` | Require persistent settings in non-embedded profiles | Production refuses in-memory settings | Startup tests |
+| P2 | Frontend | Cache invalidation narrow | `api/client.ts` | Domain-aware invalidation | UI refreshes after writes | UI/service tests |
+| P2 | Docs | Port/profile/default docs drift | README, Launcher, Validator | Align default ports and local storage claims | Docs match code | Documentation check |
+
+---
+
+## 20. Final Production Readiness Gate
+
+| Gate | Decision |
 |---|---|
 | Ready for production | **No** |
-| Ready for internal demo | **Yes, if preview/degraded surfaces are clearly disclosed** |
-| Ready behind feature flags | **Partially** |
-| Critical blockers | DC-P0-001 production/container profile default risk |
-| Minimum release fixes | Close all P0/P1 items, run build/test/E2E/durable suites, commit new audit and TODO files, enforce no-stub scan and runtime-truth gates |
-| Shared-library refactors required before release | At minimum, inventory platform/shared imports and move/split product-specific Data Cloud/Action semantics |
-| Contract migrations required before release | Keep AEP compatibility specs sync-checked; add retirement plan and prove Data Cloud SDK canonical generation |
+| Ready for internal demo | **Yes, local/preview only** |
+| Ready behind feature flag | **Partially; critical Data/Event correctness still must be fixed** |
+| Minimum before release | Fix entity identity, H2 query, event envelope/idempotency/atomicity, production fail-closed, AI fallback gating, Runtime Truth migration. |
+| Shared-library refactors required | Yes: EntityRef, event envelope, QuerySpec, Runtime Truth types, event store canonicalization. |
+| Contract migrations required | Yes: `/surfaces` contract, event envelope, entity identity, action-plane/aep equivalence, generated SDK parity. |
 
 ---
 
-## 15. Final Checklist
+## 21. Final Checklist
 
-- [ ] Data Cloud product boundary uses planes/surfaces/modules/runtime truth everywhere.
-- [ ] AEP is described only as Action Plane runtime implementation, not peer product.
-- [ ] Production image cannot start with local/in-memory defaults accidentally.
-- [ ] Runtime Truth gates all UI routes/actions, including compatibility aliases.
-- [ ] Data Fabric is preview-gated or fully implemented/tested.
-- [ ] Analytics enforces response caps, timeout behavior, trace/error contract, and UI/OpenAPI parity.
-- [ ] Durable entity/event/workflow restart and tenant isolation tests pass.
-- [ ] Production placeholder/mock/stub scanner covers all rubric patterns.
-- [ ] CODEOWNERS correctly resolves Data Cloud, Action Plane, contracts, and shared SPI owners.
-- [ ] CI no longer treats AEP as a separate product boundary.
-- [ ] Local-stack and Playwright commands work cross-platform.
-- [ ] New exact-commit audit and TODO files are committed under `products/data-cloud/docs/audits/`.
+- [ ] Data Cloud product boundary verified with dependency graph.
+- [ ] No Data/Event/Context/Governance/Intelligence imports from Action implementation.
+- [ ] OpenAPI contracts validate.
+- [ ] Runtime route inventory matches OpenAPI.
+- [ ] UI uses generated/adapted clients, not duplicated hand-written contract types where avoidable.
+- [ ] `/surfaces` replaces `/capabilities` in UI.
+- [ ] Entity identity includes tenant/workspace/collection/id everywhere.
+- [ ] Event envelope includes required governance/provenance/trace fields.
+- [ ] H2 and in-memory stores pass conformance suite.
+- [ ] Production profile fails closed for auth, policy, audit, durable stores, observability.
+- [ ] No production AI/static heuristic fake success.
+- [ ] Audit evidence exists for sensitive mutations.
+- [ ] No in-memory settings/idempotency in production.
+- [ ] UI optional surfaces do not render before runtime truth.
+- [ ] Tests cover success, failure, permission, tenant isolation, concurrency, and degraded paths.
+- [ ] Docs, route truth matrix, contracts, SDK, and UI are internally consistent.

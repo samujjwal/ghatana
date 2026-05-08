@@ -25,10 +25,15 @@ import { TextField, Collapse } from '@ghatana/design-system';
 import { Search } from 'lucide-react';
 import type { RailPanelProps, LayerNode } from '../UnifiedLeftRail.types';
 import { Input } from '../../../ui/Input';
+import { CanvasOutlineMap } from '../../outline/CanvasOutlineMap';
 
 type CanvasNodeRecord = {
   id: string;
   type: string;
+  position?: { x: number; y: number };
+  size?: { width: number; height: number };
+  width?: number;
+  height?: number;
   hidden?: boolean;
   data?: {
     label?: string;
@@ -189,6 +194,15 @@ export function LayersPanel({
             {selectedNodeIds.length} selected
           </Typography>
         </Box>
+      </Box>
+
+      <Box className="px-4 pb-3">
+        <CanvasOutlineMap
+          nodes={canvasNodes}
+          selectedNodeIds={selectedNodeIds}
+          hoveredNodeId={hoveredNodeId}
+          onSelectNode={onSelectNode}
+        />
       </Box>
 
       {/* Layer List */}

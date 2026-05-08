@@ -203,7 +203,7 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
         <div className="flex items-center border-b border-border px-4 py-3">
           <Search className="w-5 h-5 text-muted-foreground mr-3" />
           <TextField
-            ref={inputRef as unknown as React.Ref<HTMLDivElement>}
+            ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search actions"
@@ -296,7 +296,6 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
           >
             <Alert
               severity="warning"
-              variant="standard"
               title="Confirm action"
               icon={<AlertTriangle className="w-5 h-5" />}
               action={

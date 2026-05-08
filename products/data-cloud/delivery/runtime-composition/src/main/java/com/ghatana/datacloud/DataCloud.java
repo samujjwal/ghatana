@@ -10,6 +10,8 @@ import com.ghatana.datacloud.storage.H2SovereignEventLogStore;
 import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
@@ -358,8 +360,9 @@ public final class DataCloud {
         public Promise<Optional<Entity>> findById(String tenantId, String collection, String id) {
             checkNotClosed();
             TenantContext tenant = TenantContext.of(tenantId);
-
-            return entityStore.findById(tenant, EntityStore.EntityId.of(id))
+            // DC-P0-001: use collection-scoped findByRef so same entity ID in different
+            // collections under the same tenant does not collide.
+            return entityStore.findByRef(tenant, EntityStore.EntityRef.of(collection, id))
                 .map(opt -> opt.map(e -> new Entity(
                     e.id().value(),
                     e.collection(),
@@ -428,7 +431,8 @@ public final class DataCloud {
         public Promise<Void> delete(String tenantId, String collection, String id) {
             checkNotClosed();
             TenantContext tenant = TenantContext.of(tenantId);
-            return entityStore.delete(tenant, EntityStore.EntityId.of(id));
+            // DC-P0-001: use collection-scoped deleteByRef
+            return entityStore.deleteByRef(tenant, EntityStore.EntityRef.of(collection, id));
         }
 
         @Override
@@ -443,15 +447,28 @@ public final class DataCloud {
                 return Promise.ofException(new IllegalArgumentException("Failed to serialize event payload", ex));
             }
 
+            // DC-P0-003: propagate canonical envelope fields into headers for storage/round-trip.
+            Map<String, String> enrichedHeaders = new java.util.LinkedHashMap<>(event.headers());
+            event.source().ifPresent(v        -> enrichedHeaders.put("x-dc-source", v));
+            event.subjectType().ifPresent(v   -> enrichedHeaders.put("x-dc-subject-type", v));
+            event.subjectId().ifPresent(v     -> enrichedHeaders.put("x-dc-subject-id", v));
+            event.schemaVersion().ifPresent(v -> enrichedHeaders.put("x-dc-schema-version", v));
+            event.correlationId().ifPresent(v -> enrichedHeaders.put("x-dc-correlation-id", v));
+            event.causationId().ifPresent(v   -> enrichedHeaders.put("x-dc-causation-id", v));
+            event.actor().ifPresent(v         -> enrichedHeaders.put("x-dc-actor", v));
+            event.classification().ifPresent(v -> enrichedHeaders.put("x-dc-classification", v));
+            event.policyContext().ifPresent(v -> enrichedHeaders.put("x-dc-policy-context", v));
+            event.provenance().ifPresent(v    -> enrichedHeaders.put("x-dc-provenance", v));
+            event.traceContext().ifPresent(v  -> enrichedHeaders.put("x-dc-trace-context", v));
+
             EventLogStore.EventEntry entry = EventLogStore.EventEntry.builder()
                 .eventType(event.type())
                 .payload(payloadJson)
                 .timestamp(event.timestamp())
-                .headers(event.headers())
+                .headers(enrichedHeaders)
                 .build();
 
-            return eventLogStore.append(
-                    tenant, entry)
+            return eventLogStore.append(tenant, entry)
                 .map(offset -> DataCloudClient.Offset.of(numericOffsetValue(offset)));
         }
 
@@ -537,8 +554,12 @@ public final class DataCloud {
             if (candidate instanceof AutoCloseable closeable) {
                 try {
                     closeable.close();
-                } catch (Exception ignored) {
-                    // Best-effort cleanup on shutdown.
+                } catch (Exception exception) {
+                    // DC-BE-004: Log close failures so operators can diagnose resource leaks.
+                    System.getLogger(DataCloud.class.getName())
+                        .log(System.Logger.Level.WARNING,
+                            "Failed to close {0}: {1}",
+                            new Object[]{candidate.getClass().getSimpleName(), exception.getMessage()});
                 }
             }
         }
@@ -553,24 +574,47 @@ public final class DataCloud {
             } catch (Exception ex) {
                 payload = Map.of("raw", payloadJson);
             }
-            return new Event(
-                entry.eventType(),
-                payload,
-                entry.headers(),
-                entry.timestamp()
-            );
+            Map<String, String> headers = entry.headers();
+            return Event.builder()
+                .type(entry.eventType())
+                .payload(payload)
+                .headers(headers)
+                .timestamp(entry.timestamp())
+                .source(headers.get("x-dc-source"))
+                .correlationId(headers.get("x-dc-correlation-id"))
+                .causationId(headers.get("x-dc-causation-id"))
+                .traceContext(headers.get("x-dc-trace-context"))
+                .build();
         }
     }
 
     // ==================== In-Memory Implementations ====================
 
     private static class InMemoryEntityStore implements EntityStore {
+        /**
+         * Outer key: tenantId. Inner key: "collection/entityId" (collection-scoped).
+         * This ensures the same entity ID can exist in multiple collections under one tenant
+         * without collision (DC-P0-001).
+         */
+        private static final Logger log = LoggerFactory.getLogger(InMemoryEntityStore.class);
+        /** DC-PERF-002: soft limit — warn when any single tenant exceeds this. */
+        private static final int SOFT_LIMIT_PER_TENANT = 10_000;
         private final Map<String, Map<String, Entity>> store = new ConcurrentHashMap<>();
+
+        private static String scopedKey(String collection, String entityId) {
+            return collection + "/" + entityId;
+        }
 
         @Override
         public Promise<Entity> save(TenantContext tenant, Entity entity) {
-            store.computeIfAbsent(tenant.tenantId(), k -> new ConcurrentHashMap<>())
-                .put(entity.id().value(), entity);
+            Map<String, Entity> tenantStore = store.computeIfAbsent(tenant.tenantId(), k -> new ConcurrentHashMap<>());
+            tenantStore.put(scopedKey(entity.collection(), entity.id().value()), entity);
+            int size = tenantStore.size();
+            if (size >= SOFT_LIMIT_PER_TENANT) {
+                log.warn("DC-PERF-002: InMemoryEntityStore tenant={} has reached {} entities " +
+                    "(soft limit {}). Switch to H2SovereignEntityStore for durable storage.",
+                    tenant.tenantId(), size, SOFT_LIMIT_PER_TENANT);
+            }
             return Promise.of(entity);
         }
 
@@ -584,18 +628,31 @@ public final class DataCloud {
 
         @Override
         public Promise<Optional<Entity>> findById(TenantContext tenant, EntityId id) {
+            // Without collection context the key is ambiguous; return empty to signal that
+            // callers must use findByRef for collection-scoped lookup.
+            return Promise.of(Optional.empty());
+        }
+
+        @Override
+        public Promise<Optional<Entity>> findByRef(TenantContext tenant, EntityRef ref) {
             Map<String, Entity> tenantStore = store.get(tenant.tenantId());
             if (tenantStore == null) {
                 return Promise.of(Optional.empty());
             }
-            return Promise.of(Optional.ofNullable(tenantStore.get(id.value())));
+            return Promise.of(Optional.ofNullable(tenantStore.get(scopedKey(ref.collection(), ref.entityId().value()))));
         }
 
         @Override
         public Promise<List<Entity>> findByIds(TenantContext tenant, List<EntityId> ids) {
+            // Without collection context we cannot do a scoped look-up; return empty.
+            return Promise.of(List.of());
+        }
+
+        @Override
+        public Promise<List<Entity>> findByRefs(TenantContext tenant, List<EntityRef> refs) {
             Map<String, Entity> tenantStore = store.getOrDefault(tenant.tenantId(), Map.of());
-            List<Entity> results = ids.stream()
-                .map(id -> tenantStore.get(id.value()))
+            List<Entity> results = refs.stream()
+                .map(ref -> tenantStore.get(scopedKey(ref.collection(), ref.entityId().value())))
                 .filter(Objects::nonNull)
                 .toList();
             return Promise.of(results);
@@ -682,19 +739,40 @@ public final class DataCloud {
 
         @Override
         public Promise<Void> delete(TenantContext tenant, EntityId id) {
+            // Without collection context we cannot safely delete; no-op.
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Void> deleteByRef(TenantContext tenant, EntityRef ref) {
             Map<String, Entity> tenantStore = store.get(tenant.tenantId());
             if (tenantStore != null) {
-                tenantStore.remove(id.value());
+                tenantStore.remove(scopedKey(ref.collection(), ref.entityId().value()));
             }
             return Promise.of(null);
         }
 
         @Override
         public Promise<BatchResult<String>> deleteBatch(TenantContext tenant, List<EntityId> ids) {
-            for (EntityId id : ids) {
-                delete(tenant, id);
+            // Without collection context, cannot do scoped deletes; return zero affected.
+            return Promise.of(new BatchResult<String>(ids.size(), 0, ids.size(),
+                java.util.stream.IntStream.range(0, ids.size())
+                    .mapToObj(i -> new com.ghatana.datacloud.spi.BatchError<String>(i, ids.get(i).value(), "COLLECTION_REQUIRED", "collection context required for scoped delete"))
+                    .toList()));
+        }
+
+        @Override
+        public Promise<BatchResult<String>> deleteByRefs(TenantContext tenant, List<EntityRef> refs) {
+            Map<String, Entity> tenantStore = store.get(tenant.tenantId());
+            int deleted = 0;
+            if (tenantStore != null) {
+                for (EntityRef ref : refs) {
+                    if (tenantStore.remove(scopedKey(ref.collection(), ref.entityId().value())) != null) {
+                        deleted++;
+                    }
+                }
             }
-            return Promise.of(BatchResult.success(ids.size()));
+            return Promise.of(new BatchResult<>(refs.size(), deleted, refs.size() - deleted, List.of()));
         }
 
         @Override
@@ -702,14 +780,21 @@ public final class DataCloud {
             Map<String, Entity> tenantStore = store.getOrDefault(tenant.tenantId(), Map.of());
             long count = tenantStore.values().stream()
                 .filter(e -> e.collection().equals(query.collection()))
+                .filter(e -> matchesFilters(e, query.filters()))
                 .count();
             return Promise.of(count);
         }
 
         @Override
         public Promise<Boolean> exists(TenantContext tenant, EntityId id) {
+            // Without collection context this is unreliable; return false.
+            return Promise.of(false);
+        }
+
+        @Override
+        public Promise<Boolean> existsByRef(TenantContext tenant, EntityRef ref) {
             Map<String, Entity> tenantStore = store.get(tenant.tenantId());
-            return Promise.of(tenantStore != null && tenantStore.containsKey(id.value()));
+            return Promise.of(tenantStore != null && tenantStore.containsKey(scopedKey(ref.collection(), ref.entityId().value())));
         }
 
         @Override

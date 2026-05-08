@@ -597,7 +597,10 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
             payload.put("data", data != null ? new java.util.LinkedHashMap<>(data) : Map.of());
             payload.put("createdAt", timestamp.toString());
             payload.put("updatedAt", timestamp.toString());
-            return new DataCloudClient.Event(type, payload, Map.of(), timestamp);
+            return new DataCloudClient.Event(type, payload, Map.of(), timestamp,
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty());
         }
 
         @SuppressWarnings("unchecked")
@@ -691,7 +694,10 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
             batchPayload.put("entities", entities);
 
             List<DataCloudClient.Event> events = List.of(
-                new DataCloudClient.Event("entity.batch-saved", batchPayload, Map.of(), t0)
+                new DataCloudClient.Event("entity.batch-saved", batchPayload, Map.of(), t0,
+                    Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                    Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                    Optional.empty(), Optional.empty(), Optional.empty())
             );
 
             when(mockClient.queryEvents(anyString(), any(DataCloudClient.EventQuery.class)))

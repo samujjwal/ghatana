@@ -36,7 +36,7 @@ import {
 import type { DropRequest, KeyboardMoveRequest } from './ComponentRenderer';
 import { importPageArtifactsFromCode } from './artifactCompilerBridge';
 import { AIActionLineageTracker, createAIChangeRecord } from './pageArtifactDocument';
-import type { PageArtifactAIChangeRecord, PageArtifactOperationKind } from './pageArtifactDocument';
+import type { PageArtifactAIChangeRecord, PageArtifactGraphSnapshot, PageArtifactOperationKind } from './pageArtifactDocument';
 import { importSourceToPageArtifacts, type ImportSourceType } from '../../../services/compiler/ImportSourceWorkflow';
 import {
   checkArtifactCompilerRuntimeHealth,
@@ -49,6 +49,11 @@ import {
   promoteResidualIslandToRegistryCandidate,
   type RegistryCandidatePromotionResponse,
 } from '../../../services/canvas/commands/RegistryCandidatePromotionService';
+import {
+  buildArtifactGraphMergeReviewRequest,
+  runArtifactGraphMergeReview,
+  type ArtifactGraphMergeReviewResult,
+} from '../../../services/canvas/commands/ArtifactGraphMergeReviewService';
 import {
   emitPageBuilderCommandAudit,
   emitPageBuilderCommandTelemetry,
@@ -195,6 +200,9 @@ interface ImportReviewQueueItem {
   readonly kind: 'loss-point' | 'residual-island';
   readonly label: string;
   readonly details: string;
+  readonly sourceEvidence: string;
+  readonly governedEvidence: string;
+  readonly reviewImpact: string;
 }
 
 interface RegistryCandidateSummary {
@@ -207,6 +215,17 @@ interface RegistryCandidateSummary {
   readonly createdAt: string;
 }
 
+type ArtifactGraphMergeReviewStatus = 'required' | 'running' | 'passed' | 'conflicts' | 'failed';
+
+interface ArtifactGraphMergeReviewState {
+  readonly artifactId: string;
+  readonly graph: PageArtifactGraphSnapshot;
+  readonly status: ArtifactGraphMergeReviewStatus;
+  readonly attemptedAt?: string;
+  readonly result?: ArtifactGraphMergeReviewResult;
+  readonly error?: string;
+}
+
 function buildImportReviewQueue(
   lossPoints: readonly LossPoint[] | undefined,
   residualIslandIds: readonly string[],
@@ -216,12 +235,20 @@ function buildImportReviewQueue(
     kind: 'loss-point' as const,
     label: `${lossPoint.type}${lossPoint.location ? ` at ${lossPoint.location}` : ''}`,
     details: lossPoint.description,
+    sourceEvidence: lossPoint.location
+      ? `Source path: ${lossPoint.location}`
+      : 'Source path unavailable from decompiler metadata.',
+    governedEvidence: `Builder impact: ${lossPoint.type} requires an explicit apply or skip decision before trust promotion.`,
+    reviewImpact: lossPoint.description,
   }));
   const residualItems = residualIslandIds.map((residualIslandId) => ({
     id: `residual-${residualIslandId}`,
     kind: 'residual-island' as const,
     label: residualIslandId,
     details: 'Residual island requires an accept or reject decision before handoff.',
+    sourceEvidence: `Residual source island: ${residualIslandId}`,
+    governedEvidence: 'Builder impact: no reviewed registry contract was available for this imported element.',
+    reviewImpact: 'Accept, reject, or promote the residual island so graph handoff does not hide unsupported structure.',
   }));
 
   return [...lossPointItems, ...residualItems];
@@ -351,6 +378,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   const [registryCandidates, setRegistryCandidates] = useState<readonly RegistryCandidateSummary[]>([]);
   const [importReviewQueue, setImportReviewQueue] = useState<readonly ImportReviewQueueItem[]>([]);
   const [importReviewDecisions, setImportReviewDecisions] = useState<Readonly<Record<string, ImportReviewDecision>>>({});
+  const [artifactGraphMergeReview, setArtifactGraphMergeReview] = useState<ArtifactGraphMergeReviewState | null>(null);
   const [importFidelity, setImportFidelity] = useState<
     import('./pageArtifactDocument').PageArtifactDocument['roundTripFidelity'] | null
   >(null);
@@ -366,6 +394,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   // Governance trace tracker — scoped to this designer session
   const lineageTrackerRef = useRef(new AIActionLineageTracker());
   const aiChangeRecordRef = useRef(new Map<string, PageArtifactAIChangeRecord>());
+  const initialDocumentPublishedRef = useRef(false);
   const [pendingAIActions, setPendingAIActions] = useState<readonly import('./pageArtifactDocument').AIActionLineage[]>([]);
 
   const validation = useMemo(() => validateDocument(document, contracts), [contracts, document]);
@@ -458,6 +487,23 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
     },
     [contracts, onComponentsChange, onDocumentChange],
   );
+
+  useEffect(() => {
+    if (initialDocumentPublishedRef.current) {
+      return;
+    }
+
+    initialDocumentPublishedRef.current = true;
+    onComponentsChange?.(builderDocumentToComponentData(document));
+    onDocumentChange?.(
+      document,
+      validation,
+      {
+        operation: 'document-update',
+        summary: 'Published initial page builder document.',
+      },
+    );
+  }, [document, onComponentsChange, onDocumentChange, validation]);
 
   const executeCommandResult = useCallback(
     (command: Command): CommandResult | null => {
@@ -707,6 +753,13 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
     setImportFidelity(first.roundTripFidelity ?? null);
     setImportReviewQueue(buildImportReviewQueue(first.roundTripFidelity?.lossPoints, residuals));
     setImportReviewDecisions({});
+    setArtifactGraphMergeReview(first.artifactGraph
+      ? {
+          artifactId: first.artifactId,
+          graph: first.artifactGraph,
+          status: 'required',
+        }
+      : null);
     setRegistryCandidates([]);
 
     const importedNodes = importedDocument.nodes;
@@ -846,6 +899,69 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
     },
     [announceReadOnly, canEdit, importResidualArtifactId],
   );
+
+  const handleArtifactGraphMergeReview = useCallback(async () => {
+    if (!canEdit) {
+      announceReadOnly();
+      return;
+    }
+    if (!artifactGraphMergeReview) {
+      return;
+    }
+    if (!auditContext?.tenantId) {
+      setArtifactGraphMergeReview((current) => current
+        ? {
+            ...current,
+            status: 'failed',
+            attemptedAt: new Date().toISOString(),
+            error: 'Artifact graph merge review requires authenticated tenant context.',
+          }
+        : current);
+      return;
+    }
+
+    setArtifactGraphMergeReview((current) => {
+      if (!current) {
+        return current;
+      }
+      const { error: _error, ...reviewWithoutError } = current;
+      return {
+        ...reviewWithoutError,
+        status: 'running',
+        attemptedAt: new Date().toISOString(),
+      };
+    });
+
+    try {
+      const result = await runArtifactGraphMergeReview(
+        buildArtifactGraphMergeReviewRequest(artifactGraphMergeReview.graph, auditContext.tenantId),
+      );
+      setArtifactGraphMergeReview((current) => {
+        if (!current) {
+          return current;
+        }
+        const { error: _error, ...reviewWithoutError } = current;
+        return {
+          ...reviewWithoutError,
+          status: result.conflictCount > 0 ? 'conflicts' : 'passed',
+          result,
+        };
+      });
+      setImportError(null);
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : 'Artifact graph merge review failed.';
+      setArtifactGraphMergeReview((current) => current
+        ? {
+            ...current,
+            status: 'failed',
+            error: message,
+          }
+        : current);
+      setImportError(message);
+    }
+  }, [announceReadOnly, artifactGraphMergeReview, auditContext?.tenantId, canEdit]);
 
   const handleImportReviewDecision = useCallback(
     async (reviewItem: ImportReviewQueueItem, decision: ImportReviewDecision) => {
@@ -1625,6 +1741,30 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
                   <Typography variant="caption" color="muted" style={{ display: 'block', marginTop: 2 }}>
                     {item.details}
                   </Typography>
+                  <Box
+                    className="mt-2 grid gap-2 md:grid-cols-2"
+                    data-testid={`page-designer-import-review-diff-${item.id}`}
+                  >
+                    <Box className="rounded border border-info-border bg-surface p-2">
+                      <Typography variant="caption" style={{ display: 'block', fontWeight: 600 }}>
+                        Source evidence
+                      </Typography>
+                      <Typography variant="caption" color="muted" style={{ display: 'block', marginTop: 2 }}>
+                        {item.sourceEvidence}
+                      </Typography>
+                    </Box>
+                    <Box className="rounded border border-info-border bg-surface p-2">
+                      <Typography variant="caption" style={{ display: 'block', fontWeight: 600 }}>
+                        Governed builder impact
+                      </Typography>
+                      <Typography variant="caption" color="muted" style={{ display: 'block', marginTop: 2 }}>
+                        {item.governedEvidence}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Typography variant="caption" color="muted" style={{ display: 'block', marginTop: 6 }}>
+                    Review impact: {item.reviewImpact}
+                  </Typography>
                   {decision ? (
                     <Typography
                       variant="caption"
@@ -1661,6 +1801,54 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
             })}
           </Box>
         )}
+
+        {artifactGraphMergeReview ? (
+          <Box
+            className="mt-4 rounded-lg border border-info-border bg-info-bg p-3"
+            data-testid="page-designer-graph-merge-review"
+          >
+            <Typography variant="caption" style={{ fontWeight: 600, display: 'block', marginBottom: 4 }}>
+              Artifact graph merge review: {artifactGraphMergeReview.status}
+            </Typography>
+            <Typography variant="caption" color="muted" style={{ display: 'block', marginBottom: 6 }}>
+              Graph {artifactGraphMergeReview.graph.graphId} includes {artifactGraphMergeReview.graph.nodes.length} nodes, {artifactGraphMergeReview.graph.edges.length} edges, and {artifactGraphMergeReview.graph.provenance.residualIslandIds.length} residual island references. Run merge review before trusting graph-wide handoff.
+            </Typography>
+            {artifactGraphMergeReview.result ? (
+              <Typography
+                variant="caption"
+                color={artifactGraphMergeReview.result.conflictCount > 0 ? 'warning' : 'success'}
+                data-testid="page-designer-graph-merge-review-result"
+                style={{ display: 'block', marginBottom: 6 }}
+              >
+                Merge result: {artifactGraphMergeReview.result.conflictCount} conflict{artifactGraphMergeReview.result.conflictCount === 1 ? '' : 's'} · {artifactGraphMergeReview.result.message}
+              </Typography>
+            ) : null}
+            {artifactGraphMergeReview.error ? (
+              <Typography
+                variant="caption"
+                color="danger"
+                data-testid="page-designer-graph-merge-review-error"
+                style={{ display: 'block', marginBottom: 6 }}
+              >
+                {artifactGraphMergeReview.error}
+              </Typography>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              size="small"
+              disabled={!canEdit || artifactGraphMergeReview.status === 'running'}
+              data-testid="page-designer-graph-merge-review-run"
+              onClick={() => {
+                void handleArtifactGraphMergeReview();
+              }}
+            >
+              {artifactGraphMergeReview.status === 'failed' || artifactGraphMergeReview.status === 'conflicts'
+                ? 'Retry graph merge review'
+                : 'Run graph merge review'}
+            </Button>
+          </Box>
+        ) : null}
 
         {registryCandidates.length > 0 && (
           <Box

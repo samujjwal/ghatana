@@ -166,7 +166,7 @@ function readFromStorage(
 class SyncManager {
   private config: Required<SyncConfig>;
   private listeners = new Set<SyncListener>();
-  private debounceTimers = new Map<string, NodeJS.Timeout>();
+  private debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private pendingWrites = new Map<string, unknown>();
   private isInitialized = false;
   private storageListener: ((event: Event) => void) | null = null;

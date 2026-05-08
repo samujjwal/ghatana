@@ -170,6 +170,8 @@ export interface Conflict {
     | 'first-write-wins'
     | 'merge'
     | 'custom';
+  /** Resolved value or merge output. */
+  resolution?: unknown;
   /** Timestamp */
   timestamp: number;
 }

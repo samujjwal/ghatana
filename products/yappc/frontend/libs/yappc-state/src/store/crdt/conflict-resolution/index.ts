@@ -413,7 +413,6 @@ export class ConflictResolutionEngine {
    * @returns Merge result
    */
   public threeWayMerge(input: ThreeWayMergeInput): ThreeWayMergeResult {
-    const startTime = Date.now();
     const conflicts: Conflict[] = [];
 
     // Check for conflicts
@@ -583,9 +582,9 @@ export class ConflictResolutionEngine {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        duration: Date.now() - startTime,
-      };
-    }
+      duration: 0,
+    };
+  }
   }
 }
 

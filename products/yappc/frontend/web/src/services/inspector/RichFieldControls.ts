@@ -114,14 +114,19 @@ export interface FieldControlGroup {
   collapsed?: boolean;
 }
 
+function createFieldControl(type: FieldType, config: Partial<FieldControl> = {}): FieldControl {
+  return {
+    ...config,
+    name: config.name ?? '',
+    type,
+  };
+}
+
 /**
  * Create text field control
  */
 export function createTextField(config: Partial<FieldControl> = {}): FieldControl {
-  return {
-    type: 'text',
-    ...config,
-  };
+  return createFieldControl('text', config);
 }
 
 /**
@@ -129,9 +134,8 @@ export function createTextField(config: Partial<FieldControl> = {}): FieldContro
  */
 export function createNumberField(config: Partial<FieldControl> = {}): FieldControl {
   return {
-    type: 'number',
     step: 1,
-    ...config,
+    ...createFieldControl('number', config),
   };
 }
 
@@ -140,9 +144,8 @@ export function createNumberField(config: Partial<FieldControl> = {}): FieldCont
  */
 export function createBooleanField(config: Partial<FieldControl> = {}): FieldControl {
   return {
-    type: 'boolean',
     defaultValue: false,
-    ...config,
+    ...createFieldControl('boolean', config),
   };
 }
 
@@ -151,9 +154,8 @@ export function createBooleanField(config: Partial<FieldControl> = {}): FieldCon
  */
 export function createEnumField(options: FieldOption[], config: Partial<FieldControl> = {}): FieldControl {
   return {
-    type: 'enum',
     options,
-    ...config,
+    ...createFieldControl('enum', config),
   };
 }
 
@@ -162,10 +164,9 @@ export function createEnumField(options: FieldOption[], config: Partial<FieldCon
  */
 export function createTokensField(config: Partial<FieldControl> = {}): FieldControl {
   return {
-    type: 'tokens',
     multiple: true,
     placeholder: 'Add token...',
-    ...config,
+    ...createFieldControl('tokens', config),
   };
 }
 
@@ -174,9 +175,8 @@ export function createTokensField(config: Partial<FieldControl> = {}): FieldCont
  */
 export function createComponentField(config: Partial<FieldControl> = {}): FieldControl {
   return {
-    type: 'component',
     placeholder: 'Select component...',
-    ...config,
+    ...createFieldControl('component', config),
   };
 }
 
@@ -185,9 +185,8 @@ export function createComponentField(config: Partial<FieldControl> = {}): FieldC
  */
 export function createSlotField(config: Partial<FieldControl> = {}): FieldControl {
   return {
-    type: 'slot',
     placeholder: 'Select slot...',
-    ...config,
+    ...createFieldControl('slot', config),
   };
 }
 
@@ -196,9 +195,8 @@ export function createSlotField(config: Partial<FieldControl> = {}): FieldContro
  */
 export function createActionField(config: Partial<FieldControl> = {}): FieldControl {
   return {
-    type: 'action',
     placeholder: 'Configure action...',
-    ...config,
+    ...createFieldControl('action', config),
   };
 }
 
@@ -207,9 +205,8 @@ export function createActionField(config: Partial<FieldControl> = {}): FieldCont
  */
 export function createDataBindingField(config: Partial<FieldControl> = {}): FieldControl {
   return {
-    type: 'data-binding',
     placeholder: 'Select data source...',
-    ...config,
+    ...createFieldControl('data-binding', config),
   };
 }
 
@@ -217,10 +214,7 @@ export function createDataBindingField(config: Partial<FieldControl> = {}): Fiel
  * Create object editor field control
  */
 export function createObjectField(config: Partial<FieldControl> = {}): FieldControl {
-  return {
-    type: 'object',
-    ...config,
-  };
+  return createFieldControl('object', config);
 }
 
 /**
@@ -228,9 +222,8 @@ export function createObjectField(config: Partial<FieldControl> = {}): FieldCont
  */
 export function createArrayField(config: Partial<FieldControl> = {}): FieldControl {
   return {
-    type: 'array',
     multiple: true,
-    ...config,
+    ...createFieldControl('array', config),
   };
 }
 
@@ -238,30 +231,21 @@ export function createArrayField(config: Partial<FieldControl> = {}): FieldContr
  * Create color picker field control
  */
 export function createColorField(config: Partial<FieldControl> = {}): FieldControl {
-  return {
-    type: 'color',
-    ...config,
-  };
+  return createFieldControl('color', config);
 }
 
 /**
  * Create date picker field control
  */
 export function createDateField(config: Partial<FieldControl> = {}): FieldControl {
-  return {
-    type: 'date',
-    ...config,
-  };
+  return createFieldControl('date', config);
 }
 
 /**
  * Create file upload field control
  */
 export function createFileField(config: Partial<FieldControl> = {}): FieldControl {
-  return {
-    type: 'file',
-    ...config,
-  };
+  return createFieldControl('file', config);
 }
 
 /**

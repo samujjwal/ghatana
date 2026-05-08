@@ -8,7 +8,6 @@ import { Box, Typography, Surface as Paper, Stack, Button as MuiButton } from '@
 import React from 'react';
 
 import { Button } from '../components/Button';
-import { spacing, palette, borderRadius } from '../tokens';
 
 import type { Meta, StoryObj } from '@storybook/react';
 
@@ -64,13 +63,13 @@ function MigrationExample({
               ✅ After (Design System)
             </Typography>
             <Paper
-              className="p-4 bgremaining sx: borderColor: 'success.light' */
+              className="p-4 bg-green-50 dark:bg-green-900/20 border-2 border-green-400"
             >
               {afterPreview}
             </Paper>
           </Box>
           <Paper
-            className="p-4 rounded text-sm ovolor: 'common.white' */
+            className="p-4 rounded text-sm overflow-auto font-mono bg-gray-900 text-white"
           >
             <pre style={{ margin: 0, color: 'common.white' }}>{afterCode}</pre>
           </Paper>
@@ -112,7 +111,7 @@ const MigrationPatternsPreview = () => {
 import { palette } from '@ghatana/yappc-shared-ui-core/tokens';
 
 <Box
-  className="bg-blue-600 border-gray-200 dark:bolor: 'common.white' */
+  className="bg-blue-600 border-gray-200 dark:border-gray-700 text-white"
 >
   Content
 </Box>`}
@@ -183,7 +182,7 @@ import { spacing } from '@ghatana/yappc-shared-ui-core/tokens';
 
       {/* Pattern 3: style prop → sx prop */}
       <MigrationExample
-        title="3. style={{}} → className="" on MUI Components"
+        title="3. style prop → className on MUI Components"
         description="Use sx prop instead of style for MUI components to get theme access and better performance."
         beforeCode={`// ❌ Using style prop (no theme access)
 <MuiButton

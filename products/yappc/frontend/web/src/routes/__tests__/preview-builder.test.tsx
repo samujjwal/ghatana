@@ -306,9 +306,12 @@ describe('BuilderPreviewRoute', () => {
 
     expect(shell).toHaveAttribute('data-preview-theme', 'contrast');
     expect(shell).toHaveAttribute('data-preview-locale', 'ar-SA');
+    expect(shell).toHaveAttribute('data-preview-locale-direction', 'rtl');
+    expect(shell).toHaveAttribute('data-preview-locale-currency', '١٬٢٤٩٫٠٠ ر.س');
     expect(shell).toHaveAttribute('data-preview-viewport-width', '375');
     expect(shell).toHaveAttribute('dir', 'rtl');
     expect(shell).toHaveStyle({ backgroundColor: 'rgb(0, 0, 0)' });
+    expect(screen.getByTestId('preview-runtime-locale-fixture')).toHaveTextContent('بدء المراجعة');
     expect(viewport).toHaveStyle({
       maxWidth: '375px',
       minHeight: '812px',

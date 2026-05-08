@@ -262,4 +262,103 @@ class DataCloudPlaneBoundaryTest {
             rule.check(GOVERNANCE_PLANE_CLASSES);
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 5. Domain planes must not import H2 / storage implementation classes
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("Domain planes must not import storage implementation internals (DC-BND-001)")
+    class NoStorageImplementationDependency {
+
+        /** Classes in domain planes (entity, event, governance) that must not reach into storage impl. */
+        private static JavaClasses domainPlanesClasses() {
+            return new ClassFileImporter()
+                    .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+                    .importPackages(
+                            "com.ghatana.datacloud.entity",
+                            "com.ghatana.datacloud.record",
+                            "com.ghatana.datacloud.event",
+                            "com.ghatana.datacloud.platform.event",
+                            "com.ghatana.datacloud.governance",
+                            "com.ghatana.datacloud.config");
+        }
+
+        @Test
+        @DisplayName("Domain planes must not import H2 storage implementation classes")
+        void domainPlanesMustNotImportH2StorageImpl() {
+            ArchRule rule = noClasses()
+                    .should().dependOnClassesThat()
+                    .resideInAnyPackage("com.ghatana.datacloud.storage..")
+                    .because(
+                            "H2 storage implementation classes (H2SovereignEntityStore, H2SovereignEventLogStore, etc.) "
+                            + "are delivery infrastructure. Domain planes must interact with stores only through "
+                            + "the shared SPI (com.ghatana.datacloud.spi.*). "
+                            + "Only the launcher and runtime-composition modules may wire storage implementations.");
+            rule.check(domainPlanesClasses());
+        }
+
+        @Test
+        @DisplayName("Data plane must not import Event plane implementation")
+        void dataPlaneHasNoEventPlaneImplDependency() {
+            ArchRule rule = noClasses()
+                    .that().resideInAnyPackage(
+                            "com.ghatana.datacloud.entity..",
+                            "com.ghatana.datacloud.record..")
+                    .should().dependOnClassesThat()
+                    .resideInAnyPackage(
+                            "com.ghatana.datacloud.event.impl..",
+                            "com.ghatana.datacloud.event.store..")
+                    .because(
+                            "The data/entity plane must not depend on event plane implementation details. "
+                            + "Event streaming is a separate responsibility. "
+                            + "Cross-plane integration must go through the shared SPI contract.");
+            rule.check(DATA_PLANE_CLASSES);
+        }
+
+        @Test
+        @DisplayName("Event plane must not import entity storage implementation")
+        void eventPlaneHasNoEntityStorageImplDependency() {
+            ArchRule rule = noClasses()
+                    .that().resideInAnyPackage(
+                            "com.ghatana.datacloud.event..",
+                            "com.ghatana.datacloud.platform.event..")
+                    .should().dependOnClassesThat()
+                    .resideInAnyPackage("com.ghatana.datacloud.storage..")
+                    .because(
+                            "The event plane must not reach into entity storage implementation details. "
+                            + "Cross-plane data access must go through the shared SPI contract.");
+            rule.check(EVENT_PLANE_CLASSES);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 6. Shared SPI is the canonical cross-plane contract (DC-BND-001)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("Shared SPI is the cross-plane integration contract (DC-BND-001)")
+    class SpiContractEnforcement {
+
+        @Test
+        @DisplayName("Runtime-composition must implement SPI — not bypass it")
+        void runtimeCompositionMustOnlyImplementSpi() {
+            JavaClasses compositionClasses = new ClassFileImporter()
+                    .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+                    .importPackages("com.ghatana.datacloud.storage");
+            ArchRule rule = noClasses()
+                    .that().resideInAPackage("com.ghatana.datacloud.storage..")
+                    .should().dependOnClassesThat()
+                    .resideInAnyPackage(
+                            "com.ghatana.datacloud.launcher..",
+                            "com.ghatana.datacloud.bootstrap..",
+                            "com.ghatana.aep.server..",
+                            "com.ghatana.aep.bootstrap..")
+                    .because(
+                            "Storage implementation classes in runtime-composition must not couple to the launcher "
+                            + "or any other product's server internals. "
+                            + "They should only depend on platform modules, the shared SPI, and standard libraries.");
+            rule.check(compositionClasses);
+        }
+    }
 }

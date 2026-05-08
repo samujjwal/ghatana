@@ -8,7 +8,32 @@ type ConnectionStatus =
   | 'disconnected'
   | 'failed';
 
-type MessageHandler = (message: unknown) => void;
+type MessageHandler<T = unknown> = (message: T) => void;
+
+function toError(error: unknown, fallback: string): Error {
+  return error instanceof Error
+    ? error
+    : new Error(error === undefined ? fallback : String(error));
+}
+
+function getMessageTopic(message: unknown): string | undefined {
+  if (typeof message !== 'object' || message === null) {
+    return undefined;
+  }
+
+  const envelope = message as { type?: unknown; topic?: unknown };
+  const topic = envelope.type ?? envelope.topic;
+  return typeof topic === 'string' && topic.length > 0 ? topic : undefined;
+}
+
+function getErrorMessage(message: unknown): string {
+  if (typeof message !== 'object' || message === null || !('error' in message)) {
+    return 'Unknown error';
+  }
+
+  const error = (message as { error?: unknown }).error;
+  return typeof error === 'string' && error.length > 0 ? error : 'Unknown error';
+}
 
 type Subscription = {
   topic: string;
@@ -17,7 +42,7 @@ type Subscription = {
 };
 
 export interface UseWebSocketOptions {
-  url: string;
+  url?: string;
   autoConnect?: boolean;
   reconnect?: boolean;
   maxReconnectAttempts?: number;
@@ -60,6 +85,13 @@ export function useWebSocket({
 
   const connect = () => {
     cleanupSocket();
+
+    if (!url) {
+      setLastError(new Error('WebSocket URL is required before connecting'));
+      setStatus('failed');
+      return;
+    }
+
     setStatus(reconnectAttemptsRef.current > 0 ? 'reconnecting' : 'connecting');
 
     try {
@@ -83,7 +115,7 @@ export function useWebSocket({
         }
       };
 
-      socket.onerror = (event) => {
+      socket.onerror = () => {
         setLastError(new Error('WebSocket error'));
         setStatus('failed');
         socket.close();
@@ -91,8 +123,8 @@ export function useWebSocket({
 
       socket.onmessage = (event) => {
         try {
-          const message = JSON.parse(event.data);
-          const topic = message.type || message.topic;
+          const message = JSON.parse(String(event.data)) as unknown;
+          const topic = getMessageTopic(message);
           if (topic && handlersRef.current.has(topic)) {
             handlersRef.current
               .get(topic)!
@@ -103,7 +135,7 @@ export function useWebSocket({
         }
       };
     } catch (error: unknown) {
-      setLastError(error);
+      setLastError(toError(error, 'Failed to connect WebSocket'));
       setStatus('failed');
     }
   };
@@ -173,9 +205,9 @@ export interface UseWebSocketStatusReturn {
 }
 
 export function useWebSocketStatus(): UseWebSocketStatusReturn {
-  const [status, setStatus] = useState<ConnectionStatus>('idle');
-  const [lastError, setLastError] = useState<Error | undefined>();
-  const [reconnectAttempt, setReconnectAttempt] = useState(0);
+  const [status] = useState<ConnectionStatus>('idle');
+  const [lastError] = useState<Error | undefined>();
+  const [reconnectAttempt] = useState(0);
   const [showNotification, setShowNotification] = useState(false);
 
   useEffect(() => {
@@ -197,14 +229,16 @@ export function useWebSocketStatus(): UseWebSocketStatusReturn {
  */
 export function useWebSocketSubscription<T = unknown>(
   messageType: string,
-  handler: MessageHandler,
+  handler: MessageHandler<T>,
   deps: React.DependencyList = [],
   options: UseWebSocketOptions = {}
 ) {
   const { subscribe } = useWebSocket(options);
 
   useEffect(() => {
-    const unsubscribe = subscribe(messageType, handler);
+    const unsubscribe = subscribe(messageType, (message) => {
+      handler(message as T);
+    });
     return unsubscribe;
   }, [subscribe, messageType, ...deps]); // eslint-disable-line react-hooks/exhaustive-deps
 }
@@ -244,7 +278,7 @@ export function useWebSocketData<T = unknown>(
   useWebSocketSubscription<T>(
     messageType,
     (message) => {
-      setData(message);
+      setData(message as T);
       setIsLoading(false);
       setError(null);
     },
@@ -256,11 +290,7 @@ export function useWebSocketData<T = unknown>(
   useWebSocketSubscription<{ error: string }>(
     `${messageType}_error`,
     (message) => {
-      const errorMsg =
-        typeof message === 'object' && message !== null && 'error' in message
-          ? (message as unknown).error
-          : 'Unknown error';
-      setError(new Error(errorMsg));
+      setError(new Error(getErrorMessage(message)));
       setIsLoading(false);
     },
     [messageType],

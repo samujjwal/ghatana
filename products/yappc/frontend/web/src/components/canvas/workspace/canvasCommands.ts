@@ -23,7 +23,7 @@
 
 import { atom, type Getter, type Setter } from 'jotai';
 import { type Node, type Edge } from '@xyflow/react';
-import { nodesAtom, edgesAtom, canvasAnnouncementAtom, MAX_HISTORY_SIZE } from './canvasAtoms';
+import { nodesAtom, edgesAtom, canvasAnnouncementAtom, MAX_HISTORY_SIZE, type ArtifactNodeDataR } from './canvasAtoms';
 import type { ArtifactNodeData } from '../nodes/ArtifactNode';
 import type { DependencyEdgeData } from '../edges';
 
@@ -196,9 +196,12 @@ export const executeBatchAtom = atom(
 /**
  * Add a node to the canvas.
  */
-export class AddNodeCommand<T extends Record<string, unknown> = Record<string, unknown>> implements CanvasCommand {
+export class AddNodeCommand<T extends Record<string, unknown> = ArtifactNodeDataR> implements CanvasCommand {
     readonly label: string;
+    private readonly commandNode: Node<ArtifactNodeDataR>;
+
     constructor(private readonly node: Node<T>) {
+        this.commandNode = node as unknown as Node<ArtifactNodeDataR>;
         const titledData = this.node.data as { title?: unknown } | undefined;
         const title = typeof titledData?.title === 'string' ? titledData.title : undefined;
         this.label = `Add ${title ?? this.node.id}`;
@@ -206,7 +209,7 @@ export class AddNodeCommand<T extends Record<string, unknown> = Record<string, u
     execute(_: Getter, set: Setter) {
         set(nodesAtom, (prev) => {
             if (prev.some((n) => n.id === this.node.id)) return prev;
-            return [...prev, this.node];
+            return [...prev, this.commandNode];
         });
     }
     undo(_: Getter, set: Setter) {

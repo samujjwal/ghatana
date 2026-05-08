@@ -7,8 +7,7 @@
 import { Box, Typography, Grid, Surface as Paper, Stack } from '@ghatana/design-system';
 import React from 'react';
 
-/** @ts-ignore - MUI Grid item prop typing issue in test config */
-const GridItem = Grid as unknown;
+const GridItem = Grid as React.ElementType;
 
 import { palette, spacing, borderRadius, fontFamilies, lightShadows } from './index';
 
@@ -22,7 +21,9 @@ function ColorToken({ name, value }: { name: string; value: string }) {
   return (
     <Paper className="p-4 text-center">
       <Box
-        className="w-full rounded mb-2 h-[80px] border border-solid border-gray-200 dark:border-gray-700" style={{ backgroundColor: 'value' }} />
+        className="w-full rounded mb-2 h-[80px] border border-solid border-gray-200 dark:border-gray-700"
+        style={{ backgroundColor: value }}
+      />
       <Typography as="p" className="text-sm" fontWeight="bold">
         {name}
       </Typography>
@@ -42,7 +43,9 @@ function SpacingToken({ name, value }: { name: string; value: number }) {
     <Paper className="p-4">
       <Stack direction="row" spacing={2} alignItems="center">
         <Box
-          className="h-[40px] rounded-[4px] bg-blue-600 w-[value]" />
+          className="h-[40px] rounded-[4px] bg-blue-600"
+          style={{ width: value }}
+        />
         <Box>
           <Typography as="p" className="text-sm" fontWeight="bold">
             {name}
@@ -64,7 +67,8 @@ function BorderRadiusToken({ name, value }: { name: string; value: number }) {
   return (
     <Paper className="p-4 text-center">
       <Box
-        className="w-[80px] h-[80px] bg-blue-600" style={{ borderRadius: `${value }}
+        className="w-[80px] h-[80px] bg-blue-600"
+        style={{ borderRadius: value }}
       />
       <Typography as="p" className="text-sm" fontWeight="bold">
         {name}

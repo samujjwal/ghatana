@@ -906,17 +906,20 @@ function UnifiedCanvasInner() {
                 zoomOnScroll
               >
                 <Background />
-                <Box
-                  className="transition-all duration-300"
-                  style={{
-                    opacity: calmMode ? 0 : 1,
-                    transform: calmMode ? 'scale(0.98)' : 'scale(1)',
-                    pointerEvents: calmMode ? 'none' : 'auto',
-                    transformOrigin: 'bottom left',
-                  }}
-                >
-                  <MiniMap />
-                </Box>
+                {minimapVisible && (
+                  <Box
+                    className="transition-all duration-300"
+                    data-testid="mounted-canvas-reactflow-minimap"
+                    style={{
+                      opacity: calmMode ? 0 : 1,
+                      transform: calmMode ? 'scale(0.98)' : 'scale(1)',
+                      pointerEvents: calmMode ? 'none' : 'auto',
+                      transformOrigin: 'bottom left',
+                    }}
+                  >
+                    <MiniMap />
+                  </Box>
+                )}
                 <Box
                   className="transition-all duration-300" style={{ opacity: calmMode ? 0 : 1, transform: calmMode ? 'scale(0.98)' : 'scale(1)', pointerEvents: calmMode ? 'none' : 'auto', transformOrigin: 'bottom left' }} >
                   <Controls />

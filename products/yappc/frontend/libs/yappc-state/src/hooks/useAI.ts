@@ -125,6 +125,10 @@ async function parseJsonResponse<T>(
   response: Response,
   context: string
 ): Promise<T> {
+  if (typeof response.text !== 'function' && typeof response.json === 'function') {
+    return response.json() as Promise<T>;
+  }
+
   const raw = await response.text();
 
   if (!raw) {
@@ -225,7 +229,7 @@ async function gqlFetch<T>(
  * ```
  */
 export function useCopilot(): {
-  session: CopilotSession | undefined;
+  session: CopilotSession | null;
   isLoading: boolean;
   error: Error | null;
   sendMessage: (input: { message: string; projectId?: string; context?: Record<string, unknown> }) => Promise<{
@@ -386,7 +390,10 @@ export function useAIInsights(
     isLoading: fetchQuery.isLoading,
     error: fetchQuery.error,
     dismissInsight: dismiss,
-    refetch: fetchQuery.refetch,
+    refetch: async () => {
+      const result = await fetchQuery.refetch();
+      return result.data;
+    },
   };
 }
 
@@ -434,6 +441,9 @@ export function useAIPredictions(
     predictions: predictions ?? [],
     isLoading: fetchQuery.isLoading,
     error: fetchQuery.error,
-    refetch: fetchQuery.refetch,
+    refetch: async () => {
+      const result = await fetchQuery.refetch();
+      return result.data;
+    },
   };
 }

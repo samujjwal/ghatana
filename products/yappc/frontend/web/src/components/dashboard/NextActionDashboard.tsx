@@ -109,11 +109,10 @@ export const NextActionDashboard: React.FC<NextActionDashboardProps> = ({
         <Alert
           data-testid="secondary-action"
           severity="warning"
-          variant="standard"
           title={`Review: ${secondaryAction.title}`}
           icon={secondaryAction.icon || <AlertCircle className="w-5 h-5" />}
           action={
-            <Button size="sm" variant="outline" colorScheme="warning" onClick={secondaryAction.action}>
+            <Button size="sm" variant="outline" tone="warning" onClick={secondaryAction.action}>
               Review
             </Button>
           }
@@ -136,7 +135,7 @@ export const NextActionDashboard: React.FC<NextActionDashboardProps> = ({
                 <p className="text-sm text-fg-muted">{tertiaryAction.description}</p>
               </div>
             </div>
-            <Button size="sm" variant="ghost" colorScheme="grey" onClick={tertiaryAction.action}>
+            <Button size="sm" variant="ghost" tone="neutral" onClick={tertiaryAction.action}>
               Open
             </Button>
           </CardContent>
@@ -155,8 +154,6 @@ export const NextActionDashboard: React.FC<NextActionDashboardProps> = ({
                 <Alert
                   key={indicator.id}
                   severity={getHealthTone(indicator.status)}
-                  variant="outlined"
-                  hideIcon
                   title={indicator.label}
                   className="h-full"
                 >

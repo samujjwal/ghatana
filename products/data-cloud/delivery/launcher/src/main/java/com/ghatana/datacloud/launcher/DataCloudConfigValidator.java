@@ -36,7 +36,18 @@ import java.util.List;
  * DataCloudConfigValidator.fromEnvironment().validate(); // throws if invalid
  * }</pre>
  *
- * @doc.type class
+ * <h3>Production-profile preflight (DC-P0-008)</h3>
+ * <ul>
+ *   <li>{@code DATACLOUD_PROFILE=production} — triggers additional production-only checks</li>
+ *   <li>Durable DB required ({@code DATACLOUD_DB_ENABLED=true})</li>
+ *   <li>Durable Kafka event store required ({@code DATACLOUD_KAFKA_ENABLED=true})</li>
+ *   <li>Audit writer required ({@code DATACLOUD_AUDIT_ENABLED=true})</li>
+ *   <li>Auth required ({@code DATACLOUD_AUTH_ENABLED=true})</li>
+ *   <li>Policy engine URL required ({@code DATACLOUD_POLICY_ENGINE_URL})</li>
+ *   <li>Metrics required ({@code DATACLOUD_METRICS_ENABLED=true})</li>
+ *   <li>Tracing required ({@code DATACLOUD_TRACING_ENABLED=true})</li>
+ * </ul>
+ *
  * @doc.purpose Fail-fast startup configuration validation for Data-Cloud
  * @doc.layer product
  * @doc.pattern Validator
@@ -46,7 +57,8 @@ public final class DataCloudConfigValidator {
 
     private static final int MIN_PORT = 1;
     private static final int MAX_PORT = 65535;
-    private static final int DEFAULT_HTTP_PORT = 8090;
+    // DC-P1-010: align with DataCloudLauncherSettings.DEFAULT_HTTP_PORT (8082)
+    private static final int DEFAULT_HTTP_PORT = 8082;
     private static final int DEFAULT_GRPC_PORT = 9090;
 
     private final String httpPortStr;
@@ -64,6 +76,13 @@ public final class DataCloudConfigValidator {
     private final String clickhouseHost;
     private final boolean opensearchEnabled;
     private final String opensearchHost;
+    // DC-P0-008: Production-profile preflight fields
+    private final boolean productionProfile;
+    private final boolean auditEnabled;
+    private final boolean authEnabled;
+    private final String policyEngineUrl;
+    private final boolean metricsEnabled;
+    private final boolean tracingEnabled;
 
     private DataCloudConfigValidator(Builder builder) {
         this.httpPortStr        = builder.httpPortStr;
@@ -81,6 +100,13 @@ public final class DataCloudConfigValidator {
         this.clickhouseHost     = builder.clickhouseHost;
         this.opensearchEnabled  = builder.opensearchEnabled;
         this.opensearchHost     = builder.opensearchHost;
+        // DC-P0-008
+        this.productionProfile  = builder.productionProfile;
+        this.auditEnabled       = builder.auditEnabled;
+        this.authEnabled        = builder.authEnabled;
+        this.policyEngineUrl    = builder.policyEngineUrl;
+        this.metricsEnabled     = builder.metricsEnabled;
+        this.tracingEnabled     = builder.tracingEnabled;
     }
 
     /**
@@ -105,6 +131,13 @@ public final class DataCloudConfigValidator {
                 .clickhouseHost(System.getenv("DATACLOUD_CLICKHOUSE_HOST"))
                 .opensearchEnabled("true".equalsIgnoreCase(System.getenv("DATACLOUD_OPENSEARCH_ENABLED")))
                 .opensearchHost(System.getenv("DATACLOUD_OPENSEARCH_HOST"))
+                // DC-P0-008: production-profile preflight
+                .productionProfile("production".equalsIgnoreCase(System.getenv("DATACLOUD_PROFILE")))
+                .auditEnabled("true".equalsIgnoreCase(System.getenv("DATACLOUD_AUDIT_ENABLED")))
+                .authEnabled("true".equalsIgnoreCase(System.getenv("DATACLOUD_AUTH_ENABLED")))
+                .policyEngineUrl(System.getenv("DATACLOUD_POLICY_ENGINE_URL"))
+                .metricsEnabled("true".equalsIgnoreCase(System.getenv("DATACLOUD_METRICS_ENABLED")))
+                .tracingEnabled("true".equalsIgnoreCase(System.getenv("DATACLOUD_TRACING_ENABLED")))
                 .build();
     }
 
@@ -162,6 +195,29 @@ public final class DataCloudConfigValidator {
         // OpenSearch
         if (opensearchEnabled) {
             requireNonBlank(opensearchHost, "DATACLOUD_OPENSEARCH_HOST", violations);
+        }
+
+        // DC-P0-008: Production-profile preflight — require all trust-critical dependencies
+        if (productionProfile) {
+            if (!dbEnabled) {
+                violations.add("DC-P0-008: DATACLOUD_DB_ENABLED=true is required in production profile (durable entity store)");
+            }
+            if (!kafkaEnabled) {
+                violations.add("DC-P0-008: DATACLOUD_KAFKA_ENABLED=true is required in production profile (durable event store)");
+            }
+            if (!auditEnabled) {
+                violations.add("DC-P0-008: DATACLOUD_AUDIT_ENABLED=true is required in production profile");
+            }
+            if (!authEnabled) {
+                violations.add("DC-P0-008: DATACLOUD_AUTH_ENABLED=true is required in production profile");
+            }
+            requireNonBlank(policyEngineUrl, "DATACLOUD_POLICY_ENGINE_URL", violations);
+            if (!metricsEnabled) {
+                violations.add("DC-P0-008: DATACLOUD_METRICS_ENABLED=true is required in production profile");
+            }
+            if (!tracingEnabled) {
+                violations.add("DC-P0-008: DATACLOUD_TRACING_ENABLED=true is required in production profile");
+            }
         }
 
         if (!violations.isEmpty()) {
@@ -236,6 +292,13 @@ public final class DataCloudConfigValidator {
         private String clickhouseHost;
         private boolean opensearchEnabled;
         private String opensearchHost;
+        // DC-P0-008
+        private boolean productionProfile;
+        private boolean auditEnabled;
+        private boolean authEnabled;
+        private String policyEngineUrl;
+        private boolean metricsEnabled;
+        private boolean tracingEnabled;
 
         private Builder() {}
 
@@ -254,6 +317,13 @@ public final class DataCloudConfigValidator {
         public Builder clickhouseHost(String v)     { this.clickhouseHost = v;    return this; }
         public Builder opensearchEnabled(boolean v) { this.opensearchEnabled = v; return this; }
         public Builder opensearchHost(String v)     { this.opensearchHost = v;    return this; }
+        // DC-P0-008
+        public Builder productionProfile(boolean v) { this.productionProfile = v; return this; }
+        public Builder auditEnabled(boolean v)      { this.auditEnabled = v;      return this; }
+        public Builder authEnabled(boolean v)       { this.authEnabled = v;       return this; }
+        public Builder policyEngineUrl(String v)    { this.policyEngineUrl = v;   return this; }
+        public Builder metricsEnabled(boolean v)    { this.metricsEnabled = v;    return this; }
+        public Builder tracingEnabled(boolean v)    { this.tracingEnabled = v;    return this; }
 
         public DataCloudConfigValidator build() {
             return new DataCloudConfigValidator(this);

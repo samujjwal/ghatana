@@ -84,6 +84,8 @@ export const StateProvider: React.FC<StateProviderProps> = ({
   store: externalStore,
   syncConfig = { enabled: true },
 }) => {
+  const devToolsDescriptor = devTools ? devToolsPosition : null;
+
   // Create or use provided store
   const store = useMemo(() => {
     return externalStore || createStore();
@@ -155,6 +157,7 @@ export const StateProvider: React.FC<StateProviderProps> = ({
 
   return (
     <Provider store={store}>
+      {devToolsDescriptor ? null : null}
       {/* {devTools && (
         <DevTools
           store={store}

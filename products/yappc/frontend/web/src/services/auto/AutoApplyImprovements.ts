@@ -63,6 +63,12 @@ export interface AutoApplyOptions {
   autoApply?: boolean;
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
 /**
  * Auto-apply safe improvements
  */
@@ -161,7 +167,7 @@ export function getImprovementSuggestions(
       confidence: 0.95,
       source: 'a11y-rules',
       rationale: 'Interactive elements should have aria-label for accessibility',
-      apply: (value) => ({ ...value, ariaLabel: '' }),
+      apply: (value) => ({ ...asRecord(value), ariaLabel: '' }),
       rollback: (value) => {
         const { ariaLabel, ...rest } = value as Record<string, unknown>;
         return rest;
@@ -181,7 +187,7 @@ export function getImprovementSuggestions(
       confidence: 0.9,
       source: 'perf-rules',
       rationale: 'Lazy loading improves initial page load performance',
-      apply: (value) => ({ ...value, loading: 'lazy' }),
+      apply: (value) => ({ ...asRecord(value), loading: 'lazy' }),
       rollback: (value) => {
         const { loading, ...rest } = value as Record<string, unknown>;
         return rest;
@@ -201,7 +207,7 @@ export function getImprovementSuggestions(
       confidence: 0.85,
       source: 'sec-rules',
       rationale: 'CSP helps prevent XSS attacks',
-      apply: (value) => ({ ...value, csp: 'default-src self;' }),
+      apply: (value) => ({ ...asRecord(value), csp: 'default-src self;' }),
       rollback: (value) => {
         const { csp, ...rest } = value as Record<string, unknown>;
         return rest;

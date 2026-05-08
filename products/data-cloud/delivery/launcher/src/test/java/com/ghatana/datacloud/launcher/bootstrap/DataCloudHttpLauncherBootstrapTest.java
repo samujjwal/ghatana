@@ -88,7 +88,7 @@ class DataCloudHttpLauncherBootstrapTest {
                     "DATACLOUD_API_KEYS", " , , "),
                 log))
             .isInstanceOf(IllegalStateException.class) 
-            .hasMessageContaining("must contain at least one non-blank API key");
+            .hasMessageContaining("must contain at least one non-blank");
     }
 
             @Test
@@ -104,15 +104,16 @@ class DataCloudHttpLauncherBootstrapTest {
             }
 
             @Test
-            @DisplayName("buildApiKeyResolver generates non-secret principal id")
+            @DisplayName("buildApiKeyResolver generates non-secret principal id for key:tenant format")
             void buildApiKeyResolverGeneratesNonSecretPrincipalId() {
             Logger log = mock(Logger.class);
             String rawApiKey = "super-secret-api-key-123456";
+            String entry = rawApiKey + ":acme-corp";
 
             ApiKeyResolver resolver = DataCloudHttpLauncherBootstrap.buildApiKeyResolver(
                 Map.of(
                     "DATACLOUD_PROFILE", "production",
-                    "DATACLOUD_API_KEYS", rawApiKey),
+                    "DATACLOUD_API_KEYS", entry),
                 log);
 
             Optional<Principal> principal = resolver.resolve(rawApiKey);
@@ -120,6 +121,59 @@ class DataCloudHttpLauncherBootstrapTest {
             assertThat(principal.orElseThrow().getName()).startsWith("key-");
             assertThat(principal.orElseThrow().getName()).doesNotContain("123456");
             assertThat(principal.orElseThrow().getName()).doesNotContain("secret");
+            }
+
+            @Test
+            @DisplayName("buildApiKeyResolver binds resolved principal to configured tenant")
+            void buildApiKeyResolverBindsPrincipalToConfiguredTenant() {
+            Logger log = mock(Logger.class);
+
+            ApiKeyResolver resolver = DataCloudHttpLauncherBootstrap.buildApiKeyResolver(
+                Map.of(
+                    "DATACLOUD_PROFILE", "production",
+                    "DATACLOUD_API_KEYS", "key-a:tenant-alpha,key-b:tenant-beta"),
+                log);
+
+            Optional<Principal> principalA = resolver.resolve("key-a");
+            Optional<Principal> principalB = resolver.resolve("key-b");
+            Optional<Principal> missing = resolver.resolve("key-c");
+
+            assertThat(principalA).isPresent();
+            assertThat(principalA.orElseThrow().getTenantId()).isEqualTo("tenant-alpha");
+            assertThat(principalB).isPresent();
+            assertThat(principalB.orElseThrow().getTenantId()).isEqualTo("tenant-beta");
+            assertThat(missing).isEmpty();
+            }
+
+            @Test
+            @DisplayName("buildApiKeyResolver rejects plain key without tenant in production profile")
+            void buildApiKeyResolverRejectsPlainKeyWithoutTenantInProduction() {
+            Logger log = mock(Logger.class);
+
+            assertThatThrownBy(() -> DataCloudHttpLauncherBootstrap.buildApiKeyResolver(
+                Map.of(
+                    "DATACLOUD_PROFILE", "production",
+                    "DATACLOUD_API_KEYS", "plainkey-no-tenant"),
+                log))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("missing a tenant binding");
+            }
+
+            @Test
+            @DisplayName("buildApiKeyResolver accepts plain key in local profile with service tenant fallback")
+            void buildApiKeyResolverAcceptsPlainKeyInLocalProfile() {
+            Logger log = mock(Logger.class);
+
+            ApiKeyResolver resolver = DataCloudHttpLauncherBootstrap.buildApiKeyResolver(
+                Map.of(
+                    "DATACLOUD_PROFILE", "local",
+                    "DATACLOUD_API_KEYS", "plain-local-key"),
+                log);
+
+            assertThat(resolver).isNotNull();
+            Optional<Principal> principal = resolver.resolve("plain-local-key");
+            assertThat(principal).isPresent();
+            assertThat(principal.orElseThrow().getTenantId()).isEqualTo("service");
             }
 
     @Test

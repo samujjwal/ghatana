@@ -186,7 +186,7 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
       fireEvent.change(screen.getByDisplayValue('Default theme'), {
         target: { value: 'editorial' },
       });
-      fireEvent.change(screen.getByDisplayValue('en-US'), {
+      fireEvent.change(screen.getByDisplayValue('en-US · English (US)'), {
         target: { value: 'ar-SA' },
       });
 
@@ -216,8 +216,22 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
       render(<LivePreviewPanel document={baseDocument} />);
 
       expect(screen.getByText('Editorial warmth')).toBeInTheDocument();
-      expect(screen.getByText('ar-SA')).toBeInTheDocument();
-      expect(screen.getByText('he-IL')).toBeInTheDocument();
+      expect(screen.getByText('ar-SA · Arabic (Saudi Arabia)')).toBeInTheDocument();
+      expect(screen.getByText('he-IL · Hebrew (Israel)')).toBeInTheDocument();
+    });
+
+    it('renders localized fixture content for the selected preview locale', () => {
+      render(<LivePreviewPanel document={baseDocument} />);
+
+      fireEvent.change(screen.getByDisplayValue('en-US · English (US)'), {
+        target: { value: 'he-IL' },
+      });
+
+      const fixture = screen.getByTestId('live-preview-locale-fixture');
+      expect(fixture).toHaveAttribute('dir', 'rtl');
+      expect(fixture).toHaveAttribute('lang', 'he-IL');
+      expect(fixture).toHaveTextContent('השקת סביבת העבודה של המוצר');
+      expect(fixture).toHaveTextContent('₪1,249.00');
     });
   });
 

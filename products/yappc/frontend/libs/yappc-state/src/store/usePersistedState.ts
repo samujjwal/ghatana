@@ -236,7 +236,7 @@ export function usePersistedArray<T>(
     set: (items: T[]) => void;
   },
 ] {
-  const [state, setState, reset] = usePersistedState(
+  const [state, setState] = usePersistedState(
     key,
     defaultValue,
     options

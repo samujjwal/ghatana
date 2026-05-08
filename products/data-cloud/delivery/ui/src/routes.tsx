@@ -197,9 +197,11 @@ class LazyLoadErrorBoundary extends React.Component<
 }
 
 /**
- * Wrap lazy component with Suspense and Error Boundary
+ * Wrap lazy or regular component with Suspense and Error Boundary.
+ * DC-P1-004: accepts both lazy exotic components and plain function components
+ * so that inline disabled-surface fallbacks compile without type errors.
  */
-function withSuspense(Component: React.LazyExoticComponent<React.ComponentType>): React.ReactElement {
+function withSuspense(Component: React.ComponentType | React.LazyExoticComponent<React.ComponentType>): React.ReactElement {
   return (
     <LazyLoadErrorBoundary>
       <React.Suspense fallback={<PageLoader />}>
@@ -328,10 +330,17 @@ export const routes: RouteObject[] = [
       },
 
       // AEP Integration Pages
-      // Event Explorer — real-time AEP event stream explorer (restored as canonical route)
+      // Event Explorer — real-time AEP event stream explorer
+      // DC-P1-003: gated on runtime truth
       {
         path: 'events',
-        element: <RoleProtectedRoute routePath="/events">{withSuspense(EventExplorerPage)}</RoleProtectedRoute>,
+        element: (
+          <RoleProtectedRoute routePath="/events">
+            <RuntimeCapabilityRouteGate aliases={['event-explorer', 'events']} fallback={withSuspense(() => <DisabledSurfacePage surfaceName="Event Explorer" surfaceDescription="The Event Explorer surface provides real-time AEP event stream inspection and replay." />)}>
+              {withSuspense(EventExplorerPage)}
+            </RuntimeCapabilityRouteGate>
+          </RoleProtectedRoute>
+        ),
       },
       // Memory Plane Viewer — restored as canonical route
       {
@@ -401,10 +410,16 @@ export const routes: RouteObject[] = [
         ),
       },
 
-      // Plugins
+      // Plugins — DC-P1-003: gated on runtime truth
       {
         path: 'plugins',
-        element: <RoleProtectedRoute routePath="/plugins" />,
+        element: (
+          <RoleProtectedRoute routePath="/plugins">
+            <RuntimeCapabilityRouteGate aliases={['plugins', 'extensions']} fallback={withSuspense(() => <DisabledSurfacePage surfaceName="Plugins" surfaceDescription="The Plugins surface provides extension and integration management for your Data Cloud tenant." />)}>
+              <React.Suspense fallback={<PageLoader />}><PluginsPage /></React.Suspense>
+            </RuntimeCapabilityRouteGate>
+          </RoleProtectedRoute>
+        ),
         children: [
           {
             index: true,

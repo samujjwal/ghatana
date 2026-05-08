@@ -225,7 +225,7 @@ public class DataLifecycleHandler {
                 result.put("piiFields",      piiFields);
                 result.put("status",         POLICY_STATUS_CLASSIFIED);
 
-                TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+                TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
                 return saveRetentionPolicy(tenantContext, collection, result)
                     .map(savedPolicy -> {
                         emitAudit(tenantId, requestId, "RETENTION_CLASSIFY", collection,
@@ -266,7 +266,7 @@ public class DataLifecycleHandler {
                 400)).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
         }
 
-        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+        TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
         return loadRetentionPolicy(tenantContext, collection)
             .map(stored -> stored.orElseGet(() -> defaultRetentionPolicy(collection)))
             .map(policy -> http.envelopeResponse(
@@ -299,7 +299,7 @@ public class DataLifecycleHandler {
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
-        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+        TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
                 request,
                 tenantId,
@@ -519,7 +519,7 @@ public class DataLifecycleHandler {
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
-        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+        TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
                 request,
                 tenantId,
@@ -723,7 +723,7 @@ public class DataLifecycleHandler {
                 traceSupport.requestSpanId(request),
                 Map.of("request.id", requestId));
 
-        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+        TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
         Promise<List<Map<String, Object>>> policiesPromise = loadRetentionPolicies(tenantContext);
 
         // Schema scan: when a collection is specified, query a sample entity to inspect field names
@@ -808,7 +808,7 @@ public class DataLifecycleHandler {
                 400)).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
         }
 
-        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+        TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
         return loadRetentionPolicy(tenantContext, collection)
             .then(policy -> requireEntityStore().findById(tenantContext, EntityStore.EntityId.of(entityId))
                 .map(entityOpt -> {
@@ -869,7 +869,7 @@ public class DataLifecycleHandler {
                 traceSupport.requestSpanId(request),
                 Map.of("request.id", requestId));
 
-        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+        TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
         return loadRetentionPolicies(tenantContext)
             .then(policies -> {
                 EntityStore store = client.entityStore();
@@ -913,7 +913,7 @@ public class DataLifecycleHandler {
                 traceSupport.requestSpanId(request),
                 Map.of("request.id", requestId));
 
-        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+        TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
         return loadRetentionPolicies(tenantContext)
             .then(policies -> {
                 EntityStore store = client.entityStore();
@@ -1182,8 +1182,13 @@ public class DataLifecycleHandler {
         return entityStore;
     }
 
-    private TenantContext buildTenantContext(String tenantId, String requestId) {
-        return TenantContext.of(tenantId).withMetadata("requestId", requestId);
+    private TenantContext buildTenantContext(HttpRequest request, String tenantId, String requestId) {
+        String workspaceId = http.extractWorkspaceId(request);
+        TenantContext ctx = TenantContext.of(tenantId).withMetadata("requestId", requestId);
+        if (workspaceId != null) {
+            ctx = ctx.withWorkspace(workspaceId);
+        }
+        return ctx;
     }
 
     private EntityStore.QuerySpec buildCollectionQuery(String collection) {
@@ -1593,7 +1598,7 @@ public class DataLifecycleHandler {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
         String requestId = resolveRequestId(request);
-        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+        TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
 
         return request.loadBody().then(buf -> {
             try {
@@ -1634,7 +1639,7 @@ public class DataLifecycleHandler {
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
-        TenantContext tenantContext = buildTenantContext(tenantId, resolveRequestId(request));
+        TenantContext tenantContext = buildTenantContext(request, tenantId, resolveRequestId(request));
 
         return loadGovernancePolicies(tenantContext)
             .map(policies -> http.jsonResponse(Map.of(
@@ -1654,7 +1659,7 @@ public class DataLifecycleHandler {
         }
 
         String policyId = request.getPathParameter("id");
-        TenantContext tenantContext = buildTenantContext(tenantId, resolveRequestId(request));
+        TenantContext tenantContext = buildTenantContext(request, tenantId, resolveRequestId(request));
 
         String requestId = resolveRequestId(request);
         return loadGovernancePolicyById(tenantContext, policyId)
@@ -1675,7 +1680,7 @@ public class DataLifecycleHandler {
 
         String requestId = resolveRequestId(request);
         String policyId = request.getPathParameter("id");
-        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+        TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
 
         return request.loadBody().then(buf -> {
             try {
@@ -1722,7 +1727,7 @@ public class DataLifecycleHandler {
 
         String requestId = resolveRequestId(request);
         String policyId = request.getPathParameter("id");
-        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+        TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
 
         return loadGovernancePolicyById(tenantContext, policyId)
             .then(existingOpt -> {
@@ -1764,7 +1769,7 @@ public class DataLifecycleHandler {
         }
 
         String policyId = request.getPathParameter("id");
-        TenantContext tenantContext = buildTenantContext(tenantId, resolveRequestId(request));
+        TenantContext tenantContext = buildTenantContext(request, tenantId, resolveRequestId(request));
 
         return request.loadBody().then(buf -> {
             try {

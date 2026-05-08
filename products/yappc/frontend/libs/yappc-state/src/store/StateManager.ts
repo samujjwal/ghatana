@@ -317,7 +317,7 @@ export class StateManager {
    */
   static createAsyncAtomWithState<T>(
     key: AtomKey,
-    fetchFn: () => Promise<T>,
+    _fetchFn: () => Promise<T>,
     options: {
       description?: string;
       initialData?: T;
@@ -365,7 +365,7 @@ export class StateManager {
    */
   static createYjsAtom<T extends Record<string, unknown>>(
     key: AtomKey,
-    ytype: unknown,
+    _ytype: unknown,
     initialValue: T,
     options: {
       description?: string;

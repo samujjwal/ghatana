@@ -20,7 +20,7 @@
  */
 
 import { atom } from 'jotai';
-import type { PreviewMode } from '@ghatana/ui-builder';
+import type { PreviewMode } from '@ghatana/ui-builder/preview';
 
 import {
   createAtom,

@@ -11,7 +11,7 @@
  * @doc.pattern Value Object
  */
 
-import type { CRDTOperation, Conflict as CRDTConflict } from '../core/index.js';
+import type { CRDTOperation } from '../core/index.js';
 
 /**
  * Conflict type.

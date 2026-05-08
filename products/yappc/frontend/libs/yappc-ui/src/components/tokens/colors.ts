@@ -9,9 +9,6 @@
  * Migration guide: Replace imports from './tokens/colors' with '@ghatana/tokens'
  */
 
-// Re-export from platform tokens for backwards compatibility
-export { palette, lightColors, darkColors } from '@ghatana/tokens';
-
 // Legacy exports for backwards compatibility - will be removed
 export const palette = {
   // Primary colors - Blue

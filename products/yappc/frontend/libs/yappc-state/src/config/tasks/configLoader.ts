@@ -13,7 +13,6 @@ import type {
   TaskDefinition,
   TaskDomainConfig,
   WorkflowDefinition,
-  WorkflowPhase,
   LifecycleStage,
   LifecycleStageConfig,
   StageTransition,
@@ -21,8 +20,7 @@ import type {
   Persona,
   AutomationLevel,
   AuditArtifactType,
-  TaskUIConfig,
-} from '../../../types/src/tasks/index.ts';
+} from 'yappc-core/types/tasks';
 import { parse } from 'yaml';
 
 async function readTextResponse(response: Response, path: string): Promise<string> {

@@ -259,7 +259,7 @@ export const ResidualIslandReviewPanel: React.FC<ResidualIslandReviewPanelProps>
 
               {selectedIsland === island.id && (
                 <div className="mt-3 border-t border-border dark:border-border pt-3">
-                  <Alert severity="info" variant="outlined" title="Review notes" className="mb-3">
+                  <Alert severity="info" title="Review notes" className="mb-3">
                     Record why this residual should be accepted, rejected, or sent for follow-up review.
                   </Alert>
                   <TextArea

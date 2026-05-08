@@ -91,6 +91,8 @@ describe('UnifiedLeftRail', () => {
           {
             id: 'node-preview-hover',
             type: 'button',
+            position: { x: 24, y: 48 },
+            size: { width: 120, height: 44 },
             data: { label: 'Preview CTA' },
           },
         ]}
@@ -103,6 +105,10 @@ describe('UnifiedLeftRail', () => {
     fireEvent.click(await screen.findByText('button'));
 
     expect(await screen.findByTestId('layer-row-node-preview-hover')).toHaveAttribute(
+      'data-preview-hovered',
+      'true',
+    );
+    expect(screen.getByTestId('canvas-outline-minimap-marker-node-preview-hover')).toHaveAttribute(
       'data-preview-hovered',
       'true',
     );

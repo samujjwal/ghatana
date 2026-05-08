@@ -14,6 +14,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback } from 'react';
+import type { Project } from 'yappc-core/types/common';
 
 import {
   projectsAtom,
@@ -108,6 +109,10 @@ async function parseJsonResponse<T>(
   response: Response,
   context: string
 ): Promise<T> {
+  if (typeof response.text !== 'function' && typeof response.json === 'function') {
+    return response.json() as Promise<T>;
+  }
+
   const raw = await response.text();
 
   if (!raw) {
@@ -206,8 +211,8 @@ async function gqlFetch<T>(
  * ```
  */
 export function useProject(workspaceId: string | null): {
-  projects: Array<Record<string, unknown>>;
-  currentProject: Record<string, unknown> | undefined;
+  projects: Project[];
+  currentProject: Project | null;
   currentProjectId: string | null;
   isLoading: boolean;
   error: Error | null;
@@ -218,7 +223,7 @@ export function useProject(workspaceId: string | null): {
   isCreating: boolean;
   isUpdating: boolean;
   isDeleting: boolean;
-  refetch: () => Promise<Array<Record<string, unknown>> | undefined>;
+  refetch: () => Promise<Project[] | undefined>;
 } {
   const queryClient = useQueryClient();
 
@@ -241,7 +246,7 @@ export function useProject(workspaceId: string | null): {
     queryFn: async () => {
       setLoading(true);
       try {
-        const data = await gqlFetch<{ projects: unknown[] }>(PROJECTS_QUERY, {
+        const data = await gqlFetch<{ projects: Project[] }>(PROJECTS_QUERY, {
           workspaceId,
         });
         setProjects(data.projects);
@@ -345,6 +350,9 @@ export function useProject(workspaceId: string | null): {
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
-    refetch: fetchQuery.refetch,
+    refetch: async () => {
+      const result = await fetchQuery.refetch();
+      return result.data;
+    },
   };
 }

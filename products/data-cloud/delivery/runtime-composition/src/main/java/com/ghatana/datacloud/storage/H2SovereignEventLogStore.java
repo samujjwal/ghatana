@@ -7,6 +7,8 @@ import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
 import org.h2.jdbcx.JdbcDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.nio.ByteBuffer;
@@ -40,6 +42,8 @@ import java.util.function.Consumer;
  */
 public final class H2SovereignEventLogStore implements EventLogStore, AutoCloseable {
 
+    private static final Logger log = LoggerFactory.getLogger(H2SovereignEventLogStore.class);
+
     public static final String HEADER_OFFSET_KEY = "_x_dc_offset";
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
@@ -68,9 +72,23 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
     @Override
     public Promise<List<Offset>> appendBatch(TenantContext tenant, List<EventEntry> entries) {
         return Promise.ofBlocking(executor, () -> {
+            // DC-P0-005: Wrap all appends in a single transaction for atomicity.
+            // A failure on any entry rolls back the entire batch so no partial writes occur.
             List<Offset> offsets = new ArrayList<>(entries.size());
-            for (EventEntry entry : entries) {
-                offsets.add(appendSync(tenant.tenantId(), entry));
+            try (Connection connection = dataSource.getConnection()) {
+                boolean originalAutoCommit = connection.getAutoCommit();
+                connection.setAutoCommit(false);
+                try {
+                    for (EventEntry entry : entries) {
+                        offsets.add(appendSync(connection, tenant.tenantId(), entry));
+                    }
+                    connection.commit();
+                } catch (Exception exception) {
+                    connection.rollback();
+                    throw exception;
+                } finally {
+                    connection.setAutoCommit(originalAutoCommit);
+                }
             }
             return offsets;
         });
@@ -141,8 +159,25 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
     }
 
     private Offset appendSync(String tenantId, EventEntry entry) throws Exception {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement("""
+        try (Connection connection = dataSource.getConnection()) {
+            return appendSync(connection, tenantId, entry);
+        }
+    }
+
+    /**
+     * DC-P0-004: Insert the event. If the idempotency key is already present for the tenant,
+     * returns the existing offset rather than inserting a duplicate.
+     */
+    private Offset appendSync(Connection connection, String tenantId, EventEntry entry) throws Exception {
+        // DC-P0-004: Check idempotency key before insert if one is provided.
+        if (entry.idempotencyKey().isPresent()) {
+            Optional<Offset> existing = findByIdempotencyKey(connection, tenantId, entry.idempotencyKey().get());
+            if (existing.isPresent()) {
+                return existing.get();
+            }
+        }
+
+        try (PreparedStatement statement = connection.prepareStatement("""
                  INSERT INTO dc_event_log (
                      tenant_id, event_id, event_type, event_version, payload, content_type, headers_json, idempotency_key, created_at
                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -160,6 +195,21 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
             try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
                 generatedKeys.next();
                 return Offset.of(generatedKeys.getLong(1));
+            }
+        }
+    }
+
+    /** DC-P0-004: Lookup an existing event by idempotency key scoped to the tenant. */
+    private Optional<Offset> findByIdempotencyKey(Connection connection, String tenantId, String idempotencyKey) throws Exception {
+        try (PreparedStatement statement = connection.prepareStatement(
+                "SELECT offset_value FROM dc_event_log WHERE tenant_id = ? AND idempotency_key = ?")) {
+            statement.setString(1, tenantId);
+            statement.setString(2, idempotencyKey);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return Optional.of(Offset.of(resultSet.getLong("offset_value")));
+                }
+                return Optional.empty();
             }
         }
     }
@@ -228,6 +278,8 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
                 """);
             statement.execute("CREATE INDEX IF NOT EXISTS idx_dc_event_log_tenant_offset ON dc_event_log(tenant_id, offset_value)");
             statement.execute("CREATE INDEX IF NOT EXISTS idx_dc_event_log_tenant_type ON dc_event_log(tenant_id, event_type, offset_value)");
+            // DC-P0-004: Unique constraint prevents duplicate events with same idempotency key per tenant.
+            statement.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_dc_event_log_idempotency ON dc_event_log(tenant_id, idempotency_key) WHERE idempotency_key IS NOT NULL");
         } catch (Exception exception) {
             throw new IllegalStateException("Failed to initialize sovereign event log schema", exception);
         }
@@ -269,11 +321,18 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
     }
 
     private final class PollingSubscription implements Subscription {
+        /** DC-PERF-003: configurable base poll interval in ms. */
+        private static final long BASE_POLL_MS = 250L;
+        /** DC-PERF-003: maximum backoff cap when errors are sustained. */
+        private static final long MAX_BACKOFF_MS = 30_000L;
+
         private final String tenantId;
         private final Consumer<EventEntry> handler;
         private final ScheduledExecutorService scheduler;
         private final AtomicBoolean cancelled;
         private volatile long nextOffset;
+        /** Consecutive error count used to compute exponential backoff. */
+        private volatile int consecutiveErrors = 0;
 
         private PollingSubscription(String tenantId, Offset from, Consumer<EventEntry> handler) {
             this.tenantId = tenantId;
@@ -288,12 +347,28 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
         }
 
         private void start() {
-            scheduler.scheduleAtFixedRate(() -> {
-                if (cancelled.get()) {
-                    return;
-                }
-                read(TenantContext.of(tenantId, Map.of()), Offset.of(nextOffset), 100)
-                    .whenResult(entries -> {
+            schedulePoll(BASE_POLL_MS);
+        }
+
+        private void schedulePoll(long delayMs) {
+            if (cancelled.get()) return;
+            scheduler.schedule(this::doPoll, delayMs, TimeUnit.MILLISECONDS);
+        }
+
+        private void doPoll() {
+            if (cancelled.get()) return;
+            read(TenantContext.of(tenantId, Map.of()), Offset.of(nextOffset), 100)
+                .whenComplete((entries, error) -> {
+                    if (error != null) {
+                        consecutiveErrors++;
+                        long backoffMs = Math.min(BASE_POLL_MS * (1L << Math.min(consecutiveErrors, 7)), MAX_BACKOFF_MS);
+                        log.warn("DC-PERF-003: tail poll error for tenant={} (attempt {}), backing off {}ms: {}",
+                            tenantId, consecutiveErrors, backoffMs, error.getMessage());
+                        schedulePoll(backoffMs);
+                        return;
+                    }
+                    consecutiveErrors = 0;
+                    if (entries != null) {
                         for (EventEntry entry : entries) {
                             handler.accept(entry);
                             String headerOffset = entry.headers().get(HEADER_OFFSET_KEY);
@@ -301,8 +376,9 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
                                 nextOffset = Long.parseLong(headerOffset) + 1L;
                             }
                         }
-                    });
-            }, 0L, 250L, TimeUnit.MILLISECONDS);
+                    }
+                    schedulePoll(BASE_POLL_MS);
+                });
         }
 
         @Override

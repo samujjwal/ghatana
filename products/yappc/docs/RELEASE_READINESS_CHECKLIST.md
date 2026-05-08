@@ -29,6 +29,7 @@ Run the current canonical checks:
 pnpm --filter @ghatana/yappc-web-app run verify:release-readiness
 pnpm --filter @ghatana/yappc-web-app run test:e2e:a11y
 pnpm --filter @ghatana/yappc-web-app run test:e2e:visual
+pnpm --filter @ghatana/yappc-web-app run test:e2e:performance-memory
 
 ./gradlew \
   :products:yappc:services:build \

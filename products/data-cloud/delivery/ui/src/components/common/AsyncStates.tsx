@@ -291,3 +291,59 @@ export const NotFoundState = React.memo(function NotFoundState({
 });
 
 NotFoundState.displayName = 'NotFoundState';
+
+// ---------------------------------------------------------------------------
+// Degraded State — DC-UI-001
+// Shown when a surface is partially available (capability degraded, not fully unavailable).
+// ---------------------------------------------------------------------------
+
+interface DegradedStateProps {
+  title?: string;
+  message: string;
+  detail?: string;
+  className?: string;
+  'data-testid'?: string;
+}
+
+export const DegradedState = React.memo(function DegradedState({
+  title = 'Limited availability',
+  message,
+  detail,
+  className,
+  'data-testid': testId,
+}: DegradedStateProps): React.ReactElement {
+  return (
+    <div
+      className={cn(
+        'rounded-lg border border-yellow-300 bg-yellow-50 p-6',
+        'dark:border-yellow-700 dark:bg-yellow-950/20',
+        className
+      )}
+      role="status"
+      aria-live="polite"
+      data-testid={testId ?? 'degraded-state'}
+    >
+      <div className="flex items-start gap-3">
+        <AlertTriangle
+          className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600 dark:text-yellow-400"
+          aria-hidden="true"
+        />
+        <div>
+          <h3 className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
+            {title}
+          </h3>
+          <p className="mt-1 text-sm text-yellow-800/80 dark:text-yellow-200/80">
+            {message}
+          </p>
+          {detail && (
+            <p className="mt-2 text-xs text-yellow-700/70 dark:text-yellow-300/70">
+              {detail}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+DegradedState.displayName = 'DegradedState';

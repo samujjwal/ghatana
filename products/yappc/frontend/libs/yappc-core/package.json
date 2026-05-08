@@ -17,9 +17,17 @@
       "import": "./dist/types/index.js",
       "types": "./dist/types/index.d.ts"
     },
+    "./types/common": {
+      "import": "./dist/types/common.js",
+      "types": "./dist/types/common.d.ts"
+    },
     "./types/devsecops": {
       "import": "./dist/types/devsecops/index.js",
       "types": "./dist/types/devsecops/index.d.ts"
+    },
+    "./types/tasks": {
+      "import": "./dist/types/tasks/index.js",
+      "types": "./dist/types/tasks/index.d.ts"
     },
     "./constants": {
       "import": "./dist/constants/index.js",
