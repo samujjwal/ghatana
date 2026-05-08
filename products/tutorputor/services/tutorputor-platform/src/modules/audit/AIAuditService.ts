@@ -20,6 +20,7 @@ export interface AIAuditLogEntry {
   requestPayload?: string;
   responsePayload?: string;
   policyDecision?: string;
+  failureReason?: "policy_blocked" | "service_unavailable" | "rate_limited" | "validation_error" | "service_error";
   latencyMs?: number;
   success: boolean;
   errorMessage?: string;

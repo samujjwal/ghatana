@@ -393,7 +393,7 @@ export function CampaignsPage(): React.ReactElement {
                             Pause
                           </Button>
                         )}
-                        {(c.status === 'LAUNCHED' || c.status === 'ACTIVE') && (
+                        {c.status === 'LAUNCHED' && (
                           <Button
                             data-testid={`complete-campaign-${c.id}`}
                             size="sm"

@@ -39,6 +39,13 @@ export interface ContentGenerationFlags {
      * Phase 4 feature - currently disabled by default.
      */
     enableAutoPublish: boolean;
+
+    /**
+     * Enable deprecated Content Studio generation endpoints.
+     * These endpoints are deprecated in favor of the unified /generation/requests lifecycle.
+     * When disabled, they return 410 Gone.
+     */
+    enableDeprecatedContentStudioEndpoints: boolean;
 }
 
 /**
@@ -59,6 +66,9 @@ export const DEFAULT_FEATURE_FLAGS: ContentGenerationFlags = {
 
     // Phase 4: Auto-publish - disabled until validation is reliable
     enableAutoPublish: false,
+
+    // Deprecated Content Studio endpoints - disabled by default, use unified /generation/requests
+    enableDeprecatedContentStudioEndpoints: false,
 };
 
 /**
@@ -81,6 +91,10 @@ export function loadFeatureFlags(): ContentGenerationFlags {
 
         enableAutoPublish:
             process.env.ENABLE_AUTO_PUBLISH === 'true',
+
+        enableDeprecatedContentStudioEndpoints:
+            process.env.ENABLE_DEPRECATED_CONTENT_STUDIO_ENDPOINTS === 'true' ||
+            DEFAULT_FEATURE_FLAGS.enableDeprecatedContentStudioEndpoints,
     };
 }
 

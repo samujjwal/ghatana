@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Production OkHttp adapter for Google Ads Campaign API — creates search campaigns.
@@ -50,6 +51,8 @@ public final class HttpDmGoogleAdsCampaignApiClientAdapter implements DmGoogleAd
 
     /** Default number of threads for blocking HTTP I/O. Bounded to avoid unbounded concurrency. */
     private static final int DEFAULT_POOL_SIZE = 4;
+    private static final int MAX_RETRY_ATTEMPTS = 2;
+    private static final long BASE_RETRY_BACKOFF_MS = 100L;
 
     public HttpDmGoogleAdsCampaignApiClientAdapter(
             OkHttpClient httpClient,
@@ -128,11 +131,7 @@ public final class HttpDmGoogleAdsCampaignApiClientAdapter implements DmGoogleAd
             .post(RequestBody.create(bodyBytes, JSON_MEDIA_TYPE))
             .build();
 
-        try (Response response = httpClient.newCall(httpRequest).execute()) {
-            if (!response.isSuccessful()) {
-                throw new GoogleAdsConnectorException(
-                    "Campaign pause failed: HTTP " + response.code());
-            }
+        try (Response response = executeWithRetry(httpRequest, "Campaign pause")) {
             byte[] responseBody = response.body() != null ? response.body().bytes() : new byte[0];
             if (responseBody.length == 0) {
                 throw new GoogleAdsConnectorException("Campaign pause response body was empty");
@@ -143,8 +142,6 @@ public final class HttpDmGoogleAdsCampaignApiClientAdapter implements DmGoogleAd
                 throw new GoogleAdsConnectorException("Campaign pause returned empty resourceName");
             }
             return json.resourceName();
-        } catch (IOException e) {
-            throw new GoogleAdsConnectorException("Campaign pause IO error", e);
         }
     }
 
@@ -168,11 +165,7 @@ public final class HttpDmGoogleAdsCampaignApiClientAdapter implements DmGoogleAd
             .post(RequestBody.create(bodyBytes, JSON_MEDIA_TYPE))
             .build();
 
-        try (Response response = httpClient.newCall(httpRequest).execute()) {
-            if (!response.isSuccessful()) {
-                throw new GoogleAdsConnectorException(
-                    "Campaign creation failed: HTTP " + response.code());
-            }
+        try (Response response = executeWithRetry(httpRequest, "Campaign creation")) {
             byte[] responseBody = response.body() != null ? response.body().bytes() : new byte[0];
             if (responseBody.length == 0) {
                 throw new GoogleAdsConnectorException("Campaign creation response body was empty");
@@ -183,8 +176,47 @@ public final class HttpDmGoogleAdsCampaignApiClientAdapter implements DmGoogleAd
                 throw new GoogleAdsConnectorException("Campaign creation returned empty resourceName");
             }
             return json.resourceName();
-        } catch (IOException e) {
-            throw new GoogleAdsConnectorException("Campaign creation IO error", e);
+        }
+    }
+
+    private Response executeWithRetry(Request request, String operationName) {
+        int attempt = 0;
+        while (true) {
+            try {
+                Response response = httpClient.newCall(request).execute();
+                if (response.isSuccessful()) {
+                    return response;
+                }
+
+                int status = response.code();
+                response.close();
+                if (!isRetryableStatus(status) || attempt >= MAX_RETRY_ATTEMPTS) {
+                    throw new GoogleAdsConnectorException(operationName + " failed: HTTP " + status);
+                }
+
+                applyBackoff(attempt);
+                attempt++;
+            } catch (IOException ioException) {
+                if (attempt >= MAX_RETRY_ATTEMPTS) {
+                    throw new GoogleAdsConnectorException(operationName + " IO error", ioException);
+                }
+                applyBackoff(attempt);
+                attempt++;
+            }
+        }
+    }
+
+    private static boolean isRetryableStatus(int status) {
+        return status == 429 || status >= 500;
+    }
+
+    private static void applyBackoff(int attempt) {
+        long backoffMs = BASE_RETRY_BACKOFF_MS * (1L << attempt);
+        try {
+            TimeUnit.MILLISECONDS.sleep(backoffMs);
+        } catch (InterruptedException interruptedException) {
+            Thread.currentThread().interrupt();
+            throw new GoogleAdsConnectorException("Retry backoff interrupted", interruptedException);
         }
     }
 

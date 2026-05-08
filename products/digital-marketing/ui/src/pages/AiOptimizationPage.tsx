@@ -62,7 +62,7 @@ export function AiOptimizationPage(): React.ReactElement {
             Workspace: <code>{workspaceId}</code>
           </span>
           {totalPending > 0 && (
-            <Badge variant="warning">{totalPending} pending actions</Badge>
+            <Badge tone="warning">{totalPending} pending actions</Badge>
           )}
         </div>
       </div>
@@ -84,7 +84,7 @@ export function AiOptimizationPage(): React.ReactElement {
                       <h3 className="font-medium">{rec.title}</h3>
                       <p className="text-sm text-gray-600">{rec.description}</p>
                     </div>
-                    <Badge variant={rec.status === 'PENDING' ? 'info' : 'success'}>
+                    <Badge tone={rec.status === 'PENDING' ? 'info' : 'success'}>
                       {rec.status}
                     </Badge>
                   </div>
@@ -115,7 +115,7 @@ export function AiOptimizationPage(): React.ReactElement {
                       <h3 className="font-medium">{anomaly.title}</h3>
                       <p className="text-sm text-gray-600">{anomaly.description}</p>
                     </div>
-                    <Badge variant={anomaly.severity === 'HIGH' || anomaly.severity === 'CRITICAL' ? 'danger' : 'warning'}>
+                    <Badge tone={anomaly.severity === 'HIGH' || anomaly.severity === 'CRITICAL' ? 'danger' : 'warning'}>
                       {anomaly.severity}
                     </Badge>
                   </div>
@@ -141,7 +141,7 @@ export function AiOptimizationPage(): React.ReactElement {
                       <h3 className="font-medium">{exp.title}</h3>
                       <p className="text-sm text-gray-600">{exp.description}</p>
                     </div>
-                    <Badge variant={exp.status === 'PENDING' ? 'info' : 'success'}>
+                    <Badge tone={exp.status === 'PENDING' ? 'info' : 'success'}>
                       {exp.status}
                     </Badge>
                   </div>
@@ -167,7 +167,7 @@ export function AiOptimizationPage(): React.ReactElement {
                       <h3 className="font-medium">{proposal.title}</h3>
                       <p className="text-sm text-gray-600">{proposal.description}</p>
                     </div>
-                    <Badge variant={proposal.status === 'PENDING' ? 'info' : proposal.status === 'APPROVED' ? 'warning' : 'success'}>
+                    <Badge tone={proposal.status === 'PENDING' ? 'info' : proposal.status === 'APPROVED' ? 'warning' : 'success'}>
                       {proposal.status}
                     </Badge>
                   </div>
@@ -204,7 +204,7 @@ export function AiOptimizationPage(): React.ReactElement {
           },
           {
             title: 'Active Anomalies',
-            calculate: () => anomalies.filter(a => a.status === 'DETECTED').length,
+            calculate: () => anomalies.filter(a => a.status === 'PENDING').length,
             variant: 'orange',
             subtitle: 'Requires attention',
           },

@@ -207,7 +207,7 @@ export function registerReviewRoutes(
         tenantId,
         requestId,
         {
-          autoPublish: bodyResult.data.autoPublish ?? true,
+          autoPublish: bodyResult.data.autoPublish ?? false,
           actorId: reviewedBy,
         },
       );

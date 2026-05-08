@@ -1,6 +1,7 @@
 import { assertConsentAllowed } from "../compliance/consentPolicy.js";
 import type { PrismaClient } from "@tutorputor/core/db";
 import type { TenantId, UserId } from "@tutorputor/contracts/v1/types";
+import { createHash } from "crypto";
 
 // Local type definitions to avoid import issues
 type AIUseCase = "tutor_query" | "content_generation" | "intent_parsing" | "simulation_explanation" | "query_parsing";
@@ -248,22 +249,67 @@ export interface AIAuditPayloadArgs {
   response?: Record<string, unknown>;
 }
 
-function keepNonPiiValue(value: unknown): unknown {
+// Constants for audit payload size limits
+const MAX_STRING_LENGTH = 120;
+const MAX_ARRAY_ITEMS = 10;
+const MAX_OBJECT_DEPTH = 3;
+const MAX_TOTAL_PAYLOAD_SIZE_BYTES = 10240; // 10KB
+
+function computeHash(value: string): string {
+  return createHash('sha256').update(value).digest('hex').substring(0, 16);
+}
+
+function computeSize(value: unknown): number {
+  return JSON.stringify(value).length;
+}
+
+function keepNonPiiValue(
+  value: unknown,
+  depth: number = 0,
+  currentSize: number = 0,
+): { value: unknown; size: number } {
+  if (depth > MAX_OBJECT_DEPTH) {
+    return { value: "[max_depth_exceeded]", size: 24 };
+  }
+
   if (typeof value === "string") {
-    return value.length > 120 ? `${value.slice(0, 117)}...` : value;
+    const truncated = value.length > MAX_STRING_LENGTH
+      ? `${value.slice(0, MAX_STRING_LENGTH - 3)}...`
+      : value;
+    return { value: truncated, size: truncated.length };
   }
+
   if (Array.isArray(value)) {
-    return value.map(keepNonPiiValue);
+    const result: unknown[] = [];
+    let size = 2; // brackets
+    for (let i = 0; i < Math.min(value.length, MAX_ARRAY_ITEMS); i++) {
+      const { value: item, size: itemSize } = keepNonPiiValue(value[i], depth + 1);
+      result.push(item);
+      size += itemSize + 1; // +1 for comma
+    }
+    if (value.length > MAX_ARRAY_ITEMS) {
+      result.push(`...(${value.length - MAX_ARRAY_ITEMS} more items)`);
+      size += 30;
+    }
+    return { value: result, size };
   }
+
   if (value && typeof value === "object") {
-    return sanitizeNonPiiRecord(value as Record<string, unknown>);
+    const { sanitized, size: objSize } = sanitizeNonPiiRecord(
+      value as Record<string, unknown>,
+      depth + 1,
+    );
+    return { value: sanitized, size: objSize };
   }
-  return value;
+
+  const strVal = String(value);
+  return { value: strVal, size: strVal.length };
 }
 
 export function sanitizeNonPiiRecord(
   payload: Record<string, unknown>,
-): Record<string, unknown> {
+  depth: number = 0,
+): { sanitized: Record<string, unknown>; size: number } {
   const blockedKeys = new Set([
     "answer",
     "email",
@@ -279,23 +325,45 @@ export function sanitizeNonPiiRecord(
     "userInput",
     "voice",
   ]);
+
+  // Keys that should be replaced with hash references instead of full content
+  const hashReferenceKeys = new Set([
+    "currentSimulationState",
+    "recentAttempts",
+    "misconceptions",
+  ]);
+
   const sanitized: Record<string, unknown> = {};
+  let totalSize = 2; // braces
 
   for (const [key, value] of Object.entries(payload)) {
     if (blockedKeys.has(key)) {
       sanitized[`${key}Redacted`] = true;
+      totalSize += `${key}Redacted`.length + 5; // :true
       continue;
     }
-    sanitized[key] = keepNonPiiValue(value);
+
+    if (hashReferenceKeys.has(key) && value) {
+      const hash = computeHash(JSON.stringify(value));
+      sanitized[`${key}Hash`] = hash;
+      sanitized[`${key}Present`] = true;
+      totalSize += `${key}Hash`.length + hash.length + 10;
+      continue;
+    }
+
+    const { value: processedValue, size: valueSize } = keepNonPiiValue(value, depth);
+    sanitized[key] = processedValue;
+    totalSize += key.length + valueSize + 2; // key: value
   }
 
-  return sanitized;
+  return { sanitized, size: totalSize };
 }
 
 export function buildAIAuditPayload(args: AIAuditPayloadArgs): {
   requestPayload: string;
   responsePayload?: string;
 } {
+  const { sanitized: sanitizedRequest, size: requestSize } = sanitizeNonPiiRecord(args.request);
   const requestPayload = JSON.stringify({
     endpoint: args.endpoint,
     useCase: args.useCase,
@@ -303,23 +371,25 @@ export function buildAIAuditPayload(args: AIAuditPayloadArgs): {
       ...args.governance,
       containsDirectPii: false,
     },
-    request: sanitizeNonPiiRecord(args.request),
+    request: sanitizedRequest,
   });
 
-  const responsePayload = args.response
-    ? JSON.stringify({
-        endpoint: args.endpoint,
-        useCase: args.useCase,
-        governance: {
-          modelVersion: args.governance.modelVersion,
-          promptVersion: args.governance.promptVersion,
-          safetyFilterResult: args.governance.safetyFilterResult,
-          humanReviewRequired: args.governance.humanReviewRequired,
-          containsDirectPii: false,
-        },
-        response: sanitizeNonPiiRecord(args.response),
-      })
-    : undefined;
+  let responsePayload: string | undefined;
+  if (args.response) {
+    const { sanitized: sanitizedResponse } = sanitizeNonPiiRecord(args.response);
+    responsePayload = JSON.stringify({
+      endpoint: args.endpoint,
+      useCase: args.useCase,
+      governance: {
+        modelVersion: args.governance.modelVersion,
+        promptVersion: args.governance.promptVersion,
+        safetyFilterResult: args.governance.safetyFilterResult,
+        humanReviewRequired: args.governance.humanReviewRequired,
+        containsDirectPii: false,
+      },
+      response: sanitizedResponse,
+    });
+  }
 
   return {
     requestPayload,

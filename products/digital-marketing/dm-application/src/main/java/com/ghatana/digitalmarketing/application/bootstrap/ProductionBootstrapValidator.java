@@ -2,12 +2,14 @@ package com.ghatana.digitalmarketing.application.bootstrap;
 
 import com.ghatana.digitalmarketing.application.campaign.CampaignRepository;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
+import com.ghatana.digitalmarketing.pack.DigitalMarketingBoundaryPolicyStore;
+import com.ghatana.kernel.policy.BoundaryPolicyLoadContext;
+import com.ghatana.kernel.policy.BoundaryPolicyRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -221,21 +223,41 @@ public final class ProductionBootstrapValidator {
             violations.add("POLICY-001: Kernel adapter not configured, cannot verify policy pack");
             return;
         }
+        try {
+            DigitalMarketingBoundaryPolicyStore store = new DigitalMarketingBoundaryPolicyStore();
+            BoundaryPolicyLoadContext context = BoundaryPolicyLoadContext.builder()
+                .tenantId("default")
+                .region("GLOBAL")
+                .build();
 
-        // Check that critical compliance rule sets are registered
-        // These rule sets should have default-deny semantics for high-severity rules
-        String[] requiredRuleSets = {
-            "DM_MARKETING_INTEGRITY",
-            "DM_CONSENT_LIFECYCLE",
-            "DM_AUDIT_TRACEABILITY",
-            "DM_CLAIMS_DISCLOSURES"
-        };
+            List<BoundaryPolicyRule> rules = store.loadRules(context);
+            if (rules.isEmpty()) {
+                violations.add("POLICY-002: Boundary policy store returned an empty rule list");
+                return;
+            }
 
-        // NOTE: isComplianceRuleSetLoaded method not yet available on kernelAdapter
-        // Skipping compliance rule set validation for now
-        LOG.info("[DMOS-BOOTSTRAP] Skipping compliance rule set validation (method not implemented)");
+            BoundaryPolicyRule defaultDeny = rules.get(rules.size() - 1);
+            if (!"DM-BP-999".equals(defaultDeny.getRuleId())) {
+                violations.add("POLICY-003: Last boundary policy rule must be DM-BP-999 default-deny");
+            }
+            if (defaultDeny.getEffect() != BoundaryPolicyRule.Effect.DENY) {
+                violations.add("POLICY-004: DM-BP-999 must use DENY effect");
+            }
+            if (!defaultDeny.getActions().contains("*")) {
+                violations.add("POLICY-005: DM-BP-999 must cover wildcard action '*'");
+            }
 
-        LOG.info("[DMOS-BOOTSTRAP] Default-deny policy pack validation passed");
+            long defaultDenyRuleCount = rules.stream()
+                .filter(rule -> "DM-BP-999".equals(rule.getRuleId()))
+                .count();
+            if (defaultDenyRuleCount != 1) {
+                violations.add("POLICY-006: Expected exactly one DM-BP-999 default-deny rule");
+            }
+
+            LOG.info("[DMOS-BOOTSTRAP] Default-deny policy pack validation passed");
+        } catch (Exception e) {
+            violations.add("POLICY-007: Failed to validate default-deny policy pack: " + e.getMessage());
+        }
     }
 
     /**

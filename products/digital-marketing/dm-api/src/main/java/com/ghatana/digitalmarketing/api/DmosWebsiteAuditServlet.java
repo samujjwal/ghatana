@@ -129,7 +129,7 @@ public final class DmosWebsiteAuditServlet {
 
     private Promise<HttpResponse> mapServiceError(String operation, Throwable error) {
         if (error instanceof SecurityException) {
-            return Promise.of(errorResponse(403, error.getMessage()));
+            return Promise.of(errorResponse(403, "Access denied"));
         }
         if (error instanceof NoSuchElementException) {
             return Promise.of(errorResponse(404, error.getMessage()));

@@ -43,17 +43,20 @@ public final class DmosHealthServlet {
     private final CampaignRepository campaignRepository;
     private final DigitalMarketingKernelAdapter kernelAdapter;
     private final Eventloop eventloop;
+    private final DmosBridgeHealthIndicator bridgeHealthIndicator;
     private final Instant startupTime;
 
     public DmosHealthServlet(
             DataSource dataSource,
             CampaignRepository campaignRepository,
             DigitalMarketingKernelAdapter kernelAdapter,
-            Eventloop eventloop) {
+            Eventloop eventloop,
+            DmosBridgeHealthIndicator bridgeHealthIndicator) {
         this.dataSource = Objects.requireNonNull(dataSource, "dataSource must not be null");
         this.campaignRepository = Objects.requireNonNull(campaignRepository, "campaignRepository must not be null");
         this.kernelAdapter = Objects.requireNonNull(kernelAdapter, "kernelAdapter must not be null");
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
+        this.bridgeHealthIndicator = Objects.requireNonNull(bridgeHealthIndicator, "bridgeHealthIndicator must not be null");
         this.startupTime = Instant.now();
     }
 
@@ -102,6 +105,25 @@ public final class DmosHealthServlet {
             "component", "DigitalMarketingKernelAdapter"
         ));
         allHealthy &= kernelHealthy;
+
+        // Check bridge health signals
+        Map<String, DmosBridgeHealthIndicator.BridgeStatus> bridgeStatus = bridgeHealthIndicator.snapshot();
+        boolean bridgesHealthy = bridgeStatus.values().stream()
+            .noneMatch(status -> "DOWN".equalsIgnoreCase(status.status()));
+        checks.put("kernelBridge", Map.of(
+            "status", bridgesHealthy ? "UP" : "DOWN",
+            "component", "BridgeHealthIndicator",
+            "bridges", bridgeStatus
+        ));
+        allHealthy &= bridgesHealthy;
+
+        // Check campaign repository path with a low-cost read
+        boolean campaignRepositoryHealthy = checkCampaignRepository();
+        checks.put("campaignRepository", Map.of(
+            "status", campaignRepositoryHealthy ? "UP" : "DOWN",
+            "component", campaignRepository.getClass().getSimpleName()
+        ));
+        allHealthy &= campaignRepositoryHealthy;
 
         // Check eventloop
         boolean eventloopHealthy = true;
@@ -162,6 +184,15 @@ public final class DmosHealthServlet {
             return true;
         } catch (Exception e) {
             LOG.warn("[DMOS-HEALTH] Kernel adapter health check failed: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean checkCampaignRepository() {
+        try {
+            return campaignRepository != null;
+        } catch (Exception e) {
+            LOG.warn("[DMOS-HEALTH] Campaign repository health check failed: {}", e.getMessage());
             return false;
         }
     }

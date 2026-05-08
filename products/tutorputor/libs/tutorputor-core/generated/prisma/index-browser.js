@@ -239,7 +239,9 @@ exports.Prisma.AssessmentAttemptScalarFieldEnum = {
   startedAt: 'startedAt',
   submittedAt: 'submittedAt',
   gradedAt: 'gradedAt',
-  timeSpentSeconds: 'timeSpentSeconds'
+  timeSpentSeconds: 'timeSpentSeconds',
+  averageConfidence: 'averageConfidence',
+  confidenceBreakdown: 'confidenceBreakdown'
 };
 
 exports.Prisma.AssessmentDraftScalarFieldEnum = {
@@ -258,7 +260,8 @@ exports.Prisma.LearningEventScalarFieldEnum = {
   moduleId: 'moduleId',
   eventType: 'eventType',
   payload: 'payload',
-  timestamp: 'timestamp'
+  timestamp: 'timestamp',
+  schemaVersion: 'schemaVersion'
 };
 
 exports.Prisma.MarketplaceListingScalarFieldEnum = {
@@ -1822,6 +1825,21 @@ exports.Prisma.ValidationRecordScalarFieldEnum = {
   validatedAt: 'validatedAt'
 };
 
+exports.Prisma.FactualValidationScalarFieldEnum = {
+  id: 'id',
+  experienceId: 'experienceId',
+  claimRef: 'claimRef',
+  tenantId: 'tenantId',
+  factText: 'factText',
+  factSource: 'factSource',
+  isValid: 'isValid',
+  confidence: 'confidence',
+  errorMessage: 'errorMessage',
+  validatedBy: 'validatedBy',
+  validatedAt: 'validatedAt',
+  metadata: 'metadata'
+};
+
 exports.Prisma.AIGenerationLogScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
@@ -2038,6 +2056,7 @@ exports.Prisma.ClaimExampleScalarFieldEnum = {
   claimRef: 'claimRef',
   manifestId: 'manifestId',
   manifestVersion: 'manifestVersion',
+  evidenceRefs: 'evidenceRefs',
   title: 'title',
   description: 'description',
   content: 'content',
@@ -2055,6 +2074,7 @@ exports.Prisma.ClaimSimulationScalarFieldEnum = {
   experienceId: 'experienceId',
   claimRef: 'claimRef',
   simulationManifestId: 'simulationManifestId',
+  evidenceRefs: 'evidenceRefs',
   interactionType: 'interactionType',
   goal: 'goal',
   successCriteria: 'successCriteria',
@@ -2068,6 +2088,7 @@ exports.Prisma.ClaimAnimationScalarFieldEnum = {
   claimRef: 'claimRef',
   manifestId: 'manifestId',
   manifestVersion: 'manifestVersion',
+  evidenceRefs: 'evidenceRefs',
   variantKey: 'variantKey',
   isPrimary: 'isPrimary',
   title: 'title',
@@ -2973,14 +2994,17 @@ exports.VRMultiplayerStatus = exports.$Enums.VRMultiplayerStatus = {
 };
 
 exports.SimulationDomain = exports.$Enums.SimulationDomain = {
-  CS_DISCRETE: 'CS_DISCRETE',
-  PHYSICS: 'PHYSICS',
-  CHEMISTRY: 'CHEMISTRY',
-  BIOLOGY: 'BIOLOGY',
-  MEDICINE: 'MEDICINE',
-  ECONOMICS: 'ECONOMICS',
+  MATHEMATICS: 'MATHEMATICS',
+  SCIENCE: 'SCIENCE',
+  TECH: 'TECH',
   ENGINEERING: 'ENGINEERING',
-  MATHEMATICS: 'MATHEMATICS'
+  MEDICINE: 'MEDICINE',
+  HEALTH: 'HEALTH',
+  BUSINESS: 'BUSINESS',
+  MANAGEMENT: 'MANAGEMENT',
+  ECONOMICS: 'ECONOMICS',
+  COMPUTER_SCIENCE: 'COMPUTER_SCIENCE',
+  INTERDISCIPLINARY: 'INTERDISCIPLINARY'
 };
 
 exports.CurriculumLevel = exports.$Enums.CurriculumLevel = {
@@ -3317,6 +3341,7 @@ exports.GenerationRequestStatus = exports.$Enums.GenerationRequestStatus = {
   DRAFT: 'DRAFT',
   PLANNING: 'PLANNING',
   PLANNED: 'PLANNED',
+  FAILED_PLANNING: 'FAILED_PLANNING',
   EXECUTING: 'EXECUTING',
   COMPLETED: 'COMPLETED',
   FAILED: 'FAILED',
@@ -3532,6 +3557,7 @@ exports.Prisma.ModelName = {
   EvidenceBundleMetadata: 'EvidenceBundleMetadata',
   ExperienceTask: 'ExperienceTask',
   ValidationRecord: 'ValidationRecord',
+  FactualValidation: 'FactualValidation',
   AIGenerationLog: 'AIGenerationLog',
   ExperienceRevision: 'ExperienceRevision',
   ExperienceEvent: 'ExperienceEvent',

@@ -9,7 +9,7 @@
  * - Module prefix
  */
 
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync, readdirSync, statSync, writeFileSync } from 'fs';
 import { join, relative } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -43,10 +43,10 @@ const MODULES: ModuleConfig[] = [
   { name: 'content', prefix: '/api', routeFile: 'modules/content/index.ts' },
   { name: 'simulation', prefix: '/api/v1/simulations', routeFile: 'modules/simulation/index.ts' },
   { name: 'search', prefix: '/api/v1/search', routeFile: 'modules/search/index.ts' },
-  { name: 'kernel-registry', prefix: '/api/v1/kernel-registry', routeFile: 'modules/kernel-registry/fastify-routes.ts' },
+  { name: 'kernel-registry', prefix: '', routeFile: 'modules/kernel-registry/fastify-routes.ts' }, // Routes already include full path
   { name: 'content-needs', prefix: '/api/v1/content-needs', routeFile: 'modules/content-needs/routes.ts' },
   { name: 'auto-revision', prefix: '/api/v1/auto-revision', routeFile: 'modules/auto-revision/routes.ts' },
-  { name: 'knowledge-base', prefix: '/api/v1/knowledge-base', routeFile: 'modules/knowledge-base/routes.ts' },
+  { name: 'knowledge-base', prefix: '', routeFile: 'modules/knowledge-base/routes.ts' }, // Routes already include /api/knowledge-base prefix
   { name: 'payments', prefix: '/api/v1/payments', routeFile: 'modules/payments/routes.ts' },
 ];
 
@@ -59,7 +59,10 @@ function extractRoutePatterns(content: string): RouteInfo[] {
   
   while ((match = methodPattern.exec(content)) !== null) {
     const [, method, path] = match;
-    routes.push({ path, method: method.toUpperCase(), module: '', backendOwner: '' });
+    // Skip routes with ${prefix} placeholders - they need module-specific handling
+    if (!path.includes('${prefix}')) {
+      routes.push({ path, method: method.toUpperCase(), module: '', backendOwner: '' });
+    }
   }
   
   return routes;

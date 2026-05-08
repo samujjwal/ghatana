@@ -756,14 +756,6 @@ export function registerGenerationRoutes(
       const { requestId } = paramsResult.data;
       const { results } = bodyResult.data;
 
-      // Verify tenant matches worker's tenant
-      if (workerAuth.tenantId !== workerAuth.tenantId) {
-        return reply.status(403).send({
-          error: "Forbidden",
-          message: "Worker tenant mismatch",
-        });
-      }
-
       // Verify worker type is content-generation
       if (workerAuth.workerType !== "content-generation") {
         return reply.status(403).send({
@@ -773,6 +765,22 @@ export function registerGenerationRoutes(
       }
 
       try {
+        // Fetch the request to verify tenant ownership
+        const request = await executionService.getExecutionSnapshot(
+          workerAuth.tenantId,
+          requestId,
+        );
+
+        if (!request) {
+          return reply.status(404).send({
+            error: "Not Found",
+            message: "Generation request not found",
+          });
+        }
+
+        // Verify tenant matches the request's tenant (already validated by getExecutionSnapshot)
+        // This ensures the worker can only submit results for requests in their tenant
+
         const summary = await executionService.recordBatchResults(
           requestId,
           results.map((r) => ({

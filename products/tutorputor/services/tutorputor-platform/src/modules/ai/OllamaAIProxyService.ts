@@ -123,11 +123,15 @@ export class OllamaAIProxyService implements AIProxyService {
 
   /**
    * Fetch actual module context from database with tenant scoping
+   * Includes module details, content blocks, learning objectives, and misconceptions
    */
   private async getModuleContext(moduleId: ModuleId, tenantId: TenantId): Promise<{
     title: string;
     description: string | null;
     domain: string | null;
+    contentBlocks: Array<{ title: string; content: string | null }>;
+    learningObjectives: string[];
+    misconceptions: string[];
   } | null> {
     if (!moduleId || !tenantId) return null;
 
@@ -146,10 +150,41 @@ export class OllamaAIProxyService implements AIProxyService {
 
       if (!module) return null;
 
+      // Extract learning objectives and misconceptions from searchableText
+      const learningObjectives: string[] = [];
+      const misconceptions: string[] = [];
+      const contentBlocks: Array<{ title: string; content: string | null }> = [];
+      
+      // Try to extract structured objectives/misconceptions from searchableText
+      if (module.searchableText) {
+        const text = module.searchableText;
+        // Extract learning objectives (common patterns)
+        const objectiveMatches = text.match(/(?:learning objective|objective|goal)[:\s]*([^.!?]+)/gi);
+        if (objectiveMatches) {
+          learningObjectives.push(...objectiveMatches.map(m => m.replace(/^(?:learning objective|objective|goal)[:\s]*/i, '').trim()));
+        }
+        // Extract misconceptions (common patterns)
+        const misconceptionMatches = text.match(/(?:misconception|common mistake)[:\s]*([^.!?]+)/gi);
+        if (misconceptionMatches) {
+          misconceptions.push(...misconceptionMatches.map(m => m.replace(/^(?:misconception|common mistake)[:\s]*/i, '').trim()));
+        }
+        // Extract content sections (e.g., "Section 1:", "Chapter 2:")
+        const sectionMatches = text.match(/(?:section|chapter|part)\s+\d+[:\s]*([^.!?]+)/gi);
+        if (sectionMatches) {
+          contentBlocks.push(...sectionMatches.map((m, i) => ({
+            title: `Section ${i + 1}`,
+            content: m.replace(/^(?:section|chapter|part)\s+\d+[:\s]*/i, '').trim(),
+          })));
+        }
+      }
+
       return {
         title: module.title,
         description: module.searchableText as string | null,
         domain: module.difficultyLevel as string | null,
+        contentBlocks,
+        learningObjectives,
+        misconceptions,
       };
     } catch (error) {
       logger.warn({ message: "Failed to fetch module context", moduleId, tenantId, error });
@@ -750,6 +785,7 @@ Each question must:
 - Have exactly 4 options (A, B, C, D)
 - Include the correct answer
 - Provide a brief explanation
+- Avoid testing misconceptions explicitly unless asked to identify them
 
 Respond ONLY with valid JSON in this format:
 [
@@ -761,14 +797,36 @@ Respond ONLY with valid JSON in this format:
   }
 ]`;
 
-      const contentText = moduleContext.description || moduleContext.title;
+      // Build comprehensive prompt with all available context
+      const promptParts: string[] = [];
+      promptParts.push(`Module: ${moduleContext.title}`);
+      if (moduleContext.domain) promptParts.push(`Domain: ${moduleContext.domain}`);
+      
+      // Add learning objectives if available
+      if (moduleContext.learningObjectives.length > 0) {
+        promptParts.push(`Learning Objectives:\n${moduleContext.learningObjectives.map((obj, i) => `${i + 1}. ${obj}`).join('\n')}`);
+      }
+      
+      // Add misconceptions to avoid or address
+      if (moduleContext.misconceptions.length > 0) {
+        promptParts.push(`Common Misconceptions to Address:\n${moduleContext.misconceptions.map((mis, i) => `${i + 1}. ${mis}`).join('\n')}`);
+      }
+      
+      // Add content sections
+      if (moduleContext.contentBlocks.length > 0) {
+        promptParts.push(`Content Sections:\n${moduleContext.contentBlocks.map(block => `- ${block.title}: ${block.content || ''}`).join('\n')}`);
+      }
+      
+      // Add main description
+      if (moduleContext.description) {
+        promptParts.push(`Content:\n${moduleContext.description}`);
+      }
+
       const userPrompt = `Generate ${args.count} ${args.difficulty} questions based on the following content:
 
-Module: ${moduleContext.title}
-${moduleContext.domain ? `Domain: ${moduleContext.domain}` : ''}
-${contentText ? `Content: ${contentText}` : ''}
+${promptParts.join('\n\n')}
 
-Generate questions that test understanding of this content.`;
+Generate questions that test understanding of this content, its learning objectives, and help address common misconceptions.`;
 
       const result = await this.callOllama({
         model: this.model,
@@ -963,24 +1021,20 @@ Generate questions that test understanding of this content.`;
   }
 
   private parseLearningUnitResponse(response: string): { title: string; description: string; sections: unknown[] } {
-    try {
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return {
-          title: parsed.title || "Untitled Unit",
-          description: parsed.description || "",
-          sections: Array.isArray(parsed.sections) ? parsed.sections : [],
-        };
-      }
-    } catch {
-      // Fall through to default
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("AI response did not contain valid JSON for learning unit structure");
     }
 
-    return {
-      title: "Untitled Unit",
-      description: "",
-      sections: [],
-    };
+    try {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        title: parsed.title || "Untitled Unit",
+        description: parsed.description || "",
+        sections: Array.isArray(parsed.sections) ? parsed.sections : [],
+      };
+    } catch (error) {
+      throw new Error(`Failed to parse AI response as JSON: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 }

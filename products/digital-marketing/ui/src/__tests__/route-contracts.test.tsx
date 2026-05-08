@@ -10,6 +10,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import { AuthProvider } from '@/context/AuthContext';
 import { dmosRouteManifest, isRouteAllowedForRoles } from '@/routeManifest';
 import { CapabilityKeys } from '@/api/capabilities';
@@ -63,11 +66,55 @@ function renderRoute(
 }
 
 describe('Route contracts', () => {
+  it('keeps frontend manifest metadata aligned with backend route-capability contract', () => {
+    const testFileDir = path.dirname(fileURLToPath(import.meta.url));
+    const contractPath = path.resolve(
+      testFileDir,
+      '../../../dm-api/src/main/resources/contracts/dmos-route-capabilities.json',
+    );
+    const contractRaw = readFileSync(contractPath, 'utf8');
+    const contract = JSON.parse(contractRaw) as {
+      routes: Array<{
+        path: string;
+        label: string;
+        minimumRole: string;
+        personas: string[];
+        tiers: string[];
+        actions: string[];
+        cards: string[];
+        capabilityKey?: string;
+      }>;
+    };
+
+    const manifestByPath = new Map(
+      dmosRouteManifest.map((route) => [route.path, route]),
+    );
+    const contractByPath = new Map(
+      contract.routes.map((route) => [route.path, route]),
+    );
+
+    contract.routes.forEach((contractRoute) => {
+      const manifestRoute = manifestByPath.get(contractRoute.path);
+      expect(manifestRoute).toBeDefined();
+      expect(manifestRoute?.label).toBe(contractRoute.label);
+      expect(manifestRoute?.minimumRole).toBe(contractRoute.minimumRole);
+      expect(manifestRoute?.personas).toEqual(contractRoute.personas);
+      expect(manifestRoute?.tiers).toEqual(contractRoute.tiers);
+      expect(manifestRoute?.actions).toEqual(contractRoute.actions);
+      expect(manifestRoute?.cards).toEqual(contractRoute.cards);
+      expect(manifestRoute?.capabilityKey).toBe(contractRoute.capabilityKey);
+    });
+
+    dmosRouteManifest.forEach((manifestRoute) => {
+      expect(contractByPath.has(manifestRoute.path)).toBe(true);
+    });
+  });
+
   it('requires every route capability key to be defined in CapabilityKeys', () => {
     const knownCapabilities = new Set(Object.values(CapabilityKeys));
     const routeCapabilityKeys = dmosRouteManifest
       .map((route) => route.capabilityKey)
-      .filter((key): key is string => Boolean(key));
+      .filter((key): key is (typeof CapabilityKeys)[keyof typeof CapabilityKeys] => Boolean(key));
 
     routeCapabilityKeys.forEach((key) => {
       expect(knownCapabilities.has(key)).toBe(true);

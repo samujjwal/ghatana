@@ -232,11 +232,16 @@ class FlywayMigrationValidationTest {
         // Then: Invalid status should be rejected
         try (Connection conn = dataSource.getConnection();
              Statement stmt = conn.createStatement()) {
+            stmt.execute(
+                "INSERT INTO dmos_workspaces (id, tenant_id, name, status, created_at, updated_at, created_by) " +
+                "VALUES ('ws-1', 'tenant-1', 'Workspace 1', 'ACTIVE', NOW(), NOW(), 'user-1')"
+            );
 
             // This should fail due to CHECK constraint
             stmt.execute(
-                "INSERT INTO dmos_campaigns (id, workspace_id, name, status, type, created_at, updated_at, created_by) " +
-                "VALUES ('test-1', 'ws-1', 'Test', 'INVALID_STATUS', 'EMAIL', NOW(), NOW(), 'user-1')"
+                "INSERT INTO dmos_campaigns " +
+                "(id, workspace_id, tenant_id, name, status, type, created_at, updated_at, created_by) " +
+                "VALUES ('test-1', 'ws-1', 'tenant-1', 'Test', 'INVALID_STATUS', 'EMAIL', NOW(), NOW(), 'user-1')"
             );
 
             // If we reach here, the constraint didn't work

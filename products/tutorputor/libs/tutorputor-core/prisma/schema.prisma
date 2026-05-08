@@ -358,7 +358,7 @@ model AssessmentAttempt {
   timeSpentSeconds Int?
   
   // Confidence-Based Marking (TODO 13)
-  averageConfidence Float? @default(null) // 0.0 - 1.0 average confidence across all responses
+  averageConfidence Float? @default(0.0) // 0.0 - 1.0 average confidence across all responses
   confidenceBreakdown Json? // Detailed confidence per item: { itemId: confidence, ... }
   
   @@index([tenantId, userId])
@@ -4396,6 +4396,7 @@ enum GenerationRequestStatus {
   DRAFT
   PLANNING
   PLANNED
+  FAILED_PLANNING
   EXECUTING
   COMPLETED
   FAILED

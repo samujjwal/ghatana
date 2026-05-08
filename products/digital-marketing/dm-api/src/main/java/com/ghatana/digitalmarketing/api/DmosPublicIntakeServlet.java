@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -124,7 +125,11 @@ public final class DmosPublicIntakeServlet {
             int commaIdx = forwarded.indexOf(',');
             return commaIdx > 0 ? forwarded.substring(0, commaIdx).trim() : forwarded.trim();
         }
-        return request.getRemoteAddress() != null ? request.getRemoteAddress().getHostAddress() : "unknown";
+        try {
+            return request.getRemoteAddress().getHostAddress();
+        } catch (Exception ignored) {
+            return "unknown";
+        }
     }
 
     private Promise<HttpResponse> handleCaptureLead(HttpRequest request) {
@@ -140,12 +145,19 @@ public final class DmosPublicIntakeServlet {
                 String clientIp = resolveClientIp(request);
 
                 // P1-038: Abuse control check
-                Map<String, String> formData = Map.of(
-                    "email", body.email(),
-                    "firstName", body.firstName(),
-                    "lastName", body.lastName(),
-                    "phone", body.phone()
-                );
+                Map<String, String> formData = new HashMap<>();
+                if (body.email() != null) {
+                    formData.put("email", body.email());
+                }
+                if (body.firstName() != null) {
+                    formData.put("firstName", body.firstName());
+                }
+                if (body.lastName() != null) {
+                    formData.put("lastName", body.lastName());
+                }
+                if (body.phone() != null) {
+                    formData.put("phone", body.phone());
+                }
 
                 return abuseControlService.checkAbuse(ctx, clientIp, body.email(), formData)
                     .then(abuseResult -> {
@@ -180,7 +192,7 @@ public final class DmosPublicIntakeServlet {
                     })
                             .then(r -> Promise.of(r), e -> {
                                 if (e instanceof SecurityException) {
-                                    return Promise.of(errorResponse(403, e.getMessage()));
+                                    return Promise.of(errorResponse(403, "Access denied"));
                                 }
                                 if (e instanceof IllegalArgumentException) {
                                     return Promise.of(errorResponse(400, e.getMessage()));
@@ -202,7 +214,7 @@ public final class DmosPublicIntakeServlet {
         String principal = getHeader(request, "X-Principal-ID", "public-intake");
         String correlId = getHeader(request, "X-Correlation-ID", DmCorrelationId.generate().getValue());
         String idkValue = getHeader(request, "X-Idempotency-Key", null);
-        String sessionId = getHeader(request, "X-Session-ID", null);
+        String sessionId = getHeader(request, "X-Session-ID", "session-public-intake");
         Set<String> roles = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Roles")));
         Set<String> permissions = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Permissions")));
 

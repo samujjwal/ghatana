@@ -19,6 +19,9 @@ import {
   AIContentGenerationService,
 } from "./AIContentGenerationService.js";
 import {
+  AIServiceUnavailableError,
+} from "./OllamaAIProxyService.js";
+import {
   getTenantId,
   getUserId,
   requireRole,
@@ -97,15 +100,26 @@ function buildAuditEntry(args: {
   responsePayload?: string;
   success: boolean;
   errorMessage?: string;
+  failureReason?: "policy_blocked" | "service_unavailable" | "rate_limited" | "validation_error" | "service_error";
   latencyMs: number;
 }): AIAuditLogEntry {
-  return {
+  const policyDecision = args.success
+    ? "allowed"
+    : args.failureReason === "policy_blocked"
+      ? "blocked"
+      : args.failureReason === "rate_limited"
+        ? "rate_limited"
+        : args.failureReason === "validation_error"
+          ? "validation_failed"
+          : "service_error";
+
+  const result: AIAuditLogEntry = {
     tenantId: String(args.tenantId),
     userId: String(args.userId),
     modelId: args.modelId,
     endpoint: args.endpoint,
     requestPayload: args.requestPayload,
-    policyDecision: args.success ? "allowed" : "blocked",
+    policyDecision,
     latencyMs: args.latencyMs,
     success: args.success,
     ...requestAuditMetadata(args.req),
@@ -113,6 +127,12 @@ function buildAuditEntry(args: {
     ...(args.responsePayload ? { responsePayload: args.responsePayload } : {}),
     ...(args.errorMessage ? { errorMessage: args.errorMessage } : {}),
   };
+
+  if (args.failureReason) {
+    result.failureReason = args.failureReason;
+  }
+
+  return result;
 }
 
 async function enforceAiTenantRateLimit(
@@ -356,6 +376,17 @@ export async function registerAIRoutes(
       } catch (error) {
         success = false;
         errorMessage = error instanceof Error ? error.message : "Unknown error";
+        
+        // Handle AIServiceUnavailableError with 503 status
+        if (error instanceof AIServiceUnavailableError) {
+          return reply.status(503).send({
+            error: "AI Service Unavailable",
+            message: error.message,
+            code: "AI_SERVICE_UNAVAILABLE",
+            retryable: error.isRetryable,
+          });
+        }
+        
         const contextErrorReply = sendRequestContextError(reply, error);
         if (contextErrorReply) {
           return contextErrorReply;
@@ -389,6 +420,7 @@ export async function registerAIRoutes(
           },
           ...(response ? { response: { modelId } } : {}),
         });
+        const failureReason = success ? undefined : errorMessage?.includes("rate limit") ? "rate_limited" : errorMessage?.includes("validation") ? "validation_error" : "service_unavailable";
         const auditEntry = buildAuditEntry({
           req,
           tenantId,
@@ -399,6 +431,7 @@ export async function registerAIRoutes(
           requestPayload: auditPayload.requestPayload,
           latencyMs,
           success,
+          ...(failureReason ? { failureReason } : {}),
           ...(errorMessage ? { errorMessage } : {}),
           ...(auditPayload.responsePayload
             ? { responsePayload: auditPayload.responsePayload }
@@ -470,6 +503,17 @@ export async function registerAIRoutes(
         success = false;
         errorMessage = error instanceof Error ? error.message : String(error);
 
+        // Handle AIServiceUnavailableError with 503 status
+        if (error instanceof AIServiceUnavailableError) {
+          return reply.status(503).send({
+            error: "AI Service Unavailable",
+            message: error.message,
+            code: "AI_SERVICE_UNAVAILABLE",
+            retryable: error.isRetryable,
+            questions: [],
+          });
+        }
+
         const message = errorMessage;
 
         // Return structured error codes for client handling
@@ -514,6 +558,7 @@ export async function registerAIRoutes(
       } finally {
         // Log AI inference for audit
         const latencyMs = Date.now() - startTime;
+        const failureReason = success ? undefined : errorMessage?.includes("rate limit") ? "rate_limited" : errorMessage?.includes("validation") ? "validation_error" : "service_unavailable";
         const auditEntry = buildAuditEntry({
           req,
           tenantId,
@@ -523,6 +568,7 @@ export async function registerAIRoutes(
           requestPayload: JSON.stringify({ moduleId, count, difficulty }),
           latencyMs,
           success,
+          ...(failureReason ? { failureReason } : {}),
           ...(errorMessage ? { errorMessage } : {}),
           ...(success && response
             ? { responsePayload: JSON.stringify(response) }
@@ -582,6 +628,16 @@ export async function registerAIRoutes(
         success = false;
         errorMessage = error instanceof Error ? error.message : "Unknown error";
 
+        // Handle AIServiceUnavailableError with 503 status
+        if (error instanceof AIServiceUnavailableError) {
+          return reply.status(503).send({
+            error: "AI Service Unavailable",
+            message: error.message,
+            code: "AI_SERVICE_UNAVAILABLE",
+            retryable: error.isRetryable,
+          });
+        }
+
         if (
           (error as { statusCode?: number }).statusCode === 403 ||
           errorMessage.includes("Forbidden")
@@ -606,6 +662,7 @@ export async function registerAIRoutes(
       } finally {
         // Log AI inference for audit
         const latencyMs = Date.now() - startTime;
+        const failureReason = success ? undefined : errorMessage?.includes("rate limit") ? "rate_limited" : errorMessage?.includes("validation") ? "validation_error" : "service_unavailable";
         const auditEntry = buildAuditEntry({
           req,
           tenantId,
@@ -615,6 +672,7 @@ export async function registerAIRoutes(
           requestPayload: JSON.stringify({ conceptName, domain }),
           latencyMs,
           success,
+          ...(failureReason ? { failureReason } : {}),
           ...(errorMessage ? { errorMessage } : {}),
           ...(success && response
             ? { responsePayload: JSON.stringify(response) }
@@ -682,6 +740,16 @@ export async function registerAIRoutes(
       } catch (error) {
         success = false;
         errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+        // Handle AIServiceUnavailableError with 503 status
+        if (error instanceof AIServiceUnavailableError) {
+          return reply.status(503).send({
+            error: "AI Service Unavailable",
+            message: error.message,
+            code: "AI_SERVICE_UNAVAILABLE",
+            retryable: error.isRetryable,
+          });
+        }
 
         if (
           (error as { statusCode?: number }).statusCode === 403 ||

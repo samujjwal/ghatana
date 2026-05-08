@@ -149,6 +149,7 @@ export type GenerationRequestStatus =
   | "draft"
   | "planning"
   | "planned"
+  | "failed_planning"
   | "executing"
   | "completed"
   | "failed"

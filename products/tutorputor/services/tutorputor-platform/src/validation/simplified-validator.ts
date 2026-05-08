@@ -8,6 +8,7 @@
 import { z } from "zod";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { createLogger } from "../utils/logger.js";
+import { createStandardErrorResponse } from "../core/middleware/standard-error-response.js";
 
 const logger = createLogger("input-validation");
 
@@ -665,20 +666,26 @@ export function createValidationMiddleware<T>(
       request[source] = validatedData;
     } catch (error) {
       if (error instanceof ValidationError) {
-        return reply.status(400).send({
-          error: "Validation Error",
-          message: error.message,
-          code: error.code,
-          field: error.field,
-          requestId: error.context?.requestId,
-        });
+        const response = createStandardErrorResponse(
+          "VALIDATION_ERROR",
+          error.message,
+          400,
+          {
+            code: error.code,
+            field: error.field,
+            requestId: error.context?.requestId,
+          },
+        );
+        return reply.status(400).send(response);
       }
 
-      return reply.status(500).send({
-        error: "Internal Server Error",
-        message: "Validation failed",
-        requestId: request.id,
-      });
+      const response = createStandardErrorResponse(
+        "INTERNAL_ERROR",
+        "Validation failed",
+        500,
+        { requestId: request.id },
+      );
+      return reply.status(500).send(response);
     }
   };
 }

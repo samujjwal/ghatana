@@ -37,10 +37,11 @@ public final class PostgresApprovalSnapshotRepository implements ApprovalSnapsho
 
     private static final String UPSERT_SQL =
         "INSERT INTO dmos_approval_snapshots " +
-        "  (request_id, workspace_id, target_type, target_id, target_workspace_id, " +
+        "  (request_id, workspace_id, tenant_id, target_type, target_id, target_workspace_id, " +
         "   snapshot_summary, validation_result_id, risk_level, required_approver_role, snapshot_at, version) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+        "VALUES (?, ?, (SELECT tenant_id FROM dmos_workspaces WHERE id = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
         "ON CONFLICT (request_id, workspace_id) DO UPDATE SET " +
+        "  tenant_id = EXCLUDED.tenant_id, " +
         "  target_type = EXCLUDED.target_type, " +
         "  target_id = EXCLUDED.target_id, " +
         "  target_workspace_id = EXCLUDED.target_workspace_id, " +
@@ -56,7 +57,13 @@ public final class PostgresApprovalSnapshotRepository implements ApprovalSnapsho
         "SELECT request_id, workspace_id, target_type, target_id, target_workspace_id, " +
         "       snapshot_summary, validation_result_id, risk_level, required_approver_role, snapshot_at, version " +
         "FROM dmos_approval_snapshots " +
-        "WHERE request_id = ? AND workspace_id = ?";
+        "WHERE request_id = ? AND workspace_id = ? " +
+        "AND tenant_id = (SELECT tenant_id FROM dmos_workspaces WHERE id = ?)";
+
+    private static final String WORKSPACE_TENANT_MATCH_SQL =
+        "SELECT 1 FROM dmos_workspaces ws " +
+        "JOIN dmos_workspaces tws ON ws.tenant_id = tws.tenant_id " +
+        "WHERE ws.id = ? AND tws.id = ?";
 
     private final DataSource dataSource;
     private final Executor executor;
@@ -72,19 +79,33 @@ public final class PostgresApprovalSnapshotRepository implements ApprovalSnapsho
         Objects.requireNonNull(snapshot, "snapshot must not be null");
         return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection();
+                 PreparedStatement tenancyStmt = conn.prepareStatement(WORKSPACE_TENANT_MATCH_SQL);
                  PreparedStatement stmt = conn.prepareStatement(UPSERT_SQL)) {
+                tenancyStmt.setString(1, workspaceId);
+                tenancyStmt.setString(2, snapshot.targetWorkspaceId());
+                try (ResultSet tenancyRs = tenancyStmt.executeQuery()) {
+                    if (!tenancyRs.next()) {
+                        throw new DmPersistenceException(
+                            "Tenant isolation violation: workspace " + workspaceId
+                                + " and target workspace " + snapshot.targetWorkspaceId()
+                                + " do not belong to the same tenant",
+                            new IllegalStateException("Cross-tenant approval snapshot write rejected"));
+                    }
+                }
+
                 stmt.setString(1, snapshot.requestId());
                 stmt.setString(2, workspaceId);
-                stmt.setString(3, snapshot.targetType().name());
-                stmt.setString(4, snapshot.targetId());
-                stmt.setString(5, snapshot.targetWorkspaceId());
-                stmt.setString(6, snapshot.snapshotSummary());
-                stmt.setString(7, snapshot.validationResultId());
-                stmt.setShort(8, (short) snapshot.riskLevel());
-                stmt.setString(9, snapshot.requiredApproverRole());
-                stmt.setTimestamp(10, Timestamp.from(snapshot.snapshotAt()));
-                stmt.setLong(11, snapshot.version() + 1);
-                stmt.setLong(12, snapshot.version());
+                stmt.setString(3, workspaceId);
+                stmt.setString(4, snapshot.targetType().name());
+                stmt.setString(5, snapshot.targetId());
+                stmt.setString(6, snapshot.targetWorkspaceId());
+                stmt.setString(7, snapshot.snapshotSummary());
+                stmt.setString(8, snapshot.validationResultId());
+                stmt.setShort(9, (short) snapshot.riskLevel());
+                stmt.setString(10, snapshot.requiredApproverRole());
+                stmt.setTimestamp(11, Timestamp.from(snapshot.snapshotAt()));
+                stmt.setLong(12, snapshot.version() + 1);
+                stmt.setLong(13, snapshot.version());
                 int rowsAffected = stmt.executeUpdate();
                 if (rowsAffected == 0) {
                     throw new DmPersistenceException(
@@ -123,6 +144,7 @@ public final class PostgresApprovalSnapshotRepository implements ApprovalSnapsho
                  PreparedStatement stmt = conn.prepareStatement(SELECT_SQL)) {
                 stmt.setString(1, requestId);
                 stmt.setString(2, workspaceId);
+                stmt.setString(3, workspaceId);
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
                         return Optional.of(mapRow(rs));

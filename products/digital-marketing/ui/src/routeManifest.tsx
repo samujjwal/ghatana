@@ -1,22 +1,30 @@
 import React from 'react';
 import type { ProductRouteCapability } from '@ghatana/product-shell';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { ApprovalQueuePage } from '@/pages/ApprovalQueuePage';
-import { ApprovalDetailPage } from '@/pages/ApprovalDetailPage';
-import { AiActionLogPage } from '@/pages/AiActionLogPage';
-import { CampaignsPage } from '@/pages/CampaignsPage';
-import { StrategyPage } from '@/pages/StrategyPage';
-import { BudgetPage } from '@/pages/BudgetPage';
-import { FunnelAnalyticsPage } from '@/pages/FunnelAnalyticsPage';
-import { AttributionPage } from '@/pages/AttributionPage';
-import { RoiRoasPage } from '@/pages/RoiRoasPage';
-import { SelfMarketingFunnelPage } from '@/pages/SelfMarketingFunnelPage';
-import { MarketResearchPage } from '@/pages/MarketResearchPage';
-import { AdvancedChannelsPage } from '@/pages/AdvancedChannelsPage';
-import { LocalizationPage } from '@/pages/LocalizationPage';
-import { AgencyOperationsPage } from '@/pages/AgencyOperationsPage';
-import { AiOptimizationPage } from '@/pages/AiOptimizationPage';
 import { VALID_ROLES, type ValidRole, normalizeRoles } from '@/lib/role-utils';
+
+function lazyNamedPage<T>(loader: () => Promise<T>, exportName: keyof T): React.LazyExoticComponent<React.ComponentType> {
+  return React.lazy(async () => {
+    const module = await loader();
+    return { default: module[exportName] as React.ComponentType };
+  });
+}
+
+const DashboardPage = lazyNamedPage(() => import('@/pages/DashboardPage'), 'DashboardPage');
+const ApprovalQueuePage = lazyNamedPage(() => import('@/pages/ApprovalQueuePage'), 'ApprovalQueuePage');
+const ApprovalDetailPage = lazyNamedPage(() => import('@/pages/ApprovalDetailPage'), 'ApprovalDetailPage');
+const AiActionLogPage = lazyNamedPage(() => import('@/pages/AiActionLogPage'), 'AiActionLogPage');
+const CampaignsPage = lazyNamedPage(() => import('@/pages/CampaignsPage'), 'CampaignsPage');
+const StrategyPage = lazyNamedPage(() => import('@/pages/StrategyPage'), 'StrategyPage');
+const BudgetPage = lazyNamedPage(() => import('@/pages/BudgetPage'), 'BudgetPage');
+const FunnelAnalyticsPage = lazyNamedPage(() => import('@/pages/FunnelAnalyticsPage'), 'FunnelAnalyticsPage');
+const AttributionPage = lazyNamedPage(() => import('@/pages/AttributionPage'), 'AttributionPage');
+const RoiRoasPage = lazyNamedPage(() => import('@/pages/RoiRoasPage'), 'RoiRoasPage');
+const SelfMarketingFunnelPage = lazyNamedPage(() => import('@/pages/SelfMarketingFunnelPage'), 'SelfMarketingFunnelPage');
+const MarketResearchPage = lazyNamedPage(() => import('@/pages/MarketResearchPage'), 'MarketResearchPage');
+const AdvancedChannelsPage = lazyNamedPage(() => import('@/pages/AdvancedChannelsPage'), 'AdvancedChannelsPage');
+const LocalizationPage = lazyNamedPage(() => import('@/pages/LocalizationPage'), 'LocalizationPage');
+const AgencyOperationsPage = lazyNamedPage(() => import('@/pages/AgencyOperationsPage'), 'AgencyOperationsPage');
+const AiOptimizationPage = lazyNamedPage(() => import('@/pages/AiOptimizationPage'), 'AiOptimizationPage');
 
 export interface DmosRouteManifestEntry extends ProductRouteCapability {
   readonly element: React.ReactElement;

@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * P1-014: PostgresCampaignRepository integration tests with TestContainers.
@@ -67,7 +68,8 @@ class PostgresCampaignRepositoryTest extends EventloopTestBase {
             conn.createStatement().executeUpdate(
                 "INSERT INTO dmos_workspaces (id, tenant_id, name, status, created_at, updated_at, created_by) VALUES "
                 + "('ws-1','test-tenant','ws-1','ACTIVE',NOW(),NOW(),'test'),"
-                + "('ws-2','test-tenant','ws-2','ACTIVE',NOW(),NOW(),'test') "
+                + "('ws-2','test-tenant','ws-2','ACTIVE',NOW(),NOW(),'test'),"
+                + "('ws-foreign','foreign-tenant','ws-foreign','ACTIVE',NOW(),NOW(),'test') "
                 + "ON CONFLICT (id) DO NOTHING"
             );
         } catch (Exception e) {
@@ -250,6 +252,35 @@ class PostgresCampaignRepositoryTest extends EventloopTestBase {
 
         List<Campaign> results = runPromise(() -> repository.listByWorkspace(DmWorkspaceId.of("ws-1"), 10, 100));
         assertThat(results).isEmpty();
+    }
+
+    @Test
+    @DisplayName("P0 tenant isolation: save fails when workspace does not exist")
+    void shouldFailSaveWhenWorkspaceMissing() {
+        Campaign orphanCampaign = buildCampaign("camp-orphan", "ws-missing", CampaignStatus.DRAFT, CampaignType.EMAIL);
+
+        assertThatThrownBy(() -> runPromise(() -> repository.save(orphanCampaign)))
+            .isInstanceOf(DmPersistenceException.class)
+            .hasMessageContaining("Workspace not found");
+    }
+
+    @Test
+    @DisplayName("P0 tenant isolation: tenant id persisted from workspace owner")
+    void shouldPersistTenantIdFromWorkspace() {
+        Campaign campaign = buildCampaign("camp-tenant", "ws-1", CampaignStatus.DRAFT, CampaignType.EMAIL);
+        runPromise(() -> repository.save(campaign));
+
+        try (var conn = postgres.createConnection("");
+             var stmt = conn.prepareStatement("SELECT tenant_id FROM dmos_campaigns WHERE id = ? AND workspace_id = ?")) {
+            stmt.setString(1, "camp-tenant");
+            stmt.setString(2, "ws-1");
+            try (var rs = stmt.executeQuery()) {
+                assertThat(rs.next()).isTrue();
+                assertThat(rs.getString(1)).isEqualTo("test-tenant");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to verify tenant_id persistence", e);
+        }
     }
 
     private static Campaign buildCampaign(String id, String workspaceId, CampaignStatus status, CampaignType type) {

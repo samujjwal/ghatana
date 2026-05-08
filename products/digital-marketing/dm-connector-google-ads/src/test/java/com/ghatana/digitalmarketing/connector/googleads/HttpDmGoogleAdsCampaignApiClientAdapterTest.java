@@ -84,6 +84,33 @@ class HttpDmGoogleAdsCampaignApiClientAdapterTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("createSearchCampaign retries on 429 and succeeds")
+    void shouldRetryCreateOnRateLimit() {
+        server.enqueue(new MockResponse().setResponseCode(429).setBody("{\"error\":\"rate_limited\"}"));
+        server.enqueue(new MockResponse()
+            .setResponseCode(200)
+            .addHeader("Content-Type", "application/json")
+            .setBody("{\"resourceName\": \"customers/123/campaigns/777\"}"));
+
+        String resourceName = runPromise(() -> adapter.createSearchCampaign("token", validRequest()));
+
+        assertThat(resourceName).isEqualTo("customers/123/campaigns/777");
+        assertThat(server.getRequestCount()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("createSearchCampaign fails after retry budget exhausted on 5xx")
+    void shouldFailCreateAfterRetryBudgetExhausted() {
+        server.enqueue(new MockResponse().setResponseCode(503).setBody("{\"error\":\"upstream\"}"));
+        server.enqueue(new MockResponse().setResponseCode(503).setBody("{\"error\":\"upstream\"}"));
+        server.enqueue(new MockResponse().setResponseCode(503).setBody("{\"error\":\"upstream\"}"));
+
+        assertThatExceptionOfType(GoogleAdsConnectorException.class).isThrownBy(() ->
+            runPromise(() -> adapter.createSearchCampaign("token", validRequest())));
+        assertThat(server.getRequestCount()).isEqualTo(3);
+    }
+
+    @Test
     @DisplayName("createSearchCampaign sends dailyBudgetMicros converted from USD — 50 USD = 50000000 micros")
     void shouldSendBudgetAsMicros() throws InterruptedException {
         server.enqueue(new MockResponse()
@@ -207,6 +234,22 @@ class HttpDmGoogleAdsCampaignApiClientAdapterTest extends EventloopTestBase {
 
         assertThatExceptionOfType(GoogleAdsConnectorException.class).isThrownBy(() ->
             runPromise(() -> adapter.pauseCampaign("bad-token", "customers/123/campaigns/456")));
+    }
+
+    @Test
+    @DisplayName("pauseCampaign retries on transient 5xx and succeeds")
+    void shouldRetryPauseOnTransientServerError() {
+        server.enqueue(new MockResponse().setResponseCode(502).setBody("{\"error\":\"bad_gateway\"}"));
+        server.enqueue(new MockResponse()
+            .setResponseCode(200)
+            .addHeader("Content-Type", "application/json")
+            .setBody("{\"resourceName\": \"customers/123/campaigns/456\"}"));
+
+        String resourceName = runPromise(() ->
+            adapter.pauseCampaign("acc-token", "customers/123/campaigns/456"));
+
+        assertThat(resourceName).isEqualTo("customers/123/campaigns/456");
+        assertThat(server.getRequestCount()).isEqualTo(2);
     }
 
     private static CreateGoogleSearchCampaignRequest validRequest() {
