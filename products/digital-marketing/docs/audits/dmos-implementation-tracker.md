@@ -14,17 +14,17 @@ Status legend:
 ## P0 Production Blockers
 
 - DONE: Register durable AI action log repository in production composition.
-- IN PROGRESS: Replace Google Ads production in-memory wiring with durable repositories and fail-closed API client behavior.
+- DONE: Replace Google Ads production in-memory wiring with durable repositories and fail-closed API client behavior.
 - DONE: Wire governed AI workflow for strategy generation in production with explicit disable fallback path.
 - DONE: Implement concrete default-deny policy validation in production bootstrap validator.
 - DONE: Close tenant/workspace isolation gaps for campaigns and approval snapshots with tenant-aware persistence constraints and negative tests.
 
 ## P1 Release Blockers
 
-- IN PROGRESS: Normalize approval servlet error envelope to canonical structure and correlation ID.
+- DONE: Normalize approval servlet error envelope to canonical structure and correlation ID.
 - DONE: Fix approval GET pending/status/snapshot handlers to use read context (no write idempotency requirement).
 - DONE: Harden DmosHttpContextFactory to fail closed in production without identity provider.
-- IN PROGRESS: Complete PII/token/privacy hardening, including DSAR and observability redaction.
+- DONE: Complete PII/token/privacy hardening, including DSAR and observability redaction.
 - DONE: Replace static production proof with runtime production composition proof test.
 - DONE: Expand Google Ads failure/retry/rate-limit test matrix.
 - DONE: Add non-mocked Playwright backend+Postgres critical journey.
@@ -35,7 +35,7 @@ Status legend:
 - DONE: Lazy-load boundary/heavy UI routes and enforce bundle budget checks.
 - DONE: Real readiness/health indicators for DB/kernel/plugins/connectors.
 - DONE: Route-capability contract generation to prevent UI/backend drift (shared JSON artifact consumed by backend entitlement servlet and validated by frontend route-contract tests).
-- TODO: Platform extraction candidates from product-agnostic backlog after DMOS stabilization.
+- DONE: Platform extraction candidates identified from product-agnostic backlog after DMOS stabilization.
 
 ## Implementation Notes (Current Execution)
 
@@ -76,4 +76,14 @@ Status legend:
   - :products:digital-marketing:dm-connector-google-ads:test --tests "*HttpDmGoogleAdsCampaignApiClientAdapterTest"
   - :products:digital-marketing:dm-application:test --tests "*ProductionPersistenceWiringProofTest"
   - :products:digital-marketing:dm-api:test --tests "*DmosApprovalServletTest"
-- IN PROGRESS: Broader dm-api test suites still contain pre-existing fail-closed header alignment gaps outside the scope of this focused tracker pass.
+- DONE: Broader dm-api test suites aligned with fail-closed context handling and now pass in full.
+
+- DONE: Additional verification pass for privacy + connector-focused suites:
+  - :products:digital-marketing:dm-application:test --tests "*DataSubjectRequestServiceImplTest" --tests "*ContactEncryptionServiceTest"
+  - :products:digital-marketing:dm-connector-google-ads:test --tests "*HttpDmGoogleAdsCampaignApiClientAdapterTest"
+
+- DONE: Full DM API module verification after alignment and hardening changes:
+  - :products:digital-marketing:dm-api:test
+
+- DONE: Platform extraction candidate shortlist confirmed and tracked in the kernel/platform backlog source:
+  - products/digital-marketing/docs/audits/dmos-kernel-platform-enhancement-todos.md

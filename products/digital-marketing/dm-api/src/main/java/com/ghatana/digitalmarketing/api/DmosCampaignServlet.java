@@ -160,7 +160,7 @@ public final class DmosCampaignServlet {
                 )))
                 .then(r -> Promise.of(r), e -> {
                     if (e instanceof SecurityException) {
-                        return Promise.of(errorResponse(403, e.getMessage(), ctx.getCorrelationId().getValue()));
+                        return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
                     }
                     LOG.error("[DMOS] Failed to list campaigns", e);
                     return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
@@ -170,7 +170,7 @@ public final class DmosCampaignServlet {
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
         } catch (SecurityException e) {
             String correlationId = DmCorrelationId.generate().getValue();
-            return Promise.of(errorResponse(403, e.getMessage(), correlationId));
+            return Promise.of(errorResponse(403, "Access denied", correlationId));
         } catch (Exception e) {
             String correlationId = DmCorrelationId.generate().getValue();
             LOG.error("[DMOS] Failed to list campaigns", e);
@@ -203,7 +203,7 @@ public final class DmosCampaignServlet {
                             telemetry.recordException(span, e);
                             span.end();
                             if (e instanceof SecurityException) {
-                                return Promise.of(errorResponse(403, e.getMessage(), ctx.getCorrelationId().getValue()));
+                                return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
                             }
                             LOG.error("[DMOS] Failed to create campaign", e);
                             return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
@@ -214,7 +214,7 @@ public final class DmosCampaignServlet {
                 return Promise.of(errorResponse(400, e.getMessage(), correlationId));
             } catch (SecurityException e) {
                 String correlationId = DmCorrelationId.generate().getValue();
-                return Promise.of(errorResponse(403, e.getMessage(), correlationId));
+                return Promise.of(errorResponse(403, "Access denied", correlationId));
             } catch (Exception e) {
                 String correlationId = DmCorrelationId.generate().getValue();
                 LOG.error("[DMOS] Failed to create campaign", e);
@@ -234,7 +234,7 @@ public final class DmosCampaignServlet {
                 .map(campaign -> jsonResponse(200, CampaignResponse.from(campaign)))
                 .then(r -> Promise.of(r), e -> {
                     if (e instanceof SecurityException) {
-                        return Promise.of(errorResponse(403, e.getMessage(), ctx.getCorrelationId().getValue()));
+                        return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
                     }
                     if (e instanceof java.util.NoSuchElementException) {
                         return Promise.of(errorResponse(404, "Campaign not found: " + campaignId, ctx.getCorrelationId().getValue()));
@@ -247,7 +247,7 @@ public final class DmosCampaignServlet {
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
         } catch (SecurityException e) {
             String correlationId = DmCorrelationId.generate().getValue();
-            return Promise.of(errorResponse(403, e.getMessage(), correlationId));
+            return Promise.of(errorResponse(403, "Access denied", correlationId));
         } catch (Exception e) {
             String correlationId = DmCorrelationId.generate().getValue();
             LOG.error("[DMOS] Failed to get campaign", e);
@@ -276,7 +276,7 @@ public final class DmosCampaignServlet {
                         telemetry.recordException(span, e);
                         span.end();
                         if (e instanceof SecurityException) {
-                            return Promise.of(errorResponse(403, e.getMessage(), ctx.getCorrelationId().getValue()));
+                            return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
                         }
                         if (e instanceof java.util.NoSuchElementException) {
                             return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
@@ -296,7 +296,7 @@ public final class DmosCampaignServlet {
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
         } catch (SecurityException e) {
             String correlationId = DmCorrelationId.generate().getValue();
-            return Promise.of(errorResponse(403, e.getMessage(), correlationId));
+            return Promise.of(errorResponse(403, "Access denied", correlationId));
         } catch (Exception e) {
             String correlationId = DmCorrelationId.generate().getValue();
             LOG.error("[DMOS] Failed to launch campaign", e);
@@ -325,7 +325,7 @@ public final class DmosCampaignServlet {
                     telemetry.recordException(span, e);
                     span.end();
                     if (e instanceof SecurityException) {
-                        return Promise.of(errorResponse(403, e.getMessage(), ctx.getCorrelationId().getValue()));
+                        return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
                     }
                     if (e instanceof java.util.NoSuchElementException) {
                         return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
@@ -342,7 +342,7 @@ public final class DmosCampaignServlet {
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
         } catch (SecurityException e) {
             String correlationId = DmCorrelationId.generate().getValue();
-            return Promise.of(errorResponse(403, e.getMessage(), correlationId));
+            return Promise.of(errorResponse(403, "Access denied", correlationId));
         } catch (Exception e) {
             String correlationId = DmCorrelationId.generate().getValue();
             LOG.error("[DMOS] Failed to pause campaign", e);
@@ -369,7 +369,7 @@ public final class DmosCampaignServlet {
                     telemetry.recordException(span, e);
                     span.end();
                     if (e instanceof SecurityException) {
-                        return Promise.of(errorResponse(403, e.getMessage(), ctx.getCorrelationId().getValue()));
+                        return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
                     }
                     if (e instanceof java.util.NoSuchElementException) {
                         return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
@@ -386,7 +386,7 @@ public final class DmosCampaignServlet {
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
         } catch (SecurityException e) {
             String correlationId = DmCorrelationId.generate().getValue();
-            return Promise.of(errorResponse(403, e.getMessage(), correlationId));
+            return Promise.of(errorResponse(403, "Access denied", correlationId));
         } catch (Exception e) {
             String correlationId = DmCorrelationId.generate().getValue();
             LOG.error("[DMOS] Failed to complete campaign", e);
@@ -413,7 +413,7 @@ public final class DmosCampaignServlet {
                     telemetry.recordException(span, e);
                     span.end();
                     if (e instanceof SecurityException) {
-                        return Promise.of(errorResponse(403, e.getMessage(), ctx.getCorrelationId().getValue()));
+                        return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
                     }
                     if (e instanceof java.util.NoSuchElementException) {
                         return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
@@ -430,7 +430,7 @@ public final class DmosCampaignServlet {
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
         } catch (SecurityException e) {
             String correlationId = DmCorrelationId.generate().getValue();
-            return Promise.of(errorResponse(403, e.getMessage(), correlationId));
+            return Promise.of(errorResponse(403, "Access denied", correlationId));
         } catch (Exception e) {
             String correlationId = DmCorrelationId.generate().getValue();
             LOG.error("[DMOS] Failed to archive campaign", e);
@@ -457,7 +457,7 @@ public final class DmosCampaignServlet {
                     telemetry.recordException(span, e);
                     span.end();
                     if (e instanceof SecurityException) {
-                        return Promise.of(errorResponse(403, e.getMessage(), ctx.getCorrelationId().getValue()));
+                        return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
                     }
                     if (e instanceof java.util.NoSuchElementException) {
                         return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
@@ -474,7 +474,7 @@ public final class DmosCampaignServlet {
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
         } catch (SecurityException e) {
             String correlationId = DmCorrelationId.generate().getValue();
-            return Promise.of(errorResponse(403, e.getMessage(), correlationId));
+            return Promise.of(errorResponse(403, "Access denied", correlationId));
         } catch (Exception e) {
             String correlationId = DmCorrelationId.generate().getValue();
             LOG.error("[DMOS] Failed to rollback campaign", e);

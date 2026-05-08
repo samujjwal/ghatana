@@ -144,7 +144,18 @@ class CrossTenantIsolationTest extends EventloopTestBase {
         @DisplayName("POST /strategy returns 403 when tenant does not own workspace")
         void generateStrategy_crossTenant_returns403() {
             HttpRequest request = post("/v1/workspaces/" + VICTIM_WORKSPACE + "/strategy",
-                "{\"businessGoal\":\"steal data\"}");
+                                """
+                                {
+                                    "intakeCompletionPct": 80,
+                                    "serviceArea": "metro-area",
+                                    "monthlyBudget": 5000,
+                                    "auditFindingCount": 3,
+                                    "trackingGapsDetected": false,
+                                    "keywordOpportunityCount": 12,
+                                    "topCompetitorCount": 4,
+                                    "primaryOffer": "managed-service"
+                                }
+                                """);
             HttpResponse response = runPromise(() -> servlet.serve(request));
             assertTenantRejection(response);
         }
@@ -212,7 +223,16 @@ class CrossTenantIsolationTest extends EventloopTestBase {
         @DisplayName("POST /approvals returns 403 when tenant does not own workspace")
         void submitApproval_crossTenant_returns403() {
             HttpRequest request = post("/v1/workspaces/" + VICTIM_WORKSPACE + "/approvals",
-                "{\"targetType\":\"CAMPAIGN\",\"targetId\":\"cmp-1\",\"submittedBy\":\"user-1\"}");
+                                """
+                                {
+                                    "targetType": "CAMPAIGN_LAUNCH",
+                                    "targetId": "cmp-1",
+                                    "description": "Cross-tenant attack simulation",
+                                    "riskLevel": 2,
+                                    "requiredApproverRole": "reviewer",
+                                    "validationResultId": "vr-attack"
+                                }
+                                """);
             HttpResponse response = runPromise(() -> servlet.serve(request));
             assertTenantRejection(response);
         }

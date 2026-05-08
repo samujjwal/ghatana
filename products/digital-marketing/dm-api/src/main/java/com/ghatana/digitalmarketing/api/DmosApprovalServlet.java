@@ -477,7 +477,7 @@ public final class DmosApprovalServlet {
     private Promise<HttpResponse> mapServiceError(String operation, Throwable e, HttpRequest request) {
         LOG.warn("Approval service error [{}]: {}", operation, e.getMessage());
         if (e instanceof SecurityException) {
-            return Promise.of(forbidden(request, e.getMessage()));
+            return Promise.of(forbidden(request, "Access denied"));
         }
         if (e instanceof IllegalArgumentException) {
             return Promise.of(badRequest(request, e.getMessage()));
