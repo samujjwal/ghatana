@@ -1,4 +1,4 @@
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyInstance } from "fastify";
 import { initializeContentWorker } from "../startup/content-worker-init.js";
 import { closeRedisClient } from "./redis-client.js";
 import { getConfig } from "../config/config.js";
@@ -36,7 +36,7 @@ export const setupWorkers: FastifyPluginAsync<WorkersOptions> = async (
 
   if (startWorker) {
     try {
-      await initializeContentWorker({
+      const worker = await initializeContentWorker({
         shouldStart: true,
         redisUrl: options.redisUrl || config.REDIS_URL || "",
         grpcServerAddress: options.grpcServerAddress || "",
@@ -45,6 +45,11 @@ export const setupWorkers: FastifyPluginAsync<WorkersOptions> = async (
         prisma: app.prisma as PrismaClient,
         requireContentWorker: process.env.REQUIRE_CONTENT_WORKER === "true",
       });
+
+      // Store worker controller on app instance for cleanup
+      if (worker) {
+        (app as FastifyInstance & { contentWorkerController?: unknown }).contentWorkerController = worker;
+      }
 
       app.log.info("✅ Content worker initialized");
     } catch (error) {
@@ -65,6 +70,19 @@ export const setupWorkers: FastifyPluginAsync<WorkersOptions> = async (
   // Graceful shutdown hook
   app.addHook("onClose", async () => {
     app.log.info("Shutting down workers...");
+
+    // Close content worker if initialized
+    const worker = (app as FastifyInstance & { contentWorkerController?: unknown }).contentWorkerController;
+    if (worker && typeof worker === "object" && "close" in worker && typeof worker.close === "function") {
+      try {
+        app.log.info("Closing content worker...");
+        await worker.close();
+        app.log.info("Content worker closed successfully");
+      } catch (error) {
+        app.log.error({ error }, "Error closing content worker");
+      }
+    }
+
     // Close Redis connection
     await closeRedisClient();
     app.log.info("Workers shutdown complete");

@@ -27,6 +27,10 @@ import type { GenerationJobType } from "../../../modules/content/types.js";
 import { GenerationQualityLoopService } from "../../../modules/content/review/quality-loop-service.js";
 import { RealContentGenerationClient } from "../grpc/RealContentGenerationClient.js";
 import { ContentWorkerTelemetryPublisher } from "../generation-telemetry.js";
+import {
+  type ContentGenerationFlags,
+  isFeatureEnabled,
+} from "../../../config/feature-flags.js";
 
 type GrpcExampleLike = {
   example_id?: string;
@@ -47,6 +51,7 @@ export class GenerationRequestJobProcessor {
     private readonly telemetry: ContentWorkerTelemetryPublisher,
     private readonly executionService: GenerationExecutionService,
     private readonly dispatcher: GenerationQueueDispatcher,
+    private readonly featureFlags: ContentGenerationFlags,
   ) {
     this.assetMaterializationService = new AssetMaterializationService(prisma);
     this.qualityLoopService = new GenerationQualityLoopService(prisma);
@@ -107,6 +112,7 @@ export class GenerationRequestJobProcessor {
       await this.executionService.recordJobResult(
         job.data.generationRequestId,
         result,
+        job.data.tenantId,
       );
 
       const blockedResults =
@@ -118,6 +124,7 @@ export class GenerationRequestJobProcessor {
         await this.executionService.recordBatchResults(
           job.data.generationRequestId,
           blockedResults,
+          job.data.tenantId,
         );
       }
 
@@ -155,6 +162,7 @@ export class GenerationRequestJobProcessor {
             },
             durationMs: Date.now() - startedAt,
           },
+          job.data.tenantId,
         );
 
         const blockedResults =
@@ -166,6 +174,7 @@ export class GenerationRequestJobProcessor {
           await this.executionService.recordBatchResults(
             job.data.generationRequestId,
             blockedResults,
+            job.data.tenantId,
           );
         }
       }
@@ -521,11 +530,16 @@ export class GenerationRequestJobProcessor {
   private async executeEvaluation(
     job: Job<GenerationRequestExecutionJobData>,
   ): Promise<Record<string, unknown>> {
+    const autoPublishEnabled = isFeatureEnabled(
+      this.featureFlags,
+      "enableAutoPublish",
+    );
+
     const summary = await this.qualityLoopService.processRequestOutcome(
       job.data.tenantId,
       job.data.generationRequestId,
       {
-        autoPublish: true,
+        autoPublish: autoPublishEnabled,
         actorId: "system:content-worker",
       },
     );

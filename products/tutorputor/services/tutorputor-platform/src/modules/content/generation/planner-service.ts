@@ -26,6 +26,11 @@ import {
 } from "../cache/intelligent-cache.js";
 import { CostAwareGenerationRouter } from "../routing/cost-aware-router.js";
 import type Redis from "ioredis";
+import {
+  type ContentGenerationFlags,
+  isFeatureEnabled,
+  loadFeatureFlags,
+} from "../../../config/feature-flags.js";
 
 import type {
   GenerationJobType,
@@ -121,6 +126,7 @@ export class GenerationPlannerService {
 
   constructor(
     private readonly prisma: PrismaClient,
+    private readonly featureFlags: ContentGenerationFlags = loadFeatureFlags(),
     redis?: Redis,
   ) {
     this.cache = new IntelligentContentCache(redis);
@@ -231,12 +237,6 @@ export class GenerationPlannerService {
       );
     }
 
-    // Update status to PLANNING
-    await this.prisma.generationRequest.update({
-      where: { id: requestId },
-      data: { status: "PLANNING" },
-    });
-
     const requestConfig = this.normalizeRequestConfig(
       (request.requestConfig as GenerationRequestConfig | null) ?? null,
     );
@@ -304,11 +304,21 @@ export class GenerationPlannerService {
       status: "PENDING" as "PENDING",
     }));
 
-    // Persist jobs and update request atomically
+    // Persist jobs and update request atomically in a single transaction
+    // This ensures DRAFT → PLANNING → PLANNED transition is atomic
     await this.prisma.$transaction(async (tx) => {
+      // Transition to PLANNING
+      await tx.generationRequest.update({
+        where: { id: requestId },
+        data: { status: "PLANNING" },
+      });
+
+      // Create jobs
       for (const job of jobData) {
         await tx.generationJob.create({ data: job });
       }
+
+      // Transition to PLANNED with all planning data
       await tx.generationRequest.update({
         where: { id: requestId },
         data: {
@@ -534,9 +544,15 @@ export class GenerationPlannerService {
   }
 
   /**
-   * Determine the review path based on risk level.
+   * Determine the review path based on risk level and feature flags.
+   * AUTO_PUBLISH is only allowed when the feature flag is enabled.
    */
   private determineReviewPath(riskLevel: RiskLevel): ReviewPath {
+    const autoPublishEnabled = isFeatureEnabled(
+      this.featureFlags,
+      "enableAutoPublish",
+    );
+
     switch (riskLevel) {
       case "critical":
       case "high":
@@ -544,7 +560,8 @@ export class GenerationPlannerService {
       case "medium":
         return "human_review";
       case "low":
-        return "auto_publish";
+        // Only allow auto_publish for low-risk content when feature flag is enabled
+        return autoPublishEnabled ? "auto_publish" : "human_review";
       default:
         return "human_review";
     }

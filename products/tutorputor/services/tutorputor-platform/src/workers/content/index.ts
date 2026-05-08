@@ -40,6 +40,10 @@ import { ContentWorkerTelemetryPublisher } from "./generation-telemetry";
 import { GenerationExecutionService } from "../../modules/content/generation/execution-service";
 import { GenerationQueueDispatcher } from "../../modules/content/generation/queue-dispatcher";
 import type { GenerationRequestExecutionJobData } from "../../modules/content/generation/queue-dispatcher";
+import {
+  type ContentGenerationFlags,
+  loadFeatureFlags,
+} from "../../config/feature-flags.js";
 
 type BullConnection = NonNullable<ConstructorParameters<typeof Queue>[1]>["connection"];
 type ContentWorkerJobData =
@@ -68,6 +72,7 @@ export interface ContentWorkerConfig {
   concurrency?: number;
   logger: Logger;
   prisma?: PrismaClient;
+  featureFlags?: ContentGenerationFlags;
 }
 
 export class ContentWorkerService {
@@ -92,6 +97,7 @@ export class ContentWorkerService {
   constructor(config: ContentWorkerConfig) {
     this.logger = config.logger;
     this.prisma = config.prisma || new PrismaClient();
+    const featureFlags = config.featureFlags || loadFeatureFlags();
 
     this.grpcClient = new RealContentGenerationClient({
       serverAddress: config.grpc.serverAddress,
@@ -176,6 +182,7 @@ export class ContentWorkerService {
       this.telemetryPublisher,
       generationExecutionService,
       generationQueueDispatcher,
+      featureFlags,
     );
 
     this.worker = new Worker(
@@ -249,10 +256,11 @@ export class ContentWorkerService {
               );
               break;
             default:
-              this.logger.warn(
+              this.logger.error(
                 { jobId: job.id, name: job.name },
-                "Unknown job name",
+                "Unknown job name - treating as failure",
               );
+              throw new Error(`Unknown job name: ${job.name}`);
           }
 
           await this.jobDeduplicator.updateJobStatus(trackedJobId, "COMPLETED");

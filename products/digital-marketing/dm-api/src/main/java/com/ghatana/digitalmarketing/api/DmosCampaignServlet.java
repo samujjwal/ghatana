@@ -98,6 +98,16 @@ public final class DmosCampaignServlet {
         this.httpContextFactory = Objects.requireNonNull(httpContextFactory, "httpContextFactory must not be null");
     }
 
+    public DmosCampaignServlet(CampaignService campaignService, Eventloop eventloop) {
+        this(
+            campaignService,
+            eventloop,
+            DmosMetricsCollector.noop(),
+            new DmosTelemetry(io.opentelemetry.api.OpenTelemetry.noop()),
+            new DmosHttpContextFactory(false, null)
+        );
+    }
+
     /**
      * Returns the {@link AsyncServlet} routing for the DMOS campaign API.
      *

@@ -293,6 +293,21 @@ class CrossTenantIsolationTest extends EventloopTestBase {
         }
 
         @Override
+        public Promise<Campaign> completeCampaign(DmOperationContext ctx, String campaignId) {
+            return Promise.ofException(crossTenantException());
+        }
+
+        @Override
+        public Promise<Campaign> archiveCampaign(DmOperationContext ctx, String campaignId) {
+            return Promise.ofException(crossTenantException());
+        }
+
+        @Override
+        public Promise<Campaign> rollbackCampaign(DmOperationContext ctx, String campaignId) {
+            return Promise.ofException(crossTenantException());
+        }
+
+        @Override
         public Promise<Campaign> getCampaign(
                 DmOperationContext ctx, String campaignId) {
             return Promise.ofException(crossTenantException());

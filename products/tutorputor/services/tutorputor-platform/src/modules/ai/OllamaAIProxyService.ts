@@ -24,6 +24,20 @@ import { readFileSync } from 'fs';
 
 const logger = createStandaloneLogger({ component: 'OllamaAIProxyService' });
 
+/**
+ * Typed error for AI service unavailability
+ */
+export class AIServiceUnavailableError extends Error {
+  constructor(
+    message: string,
+    public readonly originalError?: unknown,
+    public readonly isRetryable: boolean = true,
+  ) {
+    super(message);
+    this.name = 'AIServiceUnavailableError';
+  }
+}
+
 import type {
   ModuleId,
   TutorCitation,
@@ -85,7 +99,7 @@ export class OllamaAIProxyService implements AIProxyService {
   constructor(
     baseUrl = "http://localhost:11434",
     model = DEFAULT_MODEL,
-    private readonly prisma?: PrismaClient,
+    private readonly prisma: PrismaClient,
   ) {
     // Enforce HTTPS in production
     if (REQUIRE_TLS && !baseUrl.startsWith("https://")) {
@@ -108,18 +122,21 @@ export class OllamaAIProxyService implements AIProxyService {
   }
 
   /**
-   * Fetch actual module context from database
+   * Fetch actual module context from database with tenant scoping
    */
-  private async getModuleContext(moduleId: ModuleId): Promise<{
+  private async getModuleContext(moduleId: ModuleId, tenantId: TenantId): Promise<{
     title: string;
     description: string | null;
     domain: string | null;
   } | null> {
-    if (!this.prisma || !moduleId) return null;
+    if (!moduleId || !tenantId) return null;
 
     try {
       const module = await this.prisma.contentAsset.findFirst({
-        where: { id: moduleId },
+        where: { 
+          id: moduleId,
+          tenantId,
+        },
         select: {
           title: true,
           searchableText: true,
@@ -135,23 +152,28 @@ export class OllamaAIProxyService implements AIProxyService {
         domain: module.difficultyLevel as string | null,
       };
     } catch (error) {
-      logger.warn({ message: "Failed to fetch module context", moduleId, error });
+      logger.warn({ message: "Failed to fetch module context", moduleId, tenantId, error });
       return null;
     }
   }
 
   /**
-   * Fetch actual claim context from database
+   * Fetch actual claim context from database with tenant scoping
    */
-  private async getClaimsContext(claimIds: string[]): Promise<Array<{
+  private async getClaimsContext(claimIds: string[], tenantId: TenantId): Promise<Array<{
     id: string;
     text: string | null;
   }>> {
-    if (!this.prisma || !claimIds || claimIds.length === 0) return [];
+    if (!claimIds || claimIds.length === 0 || !tenantId) return [];
 
     try {
       const claims = await this.prisma.learningClaim.findMany({
-        where: { id: { in: claimIds } },
+        where: { 
+          id: { in: claimIds },
+          experience: {
+            tenantId,
+          },
+        },
         select: { id: true, text: true },
       });
 
@@ -160,7 +182,7 @@ export class OllamaAIProxyService implements AIProxyService {
         text: claim.text,
       }));
     } catch (error) {
-      logger.warn({ message: "Failed to fetch claims context", claimIds, error });
+      logger.warn({ message: "Failed to fetch claims context", claimIds, tenantId, error });
       return [];
     }
   }
@@ -295,10 +317,10 @@ export class OllamaAIProxyService implements AIProxyService {
     locale?: string;
   }): Promise<TutorResponsePayload> {
     try {
-      // Fetch actual context from database
-      const moduleContext = args.moduleId ? await this.getModuleContext(args.moduleId) : null;
-      const claimsContext = args.claimIds && args.claimIds.length > 0 
-        ? await this.getClaimsContext(args.claimIds) 
+      // Fetch actual context from database with tenant scoping
+      const moduleContext = args.moduleId ? await this.getModuleContext(args.moduleId, args.tenantId) : null;
+      const claimsContext = args.claimIds && args.claimIds.length > 0
+        ? await this.getClaimsContext(args.claimIds, args.tenantId)
         : [];
 
       const systemPrompt = `You are TutorPutor, an AI tutor specializing in STEAM education (Science, Technology, Engineering, Arts, Mathematics).
@@ -387,13 +409,12 @@ Provide a Socratic, context-grounded response. If the learner asks for the answe
         tenantId: args.tenantId,
         userId: args.userId,
       });
-      
-      return {
-        answer: "I'm sorry, I'm having trouble connecting to the AI service. Please try again in a moment.",
-        citations: [],
-        followUpQuestions: [],
-        safety: { blocked: false },
-      };
+
+      throw new AIServiceUnavailableError(
+        "AI service unavailable: Unable to process tutor query",
+        error,
+        true,
+      );
     }
   }
 
@@ -460,14 +481,12 @@ Classify this intent.`;
         error: error instanceof Error ? error.message : String(error),
         userInput: args.userInput,
       });
-      
-      return {
-        type: "unknown",
-        confidence: 0,
-        params: {} as IntentParams,
-        originalInput: args.userInput,
-        normalizedInput: args.userInput.toLowerCase().trim(),
-      };
+
+      throw new AIServiceUnavailableError(
+        "AI service unavailable: Unable to parse simulation intent",
+        error,
+        true,
+      );
     }
   }
 
@@ -575,8 +594,12 @@ Provide a clear explanation of how this simulation works.`;
         error: error instanceof Error ? error.message : String(error),
         query: args.query,
       });
-      
-      return "I apologize, but I'm unable to explain this simulation at the moment. Please try again later.";
+
+      throw new AIServiceUnavailableError(
+        "AI service unavailable: Unable to explain simulation",
+        error,
+        true,
+      );
     }
   }
 
@@ -634,18 +657,12 @@ Generate a complete learning unit structure.`;
         error: error instanceof Error ? error.message : String(error),
         topic: args.topic,
       });
-      
-      return {
-        title: args.topic,
-        description: `Learning unit about ${args.topic} for ${args.targetAudience}`,
-        sections: [
-          { type: "introduction", title: "Introduction", content: "Overview of the topic", estimatedMinutes: 10 },
-          { type: "concept", title: "Core Concepts", content: "Key ideas and principles", estimatedMinutes: 20 },
-          { type: "example", title: "Examples", content: "Illustrative examples", estimatedMinutes: 15 },
-          { type: "exercise", title: "Practice", content: "Hands-on exercises", estimatedMinutes: 20 },
-          { type: "summary", title: "Summary", content: "Review and key takeaways", estimatedMinutes: 5 },
-        ],
-      };
+
+      throw new AIServiceUnavailableError(
+        "AI service unavailable: Unable to generate learning unit draft",
+        error,
+        true,
+      );
     }
   }
 
@@ -693,8 +710,12 @@ Generate a complete learning unit structure.`;
         error: error instanceof Error ? error.message : String(error),
         query,
       });
-      
-      return { textSearch: query };
+
+      throw new AIServiceUnavailableError(
+        "AI service unavailable: Unable to parse content query",
+        error,
+        false,
+      );
     }
   }
 
@@ -715,6 +736,13 @@ Generate a complete learning unit structure.`;
     }>
   > {
     try {
+      // Fetch actual module content with tenant scoping
+      const moduleContext = await this.getModuleContext(args.moduleId as ModuleId, args.tenantId as TenantId);
+      
+      if (!moduleContext) {
+        throw new Error(`Module ${args.moduleId} not found for tenant ${args.tenantId}`);
+      }
+
       const systemPrompt = `You are an educational assessment generator. Generate ${args.count} ${args.difficulty} multiple-choice questions based on the provided content.
 
 Each question must:
@@ -733,7 +761,14 @@ Respond ONLY with valid JSON in this format:
   }
 ]`;
 
-      const userPrompt = `Generate ${args.count} ${args.difficulty} questions for module ${args.moduleId} in tenant ${args.tenantId}.`;
+      const contentText = moduleContext.description || moduleContext.title;
+      const userPrompt = `Generate ${args.count} ${args.difficulty} questions based on the following content:
+
+Module: ${moduleContext.title}
+${moduleContext.domain ? `Domain: ${moduleContext.domain}` : ''}
+${contentText ? `Content: ${contentText}` : ''}
+
+Generate questions that test understanding of this content.`;
 
       const result = await this.callOllama({
         model: this.model,
@@ -765,8 +800,11 @@ Respond ONLY with valid JSON in this format:
         moduleId: args.moduleId,
       });
 
-      // Return empty array on error instead of throwing
-      return [];
+      throw new AIServiceUnavailableError(
+        "AI service unavailable: Unable to generate questions from content",
+        error,
+        true,
+      );
     }
   }
 

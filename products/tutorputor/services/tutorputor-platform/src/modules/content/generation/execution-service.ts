@@ -298,7 +298,7 @@ export class GenerationExecutionService {
     }
 
     // Check if all jobs are done
-    await this.maybeCompleteRequest(requestId);
+    await this.maybeCompleteRequest(requestId, tenantId);
 
     await this.publishJobResult(requestId, result);
 
@@ -346,9 +346,9 @@ export class GenerationExecutionService {
    * Check if all jobs in the request are finished and transition
    * the request status accordingly.
    */
-  private async maybeCompleteRequest(requestId: string): Promise<void> {
+  private async maybeCompleteRequest(requestId: string, tenantId: string): Promise<void> {
     const request = await this.prisma.generationRequest.findFirst({
-      where: { id: requestId },
+      where: { id: requestId, tenantId },
       include: { jobs: true },
     });
 
@@ -368,7 +368,7 @@ export class GenerationExecutionService {
     );
 
     await this.prisma.generationRequest.update({
-      where: { id: requestId },
+      where: { id: requestId, tenantId },
       data: {
         status: anyFailed ? "FAILED" : "COMPLETED",
         completedAt: new Date(),

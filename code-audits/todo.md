@@ -15,12 +15,12 @@ This is the implementation checklist derived from the previous audit.
 - [x] Standardize next-best-action servlet errors to `StandardErrorEnvelope` with `X-Correlation-ID` response header.
 
 ## In Progress
-- [ ] Run focused Java tests for changed DMOS modules in product-local Gradle execution.
+- [x] Run focused Java tests for changed DMOS modules in product-local Gradle execution.
 
 ## Next
-- [ ] Enforce server-side capability checks in every boundary servlet (not only UI gating).
-- [ ] Replace temporary production hard-fail placeholders with real production adapters for preflight and event store.
-- [ ] Complete production identity provider implementation (token verification + role/permission resolution).
+- [x] Enforce server-side capability checks in every boundary servlet (not only UI gating).
+- [x] Replace temporary production hard-fail placeholders with real production adapters for preflight and event store.
+- [x] Complete production identity provider implementation (token verification + role/permission resolution).
 - [ ] Add servlet-level API validation matrix tests for optimization and capability endpoints.
 - [ ] Add direct API tests proving disabled capabilities return forbidden/locked responses.
-- [ ] Add end-to-end stable route suite (UI -> API -> Postgres) to CI.
+- [x] Add end-to-end stable route suite (UI -> API -> Postgres) to CI.

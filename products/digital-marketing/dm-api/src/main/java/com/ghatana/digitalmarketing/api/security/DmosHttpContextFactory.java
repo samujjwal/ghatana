@@ -1,5 +1,6 @@
 package com.ghatana.digitalmarketing.api.security;
 
+import com.ghatana.digitalmarketing.application.capabilities.DmosCapabilityRegistry;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
@@ -111,6 +112,18 @@ public final class DmosHttpContextFactory {
      * @throws IllegalArgumentException if mandatory headers are missing (fail-closed)
      */
     public DmOperationContext buildContext(HttpRequest request, String workspaceId, boolean isWriteOperation) {
+        return buildContext(request, workspaceId, isWriteOperation, resolveRequiredCapability(request));
+    }
+
+    /**
+     * Builds an operation context and enforces an explicit capability when provided.
+     */
+    public DmOperationContext buildContext(
+        HttpRequest request,
+        String workspaceId,
+        boolean isWriteOperation,
+        String requiredCapability
+    ) {
         Objects.requireNonNull(request, "request must not be null");
         Objects.requireNonNull(workspaceId, "workspaceId must not be null");
 
@@ -165,6 +178,15 @@ public final class DmosHttpContextFactory {
                 parseCsvHeader(request.getHeader(HttpHeaders.of("X-Permissions"))),
                 true
             );
+        }
+
+        if (requiredCapability != null && !requiredCapability.isBlank()) {
+            if (!DmosCapabilityRegistry.isDefined(requiredCapability)) {
+                throw new IllegalArgumentException("Unknown capability key required by route: " + requiredCapability);
+            }
+            if (!hasCapability(identity.permissions(), requiredCapability)) {
+                throw new SecurityException("Capability not enabled for principal: " + requiredCapability);
+            }
         }
 
         // Get or generate correlation ID
@@ -229,5 +251,60 @@ public final class DmosHttpContextFactory {
             .map(String::trim)
             .filter(token -> !token.isBlank())
             .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private static boolean hasCapability(Set<String> permissions, String requiredCapability) {
+        if (permissions == null || permissions.isEmpty()) {
+            return false;
+        }
+        if (permissions.contains(requiredCapability) || permissions.contains("dmos.*") || permissions.contains("*")) {
+            return true;
+        }
+        return permissions.stream()
+            .filter(p -> p.endsWith(".*"))
+            .map(p -> p.substring(0, p.length() - 1))
+            .anyMatch(requiredCapability::startsWith);
+    }
+
+    private static String resolveRequiredCapability(HttpRequest request) {
+        String path = request.getPath();
+        if (path == null || path.isBlank()) {
+            return null;
+        }
+        if (!path.startsWith("/v1/workspaces/")) {
+            return null;
+        }
+
+        if (path.contains("/campaigns")) {
+            return DmosCapabilityRegistry.CAMPAIGNS;
+        }
+        if (path.contains("/strategy")) {
+            return DmosCapabilityRegistry.STRATEGY;
+        }
+        if (path.contains("/budget")) {
+            return DmosCapabilityRegistry.BUDGET;
+        }
+        if (path.contains("/approvals")) {
+            return DmosCapabilityRegistry.APPROVALS;
+        }
+        if (path.contains("/ai-actions")) {
+            return DmosCapabilityRegistry.AI_ACTIONS;
+        }
+        if (path.contains("/next-best-action-recommendations")
+            || path.contains("/anomaly")
+            || path.contains("/experiment")
+            || path.contains("/reallocation")) {
+            return DmosCapabilityRegistry.AI_OPTIMIZATION;
+        }
+        if (path.contains("/competitor") || path.contains("/audit")) {
+            return DmosCapabilityRegistry.MARKET_RESEARCH;
+        }
+        if (path.contains("/localization")) {
+            return DmosCapabilityRegistry.LOCALIZATION;
+        }
+        if (path.contains("/agency")) {
+            return DmosCapabilityRegistry.AGENCY;
+        }
+        return null;
     }
 }

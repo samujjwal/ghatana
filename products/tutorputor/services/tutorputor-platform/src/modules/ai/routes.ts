@@ -57,6 +57,20 @@ interface AIRouteDeps {
   };
   /** Optional: Platform AI Registry client for model version discovery */
   aiRegistryClient?: AiRegistryClient | null;
+  /** AI Health Check Service */
+  aiHealthCheckService?: {
+    getHealthStatus: () => Array<{
+      service: string;
+      healthy: boolean;
+      latency: number;
+      error?: string;
+      lastCheck: Date;
+    }>;
+  };
+  /** AI Cache Service */
+  aiCacheService?: {
+    getStats: () => { totalHits: number; totalMisses: number; hitRate: number };
+  };
 }
 
 const DEFAULT_AI_RATE_LIMIT_MAX = 30;
@@ -705,7 +719,33 @@ export async function registerAIRoutes(
     },
   );
 
+  // AI health check endpoint - relative to module prefix
+  app.get("/health", async (request, reply) => {
+    if (!deps.aiHealthCheckService) {
+      return reply.status(503).send({
+        healthy: false,
+        error: "Health check service not configured",
+      });
+    }
+    const healthStatus = deps.aiHealthCheckService.getHealthStatus();
+    return reply.send({
+      healthy: healthStatus.every(s => s.healthy),
+      services: healthStatus,
+    });
+  });
+
+  // AI cache stats endpoint - relative to module prefix
+  app.get("/cache/stats", async (request, reply) => {
+    if (!deps.aiCacheService) {
+      return reply.status(503).send({
+        error: "Cache service not configured",
+      });
+    }
+    const stats = deps.aiCacheService.getStats();
+    return reply.send(stats);
+  });
+
   app.log.info(
-    "[AI] Routes registered: /tutor/query, /generate-questions, /generate-concept, /generate-simulation",
+    "[AI] Routes registered: /tutor/query, /generate-questions, /generate-concept, /generate-simulation, /health, /cache/stats",
   );
 }

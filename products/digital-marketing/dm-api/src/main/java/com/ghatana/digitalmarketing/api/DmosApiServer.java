@@ -16,6 +16,7 @@ import com.ghatana.digitalmarketing.application.campaign.CampaignRepository;
 import com.ghatana.digitalmarketing.application.campaign.CampaignPreflightDataProvider;
 import com.ghatana.digitalmarketing.application.campaign.CampaignService;
 import com.ghatana.digitalmarketing.application.campaign.CampaignServiceImpl;
+import com.ghatana.digitalmarketing.api.security.DmosJwtIdentityProvider;
 import com.ghatana.digitalmarketing.bridge.CampaignEventSourcingAdapter;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import io.activej.promise.Promise;
@@ -37,10 +38,8 @@ import com.ghatana.digitalmarketing.application.transparency.AiActionLogServiceI
 import com.ghatana.digitalmarketing.application.workspace.WorkspaceRepository;
 import com.ghatana.digitalmarketing.application.workspace.WorkspaceService;
 import com.ghatana.digitalmarketing.application.workspace.WorkspaceServiceImpl;
-import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
-import com.ghatana.digitalmarketing.bridge.CampaignEventSourcingAdapter;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapterImpl;
 import com.ghatana.digitalmarketing.bridge.DmosRiskEvaluatorRegistrar;
@@ -59,6 +58,8 @@ import com.ghatana.digitalmarketing.persistence.approval.PostgresApprovalSnapsho
 import com.ghatana.digitalmarketing.persistence.audit.PostgresWebsiteAuditReportRepository;
 import com.ghatana.digitalmarketing.persistence.budget.PostgresBudgetRecommendationRepository;
 import com.ghatana.digitalmarketing.persistence.campaign.PostgresCampaignRepository;
+import com.ghatana.digitalmarketing.persistence.eventstore.PostgresEventLogStore;
+import com.ghatana.digitalmarketing.persistence.preflight.PostgresCampaignPreflightDataProvider;
 import com.ghatana.digitalmarketing.persistence.strategy.PostgresMarketingStrategyRepository;
 import com.ghatana.digitalmarketing.persistence.workspace.PostgresWorkspaceRepository;
 import com.ghatana.digitalmarketing.persistence.command.PostgresDmCommandRepository;
@@ -490,14 +491,17 @@ public final class DmosApiServer extends Launcher {
 
         // Campaign Service
         CampaignRepository campaignRepo = get(CampaignRepository.class);
-        if (environment.equals(PRODUCTION)) {
-            throw new IllegalStateException("CampaignPreflightDataProvider must be backed by production readiness checks in production mode");
+        CampaignPreflightDataProvider preflightProvider;
+        if (usePostgres()) {
+            DataSource dataSource = get(DataSource.class);
+            Executor executor = get(Executor.class);
+            preflightProvider = new PostgresCampaignPreflightDataProvider(dataSource, executor);
+        } else {
+            // Development fallback to keep local developer loops ergonomic.
+            preflightProvider =
+                (ctx, campaign) -> io.activej.promise.Promise.of(
+                    new CampaignPreflightDataProvider.CampaignPreflightData(true, 1, 1, 0.0, 10000.0));
         }
-
-        // Development-only fallback preflight provider.
-        CampaignPreflightDataProvider preflightProvider =
-            (ctx, campaign) -> io.activej.promise.Promise.of(
-                new CampaignPreflightDataProvider.CampaignPreflightData(true, 1, 1, 0.0, 10000.0));
 
         DmKillSwitchService killSwitchService;
         DmCommandService commandService;
@@ -602,12 +606,14 @@ public final class DmosApiServer extends Launcher {
         // KERNEL-P1-4: Use Micrometer-backed collector registered in wireObservability()
         DmosMetricsCollector dmosMetrics = get(DmosMetricsCollector.class);
 
-        if (environment.equals(PRODUCTION)) {
-            throw new IllegalStateException("Durable EventLogStore implementation is required in production mode");
-        }
-
-        // Development-only in-memory EventLogStore implementation.
-        EventLogStore eventLogStore = new EventLogStore() {
+        EventLogStore eventLogStore;
+        if (usePostgres()) {
+            DataSource dataSource = get(DataSource.class);
+            Executor executor = get(Executor.class);
+            eventLogStore = new PostgresEventLogStore(dataSource, executor);
+        } else {
+            // Development-only in-memory EventLogStore implementation.
+            eventLogStore = new EventLogStore() {
             private final java.util.Map<String, java.util.List<EventEntry>> store = new java.util.concurrent.ConcurrentHashMap<>();
             private final java.util.Map<String, Long> offsets = new java.util.concurrent.ConcurrentHashMap<>();
             private final java.util.Map<String, java.util.List<java.util.function.Consumer<EventEntry>>> tailListeners = new java.util.concurrent.ConcurrentHashMap<>();
@@ -706,7 +712,8 @@ public final class DmosApiServer extends Launcher {
                     }
                 });
             }
-        };
+            };
+        }
 
         CampaignEventSourcingAdapter eventSourcingAdapter = new CampaignEventSourcingAdapter(eventLogStore);
 
@@ -777,7 +784,7 @@ public final class DmosApiServer extends Launcher {
         boolean productionMode = environment.equals(PRODUCTION);
         com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory.IdentityProvider identityProvider = null;
         if (productionMode) {
-            throw new IllegalStateException("Production identity provider is required. Startup blocked because no IdentityProvider is configured.");
+            identityProvider = DmosJwtIdentityProvider.fromEnvironment();
         }
         com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory httpContextFactory =
             new com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory(productionMode, identityProvider);

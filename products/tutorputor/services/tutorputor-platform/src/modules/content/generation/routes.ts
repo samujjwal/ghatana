@@ -27,6 +27,14 @@ import {
   type GenerationExecutionStreamMessage,
   type JobExecutionResult,
 } from "./execution-service.js";
+import {
+  workerAuthMiddleware,
+  getWorkerAuth,
+} from "../../../core/auth/worker-auth.js";
+import {
+  loadFeatureFlags,
+  type ContentGenerationFlags,
+} from "../../../config/feature-flags.js";
 type GenerationRequestConfig = Record<string, unknown>;
 type GenerationExecutionSnapshotPayload = {
   request: { id?: unknown; status?: unknown };
@@ -68,7 +76,17 @@ const streamQuerySchema = z.object({
 });
 
 const resultsBodySchema = z.object({
-  results: z.array(z.record(z.string(), z.unknown())).min(1),
+  results: z.array(
+    z.object({
+      jobId: z.string().trim().min(1),
+      status: z.enum(["completed", "failed"]),
+      durationMs: z.number().int().nonnegative(),
+      outputAssetId: z.string().trim().min(1).optional(),
+      outputData: z.record(z.string(), z.unknown()).optional(),
+      diagnostics: z.record(z.string(), z.unknown()).optional(),
+      errorMessage: z.string().trim().optional(),
+    }).strict(),
+  ).min(1),
 });
 
 const inferIntentBodySchema = z.object({
@@ -151,7 +169,8 @@ export function registerGenerationRoutes(
   app: FastifyInstance,
   deps: { prisma: PrismaClient; redis?: Redis },
 ): void {
-  const service = new GenerationPlannerService(deps.prisma, deps.redis);
+  const featureFlags = loadFeatureFlags();
+  const service = new GenerationPlannerService(deps.prisma, featureFlags, deps.redis);
   const executionService = new GenerationExecutionService(
     deps.prisma,
     deps.redis,
@@ -710,16 +729,16 @@ export function registerGenerationRoutes(
   );
 
   // ---------------------------------------------------------------------------
-  // POST /generation/requests/:requestId/results — Record batch results
+  // POST /generation/requests/:requestId/results — Record batch results (worker-authenticated)
   // ---------------------------------------------------------------------------
   app.post<{
     Params: { requestId: string };
     Body: { results: JobExecutionResult[] };
   }>(
     "/generation/requests/:requestId/results",
-    { preHandler: [adminGuard] },
+    { preHandler: [workerAuthMiddleware] },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
+      const workerAuth = getWorkerAuth(request);
       const paramsResult = requestIdParamsSchema.safeParse(request.params);
       if (!paramsResult.success) {
         return reply
@@ -737,11 +756,36 @@ export function registerGenerationRoutes(
       const { requestId } = paramsResult.data;
       const { results } = bodyResult.data;
 
+      // Verify tenant matches worker's tenant
+      if (workerAuth.tenantId !== workerAuth.tenantId) {
+        return reply.status(403).send({
+          error: "Forbidden",
+          message: "Worker tenant mismatch",
+        });
+      }
+
+      // Verify worker type is content-generation
+      if (workerAuth.workerType !== "content-generation") {
+        return reply.status(403).send({
+          error: "Forbidden",
+          message: "Invalid worker type for this endpoint",
+        });
+      }
+
       try {
         const summary = await executionService.recordBatchResults(
           requestId,
-          toJobExecutionResults(results),
-          tenantId,
+          results.map((r) => ({
+            jobId: r.jobId,
+            status: r.status,
+            durationMs: r.durationMs,
+            ...(r.outputAssetId ? { outputAssetId: r.outputAssetId } : {}),
+            ...(r.outputData ? { outputData: r.outputData } : {}),
+            ...(r.diagnostics ? { diagnostics: r.diagnostics } : {}),
+            ...(r.errorMessage ? { errorMessage: r.errorMessage } : {}),
+          } satisfies JobExecutionResult)),
+          workerAuth.tenantId,
+          workerAuth.workerId,
         );
         return reply.send(summary);
       } catch (err: unknown) {

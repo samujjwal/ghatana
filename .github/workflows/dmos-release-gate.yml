@@ -231,6 +231,52 @@ jobs:
           path: products/digital-marketing/ui/playwright-report/
 
   # =============================================================================
+  # Job 4b: Stable Route E2E (UI -> API -> Postgres, real backend)
+  # =============================================================================
+  stable-route-e2e-realbackend:
+    name: Stable Route E2E (Real Backend)
+    runs-on: ubuntu-latest
+    if: ${{ vars.DMOS_UI_BASE_URL != '' && vars.DMOS_API_BASE_URL != '' && vars.DMOS_TEST_WORKSPACE != '' && secrets.DMOS_TEST_TOKEN != '' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        working-directory: products/digital-marketing/ui
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run stable route release gate suite against real backend
+        working-directory: products/digital-marketing/ui
+        env:
+          DMOS_UI_BASE_URL: ${{ vars.DMOS_UI_BASE_URL }}
+          DMOS_API_BASE_URL: ${{ vars.DMOS_API_BASE_URL }}
+          DMOS_TEST_WORKSPACE: ${{ vars.DMOS_TEST_WORKSPACE }}
+          DMOS_TEST_TOKEN: ${{ secrets.DMOS_TEST_TOKEN }}
+        run: pnpm test:e2e:realbackend
+
+      - name: Upload real-backend Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-realbackend
+          path: products/digital-marketing/ui/playwright-report/
+
+  # =============================================================================
   # Job 5: Production Bootstrap Validation (P1-004 / P0-016)
   # =============================================================================
   production-bootstrap-validation:

@@ -216,7 +216,9 @@ public final class DmosNextBestActionRecommendationServlet {
             String recId = request.getPathParameter("recId");
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
             return service.findById(ctx, recId)
-                .map(opt -> opt.map(rec -> jsonResponse(200, NextBestActionResponse.from(rec))).orElse(errorResponse(404, "Recommendation not found")))
+                .map(opt -> opt
+                    .map(rec -> jsonResponse(200, NextBestActionResponse.from(rec)))
+                    .orElse(errorResponse(404, "Recommendation not found", resolveCorrelationId(request), Map.of())))
                 .then(r -> Promise.of(r), e -> mapServiceError("get recommendation", e));
         } catch (IllegalArgumentException e) {
             return Promise.of(errorResponse(400, e.getMessage(), resolveCorrelationId(request), Map.of("request", e.getMessage())));

@@ -459,7 +459,7 @@ class DmosCampaignServletTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(request));
         assertThat(response.getCode()).isEqualTo(200);
 
-        String body = new String(response.getBody().getBytes(), StandardCharsets.UTF_8);
+        String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
         ObjectMapper mapper = new ObjectMapper();
         Map<String, Object> json = mapper.readValue(body, Map.class);
 
@@ -538,7 +538,7 @@ class DmosCampaignServletTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(request));
         assertThat(response.getCode()).isEqualTo(404);
 
-        String body = new String(response.getBody().getBytes(), StandardCharsets.UTF_8);
+        String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
         ObjectMapper mapper = new ObjectMapper();
         Map<String, Object> json = mapper.readValue(body, Map.class);
 
@@ -564,7 +564,7 @@ class DmosCampaignServletTest extends EventloopTestBase {
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
-        String body = new String(response.getBody().getBytes(), StandardCharsets.UTF_8);
+        String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
         ObjectMapper mapper = new ObjectMapper();
         Map<String, Object> json = mapper.readValue(body, Map.class);
 
@@ -583,7 +583,7 @@ class DmosCampaignServletTest extends EventloopTestBase {
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
-        String body = new String(response.getBody().getBytes(), StandardCharsets.UTF_8);
+        String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
         ObjectMapper mapper = new ObjectMapper();
         Map<String, Object> json = mapper.readValue(body, Map.class);
 
@@ -601,7 +601,7 @@ class DmosCampaignServletTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(badRequest));
         assertThat(response.getCode()).isEqualTo(400);
 
-        String body = new String(response.getBody().getBytes(), StandardCharsets.UTF_8);
+        String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
         ObjectMapper mapper = new ObjectMapper();
         Map<String, Object> json = mapper.readValue(body, Map.class);
         assertThat(json.get("error")).isEqualTo("BAD_REQUEST");
@@ -625,6 +625,9 @@ class DmosCampaignServletTest extends EventloopTestBase {
         private Promise<Campaign> createResult = Promise.of(buildCampaign(CampaignStatus.DRAFT));
         private Promise<Campaign> launchResult = Promise.of(buildCampaign(CampaignStatus.LAUNCHED));
         private Promise<Campaign> pauseResult = Promise.of(buildCampaign(CampaignStatus.PAUSED));
+        private Promise<Campaign> completeResult = Promise.of(buildCampaign(CampaignStatus.COMPLETED));
+        private Promise<Campaign> archiveResult = Promise.of(buildCampaign(CampaignStatus.ARCHIVED));
+        private Promise<Campaign> rollbackResult = Promise.of(buildCampaign(CampaignStatus.DRAFT));
         private Promise<Campaign> getResult = Promise.of(buildCampaign(CampaignStatus.DRAFT));
         private Promise<java.util.List<Campaign>> listResult = Promise.of(List.of());
 
@@ -650,6 +653,24 @@ class DmosCampaignServletTest extends EventloopTestBase {
         public Promise<Campaign> pauseCampaign(DmOperationContext ctx, String campaignId) {
             this.lastContext = ctx;
             return pauseResult;
+        }
+
+        @Override
+        public Promise<Campaign> completeCampaign(DmOperationContext ctx, String campaignId) {
+            this.lastContext = ctx;
+            return completeResult;
+        }
+
+        @Override
+        public Promise<Campaign> archiveCampaign(DmOperationContext ctx, String campaignId) {
+            this.lastContext = ctx;
+            return archiveResult;
+        }
+
+        @Override
+        public Promise<Campaign> rollbackCampaign(DmOperationContext ctx, String campaignId) {
+            this.lastContext = ctx;
+            return rollbackResult;
         }
 
         @Override

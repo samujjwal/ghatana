@@ -154,8 +154,7 @@ const createExperienceBodySchema = z
     description: z.string().optional(),
     gradeRange: z.string().trim().min(1).optional(),
     moduleId: z.string().trim().min(1).optional(),
-  })
-  .passthrough();
+  });
 
 const updateExperienceBodySchema = z
   .object({
@@ -165,8 +164,7 @@ const updateExperienceBodySchema = z
     estimatedTimeMinutes: z.number().int().positive().optional(),
     gradeRange: z.string().trim().min(1).optional(),
     userId: z.string().trim().min(1).optional(),
-  })
-  .passthrough();
+  });
 
 const generateClaimBodySchema = z.object({
   maxClaims: z.number().int().positive().max(50).optional(),
@@ -200,12 +198,6 @@ const updateTaskBodySchema = z.object({
 const eventQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(200).optional(),
   eventType: z.string().trim().min(1).optional(),
-});
-
-const aiGenerateClaimsBodySchema = z.object({
-  experienceId: z.string().trim().min(1),
-  maxClaims: z.number().int().positive().max(50).optional(),
-  topic: z.string().trim().min(1).optional(),
 });
 
 const animationLinkBodySchema = z.object({
@@ -476,47 +468,6 @@ export function registerContentStudioRoutes(
     // =========================================================================
     // AI Generation Routes
     // =========================================================================
-
-    // Generate claims for experience
-    fastify.post<{
-      Params: { id: string };
-      Body: GenerateClaimRequest;
-    }>(`${prefix}/experiences/:id/generate-claims`, async (request, reply) => {
-      const paramsResult = idParamSchema.safeParse(request.params);
-      if (!paramsResult.success) {
-        return reply
-          .code(400)
-          .send(validationErrorResponse(paramsResult.error.issues));
-      }
-      const bodyResult = generateClaimBodySchema.safeParse(request.body ?? {});
-      if (!bodyResult.success) {
-        return reply
-          .code(400)
-          .send(validationErrorResponse(bodyResult.error.issues));
-      }
-
-      const { id } = paramsResult.data;
-      const tenantId = getTenantId(request);
-
-      const existing = await contentStudioService.getExperience(id);
-      if (!existing) {
-        return reply.code(404).send({ error: "Experience not found" });
-      }
-
-      if (tenantId && existing.tenantId !== tenantId) {
-        return reply.code(403).send({ error: "Access denied" });
-      }
-
-      const claimsPayload: GenerateClaimRequest = {
-        ...(bodyResult.data.maxClaims != null
-          ? { maxClaims: bodyResult.data.maxClaims }
-          : {}),
-        ...(bodyResult.data.topic ? { topic: bodyResult.data.topic } : {}),
-      };
-
-      const claims = await contentStudioService.generateClaims(id, claimsPayload);
-      return reply.send({ data: claims });
-    });
 
     // Generate tasks for claim
     fastify.post<{
@@ -1286,28 +1237,6 @@ export function registerContentStudioRoutes(
       };
 
       return reply.send({ data: autofillResult });
-    });
-
-    fastify.post<{
-      Body: GenerateClaimRequest & { experienceId?: string };
-    }>(`${prefix}/ai/generate-claims`, async (request, reply) => {
-      const bodyResult = aiGenerateClaimsBodySchema.safeParse(request.body ?? {});
-      if (!bodyResult.success) {
-        return reply
-          .code(400)
-          .send(validationErrorResponse(bodyResult.error.issues));
-      }
-
-      const body = bodyResult.data;
-      const queuedPayload: GenerateClaimRequest = {
-        ...(body.maxClaims != null ? { maxClaims: body.maxClaims } : {}),
-        ...(body.topic ? { topic: body.topic } : {}),
-      };
-      const queued = await contentStudioService.generateClaims(
-        body.experienceId,
-        queuedPayload,
-      );
-      return reply.send({ data: queued });
     });
 
     fastify.post<{

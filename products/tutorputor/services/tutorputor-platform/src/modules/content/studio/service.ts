@@ -3,11 +3,8 @@
  *
  * Implements core authoring workflows backed by LearningExperience schema.
  *
- * DEPRECATED: The queue-driven background content generation is deprecated.
- * Use the unified generation-request API surface at /generation/requests instead.
- *
  * @doc.type module
- * @doc.purpose Content authoring workflows with deprecated queue-based generation
+ * @doc.purpose Content authoring workflows
  * @doc.layer product
  * @doc.pattern Service
  */
@@ -39,10 +36,6 @@ import type {
 import type { IndependentGeneratedContentValidator } from "../evaluation/independent-validator-service.js";
 import type { ClaimContradictionGrader } from "../evaluation/claim-contradiction-grader.js";
 import type { RubricBackedPillarGrader } from "../evaluation/rubric-backed-pillar-grader.js";
-import {
-  getContentGenerationQueue,
-  type ContentGenerationQueueLike,
-} from "../queue/content-generation-queue.js";
 import { GenerationPlannerService } from "../generation/planner-service.js";
 
 export type { ContentStudioService };
@@ -86,15 +79,10 @@ type UpdateExperienceInput = {
   userId?: string;
 };
 
-type GenerateClaimsInput = {
-  maxClaims?: number;
-  topic?: string;
-};
+type GenerateTaskRequest = Record<string, never>;
 
-type GenerateClaimsResult = {
-  status: "queued";
-  jobId: string | number | null | undefined;
-  experienceId: string;
+type GenerateTaskResult = {
+  tasks: unknown[];
 };
 
 type RefineContentInput = {
@@ -231,10 +219,6 @@ export type HealthAwareContentStudioService = Omit<
     data: UpdateExperienceInput,
   ) => Promise<LearningExperience | null>;
   deleteExperience: (id: string) => Promise<void>;
-  generateClaims: (
-    id: string,
-    request: GenerateClaimsInput,
-  ) => Promise<GenerateClaimsResult>;
   generateTasks: (
     experienceId: string,
     claimId: string,
@@ -1029,7 +1013,6 @@ export function createContentStudioService(
   prisma: PrismaClient,
   _config: ContentStudioConfig,
 ): HealthAwareContentStudioService {
-  const queue: ContentGenerationQueueLike = getContentGenerationQueue();
   const generationPlanner = new GenerationPlannerService(prisma);
   const independentValidator = _config.independentValidator;
   const contradictionGrader = _config.contradictionGrader;
@@ -1133,40 +1116,6 @@ export function createContentStudioService(
           lastEditedBy: request.authorId || "system",
         } satisfies Prisma.LearningExperienceUncheckedCreateInput,
       });
-
-      try {
-        await queue.add(
-          "generate-claims",
-          {
-            experienceId: experience.id,
-            tenantId: experience.tenantId,
-            topic: experience.title,
-            title: experience.title,
-            domain: experience.domain,
-            gradeLevel: toGradeEnum(gradeRange),
-            targetGrades: [toGradeEnum(gradeRange)],
-            maxClaims: 5,
-          },
-          {
-            jobId: `generate-claims:${experience.id}`,
-            attempts: 3,
-            backoff: { type: "exponential", delay: 2000 },
-            removeOnComplete: 100,
-            removeOnFail: 200,
-          },
-        );
-      } catch (queueError) {
-        await prisma.learningExperience
-          .delete({ where: { id: experience.id } })
-          .catch(() => undefined);
-        throw new Error(
-          `Failed to enqueue background claim generation: ${
-            queueError instanceof Error
-              ? queueError.message
-              : String(queueError)
-          }`,
-        );
-      }
 
       const mapped = await mapExperience(prisma, experience.id);
       await recordExperienceEvent(
@@ -1308,66 +1257,6 @@ export function createContentStudioService(
 
   async function deleteExperience(id: string): Promise<void> {
     await prisma.learningExperience.delete({ where: { id } });
-  }
-
-  async function generateClaims(
-    id: string,
-    request: GenerateClaimsInput,
-  ): Promise<GenerateClaimsResult> {
-    const experience = await prisma.learningExperience.findUnique({
-      where: { id },
-    });
-    if (!experience) {
-      throw new Error("Experience not found");
-    }
-
-    const primaryGrade = normalizeGradeRange(
-      String(safeJsonArray(experience.targetGrades)[0] || "grade_6_8"),
-    );
-    const maxClaims =
-      typeof request?.maxClaims === "number" && request.maxClaims > 0
-        ? request.maxClaims
-        : 5;
-
-    // DEPRECATED: Use generation-request API surface instead of queue
-    // This is kept for backward compatibility during migration
-    console.warn(
-      "[DEPRECATED] generateClaims using queue is deprecated. Use /generation/requests API instead.",
-    );
-
-    const job = await queue.add(
-      "generate-claims",
-      {
-        experienceId: experience.id,
-        tenantId: experience.tenantId,
-        topic: request?.topic || experience.title,
-        title: experience.title,
-        domain: experience.domain,
-        gradeLevel: toGradeEnum(primaryGrade),
-        targetGrades: safeJsonArray(experience.targetGrades),
-        maxClaims,
-      },
-      {
-        jobId: `generate-claims:${experience.id}`,
-        attempts: 3,
-        backoff: { type: "exponential", delay: 2000 },
-        removeOnComplete: 100,
-        removeOnFail: 200,
-      },
-    );
-
-    await recordExperienceEvent(prisma, id, "CLAIMS_GENERATED", "system", {
-      action: "generate_claims",
-      jobId: job.id,
-      maxClaims,
-      topic: request?.topic || experience.title,
-    });
-
-    return {
-      status: "queued",
-      jobId: job.id,
-      experienceId: id,
-    };
   }
 
   async function generateTasks(
@@ -2593,7 +2482,6 @@ export function createContentStudioService(
     listExperiences,
     updateExperience,
     deleteExperience,
-    generateClaims,
     generateTasks,
     refineContent,
     refineExperience,

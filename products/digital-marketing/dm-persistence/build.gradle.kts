@@ -12,12 +12,14 @@ dependencies {
     api(project(":products:digital-marketing:dm-domain"))
     api(project(":products:digital-marketing:dm-core-contracts"))
     api(project(":platform:java:database"))
+    api(project(":platform:java:domain"))
 
     compileOnly(libs.spotbugs.annotations)
     implementation(libs.activej.promise)
     implementation(libs.postgresql)
     implementation(libs.flyway.core)
     implementation(libs.flyway.postgresql)
+    implementation(libs.jackson.databind)
 
     testImplementation(libs.bundles.testing.core)
     testImplementation(project(":platform:java:testing"))

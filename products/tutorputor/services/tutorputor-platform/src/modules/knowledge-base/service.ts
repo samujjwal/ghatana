@@ -860,41 +860,17 @@ export class KnowledgeBaseServiceImpl {
       return [];
     }
 
-    return [
-      {
-        id: "kb-1",
-        concept: query,
-        definition: `Definition of ${query} in ${domain}`,
-        domain,
-        gradeRange: "grade_9_12",
-        examples: [`Example 1 of ${query}`, `Example 2 of ${query}`],
-        relatedConcepts: [`Related to ${query}`],
-        sources: [],
-        confidence: 0.8,
-        lastVerified: new Date(),
-      },
-    ];
+    // No mock fallback - return empty results when no local evidence found
+    return [];
   }
 
   private async searchExternalSources(
     query: string,
     domain: string,
   ): Promise<KnowledgeBaseEntry[]> {
-    // Mock external source search
-    return [
-      {
-        id: "ext-1",
-        concept: query,
-        definition: `External definition of ${query}`,
-        domain,
-        gradeRange: "grade_6_8",
-        examples: [`External example of ${query}`],
-        relatedConcepts: [],
-        sources: [],
-        confidence: 0.6,
-        lastVerified: new Date(),
-      },
-    ];
+    // No mock fallback - external source search not implemented
+    this.logger.warn({ query, domain }, "External source search not implemented");
+    return [];
   }
 
   private async generateExamples(
@@ -902,47 +878,25 @@ export class KnowledgeBaseServiceImpl {
     domain: string,
     gradeRange?: string,
   ): Promise<string[]> {
-    // In production, this would use AI to generate examples
-    return [
-      `Generated example 1 of ${concept} for ${gradeRange || "general"} ${domain}`,
-      `Generated example 2 of ${concept} for ${gradeRange || "general"} ${domain}`,
-    ];
+    // No mock fallback - example generation not implemented
+    this.logger.warn({ concept, domain, gradeRange }, "Example generation not implemented");
+    return [];
   }
 
   private async searchMathStandards(
     concept: string,
   ): Promise<CurriculumStandard[]> {
-    // Mock math standards
-    return [
-      {
-        id: "ccss-math-6-ee-1",
-        standard: "CCSS.Math.Content.6.EE.A.1",
-        description:
-          "Write and evaluate numerical expressions involving whole-number exponents.",
-        gradeRange: "grade_6_8",
-        domain: "math",
-        concepts: [concept],
-        prerequisites: ["Basic arithmetic"],
-      },
-    ];
+    // No mock fallback - math standards search not implemented
+    this.logger.warn({ concept }, "Math standards search not implemented");
+    return [];
   }
 
   private async searchScienceStandards(
     concept: string,
   ): Promise<CurriculumStandard[]> {
-    // Mock science standards
-    return [
-      {
-        id: "ngss-ms-ps1-1",
-        standard: "MS-PS1-1",
-        description:
-          "Develop models to describe the atomic composition of simple molecules.",
-        gradeRange: "grade_6_8",
-        domain: "science",
-        concepts: [concept],
-        prerequisites: ["Basic chemistry"],
-      },
-    ];
+    // No mock fallback - science standards search not implemented
+    this.logger.warn({ concept }, "Science standards search not implemented");
+    return [];
   }
 
   private async checkFactualAccuracy(

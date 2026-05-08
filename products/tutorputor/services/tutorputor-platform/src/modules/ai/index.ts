@@ -33,7 +33,7 @@ export const aiModule: FastifyPluginAsync = async (app) => {
     process.env.OLLAMA_BASE_URL ||
     "http://localhost:3300";
 
-  const aiProxyService = new OllamaAIProxyService(aiProxyBaseUrl);
+  const aiProxyService = new OllamaAIProxyService(aiProxyBaseUrl, undefined, app.prisma);
 
   app.log.info(`AI Proxy configured with base URL: ${aiProxyBaseUrl}`);
 
@@ -48,21 +48,6 @@ export const aiModule: FastifyPluginAsync = async (app) => {
   );
   app.decorate('aiCacheService', aiCacheService);
 
-  // Register health check endpoint
-  app.get('/api/v1/ai/health', async (request, reply) => {
-    const healthStatus = aiHealthCheckService.getHealthStatus();
-    return reply.send({
-      healthy: healthStatus.every(s => s.healthy),
-      services: healthStatus,
-    });
-  });
-
-  // Register cache stats endpoint
-  app.get('/api/v1/ai/cache/stats', async (request, reply) => {
-    const stats = aiCacheService.getStats();
-    return reply.send(stats);
-  });
-
   if (!aiRegistryClient) {
     app.log.warn(
       "AI Registry client not configured (AI_REGISTRY_URL unset) — model discovery disabled",
@@ -73,6 +58,8 @@ export const aiModule: FastifyPluginAsync = async (app) => {
   await registerAIRoutes(app, {
     aiProxyService: aiProxyService as AIProxyService,
     aiRegistryClient,
+    aiHealthCheckService,
+    aiCacheService,
   });
 
   app.log.info("✅ AI module routes registered");
