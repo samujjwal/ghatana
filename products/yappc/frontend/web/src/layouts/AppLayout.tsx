@@ -29,6 +29,8 @@ import {
 } from 'lucide-react';
 
 import { cn } from '../utils/cn';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
 import {
   currentUserAtom,
   sidebarCollapsedAtom,
@@ -116,9 +118,11 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
             YAPPC
           </span>
         )}
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onToggle}
-          className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-white transition-colors"
+          className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-white"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? (
@@ -126,7 +130,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
           ) : (
             <ChevronLeft className="w-5 h-5" />
           )}
-        </button>
+        </Button>
       </div>
 
       {/* Active Project */}
@@ -282,10 +286,11 @@ const Header: React.FC<HeaderProps> = ({ sidebarCollapsed }) => {
     >
       {/* Search */}
       <div className="flex items-center gap-4">
-        <button
+        <Button
+          variant="ghost"
           onClick={() => setSearchOpen(true)}
           className={cn(
-            'flex items-center gap-3 px-4 py-2 rounded-lg',
+            'flex items-center gap-3 px-4 py-2 rounded-lg [&>span]:flex [&>span]:w-full [&>span]:items-center [&>span]:gap-3',
             'bg-surface border border-border text-fg-muted',
             'hover:border-border hover:text-fg-muted transition-colors',
             'min-w-[240px]'
@@ -293,17 +298,17 @@ const Header: React.FC<HeaderProps> = ({ sidebarCollapsed }) => {
         >
           <Search className="w-4 h-4" />
           <span className="text-sm">Search...</span>
-          <div className="ml-auto flex items-center gap-1 text-xs text-fg-muted">
+          <span className="ml-auto flex items-center gap-1 text-xs text-fg-muted">
             <Command className="w-3 h-3" />
             <span>K</span>
-          </div>
-        </button>
+          </span>
+        </Button>
       </div>
 
       {/* Actions */}
       <div className="flex items-center gap-2">
         {/* New Project */}
-        <button
+        <Button
           onClick={navigation.toProjects}
           className={cn(
             'flex items-center gap-2 px-4 py-2 rounded-lg',
@@ -313,12 +318,14 @@ const Header: React.FC<HeaderProps> = ({ sidebarCollapsed }) => {
         >
           <Plus className="w-4 h-4" />
           <span>New Project</span>
-        </button>
+        </Button>
 
         {/* Theme Toggle */}
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={toggleTheme}
-          className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-white transition-colors"
+          className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-white"
           aria-label="Toggle theme"
         >
           {theme === 'dark' ? (
@@ -326,23 +333,27 @@ const Header: React.FC<HeaderProps> = ({ sidebarCollapsed }) => {
           ) : (
             <Moon className="w-5 h-5" />
           )}
-        </button>
+        </Button>
 
         {/* Help */}
-        <button
-          className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-white transition-colors"
+        <Button
+          variant="ghost"
+          size="sm"
+          className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-white"
           aria-label="Help"
         >
           <HelpCircle className="w-5 h-5" />
-        </button>
+        </Button>
 
         {/* Feedback */}
-        <button
-          className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-white transition-colors"
+        <Button
+          variant="ghost"
+          size="sm"
+          className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-white"
           aria-label="Send feedback"
         >
           <MessageSquare className="w-5 h-5" />
-        </button>
+        </Button>
       </div>
 
       {/* Search Modal - placeholder */}
@@ -364,10 +375,11 @@ const Header: React.FC<HeaderProps> = ({ sidebarCollapsed }) => {
             >
               <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
                 <Search className="w-5 h-5 text-fg-muted" />
-                <input
+                <Input
                   type="text"
                   placeholder="Search projects, stories, incidents..."
-                  className="flex-1 bg-transparent text-white placeholder-zinc-500 outline-none text-lg"
+                  fullWidth
+                  className="flex-1 border-0 bg-transparent px-0 py-0 text-white placeholder-zinc-500 text-lg focus:ring-0 focus:ring-offset-0"
                   autoFocus
                 />
                 <kbd className="px-2 py-1 bg-surface rounded text-xs text-fg-muted">ESC</kbd>

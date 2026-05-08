@@ -41,6 +41,9 @@ import {
 } from '../../services/admin/featureFlagsApi';
 import { useAtomValue } from 'jotai';
 import { currentWorkspaceIdAtom } from '../../state/atoms/workspaceAtom';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -84,14 +87,16 @@ const ToggleConfirmDialog: React.FC<ToggleConfirmDialogProps> = ({
             <Typography id="flag-dialog-title" className="text-base font-semibold capitalize">
               {action} <code className="text-sm">{flag.key}</code>?
             </Typography>
-            <button
+            <Button
               type="button"
               onClick={onCancel}
               className="rounded p-1 text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800"
               aria-label="Cancel"
+              variant="ghost"
+              size="sm"
             >
               <X className="h-4 w-4" aria-hidden="true" />
-            </button>
+            </Button>
           </Box>
 
           <Typography className="text-sm text-text-secondary">
@@ -102,26 +107,29 @@ const ToggleConfirmDialog: React.FC<ToggleConfirmDialogProps> = ({
             <label htmlFor="flag-reason" className="block text-xs font-medium text-text-secondary">
               Reason (required)
             </label>
-            <textarea
+            <Textarea
               id="flag-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={2}
               placeholder="Explain why you're changing this flag…"
               className="w-full rounded border border-divider bg-white dark:bg-grey-800 px-2 py-1 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              resize="none"
+              fullWidth
             />
           </Box>
 
           <Box className="flex justify-end gap-2">
-            <button
+            <Button
               type="button"
               onClick={onCancel}
               disabled={isBusy}
               className="rounded px-4 py-2 text-sm font-medium text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800 disabled:opacity-50"
+              variant="ghost"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => onConfirm(reason)}
               disabled={isBusy || reason.trim().length === 0}
@@ -134,7 +142,7 @@ const ToggleConfirmDialog: React.FC<ToggleConfirmDialogProps> = ({
                 <Check className="h-3.5 w-3.5" aria-hidden="true" />
               )}
               Confirm
-            </button>
+            </Button>
           </Box>
         </CardContent>
       </Card>
@@ -162,14 +170,16 @@ const AuditDrawer: React.FC<AuditDrawerProps> = ({ tenantId, flagKey, onClose })
     >
       <Box className="flex items-center justify-between">
         <Typography className="font-semibold text-sm">Audit log: {flagKey}</Typography>
-        <button
+        <Button
           type="button"
           onClick={onClose}
           className="rounded p-1 text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800"
           aria-label="Close audit"
+          variant="ghost"
+          size="sm"
         >
           <X className="h-4 w-4" aria-hidden="true" />
-        </button>
+        </Button>
       </Box>
       {isLoading && (
         <Box className="flex items-center gap-2 text-text-secondary">
@@ -232,12 +242,14 @@ const FlagRow: React.FC<FlagRowProps> = ({ flag, onToggle, onShowAudit }) => {
         </Typography>
       </Box>
       <Box className="flex items-center gap-2 shrink-0">
-        <button
+        <Button
           type="button"
           onClick={() => onToggle(flag)}
           className="flex items-center gap-1 text-text-secondary hover:text-primary transition-colors"
           aria-label={`${flag.enabled ? 'Disable' : 'Enable'} ${flag.key}`}
           data-testid={`flag-toggle-${flag.key}`}
+          variant="ghost"
+          size="sm"
         >
           {flag.enabled ? (
             <ToggleRight className="h-5 w-5 text-emerald-500" aria-hidden="true" />
@@ -245,16 +257,18 @@ const FlagRow: React.FC<FlagRowProps> = ({ flag, onToggle, onShowAudit }) => {
             <ToggleLeft className="h-5 w-5" aria-hidden="true" />
           )}
           <span className="text-xs font-medium">{flag.enabled ? 'On' : 'Off'}</span>
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={() => onShowAudit(flag)}
           className="rounded p-1 text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors"
           aria-label={`View audit for ${flag.key}`}
           data-testid={`flag-audit-${flag.key}`}
+          variant="ghost"
+          size="sm"
         >
           <History className="h-4 w-4" aria-hidden="true" />
-        </button>
+        </Button>
       </Box>
     </Box>
   );
@@ -346,25 +360,28 @@ export const FeatureFlagsPage: React.FC<FeatureFlagsPageProps> = ({ className })
               Tenant-scoped flags — {enabledCount} of {flags.length} enabled
             </Typography>
           </Box>
-          <button
+          <Button
             type="button"
             onClick={() => void refetch()}
             className="flex items-center gap-1 rounded border border-divider px-3 py-1.5 text-sm hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors"
             aria-label="Refresh"
+            variant="outline"
+            size="sm"
           >
             <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
             Refresh
-          </button>
+          </Button>
         </Box>
 
         {/* Search */}
-        <input
+        <Input
           type="search"
           placeholder="Filter flags…"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full rounded border border-divider bg-white dark:bg-grey-800 px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary"
           aria-label="Filter feature flags"
+          fullWidth
         />
 
         {/* Loading state */}
@@ -402,10 +419,12 @@ export const FeatureFlagsPage: React.FC<FeatureFlagsPageProps> = ({ className })
                 />
               ))}
               {filteredFlags.length > 8 && (
-                <button
+                <Button
                   type="button"
                   onClick={() => setExpanded((prev) => !prev)}
                   className="flex w-full items-center justify-center gap-1 rounded py-2 text-xs text-text-secondary hover:text-primary hover:bg-grey-50 dark:hover:bg-grey-800 transition-colors"
+                  variant="ghost"
+                  size="sm"
                 >
                   {expanded ? (
                     <>
@@ -418,7 +437,7 @@ export const FeatureFlagsPage: React.FC<FeatureFlagsPageProps> = ({ className })
                       Show all {filteredFlags.length} flags
                     </>
                   )}
-                </button>
+                </Button>
               )}
             </CardContent>
           </Card>

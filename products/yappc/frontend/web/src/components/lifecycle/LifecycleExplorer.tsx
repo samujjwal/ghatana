@@ -24,6 +24,7 @@ import { FilterPanel, type FilterConfig } from '../shared/FilterPanel';
 import { AISuggestionPanel } from '../shared/AISuggestionPanel';
 import { LifecycleBreadcrumb } from './LifecycleBreadcrumb';
 import { PhaseContextPanel } from './PhaseContextPanel';
+import { Button } from '../ui/Button';
 import { parseLifecycleURL, updateLifecycleURL, scrollToPhase, scrollToArtifact, copyLifecycleLink } from '../../utils/lifecycleDeepLinking';
 import { ExportButton } from '../shared/ExportButton';
 import type { ArtifactSuggestion, SuggestionContext } from '../../services/ai';
@@ -365,7 +366,7 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
 
             {/* Copy Link Confirmation */}
             {copiedLink && (
-                <div className="fixed top-4 right-4 bg-success-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 z-50 animate-fade-in">
+                <div className="fixed top-4 right-4 bg-success-bg text-success-color px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 z-50 animate-fade-in">
                     <CheckCircle className="w-5 h-5" />
                     <span>Link copied to clipboard!</span>
                 </div>
@@ -406,7 +407,7 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
                             style={{
                                 color: currentPhase
                                     ? `var(--color-${currentPhase.toLowerCase()}-500)`
-                                    : 'var(--color-primary-500)',
+                                    : 'var(--info-color)',
                             }}
                         />
                         <div>
@@ -448,12 +449,14 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
                     return (
                         <div key={group.phase} id={`phase-${group.phase}`} className="space-y-2 scroll-mt-6">
                             {/* Phase Card */}
-                            <button
+                            <Button
                                 onClick={() => handlePhaseClick(group.phase)}
                                 className={`w-full text-left p-4 rounded-lg border transition-all ${isExpanded
-                                    ? `border-primary-500 bg-gradient-to-r ${group.color} bg-opacity-10`
-                                    : 'border-divider bg-bg-paper hover:bg-grey-50 dark:hover:bg-grey-800/50'
-                                    } ${isActive ? 'ring-2 ring-primary-500 ring-offset-2' : ''}`}
+                                    ? `border-info-border bg-gradient-to-r ${group.color} bg-opacity-10`
+                                    : 'border-divider bg-bg-paper hover:bg-surface-muted dark:hover:bg-surface-muted'
+                                    } ${isActive ? 'ring-2 ring-info-border ring-offset-2' : ''}`}
+                                variant="ghost"
+                                aria-expanded={isExpanded}
                             >
                                 <div className="flex items-start justify-between">
                                     <div className="flex items-start gap-4 flex-1">
@@ -465,7 +468,7 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
                                                 {group.icon}
                                             </div>
                                             {isCompleted && <CheckCircle className="text-success-color" />}
-                                            {isActive && <Info className="text-primary-500" />}
+                                            {isActive && <Info className="text-info-color" />}
                                         </div>
 
                                         {/* Phase Info */}
@@ -481,7 +484,7 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
 
                                     <ChevronRight className={`transition-transform mt-1 ${isExpanded ? 'rotate-90' : ''}`} />
                                 </div>
-                            </button>
+                            </Button>
 
                             {/* Expanded Content */}
                             {isExpanded && (
@@ -512,13 +515,14 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
                                                         key={artifact.id}
                                                         id={`artifact-${artifact.id}`}
                                                         className={`group relative rounded border transition-all ${selectedArtifactId === artifact.id
-                                                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                                                            : 'border-divider bg-bg-default hover:bg-grey-50 dark:hover:bg-grey-800/50'
+                                                            ? 'border-info-border bg-info-bg dark:bg-info-bg/20'
+                                                            : 'border-divider bg-bg-default hover:bg-surface-muted dark:hover:bg-surface-muted'
                                                             }`}
                                                     >
-                                                        <button
+                                                        <Button
                                                             onClick={() => handleArtifactClick(artifact.id, artifact.kind)}
                                                             className="w-full text-left p-3 flex items-start gap-3"
+                                                            variant="ghost"
                                                         >
                                                             <div className="text-lg">✓</div>
                                                             <div className="flex-1 min-w-0">
@@ -530,18 +534,21 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
                                                                     <span>Updated: {new Date(artifact.updatedAt).toLocaleDateString()}</span>
                                                                 </div>
                                                             </div>
-                                                        </button>
+                                                        </Button>
                                                         {/* Copy Link Button */}
-                                                        <button
+                                                        <Button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 handleCopyLink(artifact.id, artifact.kind);
                                                             }}
-                                                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded hover:bg-grey-100 dark:hover:bg-grey-700"
+                                                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded hover:bg-surface-muted dark:hover:bg-surface-muted"
                                                             title="Copy link to artifact"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            aria-label={`Copy link to ${artifact.title}`}
                                                         >
-                                                            <ContentCopy className="w-4 h-4 text-text-secondary hover:text-primary-500" />
-                                                        </button>
+                                                            <ContentCopy className="w-4 h-4 text-text-secondary hover:text-info-color" />
+                                                        </Button>
                                                     </div>
                                                 ))}
                                             </div>
@@ -642,7 +649,7 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
                         <span className="text-text-secondary">Completed Phase</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Info className="text-primary-500 w-5 h-5" />
+                        <Info className="text-info-color w-5 h-5" />
                         <span className="text-text-secondary">Active Phase</span>
                     </div>
                     <div className="flex items-center gap-2">

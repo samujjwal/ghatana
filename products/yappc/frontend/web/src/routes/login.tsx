@@ -5,6 +5,8 @@
  * Uses AuthService for secure authentication.
  */
 
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
 import { Form, useActionData, useNavigation, useNavigate, useSearchParams } from 'react-router';
 import React from 'react';
 import { Lock, User as Person, ArrowRight as ArrowForward } from 'lucide-react';
@@ -137,7 +139,7 @@ export default function Component() {
                                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">
                                     <Person className="w-5 h-5" />
                                 </div>
-                                <input
+                                <Input
                                     id="email"
                                     name="email"
                                     type="email"
@@ -158,7 +160,7 @@ export default function Component() {
                                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">
                                     <Lock className="w-5 h-5" />
                                 </div>
-                                <input
+                                <Input
                                     id="password"
                                     name="password"
                                     type="password"
@@ -171,9 +173,9 @@ export default function Component() {
                             </div>
                         </div>
 
-                        <input type="hidden" name="redirectTo" value={redirectTo} />
+                        <Input type="hidden" name="redirectTo" value={redirectTo} />
 
-                        <button
+                        <Button variant="ghost" size="sm"
                             type="submit"
                             disabled={isLoading}
                             data-testid="login-submit"
@@ -189,19 +191,19 @@ export default function Component() {
                                     <ArrowForward className="w-4 h-4" />
                                 </>
                             )}
-                        </button>
+                        </Button>
                     </Form>
 
                     {showDemoLogin && (
                         <div className="mt-6 pt-6 border-t border-divider text-center">
-                            <button
+                            <Button variant="ghost" size="sm"
                                 onClick={handleDemoLogin}
                                 disabled={isLoading}
                                 type="button"
                                 className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isDemoLoading ? 'Loading...' : 'Continue as Demo User →'}
-                            </button>
+                            </Button>
                         </div>
                     )}
                 </div>

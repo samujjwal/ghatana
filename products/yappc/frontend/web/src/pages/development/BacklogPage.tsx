@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 
 type Priority = 'critical' | 'high' | 'medium' | 'low';
 
@@ -65,30 +67,44 @@ const BacklogPage: React.FC = () => {
               </p>
             </div>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 transition-colors text-sm font-medium">
-            <Plus className="w-4 h-4" />
+          <Button
+            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium hover:bg-violet-500"
+            startIcon={<Plus className="w-4 h-4" />}
+          >
             New Item
-          </button>
+          </Button>
         </div>
 
         {/* Toolbar */}
         <div className="flex items-center gap-3 mb-6">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
-            <input
+            <Input
               type="text"
               placeholder="Search backlog..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg bg-surface border border-border text-sm text-white placeholder-zinc-500 focus:border-violet-500 focus:outline-none"
+              fullWidth
+              size="sm"
+              className="pl-10 pr-4 py-2 rounded-lg bg-surface border-border text-sm text-white placeholder-zinc-500 focus:border-violet-500"
             />
           </div>
-          <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-border text-sm text-fg-muted hover:text-white hover:border-border">
-            <Filter className="w-4 h-4" /> Filter
-          </button>
-          <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-border text-sm text-fg-muted hover:text-white hover:border-border">
-            <ArrowUpDown className="w-4 h-4" /> Sort
-          </button>
+          <Button
+            variant="outline"
+            size="sm"
+            startIcon={<Filter className="w-4 h-4" />}
+            className="rounded-lg bg-surface border-border px-3 py-2 text-sm text-fg-muted hover:text-white hover:border-border"
+          >
+            Filter
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            startIcon={<ArrowUpDown className="w-4 h-4" />}
+            className="rounded-lg bg-surface border-border px-3 py-2 text-sm text-fg-muted hover:text-white hover:border-border"
+          >
+            Sort
+          </Button>
         </div>
 
         {/* Empty State */}
@@ -102,10 +118,12 @@ const BacklogPage: React.FC = () => {
               Start by adding stories, bugs, or tasks to your product backlog.
               Items can be prioritized and moved into sprints.
             </p>
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 transition-colors text-sm font-medium">
-              <Plus className="w-4 h-4" />
+            <Button
+              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium hover:bg-violet-500"
+              startIcon={<Plus className="w-4 h-4" />}
+            >
               Create First Item
-            </button>
+            </Button>
           </div>
         )}
       </div>

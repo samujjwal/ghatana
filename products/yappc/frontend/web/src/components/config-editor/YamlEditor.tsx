@@ -16,6 +16,7 @@ import {
   Alert,
 } from '@ghatana/design-system';
 import React, { useState, useCallback, useEffect } from 'react';
+import { Textarea } from '../ui/Textarea';
 
 import type { PageConfig } from 'yappc-config-schema';
 
@@ -183,7 +184,7 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
       </Alert>
 
       <Paper variant="outlined" className="relative">
-        <textarea
+        <Textarea
           value={yamlText}
           onChange={(event) => handleYamlChange(event.target.value)}
           disabled={readOnly}

@@ -12,6 +12,10 @@
 import React, { useState, useCallback } from 'react';
 import { Plus as Add, Minus as Remove, Sparkles as AutoAwesome, Save, Lightbulb, GraduationCap as School, TrendingUp, AlertCircle as ErrorOutline, MessageCircle as Feedback, BarChart3 as BarChart, Users as Group, Bot as SmartToy } from 'lucide-react';
 import type { EnhancementBacklogPayload, LearningRecordPayload } from '@/shared/types/lifecycle-artifacts';
+import { Button } from '../../ui/Button';
+import { Input } from '../../ui/Input';
+import { Select } from '../../ui/Select';
+import { Textarea } from '../../ui/Textarea';
 
 export interface ImprovePanelProps {
     enhancements?: EnhancementBacklogPayload;
@@ -29,7 +33,7 @@ type EnhancementStatus = 'proposed' | 'approved' | 'in_progress' | 'completed' |
 type EnhancementSource = 'incident' | 'feedback' | 'metrics' | 'team' | 'ai_suggestion';
 
 const STATUS_COLORS: Record<EnhancementStatus, string> = {
-    proposed: 'bg-grey-100 text-grey-700 dark:bg-grey-800 dark:text-grey-300',
+    proposed: 'bg-surface-muted text-fg-muted dark:bg-surface-muted dark:text-fg-muted',
     approved: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color',
     in_progress: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
     completed: 'bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color',
@@ -43,6 +47,25 @@ const SOURCE_ICONS: Record<EnhancementSource, React.ReactNode> = {
     team: <Group size={16} />,
     ai_suggestion: <SmartToy size={16} />,
 };
+
+const STATUS_OPTIONS = [
+    { value: 'proposed', label: 'Proposed' },
+    { value: 'approved', label: 'Approved' },
+    { value: 'in_progress', label: 'In Progress' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'declined', label: 'Declined' },
+];
+
+const SOURCE_OPTIONS = Object.entries(SOURCE_ICONS).map(([value]) => ({
+    value,
+    label: value.charAt(0).toUpperCase() + value.slice(1).replace('_', ' '),
+}));
+
+const PRIORITY_OPTIONS = [
+    { value: 'low', label: 'Low Priority' },
+    { value: 'medium', label: 'Medium Priority' },
+    { value: 'high', label: 'High Priority' },
+];
 
 const defaultEnhancements: EnhancementBacklogPayload = {
     items: [],
@@ -245,48 +268,56 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                 </div>
                 <div className="flex gap-2">
                     {onAIAssist && (
-                        <button
+                        <Button
                             onClick={handleAIAssist}
                             disabled={isAILoading || isSaving}
-                            className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50"
+                            variant="ghost"
+                            size="sm"
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm text-info-color hover:bg-info-bg dark:hover:bg-info-bg/20 rounded-lg transition-colors disabled:opacity-50"
                         >
                             <AutoAwesome className="w-4 h-4" />
                             {isAILoading ? 'Analyzing...' : 'AI Assist'}
-                        </button>
+                        </Button>
                     )}
-                    <button
+                    <Button
                         onClick={handleSave}
                         disabled={isSaving || isLoading}
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+                        variant="solid"
+                        size="sm"
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-info-color text-white rounded-lg hover:bg-info-color/90 transition-colors disabled:opacity-50"
                     >
                         <Save className="w-4 h-4" />
                         {isSaving ? 'Saving...' : 'Save'}
-                    </button>
+                    </Button>
                 </div>
             </div>
 
             {/* Tabs */}
             <div className="flex border-b border-divider">
-                <button
+                <Button
                     onClick={() => setActiveTab('enhancements')}
+                    variant="ghost"
+                    size="sm"
                     className={`flex items-center gap-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'enhancements'
-                            ? 'border-primary-600 text-primary-600'
+                            ? 'border-info-border text-info-color'
                             : 'border-transparent text-text-secondary hover:text-text-primary'
                         }`}
                 >
                     <Lightbulb className="w-4 h-4" />
                     Enhancements ({enhancementData.items.length})
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={() => setActiveTab('learnings')}
+                    variant="ghost"
+                    size="sm"
                     className={`flex items-center gap-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'learnings'
-                            ? 'border-primary-600 text-primary-600'
+                            ? 'border-info-border text-info-color'
                             : 'border-transparent text-text-secondary hover:text-text-primary'
                         }`}
                 >
                     <School className="w-4 h-4" />
                     Learnings
-                </button>
+                </Button>
             </div>
 
             {/* Content */}
@@ -297,87 +328,90 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                             <div className="text-center py-8 text-text-secondary">
                                 <Lightbulb className="w-12 h-12 mx-auto mb-2 opacity-50" />
                                 <p className="text-sm">No enhancements yet</p>
-                                <button
+                                <Button
                                     onClick={addEnhancement}
-                                    className="mt-2 text-sm text-primary-600 hover:text-primary-700"
+                                    variant="link"
+                                    size="sm"
+                                    className="mt-2 text-sm text-info-color hover:text-info-color"
                                 >
                                     Add first enhancement
-                                </button>
+                                </Button>
                             </div>
                         ) : (
                             <div className="space-y-3">
                                 {enhancementData.items.map((item, idx) => (
                                     <div key={idx} className="border border-divider rounded-lg bg-bg-paper p-3 space-y-2">
                                         <div className="flex items-start gap-2">
-                                            <input
+                                            <Input
                                                 type="text"
                                                 value={item.title}
                                                 onChange={(e) => updateEnhancement(idx, { title: e.target.value })}
                                                 placeholder="Enhancement title"
-                                                className="flex-1 px-2 py-1 text-sm font-medium border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                                fullWidth
+                                                size="sm"
+                                                className="flex-1 px-2 py-1 text-sm font-medium border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
                                             />
-                                            <select
+                                            <Select
                                                 value={item.status}
                                                 onChange={(e) => updateEnhancement(idx, { status: e.target.value as EnhancementStatus })}
+                                                options={STATUS_OPTIONS}
+                                                size="sm"
                                                 className={`px-2 py-1 text-xs rounded ${STATUS_COLORS[item.status]}`}
-                                            >
-                                                <option value="proposed">Proposed</option>
-                                                <option value="approved">Approved</option>
-                                                <option value="in_progress">In Progress</option>
-                                                <option value="completed">Completed</option>
-                                                <option value="declined">Declined</option>
-                                            </select>
-                                            <button
+                                            />
+                                            <Button
                                                 onClick={() => removeEnhancement(idx)}
+                                                variant="ghost"
+                                                size="sm"
+                                                aria-label={`Remove enhancement ${idx + 1}`}
                                                 className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                             >
                                                 <Remove className="w-4 h-4" />
-                                            </button>
+                                            </Button>
                                         </div>
-                                        <textarea
+                                        <Textarea
                                             value={item.description}
                                             onChange={(e) => updateEnhancement(idx, { description: e.target.value })}
                                             placeholder="Describe the enhancement..."
                                             rows={2}
-                                            className="w-full px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none"
+                                            fullWidth
+                                            resize="none"
+                                            size="sm"
+                                            className="w-full px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border resize-none"
                                         />
                                         <div className="flex items-center gap-2">
-                                            <select
+                                            <Select
                                                 value={item.source}
                                                 onChange={(e) => updateEnhancement(idx, { source: e.target.value as EnhancementSource })}
-                                                className="px-2 py-1 text-xs border border-divider rounded bg-bg-default text-text-primary focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                            >
-                                                {Object.entries(SOURCE_ICONS).map(([key]) => (
-                                                    <option key={key} value={key}>
-                                                        {key.charAt(0).toUpperCase() + key.slice(1).replace('_', ' ')}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <select
+                                                options={SOURCE_OPTIONS}
+                                                size="sm"
+                                                className="px-2 py-1 text-xs border border-divider rounded bg-bg-default text-text-primary focus:outline-none focus:ring-1 focus:ring-info-border"
+                                            />
+                                            <Select
                                                 value={item.priority}
                                                 onChange={(e) => updateEnhancement(idx, { priority: e.target.value as 'low' | 'medium' | 'high' })}
+                                                options={PRIORITY_OPTIONS}
+                                                size="sm"
                                                 className={`px-2 py-1 text-xs rounded ${item.priority === 'high'
                                                         ? 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive'
                                                         : item.priority === 'medium'
                                                             ? 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color'
-                                                            : 'bg-grey-100 text-grey-700 dark:bg-grey-800 dark:text-grey-300'
+                                                            : 'bg-surface-muted text-fg-muted dark:bg-surface-muted dark:text-fg-muted'
                                                     }`}
-                                            >
-                                                <option value="low">Low Priority</option>
-                                                <option value="medium">Medium Priority</option>
-                                                <option value="high">High Priority</option>
-                                            </select>
+                                            />
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         )}
-                        <button
+                        <Button
                             onClick={addEnhancement}
-                            className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-divider rounded-lg text-text-secondary hover:text-primary-600 hover:border-primary-300 transition-colors"
+                            variant="ghost"
+                            size="sm"
+                            fullWidth
+                            className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-divider rounded-lg text-text-secondary hover:text-info-color hover:border-info-border transition-colors"
                         >
                             <Add className="w-5 h-5" /> Add Enhancement
-                        </button>
+                        </Button>
                     </div>
                 )}
 
@@ -387,37 +421,43 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                         <div>
                             <h4 className="text-sm font-medium text-text-primary mb-2">Retrospectives</h4>
                             {learningData.retrospectives.length === 0 ? (
-                                <div className="text-center py-4 bg-grey-50 dark:bg-grey-800/50 rounded-lg">
+                                <div className="text-center py-4 bg-surface-muted dark:bg-surface-muted rounded-lg">
                                     <p className="text-sm text-text-secondary">No retrospectives yet</p>
-                                    <button
+                                    <Button
                                         onClick={addRetrospective}
-                                        className="mt-1 text-xs text-primary-600 hover:text-primary-700"
+                                        variant="link"
+                                        size="sm"
+                                        className="mt-1 text-xs text-info-color hover:text-info-color"
                                     >
                                         Add retrospective
-                                    </button>
+                                    </Button>
                                 </div>
                             ) : (
                                 <div className="space-y-3">
                                     {learningData.retrospectives.map((retro, idx) => (
                                         <div key={idx} className="border border-divider rounded-lg bg-bg-paper p-3 space-y-2">
                                             <div className="flex items-center justify-between">
-                                                <input
+                                                <Input
                                                     type="date"
                                                     value={retro.date}
                                                     onChange={(e) => updateRetrospective(idx, { date: e.target.value })}
-                                                    className="px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                                    size="sm"
+                                                    className="px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary focus:outline-none focus:ring-1 focus:ring-info-border"
                                                 />
-                                                <button
+                                                <Button
                                                     onClick={() => removeRetrospective(idx)}
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    aria-label={`Remove retrospective ${idx + 1}`}
                                                     className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                                 >
                                                     <Remove className="w-4 h-4" />
-                                                </button>
+                                                </Button>
                                             </div>
                                             <div className="grid grid-cols-3 gap-2">
                                                 <div>
                                                     <label className="block text-xs text-text-secondary mb-1">Went Well</label>
-                                                    <textarea
+                                                    <Textarea
                                                         value={retro.wentWell.join('\n')}
                                                         onChange={(e) =>
                                                             updateRetrospective(idx, {
@@ -426,12 +466,15 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                                         }
                                                         placeholder="One per line..."
                                                         rows={3}
-                                                        className="w-full px-2 py-1 text-xs border border-divider rounded bg-success-bg dark:bg-success-bg/20 text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-green-500 resize-none"
+                                                        fullWidth
+                                                        resize="none"
+                                                        size="sm"
+                                                        className="w-full px-2 py-1 text-xs border border-divider rounded bg-success-bg dark:bg-success-bg/20 text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-success-border resize-none"
                                                     />
                                                 </div>
                                                 <div>
                                                     <label className="block text-xs text-text-secondary mb-1">Improvements</label>
-                                                    <textarea
+                                                    <Textarea
                                                         value={retro.improvements.join('\n')}
                                                         onChange={(e) =>
                                                             updateRetrospective(idx, {
@@ -440,12 +483,15 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                                         }
                                                         placeholder="One per line..."
                                                         rows={3}
-                                                        className="w-full px-2 py-1 text-xs border border-divider rounded bg-warning-bg dark:bg-warning-bg/20 text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-yellow-500 resize-none"
+                                                        fullWidth
+                                                        resize="none"
+                                                        size="sm"
+                                                        className="w-full px-2 py-1 text-xs border border-divider rounded bg-warning-bg dark:bg-warning-bg/20 text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-warning-border resize-none"
                                                     />
                                                 </div>
                                                 <div>
                                                     <label className="block text-xs text-text-secondary mb-1">Actions</label>
-                                                    <textarea
+                                                    <Textarea
                                                         value={retro.actions.join('\n')}
                                                         onChange={(e) =>
                                                             updateRetrospective(idx, {
@@ -454,7 +500,10 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                                         }
                                                         placeholder="One per line..."
                                                         rows={3}
-                                                        className="w-full px-2 py-1 text-xs border border-divider rounded bg-info-bg dark:bg-info-bg/20 text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                                                        fullWidth
+                                                        resize="none"
+                                                        size="sm"
+                                                        className="w-full px-2 py-1 text-xs border border-divider rounded bg-info-bg dark:bg-info-bg/20 text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border resize-none"
                                                     />
                                                 </div>
                                             </div>
@@ -462,12 +511,14 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                     ))}
                                 </div>
                             )}
-                            <button
+                            <Button
                                 onClick={addRetrospective}
-                                className="mt-2 flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors"
+                                variant="link"
+                                size="sm"
+                                className="mt-2 flex items-center gap-1 text-xs text-info-color hover:text-info-color transition-colors"
                             >
                                 <Add className="w-3 h-3" /> Add retrospective
-                            </button>
+                            </Button>
                         </div>
 
                         {/* Insights */}
@@ -476,27 +527,34 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                             <div className="space-y-2">
                                 {learningData.insights.map((insight, idx) => (
                                     <div key={idx} className="flex gap-2">
-                                        <input
+                                        <Input
                                             type="text"
                                             value={insight}
                                             onChange={(e) => updateInsight(idx, e.target.value)}
                                             placeholder="Insight..."
-                                            className="flex-1 px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                            fullWidth
+                                            size="sm"
+                                            className="flex-1 px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
                                         />
-                                        <button
+                                        <Button
                                             onClick={() => removeInsight(idx)}
+                                            variant="ghost"
+                                            size="sm"
+                                            aria-label={`Remove insight ${idx + 1}`}
                                             className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                         >
                                             <Remove className="w-4 h-4" />
-                                        </button>
+                                        </Button>
                                     </div>
                                 ))}
-                                <button
+                                <Button
                                     onClick={addInsight}
-                                    className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors"
+                                    variant="link"
+                                    size="sm"
+                                    className="flex items-center gap-1 text-xs text-info-color hover:text-info-color transition-colors"
                                 >
                                     <Add className="w-3 h-3" /> Add insight
-                                </button>
+                                </Button>
                             </div>
                         </div>
 
@@ -506,27 +564,34 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                             <div className="space-y-2">
                                 {learningData.recommendations.map((rec, idx) => (
                                     <div key={idx} className="flex gap-2">
-                                        <input
+                                        <Input
                                             type="text"
                                             value={rec}
                                             onChange={(e) => updateRecommendation(idx, e.target.value)}
                                             placeholder="Recommendation..."
-                                            className="flex-1 px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                            fullWidth
+                                            size="sm"
+                                            className="flex-1 px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
                                         />
-                                        <button
+                                        <Button
                                             onClick={() => removeRecommendation(idx)}
+                                            variant="ghost"
+                                            size="sm"
+                                            aria-label={`Remove recommendation ${idx + 1}`}
                                             className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                         >
                                             <Remove className="w-4 h-4" />
-                                        </button>
+                                        </Button>
                                     </div>
                                 ))}
-                                <button
+                                <Button
                                     onClick={addRecommendation}
-                                    className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors"
+                                    variant="link"
+                                    size="sm"
+                                    className="flex items-center gap-1 text-xs text-info-color hover:text-info-color transition-colors"
                                 >
                                     <Add className="w-3 h-3" /> Add recommendation
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>

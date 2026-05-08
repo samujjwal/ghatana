@@ -8,7 +8,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Box, Card, CardContent, Chip, Typography } from '@ghatana/design-system';
+import { Box, Button, Card, CardContent, Chip, Typography } from '@ghatana/design-system';
 
 import type { RequirementRecord } from './types';
 import { RequirementDetail } from './RequirementDetail';
@@ -52,9 +52,11 @@ export const RequirementLifecycleBoard: React.FC<RequirementLifecycleBoardProps>
 
           <Box className="space-y-2">
             {requirements.map((requirement) => (
-              <button
+              <Button
                 key={requirement.id}
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setSelectedRequirementId(requirement.id)}
                 className={`w-full rounded border px-3 py-2 text-left transition-colors ${
                   requirement.id === selectedRequirementId
@@ -64,7 +66,7 @@ export const RequirementLifecycleBoard: React.FC<RequirementLifecycleBoardProps>
               >
                 <Typography className="text-sm font-medium">{requirement.title}</Typography>
                 <Typography className="text-xs text-fg-muted">{requirement.status}</Typography>
-              </button>
+              </Button>
             ))}
           </Box>
         </CardContent>

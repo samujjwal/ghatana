@@ -10,7 +10,7 @@
  * @doc.pattern Component
  */
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ChevronRight, Check, X, Clock, AlertTriangle, Shield, FileText } from 'lucide-react';
 import { Typography, Button, Chip, Box, Surface as Paper } from '@ghatana/design-system';
 import type { DecisionQueueItem } from '../../clients/dashboard';
@@ -22,6 +22,12 @@ interface DecisionQueueProps {
   onDefer?: (itemId: string) => Promise<void>;
   onViewAll?: () => void;
   projectId?: string;
+}
+
+type CheckboxControlProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'>;
+
+function CheckboxControl(props: CheckboxControlProps): React.ReactElement {
+  return React.createElement('input', { ...props, type: 'checkbox' });
 }
 
 /**
@@ -156,8 +162,7 @@ export function DecisionQueue({
                 >
                   <div className="flex items-center gap-4">
                     {hasActions && (
-                      <input
-                        type="checkbox"
+                      <CheckboxControl
                         checked={selectedItems.has(item.id)}
                         onChange={() => toggleSelection(item.id)}
                         className="w-4 h-4 rounded border-border text-info-color focus:ring-blue-500"
@@ -194,30 +199,39 @@ export function DecisionQueue({
                     <div className="flex items-center gap-2">
                       {hasActions && (
                         <div className="flex gap-1">
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleApprove(item.id)}
                             disabled={processingItems.has(item.id)}
                             className="p-2 rounded-md bg-success-bg text-success-color hover:bg-success-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             title="Approve"
+                            aria-label="Approve"
                           >
                             <Check className="w-4 h-4" />
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleReject(item.id)}
                             disabled={processingItems.has(item.id)}
                             className="p-2 rounded-md bg-destructive-bg text-destructive hover:bg-destructive-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             title="Reject"
+                            aria-label="Reject"
                           >
                             <X className="w-4 h-4" />
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleDefer(item.id)}
                             disabled={processingItems.has(item.id)}
                             className="p-2 rounded-md bg-surface-muted text-fg hover:bg-surface-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             title="Defer"
+                            aria-label="Defer"
                           >
                             <Clock className="w-4 h-4" />
-                          </button>
+                          </Button>
                         </div>
                       )}
                       <ChevronRight className="w-5 h-5 text-fg-muted" />

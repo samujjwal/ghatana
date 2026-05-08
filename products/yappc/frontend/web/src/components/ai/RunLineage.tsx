@@ -16,6 +16,7 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Button } from '../ui/Button';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -140,7 +141,7 @@ function LineageNode({ node, onClick }: LineageNodeProps): React.ReactElement {
 
   if (isInteractive && onClick) {
     return (
-      <button
+      <Button
         type="button"
         onClick={() => onClick(node)}
         title={`${node.type}: ${node.id}`}
@@ -148,10 +149,12 @@ function LineageNode({ node, onClick }: LineageNodeProps): React.ReactElement {
           'font-medium hover:underline focus:outline-none focus-visible:ring-1 rounded',
           colorClass,
         ].join(' ')}
+        variant="ghost"
+        size="sm"
         aria-label={`${node.type} ${node.label}`}
       >
         {node.label}
-      </button>
+      </Button>
     );
   }
 

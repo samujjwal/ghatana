@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
+import { Button } from '../ui/Button';
 import { Package as Inventory, CheckCircle, XCircle as Cancel, Hourglass as HourglassEmpty, Download, BadgeCheck as Verified, User as Person, Clock as Schedule, FileText as Description, Shield as Security } from 'lucide-react';
 import type { ReleasePacketPayload, EvidencePackPayload } from '@/shared/types/lifecycle-artifacts';
 
@@ -140,25 +141,25 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
                 </div>
                 {onDownloadEvidence && (
                     <div className="flex gap-2">
-                        <button
+                        <Button
                             onClick={() => onDownloadEvidence('pdf')}
                             className="flex items-center gap-1 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors"
                         >
                             <Download className="w-4 h-4" /> PDF
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             onClick={() => onDownloadEvidence('zip')}
                             className="flex items-center gap-1 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors"
                         >
                             <Download className="w-4 h-4" /> ZIP
-                        </button>
+                        </Button>
                     </div>
                 )}
             </div>
 
             {/* Tabs */}
             <div className="flex border-b border-divider">
-                <button
+                <Button
                     onClick={() => setActiveTab('overview')}
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'overview'
                             ? 'border-primary-600 text-primary-600'
@@ -166,8 +167,8 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
                         }`}
                 >
                     Overview
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={() => setActiveTab('artifacts')}
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'artifacts'
                             ? 'border-primary-600 text-primary-600'
@@ -175,8 +176,8 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
                         }`}
                 >
                     Artifacts ({releasePacket.artifacts?.length || 0})
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={() => setActiveTab('evidence')}
                     className={`flex items-center gap-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'evidence'
                             ? 'border-primary-600 text-primary-600'
@@ -184,8 +185,8 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
                         }`}
                 >
                     <Verified className="w-4 h-4" /> Evidence
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={() => setActiveTab('approvals')}
                     className={`flex items-center gap-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'approvals'
                             ? 'border-primary-600 text-primary-600'
@@ -193,7 +194,7 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
                         }`}
                 >
                     <Security className="w-4 h-4" /> Approvals ({approvalGates.length})
-                </button>
+                </Button>
             </div>
 
             {/* Content */}
@@ -267,7 +268,7 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
                             </div>
                         ) : (
                             releasePacket.artifacts.map((artifact, idx) => (
-                                <button
+                                <Button
                                     key={idx}
                                     onClick={() => onDownloadArtifact?.(artifact)}
                                     className="w-full flex items-center gap-3 p-3 text-left border border-divider rounded-lg bg-bg-paper hover:bg-grey-50 dark:hover:bg-grey-800/50 transition-colors"
@@ -284,7 +285,7 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
                                         )}
                                     </div>
                                     <span className="text-xs text-primary-600">Download</span>
-                                </button>
+                                </Button>
                             ))
                         )}
                     </div>
@@ -467,7 +468,7 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
 
                                 {gate.status === 'pending' && onApprove && onReject && (
                                     <div className="space-y-2">
-                                        <textarea
+                                        <NativeTextarea
                                             value={approvalComments[gate.id] || ''}
                                             onChange={(e) =>
                                                 setApprovalComments((prev) => ({
@@ -480,20 +481,20 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
                                             className="w-full px-3 py-2 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none"
                                         />
                                         <div className="flex gap-2 justify-end">
-                                            <button
+                                            <Button
                                                 onClick={() => handleReject(gate.id)}
                                                 disabled={processingGate === gate.id || !approvalComments[gate.id]?.trim()}
                                                 className="px-4 py-2 text-sm text-destructive hover:bg-destructive-bg dark:hover:bg-destructive-bg rounded-lg transition-colors disabled:opacity-50"
                                             >
                                                 Reject
-                                            </button>
-                                            <button
+                                            </Button>
+                                            <Button
                                                 onClick={() => handleApprove(gate.id)}
                                                 disabled={processingGate === gate.id}
                                                 className="px-4 py-2 text-sm bg-success-bg text-white rounded-lg hover:bg-success-bg transition-colors disabled:opacity-50"
                                             >
                                                 {processingGate === gate.id ? 'Processing...' : 'Approve'}
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
                                 )}

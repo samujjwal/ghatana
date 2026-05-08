@@ -28,7 +28,7 @@ describe('AdrLifecycle', () => {
       />
     );
     expect(screen.getByText('Use PostgreSQL over MySQL')).toBeInTheDocument();
-    expect(screen.getByText('Draft')).toBeInTheDocument();
+    expect(screen.getAllByText('Draft').length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows Submit for Review button when status is DRAFT', () => {
@@ -39,7 +39,7 @@ describe('AdrLifecycle', () => {
         onTransition={vi.fn()}
       />
     );
-    expect(screen.getByTestId('adr-transition-IN_REVIEW')).toBeInTheDocument();
+    expect(screen.getByTestId('adr-transition-IN_REVIEW')).toHaveClass('inline-flex');
   });
 
   it('shows Accept Decision and Send Back to Draft when status is IN_REVIEW', () => {
@@ -92,13 +92,16 @@ describe('AdrLifecycle', () => {
     fireEvent.click(screen.getByTestId('adr-transition-IN_REVIEW'));
     // Transition form should appear
     expect(screen.getByTestId('adr-transition-form')).toBeInTheDocument();
+    expect(screen.getByLabelText('Transition note')).toHaveClass('text-sm');
 
     // Type a note
     fireEvent.change(screen.getByLabelText('Transition note'), {
       target: { value: 'ready' },
     });
 
-    fireEvent.click(screen.getByText('Confirm'));
+    const confirmButton = screen.getByText('Confirm').closest('button');
+    expect(confirmButton).toHaveClass('inline-flex');
+    fireEvent.click(confirmButton!);
     await waitFor(() =>
       expect(onTransition).toHaveBeenCalledWith('adr-1', 'IN_REVIEW', 'ready')
     );
@@ -143,9 +146,9 @@ describe('AdrLifecycle', () => {
         onTransition={vi.fn()}
       />
     );
-    expect(screen.getByText('Draft')).toBeInTheDocument();
-    expect(screen.getByText('In Review')).toBeInTheDocument();
-    expect(screen.getByText('Accepted')).toBeInTheDocument();
-    expect(screen.getByText('Superseded')).toBeInTheDocument();
+    expect(screen.getAllByText('Draft').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('In Review').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Accepted').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Superseded').length).toBeGreaterThanOrEqual(1);
   });
 });

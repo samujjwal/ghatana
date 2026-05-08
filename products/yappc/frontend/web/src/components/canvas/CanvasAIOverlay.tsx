@@ -89,7 +89,7 @@ export function CanvasAIOverlay({
           size="sm"
           onClick={handleToggleCollapse}
           startIcon={<AIIcon className="w-4 h-4" />}
-          className="bg-primary hover:bg-info-bg text-white shadow-lg"
+          className="bg-info-color hover:bg-info-bg text-white shadow-lg"
         >
           AI Suggestions
           <Chip

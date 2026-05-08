@@ -14,6 +14,7 @@ import { useAtom } from 'jotai';
 import { Breadcrumb } from '../ui';
 import { breadcrumbItemsAtom, navigationContextAtom } from '../../state/atoms/breadcrumbAtom';
 import { WorkspaceSelector } from './WorkspaceSelector';
+import { Button } from '../ui/Button';
 
 interface HeaderWithBreadcrumbProps {
     onCreateWorkspace?: () => void;
@@ -72,9 +73,11 @@ export function HeaderWithBreadcrumb({
 
                 {/* Theme Toggle */}
                 {onThemeToggle && (
-                    <button
+                    <Button
                         type="button"
                         onClick={onThemeToggle}
+                        variant="ghost"
+                        size="small"
                         data-testid="theme-toggle"
                         className="
               p-2 rounded-lg
@@ -89,14 +92,16 @@ export function HeaderWithBreadcrumb({
                                 d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
                             />
                         </svg>
-                    </button>
+                    </Button>
                 )}
 
                 {/* Settings */}
                 {onSettings && (
-                    <button
+                    <Button
                         type="button"
                         onClick={onSettings}
+                        variant="ghost"
+                        size="small"
                         data-testid="settings-button"
                         className="
               p-2 rounded-lg
@@ -114,12 +119,14 @@ export function HeaderWithBreadcrumb({
                                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                             />
                         </svg>
-                    </button>
+                    </Button>
                 )}
 
                 {/* User Avatar */}
-                <button
+                <Button
                     type="button"
+                    variant="ghost"
+                    size="small"
                     data-testid="user-menu"
                     className="
             w-8 h-8 rounded-full
@@ -131,7 +138,7 @@ export function HeaderWithBreadcrumb({
           "
                 >
                     U
-                </button>
+                </Button>
             </div>
         </header>
     );

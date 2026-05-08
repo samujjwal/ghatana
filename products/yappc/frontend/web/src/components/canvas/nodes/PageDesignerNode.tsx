@@ -22,6 +22,7 @@
  * @doc.pattern ReactFlow Custom Node
  */
 
+import { Input } from '../../ui/Input';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Handle, Position, NodeResizer, type Node, type NodeProps } from '@xyflow/react';
 import { Box, Button, IconButton, TextArea, Typography } from '@ghatana/design-system';
@@ -805,7 +806,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
     updateNodeData,
   ]);
 
-  const borderColor = selected ? 'var(--color-primary-500, #6366f1)' : 'var(--color-border, #d1d5db)';
+  const borderColor = selected ? 'var(--info-color, #6366f1)' : 'var(--color-border, #d1d5db)';
 
   return (
     <>
@@ -849,7 +850,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
           <Typography
             variant="body2"
             className="flex-1 font-medium truncate"
-            style={{ color: 'var(--color-text-primary, #111827)' }}
+            style={{ color: 'var(--text-primary, #111827)' }}
           >
             {data.label ?? 'Page'}
           </Typography>
@@ -962,7 +963,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
 	                              {row.nodeId} · {row.status} · local {row.localLabel} / remote {row.remoteLabel}
 	                            </Typography>
 	                            <label>
-	                              <input
+	                              <Input
 	                                type="radio"
 	                                name={`page-conflict-choice-${row.nodeId}`}
 	                                checked={(conflictMergeChoices[row.nodeId] ?? (row.status === 'remote-only' ? 'remote' : 'local')) === 'local'}
@@ -976,7 +977,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
 	                              Local
 	                            </label>
 	                            <label>
-	                              <input
+	                              <Input
 	                                type="radio"
 	                                name={`page-conflict-choice-${row.nodeId}`}
 	                                checked={(conflictMergeChoices[row.nodeId] ?? (row.status === 'remote-only' ? 'remote' : 'local')) === 'remote'}
@@ -1119,25 +1120,25 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
         id="top"
         type="target"
         position={Position.Top}
-        style={{ background: 'var(--color-primary-500, #6366f1)', width: 10, height: 10 }}
+        style={{ background: 'var(--info-color, #6366f1)', width: 10, height: 10 }}
       />
       <Handle
         id="right"
         type="source"
         position={Position.Right}
-        style={{ background: 'var(--color-primary-500, #6366f1)', width: 10, height: 10 }}
+        style={{ background: 'var(--info-color, #6366f1)', width: 10, height: 10 }}
       />
       <Handle
         id="bottom"
         type="source"
         position={Position.Bottom}
-        style={{ background: 'var(--color-primary-500, #6366f1)', width: 10, height: 10 }}
+        style={{ background: 'var(--info-color, #6366f1)', width: 10, height: 10 }}
       />
       <Handle
         id="left"
         type="target"
         position={Position.Left}
-        style={{ background: 'var(--color-primary-500, #6366f1)', width: 10, height: 10 }}
+        style={{ background: 'var(--info-color, #6366f1)', width: 10, height: 10 }}
       />
     </>
   );

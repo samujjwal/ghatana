@@ -32,6 +32,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { Button } from '../../../ui/Button';
 
 type InitializationStatus =
   | 'NOT_STARTED'
@@ -170,12 +171,12 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
 
             return (
               <div key={step.id} className="flex items-center">
-                <button
+                <Button variant="ghost" size="sm"
                   onClick={() => onStepChange?.(index)}
                   disabled={status !== 'NOT_STARTED'}
                   className={cn(
                     'relative flex items-center justify-center w-8 h-8 rounded-full transition-all',
-                    isActive && 'ring-2 ring-primary ring-offset-2 ring-offset-surface',
+                    isActive && 'ring-2 ring-info-border ring-offset-2 ring-offset-surface',
                     isCompleted ? 'bg-success-bg0/20' : isPast ? 'bg-muted' : 'bg-surface-muted',
                     status === 'NOT_STARTED' && 'hover:bg-muted cursor-pointer'
                   )}
@@ -193,7 +194,7 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
                   {step.isOptional && (
                     <span className="absolute -top-1 -right-1 w-2 h-2 bg-warning-bg0 rounded-full" />
                   )}
-                </button>
+                </Button>
                 {index < steps.length - 1 && (
                   <div
                     className={cn(
@@ -305,7 +306,7 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
       {/* Navigation & Actions */}
       <div className="px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button
+          <Button variant="ghost" size="sm"
             onClick={() => onStepChange?.(currentStepIndex - 1)}
             disabled={!canNavigatePrev}
             className={cn(
@@ -316,8 +317,8 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
             )}
           >
             <ArrowLeft className="w-4 h-4" />
-          </button>
-          <button
+          </Button>
+          <Button variant="ghost" size="sm"
             onClick={() => onStepChange?.(currentStepIndex + 1)}
             disabled={!canNavigateNext}
             className={cn(
@@ -328,45 +329,45 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNo
             )}
           >
             <ArrowRight className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         <div className="flex items-center gap-2">
           {canReset && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onReset}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-muted hover:bg-muted rounded-lg text-xs text-fg transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               Reset
-            </button>
+            </Button>
           )}
           {canStart && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onStart}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-info-bg rounded-lg text-xs text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-info-color hover:bg-info-bg rounded-lg text-xs text-white transition-colors"
             >
               <Play className="w-3.5 h-3.5" />
               Start Setup
-            </button>
+            </Button>
           )}
           {canPause && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onPause}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-warning-color hover:bg-warning-bg0 rounded-lg text-xs text-white transition-colors"
             >
               <Pause className="w-3.5 h-3.5" />
               Pause
-            </button>
+            </Button>
           )}
           {canResume && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onResume}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-success-color hover:bg-success-bg0 rounded-lg text-xs text-white transition-colors"
             >
               <Play className="w-3.5 h-3.5" />
               Resume
-            </button>
+            </Button>
           )}
         </div>
       </div>

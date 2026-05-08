@@ -10,6 +10,12 @@
  */
 
 import React from 'react';
+
+const TestButton = (props: React.ButtonHTMLAttributes<HTMLButtonElement>): React.ReactElement =>
+  React.createElement('button', props);
+
+const TestTextarea = (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>): React.ReactElement =>
+  React.createElement('textarea', props);
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router';
@@ -106,9 +112,9 @@ vi.mock('../../../../components/ai/AIStatusBar', () => ({
       <span data-testid="current-phase">{currentPhase}</span>
       <span data-testid="phase-progress">{phaseProgress}%</span>
       {nextBestAction && (
-        <button data-testid="next-action" onClick={nextBestAction.action}>
+        <TestButton data-testid="next-action" onClick={nextBestAction.action}>
           {nextBestAction.title}
-        </button>
+        </TestButton>
       )}
     </div>
   ),
@@ -136,13 +142,13 @@ vi.mock('../../../../components/canvas/ZoomableLifecycleZones', () => ({
       data-active={activePhase}
     >
       {zones.map((zone: unknown) => (
-        <button
+        <TestButton
           key={zone.phase}
           data-testid={`phase-${zone.phase}`}
           onClick={() => onPhaseClick(zone.phase)}
         >
           {zone.phase}
-        </button>
+        </TestButton>
       ))}
     </div>
   ),
@@ -156,14 +162,14 @@ vi.mock('../../../../components/canvas/ZoomableLifecycleZones', () => ({
 vi.mock('../../../../components/canvas/InlineCodePanel', () => ({
   InlineCodePanel: ({ isVisible, code, language, fileName, onToggle }: unknown) => (
     <div data-testid="inline-code-panel" data-visible={isVisible}>
-      <button data-testid="code-panel-toggle" onClick={onToggle}>
+      <TestButton data-testid="code-panel-toggle" onClick={onToggle}>
         Toggle Code Panel
-      </button>
+      </TestButton>
       {isVisible && (
         <div>
           <div data-testid="code-file">{fileName}</div>
           <div data-testid="code-language">{language}</div>
-          <textarea data-testid="code-editor" value={code} readOnly />
+          <TestTextarea data-testid="code-editor" value={code} readOnly />
         </div>
       )}
     </div>
@@ -193,9 +199,9 @@ vi.mock('../../../../components/studio/StudioLayout', () => ({
       <div data-testid="studio-code-editor">{codeEditor}</div>
       <div data-testid="studio-live-preview">{livePreview}</div>
       <div data-testid="studio-validation">{validation}</div>
-      <button data-testid="studio-close" onClick={onClose}>
+      <TestButton data-testid="studio-close" onClick={onClose}>
         Close Studio
-      </button>
+      </TestButton>
     </div>
   ),
   useStudioMode: vi.fn(() => ({
@@ -210,9 +216,9 @@ vi.mock('../../../../components/keyboard/KeyboardShortcutsManager', () => ({
       {isOpen && (
         <div>
           <h3>Keyboard Shortcuts</h3>
-          <button data-testid="help-close" onClick={onClose}>
+          <TestButton data-testid="help-close" onClick={onClose}>
             Close Help
-          </button>
+          </TestButton>
         </div>
       )}
     </div>

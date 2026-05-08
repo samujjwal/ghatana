@@ -136,20 +136,6 @@ class ObservabilityTest {
     }
 
     @Test
-    @DisplayName("Should track Data Cloud event metrics")
-    void testDataCloudMetrics() { 
-        businessMetrics.recordEventPublished("ProjectCreated", "tenant-abc"); 
-        businessMetrics.recordEventPublished("ProjectCreated", "tenant-abc"); 
-        businessMetrics.recordEventConsumed("ProjectCreated", "tenant-abc"); 
-
-        double publishedCount = registry.counter("business.datacloud.events.published", "type", "ProjectCreated", "tenant", "tenant-abc").count(); 
-        double consumedCount = registry.counter("business.datacloud.events.consumed", "type", "ProjectCreated", "tenant", "tenant-abc").count(); 
-
-        assertThat(publishedCount).isEqualTo(2.0); 
-        assertThat(consumedCount).isEqualTo(1.0); 
-    }
-
-    @Test
     @DisplayName("Should track tenant and API metrics")
     void testTenantMetrics() { 
         businessMetrics.recordTenantCreated("new-tenant", "pro"); 

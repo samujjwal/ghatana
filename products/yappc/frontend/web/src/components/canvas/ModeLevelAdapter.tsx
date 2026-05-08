@@ -378,7 +378,7 @@ export const ModeLevelEmptyState: React.FC<{
                 {onAskAI && (
                     <Box
                         onClick={onAskAI}
-                        className="flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-white cursor-pointer transition-all duration-200 translate-y-[-1px] bg-info-bg" >
+                        className="flex items-center gap-2 px-6 py-3 rounded-lg bg-info-color text-white cursor-pointer transition-all duration-200 translate-y-[-1px] bg-info-bg" >
                         <AutoAwesome className="text-xl" />
                         <Typography variant="body2" fontWeight={500}>
                             {state.aiSuggestion}

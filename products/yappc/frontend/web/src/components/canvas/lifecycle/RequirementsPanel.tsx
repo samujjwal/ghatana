@@ -10,6 +10,10 @@
  * @doc.pattern Panel Component
  */
 
+import { Button } from '../../ui/Button';
+import { Input } from '../../ui/Input';
+import { Select } from '../../ui/Select';
+import { Textarea } from '../../ui/Textarea';
 import React, { useState, useCallback } from 'react';
 import { Plus as Add, Minus as Remove, ChevronDown as ExpandMore, ChevronUp as ExpandLess, Sparkles as AutoAwesome, Save, Check } from 'lucide-react';
 import type { RequirementsPayload } from '@/shared/types/lifecycle-artifacts';
@@ -70,7 +74,7 @@ const PRIORITY_COLORS = {
     must: 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive',
     should: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
     could: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color',
-    wont: 'bg-grey-100 text-grey-700 dark:bg-grey-900/30 dark:text-grey-300',
+    wont: 'bg-surface-muted text-fg-muted dark:bg-surface-muted dark:text-fg-muted',
 };
 
 const NFR_OPTIONS = ['Performance', 'Security', 'Accessibility', 'Scalability', 'Reliability', 'Usability'];
@@ -237,23 +241,23 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                 </div>
                 <div className="flex gap-2">
                     {onAIAssist && (
-                        <button
+                        <Button variant="ghost" size="sm"
                             onClick={handleAIAssist}
                             disabled={isAILoading || isSaving}
-                            className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm text-info-color hover:bg-info-bg dark:hover:bg-info-bg/20 rounded-lg transition-colors disabled:opacity-50"
                         >
                             <AutoAwesome className="w-4 h-4" />
                             {isAILoading ? 'Generating...' : 'AI Assist'}
-                        </button>
+                        </Button>
                     )}
-                    <button
+                    <Button variant="ghost" size="sm"
                         onClick={handleSave}
                         disabled={isSaving || isLoading}
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-info-color text-white rounded-lg hover:bg-info-color/90 transition-colors disabled:opacity-50"
                     >
                         <Save className="w-4 h-4" />
                         {isSaving ? 'Saving...' : 'Save'}
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -262,8 +266,8 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                 {epics.map((epic) => (
                     <div key={epic.id} className="border border-divider rounded-lg bg-bg-paper">
                         {/* Epic Header */}
-                        <div className="flex items-start gap-2 p-3 border-b border-divider bg-grey-50 dark:bg-grey-800/50 rounded-t-lg">
-                            <button
+                        <div className="flex items-start gap-2 p-3 border-b border-divider bg-surface-muted dark:bg-surface-muted rounded-t-lg">
+                            <Button variant="ghost" size="sm"
                                 onClick={() => setExpandedEpics((prev) => toggleExpanded(prev, epic.id))}
                                 className="p-1 text-text-secondary hover:text-text-primary transition-colors mt-0.5"
                             >
@@ -272,16 +276,16 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                 ) : (
                                     <ExpandMore className="w-5 h-5" />
                                 )}
-                            </button>
+                            </Button>
                             <div className="flex-1">
-                                <input
+                                <Input
                                     type="text"
                                     value={epic.title}
                                     onChange={(e) => updateEpic(epic.id, { title: e.target.value })}
                                     placeholder="Epic title"
                                     className="w-full px-2 py-1 text-sm font-medium border-none bg-transparent text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-0"
                                 />
-                                <input
+                                <Input
                                     type="text"
                                     value={epic.description || ''}
                                     onChange={(e) => updateEpic(epic.id, { description: e.target.value })}
@@ -290,13 +294,13 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                 />
                             </div>
                             {epics.length > 1 && (
-                                <button
+                                <Button variant="ghost" size="sm"
                                     onClick={() => removeEpic(epic.id)}
                                     className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                     aria-label="Remove epic"
                                 >
                                     <Remove className="w-4 h-4" />
-                                </button>
+                                </Button>
                             )}
                         </div>
 
@@ -306,8 +310,8 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                 {epic.capabilities.map((cap) => (
                                     <div key={cap.id} className="border border-divider rounded-lg">
                                         {/* Capability Header */}
-                                        <div className="flex items-center gap-2 p-2 bg-grey-50 dark:bg-grey-800/30 rounded-t-lg">
-                                            <button
+                                        <div className="flex items-center gap-2 p-2 bg-surface-muted dark:bg-surface-muted rounded-t-lg">
+                                            <Button variant="ghost" size="sm"
                                                 onClick={() =>
                                                     setExpandedCapabilities((prev) => toggleExpanded(prev, cap.id))
                                                 }
@@ -318,8 +322,8 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                                 ) : (
                                                     <ExpandMore className="w-4 h-4" />
                                                 )}
-                                            </button>
-                                            <input
+                                            </Button>
+                                            <Input
                                                 type="text"
                                                 value={cap.title}
                                                 onChange={(e) =>
@@ -329,13 +333,13 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                                 className="flex-1 px-2 py-0.5 text-sm border-none bg-transparent text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-0"
                                             />
                                             {epic.capabilities.length > 1 && (
-                                                <button
+                                                <Button variant="ghost" size="sm"
                                                     onClick={() => removeCapability(epic.id, cap.id)}
                                                     className="p-0.5 text-text-secondary hover:text-error-color transition-colors"
                                                     aria-label="Remove capability"
                                                 >
                                                     <Remove className="w-4 h-4" />
-                                                </button>
+                                                </Button>
                                             )}
                                         </div>
 
@@ -351,7 +355,7 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                                             <span className="text-xs text-text-secondary mt-1">
                                                                 R{reqIdx + 1}
                                                             </span>
-                                                            <textarea
+                                                            <Textarea
                                                                 value={req.statement}
                                                                 onChange={(e) =>
                                                                     updateRequirement(epic.id, cap.id, req.id, {
@@ -360,9 +364,9 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                                                 }
                                                                 placeholder="Requirement statement"
                                                                 rows={2}
-                                                                className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none"
+                                                                className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border resize-none"
                                                             />
-                                                            <select
+                                                            <Select
                                                                 value={req.priority}
                                                                 onChange={(e) =>
                                                                     updateRequirement(epic.id, cap.id, req.id, {
@@ -375,9 +379,9 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                                                 <option value="should">Should</option>
                                                                 <option value="could">Could</option>
                                                                 <option value="wont">Won't</option>
-                                                            </select>
+                                                            </Select>
                                                             {cap.requirements.length > 1 && (
-                                                                <button
+                                                                <Button variant="ghost" size="sm"
                                                                     onClick={() =>
                                                                         removeRequirement(epic.id, cap.id, req.id)
                                                                     }
@@ -385,7 +389,7 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                                                     aria-label="Remove requirement"
                                                                 >
                                                                     <Remove className="w-4 h-4" />
-                                                                </button>
+                                                                </Button>
                                                             )}
                                                         </div>
 
@@ -394,7 +398,7 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                                             {NFR_OPTIONS.map((nfr) => {
                                                                 const isSelected = req.nfrTags.includes(nfr);
                                                                 return (
-                                                                    <button
+                                                                    <Button variant="ghost" size="sm"
                                                                         key={nfr}
                                                                         type="button"
                                                                         onClick={() => {
@@ -406,12 +410,12 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                                                             });
                                                                         }}
                                                                         className={`px-1.5 py-0.5 text-xs rounded transition-colors ${isSelected
-                                                                                ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-                                                                                : 'bg-grey-100 text-grey-600 dark:bg-grey-800 dark:text-grey-400 hover:bg-grey-200 dark:hover:bg-grey-700'
+                                                                                ? 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color'
+                                                                                : 'bg-surface-muted text-fg-muted dark:bg-surface-muted dark:text-fg-muted hover:bg-surface-muted dark:hover:bg-surface-muted'
                                                                             }`}
                                                                     >
                                                                         {nfr}
-                                                                    </button>
+                                                                    </Button>
                                                                 );
                                                             })}
                                                         </div>
@@ -424,7 +428,7 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                                             {req.acceptanceCriteria.map((ac, acIdx) => (
                                                                 <div key={acIdx} className="flex items-center gap-1">
                                                                     <Check className="w-3 h-3 text-text-secondary" />
-                                                                    <input
+                                                                    <Input
                                                                         type="text"
                                                                         value={ac}
                                                                         onChange={(e) => {
@@ -435,10 +439,10 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                                                             });
                                                                         }}
                                                                         placeholder="Given... When... Then..."
-                                                                        className="flex-1 px-2 py-0.5 text-xs border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                                                        className="flex-1 px-2 py-0.5 text-xs border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
                                                                     />
                                                                     {req.acceptanceCriteria.length > 1 && (
-                                                                        <button
+                                                                        <Button variant="ghost" size="sm"
                                                                             onClick={() => {
                                                                                 const next = req.acceptanceCriteria.filter(
                                                                                     (_, i) => i !== acIdx
@@ -450,50 +454,50 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                                                             className="p-0.5 text-text-secondary hover:text-error-color transition-colors"
                                                                         >
                                                                             <Remove className="w-3 h-3" />
-                                                                        </button>
+                                                                        </Button>
                                                                     )}
                                                                 </div>
                                                             ))}
-                                                            <button
+                                                            <Button variant="ghost" size="sm"
                                                                 onClick={() => {
                                                                     updateRequirement(epic.id, cap.id, req.id, {
                                                                         acceptanceCriteria: [...req.acceptanceCriteria, ''],
                                                                     });
                                                                 }}
-                                                                className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors"
+                                                                className="flex items-center gap-1 text-xs text-info-color hover:text-info-color transition-colors"
                                                             >
                                                                 <Add className="w-3 h-3" /> Add criterion
-                                                            </button>
+                                                            </Button>
                                                         </div>
                                                     </div>
                                                 ))}
-                                                <button
+                                                <Button variant="ghost" size="sm"
                                                     onClick={() => addRequirement(epic.id, cap.id)}
-                                                    className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors"
+                                                    className="flex items-center gap-1 text-xs text-info-color hover:text-info-color transition-colors"
                                                 >
                                                     <Add className="w-3 h-3" /> Add requirement
-                                                </button>
+                                                </Button>
                                             </div>
                                         )}
                                     </div>
                                 ))}
-                                <button
+                                <Button variant="ghost" size="sm"
                                     onClick={() => addCapability(epic.id)}
-                                    className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors"
+                                    className="flex items-center gap-1 text-xs text-info-color hover:text-info-color transition-colors"
                                 >
                                     <Add className="w-4 h-4" /> Add capability
-                                </button>
+                                </Button>
                             </div>
                         )}
                     </div>
                 ))}
 
-                <button
+                <Button variant="ghost" size="sm"
                     onClick={addEpic}
-                    className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-divider rounded-lg text-text-secondary hover:text-primary-600 hover:border-primary-300 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-divider rounded-lg text-text-secondary hover:text-info-color hover:border-info-border transition-colors"
                 >
                     <Add className="w-5 h-5" /> Add Epic
-                </button>
+                </Button>
             </div>
         </div>
     );

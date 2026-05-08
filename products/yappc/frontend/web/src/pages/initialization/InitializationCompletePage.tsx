@@ -44,6 +44,11 @@ interface InitializationStats {
   pipelinesCreated: number;
 }
 
+const NativeButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>((props, ref) =>
+  React.createElement('button', { ...props, ref }),
+);
+NativeButton.displayName = 'NativeButton';
+
 // ============================================================================
 // Static Data
 // ============================================================================
@@ -498,7 +503,7 @@ const NextStepsList: React.FC<NextStepsListProps> = ({ steps, projectId }) => {
               <h3 className="step-title">{step.title}</h3>
               <p className="step-description">{step.description}</p>
             </div>
-            <button
+            <NativeButton
               type="button"
               className={`step-action ${step.primary ? 'step-action--primary' : ''}`}
               onClick={() => handleStepClick(step)}
@@ -514,7 +519,7 @@ const NextStepsList: React.FC<NextStepsListProps> = ({ steps, projectId }) => {
               >
                 <polyline points="9,18 15,12 9,6" />
               </svg>
-            </button>
+            </NativeButton>
           </div>
         ))}
       </div>
@@ -646,13 +651,13 @@ const CredentialsCard: React.FC<CredentialsCardProps> = ({ projectId }) => {
     <div className="credentials-card">
       <div className="credentials-header">
         <h3 className="credentials-title">Generated Credentials</h3>
-        <button
+        <NativeButton
           type="button"
           className="toggle-visibility"
           onClick={() => setShowSecrets(!showSecrets)}
         >
           {showSecrets ? 'Hide' : 'Show'}
-        </button>
+        </NativeButton>
       </div>
 
       <div className="credentials-list">
@@ -662,14 +667,14 @@ const CredentialsCard: React.FC<CredentialsCardProps> = ({ projectId }) => {
             <code className="credential-value">
               {showSecrets ? cred.value : '••••••••••••••••••••'}
             </code>
-            <button
+            <NativeButton
               type="button"
               className="copy-btn"
               onClick={() => handleCopy(cred.key, cred.value)}
               title="Copy to clipboard"
             >
               {copied === cred.key ? '✓' : '📋'}
-            </button>
+            </NativeButton>
           </div>
         ))}
       </div>
@@ -833,7 +838,7 @@ export const InitializationCompletePage: React.FC = () => {
           </span>
         </div>
 
-        <button
+        <NativeButton
           type="button"
           className="btn btn-primary"
           onClick={handleViewDashboard}
@@ -849,7 +854,7 @@ export const InitializationCompletePage: React.FC = () => {
           >
             <polyline points="9,18 15,12 9,6" />
           </svg>
-        </button>
+        </NativeButton>
       </footer>
 
       {/* CSS-in-JS Styles */}

@@ -14,6 +14,7 @@ import { Bot, User, Send, Loader2, Sparkles } from 'lucide-react';
 import React, { useRef, useEffect } from 'react';
 
 import { Button } from '@ghatana/design-system';
+import { Textarea } from '../ui/Textarea';
 
 // =============================================================================
 // Types
@@ -195,7 +196,7 @@ export const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
       {/* Input */}
       <div className="flex-shrink-0 p-3 border-t border-border">
         <div className="flex items-end gap-2 bg-surface rounded-xl px-3 py-2 border border-border focus-within:border-violet-500 transition-colors">
-          <textarea
+          <Textarea
             ref={textareaRef}
             rows={1}
             value={input}
@@ -203,6 +204,7 @@ export const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
             onKeyDown={handleKeyDown}
             placeholder="Ask the assistant… (Shift+Enter for new line)"
             className="flex-1 bg-transparent text-sm text-fg placeholder-fg-muted focus:outline-none resize-none min-h-[24px] max-h-[120px] leading-6"
+            resize="none"
           />
           <Button
             onClick={handleSend}

@@ -38,7 +38,9 @@ interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'siz
     /** Select state */
     state?: SelectState;
     /** Options array */
-    options: SelectOption[];
+    options?: SelectOption[];
+    /** Inline option children for legacy callers being migrated to the primitive */
+    children?: React.ReactNode;
     /** Placeholder option */
     placeholder?: string;
     /** Required indicator */
@@ -67,6 +69,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(({
     className = '',
     disabled = false,
     value,
+    children,
     ...props
 }, ref) => {
     // Determine select state based on props
@@ -161,7 +164,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(({
                     </option>
                 )}
 
-                {options.map((option) => (
+                {children ?? options?.map((option) => (
                     <option
                         key={option.value}
                         value={option.value}

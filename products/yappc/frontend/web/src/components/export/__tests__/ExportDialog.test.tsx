@@ -34,18 +34,19 @@ function makeArtifact(overrides: Partial<ExportArtifact> = {}): ExportArtifact {
 function renderDialog(overrides: Partial<React.ComponentProps<typeof ExportDialog>> = {}) {
   const onClose = vi.fn();
   const onCreateExport = vi.fn();
+  const props = {
+    projectId: 'proj-1',
+    projectName: 'My Project',
+    onClose,
+    onCreateExport,
+    ...overrides,
+  };
 
   const utils = render(
-    <ExportDialog
-      projectId="proj-1"
-      projectName="My Project"
-      onClose={onClose}
-      onCreateExport={onCreateExport}
-      {...overrides}
-    />
+    <ExportDialog {...props} />
   );
 
-  return { ...utils, onClose, onCreateExport };
+  return { ...utils, onClose: props.onClose, onCreateExport: props.onCreateExport };
 }
 
 // ---------------------------------------------------------------------------
@@ -152,7 +153,7 @@ describe('ExportDialog', () => {
     ];
     renderDialog({ pastExports: past });
     expect(screen.getByText('Previous Exports')).toBeInTheDocument();
-    expect(screen.getByText('JSON')).toBeInTheDocument();
+    expect(screen.getAllByText('JSON').length).toBeGreaterThan(0);
   });
 
   it('toggles content inclusions with aria-pressed', () => {

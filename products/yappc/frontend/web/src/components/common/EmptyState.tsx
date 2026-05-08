@@ -11,6 +11,7 @@
  */
 
 import React from 'react';
+import { Button } from '../ui/Button';
 
 interface EmptyStateProps {
   icon?: React.ReactNode;
@@ -102,12 +103,12 @@ export function NoProjectsEmptyState({ onCreateProject }: { onCreateProject?: ()
       description="Create your first project to get started building with AI."
       action={
         onCreateProject && (
-          <button
+          <Button
             onClick={onCreateProject}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
           >
             Create Project
-          </button>
+          </Button>
         )
       }
     />
@@ -126,12 +127,12 @@ export function NoTasksEmptyState({ onCreateTask }: { onCreateTask?: () => void 
       description="All caught up! Create a new task or let AI suggest what to work on next."
       action={
         onCreateTask && (
-          <button
+          <Button
             onClick={onCreateTask}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
           >
             Create Task
-          </button>
+          </Button>
         )
       }
     />
@@ -150,12 +151,13 @@ export function NoSearchResultsEmptyState({ query, onClear }: { query: string; o
       description={`We couldn't find anything matching "${query}". Try a different search term.`}
       action={
         onClear && (
-          <button
+          <Button
+            variant="outline"
             onClick={onClear}
             className="px-4 py-2 border border-divider text-text-primary rounded-lg font-medium hover:bg-grey-50 dark:hover:bg-grey-800 transition-colors"
           >
             Clear Search
-          </button>
+          </Button>
         )
       }
     />
@@ -189,12 +191,12 @@ export function NoCanvasElementsEmptyState({ onAddComponent }: { onAddComponent?
       description="Start building by adding components from the palette or describing what you want to create."
       action={
         onAddComponent && (
-          <button
+          <Button
             onClick={onAddComponent}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
           >
             Add Component
-          </button>
+          </Button>
         )
       }
     />
@@ -221,12 +223,12 @@ export function ErrorEmptyState({
       description={message || 'An unexpected error occurred. Please try again.'}
       action={
         onRetry && (
-          <button
+          <Button
             onClick={onRetry}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
           >
             Try Again
-          </button>
+          </Button>
         )
       }
     />

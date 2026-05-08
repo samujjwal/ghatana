@@ -11,6 +11,8 @@
 import React, { useState } from 'react';
 import { useParams, NavLink } from 'react-router';
 import { FilePlus, ArrowLeft, Save, FileText, BookOpen, Wrench } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
 
@@ -48,12 +50,13 @@ const ArticleNewPage: React.FC = () => {
         <div className="space-y-6">
           <div>
             <label className="block text-sm text-fg-muted mb-2">Title</label>
-            <input
+            <Input
               type="text"
               placeholder="Article title..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg bg-surface border border-border text-white placeholder-zinc-500 focus:border-violet-500 focus:outline-none"
+              fullWidth
+              className="px-4 py-3 rounded-lg bg-surface border border-border text-white placeholder-zinc-500 focus:border-violet-500"
             />
           </div>
 
@@ -61,27 +64,30 @@ const ArticleNewPage: React.FC = () => {
             <label className="block text-sm text-fg-muted mb-3">Template</label>
             <div className="grid grid-cols-3 gap-3">
               {templates.map((t) => (
-                <button
+                <Button
                   key={t.id}
+                  variant="ghost"
+                  fullWidth
                   onClick={() => setSelectedTemplate(t.id)}
+                  aria-pressed={selectedTemplate === t.id}
                   className={cn(
-                    'p-4 rounded-xl border text-left transition-colors',
+                    'h-full justify-start p-4 rounded-xl border text-left transition-colors [&>span]:block',
                     selectedTemplate === t.id
                       ? 'border-violet-500 bg-violet-500/10'
                       : 'border-border bg-surface hover:border-border'
                   )}
                 >
                   <t.icon className="w-5 h-5 mb-2 text-fg-muted" />
-                  <div className="font-medium text-sm">{t.label}</div>
-                  <div className="text-xs text-fg-muted mt-1">{t.description}</div>
-                </button>
+                  <span className="block font-medium text-sm">{t.label}</span>
+                  <span className="block text-xs text-fg-muted mt-1">{t.description}</span>
+                </Button>
               ))}
             </div>
           </div>
 
-          <button className="flex items-center gap-2 px-6 py-3 rounded-lg bg-violet-600 hover:bg-violet-500 transition-colors text-sm font-medium">
-            <Save className="w-4 h-4" /> Create Article
-          </button>
+          <Button startIcon={<Save className="w-4 h-4" />} className="px-6 py-3 rounded-lg bg-violet-600 hover:bg-violet-500">
+            Create Article
+          </Button>
         </div>
       </div>
     </div>

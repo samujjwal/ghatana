@@ -257,7 +257,7 @@ function AlertNodeComponent({ data, selected }: AlertNodeProps) {
         'min-w-[260px] max-w-[300px] rounded-lg border-2 bg-white shadow-md transition-all',
         isFiring ? severityConfig.borderColor : 'border-border',
         isFiring && 'animate-pulse',
-        selected && 'ring-2 ring-primary ring-offset-2'
+        selected && 'ring-2 ring-info-border ring-offset-2'
       )}
     >
       {/* Connection Handles */}

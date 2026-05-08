@@ -13,6 +13,8 @@
 import { Sparkles as AutoAwesome, Check, Pencil as Edit, X as Close, Code, HardDrive as Storage, Timer, TrendingUp, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
 import type { AIResponse } from '../../hooks/useAICommand';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 
 // ============================================================================
 // Types
@@ -89,12 +91,13 @@ export function AIResponseCard({
                 <div className="flex items-center gap-2 flex-1">
                     <AutoAwesome className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                     {isEditing ? (
-                        <input
+                        <Input
                             type="text"
                             value={editedName}
                             onChange={(e) => setEditedName(e.target.value)}
                             className="flex-1 px-3 py-1 text-sm font-semibold bg-white dark:bg-grey-800 border border-divider rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
                             placeholder="Project name"
+                            fullWidth
                         />
                     ) : (
                         <span className="font-semibold text-text-primary">{summary}</span>
@@ -105,14 +108,16 @@ export function AIResponseCard({
                         {Math.round(confidence * 100)}% confident
                     </span>
                     {!isEditing && type === 'create' && onUpdate && (
-                        <button
+                        <Button
                             type="button"
                             onClick={() => setIsEditing(true)}
-                            className="p-1 hover:bg-primary-100 dark:hover:bg-primary-800 rounded transition-colors"
+                            className="p-1 min-h-0 hover:bg-primary-100 dark:hover:bg-primary-800 rounded transition-colors"
+                            variant="ghost"
+                            size="sm"
                             title="Edit details"
                         >
                             <Edit className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>
@@ -148,34 +153,39 @@ export function AIResponseCard({
                                         >
                                             {feature}
                                             {isEditing && (
-                                                <button
+                                                <Button
                                                     type="button"
                                                     onClick={() => handleRemoveFeature(index)}
-                                                    className="hover:text-error-color"
+                                                    className="p-0 min-h-0 hover:text-error-color"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    aria-label={`Remove feature: ${feature}`}
                                                 >
                                                     <Close className="w-3 h-3" />
-                                                </button>
+                                                </Button>
                                             )}
                                         </span>
                                     ))}
                                 </div>
                                 {isEditing && (
                                     <div className="pl-6 flex gap-2">
-                                        <input
+                                        <Input
                                             type="text"
                                             value={newFeature}
                                             onChange={(e) => setNewFeature(e.target.value)}
                                             onKeyPress={(e) => e.key === 'Enter' && handleAddFeature()}
                                             className="flex-1 px-3 py-1 text-sm bg-white dark:bg-grey-800 border border-divider rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
                                             placeholder="Add a feature..."
+                                            fullWidth
                                         />
-                                        <button
+                                        <Button
                                             type="button"
                                             onClick={handleAddFeature}
                                             className="px-3 py-1 text-sm font-medium bg-primary-600 text-white rounded hover:bg-primary-700"
+                                            size="sm"
                                         >
                                             Add
-                                        </button>
+                                        </Button>
                                     </div>
                                 )}
                             </div>
@@ -234,7 +244,7 @@ export function AIResponseCard({
             <div className="px-5 py-4 bg-grey-50 dark:bg-grey-900/50 flex items-center justify-end gap-3">
                 {isEditing ? (
                     <>
-                        <button
+                        <Button
                             type="button"
                             onClick={() => {
                                 setIsEditing(false);
@@ -243,43 +253,46 @@ export function AIResponseCard({
                                 setNewFeature('');
                             }}
                             className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
+                            variant="ghost"
                         >
                             Cancel
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="button"
                             onClick={handleSaveEdits}
                             className="px-5 py-2 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
                         >
                             <Check className="w-4 h-4" />
                             Save Changes
-                        </button>
+                        </Button>
                     </>
                 ) : (
                     <>
-                        <button
+                        <Button
                             type="button"
                             onClick={onReject}
                             disabled={isConfirming}
                             className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
+                            variant="ghost"
                         >
                             <Close className="w-4 h-4 mr-1 inline" />
                             Cancel
-                        </button>
+                        </Button>
 
                         {onCustomize && type === 'create' && (
-                            <button
+                            <Button
                                 type="button"
                                 onClick={onCustomize}
                                 disabled={isConfirming}
                                 className="px-4 py-2 text-sm font-medium text-text-primary border border-divider rounded-lg hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors disabled:opacity-50"
+                                variant="outline"
                             >
                                 <Edit className="w-4 h-4 mr-1 inline" />
                                 Customize
-                            </button>
+                            </Button>
                         )}
 
-                        <button
+                        <Button
                             type="button"
                             onClick={onConfirm}
                             disabled={isConfirming}
@@ -296,7 +309,7 @@ export function AIResponseCard({
                                     {type === 'create' ? 'Create Project' : 'Confirm'}
                                 </>
                             )}
-                        </button>
+                        </Button>
                     </>
                 )}
             </div>

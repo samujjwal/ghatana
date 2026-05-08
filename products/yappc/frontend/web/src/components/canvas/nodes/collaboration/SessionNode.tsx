@@ -34,6 +34,7 @@ import {
   Circle,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { Button } from '../../../ui/Button';
 
 type CollaborationSessionType =
   | 'PAIR_PROGRAMMING'
@@ -405,13 +406,13 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
                   <RoleIcon className={cn('w-4 h-4', roleColors[participant.role])} />
                 </span>
                 {isHost && participant.userId !== currentUserId && onKick && (
-                  <button
+                  <Button variant="ghost" size="sm"
                     onClick={() => onKick(participant.userId)}
                     className="p-1 rounded hover:bg-muted text-fg-muted hover:text-destructive transition-colors"
                     title="Remove from session"
                   >
                     <UserMinus className="w-3 h-3" />
-                  </button>
+                  </Button>
                 )}
               </div>
             );
@@ -465,59 +466,59 @@ function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
         <div className="flex flex-wrap items-center gap-2">
           {/* Join/Leave */}
           {canJoin && onJoin && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onJoin}
               className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-success-color text-white rounded-lg hover:opacity-90 transition-colors text-sm font-medium"
             >
               <LogIn className="w-4 h-4" />
               Join Session
-            </button>
+            </Button>
           )}
           {canLeave && onLeave && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onLeave}
               className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-muted text-fg rounded-lg hover:opacity-90 transition-colors text-sm font-medium"
             >
               <LogOut className="w-4 h-4" />
               Leave
-            </button>
+            </Button>
           )}
 
           {/* Host Controls */}
           {isHost && (
             <>
               {session.status === 'SCHEDULED' && onStart && (
-                <button
+                <Button variant="ghost" size="sm"
                   onClick={onStart}
                   className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-success-color text-white rounded-lg hover:opacity-90 transition-colors text-sm font-medium"
                 >
                   <Play className="w-4 h-4" />
                   Start
-                </button>
+                </Button>
               )}
               {isActive && onPause && (
-                <button
+                <Button variant="ghost" size="sm"
                   onClick={onPause}
                   className="flex items-center justify-center gap-2 px-3 py-2 bg-warning-bg text-warning-color rounded-lg hover:opacity-90 transition-colors text-sm font-medium"
                 >
                   <Pause className="w-4 h-4" />
-                </button>
+                </Button>
               )}
               {isPaused && onStart && (
-                <button
+                <Button variant="ghost" size="sm"
                   onClick={onStart}
                   className="flex items-center justify-center gap-2 px-3 py-2 bg-success-bg text-success-color rounded-lg hover:opacity-90 transition-colors text-sm font-medium"
                 >
                   <Play className="w-4 h-4" />
-                </button>
+                </Button>
               )}
               {(isActive || isPaused) && onEnd && (
-                <button
+                <Button variant="ghost" size="sm"
                   onClick={onEnd}
                   className="flex items-center justify-center gap-2 px-3 py-2 bg-destructive-bg text-destructive rounded-lg hover:opacity-90 transition-colors text-sm font-medium"
                 >
                   <Square className="w-4 h-4" />
-                </button>
+                </Button>
               )}
             </>
           )}

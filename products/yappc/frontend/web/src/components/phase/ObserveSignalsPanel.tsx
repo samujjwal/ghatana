@@ -260,14 +260,16 @@ export const ObserveSignalsPanel: React.FC<ObserveSignalsPanelProps> = ({
             )}
           </h4>
           {resolvedIncidents.length > 0 && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               className="text-xs text-fg-muted hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onClick={toggleResolved}
               aria-pressed={showResolved}
             >
               {showResolved ? 'Hide resolved' : `Show ${resolvedIncidents.length} resolved`}
-            </button>
+            </Button>
           )}
         </div>
 

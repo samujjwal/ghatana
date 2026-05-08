@@ -60,10 +60,10 @@ const DiagramNodeInner = ({ data, selected }: NodeProps<DiagramCanvasNode>) => {
                         <MermaidDiagram content={content} />
                     </CanvasErrorBoundary>
                 </CanvasContentWrapper>
-                <Handle type="target" position={Position.Top} className="w-3 h-3" style={{ background: 'var(--color-primary, #1976d2)' }} />
-                <Handle type="source" position={Position.Bottom} className="w-3 h-3" style={{ background: 'var(--color-primary, #1976d2)' }} />
-                <Handle type="target" position={Position.Left} id="left" className="w-3 h-3" style={{ background: 'var(--color-primary, #1976d2)' }} />
-                <Handle type="source" position={Position.Right} id="right" className="w-3 h-3" style={{ background: 'var(--color-primary, #1976d2)' }} />
+                <Handle type="target" position={Position.Top} className="w-3 h-3" style={{ background: 'var(--info-color, #1976d2)' }} />
+                <Handle type="source" position={Position.Bottom} className="w-3 h-3" style={{ background: 'var(--info-color, #1976d2)' }} />
+                <Handle type="target" position={Position.Left} id="left" className="w-3 h-3" style={{ background: 'var(--info-color, #1976d2)' }} />
+                <Handle type="source" position={Position.Right} id="right" className="w-3 h-3" style={{ background: 'var(--info-color, #1976d2)' }} />
             </div>
         </>
     );

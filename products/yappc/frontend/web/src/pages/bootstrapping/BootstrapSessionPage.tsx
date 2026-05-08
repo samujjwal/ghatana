@@ -40,6 +40,11 @@ import { ROUTES } from '../../router/paths';
 
 type ViewMode = 'split' | 'chat' | 'canvas' | 'validation';
 
+const NativeButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>((props, ref) =>
+  React.createElement('button', { ...props, ref }),
+);
+NativeButton.displayName = 'NativeButton';
+
 interface SessionState {
   phase: 'gathering' | 'designing' | 'validating' | 'ready';
   progress: number;
@@ -208,7 +213,7 @@ const BootstrapSessionPage: React.FC = () => {
             { id: 'canvas', icon: <MessageSquare className="w-4 h-4" />, label: 'Canvas' },
             { id: 'validation', icon: <CheckCircle2 className="w-4 h-4" />, label: 'Validation' },
           ].map((view) => (
-            <button
+            <NativeButton
               key={view.id}
               onClick={() => setViewMode(view.id as ViewMode)}
               className={cn(
@@ -221,34 +226,34 @@ const BootstrapSessionPage: React.FC = () => {
             >
               {view.icon}
               <span className="hidden md:inline">{view.label}</span>
-            </button>
+            </NativeButton>
           ))}
         </div>
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
-          <button
+          <NativeButton
             onClick={handleExport}
             className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-white transition-colors"
             title="Export Configuration"
           >
             <Download className="w-4 h-4" />
-          </button>
-          <button
+          </NativeButton>
+          <NativeButton
             className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-white transition-colors"
             title="Share"
           >
             <Share2 className="w-4 h-4" />
-          </button>
-          <button
+          </NativeButton>
+          <NativeButton
             className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-white transition-colors"
             title="Reset Session"
           >
             <RotateCcw className="w-4 h-4" />
-          </button>
+          </NativeButton>
 
           {sessionState.phase === 'ready' && (
-            <button
+            <NativeButton
               onClick={handleProceedToSetup}
               className={cn(
                 'flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm',
@@ -257,7 +262,7 @@ const BootstrapSessionPage: React.FC = () => {
             >
               Proceed to Setup
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </NativeButton>
           )}
         </div>
       </div>

@@ -45,9 +45,69 @@ describe('artifactCompilerBridge', () => {
     expect(artifacts[0]?.roundTripFidelity?.confidence).toBe(0.8);
     expect(artifacts[0]?.artifactGraph?.provenance.residualIslandIds).toEqual(['island-1', 'island-2']);
     expect(artifacts[0]?.artifactGraph?.edges[0]).toMatchObject({
-      kind: 'residual-of',
-      to: 'page-1:page',
+      kind: 'part-of',
+      from: 'page-1:page',
+      to: 'model-2:product',
     });
+    expect(artifacts[0]?.artifactGraph?.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'residual-of',
+          to: 'page-1:page',
+        }),
+      ]),
+    );
+  });
+
+  it('persists multi-page semantic imports into one shared product graph', () => {
+    const artifacts = compileSemanticModelToPageArtifacts(
+      {
+        id: 'commerce-app',
+        name: 'Commerce App',
+        pages: [
+          { id: 'home-page', name: 'Home' },
+          { id: 'checkout-page', name: 'Checkout' },
+        ],
+      },
+      'tester',
+    );
+
+    expect(artifacts).toHaveLength(2);
+    expect(artifacts[0]?.artifactGraph?.graphId).toBe('commerce-app:graph');
+    expect(artifacts[1]?.artifactGraph?.graphId).toBe('commerce-app:graph');
+    expect(artifacts[0]?.artifactGraph?.nodes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'commerce-app:product',
+          kind: 'product',
+          metadata: expect.objectContaining({ pageCount: 2 }),
+        }),
+        expect.objectContaining({
+          id: 'home-page:page',
+          kind: 'page',
+          metadata: expect.objectContaining({ currentArtifact: true, pageIndex: 0 }),
+        }),
+        expect.objectContaining({
+          id: 'checkout-page:page',
+          kind: 'page',
+          metadata: expect.objectContaining({ peerPage: true, pageIndex: 1 }),
+        }),
+      ]),
+    );
+    expect(artifacts[1]?.artifactGraph?.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'part-of',
+          from: 'checkout-page:page',
+          to: 'commerce-app:product',
+        }),
+        expect.objectContaining({
+          kind: 'part-of',
+          from: 'home-page:page',
+          to: 'commerce-app:product',
+        }),
+      ]),
+    );
   });
 
   it('imports artifacts from serialized semantic model text', () => {

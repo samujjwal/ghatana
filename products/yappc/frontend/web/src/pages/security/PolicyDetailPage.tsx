@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { Button } from '../../components/ui/Button';
 
 interface PolicyRule {
   id: string;
@@ -111,8 +112,8 @@ const PolicyDetailPage: React.FC = () => {
           </div>
         </div>
         <div className="flex gap-3">
-          <button className="px-4 py-2 border border-border text-fg-muted hover:bg-surface text-sm font-medium rounded-lg transition-colors">Disable</button>
-          <button className="px-4 py-2 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors">Edit Policy</button>
+          <Button variant="outline" className="px-4 py-2 border border-border text-fg-muted hover:bg-surface text-sm font-medium rounded-lg transition-colors">Disable</Button>
+          <Button variant="solid" className="px-4 py-2 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors">Edit Policy</Button>
         </div>
       </div>
 
@@ -145,7 +146,7 @@ const PolicyDetailPage: React.FC = () => {
       <div className="bg-surface border border-border rounded-lg">
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
           <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wide">Rules ({rules.length})</h2>
-          <button className="text-xs text-info-color hover:text-info-color transition-colors">+ Add Rule</button>
+          <Button variant="link" size="small" className="text-xs text-info-color hover:text-info-color transition-colors">+ Add Rule</Button>
         </div>
         {rules.length === 0 ? (
           <div className="p-8 text-center text-fg-muted text-sm">No rules defined for this policy.</div>

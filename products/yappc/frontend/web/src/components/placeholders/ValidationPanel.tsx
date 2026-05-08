@@ -12,6 +12,7 @@
 
 import React from 'react';
 import { AlertTriangle, XCircle, CheckCircle2, X, Wrench } from 'lucide-react';
+import { Button } from '../ui/Button';
 
 // =============================================================================
 // Types
@@ -97,23 +98,27 @@ const IssueRow: React.FC<{
       {/* Actions */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
         {onResolve && (
-          <button
+          <Button
             onClick={() => onResolve(issue.id)}
+            variant="ghost"
+            size="small"
             title="Mark as resolved"
             className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors"
           >
             <Wrench className="w-3 h-3" />
             Fix
-          </button>
+          </Button>
         )}
         {onIgnore && (
-          <button
+          <Button
             onClick={() => onIgnore(issue.id)}
+            variant="ghost"
+            size="small"
             title="Ignore this issue"
             className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-surface-muted/60 text-fg-muted border border-border/40 hover:bg-surface-muted transition-colors"
           >
             <X className="w-3 h-3" />
-          </button>
+          </Button>
         )}
       </div>
     </div>

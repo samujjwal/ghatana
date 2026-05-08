@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { Button } from '../ui/Button';
 
 /**
  * Keyboard Shortcuts Manager component.
@@ -357,12 +358,15 @@ export function KeyboardShortcutsHelp({
             <h2 className="text-xl font-bold text-fg dark:text-fg-muted">
               Keyboard Shortcuts
             </h2>
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onClose}
               className="text-fg-muted hover:text-fg dark:hover:text-fg-muted"
+              aria-label="Close keyboard shortcuts"
             >
               ✕
-            </button>
+            </Button>
           </div>
 
           {/* Content */}
@@ -398,14 +402,16 @@ export function KeyboardShortcutsHelp({
           {/* Footer */}
           <div className="px-6 py-3 border-t border-border dark:border-border flex items-center justify-between text-sm text-fg-muted dark:text-fg-muted">
             <span>Press <ShortcutKey keyLabel="Esc" /> to close</span>
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onClose}
               tabIndex={0}
               className="px-3 py-1 bg-surface-muted dark:bg-surface hover:bg-surface-muted dark:hover:bg-surface-muted rounded text-fg dark:text-fg-muted"
               onKeyDown={(e) => { if (e.key === 'Enter') onClose(); }}
             >
               Close
-            </button>
+            </Button>
           </div>
         </div>
       </div>

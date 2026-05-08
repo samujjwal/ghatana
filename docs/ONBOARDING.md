@@ -53,7 +53,10 @@ pnpm test
 
 ## 3. Running a Product Locally
 
-### Example A — AEP (Agentic Event Processor)
+### Example A — Data Cloud Action Plane (AEP runtime)
+
+> AEP is the runtime implementation behind Data Cloud's Action Plane.
+> It is not a standalone product — see `products/data-cloud/planes/action/`.
 
 ```bash
 # Start backing services
@@ -214,7 +217,7 @@ contracts/      ← Protobuf + OpenAPI schemas (no dependencies)
     ↑
 platform/java/  ← Core platform libs (HTTP, DB, Auth, Observability, AI)
     ↑
-products/       ← Business products (aep, data-cloud, dcmaar, virtual-org, ...)
+products/       ← Business products (data-cloud, dcmaar, virtual-org, ...) [AEP is the Action Plane inside data-cloud, not a separate product]
 ```
 
 **Dependency rule:** products depend on libs and contracts. Libs depend on contracts only. Cross-product dependencies are **forbidden**.

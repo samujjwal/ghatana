@@ -32,6 +32,7 @@ import { ThemeToggleButton } from '../../theme';
 import { useWorkspaceContext } from '../../hooks/useWorkspaceData';
 import { currentUserAtom } from '../../stores/user.store';
 import { unreadNotificationsCountAtom } from '../../state/atoms';
+import { Button } from '../ui/Button';
 
 interface UnifiedHeaderBarProps {
     /** Current project ID (for project-specific context) */
@@ -201,7 +202,9 @@ export function UnifiedHeaderBar({
                 <div className="h-6 w-px bg-divider" />
 
                 {/* Notifications */}
-                <button
+                <Button
+                    variant="ghost"
+                    size="sm"
                     className="p-2 rounded-md text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 relative"
                     aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
                     title={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
@@ -215,19 +218,21 @@ export function UnifiedHeaderBar({
                             {unreadCount > 9 ? '9+' : unreadCount}
                         </span>
                     )}
-                </button>
+                </Button>
 
                 {/* Theme Toggle */}
                 <ThemeToggleButton />
 
                 {/* User Avatar */}
-                <button
+                <Button
+                    variant="ghost"
+                    size="sm"
                     className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-sm font-medium text-primary-700 dark:text-primary-300 hover:ring-2 hover:ring-primary-500 transition-all focus:outline-none focus:ring-2 focus:ring-primary-500"
                     aria-label={currentUser ? `User menu (${currentUser.name})` : 'User menu'}
                     title={currentUser?.name ?? 'User menu'}
                 >
                     {userInitials}
-                </button>
+                </Button>
             </div>
         </header>
     );

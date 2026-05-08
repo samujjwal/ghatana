@@ -1,7 +1,15 @@
+# DEPRECATED — superseded by contracts/openapi/action-plane.yaml.
+# This file is retained for historical reference only and will be removed in a
+# future cleanup sprint.  Do not add new endpoints here.
+# See action-plane.yaml for the current Data Cloud Action Plane API contract.
 openapi: 3.0.3
 info:
-  title: Ghatana AEP (Agentic Event Processor) API
+  title: Ghatana AEP (Agentic Event Processor) API [DEPRECATED]
   description: |
+    **DEPRECATED** — This specification has been replaced by `action-plane.yaml`.
+    See `contracts/openapi/action-plane.yaml` for the canonical Data Cloud Action
+    Plane API contract.
+
     REST API for the Agentic Event Processor (AEP).
 
     AEP provides an agentic orchestration runtime for event-driven execution,

@@ -38,6 +38,9 @@ import {
   type PortalLink,
 } from '../../../lib/canvas-legacy/navigation/pageManager';
 import React from 'react';
+
+const TestButton = (props: React.ButtonHTMLAttributes<HTMLButtonElement>): React.ReactElement =>
+  React.createElement('button', props);
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Helper functions to work with dynamically generated page IDs
@@ -224,37 +227,37 @@ function PageNavigator({
       </div>
 
       <div data-testid="controls">
-        <button data-testid="create-page-btn" onClick={handleCreatePage}>
+        <TestButton data-testid="create-page-btn" onClick={handleCreatePage}>
           Create Page
-        </button>
-        <button
+        </TestButton>
+        <TestButton
           data-testid="next-page-btn"
           onClick={handleNextPage}
           disabled={!activePage}
         >
           Next Page
-        </button>
-        <button
+        </TestButton>
+        <TestButton
           data-testid="prev-page-btn"
           onClick={handlePreviousPage}
           disabled={!activePage}
         >
           Previous Page
-        </button>
-        <button
+        </TestButton>
+        <TestButton
           data-testid="back-btn"
           onClick={handleGoBack}
           disabled={!canNavigateBack}
         >
           Back
-        </button>
-        <button
+        </TestButton>
+        <TestButton
           data-testid="forward-btn"
           onClick={handleGoForward}
           disabled={!canNavigateForward}
         >
           Forward
-        </button>
+        </TestButton>
       </div>
 
       <div data-testid="page-list">
@@ -268,30 +271,30 @@ function PageNavigator({
               data-active={page.active}
             >
               <span>{page.name}</span>
-              <button
+              <TestButton
                 data-testid={`activate-${page.id}`}
                 onClick={() => handleSetActivePage(page.id)}
               >
                 Activate
-              </button>
-              <button
+              </TestButton>
+              <TestButton
                 data-testid={`duplicate-${page.id}`}
                 onClick={() => handleDuplicatePage(page.id)}
               >
                 Duplicate
-              </button>
-              <button
+              </TestButton>
+              <TestButton
                 data-testid={`delete-${page.id}`}
                 onClick={() => handleDeletePage(page.id)}
               >
                 Delete
-              </button>
-              <button
+              </TestButton>
+              <TestButton
                 data-testid={`create-link-${page.id}`}
                 onClick={() => handleCreateDeepLink('element-1')}
               >
                 Create Deep Link
-              </button>
+              </TestButton>
             </div>
           );
         })}
@@ -300,12 +303,12 @@ function PageNavigator({
       <div data-testid="deep-links-list">
         {Array.from(state.deepLinks.values()).map((link) => (
           <div key={link.id} data-testid={`deep-link-${link.id}`}>
-            <button
+            <TestButton
               data-testid={`navigate-link-${link.id}`}
               onClick={() => handleNavigateToDeepLink(link.id)}
             >
               Navigate to {link.elementId}
-            </button>
+            </TestButton>
           </div>
         ))}
       </div>

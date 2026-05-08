@@ -24,6 +24,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { Button } from '../ui/Button';
 
 /**
  * Alert severity level
@@ -220,26 +221,29 @@ export const ThrottleAlertBanner: React.FC<ThrottleAlertBannerProps> = ({
           {/* Actions */}
           <div className="flex flex-wrap gap-2 mt-3">
             {onUpgrade && status && status.tier.toLowerCase() !== 'enterprise' && (
-              <button
+              <Button
                 onClick={onUpgrade}
                 className={`px-4 py-2 ${colors.button} text-white text-sm font-medium rounded transition-colors`}
               >
                 Upgrade Plan
-              </button>
+              </Button>
             )}
             {onViewDetails && (
-              <button
+              <Button
+                variant="outline"
                 onClick={onViewDetails}
                 className={`px-4 py-2 border ${colors.border} ${colors.text} text-sm font-medium rounded hover:bg-white hover:bg-opacity-50 transition-colors`}
               >
                 View Details
-              </button>
+              </Button>
             )}
           </div>
         </div>
 
         {/* Dismiss button */}
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={handleDismiss}
           className={`${colors.text} opacity-60 hover:opacity-100 ml-3 flex-shrink-0`}
           aria-label="Dismiss alert"
@@ -255,7 +259,7 @@ export const ThrottleAlertBanner: React.FC<ThrottleAlertBannerProps> = ({
               clipRule="evenodd"
             />
           </svg>
-        </button>
+        </Button>
       </div>
 
       {/* Progress indicator (for warnings only) */}
@@ -278,4 +282,3 @@ export const ThrottleAlertBanner: React.FC<ThrottleAlertBannerProps> = ({
 };
 
 export default ThrottleAlertBanner;
-

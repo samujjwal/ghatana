@@ -38,6 +38,7 @@
  * @doc.pattern ContentNode
  */
 
+import { Input } from '../../ui/Input';
 import React, { useState, useCallback, useRef } from 'react';
 import { type Node, type NodeProps } from '@xyflow/react';
 import { NodeResizer } from '@xyflow/react';
@@ -139,7 +140,7 @@ export function GroupNode({ data, selected }: NodeProps<GroupCanvasNode>) {
                     onDoubleClick={handleLabelDoubleClick}
                 >
                     {isEditing ? (
-                        <input
+                        <Input
                             ref={inputRef}
                             className="nodrag nopan text-xs font-semibold bg-transparent border-b border-info-border outline-none text-fg dark:text-fg-muted min-w-[60px]"
                             value={label}

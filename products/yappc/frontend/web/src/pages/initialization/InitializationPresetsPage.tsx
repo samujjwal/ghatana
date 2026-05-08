@@ -11,6 +11,8 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 
 type PresetCategory =
   | 'frontend'
@@ -51,6 +53,14 @@ interface PresetCardProps {
   showDetails?: boolean;
 }
 
+interface NativeButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children: React.ReactNode;
+}
+
+function NativeButton({ children, type = 'button', ...props }: NativeButtonProps): React.ReactElement {
+  return React.createElement('button', { ...props, type }, children);
+}
+
 function PresetCard({
   preset,
   isSelected = false,
@@ -58,7 +68,7 @@ function PresetCard({
   showDetails = false,
 }: PresetCardProps): React.ReactElement {
   return (
-    <button
+    <NativeButton
       type="button"
       className={`preset-card ${isSelected ? 'preset-card--selected' : ''}`}
       onClick={onSelect}
@@ -96,7 +106,7 @@ function PresetCard({
           ))}
         </ul>
       ) : null}
-    </button>
+    </NativeButton>
   );
 }
 
@@ -426,29 +436,33 @@ export const InitializationPresetsPage: React.FC = () => {
             everything from scratch.
           </p>
         </div>
-        <button
+        <Button
           type="button"
+          variant="outline"
           className="btn btn-secondary skip-btn"
           onClick={handleCustom}
         >
           Skip to Custom Configuration →
-        </button>
+        </Button>
       </header>
 
       {/* Filters */}
       <div className="presets-filters">
         <div className="filter-tabs">
           {CATEGORY_FILTERS.map((cat) => (
-            <button
+            <Button
               key={cat.value}
               type="button"
+              variant="ghost"
+              size="sm"
+              aria-pressed={filter.category === cat.value}
               className={`filter-tab ${
                 filter.category === cat.value ? 'filter-tab--active' : ''
               }`}
               onClick={() => setFilter({ ...filter, category: cat.value })}
             >
               {cat.label}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -463,7 +477,7 @@ export const InitializationPresetsPage: React.FC = () => {
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <input
+          <Input
             type="text"
             className="search-input"
             placeholder="Search presets..."
@@ -504,13 +518,13 @@ export const InitializationPresetsPage: React.FC = () => {
           </svg>
           <h3>No presets found</h3>
           <p>Try adjusting your filters or search query</p>
-          <button
+          <Button
             type="button"
             className="btn btn-primary"
             onClick={() => setFilter({ category: 'all', searchQuery: '' })}
           >
             Clear Filters
-          </button>
+          </Button>
         </div>
       )}
 
@@ -526,13 +540,13 @@ export const InitializationPresetsPage: React.FC = () => {
             </p>
           </div>
         </div>
-        <button
+        <Button
           type="button"
           className="btn btn-primary"
           onClick={handleCustom}
         >
           Start Custom Configuration →
-        </button>
+        </Button>
       </div>
 
       {/* CSS-in-JS Styles */}

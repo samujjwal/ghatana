@@ -5,9 +5,9 @@ name: Product-Isolated CI
 # dramatically reducing CI duration for large monorepos.
 #
 # Products covered:
-#   - yappc        → products/yappc/**
-#   - aep          → products/data-cloud/planes/action/**
-#   - data-cloud   → products/data-cloud/**
+#   - yappc              → products/yappc/**
+#   - data-cloud         → products/data-cloud/**
+#   - action-plane       → products/data-cloud/planes/action/** (subset of data-cloud)
 #   - audio-video  → products/audio-video/**
 #   - dcmaar       → products/dcmaar/**
 #
@@ -21,7 +21,7 @@ on:
   workflow_dispatch:
     inputs:
       force_product:
-        description: "Force-build a specific product (yappc|aep|data-cloud|audio-video|dcmaar|all)"
+        description: "Force-build a specific product (yappc|data-cloud|action-plane|audio-video|dcmaar|all)"
         required: false
         default: ""
 
@@ -82,7 +82,7 @@ jobs:
           echo "| Product | Changed |" >> $GITHUB_STEP_SUMMARY
           echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
           echo "| YAPPC       | ${{ steps.filter.outputs.yappc }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| AEP         | ${{ steps.filter.outputs.aep }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Action Plane (Data Cloud) | ${{ steps.filter.outputs.aep }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Data Cloud  | ${{ steps.filter.outputs.data_cloud }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Audio-Video | ${{ steps.filter.outputs.audio_video }} |" >> $GITHUB_STEP_SUMMARY
           echo "| DCMAAR      | ${{ steps.filter.outputs.dcmaar }} |" >> $GITHUB_STEP_SUMMARY
@@ -276,17 +276,21 @@ jobs:
           retention-days: 7
 
 # ─────────────────────────────────────────────────────────────────────────────
-# STEP 4: AEP isolated build
+# STEP 4: Data Cloud Action Plane isolated build
+# The Action Plane is a plane within Data Cloud (not a separate product).
+# This job builds and tests only the action plane modules for fast feedback
+# when only planes/action/** changes without touching the rest of Data Cloud.
 # ─────────────────────────────────────────────────────────────────────────────
-  aep-build:
-    name: AEP Build
+  action-plane-build:
+    name: Data Cloud / Action Plane Build
     needs: [detect-changes, platform-build]
     if: >
       always() &&
       (
         needs.detect-changes.outputs.aep == 'true' ||
         needs.detect-changes.outputs.platform == 'true' ||
-        github.event.inputs.force_product == 'aep' ||
+        github.event.inputs.force_product == 'action-plane' ||
+        github.event.inputs.force_product == 'data-cloud' ||
         github.event.inputs.force_product == 'all'
       ) &&
       !cancelled()
@@ -312,12 +316,12 @@ jobs:
             ~/.gradle/caches
           key: platform-build-${{ github.sha }}
 
-      - name: Build AEP
+      - name: Build Action Plane
         run: |
           ./gradlew :products:data-cloud:planes:action:build \
             --no-daemon --parallel --build-cache --stacktrace
 
-      - name: Test AEP
+      - name: Test Action Plane
         run: ./gradlew :products:data-cloud:planes:action:test --no-daemon
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -375,7 +379,7 @@ jobs:
       - platform-build
       - yappc-backend
       - yappc-frontend
-      - aep-build
+      - action-plane-build
       - data-cloud-build
     if: always()
     runs-on: ubuntu-latest
@@ -386,7 +390,7 @@ jobs:
             "${{ needs.platform-build.result }}"
             "${{ needs.yappc-backend.result }}"
             "${{ needs.yappc-frontend.result }}"
-            "${{ needs.aep-build.result }}"
+            "${{ needs.action-plane-build.result }}"
             "${{ needs.data-cloud-build.result }}"
           )
           for result in "${results[@]}"; do

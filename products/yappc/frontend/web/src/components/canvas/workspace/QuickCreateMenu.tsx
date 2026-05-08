@@ -145,7 +145,7 @@ export const QuickCreateMenu: React.FC<QuickCreateMenuProps> = ({
                                         {isCurrentPhase && (
                                             <Typography
                                                 as="span" className="text-xs text-fg-muted"
-                                                className="px-1 bg-primary text-white rounded-sm text-[0.65rem]"
+                                                className="px-1 bg-info-color text-white rounded-sm text-[0.65rem]"
                                             >
                                                 CURRENT
                                             </Typography>

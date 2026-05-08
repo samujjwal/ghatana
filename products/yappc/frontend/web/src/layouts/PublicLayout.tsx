@@ -12,6 +12,7 @@ import { Menu, X, ChevronDown, GitBranch, Globe } from 'lucide-react';
 
 import { cn } from '../utils/cn';
 import { ROUTES } from '../router/paths';
+import { Button } from '../components/ui/Button';
 
 // =============================================================================
 // Navigation Configuration
@@ -93,7 +94,9 @@ const Header: React.FC = () => {
                       {item.label}
                     </NavLink>
                   ) : (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="small"
                       className={cn(
                         'flex items-center gap-1 px-4 py-2 text-sm transition-colors',
                         activeDropdown === item.label ? 'text-white' : 'text-fg-muted hover:text-white'
@@ -101,7 +104,7 @@ const Header: React.FC = () => {
                     >
                       {item.label}
                       <ChevronDown className="w-4 h-4" />
-                    </button>
+                    </Button>
                   )}
 
                   {/* Dropdown */}
@@ -153,13 +156,15 @@ const Header: React.FC = () => {
             </div>
 
             {/* Mobile Menu Button */}
-            <button
+            <Button
+              variant="ghost"
+              size="small"
               className="md:hidden p-2 text-fg-muted hover:text-white transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+            </Button>
           </div>
         </div>
 

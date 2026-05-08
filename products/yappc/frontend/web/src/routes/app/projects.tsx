@@ -10,6 +10,9 @@
  * @doc.pattern Route Component
  */
 
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -156,14 +159,14 @@ export default function ProjectsRoute() {
                             {filteredProjects.length} project{filteredProjects.length !== 1 ? 's' : ''} in {currentWorkspace?.name || 'workspace'}
                         </p>
                     </div>
-                    <button
+                    <Button variant="ghost" size="sm"
                         onClick={() => setShowCreateDialog(true)}
                         data-testid="create-project-button"
                         className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
                     >
                         <Add className="w-5 h-5" />
                         <span>New Project</span>
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Toolbar */}
@@ -171,7 +174,7 @@ export default function ProjectsRoute() {
                     {/* Search */}
                     <div className="relative flex-1 max-w-md">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary" />
-                        <input
+                        <Input
                             type="text"
                             placeholder="Search projects..."
                             value={searchQuery}
@@ -183,7 +186,7 @@ export default function ProjectsRoute() {
                     {/* Filter Buttons */}
                     <div className="flex items-center gap-1 bg-bg-default rounded-lg p-1 border border-divider">
                         {(['all', 'owned', 'included'] as const).map((f) => (
-                            <button
+                            <Button variant="ghost" size="sm"
                                 key={f}
                                 onClick={() => setFilter(f)}
                                 className={`
@@ -195,14 +198,14 @@ export default function ProjectsRoute() {
                                 `}
                             >
                                 {f === 'all' ? 'All' : f === 'owned' ? '✏️ Mine' : '👁️ Shared'}
-                            </button>
+                            </Button>
                         ))}
                     </div>
 
                     {/* Sort */}
                     <div className="flex items-center gap-2">
                         <FilterList className="w-4 h-4 text-text-secondary" />
-                        <select
+                        <Select
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value as SortBy)}
                             className="text-sm bg-bg-default border border-divider rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
@@ -210,25 +213,25 @@ export default function ProjectsRoute() {
                             <option value="updated">Last Updated</option>
                             <option value="name">Name</option>
                             <option value="phase">Phase</option>
-                        </select>
+                        </Select>
                     </div>
 
                     {/* View Toggle */}
                     <div className="flex items-center gap-1 border border-divider rounded-lg p-0.5">
-                        <button
+                        <Button variant="ghost" size="sm"
                             onClick={() => setViewMode('grid')}
                             className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-grey-100 dark:bg-grey-800' : ''}`}
                             title="Grid view"
                         >
                             <ViewModule className="w-4 h-4 text-text-secondary" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button variant="ghost" size="sm"
                             onClick={() => setViewMode('list')}
                             className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-grey-100 dark:bg-grey-800' : ''}`}
                             title="List view"
                         >
                             <ViewList className="w-4 h-4 text-text-secondary" />
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </header>
@@ -307,13 +310,13 @@ function EmptyState({
                 }
             </p>
             {filter !== 'included' && (
-                <button
+                <Button variant="ghost" size="sm"
                     onClick={onCreateNew}
                     className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
                 >
                     <Add className="w-5 h-5" />
                     <span>Create Project</span>
-                </button>
+                </Button>
             )}
         </div>
     );
@@ -331,7 +334,7 @@ function ProjectGrid({
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {projects.map((project) => (
-                <button
+                <Button variant="ghost" size="sm"
                     key={project.id}
                     onClick={() => onSelect(project.id)}
                     className="text-left p-4 bg-bg-paper border border-divider rounded-xl hover:shadow-md hover:border-primary-200 dark:hover:border-primary-800 transition-all group"
@@ -376,7 +379,7 @@ function ProjectGrid({
                             </span>
                         )}
                     </div>
-                </button>
+                </Button>
             ))}
         </div>
     );

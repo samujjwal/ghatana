@@ -18,6 +18,9 @@ import {
     type Workspace,
 } from '../../state/atoms/workspaceAtom';
 import { useCreateWorkspace, useNameSuggestions } from '../../hooks/useWorkspaceData';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
 
 interface CreateWorkspaceDialogProps {
     isOpen: boolean;
@@ -140,16 +143,18 @@ export function CreateWorkspaceDialog({
                     <h2 id="create-workspace-title" className="text-lg font-semibold text-grey-900 dark:text-grey-100">
                         Create Workspace
                     </h2>
-                    <button
+                    <Button
                         type="button"
                         onClick={onClose}
+                        variant="ghost"
+                        size="small"
                         className="p-1 text-grey-400 hover:text-grey-600 dark:hover:text-grey-300 transition-colors"
                         aria-label="Close"
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Form */}
@@ -163,14 +168,16 @@ export function CreateWorkspaceDialog({
                                     AI Suggestion: <strong>{aiSuggestion}</strong>
                                 </p>
                             </div>
-                            <button
+                            <Button
                                 type="button"
                                 onClick={handleUseSuggestion}
+                                variant="ghost"
+                                size="small"
                                 className="px-3 py-1 text-sm font-medium text-primary-600 dark:text-primary-400 
                   hover:bg-primary-100 dark:hover:bg-primary-900/40 rounded-md transition-colors"
                             >
                                 Use
-                            </button>
+                            </Button>
                         </div>
                     )}
 
@@ -182,7 +189,7 @@ export function CreateWorkspaceDialog({
                         >
                             Name
                         </label>
-                        <input
+                        <Input
                             ref={inputRef}
                             id="workspace-name"
                             type="text"
@@ -212,7 +219,7 @@ export function CreateWorkspaceDialog({
                         >
                             Description <span className="text-grey-400">(optional)</span>
                         </label>
-                        <textarea
+                        <Textarea
                             id="workspace-description"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
@@ -233,13 +240,14 @@ export function CreateWorkspaceDialog({
 
                     {/* Create Default Project Checkbox */}
                     <div className="flex items-start gap-3">
-                        <input
+                        <Input
                             id="create-default-project"
                             type="checkbox"
                             checked={createDefaultProject}
                             onChange={(e) => setCreateDefaultProject(e.target.checked)}
                             className="
                 mt-0.5 w-4 h-4
+                !w-4 !min-h-0 !px-0 !py-0
                 text-primary-600
                 border-grey-300 dark:border-grey-600
                 rounded
@@ -263,9 +271,10 @@ export function CreateWorkspaceDialog({
 
                 {/* Footer */}
                 <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-grey-200 dark:border-grey-800">
-                    <button
+                    <Button
                         type="button"
                         onClick={onClose}
+                        variant="ghost"
                         className="
               px-4 py-2 text-sm font-medium
               text-grey-700 dark:text-grey-300
@@ -274,11 +283,12 @@ export function CreateWorkspaceDialog({
             "
                     >
                         Cancel
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         type="submit"
                         form={formId}
                         disabled={!name.trim() || isCreating}
+                        variant="solid"
                         data-testid="create-workspace-submit"
                         className="
               px-4 py-2 text-sm font-medium
@@ -299,7 +309,7 @@ export function CreateWorkspaceDialog({
                         ) : (
                             'Create Workspace'
                         )}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

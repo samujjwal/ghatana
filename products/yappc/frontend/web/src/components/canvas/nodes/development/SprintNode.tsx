@@ -13,6 +13,7 @@
 import React, { memo, useCallback, useState } from 'react';
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { cn } from '../../utils/cn';
+import { Button } from '../../../ui/Button';
 import {
   Calendar,
   Target,
@@ -97,8 +98,8 @@ const STATUS_CONFIG: Record<SprintStatus, { label: string; icon: typeof Play; co
   active: {
     label: 'Active',
     icon: Play,
-    color: 'text-emerald-600',
-    bgColor: 'bg-emerald-50 border-emerald-200',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg border-success-border',
   },
   completed: {
     label: 'Completed',
@@ -322,7 +323,7 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
 
           {/* Menu */}
           <div className="relative">
-            <button
+            <Button variant="ghost" size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowMenu(!showMenu);
@@ -330,7 +331,7 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
               className="p-1.5 rounded hover:bg-surface-muted text-fg-muted hover:text-fg-muted"
             >
               <MoreHorizontal className="w-4 h-4" />
-            </button>
+            </Button>
 
             {showMenu && (
               <>
@@ -342,38 +343,38 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
                   }}
                 />
                 <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-border py-1 z-20">
-                  <button
+                  <Button variant="ghost" size="sm"
                     onClick={handleEdit}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-fg hover:bg-surface-muted"
+                    className="flex w-full items-center justify-start gap-2 px-3 py-2 text-sm text-fg hover:bg-surface-muted"
                   >
                     <Edit2 className="w-4 h-4" />
                     Edit Sprint
-                  </button>
+                  </Button>
                   {data.status === 'planning' && (
-                    <button
+                    <Button variant="ghost" size="sm"
                       onClick={handleStart}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-emerald-600 hover:bg-emerald-50"
+                      className="flex w-full items-center justify-start gap-2 px-3 py-2 text-sm text-success-color hover:bg-success-bg"
                     >
                       <Play className="w-4 h-4" />
                       Start Sprint
-                    </button>
+                    </Button>
                   )}
                   {data.status === 'active' && (
-                    <button
+                    <Button variant="ghost" size="sm"
                       onClick={handleComplete}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-info-color hover:bg-info-bg"
+                      className="flex w-full items-center justify-start gap-2 px-3 py-2 text-sm text-info-color hover:bg-info-bg"
                     >
                       <CheckCircle2 className="w-4 h-4" />
                       Complete Sprint
-                    </button>
+                    </Button>
                   )}
-                  <button
+                  <Button variant="ghost" size="sm"
                     onClick={handleDelete}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-destructive hover:bg-destructive-bg"
+                    className="flex w-full items-center justify-start gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive-bg"
                   >
                     <Trash2 className="w-4 h-4" />
                     Delete
-                  </button>
+                  </Button>
                 </div>
               </>
             )}
@@ -419,7 +420,7 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
             <div
               className={cn(
                 'h-full rounded-full transition-all',
-                progress >= 100 ? 'bg-emerald-500' : 'bg-violet-500'
+                progress >= 100 ? 'bg-success-bg' : 'bg-violet-500'
               )}
               style={{ width: `${Math.min(progress, 100)}%` }}
             />
@@ -447,7 +448,7 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
           <div className="mt-3 pt-3 border-t border-border">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-fg-muted">Burndown</span>
-              <button
+              <Button variant="ghost" size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   data.onOpenBurndown?.(nodeId);
@@ -455,7 +456,7 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
                 className="text-xs text-violet-600 hover:text-violet-700"
               >
                 View Chart
-              </button>
+              </Button>
             </div>
             <MiniBurndown data={data.burndownData} />
           </div>
@@ -491,7 +492,7 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
 
           {/* Quick actions */}
           <div className="flex gap-2 pt-2">
-            <button
+            <Button variant="ghost" size="sm"
               onClick={handleOpenBoard}
               className={cn(
                 'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium',
@@ -500,8 +501,8 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
             >
               <Layers className="w-3.5 h-3.5" />
               Open Board
-            </button>
-            <button
+            </Button>
+            <Button variant="ghost" size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 data.onAddStory?.(nodeId);
@@ -513,7 +514,7 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
             >
               <Layers className="w-3.5 h-3.5" />
               Add Story
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -539,7 +540,7 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
           )}
         </div>
 
-        <button
+        <Button variant="ghost" size="sm"
           onClick={handleToggleExpand}
           className="p-1 rounded hover:bg-surface-muted text-fg-muted hover:text-fg-muted"
         >
@@ -548,7 +549,7 @@ const SprintNodeComponent: React.FC<SprintNodeProps> = ({
           ) : (
             <ChevronDown className="w-4 h-4" />
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );

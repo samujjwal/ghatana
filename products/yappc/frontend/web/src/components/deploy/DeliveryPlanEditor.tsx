@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
+import { Button } from '../ui/Button';
 import { Plus as Add, Minus as Remove, Save, Sparkles as AutoAwesome, Flag, ClipboardList as Assignment, Calendar as CalendarToday, GripVertical as DragIndicator } from 'lucide-react';
 import type { DeliveryPlanPayload } from '@/shared/types/lifecycle-artifacts';
 
@@ -38,6 +39,21 @@ const TASK_STATUS_COLORS: Record<TaskStatus, string> = {
     done: 'bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color',
     blocked: 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive',
 };
+
+const NativeInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>((props, ref) =>
+    React.createElement('input', { ...props, ref }),
+);
+NativeInput.displayName = 'NativeInput';
+
+const NativeSelect = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>((props, ref) =>
+    React.createElement('select', { ...props, ref }),
+);
+NativeSelect.displayName = 'NativeSelect';
+
+const NativeTextarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) =>
+    React.createElement('textarea', { ...props, ref }),
+);
+NativeTextarea.displayName = 'NativeTextarea';
 
 const defaultData: DeliveryPlanPayload = {
     milestones: [],
@@ -227,23 +243,23 @@ export const DeliveryPlanEditor: React.FC<DeliveryPlanEditorProps> = ({
                 </div>
                 <div className="flex gap-2">
                     {onAIAssist && (
-                        <button
+                        <Button
                             onClick={handleAIAssist}
                             disabled={isAILoading || isSaving}
                             className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50"
                         >
                             <AutoAwesome className="w-4 h-4" />
                             {isAILoading ? 'Generating...' : 'Assist'}
-                        </button>
+                        </Button>
                     )}
-                    <button
+                    <Button
                         onClick={handleSave}
                         disabled={isSaving || isLoading}
                         className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
                     >
                         <Save className="w-4 h-4" />
                         {isSaving ? 'Saving...' : 'Save'}
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -263,20 +279,20 @@ export const DeliveryPlanEditor: React.FC<DeliveryPlanEditorProps> = ({
                                 {/* Milestone Header */}
                                 <div className="flex items-center gap-2 p-3 bg-grey-50 dark:bg-grey-800/50">
                                     <DragIndicator className="w-4 h-4 text-text-secondary cursor-move" />
-                                    <input
+                                    <NativeInput
                                         type="text"
                                         value={milestone.name}
                                         onChange={(e) => updateMilestone(mIdx, { name: e.target.value })}
                                         placeholder="Milestone name"
                                         className="flex-1 px-2 py-1 text-sm font-medium border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                     />
-                                    <input
+                                    <NativeInput
                                         type="date"
                                         value={milestone.targetDate}
                                         onChange={(e) => updateMilestone(mIdx, { targetDate: e.target.value })}
                                         className="px-2 py-1 text-xs border border-divider rounded bg-bg-paper text-text-primary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                     />
-                                    <select
+                                    <NativeSelect
                                         value={milestone.status}
                                         onChange={(e) => updateMilestone(mIdx, { status: e.target.value as MilestoneStatus })}
                                         className={`px-2 py-1 text-xs rounded ${MILESTONE_STATUS_COLORS[milestone.status]}`}
@@ -285,25 +301,25 @@ export const DeliveryPlanEditor: React.FC<DeliveryPlanEditorProps> = ({
                                         <option value="in_progress">In Progress</option>
                                         <option value="completed">Completed</option>
                                         <option value="delayed">Delayed</option>
-                                    </select>
-                                    <button
+                                    </NativeSelect>
+                                    <Button
                                         onClick={() => setExpandedMilestone(expandedMilestone === mIdx ? null : mIdx)}
                                         className="p-1 text-text-secondary hover:text-text-primary transition-colors"
                                     >
                                         {expandedMilestone === mIdx ? '−' : '+'}
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
                                         onClick={() => removeMilestone(mIdx)}
                                         className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                     >
                                         <Remove className="w-4 h-4" />
-                                    </button>
+                                    </Button>
                                 </div>
 
                                 {/* Milestone Details */}
                                 {expandedMilestone === mIdx && (
                                     <div className="p-3 space-y-3 border-t border-divider">
-                                        <textarea
+                                        <NativeTextarea
                                             value={milestone.description}
                                             onChange={(e) => updateMilestone(mIdx, { description: e.target.value })}
                                             placeholder="Milestone description..."
@@ -319,28 +335,28 @@ export const DeliveryPlanEditor: React.FC<DeliveryPlanEditorProps> = ({
                                             <div className="space-y-2">
                                                 {milestone.tasks.map((task, tIdx) => (
                                                     <div key={tIdx} className="flex gap-2 items-start">
-                                                        <input
+                                                        <NativeInput
                                                             type="text"
                                                             value={task.name}
                                                             onChange={(e) => updateTask(mIdx, tIdx, { name: e.target.value })}
                                                             placeholder="Task name"
                                                             className="flex-1 px-2 py-1 text-xs border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                                         />
-                                                        <input
+                                                        <NativeInput
                                                             type="text"
                                                             value={task.assignee}
                                                             onChange={(e) => updateTask(mIdx, tIdx, { assignee: e.target.value })}
                                                             placeholder="Assignee"
                                                             className="w-24 px-2 py-1 text-xs border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                                         />
-                                                        <input
+                                                        <NativeInput
                                                             type="text"
                                                             value={task.estimate}
                                                             onChange={(e) => updateTask(mIdx, tIdx, { estimate: e.target.value })}
                                                             placeholder="Est."
                                                             className="w-16 px-2 py-1 text-xs border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                                         />
-                                                        <select
+                                                        <NativeSelect
                                                             value={task.status}
                                                             onChange={(e) => updateTask(mIdx, tIdx, { status: e.target.value as TaskStatus })}
                                                             className={`px-2 py-1 text-xs rounded ${TASK_STATUS_COLORS[task.status]}`}
@@ -349,33 +365,33 @@ export const DeliveryPlanEditor: React.FC<DeliveryPlanEditorProps> = ({
                                                             <option value="in_progress">In Progress</option>
                                                             <option value="done">Done</option>
                                                             <option value="blocked">Blocked</option>
-                                                        </select>
-                                                        <button
+                                                        </NativeSelect>
+                                                        <Button
                                                             onClick={() => removeTask(mIdx, tIdx)}
                                                             className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                                         >
                                                             <Remove className="w-3 h-3" />
-                                                        </button>
+                                                        </Button>
                                                     </div>
                                                 ))}
-                                                <button
+                                                <Button
                                                     onClick={() => addTask(mIdx)}
                                                     className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors"
                                                 >
                                                     <Add className="w-3 h-3" /> Add task
-                                                </button>
+                                                </Button>
                                             </div>
                                         </div>
                                     </div>
                                 )}
                             </div>
                         ))}
-                        <button
+                        <Button
                             onClick={addMilestone}
                             className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-divider rounded-lg text-text-secondary hover:text-primary-600 hover:border-primary-300 transition-colors"
                         >
                             <Add className="w-5 h-5" /> Add Milestone
-                        </button>
+                        </Button>
                     </div>
                 </div>
 
@@ -385,27 +401,27 @@ export const DeliveryPlanEditor: React.FC<DeliveryPlanEditorProps> = ({
                     <div className="space-y-2">
                         {plan.dependencies.map((dep, idx) => (
                             <div key={idx} className="flex gap-2">
-                                <input
+                                <NativeInput
                                     type="text"
                                     value={dep}
                                     onChange={(e) => updateListItem('dependencies', idx, e.target.value)}
                                     placeholder="External dependency..."
                                     className="flex-1 px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                 />
-                                <button
+                                <Button
                                     onClick={() => removeListItem('dependencies', idx)}
                                     className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                 >
                                     <Remove className="w-4 h-4" />
-                                </button>
+                                </Button>
                             </div>
                         ))}
-                        <button
+                        <Button
                             onClick={() => addListItem('dependencies')}
                             className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors"
                         >
                             <Add className="w-3 h-3" /> Add dependency
-                        </button>
+                        </Button>
                     </div>
                 </div>
 
@@ -415,27 +431,27 @@ export const DeliveryPlanEditor: React.FC<DeliveryPlanEditorProps> = ({
                     <div className="space-y-2">
                         {plan.risks.map((risk, idx) => (
                             <div key={idx} className="flex gap-2">
-                                <input
+                                <NativeInput
                                     type="text"
                                     value={risk}
                                     onChange={(e) => updateListItem('risks', idx, e.target.value)}
                                     placeholder="Potential risk..."
                                     className="flex-1 px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                 />
-                                <button
+                                <Button
                                     onClick={() => removeListItem('risks', idx)}
                                     className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                 >
                                     <Remove className="w-4 h-4" />
-                                </button>
+                                </Button>
                             </div>
                         ))}
-                        <button
+                        <Button
                             onClick={() => addListItem('risks')}
                             className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors"
                         >
                             <Add className="w-3 h-3" /> Add risk
-                        </button>
+                        </Button>
                     </div>
                 </div>
 
@@ -445,27 +461,27 @@ export const DeliveryPlanEditor: React.FC<DeliveryPlanEditorProps> = ({
                     <div className="space-y-2">
                         {plan.assumptions.map((assumption, idx) => (
                             <div key={idx} className="flex gap-2">
-                                <input
+                                <NativeInput
                                     type="text"
                                     value={assumption}
                                     onChange={(e) => updateListItem('assumptions', idx, e.target.value)}
                                     placeholder="Assumption..."
                                     className="flex-1 px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                 />
-                                <button
+                                <Button
                                     onClick={() => removeListItem('assumptions', idx)}
                                     className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                 >
                                     <Remove className="w-4 h-4" />
-                                </button>
+                                </Button>
                             </div>
                         ))}
-                        <button
+                        <Button
                             onClick={() => addListItem('assumptions')}
                             className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors"
                         >
                             <Add className="w-3 h-3" /> Add assumption
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>

@@ -79,13 +79,13 @@ describe('AILabelOverlay', () => {
     it('applies subtle variant style', () => {
         render(<AILabelOverlay variant="subtle" />);
         const label = screen.getByTestId('ai-label');
-        expect(label.className).toContain('bg-purple-50');
+        expect(label.className).toContain('bg-info-bg/50');
     });
 
     it('applies emphasis variant style', () => {
         render(<AILabelOverlay variant="emphasis" />);
         const label = screen.getByTestId('ai-label');
-        expect(label.className).toContain('bg-purple-100');
+        expect(label.className).toContain('bg-info-bg');
     });
 
     it('applies border variant style', () => {

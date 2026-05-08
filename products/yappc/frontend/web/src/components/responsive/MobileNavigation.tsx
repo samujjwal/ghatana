@@ -77,7 +77,7 @@ export function MobileNavigation({ items, activeItemId, className = '' }: Mobile
           </div>
           <div className="grid grid-cols-3 gap-2">
             {items.map(item => (
-              <button
+              <Button
                 key={item.id}
                 onClick={() => handleItemClick(item)}
                 className={`flex flex-col items-center p-3 rounded-lg transition-colors ${
@@ -85,6 +85,8 @@ export function MobileNavigation({ items, activeItemId, className = '' }: Mobile
                     ? 'bg-info-bg dark:bg-info-bg/20 text-info-color dark:text-info-color'
                     : 'hover:bg-surface-muted dark:hover:bg-surface'
                 }`}
+                variant="text"
+                size="sm"
               >
                 <div className="relative mb-1">
                   {item.icon}
@@ -97,7 +99,7 @@ export function MobileNavigation({ items, activeItemId, className = '' }: Mobile
                   )}
                 </div>
                 <Typography className="text-xs">{item.label}</Typography>
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -106,7 +108,7 @@ export function MobileNavigation({ items, activeItemId, className = '' }: Mobile
       {/* Bottom navigation bar */}
       <div className="flex items-center justify-around px-2 py-2">
         {items.slice(0, 4).map(item => (
-          <button
+          <Button
             key={item.id}
             onClick={() => handleItemClick(item)}
             className={`flex flex-col items-center p-2 min-w-[48px] min-h-[48px] rounded-lg transition-colors relative ${
@@ -114,6 +116,8 @@ export function MobileNavigation({ items, activeItemId, className = '' }: Mobile
                 ? 'text-info-color dark:text-info-color'
                 : 'text-fg-muted dark:text-fg-muted'
             }`}
+            variant="text"
+            size="sm"
           >
             <div className="relative">
               {item.icon}
@@ -126,22 +130,24 @@ export function MobileNavigation({ items, activeItemId, className = '' }: Mobile
               )}
             </div>
             <Typography className="text-xs mt-1">{item.label}</Typography>
-          </button>
+          </Button>
         ))}
 
         {/* More button for additional items */}
         {items.length > 4 && (
-          <button
+          <Button
             onClick={() => setExpanded(!expanded)}
             className={`flex flex-col items-center p-2 min-w-[48px] min-h-[48px] rounded-lg transition-colors ${
               expanded
                 ? 'text-info-color dark:text-info-color'
                 : 'text-fg-muted dark:text-fg-muted'
             }`}
+            variant="text"
+            size="sm"
           >
             {expanded ? <CloseIcon className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
             <Typography className="text-xs mt-1">{expanded ? 'Close' : 'More'}</Typography>
-          </button>
+          </Button>
         )}
       </div>
     </div>

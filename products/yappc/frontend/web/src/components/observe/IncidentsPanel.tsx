@@ -12,6 +12,8 @@
 
 import React, { useState, useCallback } from 'react';
 import { AlertTriangle as Warning, CheckCircle, XCircle as Cancel, Plus as Add, User as Person, Clock as Schedule, FileText as Description, ChevronDown as ExpandMore, ChevronUp as ExpandLess, Link as LinkIcon } from 'lucide-react';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 
 export interface IncidentEvent {
     timestamp: string;
@@ -148,21 +150,24 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                     </div>
                 </div>
                 {onCreateIncident && (
-                    <button
+                    <Button
                         onClick={onCreateIncident}
+                        variant="solid"
                         className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
                     >
                         <Add className="w-4 h-4" /> New Incident
-                    </button>
+                    </Button>
                 )}
             </div>
 
             {/* Filter */}
             <div className="flex gap-2 px-4 py-2 border-b border-divider bg-grey-50 dark:bg-grey-800/50">
                 {(['all', 'open', 'resolved'] as const).map((f) => (
-                    <button
+                    <Button
                         key={f}
                         onClick={() => setFilter(f)}
+                        variant="ghost"
+                        size="small"
                         className={`px-3 py-1 text-xs rounded-lg transition-colors ${filter === f
                                 ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
                                 : 'text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800'
@@ -174,7 +179,7 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                                 {openCount}
                             </span>
                         )}
-                    </button>
+                    </Button>
                 ))}
             </div>
 
@@ -196,22 +201,23 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                                     }`}
                             >
                                 {/* Incident Header */}
-                                <button
+                                <Button
                                     onClick={() =>
                                         setExpandedIncident(
                                             expandedIncident === incident.id ? null : incident.id,
                                         )
                                     }
+                                    variant="ghost"
                                     className={`w-full flex items-start gap-3 p-3 text-left transition-colors hover:bg-grey-50 dark:hover:bg-grey-800/50 ${incident.status !== 'resolved'
                                             ? SEVERITY_CONFIG[incident.severity].bg
                                             : 'bg-bg-paper'
                                         }`}
                                 >
-                                    <div className={STATUS_CONFIG[incident.status].color}>
+                                    <span className={STATUS_CONFIG[incident.status].color}>
                                         {STATUS_CONFIG[incident.status].icon}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
+                                    </span>
+                                    <span className="flex-1 min-w-0">
+                                        <span className="flex items-center gap-2 mb-1">
                                             <span className="font-medium text-sm text-text-primary">
                                                 {incident.title}
                                             </span>
@@ -220,8 +226,8 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                                             >
                                                 {SEVERITY_CONFIG[incident.severity].label}
                                             </span>
-                                        </div>
-                                        <div className="flex items-center gap-3 text-xs text-text-secondary">
+                                        </span>
+                                        <span className="flex items-center gap-3 text-xs text-text-secondary">
                                             <span className={STATUS_CONFIG[incident.status].color}>
                                                 {STATUS_CONFIG[incident.status].label}
                                             </span>
@@ -235,14 +241,14 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                                                     {incident.assignee}
                                                 </span>
                                             )}
-                                        </div>
-                                    </div>
+                                        </span>
+                                    </span>
                                     {expandedIncident === incident.id ? (
                                         <ExpandLess className="w-4 h-4 text-text-secondary" />
                                     ) : (
                                         <ExpandMore className="w-4 h-4 text-text-secondary" />
                                     )}
-                                </button>
+                                </Button>
 
                                 {/* Expanded Details */}
                                 {expandedIncident === incident.id && (
@@ -270,10 +276,12 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                                                 <span className="text-xs text-text-secondary">Update status:</span>
                                                 {(['investigating', 'identified', 'monitoring', 'resolved'] as const).map(
                                                     (status) => (
-                                                        <button
+                                                        <Button
                                                             key={status}
                                                             onClick={() => onUpdateStatus(incident.id, status)}
                                                             disabled={incident.status === status}
+                                                            variant="ghost"
+                                                            size="small"
                                                             className={`px-2 py-1 text-xs rounded transition-colors ${incident.status === status
                                                                     ? 'bg-grey-200 dark:bg-grey-700 text-text-secondary'
                                                                     : status === 'resolved'
@@ -282,7 +290,7 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                                                                 }`}
                                                         >
                                                             {STATUS_CONFIG[status].label}
-                                                        </button>
+                                                        </Button>
                                                     ),
                                                 )}
                                             </div>
@@ -315,7 +323,7 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                                         {onAddNote && incident.status !== 'resolved' && (
                                             <div className="p-3 border-b border-divider">
                                                 <div className="flex gap-2">
-                                                    <input
+                                                    <Input
                                                         type="text"
                                                         value={newNote[incident.id] || ''}
                                                         onChange={(e) =>
@@ -327,13 +335,15 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                                                         placeholder="Add a note..."
                                                         className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                                     />
-                                                    <button
+                                                    <Button
                                                         onClick={() => handleAddNote(incident.id)}
                                                         disabled={isSubmittingNote || !newNote[incident.id]?.trim()}
+                                                        variant="solid"
+                                                        size="small"
                                                         className="px-3 py-1 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors disabled:opacity-50"
                                                     >
                                                         Add
-                                                    </button>
+                                                    </Button>
                                                 </div>
                                             </div>
                                         )}

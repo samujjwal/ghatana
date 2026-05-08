@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { Button } from '../../components/ui/Button';
 
 // ============================================================================
 // Types
@@ -124,7 +125,10 @@ const ActivityFeedPage: React.FC = () => {
 
       {/* Filter Bar */}
       <div className="flex flex-wrap gap-2">
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-pressed={filter === 'all'}
           onClick={() => setFilter('all')}
           className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
             filter === 'all'
@@ -133,10 +137,13 @@ const ActivityFeedPage: React.FC = () => {
           }`}
         >
           All
-        </button>
+        </Button>
         {(Object.keys(ACTIVITY_CONFIG) as ActivityType[]).map((type) => (
-          <button
+          <Button
             key={type}
+            variant="ghost"
+            size="sm"
+            aria-pressed={filter === type}
             onClick={() => setFilter(type)}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               filter === type
@@ -146,7 +153,7 @@ const ActivityFeedPage: React.FC = () => {
           >
             <span className={`inline-block h-2 w-2 rounded-full ${ACTIVITY_CONFIG[type].color.replace('text-', 'bg-')}`} />
             {ACTIVITY_CONFIG[type].label}
-          </button>
+          </Button>
         ))}
       </div>
 

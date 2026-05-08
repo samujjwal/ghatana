@@ -9,6 +9,9 @@
  * @doc.pattern Route Module
  */
 
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Textarea } from '../components/ui/Textarea';
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -180,7 +183,7 @@ export default function Component() {
             {/* Tab nav */}
             <div className="flex gap-1 border-b border-border mb-6">
                 {tabs.map(tab => (
-                    <button
+                    <Button variant="ghost" size="sm"
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
                         className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-colors
@@ -193,7 +196,7 @@ export default function Component() {
                     >
                         {tab.icon}
                         {tab.label}
-                    </button>
+                    </Button>
                 ))}
             </div>
 
@@ -203,7 +206,7 @@ export default function Component() {
                     <div className="space-y-4 p-6">
                         <div>
                             <label className={labelCls} htmlFor="ws-name">Workspace Name</label>
-                            <input
+                            <Input
                                 id="ws-name"
                                 className={inputCls}
                                 value={form.name}
@@ -217,7 +220,7 @@ export default function Component() {
 
                         <div>
                             <label className={labelCls} htmlFor="ws-desc">Description</label>
-                            <textarea
+                            <Textarea
                                 id="ws-desc"
                                 rows={3}
                                 className={inputCls}
@@ -238,14 +241,14 @@ export default function Component() {
                                         Read-only identity metadata is available on demand without crowding the primary settings flow.
                                     </p>
                                 </div>
-                                <button
+                                <Button variant="ghost" size="sm"
                                     type="button"
                                     className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-fg-muted transition-colors hover:bg-surface"
                                     onClick={() => setShowAdvancedMetadata((currentValue) => !currentValue)}
                                     data-testid="workspace-advanced-metadata-toggle"
                                 >
                                     {showAdvancedMetadata ? 'Hide details' : 'Show details'}
-                                </button>
+                                </Button>
                             </div>
 
                             {showAdvancedMetadata && workspace && (
@@ -284,7 +287,7 @@ export default function Component() {
                     </div>
 
                     <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
-                        <button
+                        <Button variant="ghost" size="sm"
                             className="rounded-lg border border-border px-4 py-2 text-sm text-fg-muted hover:bg-surface-muted transition-colors"
                             onClick={() => workspace && setForm({
                                 name: workspace.name ?? '',
@@ -292,15 +295,15 @@ export default function Component() {
                             })}
                         >
                             Discard
-                        </button>
-                        <button
+                        </Button>
+                        <Button variant="ghost" size="sm"
                             className="flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark transition-colors disabled:opacity-60"
                             onClick={() => saveMutation.mutate(form)}
                             disabled={saveMutation.isPending}
                         >
                             <Save className="h-4 w-4" />
                             {saveMutation.isPending ? 'Saving…' : 'Save Changes'}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             )}
@@ -318,7 +321,7 @@ export default function Component() {
                         <label className={labelCls} htmlFor="delete-confirm">
                             Type <span className="font-mono text-fg">{form.name || workspace?.name}</span> to confirm
                         </label>
-                        <input
+                        <Input
                             id="delete-confirm"
                             className={inputCls}
                             value={deleteConfirm}
@@ -334,13 +337,13 @@ export default function Component() {
                     </div>
 
                     <div className="flex justify-end border-t border-error-200 dark:border-error-800 px-6 py-4">
-                        <button
+                        <Button variant="ghost" size="sm"
                             className="rounded-lg bg-error-600 px-4 py-2 text-sm font-medium text-white hover:bg-error-700 transition-colors disabled:opacity-60"
                             disabled={deleteConfirm !== (form.name || workspace?.name) || deleteMutation.isPending}
                             onClick={() => deleteMutation.mutate()}
                         >
                             {deleteMutation.isPending ? 'Deleting…' : 'Delete Workspace'}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             )}

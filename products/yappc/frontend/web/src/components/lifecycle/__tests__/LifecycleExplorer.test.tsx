@@ -12,6 +12,11 @@ import { LifecyclePhase } from '@/types/lifecycle';
 
 // ---- Module mocks -----------------------------------------------------------
 
+const lifecycleMockState = vi.hoisted(() => ({
+  artifacts: [] as unknown[],
+  gateStatuses: {} as Record<string, unknown>,
+}));
+
 vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router')>();
   return {
@@ -22,14 +27,14 @@ vi.mock('react-router', async (importOriginal) => {
 
 vi.mock('../../../services/canvas/lifecycle', () => ({
   useLifecycleArtifacts: () => ({
-    artifacts: [],
+    artifacts: lifecycleMockState.artifacts,
     loading: false,
     deleteArtifact: vi.fn(),
     createArtifact: vi.fn(),
   }),
   usePhaseGates: () => ({
     currentPhase: LifecyclePhase.INTENT,
-    gateStatuses: {},
+    gateStatuses: lifecycleMockState.gateStatuses,
     loading: false,
   }),
 }));
@@ -81,6 +86,8 @@ import { LifecycleExplorer } from '../LifecycleExplorer';
 describe('LifecycleExplorer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    lifecycleMockState.artifacts = [];
+    lifecycleMockState.gateStatuses = {};
   });
 
   it('renders without crashing', () => {
@@ -149,25 +156,13 @@ describe('LifecycleExplorer', () => {
   });
 
   it('renders correctly with a populated gateStatuses map', () => {
-    vi.mock('../../../services/canvas/lifecycle', () => ({
-      useLifecycleArtifacts: () => ({
-        artifacts: [],
-        loading: false,
-        deleteArtifact: vi.fn(),
-        createArtifact: vi.fn(),
-      }),
-      usePhaseGates: () => ({
-        currentPhase: LifecyclePhase.INTENT,
-        gateStatuses: {
-          'gate-intent-shape': {
-            gateId: 'gate-intent-shape',
-            status: 'pending' as const,
-            validationResults: [],
-          },
-        },
-        loading: false,
-      }),
-    }));
+    lifecycleMockState.gateStatuses = {
+      'gate-intent-shape': {
+        gateId: 'gate-intent-shape',
+        status: 'pending' as const,
+        validationResults: [],
+      },
+    };
 
     // Re-render with gates present — should not throw
     render(<LifecycleExplorer projectId="proj-with-gates" />);

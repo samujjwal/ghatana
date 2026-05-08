@@ -15,6 +15,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Box, Typography, IconButton } from '@ghatana/design-system';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { ChevronDown as ExpandIcon, ChevronRight as CollapseIcon, ZoomIn as ZoomInIcon } from 'lucide-react';
+import { Input } from '../../ui/Input';
 
 export interface FrameNodeData {
     title: string;
@@ -106,12 +107,14 @@ export const FrameNode = React.memo(({ data, selected, id }: NodeProps<FrameNode
 
                 {/* Title */}
                 {isEditingTitle ? (
-                    <input
+                    <Input
                         ref={inputRef}
                         value={localTitle}
                         onChange={handleChange}
                         onBlur={handleBlur}
                         onKeyDown={handleKeyDown}
+                        fullWidth
+                        size="sm"
                         style={{
                             flex: 1,
                             background: 'rgba(255,255,255,0.2)',

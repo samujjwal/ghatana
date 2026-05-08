@@ -26,7 +26,7 @@ export interface SuggestedStep {
   approvalRequired: boolean;
   rollbackSupported: boolean;
   estimatedTime?: string;
-  onAccept: () => void;
+  onAccept: (step: SuggestedStep) => void;
   onDismiss?: () => void;
 }
 
@@ -176,7 +176,7 @@ export const PhaseSuggestedNextStep: React.FC<PhaseSuggestedNextStepProps> = ({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button onClick={step.onAccept} className="flex-1" size="sm">
+                        <Button onClick={() => step.onAccept(step)} className="flex-1" size="sm">
                           {getActionLabel(step)}
                         </Button>
                         {step.onDismiss && (

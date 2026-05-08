@@ -14,6 +14,7 @@ import React, { useState } from 'react';
 import { TrendingUp, TrendingDown, Gauge as Speed, Cpu as Memory, AlertTriangle as Warning, CheckCircle } from 'lucide-react';
 import { useLifecycleArtifacts } from '../../services/canvas/lifecycle/LifecycleArtifactService';
 import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
+import { Button } from '../ui/Button';
 
 export interface OpsBaselineDashboardProps {
     projectId: string;
@@ -165,27 +166,29 @@ export const OpsBaselineDashboard: React.FC<OpsBaselineDashboardProps> = ({ proj
                     <h2 className="text-lg font-semibold text-text-primary">Operational Baseline</h2>
                     <p className="text-sm text-text-secondary">OBSERVE Phase - System Health</p>
                 </div>
-                <button
+                <Button
                     onClick={handleSaveBaseline}
                     className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
                 >
                     Save Baseline
-                </button>
+                </Button>
             </div>
 
             {/* Tabs */}
             <div className="flex gap-1 px-4 py-2 border-b border-divider bg-bg-default">
                 {(['metrics', 'slo', 'adoption', 'health'] as const).map((tab) => (
-                    <button
+                    <Button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors capitalize ${activeTab === tab
                             ? 'bg-primary-50 text-primary-600'
                             : 'text-text-secondary hover:text-text-primary hover:bg-grey-100'
                             }`}
+                        variant="ghost"
+                        size="sm"
                     >
                         {tab === 'slo' ? 'SLO' : tab}
-                    </button>
+                    </Button>
                 ))}
             </div>
 

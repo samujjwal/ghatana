@@ -8,6 +8,9 @@
  */
 
 import React from 'react';
+
+const TestButton = (props: React.ButtonHTMLAttributes<HTMLButtonElement>): React.ReactElement =>
+  React.createElement('button', props);
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { createPageArtifactDocument } from '../../page/pageArtifactDocument';
@@ -63,7 +66,7 @@ vi.mock('@/components/canvas/page/PageDesigner', () => ({
       data-allow-editing={String(phaseConfig?.allowEditing ?? true)}
       data-read-only-reason={readOnlyReason ?? ''}
     >
-      <button
+      <TestButton
         data-testid="page-designer-full"
         onClick={() =>
           onDocumentChange?.(
@@ -92,7 +95,7 @@ vi.mock('@/components/canvas/page/PageDesigner', () => ({
           )
         }
       />
-      <button
+      <TestButton
         data-testid="trigger-undo-document-change"
         onClick={() =>
           onDocumentChange?.(
@@ -128,7 +131,7 @@ vi.mock('@/components/canvas/page/PageDesigner', () => ({
           )
         }
       />
-      <button
+      <TestButton
         data-testid="trigger-import-artifacts"
         onClick={() =>
           onImportArtifacts?.([
@@ -137,7 +140,7 @@ vi.mock('@/components/canvas/page/PageDesigner', () => ({
           ])
         }
       />
-      <button
+      <TestButton
         data-testid="trigger-ai-record"
         onClick={() =>
           onAIChangeRecord?.({
@@ -157,7 +160,7 @@ vi.mock('@/components/canvas/page/PageDesigner', () => ({
           })
         }
       />
-      <button
+      <TestButton
         data-testid="trigger-ai-review-accept"
         onClick={() => onAIReviewDecision?.('ai-1', 'accepted')}
       />
@@ -218,10 +221,10 @@ vi.mock('@ghatana/design-system', async (importOriginal) => {
       <div {...rest}>{children}</div>
     ),
     Button: ({ children, onClick, ...rest }: React.PropsWithChildren<React.ButtonHTMLAttributes<HTMLButtonElement>>) => (
-      <button onClick={onClick} {...rest}>{children}</button>
+      <TestButton onClick={onClick} {...rest}>{children}</TestButton>
     ),
     IconButton: ({ children, onClick, 'aria-label': ariaLabel }: { children: React.ReactNode; onClick?: (e: React.MouseEvent) => void; 'aria-label'?: string }) => (
-      <button onClick={onClick} aria-label={ariaLabel}>{children}</button>
+      <TestButton onClick={onClick} aria-label={ariaLabel}>{children}</TestButton>
     ),
     Typography: ({ children, ...rest }: React.PropsWithChildren<Record<string, unknown>>) => <span {...rest}>{children}</span>,
   };

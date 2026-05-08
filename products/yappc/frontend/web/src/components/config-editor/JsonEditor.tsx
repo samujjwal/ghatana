@@ -16,6 +16,7 @@ import {
   Alert,
 } from '@ghatana/design-system';
 import React, { useState, useCallback, useEffect } from 'react';
+import { Textarea } from '../ui/Textarea';
 
 import type { PageConfig } from 'yappc-config-schema';
 
@@ -140,7 +141,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
       )}
 
       <Paper variant="outlined" className="relative">
-        <textarea
+        <Textarea
           value={jsonText}
           onChange={(event) => handleJsonChange(event.target.value)}
           disabled={readOnly}

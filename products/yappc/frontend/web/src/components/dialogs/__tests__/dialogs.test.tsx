@@ -6,8 +6,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import React from 'react';
 import { StandardModal } from '../StandardModal';
 import { StandardDrawer } from '../StandardDrawer';
+
+const TestButton = (props: React.ButtonHTMLAttributes<HTMLButtonElement>): React.ReactElement =>
+    React.createElement('button', props);
 
 // ============================================================================
 // StandardModal
@@ -57,7 +61,7 @@ describe('StandardModal', () => {
 
     it('renders actions when provided', () => {
         render(
-            <StandardModal isOpen={true} onClose={vi.fn()} actions={<button>Confirm</button>}>
+            <StandardModal isOpen={true} onClose={vi.fn()} actions={<TestButton>Confirm</TestButton>}>
                 content
             </StandardModal>
         );
@@ -111,7 +115,7 @@ describe('StandardDrawer', () => {
 
     it('renders actions when provided', () => {
         render(
-            <StandardDrawer isOpen={true} onClose={vi.fn()} actions={<button>Save</button>}>
+            <StandardDrawer isOpen={true} onClose={vi.fn()} actions={<TestButton>Save</TestButton>}>
                 content
             </StandardDrawer>
         );

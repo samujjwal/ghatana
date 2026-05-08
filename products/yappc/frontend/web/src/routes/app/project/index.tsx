@@ -91,7 +91,7 @@ function getStatusPanelClassName(
 ): string {
   switch (tone) {
     case 'ready':
-      return 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100';
+      return 'border-success-border bg-success-bg text-success-color dark:border-success-border/60 dark:bg-success-bg/40 dark:text-success-color';
     case 'blocked':
       return 'border-destructive-border bg-destructive-bg text-destructive dark:border-destructive-border/60 dark:bg-destructive-bg/40 dark:text-destructive';
     case 'review':
@@ -275,7 +275,7 @@ export default function ProjectIndexRoute() {
 
           <article className="rounded-2xl border border-border bg-surface-raised p-5 shadow-sm">
             <div className="flex items-start gap-3">
-              <Gauge className="mt-0.5 h-5 w-5 text-primary-600" />
+              <Gauge className="mt-0.5 h-5 w-5 text-info-color" />
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
                   Delivery posture
@@ -309,7 +309,7 @@ export default function ProjectIndexRoute() {
 
           <article className="rounded-2xl border border-border bg-surface-raised p-5 shadow-sm md:col-span-2">
             <div className="flex items-start gap-3">
-              <ListTodo className="mt-0.5 h-5 w-5 text-primary-600" />
+              <ListTodo className="mt-0.5 h-5 w-5 text-info-color" />
               <div className="w-full">
                 <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
                   Automation guidance

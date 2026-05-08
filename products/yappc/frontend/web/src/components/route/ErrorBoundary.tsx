@@ -8,6 +8,7 @@
 import { useEffect } from "react";
 import { useRouteError, Link } from "react-router";
 import { removeStorage, writeFlag } from '../../services/storage';
+import { Button } from '../ui/Button';
 
 type RouteErrorLike = Error & { status?: number; statusText?: string };
 
@@ -109,7 +110,7 @@ export function RouteErrorBoundary({
 
             {showNavigation && (
                 <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-                    <button
+                    <Button
                         data-testid="retry-button"
                         onClick={() => {
                             // Clear error flag and reload
@@ -125,6 +126,7 @@ export function RouteErrorBoundary({
                                 window.location.reload();
                             }, 10);
                         }}
+                        className=""
                         style={{
                             padding: "0.5rem 1rem",
                             backgroundColor: "var(--primary-color)",
@@ -137,7 +139,7 @@ export function RouteErrorBoundary({
                         }}
                     >
                         Retry
-                    </button>
+                    </Button>
 
                     <Link
                         to="/workspaces"

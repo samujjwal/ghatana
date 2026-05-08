@@ -20,6 +20,7 @@ import {
 } from '../../services/ai';
 import { ConfidenceBadge } from '../ai/ConfidenceBadge';
 import { AILabelOverlay } from '../ai/AILabelOverlay';
+import { Button } from '../ui/Button';
 
 export interface AISuggestionPanelProps {
     context: SuggestionContext;
@@ -75,11 +76,14 @@ export const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
     return (
         <div className="border border-divider rounded-lg bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
             {/* Header */}
-            <button
+            <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/50 dark:hover:bg-black/20 transition-colors rounded-t-lg"
+                aria-expanded={isExpanded}
             >
-                <div className="flex items-center gap-2">
+                <span className="flex items-center gap-2">
                     <Lightbulb className="w-5 h-5 text-warning-color" />
                     <span className="text-sm font-medium text-text-primary">AI Suggestions</span>
                     {recommendedKinds.length > 0 && (
@@ -87,11 +91,11 @@ export const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
                             {recommendedKinds.length}
                         </span>
                     )}
-                </div>
+                </span>
                 <span className="text-xs text-text-secondary">
                     {isExpanded ? '▲' : '▼'}
                 </span>
-            </button>
+            </Button>
 
             {/* Content */}
             {isExpanded && (
@@ -105,12 +109,14 @@ export const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
                     {error && (
                         <div className="p-3 bg-destructive-bg border border-destructive-border rounded text-sm text-destructive">
                             {error}
-                            <button
+                            <Button
+                                variant="link"
+                                size="sm"
                                 onClick={loadSuggestions}
                                 className="ml-2 text-xs underline hover:no-underline"
                             >
                                 Retry
-                            </button>
+                            </Button>
                         </div>
                     )}
 
@@ -119,12 +125,14 @@ export const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
                             <div className="text-sm text-text-secondary mb-2">
                                 No suggestions available yet
                             </div>
-                            <button
+                            <Button
+                                variant="link"
+                                size="sm"
                                 onClick={loadSuggestions}
                                 className="text-sm text-primary-600 hover:underline"
                             >
                                 Generate suggestions
-                            </button>
+                            </Button>
                         </div>
                     )}
 
@@ -150,12 +158,15 @@ export const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
                                     </p>
                                 </div>
                                 {onDismiss && (
-                                    <button
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
                                         onClick={() => onDismiss(suggestion.id)}
                                         className="p-1 hover:bg-grey-100 rounded transition-colors flex-shrink-0"
+                                        aria-label={`Dismiss suggestion: ${suggestion.title}`}
                                     >
                                         <Close className="w-4 h-4 text-text-secondary" />
-                                    </button>
+                                    </Button>
                                 )}
                             </div>
 
@@ -174,13 +185,13 @@ export const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
                             )}
 
                             {onAccept && (
-                                <button
+                                <Button
                                     onClick={() => onAccept(suggestion)}
                                     className="w-full flex items-center justify-center gap-1 px-3 py-1.5 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors"
                                 >
                                     <Add className="w-4 h-4" />
                                     Create from suggestion
-                                </button>
+                                </Button>
                             )}
                         </div>
                     ))}

@@ -29,6 +29,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { cn } from '@/lib/utils';
 import { ConfidenceBadge } from './ConfidenceBadge';
+import { Button } from '../ui/Button';
 import {
   applyRefactorSuggestion,
   listRefactorSuggestions,
@@ -144,9 +145,10 @@ function SuggestionRow({ suggestion, designId, onSimulateSuccess }: SuggestionRo
       data-testid={`suggestion-row-${suggestion.id}`}
     >
       {/* Header */}
-      <button
+      <Button
         type="button"
         className="flex w-full items-start gap-2 px-4 py-3 text-left"
+        variant="ghost"
         onClick={() => setExpanded((e) => !e)}
         aria-expanded={expanded}
         data-testid={`btn-expand-${suggestion.id}`}
@@ -175,7 +177,7 @@ function SuggestionRow({ suggestion, designId, onSimulateSuccess }: SuggestionRo
           </div>
           <p className="mt-0.5 truncate text-xs text-text-secondary">{suggestion.rationale}</p>
         </div>
-      </button>
+      </Button>
 
       {/* Expanded body */}
       {expanded && (
@@ -196,9 +198,11 @@ function SuggestionRow({ suggestion, designId, onSimulateSuccess }: SuggestionRo
           <div className="flex items-center gap-2">
             {/* Simulate — always available while not applied */}
             {!isApplied && !isUndone && (
-              <button
+              <Button
                 type="button"
                 className="inline-flex items-center gap-1.5 rounded-md border border-divider bg-bg-default px-3 py-1.5 text-xs font-medium text-text-primary hover:bg-grey-50 disabled:opacity-50"
+                variant="outline"
+                size="sm"
                 onClick={() => simulate.mutate()}
                 disabled={simulate.isPending}
                 data-testid={`btn-simulate-${suggestion.id}`}
@@ -209,14 +213,15 @@ function SuggestionRow({ suggestion, designId, onSimulateSuccess }: SuggestionRo
                   <Eye className="h-3 w-3" />
                 )}
                 Simulate
-              </button>
+              </Button>
             )}
 
             {/* Apply — only after simulate and when canApply */}
             {(isSimulated || (!isApplied && !isUndone && suggestion.simulatedDiff)) && !isApplied && (
-              <button
+              <Button
                 type="button"
                 className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+                size="sm"
                 onClick={() => apply.mutate()}
                 disabled={apply.isPending || simulate.isPending}
                 data-testid={`btn-apply-${suggestion.id}`}
@@ -227,14 +232,16 @@ function SuggestionRow({ suggestion, designId, onSimulateSuccess }: SuggestionRo
                   <Check className="h-3 w-3" />
                 )}
                 Apply
-              </button>
+              </Button>
             )}
 
             {/* Undo — only when applied */}
             {isApplied && (
-              <button
+              <Button
                 type="button"
                 className="inline-flex items-center gap-1.5 rounded-md border border-divider bg-bg-default px-3 py-1.5 text-xs font-medium text-text-primary hover:bg-grey-50 disabled:opacity-50"
+                variant="outline"
+                size="sm"
                 onClick={() => undo.mutate()}
                 disabled={undo.isPending}
                 data-testid={`btn-undo-${suggestion.id}`}
@@ -245,7 +252,7 @@ function SuggestionRow({ suggestion, designId, onSimulateSuccess }: SuggestionRo
                   <RotateCcw className="h-3 w-3" />
                 )}
                 Undo
-              </button>
+              </Button>
             )}
           </div>
 
@@ -317,15 +324,17 @@ export function RefactorSuggestionPanel({
             </p>
           </div>
         </div>
-        <button
+        <Button
           type="button"
           onClick={onClose}
           className="rounded-md p-1 text-text-secondary hover:bg-grey-100"
+          variant="ghost"
+          size="sm"
           aria-label="Close refactoring suggestions panel"
           data-testid="btn-close-refactor-panel"
         >
           <X className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Simulate diff preview (sticky) */}
@@ -333,14 +342,16 @@ export function RefactorSuggestionPanel({
         <div className="border-b border-divider px-4 py-3">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-xs font-semibold text-text-primary">Simulated diff preview</p>
-            <button
+            <Button
               type="button"
               className="text-xs text-text-secondary hover:text-text-primary"
+              variant="ghost"
+              size="sm"
               onClick={() => setActiveSimResult(null)}
               aria-label="Dismiss diff preview"
             >
               Dismiss
-            </button>
+            </Button>
           </div>
           <DiffViewer result={activeSimResult} />
         </div>

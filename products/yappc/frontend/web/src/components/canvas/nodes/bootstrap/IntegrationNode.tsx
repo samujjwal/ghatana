@@ -13,6 +13,7 @@
 import React, { memo, useState, useCallback } from 'react';
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { cn } from '../../utils/cn';
+import { Button } from '../../../ui/Button';
 import {
   Plug,
   CreditCard,
@@ -237,7 +238,7 @@ export const IntegrationNode = memo<IntegrationNodeProps>(({ id, data, selected 
       className={cn(
         'min-w-[220px] max-w-[300px] rounded-lg border-2 transition-all duration-200',
         config.bgColor,
-        selected && 'ring-2 ring-primary ring-offset-2 shadow-lg',
+        selected && 'ring-2 ring-info-border ring-offset-2 shadow-lg',
         !selected && 'shadow-sm hover:shadow-md'
       )}
     >
@@ -245,22 +246,22 @@ export const IntegrationNode = memo<IntegrationNodeProps>(({ id, data, selected 
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
+        className="!w-3 !h-3 !bg-info-color !border-2 !border-background"
       />
       <Handle
         type="target"
         position={Position.Left}
-        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
+        className="!w-3 !h-3 !bg-info-color !border-2 !border-background"
       />
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
+        className="!w-3 !h-3 !bg-info-color !border-2 !border-background"
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
+        className="!w-3 !h-3 !bg-info-color !border-2 !border-background"
       />
 
       {/* Header */}
@@ -277,7 +278,7 @@ export const IntegrationNode = memo<IntegrationNodeProps>(({ id, data, selected 
         <div className="flex items-center gap-1">
           {StatusIcon && <StatusIcon className={cn('w-4 h-4', statusConfig.color)} />}
           <div className="relative">
-            <button
+            <Button variant="ghost" size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowMenu(!showMenu);
@@ -285,36 +286,36 @@ export const IntegrationNode = memo<IntegrationNodeProps>(({ id, data, selected 
               className="p-1 hover:bg-black/5 rounded"
             >
               <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
-            </button>
+            </Button>
             {showMenu && (
               <div className="absolute right-0 top-full mt-1 bg-surface rounded-lg shadow-lg border border-border py-1 z-50 min-w-[130px]">
-                <button
+                <Button variant="ghost" size="sm"
                   onClick={handleEdit}
-                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted/40 flex items-center gap-2"
+                  className="w-full justify-start px-3 py-1.5 text-left text-sm hover:bg-muted/40 flex items-center gap-2"
                 >
                   <Edit2 className="w-3.5 h-3.5" /> Edit
-                </button>
-                <button
+                </Button>
+                <Button variant="ghost" size="sm"
                   onClick={() => data.onConfigure?.(id)}
-                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted/40 flex items-center gap-2"
+                  className="w-full justify-start px-3 py-1.5 text-left text-sm hover:bg-muted/40 flex items-center gap-2"
                 >
                   <Key className="w-3.5 h-3.5" /> Configure
-                </button>
+                </Button>
                 {data.documentationUrl && (
-                  <button
+                  <Button variant="ghost" size="sm"
                     onClick={handleOpenDocs}
-                    className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted/40 flex items-center gap-2"
+                    className="w-full justify-start px-3 py-1.5 text-left text-sm hover:bg-muted/40 flex items-center gap-2"
                   >
                     <ExternalLink className="w-3.5 h-3.5" /> Docs
-                  </button>
+                  </Button>
                 )}
                 <hr className="my-1" />
-                <button
+                <Button variant="ghost" size="sm"
                   onClick={handleDelete}
-                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-destructive-bg text-destructive flex items-center gap-2"
+                  className="w-full justify-start px-3 py-1.5 text-left text-sm hover:bg-destructive-bg text-destructive flex items-center gap-2"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Remove
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -347,21 +348,21 @@ export const IntegrationNode = memo<IntegrationNodeProps>(({ id, data, selected 
         </div>
         <div className="flex items-center gap-2">
           {data.commentCount && data.commentCount > 0 && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 data.onOpenComments?.(id);
               }}
-              className="flex items-center gap-1 hover:text-primary"
+              className="flex items-center gap-1 hover:text-info-color"
             >
               <MessageSquare className="w-3.5 h-3.5" />
               {data.commentCount}
-            </button>
+            </Button>
           )}
           {data.capabilities.length > 0 && (
-            <button onClick={handleToggleExpand} className="hover:text-primary">
+            <Button variant="ghost" size="sm" onClick={handleToggleExpand} className="hover:text-info-color">
               {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </button>
+            </Button>
           )}
         </div>
       </div>

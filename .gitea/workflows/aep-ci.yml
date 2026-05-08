@@ -1,6 +1,6 @@
-# Ghatana AEP (Agentic Event Processor) — Continuous Integration
+# Ghatana Data Cloud Action Plane — Continuous Integration
 #
-# Runs on every push and pull request that touches the aep product or
+# Runs on every push and pull request that touches the Data Cloud Action Plane or
 # shared platform libraries. Uses Gitea Actions (GitHub Actions-compatible syntax).
 #
 # Jobs:
@@ -9,7 +9,7 @@
 #   3. docker-build     — Build & push multi-arch image to the Gitea registry
 #   4. security-scan    — Trivy CVE scan with SARIF upload
 
-name: aep-ci
+name: data-cloud-action-plane-ci
 
 on:
   push:
@@ -37,7 +37,7 @@ on:
 env:
   JAVA_VERSION: "21"
   REGISTRY: ${{ gitea.server_url | replace('https://', '') | replace('http://', '') }}
-  IMAGE_NAME: ${{ gitea.repository }}/aep
+  IMAGE_NAME: ${{ gitea.repository }}/data-cloud-action-plane
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -120,7 +120,7 @@ jobs:
             --no-daemon \
             --info || echo "No integration tests configured, skipping."
 
-      - name: Generate AEP coverage reports
+      - name: Generate action plane coverage reports
         env:
           DOCKER_HOST: tcp://docker:2376
           DOCKER_TLS_CERTDIR: ""
@@ -148,7 +148,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: aep-jacoco-coverage
+          name: action-plane-jacoco-coverage
           path: products/data-cloud/planes/action/**/build/reports/jacoco/test/
           retention-days: 7
 
@@ -356,7 +356,7 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-results.sarif
-          category:   trivy-container-aep
+          category:   trivy-container-action-plane
 
       - name: Run Trivy for SBOM generation (SPDX JSON)
         uses: aquasecurity/trivy-action@0.28.0
@@ -368,6 +368,6 @@ jobs:
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
         with:
-          name: aep-sbom
+          name: action-plane-sbom
           path: sbom.spdx.json
           retention-days: 30

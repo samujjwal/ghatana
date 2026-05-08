@@ -12,6 +12,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Button, Card, CardContent } from '@ghatana/design-system';
+import { Select } from '../ui/Select';
 
 export type DeploymentMode = 'planning' | 'preview' | 'production';
 
@@ -157,7 +158,7 @@ export const RunReadinessPanel: React.FC<RunReadinessPanelProps> = ({
             <label htmlFor="deployment-mode-select" className="text-sm font-medium text-fg sr-only">
               Deployment mode
             </label>
-            <select
+            <Select
               id="deployment-mode-select"
               value={mode}
               onChange={handleModeChange}
@@ -170,7 +171,7 @@ export const RunReadinessPanel: React.FC<RunReadinessPanelProps> = ({
                   {MODE_LABELS[m].label}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         </CardContent>
       </Card>
@@ -234,15 +235,17 @@ export const RunReadinessPanel: React.FC<RunReadinessPanelProps> = ({
       {/* Deployment Plan */}
       {plan.length > 0 && (
         <section aria-label="Deployment plan">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             className="flex w-full items-center justify-between text-sm font-medium text-fg mb-3 hover:text-fg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={togglePlan}
             aria-expanded={planExpanded}
           >
             <span>Deployment plan ({plan.length} steps)</span>
             <span aria-hidden="true">{planExpanded ? '▲' : '▼'}</span>
-          </button>
+          </Button>
           {planExpanded && (
             <ol className="space-y-2 list-none" aria-label="Deployment steps">
               {[...plan].sort((a, b) => a.order - b.order).map((step) => {

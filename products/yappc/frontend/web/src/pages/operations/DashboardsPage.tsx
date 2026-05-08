@@ -13,6 +13,7 @@ import React from 'react';
 import { useParams, NavLink } from 'react-router';
 import { LayoutDashboard, Plus } from 'lucide-react';
 import { ROUTES } from '../../router/paths';
+import { Button } from '../../components/ui/Button';
 
 const DashboardsPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -30,9 +31,9 @@ const DashboardsPage: React.FC = () => {
               <p className="text-fg-muted">Custom monitoring dashboards</p>
             </div>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 transition-colors text-sm font-medium">
+          <Button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 transition-colors text-sm font-medium">
             <Plus className="w-4 h-4" /> New Dashboard
-          </button>
+          </Button>
         </div>
 
         <div className="flex flex-col items-center justify-center py-20 text-center">

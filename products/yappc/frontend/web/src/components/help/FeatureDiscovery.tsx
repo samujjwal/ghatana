@@ -13,6 +13,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { readStorage, writeStorage } from '../../services/storage';
+import { Button } from '../ui/Button';
 
 interface FeatureHighlight {
     id: string;
@@ -99,21 +100,25 @@ export function FeatureDiscoveryTooltip({
                     <h3 className="font-semibold text-fg">{feature.title}</h3>
                     <p className="text-sm text-fg-muted mt-1">{feature.description}</p>
                 </div>
-                <button
+                <Button
                     onClick={onDismiss}
+                    variant="ghost"
+                    size="small"
                     className="text-fg-muted hover:text-fg-muted"
                     aria-label="Dismiss"
                 >
                     ×
-                </button>
+                </Button>
             </div>
             <div className="mt-3 flex justify-end">
-                <button
+                <Button
                     onClick={onDismiss}
+                    variant="ghost"
+                    size="small"
                     className="text-sm text-info-color hover:text-info-color font-medium"
                 >
                     Got it
-                </button>
+                </Button>
             </div>
         </div>
     );

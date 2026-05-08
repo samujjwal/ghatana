@@ -14,8 +14,8 @@ registerBuiltInRenderers();
 const DND_COMPONENT_MIME = 'application/x-page-component';
 const DND_NODE_MIME = 'application/x-page-node';
 const PAGE_RENDERER_TOKENS = {
-  selectionBorder: 'var(--color-primary-600, var(--accent, #2563eb))',
-  dropActiveBackground: 'var(--color-primary-100, var(--accent-soft, #dbeafe))',
+  selectionBorder: 'var(--info-color, var(--accent, #2563eb))',
+  dropActiveBackground: 'var(--info-bg, var(--accent-soft, #dbeafe))',
   dropIdleBorder: 'var(--color-border-subtle, var(--border-subtle, #cbd5e1))',
   dropIdleBackground: 'var(--color-surface-muted, var(--surface-subtle, #f1f5f9))',
   textMuted: 'var(--color-text-muted, var(--text-muted, #334155))',

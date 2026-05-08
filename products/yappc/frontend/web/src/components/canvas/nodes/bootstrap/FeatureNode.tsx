@@ -13,6 +13,7 @@
 import React, { memo, useCallback, useState } from 'react';
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { cn } from '../../utils/cn';
+import { Button } from '../../../ui/Button';
 import {
   Sparkles,
   Rocket,
@@ -69,8 +70,8 @@ export interface FeatureNodeProps extends NodeProps<FeatureCanvasNode> {}
 const PHASE_CONFIG: Record<FeaturePhase, { label: string; color: string; bgColor: string; icon: typeof Rocket }> = {
   mvp: {
     label: 'MVP',
-    color: 'text-emerald-700',
-    bgColor: 'bg-emerald-50 border-emerald-200',
+    color: 'text-success-color',
+    bgColor: 'bg-success-bg border-success-border',
     icon: Rocket,
   },
   v2: {
@@ -95,7 +96,7 @@ const PRIORITY_CONFIG: Record<FeaturePriority, { label: string; color: string; d
 
 const STATUS_CONFIG: Record<FeatureStatus, { label: string; icon: typeof CheckCircle2; color: string }> = {
   identified: { label: 'Identified', icon: AlertCircle, color: 'text-fg-muted' },
-  confirmed: { label: 'Confirmed', icon: CheckCircle2, color: 'text-emerald-600' },
+  confirmed: { label: 'Confirmed', icon: CheckCircle2, color: 'text-success-color' },
   rejected: { label: 'Rejected', icon: XCircle, color: 'text-destructive' },
 };
 
@@ -149,7 +150,7 @@ export const FeatureNode = memo<FeatureNodeProps>(({ id, data, selected }) => {
       className={cn(
         'min-w-[220px] max-w-[300px] rounded-lg border-2 transition-all duration-200',
         phase.bgColor,
-        selected && 'ring-2 ring-primary ring-offset-2 shadow-lg',
+        selected && 'ring-2 ring-info-border ring-offset-2 shadow-lg',
         !selected && 'shadow-sm hover:shadow-md'
       )}
     >
@@ -185,7 +186,7 @@ export const FeatureNode = memo<FeatureNodeProps>(({ id, data, selected }) => {
           <div className={cn('w-2 h-2 rounded-full', priority.dotColor)} title={`${priority.label} priority`} />
           <StatusIcon className={cn('w-4 h-4', status.color)} />
           <div className="relative">
-            <button
+            <Button variant="ghost" size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowMenu(!showMenu);
@@ -193,28 +194,28 @@ export const FeatureNode = memo<FeatureNodeProps>(({ id, data, selected }) => {
               className="p-1 hover:bg-black/5 rounded"
             >
               <MoreHorizontal className="w-4 h-4 text-fg-muted" />
-            </button>
+            </Button>
             {showMenu && (
               <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border py-1 z-50 min-w-[120px]">
-                <button
+                <Button variant="ghost" size="sm"
                   onClick={handleEdit}
-                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-surface-muted flex items-center gap-2"
+                  className="w-full justify-start px-3 py-1.5 text-left text-sm hover:bg-surface-muted flex items-center gap-2"
                 >
                   <Edit2 className="w-3.5 h-3.5" /> Edit
-                </button>
-                <button
+                </Button>
+                <Button variant="ghost" size="sm"
                   onClick={() => data.onAddDependency?.(id)}
-                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-surface-muted flex items-center gap-2"
+                  className="w-full justify-start px-3 py-1.5 text-left text-sm hover:bg-surface-muted flex items-center gap-2"
                 >
                   <Link className="w-3.5 h-3.5" /> Link
-                </button>
+                </Button>
                 <hr className="my-1" />
-                <button
+                <Button variant="ghost" size="sm"
                   onClick={handleDelete}
-                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-destructive-bg text-destructive flex items-center gap-2"
+                  className="w-full justify-start px-3 py-1.5 text-left text-sm hover:bg-destructive-bg text-destructive flex items-center gap-2"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Delete
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -245,22 +246,22 @@ export const FeatureNode = memo<FeatureNodeProps>(({ id, data, selected }) => {
             </span>
           )}
           {data.commentCount && data.commentCount > 0 && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 data.onOpenComments?.(id);
               }}
-              className="flex items-center gap-1 hover:text-primary"
+              className="flex items-center gap-1 hover:text-info-color"
             >
               <MessageSquare className="w-3.5 h-3.5" />
               {data.commentCount}
-            </button>
+            </Button>
           )}
         </div>
         {(data.description || data.techStack?.length || data.notes) && (
-          <button onClick={handleToggleExpand} className="hover:text-primary">
+          <Button variant="ghost" size="sm" onClick={handleToggleExpand} className="hover:text-info-color">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -291,20 +292,20 @@ export const FeatureNode = memo<FeatureNodeProps>(({ id, data, selected }) => {
           {/* Status Actions */}
           <div className="flex gap-1 pt-1">
             {data.status !== 'confirmed' && (
-              <button
+              <Button variant="ghost" size="sm"
                 onClick={handleStatusChange('confirmed')}
-                className="px-2 py-1 text-xs bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200"
+                className="px-2 py-1 text-xs bg-success-bg text-success-color rounded hover:bg-success-bg/80"
               >
                 Confirm
-              </button>
+              </Button>
             )}
             {data.status !== 'rejected' && (
-              <button
+              <Button variant="ghost" size="sm"
                 onClick={handleStatusChange('rejected')}
                 className="px-2 py-1 text-xs bg-destructive-bg text-destructive rounded hover:bg-destructive-bg"
               >
                 Reject
-              </button>
+              </Button>
             )}
           </div>
         </div>

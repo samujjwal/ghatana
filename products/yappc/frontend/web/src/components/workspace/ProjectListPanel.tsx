@@ -16,6 +16,7 @@ import { useNavigate, useParams } from 'react-router';
 
 import { workspaceAtom, type ProjectWithOwnership } from '../../state/atoms/workspaceAtom';
 import { LifecyclePhaseBadge } from '../lifecycle/LifecyclePhaseBadge';
+import { Button } from '../ui/Button';
 
 function toLegacyLifecyclePhase(
     phase: ProjectWithOwnership['lifecyclePhase']
@@ -84,9 +85,11 @@ export function ProjectListPanel({
         <div className={`flex flex-col ${className}`}>
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-grey-200 dark:border-grey-700">
-                <button
+                <Button
                     type="button"
                     onClick={() => setIsCollapsed(!isCollapsed)}
+                    variant="ghost"
+                    size="small"
                     className="flex items-center gap-2 text-sm font-semibold text-grey-700 dark:text-grey-300"
                 >
                     <svg
@@ -98,7 +101,7 @@ export function ProjectListPanel({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                     PROJECTS
-                </button>
+                </Button>
 
                 {/* Project Count Badge */}
                 <span className="px-2 py-0.5 text-xs font-medium rounded-full 
@@ -113,10 +116,12 @@ export function ProjectListPanel({
                     {/* Quick Filters */}
                     <div className="flex gap-1 px-3 py-2 border-b border-grey-100 dark:border-grey-800">
                         {(['all', 'owned', 'included'] as const).map((f) => (
-                            <button
+                            <Button
                                 key={f}
                                 type="button"
                                 onClick={() => setFilter(f)}
+                                variant="ghost"
+                                size="small"
                                 className={`
                   px-2 py-1 text-xs font-medium rounded-md transition-colors
                   ${filter === f
@@ -126,7 +131,7 @@ export function ProjectListPanel({
                 `}
                             >
                                 {f === 'all' ? 'All' : f === 'owned' ? 'Owned' : 'Included'}
-                            </button>
+                            </Button>
                         ))}
                     </div>
 
@@ -141,22 +146,25 @@ export function ProjectListPanel({
                                     }
                                 </p>
                                 {filter !== 'included' && onCreateProject && (
-                                    <button
+                                    <Button
                                         type="button"
                                         onClick={onCreateProject}
+                                        variant="link"
+                                        size="small"
                                         className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
                                     >
                                         Create your first project →
-                                    </button>
+                                    </Button>
                                 )}
                             </div>
                         ) : (
                             <ul className="py-1">
                                 {filteredProjects.map((project) => (
                                     <li key={project.id}>
-                                        <button
+                                        <Button
                                             type="button"
                                             onClick={() => handleSelectProject(project)}
+                                            variant="ghost"
                                             data-testid={`project-item-${project.id}`}
                                             className={`
                         w-full flex items-start gap-3 px-4 py-3 text-left
@@ -168,16 +176,16 @@ export function ProjectListPanel({
                       `}
                                         >
                                             {/* Health Indicator */}
-                                            <div className="flex-shrink-0 pt-1">
-                                                <div
+                                            <span className="flex-shrink-0 pt-1">
+                                                <span
                                                     className={`w-2 h-2 rounded-full ${getHealthColor(project.aiHealthScore)}`}
                                                     title={project.aiHealthScore ? `Health: ${project.aiHealthScore}%` : 'No health data'}
                                                 />
-                                            </div>
+                                            </span>
 
                                             {/* Project Info */}
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2">
+                                            <span className="flex-1 min-w-0">
+                                                <span className="flex items-center gap-2">
                                                     <span className={`
                             text-sm font-medium truncate
                             ${activeProjectId === project.id
@@ -197,25 +205,25 @@ export function ProjectListPanel({
                                                             read-only
                                                         </span>
                                                     )}
-                                                </div>
+                                                </span>
 
                                                 {/* Status & Type */}
-                                                <div className="flex items-center gap-2 mt-1">
+                                                <span className="flex items-center gap-2 mt-1">
                                                     <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${getStatusStyle(project.status)}`}>
                                                         {project.status}
                                                     </span>
                                                     <span className="text-[10px] text-grey-400 dark:text-grey-500">
                                                         {project.type.replace('_', ' ')}
                                                     </span>
-                                                </div>
+                                                </span>
 
                                                 {/* Lifecycle Phase Badge */}
-                                                <div className="mt-1.5">
+                                                <span className="mt-1.5 block">
                                                     <LifecyclePhaseBadge
                                                         phase={toLegacyLifecyclePhase(project.lifecyclePhase)}
                                                         size="sm"
                                                     />
-                                                </div>
+                                                </span>
 
                                                 {/* AI Next Action - subtle hint */}
                                                 {project.aiNextActions.length > 0 && (
@@ -223,8 +231,8 @@ export function ProjectListPanel({
                                                         💡 {project.aiNextActions[0]}
                                                     </p>
                                                 )}
-                                            </div>
-                                        </button>
+                                            </span>
+                                        </Button>
                                     </li>
                                 ))}
                             </ul>
@@ -234,9 +242,10 @@ export function ProjectListPanel({
                     {/* Actions */}
                     <div className="border-t border-grey-200 dark:border-grey-700 p-2 space-y-1">
                         {onCreateProject && (
-                            <button
+                            <Button
                                 type="button"
                                 onClick={onCreateProject}
+                                variant="ghost"
                                 data-testid="create-project-btn"
                                 className="
                   w-full flex items-center gap-2 px-3 py-2
@@ -247,13 +256,14 @@ export function ProjectListPanel({
                             >
                                 <span className="text-lg">+</span>
                                 <span>New Project</span>
-                            </button>
+                            </Button>
                         )}
 
                         {onImportProject && (
-                            <button
+                            <Button
                                 type="button"
                                 onClick={onImportProject}
+                                variant="ghost"
                                 data-testid="import-project-btn"
                                 className="
                   w-full flex items-center gap-2 px-3 py-2
@@ -264,7 +274,7 @@ export function ProjectListPanel({
                             >
                                 <span className="text-lg">↓</span>
                                 <span>Include Project</span>
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </>

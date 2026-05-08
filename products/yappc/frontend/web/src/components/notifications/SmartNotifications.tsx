@@ -26,6 +26,12 @@ import { Typography, Button, Box, Card, CardContent, CardActions, Chip, Badge } 
 import { useSmartNotifications, useNotificationToast } from '../../hooks/useSmartNotifications';
 import type { Notification, ConsolidatedNotification, NotificationType } from '../../services/ai/NotificationService';
 
+const NativeInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
+  (props, ref) => React.createElement('input', { ...props, ref })
+);
+
+NativeInput.displayName = 'NativeInput';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -331,7 +337,7 @@ export function SmartNotifications({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Typography className="text-xs">Consolidate notifications</Typography>
-                    <input
+                    <NativeInput
                       type="checkbox"
                       checked={preferences.enableConsolidation}
                       onChange={(e) => updatePreferences({ enableConsolidation: e.target.checked })}

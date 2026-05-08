@@ -30,6 +30,7 @@ import { PanelManager } from './panels/PanelManager';
 import { type WorkspacePanelConfig } from './panels/types';
 import { CommandPalette, type CommandAction } from './tools/CommandPalette';
 import { CanvasErrorBoundary } from './CanvasErrorBoundary';
+import { Button } from '../ui/Button';
 import { type LifecyclePhase } from '@/types/lifecycle';
 import { type ReactFlowInstance } from '@xyflow/react';
 import { type AbstractionLevel } from '../../types/abstractionLevel';
@@ -226,20 +227,24 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
                 style={{ top: nodeContextMenu.y, left: nodeContextMenu.x }}
                 role="menu"
             >
-                <button
+                <Button
                     type="button"
-                    className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-surface-muted dark:hover:bg-surface"
+                    variant="ghost"
+                    size="small"
+                    className="w-full min-h-0 justify-start rounded-md px-3 py-2 text-left text-sm hover:bg-surface-muted dark:hover:bg-surface"
                     onClick={() => {
                         setIsInspectorOpen(true);
                         setNodeContextMenu(null);
                     }}
                 >
                     Edit in Inspector
-                </button>
+                </Button>
                 {canvasPolicy.canCreateArtifacts && (
-                    <button
+                    <Button
                         type="button"
-                        className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-surface-muted dark:hover:bg-surface"
+                        variant="ghost"
+                        size="small"
+                        className="w-full min-h-0 justify-start rounded-md px-3 py-2 text-left text-sm hover:bg-surface-muted dark:hover:bg-surface"
                         onClick={() => {
                             handlers.handleCopyNodes?.();
                             handlers.handlePasteNodes?.();
@@ -248,12 +253,15 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
                     >
                         <DuplicateIcon size={14} className="mr-2" />
                         Duplicate
-                    </button>
+                    </Button>
                 )}
                 {canvasPolicy.canMutateArtifacts && (
-                    <button
+                    <Button
                         type="button"
-                        className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-destructive hover:bg-surface-muted dark:text-destructive dark:hover:bg-surface"
+                        variant="ghost"
+                        tone="danger"
+                        size="small"
+                        className="w-full min-h-0 justify-start rounded-md px-3 py-2 text-left text-sm text-destructive hover:bg-surface-muted dark:text-destructive dark:hover:bg-surface"
                         onClick={() => {
                             setSelectedNodes([nodeContextMenu.nodeId]);
                             handlers.handleDeleteSelected();
@@ -262,7 +270,7 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
                     >
                         <TrashIcon size={14} className="mr-2" />
                         Delete
-                    </button>
+                    </Button>
                 )}
             </Box>
         )}

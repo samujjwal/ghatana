@@ -24,6 +24,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { useGeneratedCodeQualityGate } from '@/hooks/useGeneratedCodeQualityGate';
 import type { QualityCheckResult, QualityCheckStatus } from '@/hooks/useGeneratedCodeQualityGate';
+import { Button } from '../ui/Button';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -104,15 +105,17 @@ export function GeneratedCodeQualityGate({
     >
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-text-primary">Quality gate</h3>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => refetch()}
           className="rounded p-1 text-text-secondary hover:bg-grey-100"
           aria-label="Refresh quality checks"
           data-testid="btn-refresh-quality"
         >
           <RefreshCw className="h-3.5 w-3.5" />
-        </button>
+        </Button>
       </div>
 
       {isLoading && (
@@ -139,10 +142,11 @@ export function GeneratedCodeQualityGate({
         </div>
       )}
 
-      <button
+      <Button
         type="button"
         onClick={onAccept}
         disabled={!canAccept}
+        fullWidth
         className={cn(
           'w-full rounded-md px-4 py-2 text-sm font-medium transition-colors',
           canAccept
@@ -158,7 +162,7 @@ export function GeneratedCodeQualityGate({
         }
       >
         {canAccept ? 'Accept' : 'Accept (blocked — fix checks first)'}
-      </button>
+      </Button>
     </div>
   );
 }

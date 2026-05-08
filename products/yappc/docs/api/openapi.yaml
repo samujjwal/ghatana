@@ -966,6 +966,50 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
 
+  /api/v1/yappc/artifact/import-source/{jobId}:
+    get:
+      tags: [artifact-graph]
+      summary: Poll a governed source import job
+      operationId: getSourceImportJob
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Source import job progress snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [job]
+                properties:
+                  job:
+                    $ref: "#/components/schemas/SourceImportJob"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # ── Validate ─────────────────────────────────────────────────────────────────
 
   /api/v1/yappc/validate:
@@ -4775,24 +4819,76 @@ components:
             totalSize:
               type: integer
         job:
-          type: object
-          properties:
-            id:
-              type: string
-            status:
-              type: string
-              enum: [REVIEW_REQUIRED, REJECTED, FAILED]
-            reason:
-              type: string
-            tenantId:
-              type: string
-            workspaceId:
-              type: string
-            projectId:
-              type: string
-            createdAt:
-              type: string
-              format: date-time
+          $ref: "#/components/schemas/SourceImportJob"
+
+    SourceImportProgressStep:
+      type: object
+      required: [id, label, status, percent]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, completed, failed, skipped]
+        percent:
+          type: integer
+          minimum: 0
+          maximum: 100
+        message:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+
+    SourceImportJob:
+      type: object
+      required: [id, status, percentComplete, currentStep, steps, createdAt]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [VALIDATING, FETCHING_SOURCE, REVIEW_REQUIRED, REJECTED, FAILED]
+        reason:
+          type: string
+        tenantId:
+          type: string
+          nullable: true
+        workspaceId:
+          type: string
+          nullable: true
+        projectId:
+          type: string
+          nullable: true
+        sourceType:
+          type: string
+        source:
+          type: string
+        componentName:
+          type: string
+        percentComplete:
+          type: integer
+          minimum: 0
+          maximum: 100
+        currentStep:
+          type: string
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceImportProgressStep"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        auditRecorded:
+          type: boolean
 
     # ── Validate schemas ──────────────────────────────────────────────────────
 

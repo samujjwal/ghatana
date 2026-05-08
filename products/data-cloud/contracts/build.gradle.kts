@@ -90,6 +90,64 @@ tasks.register<JavaExec>("generateAepJavaSdk") {
     outputs.dir(outputDir)
 }
 
+tasks.register<JavaExec>("generateDataCloudTypescriptSdk") {
+    group = "contracts"
+    description = "Generates a TypeScript fetch client from the canonical Data Cloud OpenAPI spec (data-cloud.yaml)."
+
+    val outputDir = layout.buildDirectory.dir("generated/data-cloud/typescript")
+    classpath = openApiGeneratorCli
+    mainClass.set("org.openapitools.codegen.OpenAPIGenerator")
+    args(
+        "generate",
+        "-g", "typescript-fetch",
+        "-i", dataCloudSpec.asFile.toURI().toString(),
+        "-o", outputDir.get().asFile.absolutePath,
+        "--api-package", "com.ghatana.datacloud.api",
+        "--model-package", "com.ghatana.datacloud.model",
+        "--additional-properties",
+        listOf(
+            "npmName=@ghatana/data-cloud-client",
+            "npmVersion=${project.version}",
+            "supportsES6=true",
+            "typescriptThreePlus=true",
+            "withInterfaces=true"
+        ).joinToString(",")
+    )
+    inputs.file(dataCloudSpec)
+    outputs.dir(outputDir)
+}
+
+tasks.register<JavaExec>("generateDataCloudJavaSdk") {
+    group = "contracts"
+    description = "Generates a Java client SDK from the canonical Data Cloud OpenAPI spec (data-cloud.yaml) for integration tests."
+
+    val outputDir = layout.buildDirectory.dir("generated/data-cloud/java-sdk")
+    classpath = openApiGeneratorCli
+    mainClass.set("org.openapitools.codegen.OpenAPIGenerator")
+    args(
+        "generate",
+        "-g", "java",
+        "-i", dataCloudSpec.asFile.toURI().toString(),
+        "-o", outputDir.get().asFile.absolutePath,
+        "--api-package", "com.ghatana.datacloud.sdk.api",
+        "--model-package", "com.ghatana.datacloud.sdk.model",
+        "--invoker-package", "com.ghatana.datacloud.sdk",
+        "--group-id", "com.ghatana",
+        "--artifact-id", "data-cloud-java-sdk",
+        "--artifact-version", project.version.toString(),
+        "--additional-properties",
+        listOf(
+            "library=okhttp-gson",
+            "dateLibrary=java8",
+            "openApiNullable=false",
+            "useRxJava2=false",
+            "useRxJava3=false"
+        ).joinToString(",")
+    )
+    inputs.file(dataCloudSpec)
+    outputs.dir(outputDir)
+}
+
 abstract class CheckProductOpenApiSync : DefaultTask() {
     @get:InputFiles
     abstract val specFiles: ConfigurableFileCollection

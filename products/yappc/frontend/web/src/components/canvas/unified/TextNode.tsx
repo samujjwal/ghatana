@@ -8,6 +8,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Box, Typography } from '@ghatana/design-system';
 import { Handle, Position, type NodeProps, NodeResizer } from '@xyflow/react';
+import { Textarea } from '../../ui/Textarea';
 
 export interface TextNodeData {
   text: string;
@@ -93,12 +94,14 @@ export const TextNode = React.memo(
           className="w-full h-full bg-[#fafafa] border-[2px] rounded flex flex-col overflow-hidden relative pointer-events-auto p-4" style={{ borderColor: selected ? 'primary.main' : '#e0e0e0', boxShadow: selected ? 3 : 1, cursor: isEditing ? 'text' : 'move' }}
         >
           {isEditing ? (
-            <textarea
+            <Textarea
               ref={textareaRef}
               value={localText}
               onChange={handleChange}
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
+              resize="none"
+              fullWidth
               style={{
                 width: '100%',
                 height: '100%',

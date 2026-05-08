@@ -20,6 +20,7 @@ import { ChevronsUpDown as UnfoldMoreOutlined, ChevronsDownUp as UnfoldLessOutli
 
 import { LifecyclePhase } from '../../types/lifecycle';
 import { STATUS_BAR, TRANSITIONS, RADIUS, Z_INDEX } from '../../styles/design-tokens';
+import { Button } from '../ui/Button';
 import { PhaseProgressBar } from './PhaseProgressBar';
 
 // ============================================================================
@@ -97,23 +98,27 @@ function PhaseDot({ phase, status, isCurrent, progress, onClick }: PhaseDotProps
         const base = `${TRANSITIONS.fast} rounded-full cursor-pointer hover:scale-110`;
 
         if (isCurrent) {
-            return `${base} w-3.5 h-3.5 bg-primary-600 ring-4 ring-primary-300 ring-offset-2 shadow-lg scale-125`;
+            return `${base} w-3.5 h-3.5 bg-info-color ring-4 ring-info-border ring-offset-2 shadow-lg scale-125`;
         }
 
         if (status === 'completed') {
             return `${base} w-2 h-2 bg-success-bg opacity-60 scale-90`;
         }
 
-        return `${base} w-2 h-2 bg-grey-300 dark:bg-grey-600 opacity-40 scale-85`;
+        return `${base} w-2 h-2 bg-surface-muted dark:bg-surface-muted opacity-40 scale-85`;
     }, [isCurrent, status]);
 
     return (
         <Tooltip title={`${PHASE_LABELS[phase]}: ${progress}%`}>
-            <button
+            <Button
+                variant="ghost"
+                size="small"
                 onClick={onClick}
-                className={dotClass}
+                className={`${dotClass} min-h-0 p-0 text-transparent`}
                 aria-label={`Go to ${PHASE_LABELS[phase]} phase`}
-            />
+            >
+                <span className="sr-only">{PHASE_LABELS[phase]}</span>
+            </Button>
         </Tooltip>
     );
 }
@@ -128,9 +133,9 @@ function TechBadge({ tech }: TechBadgeProps) {
             className={`
                 inline-flex items-center gap-1 px-2 py-0.5
                 text-xs font-medium
-                bg-grey-100 dark:bg-grey-800 text-text-secondary
+                bg-surface-muted dark:bg-surface-muted text-text-secondary
                 ${RADIUS.button} ${TRANSITIONS.fast}
-                hover:bg-grey-200 dark:hover:bg-grey-700
+                hover:bg-surface-muted dark:hover:bg-surface-muted
             `}
             style={tech.color ? { backgroundColor: `${tech.color}20`, color: tech.color } : undefined}
         >

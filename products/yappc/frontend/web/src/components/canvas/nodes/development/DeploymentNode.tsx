@@ -13,6 +13,7 @@
 import React, { memo, useCallback, useState } from 'react';
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { cn } from '../../utils/cn';
+import { Button } from '../../../ui/Button';
 import {
   Rocket,
   Server,
@@ -279,7 +280,7 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
         'deployment-node w-80 rounded-xl border shadow-sm transition-all duration-200',
         'bg-surface',
         statusConfig.bgColor,
-        selected && 'ring-2 ring-primary ring-offset-2',
+        selected && 'ring-2 ring-info-border ring-offset-2',
         dragging && 'opacity-75 shadow-lg scale-[1.02]'
       )}
       onDoubleClick={handleViewLogs}
@@ -319,7 +320,7 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
 
           {/* Actions */}
           <div className="relative">
-            <button
+            <Button variant="ghost" size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowMenu(!showMenu);
@@ -327,7 +328,7 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
               className="p-1.5 rounded hover:bg-surface-muted text-fg-muted hover:text-fg"
             >
               <MoreHorizontal className="w-4 h-4" />
-            </button>
+            </Button>
 
             {showMenu && (
               <>
@@ -339,48 +340,48 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
                   }}
                 />
                 <div className="absolute right-0 top-full mt-1 w-40 bg-surface rounded-lg shadow-lg border border-border py-1 z-20">
-                  <button
+                  <Button variant="ghost" size="sm"
                     onClick={handleViewLogs}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-fg hover:bg-surface-muted"
+                    className="flex w-full items-center justify-start gap-2 px-3 py-2 text-sm text-fg hover:bg-surface-muted"
                   >
                     <Terminal className="w-4 h-4" />
                     View Logs
-                  </button>
+                  </Button>
                   {isPending && (
-                    <button
+                    <Button variant="ghost" size="sm"
                       onClick={handleApprove}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-success-color hover:bg-success-bg"
+                      className="flex w-full items-center justify-start gap-2 px-3 py-2 text-sm text-success-color hover:bg-success-bg"
                     >
                       <Play className="w-4 h-4" />
                       Approve & Deploy
-                    </button>
+                    </Button>
                   )}
                   {isInProgress && (
-                    <button
+                    <Button variant="ghost" size="sm"
                       onClick={handleCancel}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-destructive hover:bg-destructive-bg"
+                      className="flex w-full items-center justify-start gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive-bg"
                     >
                       <Pause className="w-4 h-4" />
                       Cancel Deployment
-                    </button>
+                    </Button>
                   )}
                   {canRollback && (
-                    <button
+                    <Button variant="ghost" size="sm"
                       onClick={handleRollback}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-warning-color hover:bg-warning-bg"
+                      className="flex w-full items-center justify-start gap-2 px-3 py-2 text-sm text-warning-color hover:bg-warning-bg"
                     >
                       <RotateCcw className="w-4 h-4" />
                       Rollback
-                    </button>
+                    </Button>
                   )}
                   {canRetry && (
-                    <button
+                    <Button variant="ghost" size="sm"
                       onClick={handleRetry}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-info-color hover:bg-info-bg"
+                      className="flex w-full items-center justify-start gap-2 px-3 py-2 text-sm text-info-color hover:bg-info-bg"
                     >
                       <Play className="w-4 h-4" />
                       Retry Deployment
-                    </button>
+                    </Button>
                   )}
                 </div>
               </>
@@ -505,7 +506,7 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
         </div>
 
         {data.pipeline && data.pipeline.length > 0 && (
-          <button
+          <Button variant="ghost" size="sm"
             onClick={handleToggleExpand}
             className="p-1 rounded hover:bg-surface-muted text-fg-muted hover:text-fg"
           >
@@ -514,7 +515,7 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
             ) : (
               <ChevronDown className="w-4 h-4" />
             )}
-          </button>
+          </Button>
         )}
       </div>
     </div>

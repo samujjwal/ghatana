@@ -364,6 +364,7 @@ public class DataLifecycleHandler {
                                 result.put("confirmationToken", token);
                                 result.put("tokenExpiresInSec", DestructiveActionToken.TOKEN_VALIDITY_MS / 1000);
                                 result.put("estimatedRows", candidates.size());
+                                result.put("eligibleCount", candidates.size());
                                 result.put("sampleEntityIds", candidates.stream()
                                     .map(entity -> entity.id().value())
                                     .limit(10)
@@ -435,6 +436,7 @@ public class DataLifecycleHandler {
                                     "collection", collection,
                                     "dryRun", false,
                                     "status", "PURGE_COMPLETED",
+                                    "deletedCount", 0,
                                     "deletedRows", 0,
                                     "deletedEntityIds", List.of(),
                                     "requestId", requestId,
@@ -478,6 +480,7 @@ public class DataLifecycleHandler {
                                 result.put("collection", collection);
                                 result.put("dryRun", false);
                                 result.put("status", "PURGE_COMPLETED");
+                                result.put("deletedCount", batchResult.successCount());
                                 result.put("deletedRows", batchResult.successCount());
                                 result.put("requestedRows", entityIds.size());
                                 result.put("failedRows", batchResult.failureCount());
@@ -603,6 +606,7 @@ public class DataLifecycleHandler {
                             result.put("tokenExpiresInSec", DestructiveActionToken.TOKEN_VALIDITY_MS / 1000);
                             result.put("estimatedFields", changedFields.size());
                             result.put("fields", changedFields);
+                            result.put("fieldsToRedact", changedFields);
                             result.put("previousValueHashes", previousValueHashes);
                             result.put("reason", reason);
                             return Promise.of(http.envelopeResponse(
@@ -628,7 +632,7 @@ public class DataLifecycleHandler {
                         // Execute path: token is mandatory and must pass HMAC verification
                         if (confirmationToken.isBlank()) {
                             return Promise.of(http.errorEnvelopeResponse(
-                                ApiResponse.error("MISSING_CONFIRMATION",
+                                ApiResponse.error("MISSING_confirmationToken",
                                     "confirmationToken is required to authorise redaction. " +
                                     "Perform a dry-run first to obtain a valid token.",
                                     tenantId, requestId),
@@ -667,6 +671,7 @@ public class DataLifecycleHandler {
                                         "entityId", entityId,
                                         "fieldCount", changedFields.size(),
                                         "fields", changedFields,
+                                        "redactedFields", changedFields,
                                         "previousValueHashes", previousValueHashes,
                                         "reason", reason));
                                 logGovernanceEvent(
@@ -1611,7 +1616,8 @@ public class DataLifecycleHandler {
                 return saveGovernancePolicy(tenantContext, policyId, policy)
                     .map(savedPolicy -> {
                         log.info("[P1-1] Policy created tenant={} policyId={} name={}", tenantId, policyId, savedPolicy.get("name"));
-                        return http.jsonResponse(201, savedPolicy);
+                        return http.errorEnvelopeResponse(
+                            ApiResponse.success(savedPolicy, tenantId, requestId), objectMapper, 201);
                     });
             } catch (Exception e) {
                 log.error("[P1-1] Failed to create policy tenant={}", tenantId, e);
@@ -1650,9 +1656,10 @@ public class DataLifecycleHandler {
         String policyId = request.getPathParameter("id");
         TenantContext tenantContext = buildTenantContext(tenantId, resolveRequestId(request));
 
+        String requestId = resolveRequestId(request);
         return loadGovernancePolicyById(tenantContext, policyId)
             .map(policy -> policy
-                .map(http::jsonResponse)
+                .map(p -> http.envelopeResponse(ApiResponse.success(p, tenantId, requestId), objectMapper))
                 .orElseGet(() -> http.errorResponse(404, "Policy not found: " + policyId)));
     }
 
@@ -1666,8 +1673,9 @@ public class DataLifecycleHandler {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
 
+        String requestId = resolveRequestId(request);
         String policyId = request.getPathParameter("id");
-        TenantContext tenantContext = buildTenantContext(tenantId, resolveRequestId(request));
+        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
 
         return request.loadBody().then(buf -> {
             try {
@@ -1692,7 +1700,8 @@ public class DataLifecycleHandler {
                         return saveGovernancePolicy(tenantContext, policyId, policy)
                             .map(savedPolicy -> {
                                 log.info("[P1-1] Policy updated tenant={} policyId={}", tenantId, policyId);
-                                return http.jsonResponse(savedPolicy);
+                                return http.envelopeResponse(
+                                    ApiResponse.success(savedPolicy, tenantId, requestId), objectMapper);
                             });
                     });
             } catch (Exception e) {
@@ -1711,8 +1720,9 @@ public class DataLifecycleHandler {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
 
+        String requestId = resolveRequestId(request);
         String policyId = request.getPathParameter("id");
-        TenantContext tenantContext = buildTenantContext(tenantId, resolveRequestId(request));
+        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
 
         return loadGovernancePolicyById(tenantContext, policyId)
             .then(existingOpt -> {
@@ -1721,19 +1731,25 @@ public class DataLifecycleHandler {
                 }
                 Promise<Void> deletePromise = requireEntityStore().delete(tenantContext, EntityStore.EntityId.of(governancePolicyEntityId(policyId)));
                 if (deletePromise == null) {
-                    return Promise.of(http.jsonResponse(Map.of(
-                        "id", policyId,
-                        "status", "deleted",
-                        "deletedAt", Instant.now().toString()
-                    )));
+                    emitAudit(tenantId, requestId, "POLICY_DELETED", GOVERNANCE_POLICIES_COLLECTION,
+                        Map.of("policyId", policyId));
+                    return Promise.of(http.envelopeResponse(
+                        ApiResponse.success(Map.of(
+                            "id", policyId,
+                            "status", "deleted",
+                            "deletedAt", Instant.now().toString()
+                        ), tenantId, requestId), objectMapper));
                 }
                 return deletePromise.map(ignored -> {
                     log.info("[P1-1] Policy deleted tenant={} policyId={}", tenantId, policyId);
-                    return http.jsonResponse(Map.of(
-                        "id", policyId,
-                        "status", "deleted",
-                        "deletedAt", Instant.now().toString()
-                    ));
+                    emitAudit(tenantId, requestId, "POLICY_DELETED", GOVERNANCE_POLICIES_COLLECTION,
+                        Map.of("policyId", policyId));
+                    return http.envelopeResponse(
+                        ApiResponse.success(Map.of(
+                            "id", policyId,
+                            "status", "deleted",
+                            "deletedAt", Instant.now().toString()
+                        ), tenantId, requestId), objectMapper);
                 });
             });
     }
@@ -1755,7 +1771,6 @@ public class DataLifecycleHandler {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> payload = objectMapper.readValue(
                     buf.getString(StandardCharsets.UTF_8), Map.class);
-                boolean enabled = Boolean.parseBoolean(String.valueOf(payload.getOrDefault("enabled", "true")));
 
                 return loadGovernancePolicyById(tenantContext, policyId)
                     .then(existingOpt -> {
@@ -1763,14 +1778,25 @@ public class DataLifecycleHandler {
                             return Promise.of(http.errorResponse(404, "Policy not found: " + policyId));
                         }
 
-                        Map<String, Object> policy = new LinkedHashMap<>(existingOpt.get());
+                        Map<String, Object> existingPolicy = existingOpt.get();
+                        // Toggle: flip current enabled state, or use request body if explicitly provided
+                        boolean enabled;
+                        if (payload.containsKey("enabled")) {
+                            enabled = Boolean.parseBoolean(String.valueOf(payload.get("enabled")));
+                        } else {
+                            boolean currentEnabled = Boolean.TRUE.equals(existingPolicy.get("enabled"));
+                            enabled = !currentEnabled;
+                        }
+                        Map<String, Object> policy = new LinkedHashMap<>(existingPolicy);
                         policy.put("enabled", enabled);
                         policy.put("updatedAt", Instant.now().toString());
 
                         return saveGovernancePolicy(tenantContext, policyId, policy)
                             .map(savedPolicy -> {
+                                String reqId = resolveRequestId(request);
                                 log.info("[P1-1] Policy toggled tenant={} policyId={} enabled={}", tenantId, policyId, enabled);
-                                return http.jsonResponse(savedPolicy);
+                                return http.envelopeResponse(
+                                    ApiResponse.success(savedPolicy, tenantId, reqId), objectMapper);
                             });
                     });
             } catch (Exception e) {

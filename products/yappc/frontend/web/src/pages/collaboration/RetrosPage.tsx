@@ -12,6 +12,7 @@
 import React from 'react';
 import { useParams } from 'react-router';
 import { RotateCcw, Plus, ThumbsUp, ThumbsDown, Lightbulb } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
 
 const RetrosPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -29,9 +30,12 @@ const RetrosPage: React.FC = () => {
               <p className="text-fg-muted">Reflect, learn, and improve as a team</p>
             </div>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 transition-colors text-sm font-medium">
-            <Plus className="w-4 h-4" /> New Retro
-          </button>
+          <Button
+            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium hover:bg-violet-500"
+            startIcon={<Plus className="w-4 h-4" />}
+          >
+            New Retro
+          </Button>
         </div>
 
         <div className="grid grid-cols-3 gap-4 mb-8">

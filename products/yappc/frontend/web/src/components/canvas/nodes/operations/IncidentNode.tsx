@@ -253,7 +253,7 @@ function IncidentNodeComponent({ data, selected }: IncidentNodeProps) {
       className={cn(
         'min-w-[280px] max-w-[320px] rounded-lg border-2 bg-white shadow-md transition-all',
         severityConfig.borderColor,
-        selected && 'ring-2 ring-primary ring-offset-2'
+        selected && 'ring-2 ring-info-border ring-offset-2'
       )}
     >
       {/* Connection Handles */}

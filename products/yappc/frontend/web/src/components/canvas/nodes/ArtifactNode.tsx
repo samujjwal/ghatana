@@ -155,22 +155,22 @@ const ArtifactNodeInner: React.FC<NodeProps<ArtifactCanvasNode>> = ({ id, data, 
                 <Handle
                     type="target"
                     position={Position.Top}
-                    style={{ background: 'var(--color-primary, #1976d2)', width: 10, height: 10 }}
+                    style={{ background: 'var(--info-color, #1976d2)', width: 10, height: 10 }}
                 />
                 <Handle
                     type="source"
                     position={Position.Bottom}
-                    style={{ background: 'var(--color-primary, #1976d2)', width: 10, height: 10 }}
+                    style={{ background: 'var(--info-color, #1976d2)', width: 10, height: 10 }}
                 />
                 <Handle
                     type="target"
                     position={Position.Left}
-                    style={{ background: 'var(--color-primary, #1976d2)', width: 10, height: 10 }}
+                    style={{ background: 'var(--info-color, #1976d2)', width: 10, height: 10 }}
                 />
                 <Handle
                     type="source"
                     position={Position.Right}
-                    style={{ background: 'var(--color-primary, #1976d2)', width: 10, height: 10 }}
+                    style={{ background: 'var(--info-color, #1976d2)', width: 10, height: 10 }}
                 />
 
             <CardContent className="relative p-3 pb-3">

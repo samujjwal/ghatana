@@ -12,6 +12,7 @@
 import React from 'react';
 import { useParams } from 'react-router';
 import { Target, Plus, TrendingUp } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
 
 const GoalsPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -29,9 +30,9 @@ const GoalsPage: React.FC = () => {
               <p className="text-fg-muted">Track objectives and key results</p>
             </div>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 transition-colors text-sm font-medium">
-            <Plus className="w-4 h-4" /> New Goal
-          </button>
+          <Button startIcon={<Plus className="w-4 h-4" />} className="rounded-lg bg-violet-600 hover:bg-violet-500">
+            New Goal
+          </Button>
         </div>
 
         <div className="flex flex-col items-center justify-center py-20 text-center">

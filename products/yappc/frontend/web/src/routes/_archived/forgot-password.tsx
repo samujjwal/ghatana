@@ -6,6 +6,8 @@
  * @doc.layer frontend
  */
 import React, { useState, FormEvent } from 'react';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 import { authService } from '../../services/auth/AuthService';
 
 interface FormErrors {
@@ -53,7 +55,7 @@ export default function ForgotPasswordComponent(): React.ReactElement {
       <form onSubmit={(e) => void handleSubmit(e)}>
         <div>
           <label htmlFor="forgot-email">Email address</label>
-          <input
+          <Input
             id="forgot-email"
             aria-label="Email address"
             name="email"
@@ -66,9 +68,9 @@ export default function ForgotPasswordComponent(): React.ReactElement {
         {serverError && (
           <div data-testid="forgot-password-error">{serverError}</div>
         )}
-        <button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Sending…' : 'Send reset link'}
-        </button>
+        </Button>
       </form>
       <a href="/login">Back to login</a>
     </div>

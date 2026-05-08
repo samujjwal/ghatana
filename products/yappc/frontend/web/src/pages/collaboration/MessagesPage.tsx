@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 
 // ============================================================================
 // Types
@@ -103,12 +105,14 @@ const MessagesPage: React.FC = () => {
       <div className="w-72 shrink-0 border-r border-border flex flex-col bg-surface">
         <div className="p-4 border-b border-border">
           <h1 className="text-lg font-bold text-fg-muted mb-3">Messages</h1>
-          <input
+          <Input
             type="text"
             placeholder="Search channels..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-fg-muted text-sm placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-info-border"
+            fullWidth
+            size="sm"
+            className="px-3 py-2 bg-surface border border-border rounded-lg text-fg-muted text-sm placeholder-zinc-500 focus:ring-blue-500/40 focus:border-info-border"
           />
         </div>
 
@@ -124,32 +128,35 @@ const MessagesPage: React.FC = () => {
               {filteredChannels
                 ?.filter((c) => c.type === 'channel')
                 .map((channel) => (
-                  <button
+                  <Button
                     key={channel.id}
+                    variant="ghost"
+                    fullWidth
                     onClick={() => setSelectedChannelId(channel.id)}
-                    className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${
+                    aria-pressed={selectedChannelId === channel.id}
+                    className={`justify-start text-left px-4 py-2.5 rounded-none transition-colors [&>span]:flex [&>span]:w-full [&>span]:items-center [&>span]:gap-3 ${
                       selectedChannelId === channel.id
                         ? 'bg-surface text-fg-muted'
                         : 'text-fg-muted hover:bg-surface hover:text-fg-muted'
                     }`}
                   >
                     <span className="text-fg-muted text-sm">#</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
+                    <span className="flex-1 min-w-0">
+                      <span className="flex items-center justify-between">
                         <span className="text-sm font-medium truncate">{channel.name}</span>
                         {channel.unreadCount > 0 && (
                           <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-primary text-white rounded-full">
                             {channel.unreadCount}
                           </span>
                         )}
-                      </div>
+                      </span>
                       {channel.lastMessage && (
-                        <p className="text-xs text-fg-muted truncate mt-0.5">
+                        <span className="block text-xs text-fg-muted truncate mt-0.5">
                           {channel.lastMessage.sender}: {channel.lastMessage.text}
-                        </p>
+                        </span>
                       )}
-                    </div>
-                  </button>
+                    </span>
+                  </Button>
                 ))}
 
               {/* Direct Messages */}
@@ -157,34 +164,37 @@ const MessagesPage: React.FC = () => {
               {filteredChannels
                 ?.filter((c) => c.type === 'direct')
                 .map((channel) => (
-                  <button
+                  <Button
                     key={channel.id}
+                    variant="ghost"
+                    fullWidth
                     onClick={() => setSelectedChannelId(channel.id)}
-                    className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${
+                    aria-pressed={selectedChannelId === channel.id}
+                    className={`justify-start text-left px-4 py-2.5 rounded-none transition-colors [&>span]:flex [&>span]:w-full [&>span]:items-center [&>span]:gap-3 ${
                       selectedChannelId === channel.id
                         ? 'bg-surface text-fg-muted'
                         : 'text-fg-muted hover:bg-surface hover:text-fg-muted'
                     }`}
                   >
-                    <div className="w-5 h-5 rounded-full bg-surface-muted flex items-center justify-center text-[10px] text-fg-muted">
+                    <span className="w-5 h-5 rounded-full bg-surface-muted flex items-center justify-center text-[10px] text-fg-muted">
                       {channel.name.charAt(0)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="flex items-center justify-between">
                         <span className="text-sm font-medium truncate">{channel.name}</span>
                         {channel.unreadCount > 0 && (
                           <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-primary text-white rounded-full">
                             {channel.unreadCount}
                           </span>
                         )}
-                      </div>
+                      </span>
                       {channel.lastMessage && (
-                        <p className="text-xs text-fg-muted truncate mt-0.5">
+                        <span className="block text-xs text-fg-muted truncate mt-0.5">
                           {channel.lastMessage.text}
-                        </p>
+                        </span>
                       )}
-                    </div>
-                  </button>
+                    </span>
+                  </Button>
                 ))}
 
               {filteredChannels?.length === 0 && (
@@ -241,14 +251,15 @@ const MessagesPage: React.FC = () => {
             {/* Compose */}
             <div className="px-6 py-4 border-t border-border">
               <div className="flex gap-2">
-                <input
+                <Input
                   type="text"
                   placeholder={`Message #${channelData.channel.name}`}
-                  className="flex-1 px-4 py-2.5 bg-surface border border-border rounded-lg text-fg-muted text-sm placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-info-border"
+                  fullWidth
+                  className="px-4 py-2.5 bg-surface border border-border rounded-lg text-fg-muted text-sm placeholder-zinc-500 focus:ring-blue-500/40 focus:border-info-border"
                 />
-                <button className="px-4 py-2.5 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors">
+                <Button className="px-4 py-2.5 rounded-lg">
                   Send
-                </button>
+                </Button>
               </div>
             </div>
           </>

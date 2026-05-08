@@ -25,6 +25,7 @@ import {
   Circle,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { Button } from '../../../ui/Button';
 
 type TeamRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'GUEST';
 type TeamStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
@@ -160,13 +161,13 @@ function TeamNode({ data }: NodeProps<TeamCanvasNode>) {
 
           {/* Settings Button */}
           {onOpenSettings && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onOpenSettings}
               className="p-1.5 rounded-lg hover:bg-surface-muted text-fg-muted hover:text-white transition-colors"
               title="Team Settings"
             >
               <Settings className="w-4 h-4" />
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -200,13 +201,13 @@ function TeamNode({ data }: NodeProps<TeamCanvasNode>) {
 
         {/* Invite Button */}
         {onInviteMember && (
-          <button
+          <Button variant="ghost" size="sm"
             onClick={onInviteMember}
             className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 bg-info-bg/20 text-info-color rounded-lg hover:bg-info-bg/30 transition-colors text-sm font-medium"
           >
             <UserPlus className="w-4 h-4" />
             Invite Member
-          </button>
+          </Button>
         )}
       </div>
 
@@ -243,10 +244,10 @@ function TeamNode({ data }: NodeProps<TeamCanvasNode>) {
           </span>
           <div className="mt-2 space-y-1">
             {recentChannels.map((channel: TeamChannel) => (
-              <button
+              <Button variant="ghost" size="sm"
                 key={channel.id}
                 onClick={() => onOpenChannel?.(channel.id)}
-                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface-muted text-left transition-colors"
+                className="w-full flex items-center justify-start gap-2 px-2 py-1.5 rounded-lg hover:bg-surface-muted text-left transition-colors"
               >
                 {channel.type === 'PUBLIC' ? (
                   <Hash className="w-4 h-4 text-fg-muted" />
@@ -256,7 +257,7 @@ function TeamNode({ data }: NodeProps<TeamCanvasNode>) {
                 <span className="text-fg text-sm truncate flex-1">
                   {channel.name}
                 </span>
-              </button>
+              </Button>
             ))}
           </div>
         </div>

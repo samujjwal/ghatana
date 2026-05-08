@@ -13,6 +13,7 @@
  * @doc.pattern Presentational Component
  */
 
+import { Button } from '../../ui/Button';
 import { useCallback, useEffect } from 'react';
 import { Undo2 as Undo, Redo2 as Redo, Sparkles as AutoAwesome, HelpCircle as Help, CheckCircle, AlertTriangle as Warning, AlertCircle as ErrorIcon, Code as CodeIcon, CloudCheck as CloudDone, CloudOff, RefreshCw as Sync, MoreVertical as MoreVert, Navigation as NavigationIcon, Paintbrush as BrushIcon, GitBranch as DiagramIcon } from 'lucide-react';
 import { Menu, MenuItem, Tooltip, useTheme, useMediaQuery } from '@ghatana/design-system';
@@ -162,14 +163,14 @@ function IconButton({
 
     const variantClass = {
         default: active
-            ? 'bg-grey-100 dark:bg-grey-800 text-text-primary'
-            : 'text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800',
+            ? 'bg-surface-muted dark:bg-surface-muted text-text-primary'
+            : 'text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-muted',
         success: 'text-success-color hover:bg-success-bg dark:hover:bg-success-bg/30',
         warning: 'text-warning-color hover:bg-warning-bg dark:hover:bg-warning-bg/30',
         error: 'text-destructive hover:bg-destructive-bg dark:hover:bg-destructive-bg/30',
         primary: active
-            ? 'bg-grey-100 dark:bg-grey-800 text-primary-600'
-            : 'text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30',
+            ? 'bg-surface-muted dark:bg-surface-muted text-info-color'
+            : 'text-info-color hover:bg-info-bg dark:hover:bg-info-bg/30',
         secondary: 'text-secondary-600 hover:bg-secondary-50 dark:hover:bg-secondary-900/30',
     }[variant];
 
@@ -177,7 +178,7 @@ function IconButton({
         <Tooltip title={title || ''} arrow enterDelay={400}>
             {/* Span wrapper needed for disabled button tooltips and flex layout preservation */}
             <span className="inline-flex">
-                <button
+                <Button variant="ghost" size="sm"
                     onClick={onClick}
                     disabled={disabled}
                     // title removed - handled by Tooltip
@@ -186,11 +187,11 @@ function IconButton({
                         ${sizeClass} ${RADIUS.button} ${TRANSITIONS.fast}
                         ${variantClass}
                         disabled:opacity-30 disabled:cursor-not-allowed
-                        focus:outline-none focus:ring-2 focus:ring-primary-500
+                        focus:outline-none focus:ring-2 focus:ring-info-border
                     `}
                 >
                     {children}
-                </button>
+                </Button>
             </span>
         </Tooltip>
     );
@@ -223,15 +224,15 @@ function BadgeButton({
         success: 'bg-success-bg text-white hover:bg-success-bg',
         warning: 'bg-warning-bg text-black hover:bg-warning-bg',
         error: 'bg-destructive-bg text-white hover:bg-destructive-bg',
-        info: 'bg-info-bg text-white hover:bg-primary',
+        info: 'bg-info-bg text-white hover:bg-info-color',
         secondary: 'bg-secondary-500 text-white hover:bg-secondary-600',
-        default: 'bg-grey-200 text-text-secondary hover:bg-grey-300 dark:bg-grey-700 dark:hover:bg-grey-600',
+        default: 'bg-surface-muted text-text-secondary hover:bg-surface-muted dark:bg-surface-muted dark:hover:bg-surface-muted',
     }[variant];
 
     return (
         <Tooltip title={title || ''} arrow enterDelay={400}>
             <span className="inline-flex">
-                <button
+                <Button variant="ghost" size="sm"
                     onClick={onClick}
                     disabled={disabled || isLoading}
                     // title removed - handled by Tooltip
@@ -253,7 +254,7 @@ function BadgeButton({
                         <span className="flex items-center justify-center w-3 h-3">{icon}</span>
                     ) : null}
                     <span>{label}</span>
-                </button>
+                </Button>
             </span>
         </Tooltip>
     );
@@ -516,7 +517,7 @@ export function UnifiedCanvasToolbar({
 
             {/* Section 3: STATUS - Save & Sync (Icon only on mobile) */}
             <ToolbarSection>
-                <button
+                <Button variant="ghost" size="sm"
                     onClick={saveStatus === 'error' ? handleRetry : undefined}
                     className={`
                         flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium
@@ -525,7 +526,7 @@ export function UnifiedCanvasToolbar({
                             ? 'text-destructive bg-destructive-bg dark:bg-destructive-bg/20 hover:bg-destructive-bg dark:hover:bg-destructive-bg/30 cursor-pointer'
                             : saveStatus === 'saving'
                                 ? 'text-info-color bg-info-bg dark:bg-info-bg/20'
-                                : 'text-text-secondary hover:bg-grey-50 dark:hover:bg-grey-800 cursor-default'
+                                : 'text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-muted cursor-default'
                         }
                     `}
                     title={saveStatusTitle}
@@ -541,7 +542,7 @@ export function UnifiedCanvasToolbar({
                                     saveStatus === 'saved' ? formatSaveTime(lastSaveTime) : 'Synced'}
                         </span>
                     )}
-                </button>
+                </Button>
             </ToolbarSection>
 
             {!isMobile && <ToolbarDivider />}

@@ -74,6 +74,9 @@ const PluginDetailsPage = React.lazy(() =>
 const NotFound = React.lazy(() =>
   import('./pages/NotFound').then((m) => ({ default: m.NotFound }))
 );
+const DisabledSurfacePage = React.lazy(() =>
+  import('./pages/DisabledSurfacePage').then((m) => ({ default: m.DisabledSurfacePage }))
+);
 
 // AEP Integration Pages — new in Track 4
 const EventExplorerPage = React.lazy(() =>
@@ -296,7 +299,7 @@ export const routes: RouteObject[] = [
         path: 'alerts',
         element: (
           <RoleProtectedRoute routePath="/alerts">
-            <RuntimeCapabilityRouteGate aliases={['alert-triage', 'monitoring', 'alerts']}>
+            <RuntimeCapabilityRouteGate aliases={['alert-triage', 'monitoring', 'alerts']} fallback={withSuspense(() => <DisabledSurfacePage surfaceName="Alerts" surfaceDescription="The Alerts surface provides real-time alert triage and monitoring for your Data Cloud deployment." />)}>
               {withSuspense(AlertsPage)}
             </RuntimeCapabilityRouteGate>
           </RoleProtectedRoute>
@@ -324,7 +327,7 @@ export const routes: RouteObject[] = [
         path: 'memory',
         element: (
           <RoleProtectedRoute routePath="/memory">
-            <RuntimeCapabilityRouteGate aliases={['memory-plane', 'context', 'memory']} fallback={withSuspense(NotFound)}>
+            <RuntimeCapabilityRouteGate aliases={['memory-plane', 'memory']} fallback={withSuspense(() => <DisabledSurfacePage surfaceName="Memory Plane" surfaceDescription="The Memory Plane surface provides persistent memory and context management for AI agent workloads." />)}>
               {withSuspense(MemoryPlaneViewerPage)}
             </RuntimeCapabilityRouteGate>
           </RoleProtectedRoute>
@@ -335,7 +338,7 @@ export const routes: RouteObject[] = [
         path: 'entities',
         element: (
           <RoleProtectedRoute routePath="/entities">
-            <RuntimeCapabilityRouteGate aliases={['entity-browser', 'entities']} fallback={withSuspense(NotFound)}>
+            <RuntimeCapabilityRouteGate aliases={['entity-browser', 'entities']} fallback={withSuspense(() => <DisabledSurfacePage surfaceName="Entity Browser" surfaceDescription="The Entity Browser surface provides structured entity management and inspection for your data domains." />)}>
               {withSuspense(EntityBrowserPage)}
             </RuntimeCapabilityRouteGate>
           </RoleProtectedRoute>
@@ -346,7 +349,7 @@ export const routes: RouteObject[] = [
         path: 'context',
         element: (
           <RoleProtectedRoute routePath="/context">
-            <RuntimeCapabilityRouteGate aliases={['context-explorer', 'context']} fallback={withSuspense(NotFound)}>
+            <RuntimeCapabilityRouteGate aliases={['context-explorer', 'context']} fallback={withSuspense(() => <DisabledSurfacePage surfaceName="Context Explorer" surfaceDescription="The Context Explorer surface provides contextual insight and lineage tracing across your data assets." />)}>
               {withSuspense(ContextExplorerPage)}
             </RuntimeCapabilityRouteGate>
           </RoleProtectedRoute>
@@ -357,7 +360,7 @@ export const routes: RouteObject[] = [
         path: 'fabric',
         element: (
           <RoleProtectedRoute routePath="/fabric">
-            <RuntimeCapabilityRouteGate aliases={['data-fabric', 'fabric']} fallback={withSuspense(NotFound)}>
+            <RuntimeCapabilityRouteGate aliases={['data-fabric', 'fabric']} fallback={withSuspense(() => <DisabledSurfacePage surfaceName="Data Fabric" surfaceDescription="The Data Fabric surface provides unified data connectivity, storage profiling, and connector management." />)}>
               {withSuspense(DataFabricPage)}
             </RuntimeCapabilityRouteGate>
           </RoleProtectedRoute>
@@ -368,7 +371,7 @@ export const routes: RouteObject[] = [
         path: 'agents',
         element: (
           <RoleProtectedRoute routePath="/agents">
-            <RuntimeCapabilityRouteGate aliases={['agent-catalog', 'agents']} fallback={withSuspense(NotFound)}>
+            <RuntimeCapabilityRouteGate aliases={['agent-catalog', 'agents']} fallback={withSuspense(() => <DisabledSurfacePage surfaceName="Agent Catalog" surfaceDescription="The Agent Catalog surface provides discovery, registration, and management of AI agents in your deployment." />)}>
               {withSuspense(AgentPluginManagerPage)}
             </RuntimeCapabilityRouteGate>
           </RoleProtectedRoute>
@@ -380,7 +383,7 @@ export const routes: RouteObject[] = [
         path: 'settings',
         element: (
           <RoleProtectedRoute routePath="/settings">
-            <RuntimeCapabilityRouteGate aliases={['settings', 'config']} fallback={withSuspense(NotFound)}>
+            <RuntimeCapabilityRouteGate aliases={['settings', 'config']} fallback={withSuspense(() => <DisabledSurfacePage surfaceName="Settings" surfaceDescription="The Settings surface provides configuration management for your Data Cloud tenant." />)}>
               {withSuspense(SettingsPage)}
             </RuntimeCapabilityRouteGate>
           </RoleProtectedRoute>
@@ -406,30 +409,40 @@ export const routes: RouteObject[] = [
       // Connectors - Data source connector management
       {
         path: 'connectors',
-        element: <LazyLoadErrorBoundary><React.Suspense fallback={<PageLoader />}><DataConnectorsPageWrapper /></React.Suspense></LazyLoadErrorBoundary>,
+        element: (
+          <RoleProtectedRoute routePath="/connectors">
+            <RuntimeCapabilityRouteGate aliases={['data-connectors', 'connectors']} fallback={withSuspense(() => <DisabledSurfacePage surfaceName="Data Connectors" surfaceDescription="The Data Connectors surface provides management of external data source integrations for your deployment." />)}>
+              <LazyLoadErrorBoundary>
+                <React.Suspense fallback={<PageLoader />}>
+                  <DataConnectorsPageWrapper />
+                </React.Suspense>
+              </LazyLoadErrorBoundary>
+            </RuntimeCapabilityRouteGate>
+          </RoleProtectedRoute>
+        ),
       },
 
       // =========================================
       // COMPATIBILITY ROUTES (Deep-link Continuity)
       // =========================================
 
-      { path: 'dashboard', element: withSuspense(IntelligentHub) },
-      { path: 'hub', element: withSuspense(IntelligentHub) },
-      { path: 'collections', element: withSuspense(DataExplorer) },
-      { path: 'collections/new', element: withSuspense(CreateCollectionPage) },
-      { path: 'collections/:id', element: withSuspense(DataExplorer) },
-      { path: 'collections/:id/edit', element: withSuspense(EditCollectionPage) },
-      { path: 'datasets', element: withSuspense(DataExplorer) },
+      { path: 'dashboard', element: <RoleProtectedRoute routePath="/">{withSuspense(IntelligentHub)}</RoleProtectedRoute> },
+      { path: 'hub', element: <RoleProtectedRoute routePath="/">{withSuspense(IntelligentHub)}</RoleProtectedRoute> },
+      { path: 'collections', element: <RoleProtectedRoute routePath="/data">{withSuspense(DataExplorer)}</RoleProtectedRoute> },
+      { path: 'collections/new', element: <RoleProtectedRoute routePath="/data">{withSuspense(CreateCollectionPage)}</RoleProtectedRoute> },
+      { path: 'collections/:id', element: <RoleProtectedRoute routePath="/data">{withSuspense(DataExplorer)}</RoleProtectedRoute> },
+      { path: 'collections/:id/edit', element: <RoleProtectedRoute routePath="/data">{withSuspense(EditCollectionPage)}</RoleProtectedRoute> },
+      { path: 'datasets', element: <RoleProtectedRoute routePath="/data">{withSuspense(DataExplorer)}</RoleProtectedRoute> },
       { path: 'lineage', element: <Navigate to="/data?view=lineage" replace /> },
       { path: 'quality', element: <Navigate to="/data?view=quality" replace /> },
-      { path: 'workflows', element: withSuspense(WorkflowsPage) },
-      { path: 'workflows/new', element: withSuspense(SmartWorkflowBuilder) },
-      { path: 'workflows/:id', element: withSuspense(WorkflowDesigner) },
-      { path: 'sql', element: withSuspense(SqlWorkspacePage) },
-      { path: 'governance', element: withSuspense(TrustCenter) },
-      { path: 'brain', element: withSuspense(InsightsPage) },
-      { path: 'dashboards', element: withSuspense(InsightsPage) },
-      { path: 'cost', element: withSuspense(InsightsPage) },
+      { path: 'workflows', element: <RoleProtectedRoute routePath="/pipelines">{withSuspense(WorkflowsPage)}</RoleProtectedRoute> },
+      { path: 'workflows/new', element: <RoleProtectedRoute routePath="/pipelines">{withSuspense(SmartWorkflowBuilder)}</RoleProtectedRoute> },
+      { path: 'workflows/:id', element: <RoleProtectedRoute routePath="/pipelines">{withSuspense(WorkflowDesigner)}</RoleProtectedRoute> },
+      { path: 'sql', element: <RoleProtectedRoute routePath="/query">{withSuspense(SqlWorkspacePage)}</RoleProtectedRoute> },
+      { path: 'governance', element: <RoleProtectedRoute routePath="/trust">{withSuspense(TrustCenter)}</RoleProtectedRoute> },
+      { path: 'brain', element: <RoleProtectedRoute routePath="/insights">{withSuspense(InsightsPage)}</RoleProtectedRoute> },
+      { path: 'dashboards', element: <RoleProtectedRoute routePath="/insights">{withSuspense(InsightsPage)}</RoleProtectedRoute> },
+      { path: 'cost', element: <RoleProtectedRoute routePath="/insights">{withSuspense(InsightsPage)}</RoleProtectedRoute> },
 
       // 404
       {

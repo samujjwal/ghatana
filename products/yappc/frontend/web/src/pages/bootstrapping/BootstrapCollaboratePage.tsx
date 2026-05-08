@@ -43,6 +43,11 @@ import { Tooltip } from '@ghatana/design-system';
 
 import { ROUTES } from '../../router/paths';
 
+const NativeButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>((props, ref) =>
+  React.createElement('button', { ...props, ref }),
+);
+NativeButton.displayName = 'NativeButton';
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -608,7 +613,7 @@ const BootstrapCollaboratePage: React.FC = () => {
         <div className="mx-auto max-w-4xl">
           {/* Tabs */}
           <div className="mb-6 flex items-center gap-4 border-b border-border">
-            <button
+            <NativeButton
               onClick={() => setActiveTab('people')}
               className={cn(
                 'flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors',
@@ -622,8 +627,8 @@ const BootstrapCollaboratePage: React.FC = () => {
               <span className="ml-1 rounded-full bg-surface px-2 py-0.5 text-xs">
                 {collaborators.length + pendingInvites.length}
               </span>
-            </button>
-            <button
+            </NativeButton>
+            <NativeButton
               onClick={() => setActiveTab('comments')}
               className={cn(
                 'flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors',
@@ -639,7 +644,7 @@ const BootstrapCollaboratePage: React.FC = () => {
                   {unresolvedComments.length}
                 </span>
               )}
-            </button>
+            </NativeButton>
           </div>
 
           <AnimatePresence mode="wait">
@@ -779,7 +784,7 @@ const BootstrapCollaboratePage: React.FC = () => {
               Permission
             </label>
             <div className="flex gap-3">
-              <button
+              <NativeButton
                 onClick={() => setInviteRole('editor')}
                 className={cn(
                   'flex-1 rounded-lg border p-3 text-left transition-colors',
@@ -795,8 +800,8 @@ const BootstrapCollaboratePage: React.FC = () => {
                 <p className="mt-1 text-sm text-fg-muted">
                   Can edit canvas and add comments
                 </p>
-              </button>
-              <button
+              </NativeButton>
+              <NativeButton
                 onClick={() => setInviteRole('viewer')}
                 className={cn(
                   'flex-1 rounded-lg border p-3 text-left transition-colors',
@@ -812,7 +817,7 @@ const BootstrapCollaboratePage: React.FC = () => {
                 <p className="mt-1 text-sm text-fg-muted">
                   Can view and add comments only
                 </p>
-              </button>
+              </NativeButton>
             </div>
           </div>
         </div>

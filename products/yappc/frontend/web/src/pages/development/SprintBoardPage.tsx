@@ -41,6 +41,16 @@ interface FilterState {
   search: string;
 }
 
+const NativeButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>((props, ref) =>
+  React.createElement('button', { ...props, ref }),
+);
+NativeButton.displayName = 'NativeButton';
+
+const NativeInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>((props, ref) =>
+  React.createElement('input', { ...props, ref }),
+);
+NativeInput.displayName = 'NativeInput';
+
 // =============================================================================
 // Filter Panel Component
 // =============================================================================
@@ -94,16 +104,16 @@ const FilterPanel: React.FC<{
         <span className="font-medium text-white">Filters</span>
         <div className="flex items-center gap-2">
           {hasActiveFilters && (
-            <button
+            <NativeButton
               onClick={clearFilters}
               className="text-xs text-violet-400 hover:text-violet-300"
             >
               Clear all
-            </button>
+            </NativeButton>
           )}
-          <button onClick={onClose} className="p-1 hover:bg-surface rounded">
+          <NativeButton onClick={onClose} className="p-1 hover:bg-surface rounded" aria-label="Close filters">
             <X className="w-4 h-4 text-fg-muted" />
-          </button>
+          </NativeButton>
         </div>
       </div>
 
@@ -115,7 +125,7 @@ const FilterPanel: React.FC<{
           </label>
           <div className="mt-2 flex flex-wrap gap-2">
             {assignees.map((name) => (
-              <button
+              <NativeButton
                 key={name}
                 onClick={() => toggleFilter('assignee', name!)}
                 className={cn(
@@ -126,7 +136,7 @@ const FilterPanel: React.FC<{
                 )}
               >
                 {name}
-              </button>
+              </NativeButton>
             ))}
           </div>
         </div>
@@ -138,7 +148,7 @@ const FilterPanel: React.FC<{
           </label>
           <div className="mt-2 flex flex-wrap gap-2">
             {types.map((type) => (
-              <button
+              <NativeButton
                 key={type}
                 onClick={() => toggleFilter('type', type)}
                 className={cn(
@@ -149,7 +159,7 @@ const FilterPanel: React.FC<{
                 )}
               >
                 {type}
-              </button>
+              </NativeButton>
             ))}
           </div>
         </div>
@@ -161,7 +171,7 @@ const FilterPanel: React.FC<{
           </label>
           <div className="mt-2 flex flex-wrap gap-2">
             {priorities.map((priority) => (
-              <button
+              <NativeButton
                 key={priority}
                 onClick={() => toggleFilter('priority', priority)}
                 className={cn(
@@ -172,7 +182,7 @@ const FilterPanel: React.FC<{
                 )}
               >
                 {priority}
-              </button>
+              </NativeButton>
             ))}
           </div>
         </div>
@@ -185,7 +195,7 @@ const FilterPanel: React.FC<{
             </label>
             <div className="mt-2 flex flex-wrap gap-2">
               {labels.map((label) => (
-                <button
+                <NativeButton
                   key={label}
                   onClick={() => toggleFilter('labels', label)}
                   className={cn(
@@ -196,7 +206,7 @@ const FilterPanel: React.FC<{
                   )}
                 >
                   {label}
-                </button>
+                </NativeButton>
               ))}
             </div>
           </div>
@@ -219,7 +229,7 @@ const SprintSelector: React.FC<{
 
   return (
     <div className="relative">
-      <button
+      <NativeButton
         onClick={() => setOpen(!open)}
         className={cn(
           'flex items-center gap-2 px-4 py-2 rounded-lg',
@@ -230,7 +240,7 @@ const SprintSelector: React.FC<{
         <Calendar className="w-4 h-4 text-violet-400" />
         <span>{currentSprint?.name || 'Select Sprint'}</span>
         <ChevronDown className="w-4 h-4 text-fg-muted" />
-      </button>
+      </NativeButton>
 
       <AnimatePresence>
         {open && (
@@ -247,7 +257,7 @@ const SprintSelector: React.FC<{
             >
               <div className="p-2 space-y-1 max-h-64 overflow-y-auto">
                 {sprints.map((sprint) => (
-                  <button
+                  <NativeButton
                     key={sprint.id}
                     onClick={() => {
                       onSelect(sprint.id);
@@ -271,7 +281,7 @@ const SprintSelector: React.FC<{
                         Active
                       </span>
                     )}
-                  </button>
+                  </NativeButton>
                 ))}
               </div>
             </motion.div>
@@ -368,7 +378,7 @@ const SprintBoardPage: React.FC = () => {
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
-              <input
+              <NativeInput
                 type="text"
                 placeholder="Search stories..."
                 value={filters.search}
@@ -384,7 +394,7 @@ const SprintBoardPage: React.FC = () => {
 
             {/* Filters */}
             <div className="relative">
-              <button
+              <NativeButton
                 onClick={() => setShowFilters(!showFilters)}
                 className={cn(
                   'flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors',
@@ -400,7 +410,7 @@ const SprintBoardPage: React.FC = () => {
                     {activeFiltersCount}
                   </span>
                 )}
-              </button>
+              </NativeButton>
 
               <AnimatePresence>
                 {showFilters && (
@@ -414,7 +424,7 @@ const SprintBoardPage: React.FC = () => {
             </div>
 
             {/* View Options */}
-            <button
+            <NativeButton
               className={cn(
                 'p-2 rounded-lg transition-colors',
                 'bg-surface text-fg-muted hover:text-white border border-border'
@@ -422,10 +432,10 @@ const SprintBoardPage: React.FC = () => {
               title="Board Settings"
             >
               <SlidersHorizontal className="w-4 h-4" />
-            </button>
+            </NativeButton>
 
             {/* Refresh */}
-            <button
+            <NativeButton
               className={cn(
                 'p-2 rounded-lg transition-colors',
                 'bg-surface text-fg-muted hover:text-white border border-border'
@@ -433,10 +443,10 @@ const SprintBoardPage: React.FC = () => {
               title="Refresh"
             >
               <RefreshCw className="w-4 h-4" />
-            </button>
+            </NativeButton>
 
             {/* Velocity */}
-            <button
+            <NativeButton
               className={cn(
                 'p-2 rounded-lg transition-colors',
                 'bg-surface text-fg-muted hover:text-white border border-border'
@@ -444,10 +454,10 @@ const SprintBoardPage: React.FC = () => {
               title="View Metrics"
             >
               <BarChart3 className="w-4 h-4" />
-            </button>
+            </NativeButton>
 
             {/* Add Story */}
-            <button
+            <NativeButton
               className={cn(
                 'flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm',
                 'bg-violet-500 text-white hover:bg-violet-600 transition-colors'
@@ -455,7 +465,7 @@ const SprintBoardPage: React.FC = () => {
             >
               <Plus className="w-4 h-4" />
               Add Story
-            </button>
+            </NativeButton>
           </div>
         </div>
       </div>

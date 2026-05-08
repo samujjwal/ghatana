@@ -72,6 +72,21 @@ interface ChatMessage extends Message {
   isEditing?: boolean;
 }
 
+const NativeButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>((props, ref) =>
+  React.createElement('button', { ...props, ref }),
+);
+NativeButton.displayName = 'NativeButton';
+
+const NativeInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>((props, ref) =>
+  React.createElement('input', { ...props, ref }),
+);
+NativeInput.displayName = 'NativeInput';
+
+const NativeTextarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) =>
+  React.createElement('textarea', { ...props, ref }),
+);
+NativeTextarea.displayName = 'NativeTextarea';
+
 // ============================================================================
 // Sub-components
 // ============================================================================
@@ -93,7 +108,7 @@ const ChannelListItem: React.FC<{
   onClick: () => void;
 }> = ({ channel, isActive, onClick }) => {
   return (
-    <button
+    <NativeButton
       onClick={onClick}
       className={cn(
         'w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition-colors',
@@ -108,7 +123,7 @@ const ChannelListItem: React.FC<{
         </span>
       )}
       {channel.isMuted && <BellOff className="w-3 h-3 text-fg-muted" />}
-    </button>
+    </NativeButton>
   );
 };
 
@@ -185,7 +200,7 @@ const MessageBubble: React.FC<{
         {message.reactions && message.reactions.length > 0 && (
           <div className="flex gap-1 mt-1 flex-wrap">
             {message.reactions.map((reaction, idx) => (
-              <button
+              <NativeButton
                 key={idx}
                 onClick={() => onReact(reaction.emoji)}
                 className={cn(
@@ -197,18 +212,18 @@ const MessageBubble: React.FC<{
               >
                 <span>{reaction.emoji}</span>
                 <span>{reaction.count}</span>
-              </button>
+              </NativeButton>
             ))}
           </div>
         )}
 
         {/* Thread indicator */}
         {message.threadId && message.replyCount > 0 && (
-          <button className="flex items-center gap-2 mt-2 text-xs text-info-color hover:opacity-80">
+          <NativeButton className="flex items-center gap-2 mt-2 text-xs text-info-color hover:opacity-80">
             <Reply className="w-3 h-3" />
             {message.replyCount} replies
             <ChevronRight className="w-3 h-3" />
-          </button>
+          </NativeButton>
         )}
       </div>
 
@@ -222,43 +237,45 @@ const MessageBubble: React.FC<{
         >
           {/* Reactions picker */}
           <div className="relative">
-            <button
+            <NativeButton
               onClick={() => setShowReactions(!showReactions)}
               className="p-1.5 hover:bg-surface-muted rounded"
+              aria-label="Show reactions"
             >
               <Smile className="w-4 h-4 text-fg-muted" />
-            </button>
+            </NativeButton>
             {showReactions && (
               <div className="absolute bottom-full left-0 mb-1 flex gap-1 bg-surface border border-border rounded-lg p-1 shadow-lg">
                 {reactions.map(({ emoji, icon: Icon }) => (
-                  <button
+                  <NativeButton
                     key={emoji}
                     onClick={() => {
                       onReact(emoji);
                       setShowReactions(false);
                     }}
                     className="p-1.5 hover:bg-surface-muted rounded"
+                    aria-label={`React with ${emoji}`}
                   >
                     <Icon className="w-4 h-4 text-fg-muted" />
-                  </button>
+                  </NativeButton>
                 ))}
               </div>
             )}
           </div>
-          <button onClick={onReply} className="p-1.5 hover:bg-surface-muted rounded">
+          <NativeButton onClick={onReply} className="p-1.5 hover:bg-surface-muted rounded" aria-label="Reply">
             <Reply className="w-4 h-4 text-fg-muted" />
-          </button>
-          <button onClick={onPin} className="p-1.5 hover:bg-surface-muted rounded">
+          </NativeButton>
+          <NativeButton onClick={onPin} className="p-1.5 hover:bg-surface-muted rounded" aria-label="Pin message">
             <Pin className="w-4 h-4 text-fg-muted" />
-          </button>
+          </NativeButton>
           {isOwn && (
             <>
-              <button onClick={onEdit} className="p-1.5 hover:bg-surface-muted rounded">
+              <NativeButton onClick={onEdit} className="p-1.5 hover:bg-surface-muted rounded" aria-label="Edit message">
                 <Edit2 className="w-4 h-4 text-fg-muted" />
-              </button>
-              <button onClick={onDelete} className="p-1.5 hover:bg-surface-muted rounded">
+              </NativeButton>
+              <NativeButton onClick={onDelete} className="p-1.5 hover:bg-surface-muted rounded" aria-label="Delete message">
                 <Trash2 className="w-4 h-4 text-destructive" />
-              </button>
+              </NativeButton>
             </>
           )}
         </div>
@@ -414,7 +431,7 @@ const TeamChatPage: React.FC = () => {
         <div className="p-3 border-b border-border">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
-            <input
+            <NativeInput
               type="text"
               placeholder="Search channels..."
               value={searchQuery}
@@ -430,12 +447,13 @@ const TeamChatPage: React.FC = () => {
             <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
               Channels
             </span>
-            <button
+            <NativeButton
               onClick={() => navigate(`/teams/${teamId}/channels/new`)}
               className="p-1 hover:bg-surface-muted rounded"
+              aria-label="Create channel"
             >
               <Plus className="w-4 h-4 text-fg-muted" />
-            </button>
+            </NativeButton>
           </div>
           {filteredChannels
             .filter((c) => c.type === 'PUBLIC' || c.type === 'PRIVATE')
@@ -452,9 +470,9 @@ const TeamChatPage: React.FC = () => {
             <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
               Direct Messages
             </span>
-            <button className="p-1 hover:bg-surface-muted rounded">
+            <NativeButton className="p-1 hover:bg-surface-muted rounded" aria-label="Create direct message">
               <Plus className="w-4 h-4 text-fg-muted" />
-            </button>
+            </NativeButton>
           </div>
           {filteredChannels
             .filter((c) => c.type === 'DIRECT_MESSAGE' || c.type === 'GROUP_DM')
@@ -485,21 +503,22 @@ const TeamChatPage: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button
+                <NativeButton
                   onClick={() => setShowSearch(!showSearch)}
                   className={cn(
                     'p-2 rounded-lg transition-colors',
                     showSearch ? 'bg-primary text-primary-foreground' : 'hover:bg-surface-muted text-fg-muted'
                   )}
+                  aria-label="Search messages"
                 >
                   <Search className="w-5 h-5" />
-                </button>
-                <button className="p-2 hover:bg-surface-muted rounded-lg text-fg-muted">
+                </NativeButton>
+                <NativeButton className="p-2 hover:bg-surface-muted rounded-lg text-fg-muted" aria-label="View members">
                   <Users className="w-5 h-5" />
-                </button>
-                <button className="p-2 hover:bg-surface-muted rounded-lg text-fg-muted">
+                </NativeButton>
+                <NativeButton className="p-2 hover:bg-surface-muted rounded-lg text-fg-muted" aria-label="Channel settings">
                   <Settings className="w-5 h-5" />
-                </button>
+                </NativeButton>
               </div>
             </header>
 
@@ -538,23 +557,24 @@ const TeamChatPage: React.FC = () => {
                     Replying to <span className="text-fg">{replyingTo.sender?.name}</span>
                   </span>
                 </div>
-                <button
+                <NativeButton
                   onClick={() => setReplyingTo(null)}
                   className="p-1 hover:bg-surface-muted rounded"
+                  aria-label="Cancel reply"
                 >
                   <X className="w-4 h-4 text-fg-muted" />
-                </button>
+                </NativeButton>
               </div>
             )}
 
             {/* Message Input */}
             <div className="px-6 py-4 border-t border-border bg-surface">
               <div className="flex items-end gap-3">
-                <button className="p-2 hover:bg-surface-muted rounded-lg text-fg-muted">
+                <NativeButton className="p-2 hover:bg-surface-muted rounded-lg text-fg-muted" aria-label="Attach file">
                   <Paperclip className="w-5 h-5" />
-                </button>
+                </NativeButton>
                 <div className="flex-1 relative">
-                  <textarea
+                  <NativeTextarea
                     ref={inputRef}
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
@@ -564,13 +584,13 @@ const TeamChatPage: React.FC = () => {
                     className="w-full px-4 py-3 bg-surface-muted border border-border rounded-lg text-fg placeholder:text-fg-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
-                <button className="p-2 hover:bg-surface-muted rounded-lg text-fg-muted">
+                <NativeButton className="p-2 hover:bg-surface-muted rounded-lg text-fg-muted" aria-label="Open emoji picker">
                   <Smile className="w-5 h-5" />
-                </button>
-                <button className="p-2 hover:bg-surface-muted rounded-lg text-fg-muted">
+                </NativeButton>
+                <NativeButton className="p-2 hover:bg-surface-muted rounded-lg text-fg-muted" aria-label="Mention user">
                   <AtSign className="w-5 h-5" />
-                </button>
-                <button
+                </NativeButton>
+                <NativeButton
                   onClick={handleSendMessage}
                   disabled={!messageText.trim() || sending}
                   className={cn(
@@ -579,9 +599,10 @@ const TeamChatPage: React.FC = () => {
                       ? 'bg-primary hover:opacity-90 text-primary-foreground'
                       : 'bg-muted text-fg-muted cursor-not-allowed'
                   )}
+                  aria-label="Send message"
                 >
                   <Send className="w-5 h-5" />
-                </button>
+                </NativeButton>
               </div>
             </div>
           </>

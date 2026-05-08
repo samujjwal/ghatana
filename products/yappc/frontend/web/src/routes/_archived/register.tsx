@@ -6,6 +6,8 @@
  * @doc.layer frontend
  */
 import React, { useState, FormEvent } from 'react';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 import { authService } from '../../services/auth/AuthService';
 
 interface FormFields {
@@ -90,35 +92,35 @@ export default function RegisterComponent(): React.ReactElement {
       <form onSubmit={(e) => void handleSubmit(e)}>
         <div>
           <label htmlFor="register-firstName">First name</label>
-          <input id="register-firstName" aria-label="First name" name="firstName" value={fields.firstName} onChange={handleChange} />
+          <Input id="register-firstName" aria-label="First name" name="firstName" value={fields.firstName} onChange={handleChange} />
           {errors.firstName && <span>{errors.firstName}</span>}
         </div>
         <div>
           <label htmlFor="register-lastName">Last name</label>
-          <input id="register-lastName" aria-label="Last name" name="lastName" value={fields.lastName} onChange={handleChange} />
+          <Input id="register-lastName" aria-label="Last name" name="lastName" value={fields.lastName} onChange={handleChange} />
           {errors.lastName && <span>{errors.lastName}</span>}
         </div>
         <div>
           <label htmlFor="register-username">Username</label>
-          <input id="register-username" aria-label="Username" name="username" value={fields.username} onChange={handleChange} />
+          <Input id="register-username" aria-label="Username" name="username" value={fields.username} onChange={handleChange} />
           {errors.username && <span>{errors.username}</span>}
         </div>
         <div>
           <label htmlFor="register-email">Email</label>
-          <input id="register-email" aria-label="Email" name="email" type="email" value={fields.email} onChange={handleChange} />
+          <Input id="register-email" aria-label="Email" name="email" type="email" value={fields.email} onChange={handleChange} />
           {errors.email && <span>{errors.email}</span>}
         </div>
         <div>
           <label htmlFor="register-password">Password</label>
-          <input id="register-password" aria-label="Password" name="password" type="password" value={fields.password} onChange={handleChange} />
+          <Input id="register-password" aria-label="Password" name="password" type="password" value={fields.password} onChange={handleChange} />
           {errors.password && <span>{errors.password}</span>}
         </div>
         {serverError && (
           <div data-testid="register-error">{serverError}</div>
         )}
-        <button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Creating account…' : 'Create account'}
-        </button>
+        </Button>
       </form>
       <a href="/login">Sign in</a>
     </div>

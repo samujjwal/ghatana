@@ -12,6 +12,7 @@
 import React, { useState } from 'react';
 import { useParams, NavLink } from 'react-router';
 import { BookOpen, Plus, Search, Tag } from 'lucide-react';
+import { Input } from '../../components/ui/Input';
 import { ROUTES } from '../../router/paths';
 
 const KnowledgeBasePage: React.FC = () => {
@@ -43,12 +44,14 @@ const KnowledgeBasePage: React.FC = () => {
 
         <div className="relative max-w-md mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
-          <input
+          <Input
             type="text"
             placeholder="Search articles..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-lg bg-surface border border-border text-sm text-white placeholder-zinc-500 focus:border-violet-500 focus:outline-none"
+            fullWidth
+            size="sm"
+            className="pl-10 pr-4 py-2 rounded-lg bg-surface border border-border text-sm text-white placeholder-zinc-500 focus:border-violet-500"
           />
         </div>
 

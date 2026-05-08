@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
+import { Textarea } from '../../components/ui/Textarea';
 
 // ============================================================================
 // Types
@@ -110,9 +114,13 @@ function ToggleSwitch({
         <p className="text-sm font-medium text-fg-muted">{label}</p>
         <p className="text-xs text-fg-muted">{description}</p>
       </div>
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+        aria-pressed={checked}
+        aria-label={`${checked ? 'Disable' : 'Enable'} ${label}`}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors [&>span]:inline-flex ${
           checked ? 'bg-primary' : 'bg-surface-muted'
         }`}
       >
@@ -121,7 +129,7 @@ function ToggleSwitch({
             checked ? 'translate-x-6' : 'translate-x-1'
           }`}
         />
-      </button>
+      </Button>
     </div>
   );
 }
@@ -130,56 +138,62 @@ function GeneralPanel({ settings }: { settings: WorkspaceSettings }) {
   const [name, setName] = useState(settings.general.name);
   const [description, setDescription] = useState(settings.general.description);
   const [timezone, setTimezone] = useState(settings.general.timezone);
+  const [language, setLanguage] = useState(settings.general.language);
 
   return (
     <div className="space-y-6">
       <div>
         <label className="block text-sm font-medium text-fg-muted mb-1.5">Workspace Name</label>
-        <input
+        <Input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-muted placeholder-zinc-500 focus:border-info-border focus:outline-none focus:ring-1 focus:ring-blue-500"
+          fullWidth
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-muted placeholder-zinc-500 focus:border-info-border focus:ring-blue-500"
           placeholder="My Workspace"
         />
       </div>
       <div>
         <label className="block text-sm font-medium text-fg-muted mb-1.5">Description</label>
-        <textarea
+        <Textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
-          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-muted placeholder-zinc-500 focus:border-info-border focus:outline-none focus:ring-1 focus:ring-blue-500"
+          fullWidth
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-muted placeholder-zinc-500 focus:border-info-border focus:ring-blue-500"
           placeholder="What this workspace is about..."
         />
       </div>
       <div>
         <label className="block text-sm font-medium text-fg-muted mb-1.5">Timezone</label>
-        <input
+        <Input
           type="text"
           value={timezone}
           onChange={(e) => setTimezone(e.target.value)}
-          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-muted placeholder-zinc-500 focus:border-info-border focus:outline-none focus:ring-1 focus:ring-blue-500"
+          fullWidth
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-muted placeholder-zinc-500 focus:border-info-border focus:ring-blue-500"
           placeholder="America/New_York"
         />
       </div>
       <div>
         <label className="block text-sm font-medium text-fg-muted mb-1.5">Language</label>
-        <select
-          value={settings.general.language}
-          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-muted focus:border-info-border focus:outline-none focus:ring-1 focus:ring-blue-500"
+        <Select
+          value={language}
+          onChange={(e) => setLanguage(e.target.value)}
+          fullWidth
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-muted focus:border-info-border focus:ring-blue-500"
         >
           <option value="en">English</option>
           <option value="es">Spanish</option>
           <option value="fr">French</option>
           <option value="de">German</option>
           <option value="ja">Japanese</option>
-        </select>
+        </Select>
       </div>
       <div className="flex justify-end">
-        <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg transition-colors">
+        <Button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg">
           Save Changes
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -228,9 +242,9 @@ function NotificationsPanel({ settings }: { settings: WorkspaceSettings }) {
         onChange={() => toggle('prReviews')}
       />
       <div className="pt-4 flex justify-end">
-        <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg transition-colors">
+        <Button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg">
           Save Preferences
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -254,9 +268,9 @@ function SecurityPanel({ settings }: { settings: WorkspaceSettings }) {
             </span>
           </div>
           <p className="text-xs text-fg-muted">Add an extra layer of security to your account</p>
-          <button className="mt-3 text-xs text-info-color hover:text-info-color transition-colors">
+          <Button variant="link" size="sm" className="mt-3 min-h-0 px-0 py-0 text-xs text-info-color hover:text-info-color">
             {sec.twoFactorEnabled ? 'Manage 2FA' : 'Enable 2FA'}
-          </button>
+          </Button>
         </div>
 
         <div className="bg-surface/50 rounded-lg p-4">
@@ -271,9 +285,9 @@ function SecurityPanel({ settings }: { settings: WorkspaceSettings }) {
             </span>
           </div>
           <p className="text-xs text-fg-muted">Single sign-on for enterprise authentication</p>
-          <button className="mt-3 text-xs text-info-color hover:text-info-color transition-colors">
+          <Button variant="link" size="sm" className="mt-3 min-h-0 px-0 py-0 text-xs text-info-color hover:text-info-color">
             Configure SSO
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -288,9 +302,9 @@ function SecurityPanel({ settings }: { settings: WorkspaceSettings }) {
         <p className="text-sm text-fg-muted">
           {sec.lastPasswordChange ? new Date(sec.lastPasswordChange).toLocaleDateString() : 'Never'}
         </p>
-        <button className="mt-2 text-xs text-info-color hover:text-info-color transition-colors">
+        <Button variant="link" size="sm" className="mt-2 min-h-0 px-0 py-0 text-xs text-info-color hover:text-info-color">
           Change Password
-        </button>
+        </Button>
       </div>
 
       <div>
@@ -335,7 +349,9 @@ function IntegrationsPanel({ settings }: { settings: WorkspaceSettings }) {
                 )}
               </div>
             </div>
-            <button
+            <Button
+              variant={integration.connected ? 'outline' : 'solid'}
+              size="sm"
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                 integration.connected
                   ? 'border border-border text-fg-muted hover:bg-surface-muted'
@@ -343,7 +359,7 @@ function IntegrationsPanel({ settings }: { settings: WorkspaceSettings }) {
               }`}
             >
               {integration.connected ? 'Disconnect' : 'Connect'}
-            </button>
+            </Button>
           </div>
         ))
       )}
@@ -361,9 +377,9 @@ function DangerZonePanel() {
         <p className="text-xs text-fg-muted mb-3">
           Transfer ownership of this workspace to another user.
         </p>
-        <button className="rounded-lg border border-destructive-border px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive-bg/20 transition-colors">
+        <Button variant="outline" tone="danger" size="sm" className="rounded-lg border border-destructive-border px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive-bg/20">
           Transfer Ownership
-        </button>
+        </Button>
       </div>
 
       <div className="rounded-lg border border-destructive-border/50 p-4">
@@ -372,19 +388,22 @@ function DangerZonePanel() {
           Permanently delete this workspace and all its data. This action cannot be undone.
         </p>
         <div className="flex items-center gap-3">
-          <input
+          <Input
             type="text"
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             placeholder='Type "DELETE" to confirm'
-            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-fg-muted placeholder-zinc-500 focus:border-destructive-border focus:outline-none focus:ring-1 focus:ring-red-500"
+            size="sm"
+            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-fg-muted placeholder-zinc-500 focus:border-destructive-border focus:ring-red-500"
           />
-          <button
+          <Button
+            tone="danger"
+            size="sm"
             disabled={confirmText !== 'DELETE'}
-            className="rounded-lg bg-destructive-bg px-3 py-1.5 text-xs font-medium text-white hover:bg-destructive-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="rounded-lg bg-destructive-bg px-3 py-1.5 text-xs font-medium text-white hover:bg-destructive-bg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Delete Workspace
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -421,10 +440,13 @@ const SettingsPage: React.FC = () => {
         {/* Sidebar Navigation */}
         <nav className="w-52 shrink-0 space-y-1">
           {TABS.map((tab) => (
-            <button
+            <Button
               key={tab}
+              variant="ghost"
+              fullWidth
               onClick={() => setActiveTab(tab)}
-              className={`w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm rounded-lg transition-colors ${
+              aria-pressed={activeTab === tab}
+              className={`justify-start gap-2.5 text-left px-3 py-2 text-sm rounded-lg transition-colors [&>span]:flex [&>span]:items-center [&>span]:gap-2.5 ${
                 activeTab === tab
                   ? 'bg-surface text-fg-muted'
                   : tab === 'Danger Zone'
@@ -434,7 +456,7 @@ const SettingsPage: React.FC = () => {
             >
               {TAB_ICONS[tab]}
               {tab}
-            </button>
+            </Button>
           ))}
         </nav>
 

@@ -23,6 +23,7 @@ import {
   Divider,
 } from '@ghatana/design-system';
 import { Download as DownloadIcon, Upload as UploadIcon, Code as JsonIcon, Image as ImageIcon, FileText as SvgIcon } from 'lucide-react';
+import { Input } from '../../ui/Input';
 
 interface ExportImportDialogProps {
     open: boolean;
@@ -155,7 +156,7 @@ export function ExportImportDialog({
             </Dialog>
 
             {/* Hidden file input */}
-            <input
+            <Input
                 ref={fileInputRef}
                 type="file"
                 accept=".json"

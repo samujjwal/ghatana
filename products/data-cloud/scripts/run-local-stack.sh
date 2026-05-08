@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PRODUCT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 REPO_ROOT="$(cd "${PRODUCT_ROOT}/../.." && pwd)"
-UI_DIR="${PRODUCT_ROOT}/ui"
+UI_DIR="${PRODUCT_ROOT}/delivery/ui"
 
 DATACLOUD_PROFILE="${DATACLOUD_PROFILE:-local}"
 DATACLOUD_HTTP_ENABLED="${DATACLOUD_HTTP_ENABLED:-true}"

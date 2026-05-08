@@ -53,7 +53,7 @@ describe('ThreatLifecycle', () => {
         onDispose={vi.fn()}
       />
     );
-    expect(screen.getByTestId('threat-dispose-btn-threat-1')).toBeInTheDocument();
+    expect(screen.getByTestId('threat-dispose-btn-threat-1')).toHaveClass('inline-flex');
   });
 
   it('does not show disposition button for disposed threats', () => {
@@ -84,13 +84,16 @@ describe('ThreatLifecycle', () => {
 
     // Form should appear
     expect(screen.getByTestId('threat-disposition-form-threat-1')).toBeInTheDocument();
+    expect(screen.getByLabelText(/justification/i)).toHaveClass('text-sm');
 
     // Select MITIGATED (it's the default so just confirm)
     fireEvent.change(screen.getByLabelText(/justification/i), {
       target: { value: 'Added rate limiting' },
     });
 
-    fireEvent.click(screen.getByText('Confirm'));
+    const confirmButton = screen.getByText('Confirm').closest('button');
+    expect(confirmButton).toHaveClass('inline-flex');
+    fireEvent.click(confirmButton!);
     await waitFor(() =>
       expect(onDispose).toHaveBeenCalledWith(
         'threat-1',

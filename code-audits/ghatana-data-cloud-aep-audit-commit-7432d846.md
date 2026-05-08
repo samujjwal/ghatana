@@ -1,3 +1,5 @@
+> **HISTORICAL ARTIFACT** — This audit was produced at commit `7432d846` and has been superseded by the active todo list at `products/data-cloud/docs/audits/end-to-end-data-cloud-todo-list.md`. Do not act on findings here; confirm current status against the todo list.
+
 # Ghatana Data Cloud + AEP — Ultra-Strict End-to-End Product Correctness, Completeness, Architecture/Design, and Production-Readiness Audit
 
 **Repository:** `samujjwal/ghatana`  

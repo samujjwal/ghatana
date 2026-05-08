@@ -11,7 +11,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Box, Card, CardContent, Chip, Typography } from '@ghatana/design-system';
+import { Box, Button, Card, CardContent, Chip, Typography } from '@ghatana/design-system';
 import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 
 import type { RequirementVersion } from './types';
@@ -109,8 +109,10 @@ const FieldDiff: React.FC<FieldDiffProps> = ({ fieldName, oldValue, newValue }) 
 
   return (
     <Box className="rounded-md border border-divider overflow-hidden" data-testid={`diff-field-${fieldName}`}>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="sm"
         onClick={() => setExpanded((prev) => !prev)}
         className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left hover:bg-grey-50 dark:hover:bg-grey-800 transition-colors"
         aria-expanded={expanded}
@@ -125,7 +127,7 @@ const FieldDiff: React.FC<FieldDiffProps> = ({ fieldName, oldValue, newValue }) 
           )}
         </Box>
         {expanded ? <ChevronUp className="h-4 w-4 text-text-secondary" /> : <ChevronDown className="h-4 w-4 text-text-secondary" />}
-      </button>
+      </Button>
 
       {expanded && (
         <Box className="divide-y divide-divider bg-grey-50 dark:bg-grey-900/50">

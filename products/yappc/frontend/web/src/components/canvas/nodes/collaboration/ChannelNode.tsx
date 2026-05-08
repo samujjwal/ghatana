@@ -28,6 +28,7 @@ import {
   Circle,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { Button } from '../../../ui/Button';
 
 type ChannelType = 'PUBLIC' | 'PRIVATE' | 'DIRECT_MESSAGE' | 'GROUP_DM';
 type PresenceStatus = 'ONLINE' | 'AWAY' | 'BUSY' | 'OFFLINE' | 'INVISIBLE';
@@ -98,13 +99,13 @@ const channelTypeConfig: Record<
     icon: MessageSquare,
     label: 'Direct',
     color: 'text-info-color',
-    bgColor: 'bg-info-bg0/20',
+    bgColor: 'bg-info-bg/20',
   },
   GROUP_DM: {
     icon: Users,
     label: 'Group DM',
     color: 'text-info-color',
-    bgColor: 'bg-info-bg0/20',
+    bgColor: 'bg-info-bg/20',
   },
 };
 
@@ -156,7 +157,7 @@ function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
       <Handle
         type="target"
         position={Position.Left}
-        className="w-3 h-3 bg-info-bg0 border-2 border-border"
+        className="w-3 h-3 bg-info-bg border-2 border-border"
       />
 
       {/* Header */}
@@ -179,7 +180,7 @@ function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
                 <Archive className="w-4 h-4 text-fg-muted" />
               )}
               {channel.unreadCount > 0 && (
-                <span className="px-2 py-0.5 bg-info-bg0 text-white text-xs font-bold rounded-full">
+                <span className="px-2 py-0.5 bg-info-bg text-white text-xs font-bold rounded-full">
                   {channel.unreadCount > 99 ? '99+' : channel.unreadCount}
                 </span>
               )}
@@ -203,7 +204,7 @@ function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
 
           {/* Mute Button */}
           {!channel.isArchived && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={isMuted ? onUnmute : onMute}
               className={cn(
                 'p-1.5 rounded-lg transition-colors',
@@ -218,7 +219,7 @@ function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
               ) : (
                 <Bell className="w-4 h-4" />
               )}
-            </button>
+            </Button>
           )}
         </div>
 
@@ -347,13 +348,13 @@ function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
       {/* Open Channel Button */}
       {!channel.isArchived && onOpenChannel && (
         <div className="p-4 border-b border-border">
-          <button
+          <Button variant="ghost" size="sm"
             onClick={onOpenChannel}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-info-bg0 text-white rounded-lg hover:bg-primary transition-colors text-sm font-medium"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-info-bg text-white rounded-lg hover:bg-info-color transition-colors text-sm font-medium"
           >
             <MessageSquare className="w-4 h-4" />
             Open Channel
-          </button>
+          </Button>
         </div>
       )}
 
@@ -397,7 +398,7 @@ function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
         type="source"
         position={Position.Right}
         id="threads"
-        className="w-3 h-3 bg-info-bg0 border-2 border-border"
+        className="w-3 h-3 bg-info-bg border-2 border-border"
         style={{ top: '60%' }}
       />
     </div>

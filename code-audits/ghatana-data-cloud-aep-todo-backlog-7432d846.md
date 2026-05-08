@@ -1,3 +1,5 @@
+> **HISTORICAL ARTIFACT** — This backlog was produced at commit `7432d846` and has been superseded by the active todo list at `products/data-cloud/docs/audits/end-to-end-data-cloud-todo-list.md`. Do not act on items here; confirm current status against the todo list.
+
 # Data Cloud + AEP TODO Backlog
 
 Repository: `samujjwal/ghatana`  

@@ -34,6 +34,7 @@ import React, { useState } from 'react';
 import { Loader2, AlertCircle, FileText, Sparkles } from 'lucide-react';
 import { AIAssistLabel } from '../../ai/AIAssistLabel';
 import type { AIAssistSource } from '../../ai/AIAssistLabel';
+import { Button } from '../../ui/Button';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -116,14 +117,16 @@ export function AdrDraftPanel({ nodeId, onAcceptDraft, className }: AdrDraftPane
     >
       {/* Trigger */}
       {state === 'idle' && (
-        <button
+        <Button
           data-testid="adr-generate-btn"
+          variant="outline"
+          size="small"
           onClick={() => void handleGenerate()}
-          className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
+          className="min-h-0 gap-1.5 rounded-lg border-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
         >
           <Sparkles className="h-4 w-4" aria-hidden="true" />
           Generate ADR draft
-        </button>
+        </Button>
       )}
 
       {/* Loading */}
@@ -141,12 +144,14 @@ export function AdrDraftPanel({ nodeId, onAcceptDraft, className }: AdrDraftPane
             <AlertCircle className="h-4 w-4" aria-hidden="true" />
             Could not generate ADR draft.
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="small"
             onClick={() => setState('idle')}
-            className="text-xs text-muted underline"
+            className="min-h-0 px-0 py-0 text-xs text-muted underline"
           >
             Try again
-          </button>
+          </Button>
         </div>
       )}
 
@@ -180,21 +185,25 @@ export function AdrDraftPanel({ nodeId, onAcceptDraft, className }: AdrDraftPane
 
           <div className="flex gap-2 pt-1">
             {onAcceptDraft && (
-              <button
+              <Button
                 data-testid="adr-accept-btn"
+                variant="solid"
+                size="small"
                 onClick={() => onAcceptDraft(draft)}
-                className="rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                className="min-h-0 rounded bg-info-color px-3 py-1 text-xs font-medium text-white hover:bg-info-color/90"
               >
                 Accept draft
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               data-testid="adr-regenerate-btn"
+              variant="outline"
+              size="small"
               onClick={() => setState('idle')}
-              className="rounded border border-border px-3 py-1 text-xs font-medium text-muted hover:bg-accent"
+              className="min-h-0 rounded border-border px-3 py-1 text-xs font-medium text-muted hover:bg-accent"
             >
               Regenerate
-            </button>
+            </Button>
           </div>
         </div>
       )}

@@ -20,6 +20,33 @@ vi.mock('../registry', () => ({
       type: 'text',
       required: false,
     },
+    {
+      name: 'options',
+      label: 'options',
+      control: 'json',
+      type: 'text',
+      valueType: 'array',
+      required: false,
+      description: 'Select options',
+    },
+    {
+      name: 'analytics',
+      label: 'analytics',
+      control: 'json',
+      type: 'text',
+      valueType: 'object',
+      required: false,
+      description: 'Analytics payload',
+    },
+    {
+      name: 'tokenRefs',
+      label: 'tokenRefs',
+      control: 'multiselect',
+      type: 'text',
+      valueType: 'array',
+      required: false,
+      tokenTypes: ['color'],
+    },
   ],
   getContractGovernanceProfile: () => ({
     reviewRequiredProps: ['variant'],
@@ -224,5 +251,106 @@ describe('PropertyForm governance enforcement', () => {
     const actionEventPicker = screen.getByLabelText('Action event');
     expect(actionEventPicker).toHaveTextContent('onClick');
     expect(actionEventPicker).toHaveTextContent('onMouseEnter');
+  });
+
+  it('preserves complex object, array, and token collection props from rich editors', () => {
+    const onUpdate = vi.fn();
+    render(
+      <PropertyForm
+        contractName="Select"
+        initialProps={{
+          ariaLabel: 'Choose region',
+          variant: 'solid',
+          options: [{ label: 'North America', value: 'na' }],
+          analytics: { eventName: 'region.changed' },
+          tokenRefs: ['color.surface.default'],
+        }}
+        onUpdate={onUpdate}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('options JSON'), {
+      target: {
+        value: JSON.stringify(
+          [
+            { label: 'North America', value: 'na' },
+            { label: 'Europe', value: 'eu' },
+          ],
+          null,
+          2,
+        ),
+      },
+    });
+    fireEvent.change(screen.getByLabelText('analytics JSON'), {
+      target: { value: '{"eventName":"region.changed","sampleRate":0.5}' },
+    });
+    fireEvent.change(screen.getByLabelText(/tokenRefs/i), {
+      target: { value: 'color.surface.default, color.text.strong' },
+    });
+
+    fireEvent.click(screen.getByLabelText('Telemetry consent has been confirmed for this change'));
+    fireEvent.click(screen.getByLabelText('Privacy classification has been reviewed for this change'));
+    const reviewAcknowledgement = screen.queryByLabelText('I have reviewed the governed change');
+    if (reviewAcknowledgement) {
+      fireEvent.click(reviewAcknowledgement);
+    }
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+
+    expect(onUpdate).toHaveBeenCalledWith({
+      props: {
+        ariaLabel: 'Choose region',
+        variant: 'solid',
+        options: [
+          { label: 'North America', value: 'na' },
+          { label: 'Europe', value: 'eu' },
+        ],
+        analytics: {
+          eventName: 'region.changed',
+          sampleRate: 0.5,
+        },
+        tokenRefs: ['color.surface.default', 'color.text.strong'],
+      },
+      name: undefined,
+    });
+  });
+
+  it('blocks apply while complex field JSON is malformed or wrong-shaped', () => {
+    const onUpdate = vi.fn();
+    render(
+      <PropertyForm
+        contractName="Select"
+        initialProps={{
+          ariaLabel: 'Choose region',
+          variant: 'solid',
+          options: [],
+          analytics: {},
+          tokenRefs: [],
+        }}
+        onUpdate={onUpdate}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('options JSON'), {
+      target: { value: '{"label":"Not an array"}' },
+    });
+
+    expect(screen.getByTestId('property-complex-json-error-options')).toHaveTextContent(
+      'options must be a JSON array.',
+    );
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('options JSON'), {
+      target: { value: '[{"label":"North America","value":"na"}]' },
+    });
+    fireEvent.change(screen.getByLabelText('analytics JSON'), {
+      target: { value: '[{"not":"an object"}]' },
+    });
+
+    expect(screen.getByTestId('property-complex-json-error-analytics')).toHaveTextContent(
+      'analytics must be a JSON object.',
+    );
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
+    expect(onUpdate).not.toHaveBeenCalled();
   });
 });

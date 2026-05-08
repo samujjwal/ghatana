@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { Button } from '../../components/ui/Button';
 
 interface UserProfile {
   id: string;
@@ -88,12 +89,14 @@ const ProfilePage: React.FC = () => {
             <p className="text-sm text-fg-muted">{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : 'N/A'}</p>
           </div>
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => setEditing(!editing)}
           className="px-4 py-2 bg-surface hover:bg-surface-muted text-fg-muted text-sm rounded-lg transition-colors"
         >
           {editing ? 'Cancel' : 'Edit Profile'}
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -23,6 +23,21 @@ type ReviewStatus = 'open' | 'approved' | 'changes_requested' | 'merged' | 'clos
 type CIStatus = 'pending' | 'running' | 'passed' | 'failed' | 'cancelled';
 type ReviewAction = 'approve' | 'request_changes' | 'comment';
 
+const NativeButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>((props, ref) =>
+  React.createElement('button', { ...props, ref }),
+);
+NativeButton.displayName = 'NativeButton';
+
+const NativeInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>((props, ref) =>
+  React.createElement('input', { ...props, ref }),
+);
+NativeInput.displayName = 'NativeInput';
+
+const NativeTextarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) =>
+  React.createElement('textarea', { ...props, ref }),
+);
+NativeTextarea.displayName = 'NativeTextarea';
+
 interface User {
   id: string;
   name: string;
@@ -281,7 +296,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
             const fileCommentsCount = comments.filter((c) => c.filePath === file.path).length;
             return (
               <li key={file.id}>
-                <button
+                <NativeButton
                   type="button"
                   className={`file-item ${file.path === selectedFile ? 'file-item--active' : ''}`}
                   onClick={() => onSelectFile(file.path)}
@@ -299,7 +314,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
                   {fileCommentsCount > 0 && (
                     <span className="file-comments">{fileCommentsCount}</span>
                   )}
-                </button>
+                </NativeButton>
               </li>
             );
           })}
@@ -366,9 +381,9 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
                           <span className="line-content">
                             <code>{line.content}</code>
                           </span>
-                          <button type="button" className="add-comment-btn" title="Add comment">
+                          <NativeButton type="button" className="add-comment-btn" title="Add comment">
                             💬
-                          </button>
+                          </NativeButton>
                         </div>
 
                         {/* Inline Comments */}
@@ -390,7 +405,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
                         {/* Comment Input */}
                         {isCommenting && (
                           <div className="comment-input-row">
-                            <textarea
+                            <NativeTextarea
                               value={commentText}
                               onChange={(e) => setCommentText(e.target.value)}
                               placeholder="Leave a comment..."
@@ -399,7 +414,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
                               autoFocus
                             />
                             <div className="comment-actions">
-                              <button
+                              <NativeButton
                                 type="button"
                                 className="cancel-btn"
                                 onClick={() => {
@@ -408,15 +423,15 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
                                 }}
                               >
                                 Cancel
-                              </button>
-                              <button
+                              </NativeButton>
+                              <NativeButton
                                 type="button"
                                 className="submit-btn"
                                 onClick={handleSubmitComment}
                                 disabled={!commentText.trim() || isSubmitting}
                               >
                                 {isSubmitting ? 'Adding...' : 'Add Comment'}
-                              </button>
+                              </NativeButton>
                             </div>
                           </div>
                         )}
@@ -604,9 +619,9 @@ export const CodeReviewDetailPage: React.FC = () => {
         <div className="error-container">
           <h2>Failed to load pull request</h2>
           <p>{error || 'Pull request not found'}</p>
-          <button onClick={() => navigate(`/projects/${projectId}/reviews`)}>
+          <NativeButton onClick={() => navigate(`/projects/${projectId}/reviews`)}>
             Back to Reviews
-          </button>
+          </NativeButton>
         </div>
       </div>
     );
@@ -681,21 +696,21 @@ export const CodeReviewDetailPage: React.FC = () => {
           <div className="pr-actions">
             {pr.status !== 'merged' && pr.status !== 'closed' && (
               <>
-                <button
+                <NativeButton
                   type="button"
                   className="action-btn"
                   onClick={() => setShowReviewModal(true)}
                 >
                   📝 Review
-                </button>
-                <button
+                </NativeButton>
+                <NativeButton
                   type="button"
                   className={`action-btn action-btn--primary ${!canMerge ? 'action-btn--disabled' : ''}`}
                   onClick={() => canMerge && setShowMergeModal(true)}
                   disabled={!canMerge}
                 >
                   🔀 Merge
-                </button>
+                </NativeButton>
               </>
             )}
           </div>
@@ -703,43 +718,43 @@ export const CodeReviewDetailPage: React.FC = () => {
 
         {/* Tabs */}
         <div className="tabs-bar">
-          <button
+          <NativeButton
             type="button"
             className={`tab-btn ${activeTab === 'conversation' ? 'tab-btn--active' : ''}`}
             onClick={() => setActiveTab('conversation')}
           >
             💬 Conversation
-          </button>
-          <button
+          </NativeButton>
+          <NativeButton
             type="button"
             className={`tab-btn ${activeTab === 'files' ? 'tab-btn--active' : ''}`}
             onClick={() => setActiveTab('files')}
           >
             📁 Files Changed ({pr.files.length})
-          </button>
-          <button
+          </NativeButton>
+          <NativeButton
             type="button"
             className={`tab-btn ${activeTab === 'checks' ? 'tab-btn--active' : ''}`}
             onClick={() => setActiveTab('checks')}
           >
             {ciConfig.icon} Checks ({pr.ciChecks.length})
-          </button>
+          </NativeButton>
           {activeTab === 'files' && (
             <div className="view-toggle">
-              <button
+              <NativeButton
                 type="button"
                 className={`toggle-btn ${viewMode === 'unified' ? 'toggle-btn--active' : ''}`}
                 onClick={() => setViewMode('unified')}
               >
                 Unified
-              </button>
-              <button
+              </NativeButton>
+              <NativeButton
                 type="button"
                 className={`toggle-btn ${viewMode === 'split' ? 'toggle-btn--active' : ''}`}
                 onClick={() => setViewMode('split')}
               >
                 Split
-              </button>
+              </NativeButton>
             </div>
           )}
         </div>
@@ -902,7 +917,7 @@ export const CodeReviewDetailPage: React.FC = () => {
               <h3 className="modal-title">Submit Review</h3>
               <div className="review-actions-select">
                 <label className={`review-option ${reviewAction === 'comment' ? 'review-option--selected' : ''}`}>
-                  <input
+                  <NativeInput
                     type="radio"
                     name="reviewAction"
                     value="comment"
@@ -913,7 +928,7 @@ export const CodeReviewDetailPage: React.FC = () => {
                   <span className="option-label">Comment</span>
                 </label>
                 <label className={`review-option ${reviewAction === 'approve' ? 'review-option--selected' : ''}`}>
-                  <input
+                  <NativeInput
                     type="radio"
                     name="reviewAction"
                     value="approve"
@@ -924,7 +939,7 @@ export const CodeReviewDetailPage: React.FC = () => {
                   <span className="option-label">Approve</span>
                 </label>
                 <label className={`review-option ${reviewAction === 'request_changes' ? 'review-option--selected' : ''}`}>
-                  <input
+                  <NativeInput
                     type="radio"
                     name="reviewAction"
                     value="request_changes"
@@ -935,7 +950,7 @@ export const CodeReviewDetailPage: React.FC = () => {
                   <span className="option-label">Request Changes</span>
                 </label>
               </div>
-              <textarea
+              <NativeTextarea
                 value={reviewBody}
                 onChange={(e) => setReviewBody(e.target.value)}
                 placeholder="Leave a comment (optional for approve/request changes)..."
@@ -943,21 +958,21 @@ export const CodeReviewDetailPage: React.FC = () => {
                 rows={5}
               />
               <div className="modal-actions">
-                <button
+                <NativeButton
                   type="button"
                   className="modal-btn"
                   onClick={() => setShowReviewModal(false)}
                 >
                   Cancel
-                </button>
-                <button
+                </NativeButton>
+                <NativeButton
                   type="button"
                   className="modal-btn modal-btn--primary"
                   onClick={handleSubmitReview}
                   disabled={isSubmittingReview}
                 >
                   {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
-                </button>
+                </NativeButton>
               </div>
             </div>
           </div>
@@ -970,7 +985,7 @@ export const CodeReviewDetailPage: React.FC = () => {
               <h3 className="modal-title">Merge Pull Request</h3>
               <div className="merge-method-select">
                 <label className={`merge-option ${mergeMethod === 'squash' ? 'merge-option--selected' : ''}`}>
-                  <input
+                  <NativeInput
                     type="radio"
                     name="mergeMethod"
                     value="squash"
@@ -981,7 +996,7 @@ export const CodeReviewDetailPage: React.FC = () => {
                   <span className="option-desc">Combine all commits into one</span>
                 </label>
                 <label className={`merge-option ${mergeMethod === 'merge' ? 'merge-option--selected' : ''}`}>
-                  <input
+                  <NativeInput
                     type="radio"
                     name="mergeMethod"
                     value="merge"
@@ -992,7 +1007,7 @@ export const CodeReviewDetailPage: React.FC = () => {
                   <span className="option-desc">All commits will be added</span>
                 </label>
                 <label className={`merge-option ${mergeMethod === 'rebase' ? 'merge-option--selected' : ''}`}>
-                  <input
+                  <NativeInput
                     type="radio"
                     name="mergeMethod"
                     value="rebase"
@@ -1004,21 +1019,21 @@ export const CodeReviewDetailPage: React.FC = () => {
                 </label>
               </div>
               <div className="modal-actions">
-                <button
+                <NativeButton
                   type="button"
                   className="modal-btn"
                   onClick={() => setShowMergeModal(false)}
                 >
                   Cancel
-                </button>
-                <button
+                </NativeButton>
+                <NativeButton
                   type="button"
                   className="modal-btn modal-btn--merge"
                   onClick={handleMerge}
                   disabled={isMerging}
                 >
                   {isMerging ? 'Merging...' : '🔀 Confirm Merge'}
-                </button>
+                </NativeButton>
               </div>
             </div>
           </div>

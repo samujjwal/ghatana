@@ -20,6 +20,7 @@ import { Lightbulb as LightbulbOutlined, PenLine as DrawOutlined, BadgeCheck as 
 
 import { LifecyclePhase } from '../../types/lifecycle';
 import { TRANSITIONS } from '../../styles/design-tokens';
+import { Button } from '../ui/Button';
 
 // ============================================================================
 // Types
@@ -162,16 +163,18 @@ function PhaseStep({
             return `${base} bg-success-bg text-white shadow-md`;
         }
 
-        return `${base} bg-grey-200 dark:bg-grey-700 text-grey-500 dark:text-grey-400`;
+        return `${base} bg-surface-muted dark:bg-surface-muted text-fg-muted dark:text-fg-muted`;
     }, [isCurrent, status]);
 
     return (
         <div className="flex items-center">
             {/* Phase Step */}
             <Tooltip title={config.description}>
-                <button
+                <Button
+                    variant="ghost"
+                    size="small"
                     onClick={onClick}
-                    className={stepClasses}
+                    className={`${stepClasses} min-h-0 bg-transparent p-0 text-inherit hover:bg-transparent`}
                     aria-label={`Go to ${config.label} phase`}
                     style={{ minWidth: variant === 'full' ? '80px' : '60px' }}
                 >
@@ -231,7 +234,7 @@ function PhaseStep({
                             {progress}%
                         </span>
                     )}
-                </button>
+                </Button>
             </Tooltip>
 
             {/* Connector Line */}
@@ -239,7 +242,7 @@ function PhaseStep({
                 <div
                     className={`
                         flex-1 h-0.5 mx-1 ${TRANSITIONS.fast}
-                        ${status === 'completed' ? 'bg-success-bg' : 'bg-grey-300 dark:bg-grey-600'}
+                        ${status === 'completed' ? 'bg-success-bg' : 'bg-surface-muted dark:bg-surface-muted'}
                     `}
                     style={{
                         minWidth: variant === 'full' ? '24px' : '16px',
@@ -294,7 +297,7 @@ export function PhaseProgressBar({
                             {overallProgress}%
                         </span>
                     </div>
-                    <div className="w-full h-2 bg-grey-200 dark:bg-grey-700 rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-surface-muted dark:bg-surface-muted rounded-full overflow-hidden">
                         <div
                             className={`h-full bg-gradient-to-r from-blue-500 to-green-500 ${TRANSITIONS.default}`}
                             style={{ width: `${overallProgress}%` }}

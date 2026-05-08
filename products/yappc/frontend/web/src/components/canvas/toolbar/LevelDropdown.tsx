@@ -23,6 +23,7 @@ import { Globe as Public, LayoutGrid as Apps, File as InsertDriveFile, Braces as
 
 import { type AbstractionLevel } from '../../../types/canvas';
 import { BUTTON, RADIUS, TRANSITIONS, LEVEL_COLORS, Z_INDEX } from '../../../styles/design-tokens';
+import { Button } from '../../ui/Button';
 
 // ============================================================================
 // Types
@@ -222,14 +223,16 @@ export function LevelDropdown({
         <div ref={dropdownRef} className={`relative flex items-center gap-1 ${className}`}>
             {/* Zoom Out Button */}
             {onZoomOut && (
-                <button
+                <Button
                     onClick={onZoomOut}
                     disabled={!canZoomOut || disabled}
+                    variant="ghost"
+                    size="sm"
                     className={`
                         p-1.5 ${RADIUS.button} ${TRANSITIONS.fast}
-                        hover:bg-grey-100 dark:hover:bg-grey-800
+                        hover:bg-surface-muted dark:hover:bg-surface-muted
                         disabled:opacity-30 disabled:cursor-not-allowed
-                        focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1
+                        focus:outline-none focus:ring-2 focus:ring-info-border focus:ring-offset-1
                     `}
                     aria-label={canZoomOut
                         ? `Zoom out to ${getPrevLevelName()} level. Currently at ${currentOption.label} level. Shortcut: Alt+Up`
@@ -238,11 +241,11 @@ export function LevelDropdown({
                     title={canZoomOut ? `Zoom out to ${getPrevLevelName()} (Alt+↑)` : 'Already at highest level'}
                 >
                     <ZoomOut className="w-4 h-4 text-text-secondary" aria-hidden="true" />
-                </button>
+                </Button>
             )}
 
             {/* Level Dropdown Trigger */}
-            <button
+            <Button
                 ref={triggerRef}
                 onClick={() => {
                     if (!disabled) {
@@ -252,13 +255,15 @@ export function LevelDropdown({
                 }}
                 onKeyDown={handleTriggerKeyDown}
                 disabled={disabled}
+                variant="ghost"
+                size="sm"
                 className={`
                     flex items-center gap-2 px-3 ${BUTTON.default}
                     ${RADIUS.button} ${TRANSITIONS.fast}
                     bg-bg-paper border border-divider
-                    hover:bg-grey-50 dark:hover:bg-grey-800
+                    hover:bg-surface-muted dark:hover:bg-surface-muted
                     disabled:opacity-50 disabled:cursor-not-allowed
-                    focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1
+                    focus:outline-none focus:ring-2 focus:ring-info-border focus:ring-offset-1
                 `}
                 aria-haspopup="listbox"
                 aria-expanded={isOpen}
@@ -274,18 +279,20 @@ export function LevelDropdown({
                     className={`w-4 h-4 text-text-secondary ${TRANSITIONS.fast} ${isOpen ? 'rotate-180' : ''}`}
                     aria-hidden="true"
                 />
-            </button>
+            </Button>
 
             {/* Drill Down Button */}
             {onDrillDown && (
-                <button
+                <Button
                     onClick={onDrillDown}
                     disabled={!canDrillDown || disabled}
+                    variant="ghost"
+                    size="sm"
                     className={`
                         p-1.5 ${RADIUS.button} ${TRANSITIONS.fast}
-                        hover:bg-grey-100 dark:hover:bg-grey-800
+                        hover:bg-surface-muted dark:hover:bg-surface-muted
                         disabled:opacity-30 disabled:cursor-not-allowed
-                        focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1
+                        focus:outline-none focus:ring-2 focus:ring-info-border focus:ring-offset-1
                     `}
                     aria-label={canDrillDown
                         ? `Drill down to ${getNextLevelName()} level. Currently at ${currentOption.label} level. Shortcut: Alt+Down`
@@ -294,7 +301,7 @@ export function LevelDropdown({
                     title={canDrillDown ? `Drill down to ${getNextLevelName()} (Alt+↓)` : 'Already at most detailed level'}
                 >
                     <ZoomIn className="w-4 h-4 text-text-secondary" aria-hidden="true" />
-                </button>
+                </Button>
             )}
 
             {/* Dropdown Menu - Rendered via portal to avoid overflow clipping */}
@@ -321,7 +328,7 @@ export function LevelDropdown({
                         const isFocused = index === focusedIndex;
 
                         return (
-                            <button
+                            <Button
                                 key={option.level}
                                 ref={el => { optionRefs.current[index] = el; }}
                                 id={`level-option-${option.level}`}
@@ -335,16 +342,19 @@ export function LevelDropdown({
                                         handleSelect(option.level);
                                     }
                                 }}
+                                variant="ghost"
+                                size="sm"
+                                fullWidth
                                 className={`
                                     w-full flex items-center gap-3 px-3 py-2.5 text-left
                                     ${TRANSITIONS.fast}
                                     ${isSelected
                                         ? 'bg-secondary-50 dark:bg-secondary-900/30'
                                         : isFocused
-                                            ? 'bg-grey-100 dark:bg-grey-700'
-                                            : 'hover:bg-grey-50 dark:hover:bg-grey-800'
+                                            ? 'bg-surface-muted dark:bg-surface-muted'
+                                            : 'hover:bg-surface-muted dark:hover:bg-surface-muted'
                                     }
-                                    focus:outline-none focus:bg-grey-100 dark:focus:bg-grey-700
+                                    focus:outline-none focus:bg-surface-muted dark:focus:bg-surface-muted
                                 `}
                                 tabIndex={isFocused ? 0 : -1}
                             >
@@ -362,7 +372,7 @@ export function LevelDropdown({
                                         {option.description}
                                     </p>
                                 </div>
-                            </button>
+                            </Button>
                         );
                     })}
                 </div>,

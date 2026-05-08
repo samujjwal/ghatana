@@ -24,6 +24,9 @@ import { Tooltip, Chip, Spinner as CircularProgress } from '@ghatana/design-syst
 import { TRANSITIONS, RADIUS } from '../../styles/design-tokens';
 import type { CanvasMode } from '../../types/canvasMode';
 import { LifecyclePhase, PHASE_LABELS } from '../../types/lifecycle';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
 
 // ============================================================================
 // Types
@@ -257,7 +260,7 @@ export function AICommandBar({
 
                 {/* Input */}
                 {isExpanded ? (
-                    <textarea
+                    <Textarea
                         ref={textareaRef}
                         value={value}
                         onChange={(e) => setValue(e.target.value)}
@@ -272,9 +275,11 @@ export function AICommandBar({
                             text-sm
                         `}
                         aria-label="AI prompt input"
+                        resize="none"
+                        fullWidth
                     />
                 ) : (
-                    <input
+                    <Input
                         ref={inputRef}
                         type="text"
                         value={value}
@@ -289,6 +294,7 @@ export function AICommandBar({
                             text-sm
                         `}
                         aria-label="AI prompt input"
+                        fullWidth
                     />
                 )}
 
@@ -297,27 +303,33 @@ export function AICommandBar({
                     {/* History */}
                     {recentPrompts.length > 0 && (
                         <Tooltip title="Recent prompts">
-                            <button
+                            <Button
+                                type="button"
                                 onClick={() => setShowHistory(!showHistory)}
                                 className={`
-                                    p-1.5 ${RADIUS.button} ${TRANSITIONS.fast}
+                                    p-1.5 min-h-0 ${RADIUS.button} ${TRANSITIONS.fast}
                                     text-text-tertiary hover:text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800
                                 `}
+                                variant="ghost"
+                                size="sm"
                                 aria-label="Show recent prompts"
                             >
                                 <History className="w-4 h-4" />
-                            </button>
+                            </Button>
                         </Tooltip>
                     )}
 
                     {/* Expand/Collapse */}
                     <Tooltip title={isExpanded ? 'Collapse' : 'Expand'}>
-                        <button
+                        <Button
+                            type="button"
                             onClick={() => setIsExpanded(!isExpanded)}
                             className={`
-                                p-1.5 ${RADIUS.button} ${TRANSITIONS.fast}
+                                p-1.5 min-h-0 ${RADIUS.button} ${TRANSITIONS.fast}
                                 text-text-tertiary hover:text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800
                             `}
+                            variant="ghost"
+                            size="sm"
                             aria-label={isExpanded ? 'Collapse' : 'Expand'}
                         >
                             {isExpanded ? (
@@ -325,29 +337,33 @@ export function AICommandBar({
                             ) : (
                                 <ExpandMore className="w-4 h-4" />
                             )}
-                        </button>
+                        </Button>
                     </Tooltip>
 
                     {/* Clear */}
                     {value && (
-                        <button
+                        <Button
+                            type="button"
                             onClick={() => setValue('')}
                             className={`
-                                p-1.5 ${RADIUS.button} ${TRANSITIONS.fast}
+                                p-1.5 min-h-0 ${RADIUS.button} ${TRANSITIONS.fast}
                                 text-text-tertiary hover:text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800
                             `}
+                            variant="ghost"
+                            size="sm"
                             aria-label="Clear"
                         >
                             <Close className="w-4 h-4" />
-                        </button>
+                        </Button>
                     )}
 
                     {/* Submit */}
-                    <button
+                    <Button
+                        type="button"
                         onClick={handleSubmit}
                         disabled={!value.trim() || isProcessing}
                         className={`
-                            p-1.5 ${RADIUS.button} ${TRANSITIONS.fast}
+                            p-1.5 min-h-0 ${RADIUS.button} ${TRANSITIONS.fast}
                             ${value.trim()
                                 ? 'bg-primary-500 text-white hover:bg-primary-600'
                                 : 'text-text-tertiary cursor-not-allowed'
@@ -361,7 +377,7 @@ export function AICommandBar({
                         ) : (
                             <Send className="w-4 h-4" />
                         )}
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -369,7 +385,8 @@ export function AICommandBar({
             {!value && !showHistory && (
                 <div className="flex items-center gap-2 mt-2 overflow-x-auto pb-1">
                     {quickActions.map((action, index) => (
-                        <button
+                        <Button
+                            type="button"
                             key={index}
                             onClick={() => handleQuickAction(action.prompt)}
                             className={`
@@ -379,22 +396,27 @@ export function AICommandBar({
                                 hover:bg-grey-200 dark:hover:bg-grey-700
                                 ${RADIUS.button} ${TRANSITIONS.fast}
                             `}
+                            variant="ghost"
+                            size="sm"
                         >
                             <span>{action.icon}</span>
                             <span>{action.label}</span>
-                        </button>
+                        </Button>
                     ))}
                     {onOpenFullPanel && (
-                        <button
+                        <Button
+                            type="button"
                             onClick={onOpenFullPanel}
                             className={`
                                 px-2.5 py-1 text-xs font-medium
                                 text-primary-600 hover:text-primary-700
                                 ${TRANSITIONS.fast}
                             `}
+                            variant="ghost"
+                            size="sm"
                         >
                             Open full panel →
-                        </button>
+                        </Button>
                     )}
                 </div>
             )}
@@ -409,7 +431,8 @@ export function AICommandBar({
                     `}
                 >
                     {filteredCommands.map((cmd) => (
-                        <button
+                        <Button
+                            type="button"
                             key={cmd.command}
                             onClick={() => handleSlashCommand(cmd.command)}
                             className={`
@@ -417,10 +440,12 @@ export function AICommandBar({
                                 hover:bg-grey-100 dark:hover:bg-grey-800
                                 ${TRANSITIONS.fast}
                             `}
+                            variant="ghost"
+                            size="sm"
                         >
                             <code className="text-sm font-mono text-primary-600">{cmd.command}</code>
                             <span className="text-sm text-text-secondary">{cmd.description}</span>
-                        </button>
+                        </Button>
                     ))}
                 </div>
             )}
@@ -438,7 +463,8 @@ export function AICommandBar({
                         Recent Prompts
                     </div>
                     {recentPrompts.map((prompt, index) => (
-                        <button
+                        <Button
+                            type="button"
                             key={index}
                             onClick={() => handleHistoryClick(prompt)}
                             className={`
@@ -447,9 +473,11 @@ export function AICommandBar({
                                 hover:bg-grey-100 dark:hover:bg-grey-800
                                 ${TRANSITIONS.fast}
                             `}
+                            variant="ghost"
+                            size="sm"
                         >
                             {prompt}
-                        </button>
+                        </Button>
                     ))}
                 </div>
             )}

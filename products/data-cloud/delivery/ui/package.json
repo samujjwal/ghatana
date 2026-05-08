@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "bundle:check": "bash scripts/check-bundle-budgets.sh",
+    "bundle:check:ci": "bash scripts/check-bundle-budgets.sh --skip-build",
     "preview": "vite preview",
     "lint": "eslint src --max-warnings=0",
     "type-check": "tsc --noEmit",

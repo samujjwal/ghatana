@@ -509,7 +509,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               data-testid="command-search"
               autoFocus
             />
-            <kbd className="px-1.5 py-0.5 text-xs text-text-secondary bg-grey-100 dark:bg-grey-800 rounded">
+            <kbd className="px-1.5 py-0.5 text-xs text-text-secondary bg-surface-muted dark:bg-surface-muted rounded">
               esc
             </kbd>
           </Box>
@@ -567,7 +567,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     </Box>
                     {action.shortcut && (
                       <kbd
-                        className="ml-2 px-1.5 py-0.5 text-[10px] font-mono text-text-secondary bg-grey-100 dark:bg-grey-800 rounded"
+                        className="ml-2 px-1.5 py-0.5 text-[10px] font-mono text-text-secondary bg-surface-muted dark:bg-surface-muted rounded"
                       >
                         {action.shortcut}
                       </kbd>

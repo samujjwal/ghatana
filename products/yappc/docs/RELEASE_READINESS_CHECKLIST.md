@@ -27,6 +27,7 @@ Run the current canonical checks:
 
 ```bash
 pnpm --filter @ghatana/yappc-web-app run verify:release-readiness
+pnpm --filter @ghatana/yappc-web-app run test:e2e:a11y
 pnpm --filter @ghatana/yappc-web-app run test:e2e:visual
 
 ./gradlew \

@@ -49,6 +49,16 @@ export default defineConfig({
 
   // Configure projects for major browsers
   projects: [
+    // ---------------------------------------------------------------------------
+    // Auth setup: runs once before the 'authenticated' project to persist login
+    // state in e2e/.auth/user.json. Tests that need auth depend on this project.
+    // ---------------------------------------------------------------------------
+    {
+      name: 'setup',
+      testMatch: /.*\.setup\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
@@ -70,13 +80,31 @@ export default defineConfig({
       name: 'Mobile Safari',
       use: { ...devices['iPhone 12'] },
     },
+    // ---------------------------------------------------------------------------
+    // Authenticated project: reuses the login state persisted by the 'setup'
+    // project so individual tests do not repeat the auth flow.
+    // ---------------------------------------------------------------------------
+    {
+      name: 'authenticated',
+      use: {
+        ...devices['Desktop Chrome'],
+        // Reuse the auth state written by e2e/auth.setup.ts
+        storageState: 'e2e/.auth/user.json',
+      },
+      dependencies: ['setup'],
+    },
   ],
 
   // Run local dev server before starting tests
   webServer: [
     {
-      command: '.\\gradlew.bat :products:data-cloud:delivery:launcher:runLauncher',
-      cwd: '..\\..\\..',
+      // Cross-platform: use the Gradle wrapper script appropriate for the OS.
+      // On Linux/macOS CI agents this resolves to `./gradlew`.
+      // On Windows developer workstations this resolves to `gradlew.bat`.
+      command: process.platform === 'win32'
+        ? '.\\gradlew.bat :products:data-cloud:delivery:launcher:runLauncher'
+        : './gradlew :products:data-cloud:delivery:launcher:runLauncher',
+      cwd: '../../..',
       url: 'http://127.0.0.1:8082/health',
       reuseExistingServer: !process.env.CI,
       timeout: 240 * 1000,

@@ -44,7 +44,7 @@ export function CanvasCollaborationBanner({ projectId }: CanvasCollaborationBann
         <div className="mt-3 flex flex-wrap gap-2">
           {collaborators.map((presence) => (
             <span key={presence.user.id}
-              className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-200">
+              className="rounded-full bg-info-bg px-2.5 py-1 text-[11px] font-medium text-info-color dark:bg-info-bg/30 dark:text-info-color">
               {presence.user.name}
             </span>
           ))}

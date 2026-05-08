@@ -24,6 +24,7 @@ import {
 } from '../workspace/canvasAtoms';
 import { executeCommandAtom, UpdateNodeDataCommand } from '../workspace/canvasCommands';
 import { MERMAID_TEMPLATES } from '../diagram/MermaidDiagram';
+import { Textarea } from '../../ui/Textarea';
 
 export interface DiagramToolbarProps {
     /** Optional additional class names for the toolbar wrapper */
@@ -229,13 +230,14 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
                 <DialogTitle>Edit Diagram Code</DialogTitle>
                 <DialogContent>
                     <label htmlFor="mermaid-code-editor" className="block text-sm font-medium mb-1">Mermaid code</label>
-                    <textarea
+                    <Textarea
                         id="mermaid-code-editor"
                         aria-label="Mermaid code"
                         rows={15}
                         value={editBuffer}
                         onChange={(e) => setEditBuffer(e.target.value)}
                         placeholder="Enter Mermaid diagram code..."
+                        fullWidth
                         className="w-full font-mono text-sm border border-border rounded p-2 resize-y"
                     />
                 </DialogContent>

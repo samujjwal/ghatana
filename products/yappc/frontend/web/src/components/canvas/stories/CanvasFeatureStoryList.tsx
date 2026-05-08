@@ -1,3 +1,5 @@
+import { Input } from '../../ui/Input';
+import { Select } from '../../ui/Select';
 import { Search as SearchIcon } from 'lucide-react';
 import { Alert, Box, Chip, Stack, Typography } from '@ghatana/design-system';
 import { InputAdornment, Tab, Tabs, TextField } from '@ghatana/design-system';
@@ -280,7 +282,7 @@ export function CanvasFeatureStoryList({
             data-testid="canvas-feature-story-search"
           >
             <SearchIcon size={16} aria-hidden className="text-fg-muted" />
-            <input
+            <Input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder={searchPlaceholder}
@@ -294,7 +296,7 @@ export function CanvasFeatureStoryList({
               data-testid="canvas-feature-story-progress-filter"
             >
               <span>Progress status</span>
-              <select
+              <Select
                 value={progressFilter}
                 onChange={(event) => updateProgressFilter(event.target.value)}
                 className="min-h-9 rounded-md border border-border bg-white px-3 py-2 text-sm dark:border-border dark:bg-surface"
@@ -306,7 +308,7 @@ export function CanvasFeatureStoryList({
                     {option.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
           ) : null}
         </Box>

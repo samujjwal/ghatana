@@ -16,6 +16,7 @@ import { X as Close, ArrowLeft as ArrowBack, ArrowRight as ArrowForward } from '
 import { IdeaBriefForm } from './IdeaBriefForm';
 import { ResearchPackEditor } from './ResearchPackEditor';
 import { ProblemStatementEditor } from './ProblemStatementEditor';
+import { Button } from '../ui/Button';
 import {
     LifecycleArtifactKind,
     LIFECYCLE_ARTIFACT_CATALOG,
@@ -158,13 +159,15 @@ export const IntentDrawer: React.FC<IntentDrawerProps> = ({
                             <p className="text-sm text-text-secondary">{config.description}</p>
                         </div>
                     </div>
-                    <button
+                    <Button
                         onClick={closeDrawer}
+                        variant="ghost"
+                        size="small"
                         className="p-2 text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors"
                         aria-label="Close drawer"
                     >
                         <Close className="w-5 h-5" />
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Navigation Pills */}
@@ -173,9 +176,11 @@ export const IntentDrawer: React.FC<IntentDrawerProps> = ({
                         const isActive = id === drawerId;
                         const artifactMeta = LIFECYCLE_ARTIFACT_CATALOG[cfg.kind];
                         return (
-                            <button
+                            <Button
                                 key={id}
                                 onClick={() => navigateToDrawer(id as DrawerId)}
+                                variant="ghost"
+                                size="small"
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors ${isActive
                                         ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
                                         : 'text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800'
@@ -183,7 +188,7 @@ export const IntentDrawer: React.FC<IntentDrawerProps> = ({
                             >
                                 <span aria-hidden="true">{artifactMeta.icon}</span>
                                 <span>{cfg.title}</span>
-                            </button>
+                            </Button>
                         );
                     })}
                 </div>
@@ -235,24 +240,28 @@ export const IntentDrawer: React.FC<IntentDrawerProps> = ({
                 <div className="flex items-center justify-between p-4 border-t border-divider bg-bg-default">
                     <div>
                         {config.prev && (
-                            <button
+                            <Button
                                 onClick={() => navigateToDrawer(config.prev!)}
+                                variant="ghost"
+                                size="small"
                                 className="flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary transition-colors"
                             >
                                 <ArrowBack className="w-4 h-4" />
                                 {DRAWER_CONFIG[config.prev].title}
-                            </button>
+                            </Button>
                         )}
                     </div>
                     <div>
                         {config.next && (
-                            <button
+                            <Button
                                 onClick={() => navigateToDrawer(config.next!)}
+                                variant="ghost"
+                                size="small"
                                 className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 transition-colors"
                             >
                                 {DRAWER_CONFIG[config.next].title}
                                 <ArrowForward className="w-4 h-4" />
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </div>

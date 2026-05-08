@@ -12,6 +12,8 @@
 
 import React from 'react';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 
 interface VoiceInputButtonProps {
   onTranscript?: (transcript: string) => void;
@@ -57,8 +59,9 @@ export function VoiceInputButton({
 
   return (
     <div className={`relative ${className}`}>
-      <button
+      <Button
         type="button"
+        variant="ghost"
         onClick={toggleListening}
         disabled={disabled || status === 'error'}
         className={`
@@ -97,7 +100,7 @@ export function VoiceInputButton({
             <span className="absolute inset-0 rounded-full animate-pulse bg-destructive-bg opacity-50" />
           </>
         )}
-      </button>
+      </Button>
 
       {/* Interim Transcript Tooltip */}
       {isListening && interimTranscript && (
@@ -175,13 +178,14 @@ export function VoiceInputField({
 
   return (
     <div className={`relative flex items-center ${className}`}>
-      <input
+      <Input
         type="text"
         value={isListening ? `${value} ${interimTranscript}`.trim() : value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={disabled || isListening}
+        fullWidth
         className={`
           flex-1 px-4 py-3 pr-12
           bg-bg-default border border-divider rounded-lg

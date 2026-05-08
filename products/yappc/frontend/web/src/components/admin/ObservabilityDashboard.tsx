@@ -31,6 +31,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { Button } from '../ui/Button';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -211,16 +212,18 @@ export const ObservabilityDashboard: React.FC<ObservabilityDashboardProps> = ({
           </Box>
         </Box>
         {onRefresh && (
-          <button
+          <Button
             type="button"
             onClick={onRefresh}
             disabled={isLoading}
+            variant="outline"
+            size="small"
             aria-label="Refresh metrics"
             className="flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm text-fg-muted hover:bg-surface-muted disabled:opacity-50"
           >
             <Zap className="h-3 w-3" />
             Refresh
-          </button>
+          </Button>
         )}
       </Box>
 

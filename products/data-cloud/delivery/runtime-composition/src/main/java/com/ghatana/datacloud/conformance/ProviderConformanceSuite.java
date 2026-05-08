@@ -2,6 +2,7 @@ package com.ghatana.datacloud.conformance;
 
 import com.ghatana.datacloud.spi.*;
 import com.ghatana.platform.types.identity.Offset;
+import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 
 import java.nio.ByteBuffer;
@@ -165,11 +166,22 @@ public final class ProviderConformanceSuite {
     }
 
     /**
-     * Block on a promise to get its result synchronously.
-     * This is a simplified blocking wrapper for conformance tests.
+     * Block on a promise to get its result synchronously using an isolated Eventloop.
      */
+    @SuppressWarnings("unchecked")
     private static <T> T block(Promise<T> promise) {
-        return promise.toCompletableFuture().join();
+        Object[] result = new Object[1];
+        Throwable[] error = new Throwable[1];
+        Eventloop eventloop = Eventloop.create();
+        eventloop.submit(() -> promise.whenComplete((v, e) -> {
+            result[0] = v;
+            error[0] = e;
+        }));
+        eventloop.run();
+        if (error[0] != null) {
+            throw new RuntimeException("Conformance promise failed", error[0]);
+        }
+        return (T) result[0];
     }
 
     private static ConformanceResult test(String name, TestFn fn) {

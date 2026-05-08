@@ -55,7 +55,7 @@ describe('ArtifactsPanel', () => {
 
         it('renders Requirements artifact button', () => {
             renderPanel();
-            expect(screen.getByText('Requirements')).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /requirements/i })).toHaveClass('inline-flex');
         });
 
         it('renders Architecture Decision Record artifact button', () => {
@@ -167,7 +167,7 @@ describe('ArtifactsPanel', () => {
             renderPanel();
             expect(
                 screen.getByRole('button', { name: /view traceability graph/i }),
-            ).toBeInTheDocument();
+            ).toHaveClass('inline-flex');
         });
     });
 });

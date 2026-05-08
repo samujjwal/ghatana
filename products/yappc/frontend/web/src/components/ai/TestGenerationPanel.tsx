@@ -31,6 +31,7 @@ import React, { useState } from 'react';
 import { Loader2, AlertCircle, FlaskConical, Copy } from 'lucide-react';
 import { AIAssistLabel } from './AIAssistLabel';
 import type { AIAssistSource } from './AIAssistLabel';
+import { Button } from '../ui/Button';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -98,15 +99,17 @@ function TestCaseItem({ test }: { test: GeneratedTestCase }) {
     >
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-medium text-foreground">{test.name}</p>
-        <button
+        <Button
           data-testid={`test-copy-${test.id}`}
           onClick={handleCopy}
           aria-label={`Copy test: ${test.name}`}
           className="flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-xs text-muted hover:bg-accent"
+          variant="outline"
+          size="sm"
         >
           <Copy className="h-3 w-3" aria-hidden="true" />
           {copied ? 'Copied!' : 'Copy'}
-        </button>
+        </Button>
       </div>
       <pre className="overflow-x-auto rounded bg-muted/20 px-2 py-1.5 text-xs text-foreground">
         <code>{test.code}</code>
@@ -145,14 +148,16 @@ export function TestGenerationPanel({ runId, onAccept, className }: TestGenerati
     >
       {/* Idle trigger */}
       {state === 'idle' && (
-        <button
+        <Button
           data-testid="test-gen-btn"
           onClick={() => void handleGenerate()}
           className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
+          variant="outline"
+          size="sm"
         >
           <FlaskConical className="h-4 w-4" aria-hidden="true" />
           Generate tests
-        </button>
+        </Button>
       )}
 
       {/* Loading */}
@@ -170,9 +175,9 @@ export function TestGenerationPanel({ runId, onAccept, className }: TestGenerati
             <AlertCircle className="h-4 w-4" aria-hidden="true" />
             Could not generate tests.
           </div>
-          <button onClick={() => setState('idle')} className="text-xs text-muted underline">
+          <Button onClick={() => setState('idle')} className="text-xs text-muted underline" variant="link" size="sm">
             Try again
-          </button>
+          </Button>
         </div>
       )}
 
@@ -197,21 +202,24 @@ export function TestGenerationPanel({ runId, onAccept, className }: TestGenerati
 
           <div className="flex gap-2 pt-1">
             {onAccept && (
-              <button
+              <Button
                 data-testid="test-gen-accept-btn"
                 onClick={() => onAccept(result)}
                 className="rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                size="sm"
               >
                 Accept tests
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               onClick={() => setState('idle')}
               data-testid="test-gen-regenerate-btn"
               className="rounded border border-border px-3 py-1 text-xs font-medium text-muted hover:bg-accent"
+              variant="outline"
+              size="sm"
             >
               Regenerate
-            </button>
+            </Button>
           </div>
         </div>
       )}

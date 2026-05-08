@@ -13,6 +13,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { CheckCircle, XCircle as Cancel, AlertTriangle as Warning, Hourglass as HourglassEmpty, Play as PlayArrow, RefreshCw as Refresh, Download, Sparkles as AutoAwesome, ChevronDown as ExpandMore, ChevronUp as ExpandLess } from 'lucide-react';
 import type { LifecyclePhase } from '@/shared/types/lifecycle';
+import { Button } from '../ui/Button';
 
 export interface ValidationCheck {
     id: string;
@@ -53,6 +54,14 @@ export interface ValidationSummaryPanelProps {
 }
 
 type CategoryType = ValidationCheck['category'];
+
+interface NativeButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+    children: React.ReactNode;
+}
+
+function NativeButton({ children, type = 'button', ...props }: NativeButtonProps): React.ReactElement {
+    return React.createElement('button', { ...props, type }, children);
+}
 
 const CATEGORY_LABELS: Record<CategoryType, { label: string; icon: string }> = {
     requirements: { label: 'Requirements', icon: '📋' },
@@ -206,16 +215,19 @@ export const ValidationSummaryPanel: React.FC<ValidationSummaryPanelProps> = ({
                 </div>
                 <div className="flex gap-2">
                     {onAIAssist && (
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={handleAIAssist}
                             disabled={isAILoading || isRunning}
                             className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50"
                         >
                             <AutoAwesome className="w-4 h-4" />
                             {isAILoading ? 'Analyzing...' : 'Assist'}
-                        </button>
+                        </Button>
                     )}
-                    <button
+                    <Button
+                        size="sm"
                         onClick={onRunValidation}
                         disabled={isRunning}
                         className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
@@ -231,7 +243,7 @@ export const ValidationSummaryPanel: React.FC<ValidationSummaryPanelProps> = ({
                                 Run All
                             </>
                         )}
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -269,9 +281,10 @@ export const ValidationSummaryPanel: React.FC<ValidationSummaryPanelProps> = ({
 
                     return (
                         <div key={category} className="border border-divider rounded-lg bg-bg-paper overflow-hidden">
-                            <button
+                            <NativeButton
                                 onClick={() => toggleCategory(category)}
                                 className="w-full flex items-center justify-between px-4 py-3 hover:bg-grey-50 dark:hover:bg-grey-800/50 transition-colors"
+                                aria-expanded={isExpanded}
                             >
                                 <div className="flex items-center gap-2">
                                     <span>{CATEGORY_LABELS[category].icon}</span>
@@ -294,7 +307,7 @@ export const ValidationSummaryPanel: React.FC<ValidationSummaryPanelProps> = ({
                                         <ExpandMore className="w-4 h-4 text-text-secondary" />
                                     )}
                                 </div>
-                            </button>
+                            </NativeButton>
                             {isExpanded && (
                                 <div className="border-t border-divider divide-y divide-divider">
                                     {categoryChecks.map((check) => (
@@ -328,22 +341,26 @@ export const ValidationSummaryPanel: React.FC<ValidationSummaryPanelProps> = ({
                                                     </p>
                                                 )}
                                                 <div className="flex items-center gap-2 mt-2">
-                                                    <button
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
                                                         onClick={() => onRunCheck(check.id)}
                                                         disabled={isRunning || check.status === 'running'}
                                                         className="text-xs text-primary-600 hover:text-primary-700 disabled:opacity-50"
                                                     >
                                                         <Refresh className="w-3 h-3 inline mr-1" />
                                                         Re-run
-                                                    </button>
+                                                    </Button>
                                                     {check.autoFix && check.status === 'failed' && onAutoFix && (
-                                                        <button
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
                                                             onClick={() => onAutoFix(check.id)}
                                                             className="text-xs text-success-color hover:text-success-color"
                                                         >
                                                             <AutoAwesome className="w-3 h-3 inline mr-1" />
                                                             Auto-fix
-                                                        </button>
+                                                        </Button>
                                                     )}
                                                 </div>
                                             </div>
@@ -381,12 +398,14 @@ export const ValidationSummaryPanel: React.FC<ValidationSummaryPanelProps> = ({
                                 </ul>
                             </div>
                         )}
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => setAiSuggestions(null)}
                             className="text-xs text-text-secondary hover:text-text-primary"
                         >
                             Dismiss
-                        </button>
+                        </Button>
                     </div>
                 )}
             </div>
@@ -399,29 +418,35 @@ export const ValidationSummaryPanel: React.FC<ValidationSummaryPanelProps> = ({
                     )}
                 </div>
                 <div className="flex gap-2">
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={handleGenerateReport}
                         disabled={isGeneratingReport || isRunning}
                         className="flex items-center gap-1 px-3 py-1.5 text-xs text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded transition-colors disabled:opacity-50"
                     >
                         {isGeneratingReport ? 'Generating...' : 'Generate Report'}
-                    </button>
+                    </Button>
                     {currentReport && onExportReport && (
                         <div className="flex gap-1">
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => handleExportReport('pdf')}
                                 className="px-2 py-1 text-xs text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 rounded transition-colors"
                             >
                                 <Download className="w-3 h-3 inline mr-1" />
                                 PDF
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => handleExportReport('md')}
                                 className="px-2 py-1 text-xs text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 rounded transition-colors"
                             >
                                 <Download className="w-3 h-3 inline mr-1" />
                                 MD
-                            </button>
+                            </Button>
                         </div>
                     )}
                 </div>

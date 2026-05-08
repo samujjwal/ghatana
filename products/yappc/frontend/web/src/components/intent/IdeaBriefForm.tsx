@@ -13,6 +13,9 @@
 import React, { useState, useCallback } from 'react';
 import { Sparkles as AutoAwesome, Plus as Add, Minus as Remove } from 'lucide-react';
 import type { IdeaBriefPayload } from '@/shared/types/lifecycle-artifacts';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
 
 export interface IdeaBriefFormProps {
     initialData?: Partial<IdeaBriefPayload>;
@@ -155,7 +158,7 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
                 >
                     Idea Title *
                 </label>
-                <input
+                <Input
                     id="idea-title"
                     type="text"
                     value={data.title}
@@ -178,7 +181,7 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
                 >
                     One-liner Description *
                 </label>
-                <input
+                <Input
                     id="idea-oneliner"
                     type="text"
                     value={data.oneLiner}
@@ -201,7 +204,7 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
                 <div className="space-y-2">
                     {data.targetUsers.map((user, index) => (
                         <div key={index} className="flex gap-2">
-                            <input
+                            <Input
                                 type="text"
                                 value={user}
                                 onChange={(e) => updateArrayItem('targetUsers', index, e.target.value)}
@@ -210,26 +213,30 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
                                 disabled={isSubmitting}
                             />
                             {data.targetUsers.length > 1 && (
-                                <button
+                                <Button
                                     type="button"
                                     onClick={() => removeArrayItem('targetUsers', index)}
+                                    variant="ghost"
+                                    size="small"
                                     className="p-2 text-text-secondary hover:text-error-color transition-colors"
                                     aria-label="Remove target user"
                                     disabled={isSubmitting}
                                 >
                                     <Remove className="w-5 h-5" />
-                                </button>
+                                </Button>
                             )}
                         </div>
                     ))}
-                    <button
+                    <Button
                         type="button"
                         onClick={() => addArrayItem('targetUsers')}
+                        variant="ghost"
+                        size="small"
                         className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 transition-colors"
                         disabled={isSubmitting}
                     >
                         <Add className="w-4 h-4" /> Add target user
-                    </button>
+                    </Button>
                 </div>
                 {errors.targetUsers && (
                     <p className="text-sm text-error-color mt-1">{errors.targetUsers}</p>
@@ -244,7 +251,7 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
                 >
                     Business Value *
                 </label>
-                <textarea
+                <Textarea
                     id="idea-value"
                     value={data.businessValue}
                     onChange={(e) => updateField('businessValue', e.target.value)}
@@ -267,7 +274,7 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
                 <div className="space-y-2">
                     {data.constraints.map((constraint, index) => (
                         <div key={index} className="flex gap-2">
-                            <input
+                            <Input
                                 type="text"
                                 value={constraint}
                                 onChange={(e) => updateArrayItem('constraints', index, e.target.value)}
@@ -276,26 +283,30 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
                                 disabled={isSubmitting}
                             />
                             {data.constraints.length > 1 && (
-                                <button
+                                <Button
                                     type="button"
                                     onClick={() => removeArrayItem('constraints', index)}
+                                    variant="ghost"
+                                    size="small"
                                     className="p-2 text-text-secondary hover:text-error-color transition-colors"
                                     aria-label="Remove constraint"
                                     disabled={isSubmitting}
                                 >
                                     <Remove className="w-5 h-5" />
-                                </button>
+                                </Button>
                             )}
                         </div>
                     ))}
-                    <button
+                    <Button
                         type="button"
                         onClick={() => addArrayItem('constraints')}
+                        variant="ghost"
+                        size="small"
                         className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 transition-colors"
                         disabled={isSubmitting}
                     >
                         <Add className="w-4 h-4" /> Add constraint
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -307,7 +318,7 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
                 <div className="space-y-2">
                     {data.assumptions.map((assumption, index) => (
                         <div key={index} className="flex gap-2">
-                            <input
+                            <Input
                                 type="text"
                                 value={assumption}
                                 onChange={(e) => updateArrayItem('assumptions', index, e.target.value)}
@@ -316,60 +327,67 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
                                 disabled={isSubmitting}
                             />
                             {data.assumptions.length > 1 && (
-                                <button
+                                <Button
                                     type="button"
                                     onClick={() => removeArrayItem('assumptions', index)}
+                                    variant="ghost"
+                                    size="small"
                                     className="p-2 text-text-secondary hover:text-error-color transition-colors"
                                     aria-label="Remove assumption"
                                     disabled={isSubmitting}
                                 >
                                     <Remove className="w-5 h-5" />
-                                </button>
+                                </Button>
                             )}
                         </div>
                     ))}
-                    <button
+                    <Button
                         type="button"
                         onClick={() => addArrayItem('assumptions')}
+                        variant="ghost"
+                        size="small"
                         className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 transition-colors"
                         disabled={isSubmitting}
                     >
                         <Add className="w-4 h-4" /> Add assumption
-                    </button>
+                    </Button>
                 </div>
             </div>
 
             {/* Actions */}
             <div className="flex items-center justify-between pt-4 border-t border-divider">
                 {onAIAssist && (
-                    <button
+                    <Button
                         type="button"
                         onClick={handleAIAssist}
                         disabled={isSubmitting || isAILoading}
+                        variant="ghost"
                         className="flex items-center gap-2 px-4 py-2 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50"
                     >
                         <AutoAwesome className="w-5 h-5" />
                         {isAILoading ? 'Getting suggestions...' : 'AI Suggestions'}
-                    </button>
+                    </Button>
                 )}
                 <div className="flex gap-3 ml-auto">
                     {onCancel && (
-                        <button
+                        <Button
                             type="button"
                             onClick={onCancel}
                             disabled={isSubmitting}
+                            variant="ghost"
                             className="px-4 py-2 text-text-secondary hover:text-text-primary transition-colors"
                         >
                             Cancel
-                        </button>
+                        </Button>
                     )}
-                    <button
+                    <Button
                         type="submit"
                         disabled={isSubmitting}
+                        variant="solid"
                         className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
                     >
                         {isSubmitting ? 'Saving...' : 'Save Idea Brief'}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </form>

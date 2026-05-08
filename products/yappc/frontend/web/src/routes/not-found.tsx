@@ -10,6 +10,7 @@
  * @doc.pattern Route Component
  */
 
+import { Button } from '../components/ui/Button';
 import { Link, useNavigate } from 'react-router';
 import { Home, Search, ArrowLeft as ArrowBack } from 'lucide-react';
 
@@ -59,13 +60,13 @@ export default function NotFoundRoute() {
                         <Home className="w-5 h-5" />
                         Go to Dashboard
                     </Link>
-                    <button
+                    <Button variant="ghost" size="sm"
                         onClick={handleSafeBack}
                         className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-grey-100 dark:bg-grey-800 text-text-primary rounded-lg font-medium hover:bg-grey-200 dark:hover:bg-grey-700 transition-colors"
                     >
                         <ArrowBack className="w-5 h-5" />
                         Go Back
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Help Text */}

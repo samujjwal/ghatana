@@ -12,6 +12,7 @@
 
 import React from 'react';
 import { Sparkles } from 'lucide-react';
+import { Button } from '../ui/Button';
 
 export type AILabelSize = 'sm' | 'md' | 'lg';
 export type AILabelVariant = 'subtle' | 'emphasis' | 'border';
@@ -73,9 +74,9 @@ export const AILabelOverlay: React.FC<AILabelOverlayProps> = ({
 
   if (onClick) {
     return (
-      <button type="button" onClick={onClick} className="inline-flex">
+      <Button type="button" onClick={onClick} className="inline-flex p-0 min-h-0" variant="ghost" size="sm">
         {content}
-      </button>
+      </Button>
     );
   }
 

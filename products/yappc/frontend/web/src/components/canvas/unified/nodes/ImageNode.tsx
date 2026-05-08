@@ -23,6 +23,7 @@ import {
   Button,
   Spinner as CircularProgress,
 } from '@ghatana/design-system';
+import { Input } from '../../../ui/Input';
 
 export interface ImageNodeData {
     src?: string;
@@ -136,7 +137,7 @@ function ImageNodeComponent({ data, selected, id }: ImageNodeProps) {
                 style={{ borderRadius, backgroundColor: 'rgba(255,255,255,0.96)' }}
             >
                 {/* Hidden file input */}
-                <input
+                <Input
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"

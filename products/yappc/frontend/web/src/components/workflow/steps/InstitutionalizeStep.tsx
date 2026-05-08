@@ -50,6 +50,12 @@ const TEAM_MEMBERS = [
     'Frank Miller',
 ];
 
+const NativeInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
+    (props, ref) => React.createElement('input', { ...props, ref })
+);
+
+NativeInput.displayName = 'NativeInput';
+
 // ============================================================================
 // COMPONENT
 // ============================================================================
@@ -260,7 +266,7 @@ export function InstitutionalizeStep() {
                                     Enforcement Level: <strong>{getEnforcementLabel(newActionEnforcement)}</strong>
                                 </Typography>
                             </Box>
-                            <input
+                            <NativeInput
                                 type="range"
                                 value={newActionEnforcement}
                                 onChange={(event) => {
@@ -415,7 +421,7 @@ export function InstitutionalizeStep() {
                     <Typography component="p" className="text-lg font-medium" gutterBottom>
                         Effective Date
                     </Typography>
-                    <input
+                    <NativeInput
                         type="date"
                         value={currentData.effectiveDate ?? ''}
                         onChange={(e) => handleChange('effectiveDate', e.target.value || undefined)}

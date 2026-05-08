@@ -11,6 +11,7 @@
 
 import React, { useState } from 'react';
 import { Download as FileDownload } from 'lucide-react';
+import { Button } from '../ui/Button';
 
 export interface ExportButtonProps {
     onExport: (format: 'json' | 'markdown' | 'pdf') => void;
@@ -38,7 +39,7 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
 
     return (
         <div className="relative">
-            <button
+            <Button
                 onClick={() => setShowMenu(!showMenu)}
                 disabled={disabled}
                 className={`flex items-center gap-2 px-4 py-2 text-sm font-medium bg-white border border-divider rounded-md hover:bg-grey-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${compact ? 'px-2 py-1' : ''
@@ -46,7 +47,7 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
             >
                 <FileDownload className="w-4 h-4" />
                 {!compact && 'Export'}
-            </button>
+            </Button>
 
             {showMenu && (
                 <>
@@ -56,14 +57,14 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
                     />
                     <div className="absolute right-0 mt-1 w-48 bg-white border border-divider rounded-md shadow-lg z-20">
                         {formats.map((format) => (
-                            <button
+                            <Button
                                 key={format.id}
                                 onClick={() => handleExport(format.id)}
                                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left hover:bg-grey-50 transition-colors first:rounded-t-md last:rounded-b-md"
                             >
                                 <span className="text-lg">{format.icon}</span>
                                 <span>{format.label}</span>
-                            </button>
+                            </Button>
                         ))}
                     </div>
                 </>

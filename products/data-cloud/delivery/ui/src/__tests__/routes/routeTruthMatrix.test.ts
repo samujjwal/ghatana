@@ -37,20 +37,40 @@ describe('route truth matrix', () => {
     expect(globalSearchSource).toContain("id: 'nav-trust'");
   });
 
-  it('keeps preview routes fail-closed behind feature gate fallbacks', () => {
+  it('keeps preview routes fail-closed behind RuntimeCapabilityRouteGate', () => {
+    // Preview routes are gated via RoleProtectedRoute + RuntimeCapabilityRouteGate
+    // (supercedes the old isXxxSurfaceEnabled() ternary pattern)
     expect(routesSource).toContain("path: 'alerts'");
-    expect(routesSource).toContain("element: isAlertsSurfaceEnabled() ? withSuspense(AlertsPage) : withSuspense(NotFound)");
+    expect(routesSource).toContain("aliases={['alert-triage', 'monitoring', 'alerts']}");
+
     expect(routesSource).toContain("path: 'memory'");
-    expect(routesSource).toContain("element: isMemorySurfaceEnabled() ? withSuspense(MemoryPlaneViewerPage) : withSuspense(NotFound)");
+    expect(routesSource).toContain("aliases={['memory-plane', 'memory']}");
+
     expect(routesSource).toContain("path: 'entities'");
-    expect(routesSource).toContain("element: isEntityBrowserSurfaceEnabled() ? withSuspense(EntityBrowserPage) : withSuspense(NotFound)");
+    expect(routesSource).toContain("aliases={['entity-browser', 'entities']}");
+
     expect(routesSource).toContain("path: 'context'");
-    expect(routesSource).toContain("element: isContextSurfaceEnabled() ? withSuspense(ContextExplorerPage) : withSuspense(NotFound)");
+    expect(routesSource).toContain("aliases={['context-explorer', 'context']}");
+
     expect(routesSource).toContain("path: 'fabric'");
-    expect(routesSource).toContain("element: isFabricSurfaceEnabled() ? withSuspense(DataFabricPage) : withSuspense(NotFound)");
+    expect(routesSource).toContain("aliases={['data-fabric', 'fabric']}");
+
     expect(routesSource).toContain("path: 'agents'");
-    expect(routesSource).toContain("element: isAgentCatalogSurfaceEnabled() ? withSuspense(AgentPluginManagerPage) : withSuspense(NotFound)");
+    expect(routesSource).toContain("aliases={['agent-catalog', 'agents']}");
+
     expect(routesSource).toContain("path: 'settings'");
-    expect(routesSource).toContain("element: isSettingsSurfaceEnabled() ? withSuspense(SettingsPage) : withSuspense(NotFound)");
+    expect(routesSource).toContain("aliases={['settings', 'config']}");
+
+    expect(routesSource).toContain("path: 'connectors'");
+    expect(routesSource).toContain("aliases={['data-connectors', 'connectors']}");
+  });
+
+  it('wraps preview routes with RoleProtectedRoute', () => {
+    // Every RuntimeCapabilityRouteGate must be inside a RoleProtectedRoute
+    const rtcgInstances = (routesSource.match(/RuntimeCapabilityRouteGate/g) ?? []).length;
+    const roleGuardInstances = (routesSource.match(/RoleProtectedRoute/g) ?? []).length;
+    // There are more RoleProtectedRoute usages (aliases) than RuntimeCapabilityRouteGate
+    expect(roleGuardInstances).toBeGreaterThanOrEqual(rtcgInstances);
+    expect(rtcgInstances).toBeGreaterThan(0);
   });
 });

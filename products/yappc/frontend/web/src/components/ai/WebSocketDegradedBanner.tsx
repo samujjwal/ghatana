@@ -20,6 +20,7 @@ import React, { useEffect, useState } from 'react';
 import { WifiOff, Wifi } from 'lucide-react';
 import { useWebSocketHealth } from '@/hooks/useWebSocketHealth';
 import type { WebSocketHealth } from '@/hooks/useWebSocketHealth';
+import { Button } from '../ui/Button';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -96,15 +97,17 @@ export function WebSocketDegradedBanner({
           ? ` (attempt ${reconnectAttempt})`
           : null}
       </span>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="sm"
         onClick={() => setDismissed(true)}
         aria-label="Dismiss connection warning"
         className="ml-auto p-0.5 opacity-60 transition-opacity hover:opacity-100"
         data-testid="btn-dismiss-ws-banner"
       >
         ✕
-      </button>
+      </Button>
     </div>
   );
 }

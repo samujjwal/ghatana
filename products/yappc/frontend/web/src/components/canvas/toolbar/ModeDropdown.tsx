@@ -23,6 +23,7 @@ import { Lightbulb as EmojiObjects, GitBranch as AccountTree, Paintbrush as Brus
 
 import { type CanvasMode } from '../../../types/canvas';
 import { BUTTON, RADIUS, TRANSITIONS, MODE_COLORS, Z_INDEX } from '../../../styles/design-tokens';
+import { Button } from '../../ui/Button';
 
 // ============================================================================
 // Types
@@ -226,7 +227,7 @@ export function ModeDropdown({
     return (
         <div ref={dropdownRef} className={`relative ${className}`}>
             {/* Trigger Button */}
-            <button
+            <Button
                 ref={triggerRef}
                 onClick={() => {
                     if (!disabled) {
@@ -236,13 +237,15 @@ export function ModeDropdown({
                 }}
                 onKeyDown={handleTriggerKeyDown}
                 disabled={disabled}
+                variant="ghost"
+                size="sm"
                 className={`
                     flex items-center gap-2 px-3 ${BUTTON.default}
                     ${RADIUS.button} ${TRANSITIONS.fast}
                     bg-bg-paper border border-divider
-                    hover:bg-grey-50 dark:hover:bg-grey-800
+                    hover:bg-surface-muted dark:hover:bg-surface-muted
                     disabled:opacity-50 disabled:cursor-not-allowed
-                    focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1
+                    focus:outline-none focus:ring-2 focus:ring-info-border focus:ring-offset-1
                 `}
                 aria-haspopup="listbox"
                 aria-expanded={isOpen}
@@ -257,7 +260,7 @@ export function ModeDropdown({
                 <KeyboardArrowDown
                     className={`w-4 h-4 text-text-secondary ${TRANSITIONS.fast} ${isOpen ? 'rotate-180' : ''}`}
                 />
-            </button>
+            </Button>
 
             {/* Dropdown Menu - Rendered via portal to avoid overflow clipping */}
             {isOpen && typeof document !== 'undefined' && createPortal(
@@ -287,7 +290,7 @@ export function ModeDropdown({
                         const isFocused = index === focusedIndex;
 
                         return (
-                            <button
+                            <Button
                                 key={option.mode}
                                 ref={el => { optionRefs.current[index] = el; }}
                                 id={`mode-option-${option.mode}`}
@@ -301,32 +304,35 @@ export function ModeDropdown({
                                         handleSelect(option.mode);
                                     }
                                 }}
+                                variant="ghost"
+                                size="sm"
+                                fullWidth
                                 className={`
                                     w-full flex items-center gap-3 px-3 py-2.5 text-left
                                     ${TRANSITIONS.fast}
                                     ${isSelected
-                                        ? 'bg-primary-50 dark:bg-primary-900/30'
+                                        ? 'bg-info-bg dark:bg-info-bg/30'
                                         : isFocused
-                                            ? 'bg-grey-100 dark:bg-grey-700'
-                                            : 'hover:bg-grey-50 dark:hover:bg-grey-800'
+                                            ? 'bg-surface-muted dark:bg-surface-muted'
+                                            : 'hover:bg-surface-muted dark:hover:bg-surface-muted'
                                     }
-                                    focus:outline-none focus:bg-grey-100 dark:focus:bg-grey-700
+                                    focus:outline-none focus:bg-surface-muted dark:focus:bg-surface-muted
                                 `}
                                 tabIndex={isFocused ? 0 : -1}
                             >
                                 <Icon
-                                    className={`w-4 h-4 ${isSelected ? 'text-primary-600' : 'text-text-secondary'}`}
+                                    className={`w-4 h-4 ${isSelected ? 'text-info-color' : 'text-text-secondary'}`}
                                     aria-hidden="true"
                                 />
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                         <span
-                                            className={`text-sm font-medium ${isSelected ? 'text-primary-700 dark:text-primary-300' : 'text-text-primary'}`}
+                                            className={`text-sm font-medium ${isSelected ? 'text-info-color dark:text-info-color' : 'text-text-primary'}`}
                                         >
                                             {option.label}
                                         </span>
                                         <kbd
-                                            className="px-1.5 py-0.5 text-[10px] font-mono bg-grey-100 dark:bg-grey-700 rounded"
+                                            className="px-1.5 py-0.5 text-[10px] font-mono bg-surface-muted dark:bg-surface-muted rounded"
                                             aria-label={`Keyboard shortcut: ${option.shortcut}`}
                                         >
                                             {option.shortcut}
@@ -336,7 +342,7 @@ export function ModeDropdown({
                                         {option.description}
                                     </p>
                                 </div>
-                            </button>
+                            </Button>
                         );
                     })}
                 </div>,

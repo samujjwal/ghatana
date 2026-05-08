@@ -202,7 +202,7 @@ function MindmapNodeComponent({ data, selected, id }: MindmapNodeProps) {
             {selected && !isEditing && (
                 <IconButton
                     size="small"
-                    className="absolute w-[20px] h-[20px] bg-primary text-white text-[0.8rem] hover:bg-info-bg" style={{ right: layoutDirection === 'left' ? 'auto' : hasChildren ? -48 : -24, left: layoutDirection === 'left' ? (hasChildren ? -48 : -24) : 'auto' }}
+                    className="absolute w-[20px] h-[20px] bg-info-color text-white text-[0.8rem] hover:bg-info-bg" style={{ right: layoutDirection === 'left' ? 'auto' : hasChildren ? -48 : -24, left: layoutDirection === 'left' ? (hasChildren ? -48 : -24) : 'auto' }}
                     title="Add child (Tab)"
                 >
                     +

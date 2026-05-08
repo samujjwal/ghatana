@@ -249,8 +249,9 @@ describe('RequirementsPanel', () => {
             const accessibilityBtn = screen.queryByRole('button', { name: 'Accessibility' });
             if (accessibilityBtn) {
                 fireEvent.click(accessibilityBtn);
-                // After clicking, should have "selected" class
-                expect(accessibilityBtn.className).toMatch(/primary/);
+                // After clicking, should have selected semantic token classes.
+                expect(accessibilityBtn).toHaveClass('bg-info-bg');
+                expect(accessibilityBtn).toHaveClass('text-info-color');
             }
         });
     });

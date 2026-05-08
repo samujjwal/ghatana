@@ -6,6 +6,9 @@
 
 import React, { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Textarea } from '../../components/ui/Textarea';
 import {
   ConfigurationWizard,
   CostEstimator,
@@ -34,6 +37,18 @@ interface HostingConfig {
 interface TeamConfig {
   inviteMembers: string[];
   accessControl: 'open' | 'invite-only' | 'private';
+}
+
+type RadioControlProps = Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  'type'
+>;
+
+function RadioControl(props: RadioControlProps): React.ReactElement {
+  return React.createElement('input', {
+    ...props,
+    type: 'radio',
+  });
 }
 
 const repositoryProviders: Provider[] = [
@@ -201,7 +216,7 @@ export const InitializationWizardPage: React.FC = () => {
             <div className="form-section">
               <label>
                 Repository Name
-                <input
+                <Input
                   type="text"
                   className="form-input"
                   value={repository.name}
@@ -213,7 +228,7 @@ export const InitializationWizardPage: React.FC = () => {
               </label>
               <label>
                 Description
-                <textarea
+                <Textarea
                   className="form-textarea"
                   value={repository.description}
                   onChange={(event) =>
@@ -224,8 +239,7 @@ export const InitializationWizardPage: React.FC = () => {
               </label>
               <div className="radio-row">
                 <label>
-                  <input
-                    type="radio"
+                  <RadioControl
                     checked={repository.visibility === 'private'}
                     onChange={() =>
                       setRepository((prev) => ({ ...prev, visibility: 'private' }))
@@ -234,8 +248,7 @@ export const InitializationWizardPage: React.FC = () => {
                   Private
                 </label>
                 <label>
-                  <input
-                    type="radio"
+                  <RadioControl
                     checked={repository.visibility === 'public'}
                     onChange={() =>
                       setRepository((prev) => ({ ...prev, visibility: 'public' }))
@@ -285,15 +298,17 @@ export const InitializationWizardPage: React.FC = () => {
               <label>
                 Invite Team Members
                 <div className="invite-row">
-                  <input
+                  <Input
                     type="email"
                     className="form-input"
                     placeholder="colleague@example.com"
                     value={inviteEmail}
                     onChange={(event) => setInviteEmail(event.target.value)}
                   />
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     className="btn btn-secondary"
                     onClick={() => {
                       if (!inviteEmail || team.inviteMembers.includes(inviteEmail)) {
@@ -307,7 +322,7 @@ export const InitializationWizardPage: React.FC = () => {
                     }}
                   >
                     Add
-                  </button>
+                  </Button>
                 </div>
               </label>
               {team.inviteMembers.length > 0 && (
@@ -315,8 +330,10 @@ export const InitializationWizardPage: React.FC = () => {
                   {team.inviteMembers.map((email) => (
                     <li key={email}>
                       <span>{email}</span>
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() =>
                           setTeam((prev) => ({
                             ...prev,
@@ -325,15 +342,14 @@ export const InitializationWizardPage: React.FC = () => {
                         }
                       >
                         Remove
-                      </button>
+                      </Button>
                     </li>
                   ))}
                 </ul>
               )}
               <div className="radio-row">
                 <label>
-                  <input
-                    type="radio"
+                  <RadioControl
                     checked={team.accessControl === 'invite-only'}
                     onChange={() =>
                       setTeam((prev) => ({ ...prev, accessControl: 'invite-only' }))
@@ -342,16 +358,14 @@ export const InitializationWizardPage: React.FC = () => {
                   Invite only
                 </label>
                 <label>
-                  <input
-                    type="radio"
+                  <RadioControl
                     checked={team.accessControl === 'open'}
                     onChange={() => setTeam((prev) => ({ ...prev, accessControl: 'open' }))}
                   />
                   Open
                 </label>
                 <label>
-                  <input
-                    type="radio"
+                  <RadioControl
                     checked={team.accessControl === 'private'}
                     onChange={() =>
                       setTeam((prev) => ({ ...prev, accessControl: 'private' }))

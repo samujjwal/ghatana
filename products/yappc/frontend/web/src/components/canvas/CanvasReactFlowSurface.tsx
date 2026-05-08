@@ -109,7 +109,7 @@ export const CanvasReactFlowSurface: React.FC<CanvasReactFlowSurfaceProps> = ({
     <Box
         id="canvas-surface"
         ref={canvasSurfaceRef}
-        className={`flex-1 relative ${dragDrop.isDragOver ? 'ring-2 ring-primary-400 ring-inset' : ''}`}
+        className={`flex-1 relative ${dragDrop.isDragOver ? 'ring-2 ring-info-border ring-inset' : ''}`}
         onDoubleClick={handleCanvasDoubleClick}
         onDrop={interactionMode === 'navigate' ? dragDrop.handleCanvasDrop : undefined}
         onDragOver={interactionMode === 'navigate' ? dragDrop.handleCanvasDragOver : undefined}

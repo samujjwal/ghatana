@@ -13,6 +13,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { GitBranch as AccountTree, Activity as Timeline, Table as TableChart, Link, Unlink as LinkOff, Sparkles as AutoAwesome, RefreshCw as Refresh } from 'lucide-react';
 import { LifecyclePhase } from '@/types/lifecycle';
 import { LifecycleArtifactKind, getArtifactsForPhase, LIFECYCLE_ARTIFACT_CATALOG } from '@/shared/types/lifecycle-artifacts';
+import { Button } from '../../ui/Button';
 
 export interface ArtifactNode {
     id: string;
@@ -45,7 +46,7 @@ const PHASE_COLORS: Record<LifecyclePhase, string> = {
 };
 
 const STATUS_INDICATORS: Record<string, { label: string; className: string }> = {
-    missing: { label: 'M', className: 'bg-grey-200 text-grey-700 dark:bg-grey-700 dark:text-grey-200' },
+    missing: { label: 'M', className: 'bg-surface-muted text-fg-muted dark:bg-surface-muted dark:text-fg-muted' },
     draft: { label: 'D', className: 'bg-warning-bg text-warning-color dark:bg-warning-bg/40 dark:text-warning-color' },
     complete: { label: 'C', className: 'bg-success-bg text-success-color dark:bg-success-bg/40 dark:text-success-color' },
 };
@@ -160,56 +161,67 @@ export const TraceabilityPanel: React.FC<TraceabilityPanelProps> = ({
                 </div>
                 <div className="flex gap-2">
                     {onAIAnalyze && (
-                        <button
+                        <Button
                             onClick={handleAIAnalyze}
                             disabled={isAnalyzing || isLoading}
-                            className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-text-secondary border border-transparent hover:border-divider hover:text-text-primary hover:bg-grey-50 dark:hover:bg-grey-800/40 rounded-lg transition-colors disabled:opacity-50"
+                            variant="ghost"
+                            size="sm"
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-text-secondary border border-transparent hover:border-divider hover:text-text-primary hover:bg-surface-muted dark:hover:bg-surface-muted rounded-lg transition-colors disabled:opacity-50"
                         >
                             <AutoAwesome className="w-4 h-4" />
                             {isAnalyzing ? 'Analyzing...' : 'AI Analyze'}
-                        </button>
+                        </Button>
                     )}
-                    <button
+                    <Button
                         onClick={onRefresh}
                         disabled={isLoading}
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors disabled:opacity-50"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Refresh traceability"
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-muted dark:hover:bg-surface-muted rounded-lg transition-colors disabled:opacity-50"
                     >
                         <Refresh className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                    </button>
+                    </Button>
                 </div>
             </div>
 
             {/* View Toggle */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-divider bg-grey-50 dark:bg-grey-800/50">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-divider bg-surface-muted dark:bg-surface-muted">
                 <div className="flex gap-1">
-                    <button
+                    <Button
                         onClick={() => setViewMode('graph')}
+                        variant="ghost"
+                        size="sm"
                         className={`flex items-center gap-1 px-3 py-1 text-xs rounded-lg transition-colors ${viewMode === 'graph'
-                                ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-                                : 'text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800'
+                                ? 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color'
+                                : 'text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-muted'
                             }`}
                     >
                         <Timeline className="w-3 h-3" /> Graph View
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         onClick={() => setViewMode('matrix')}
+                        variant="ghost"
+                        size="sm"
                         className={`flex items-center gap-1 px-3 py-1 text-xs rounded-lg transition-colors ${viewMode === 'matrix'
-                                ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-                                : 'text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800'
+                                ? 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color'
+                                : 'text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-muted'
                             }`}
                     >
                         <TableChart className="w-3 h-3" /> Matrix View
-                    </button>
+                    </Button>
                 </div>
                 {linkingFrom && (
                     <div className="flex items-center gap-2">
                         <span className="text-xs text-text-secondary">Click artifact to link...</span>
-                        <button
+                        <Button
                             onClick={handleCancelLinking}
+                            variant="link"
+                            size="sm"
                             className="text-xs text-error-color hover:text-error-dark"
                         >
                             Cancel
-                        </button>
+                        </Button>
                     </div>
                 )}
             </div>
@@ -229,12 +241,14 @@ export const TraceabilityPanel: React.FC<TraceabilityPanelProps> = ({
                                     </h4>
                                     <div className="flex flex-wrap gap-2">
                                         {phaseArtifacts.map((artifact) => (
-                                            <button
+                                            <Button
                                                 key={artifact.id}
                                                 onClick={() => handleArtifactClick(artifact.id)}
+                                                variant="ghost"
+                                                size="sm"
                                                 className={`relative px-3 py-2 text-sm rounded-lg border-2 transition-all ${PHASE_COLORS[artifact.phase]
                                                     } ${selectedArtifact === artifact.id
-                                                        ? 'ring-2 ring-primary-500 ring-offset-2'
+                                                        ? 'ring-2 ring-info-border-500 ring-offset-2'
                                                         : ''
                                                     } ${linkingFrom === artifact.id
                                                         ? 'ring-2 ring-blue-500 ring-offset-2'
@@ -255,11 +269,11 @@ export const TraceabilityPanel: React.FC<TraceabilityPanelProps> = ({
                                                     </span>
                                                 </div>
                                                 {artifact.linkedTo.length > 0 && (
-                                                    <div className="absolute -bottom-1 -right-1 w-5 h-5 flex items-center justify-center bg-primary-500 text-white text-xs rounded-full">
+                                                    <div className="absolute -bottom-1 -right-1 w-5 h-5 flex items-center justify-center bg-info-color text-white text-xs rounded-full">
                                                         {artifact.linkedTo.length}
                                                     </div>
                                                 )}
-                                            </button>
+                                            </Button>
                                         ))}
                                     </div>
                                 </div>
@@ -271,12 +285,14 @@ export const TraceabilityPanel: React.FC<TraceabilityPanelProps> = ({
                             <div className="mt-4 p-4 border border-divider rounded-lg bg-bg-paper space-y-3">
                                 <div className="flex items-center justify-between">
                                     <h4 className="text-sm font-semibold text-text-primary">{selectedArtifactData.title}</h4>
-                                    <button
+                                    <Button
                                         onClick={() => handleStartLinking(selectedArtifactData.id)}
-                                        className="flex items-center gap-1 px-2 py-1 text-xs text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded transition-colors"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="flex items-center gap-1 px-2 py-1 text-xs text-info-color hover:bg-info-bg dark:hover:bg-info-bg/20 rounded transition-colors"
                                     >
                                         <Link className="w-3 h-3" /> Create Link
-                                    </button>
+                                    </Button>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
@@ -288,15 +304,18 @@ export const TraceabilityPanel: React.FC<TraceabilityPanelProps> = ({
                                                 {linkedToSelected.map((linked) => (
                                                     <div
                                                         key={linked.id}
-                                                        className="flex items-center justify-between text-xs bg-grey-50 dark:bg-grey-800/50 px-2 py-1 rounded"
+                                                        className="flex items-center justify-between text-xs bg-surface-muted dark:bg-surface-muted px-2 py-1 rounded"
                                                     >
                                                         <span className="text-text-primary">{linked.title}</span>
-                                                        <button
+                                                        <Button
                                                             onClick={() => onUnlinkArtifacts(selectedArtifactData.id, linked.id)}
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            aria-label={`Unlink ${selectedArtifactData.title} from ${linked.title}`}
                                                             className="text-error-color hover:text-error-dark"
                                                         >
                                                             <LinkOff className="w-3 h-3" />
-                                                        </button>
+                                                        </Button>
                                                     </div>
                                                 ))}
                                             </div>
@@ -311,15 +330,18 @@ export const TraceabilityPanel: React.FC<TraceabilityPanelProps> = ({
                                                 {linkedFromSelected.map((linked) => (
                                                     <div
                                                         key={linked.id}
-                                                        className="flex items-center justify-between text-xs bg-grey-50 dark:bg-grey-800/50 px-2 py-1 rounded"
+                                                        className="flex items-center justify-between text-xs bg-surface-muted dark:bg-surface-muted px-2 py-1 rounded"
                                                     >
                                                         <span className="text-text-primary">{linked.title}</span>
-                                                        <button
+                                                        <Button
                                                             onClick={() => onUnlinkArtifacts(linked.id, selectedArtifactData.id)}
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            aria-label={`Unlink ${linked.title} from ${selectedArtifactData.title}`}
                                                             className="text-error-color hover:text-error-dark"
                                                         >
                                                             <LinkOff className="w-3 h-3" />
-                                                        </button>
+                                                        </Button>
                                                     </div>
                                                 ))}
                                             </div>
@@ -377,10 +399,10 @@ export const TraceabilityPanel: React.FC<TraceabilityPanelProps> = ({
                                             <td
                                                 key={`${row.id}-${artifact.id}`}
                                                 className={`p-2 text-center border border-divider ${row.id === artifact.id
-                                                        ? 'bg-grey-200 dark:bg-grey-700'
+                                                        ? 'bg-surface-muted dark:bg-surface-muted'
                                                         : linked
                                                             ? 'bg-success-bg dark:bg-success-bg/30 cursor-pointer hover:bg-success-bg dark:hover:bg-success-bg/50'
-                                                            : 'cursor-pointer hover:bg-grey-100 dark:hover:bg-grey-800'
+                                                            : 'cursor-pointer hover:bg-surface-muted dark:hover:bg-surface-muted'
                                                     }`}
                                                 onClick={() => {
                                                     if (row.id !== artifact.id) {
@@ -393,11 +415,11 @@ export const TraceabilityPanel: React.FC<TraceabilityPanelProps> = ({
                                                 }}
                                             >
                                                 {row.id === artifact.id ? (
-                                                    <span className="text-grey-400">—</span>
+                                                    <span className="text-fg-muted">—</span>
                                                 ) : linked ? (
                                                     <Link className="w-4 h-4 text-success-color mx-auto" />
                                                 ) : (
-                                                    <span className="text-grey-300 dark:text-grey-600">·</span>
+                                                    <span className="text-fg-muted dark:text-fg-muted">·</span>
                                                 )}
                                             </td>
                                         ))}
@@ -410,9 +432,9 @@ export const TraceabilityPanel: React.FC<TraceabilityPanelProps> = ({
 
                 {/* AI Analysis Results */}
                 {aiAnalysis && (
-                    <div className="mt-4 p-4 border border-primary-200 dark:border-primary-800 rounded-lg bg-primary-50 dark:bg-primary-900/20 space-y-3">
+                    <div className="mt-4 p-4 border border-info-border dark:border-info-border rounded-lg bg-info-bg dark:bg-info-bg/20 space-y-3">
                         <h4 className="font-medium text-text-primary flex items-center gap-2">
-                            <AutoAwesome className="w-4 h-4 text-primary-600" /> AI Analysis
+                            <AutoAwesome className="w-4 h-4 text-info-color" /> AI Analysis
                         </h4>
                         {aiAnalysis.gaps.length > 0 && (
                             <div>
@@ -434,18 +456,20 @@ export const TraceabilityPanel: React.FC<TraceabilityPanelProps> = ({
                                 </ul>
                             </div>
                         )}
-                        <button
+                        <Button
                             onClick={() => setAiAnalysis(null)}
+                            variant="ghost"
+                            size="sm"
                             className="text-xs text-text-secondary hover:text-text-primary"
                         >
                             Dismiss
-                        </button>
+                        </Button>
                     </div>
                 )}
             </div>
 
             {/* Legend */}
-            <div className="px-4 py-2 border-t border-divider bg-grey-50 dark:bg-grey-800/50">
+            <div className="px-4 py-2 border-t border-divider bg-surface-muted dark:bg-surface-muted">
                 <div className="flex flex-wrap gap-4 text-xs text-text-secondary">
                     {(['missing', 'draft', 'complete'] as const).map((status) => (
                         <span key={status} className="inline-flex items-center gap-2">

@@ -33,6 +33,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Loader2, AlertCircle, ShieldPlus } from 'lucide-react';
 import { AIAssistLabel } from '../../ai/AIAssistLabel';
 import type { AIAssistSource } from '../../ai/AIAssistLabel';
+import { Button } from '../../ui/Button';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -142,13 +143,15 @@ function SuggestionItem({
       )}
 
       {onAdd && (
-        <button
+        <Button
           data-testid={`stride-add-${suggestion.id}`}
+          variant="solid"
+          size="small"
           onClick={() => onAdd(suggestion)}
-          className="mt-1 rounded bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+          className="mt-1 min-h-0 rounded bg-info-color px-2 py-0.5 text-xs font-medium text-white hover:bg-info-color/90"
         >
           + Add to model
-        </button>
+        </Button>
       )}
     </div>
   );

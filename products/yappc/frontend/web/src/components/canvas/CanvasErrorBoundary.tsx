@@ -13,6 +13,8 @@
 import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Box, Typography } from '@ghatana/design-system';
 
+import { Button } from '../ui/Button';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -87,13 +89,16 @@ export class CanvasErrorBoundary extends Component<CanvasErrorBoundaryProps, Can
                         {this.state.error?.message || 'Unknown error'}
                     </Typography>
                     {this.props.showReset !== false && (
-                        <button
+                        <Button
+                            variant="soft"
+                            tone="danger"
+                            size="small"
                             onClick={this.handleReset}
-                            className="mt-2 px-3 py-1 text-xs rounded bg-destructive-bg dark:bg-destructive-bg text-destructive dark:text-destructive hover:bg-destructive-bg dark:hover:bg-destructive-bg transition-colors"
                             type="button"
+                            className="mt-2"
                         >
                             Retry
-                        </button>
+                        </Button>
                     )}
                 </Box>
             );

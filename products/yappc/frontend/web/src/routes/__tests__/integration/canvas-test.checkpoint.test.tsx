@@ -46,6 +46,9 @@ import {
   type UndoConflict,
 } from '../../../lib/canvas-legacy/history/checkpoint-manager';
 import React from 'react';
+
+const TestButton = (props: React.ButtonHTMLAttributes<HTMLButtonElement>): React.ReactElement =>
+  React.createElement('button', props);
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Test component that wraps checkpointManager functionality
@@ -239,7 +242,7 @@ function TimelineManager({
       <div data-testid="conflict-count">Conflicts: {conflicts.length}</div>
 
       <div data-testid="controls">
-        <button
+        <TestButton
           data-testid="record-action-btn"
           onClick={() =>
             handleRecordAction('edit', 'Test Edit', {
@@ -249,32 +252,32 @@ function TimelineManager({
           }
         >
           Record Action
-        </button>
-        <button
+        </TestButton>
+        <TestButton
           data-testid="undo-btn"
           onClick={handleUndo}
           disabled={!undoEnabled}
         >
           Undo
-        </button>
-        <button
+        </TestButton>
+        <TestButton
           data-testid="redo-btn"
           onClick={handleRedo}
           disabled={!redoEnabled}
         >
           Redo
-        </button>
-        <button data-testid="force-undo-btn" onClick={handleForceUndo}>
+        </TestButton>
+        <TestButton data-testid="force-undo-btn" onClick={handleForceUndo}>
           Force Undo
-        </button>
-        <button
+        </TestButton>
+        <TestButton
           data-testid="create-checkpoint-btn"
           onClick={() =>
             handleCreateCheckpoint(`Checkpoint ${checkpoints.length + 1}`)
           }
         >
           Create Checkpoint
-        </button>
+        </TestButton>
       </div>
 
       <div data-testid="timeline-list">
@@ -291,19 +294,19 @@ function TimelineManager({
         {checkpoints.map((checkpoint) => (
           <div key={checkpoint.id} data-testid={`checkpoint-${checkpoint.id}`}>
             <span>{checkpoint.name}</span>
-            <button
+            <TestButton
               data-testid={`restore-checkpoint-${checkpoint.id}`}
               onClick={() => handleRestoreCheckpoint(checkpoint.id)}
             >
               Restore
-            </button>
-            <button
+            </TestButton>
+            <TestButton
               data-testid={`delete-checkpoint-${checkpoint.id}`}
               onClick={() => handleDeleteCheckpoint(checkpoint.id)}
             >
               Delete
-            </button>
-            <button
+            </TestButton>
+            <TestButton
               data-testid={`create-branch-${checkpoint.id}`}
               onClick={() =>
                 handleCreateBranch(
@@ -313,7 +316,7 @@ function TimelineManager({
               }
             >
               Create Branch
-            </button>
+            </TestButton>
           </div>
         ))}
       </div>
@@ -322,12 +325,12 @@ function TimelineManager({
         {branches.map((branch) => (
           <div key={branch.id} data-testid={`branch-${branch.id}`}>
             <span>{branch.name}</span>
-            <button
+            <TestButton
               data-testid={`switch-branch-${branch.id}`}
               onClick={() => handleSwitchBranch(branch.id)}
             >
               Switch
-            </button>
+            </TestButton>
           </div>
         ))}
       </div>

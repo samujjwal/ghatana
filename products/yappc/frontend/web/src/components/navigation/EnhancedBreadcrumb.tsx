@@ -25,6 +25,8 @@ import { Home, ChevronRight, ChevronDown as KeyboardArrowDown, Plus as Add, Fold
 
 import { LifecyclePhase } from '../../types/lifecycle';
 import { PHASE_LABELS } from '../../styles/design-tokens';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 
 export interface BreadcrumbSegment {
     type: 'home' | 'workspace' | 'project' | 'section';
@@ -216,7 +218,7 @@ function DropdownMenu({
                 <div className="p-2 border-b border-divider">
                     <div className="relative">
                         <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
-                        <input
+                        <Input
                             ref={searchInputRef}
                             type="text"
                             placeholder={config.searchPlaceholder || 'Search...'}
@@ -288,18 +290,20 @@ function DropdownMenu({
             {config.footer && config.footer.length > 0 && (
                 <div className="border-t border-divider">
                     {config.footer.map((action, index) => (
-                        <button
+                        <Button
                             key={index}
+                            variant="ghost"
+                            fullWidth
                             onClick={() => {
                                 action.onClick();
                                 onClose();
                             }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-grey-50 dark:hover:bg-grey-800 transition-colors"
+                            className="justify-start gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-grey-50 dark:hover:bg-grey-800 transition-colors"
                             role="menuitem"
                         >
                             {action.icon}
                             <span>{action.label}</span>
-                        </button>
+                        </Button>
                     ))}
                 </div>
             )}
@@ -338,9 +342,11 @@ function DropdownMenuItem({
     }, [item, navigate, onClose]);
 
     return (
-        <button
+        <Button
+            variant="ghost"
+            fullWidth
             onClick={handleClick}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-grey-50 dark:hover:bg-grey-800 transition-colors"
+            className="justify-start gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-grey-50 dark:hover:bg-grey-800 transition-colors [&>span]:flex [&>span]:w-full [&>span]:items-center [&>span]:gap-2"
             role="menuitem"
         >
             {item.icon && (
@@ -354,7 +360,7 @@ function DropdownMenuItem({
                     {item.badge}
                 </span>
             )}
-        </button>
+        </Button>
     );
 }
 
@@ -565,7 +571,9 @@ export function EnhancedBreadcrumb({
                                 {segment.icon}
                             </Link>
                         ) : (
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={(e) => handleSegmentClick(segment, segmentId, e.currentTarget)}
                                 disabled={!hasDropdown && !segment.href && !segment.onClick}
                                 className={`
@@ -595,7 +603,7 @@ export function EnhancedBreadcrumb({
                                         {segment.badge.text}
                                     </span>
                                 )}
-                            </button>
+                            </Button>
                         )}
 
                         {/* Dropdown Menu */}

@@ -23,6 +23,7 @@ import React from 'react';
 import { Loader2, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useTemplateRecommendation } from '../../hooks/useTemplateRecommendation';
 import type { TemplateRecommendationContext, TemplateRecommendation } from '../../hooks/useTemplateRecommendation';
+import { Button } from '../ui/Button';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -63,35 +64,36 @@ function RecommendationItem({
   onSelect: (id: string) => void;
 }) {
   return (
-    <button
+    <Button
       data-testid={`template-rec-${rec.templateId}`}
       aria-pressed={selected}
       onClick={() => onSelect(rec.templateId)}
+      variant="ghost"
       className={[
         'w-full rounded-lg border p-3 text-left transition-colors hover:bg-accent',
         selected ? 'border-primary bg-primary-bg' : 'border-border bg-surface',
       ].join(' ')}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-1.5">
+      <span className="flex items-start justify-between gap-2">
+        <span className="space-y-0.5">
+          <span className="flex items-center gap-1.5">
             {selected && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />}
             <span className="text-sm font-medium text-foreground">{rec.name}</span>
-          </div>
+          </span>
           <p className="text-xs text-muted line-clamp-2">{rec.description}</p>
           {rec.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 pt-1">
+            <span className="flex flex-wrap gap-1 pt-1">
               {rec.tags.map((tag) => (
                 <span key={tag} className="rounded bg-surface px-1.5 py-0.5 text-xs text-muted border border-border">
                   {tag}
                 </span>
               ))}
-            </div>
+            </span>
           )}
-        </div>
+        </span>
         <ConfidencePill confidence={rec.confidence} />
-      </div>
-    </button>
+      </span>
+    </Button>
   );
 }
 

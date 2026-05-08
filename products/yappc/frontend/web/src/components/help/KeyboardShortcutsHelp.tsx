@@ -17,6 +17,7 @@ import type { ReactNode } from 'react';
 
 import { TRANSITIONS, RADIUS } from '../../styles/design-tokens';
 import ActionRegistry, { type ActionDefinition, type ActionCategory, type ActionState } from '../../services/ActionRegistry';
+import { Button } from '../ui/Button';
 
 // ============================================================================
 // Types
@@ -167,8 +168,10 @@ export function KeyboardShortcutsHelp({
                                 Keyboard Shortcuts
                             </Typography>
                         </div>
-                        <button
+                        <Button
                             onClick={onClose}
+                            variant="ghost"
+                            size="small"
                             className={`
                                 p-2 ${RADIUS.button} ${TRANSITIONS.fast}
                                 text-text-tertiary hover:text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800
@@ -176,7 +179,7 @@ export function KeyboardShortcutsHelp({
                             aria-label="Close"
                         >
                             <Close className="w-5 h-5" />
-                        </button>
+                        </Button>
                     </div>
 
                     {/* Search */}

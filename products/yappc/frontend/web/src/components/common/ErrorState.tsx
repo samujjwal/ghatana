@@ -109,13 +109,15 @@ export function ErrorState({
             )}
           </div>
           {onDismiss && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onDismiss}
               className="text-muted-foreground hover:text-foreground"
               aria-label="Dismiss"
             >
               <XCircle className="w-5 h-5" />
-            </button>
+            </Button>
           )}
         </div>
       </div>

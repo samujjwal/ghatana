@@ -15,6 +15,7 @@ import { VelocityChart, BurndownChart } from 'yappc-ui/development-ui';
 import { Spinner as LoadingSpinner } from '@ghatana/design-system';
 import { ErrorBoundary } from '@ghatana/design-system';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { Button } from '../../components/ui/Button';
 
 // ============================================================================
 // Types
@@ -355,7 +356,7 @@ export const VelocityChartsPage: React.FC = () => {
         <div className="error-container">
           <h2>Failed to load metrics</h2>
           <p>{error || 'Data not found'}</p>
-          <button onClick={() => window.location.reload()}>Retry</button>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
         </div>
       </div>
     );
@@ -422,20 +423,20 @@ export const VelocityChartsPage: React.FC = () => {
 
         {/* Chart Toggle */}
         <div className="chart-toggle">
-          <button
+          <Button
             type="button"
             className={`toggle-btn ${chartView === 'velocity' ? 'toggle-btn--active' : ''}`}
             onClick={() => setChartView('velocity')}
           >
             Velocity Chart
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             className={`toggle-btn ${chartView === 'burndown' ? 'toggle-btn--active' : ''}`}
             onClick={() => setChartView('burndown')}
           >
             Burndown Chart
-          </button>
+          </Button>
         </div>
 
         {/* Charts */}

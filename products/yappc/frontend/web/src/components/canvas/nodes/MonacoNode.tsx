@@ -4,7 +4,7 @@
  * A canvas node that embeds a code editor. When `@monaco-editor/react` is
  * installed and bundled, it uses the full Monaco experience (syntax
  * highlighting, IntelliSense, minimap). Otherwise it gracefully degrades to
- * a styled `<textarea>` with monospace rendering.
+ * a styled `<Textarea>` with monospace rendering.
  *
  * Installation (optional — full Monaco experience):
  *   pnpm add @monaco-editor/react
@@ -23,6 +23,8 @@
  * @doc.pattern ContentNode
  */
 
+import { Select } from '../../ui/Select';
+import { Textarea } from '../../ui/Textarea';
 import React, { lazy, Suspense, useCallback } from 'react';
 import { type Node, type NodeProps } from '@xyflow/react';
 import { NodeResizer } from '@xyflow/react';
@@ -117,7 +119,7 @@ function NativeCodeEditor({ value, onChange, readOnly }: NativeCodeEditorProps) 
     }, [value, onChange]);
 
     return (
-        <textarea
+        <Textarea
             className="w-full h-full resize-none bg-surface text-success-color font-mono text-sm p-3 outline-none border-none leading-relaxed"
             value={value}
             onChange={(e) => onChange(e.target.value)}
@@ -181,7 +183,7 @@ export function MonacoNode({ data, selected }: NodeProps<MonacoCanvasNode>) {
             >
                 <span className="text-fg-muted text-xs font-mono font-semibold truncate">{title}</span>
                 {!readOnly && (
-                    <select
+                    <Select
                         className="nodrag nopan text-xs bg-surface text-fg-muted border border-border rounded px-1 py-0.5 ml-2"
                         value={language}
                         onChange={(e) => {
@@ -195,7 +197,7 @@ export function MonacoNode({ data, selected }: NodeProps<MonacoCanvasNode>) {
                         {LANGUAGES.map((l) => (
                             <option key={l} value={l}>{l}</option>
                         ))}
-                    </select>
+                    </Select>
                 )}
             </div>
 

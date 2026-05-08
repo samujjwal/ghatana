@@ -197,7 +197,7 @@ function DashboardNodeComponent({ data, selected }: DashboardNodeProps) {
       className={cn(
         'min-w-[240px] max-w-[300px] rounded-lg border bg-white shadow-md transition-all',
         data.isDefault ? 'border-info-border' : 'border-border',
-        selected && 'ring-2 ring-primary ring-offset-2'
+        selected && 'ring-2 ring-info-border ring-offset-2'
       )}
     >
       {/* Connection Handles */}

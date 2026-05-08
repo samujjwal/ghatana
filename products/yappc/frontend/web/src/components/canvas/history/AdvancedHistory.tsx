@@ -3,6 +3,8 @@
  * Sophisticated history management with branch support and conflict resolution
  */
 
+import { Button } from '../../ui/Button';
+import { Input } from '../../ui/Input';
 import React, { useCallback, useState, useRef, useMemo } from 'react';
 
 import type { BaseItem } from '../core/types';
@@ -524,7 +526,7 @@ export const HistoryVisualization: React.FC<{
             ))}
 
             <div style={{ marginTop: '12px' }}>
-                <input
+                <Input
                     type="text"
                     placeholder="New branch name"
                     value={newBranchName}
@@ -537,7 +539,7 @@ export const HistoryVisualization: React.FC<{
                         fontSize: '12px'
                     }}
                 />
-                <button
+                <Button variant="ghost" size="sm"
                     onClick={() => {
                         if (newBranchName.trim()) {
                             onCreateBranch(newBranchName.trim());
@@ -555,7 +557,7 @@ export const HistoryVisualization: React.FC<{
                     }}
                 >
                     Create Branch
-                </button>
+                </Button>
             </div>
         </div>
     );

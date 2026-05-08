@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { cn } from '@/lib/utils';
 import { Bell, X, AlertTriangle, Info, CheckCircle, Clock } from 'lucide-react';
+import { Button } from '../ui/Button';
 
 /**
  * Real-time notification panel with GraphQL subscriptions.
@@ -79,9 +80,12 @@ export function NotificationPanel({ tenantId }: { tenantId: string }) {
   return (
     <div className="relative">
       {/* Bell icon button */}
-      <button
+      <Button
         ref={buttonRef}
+        variant="ghost"
+        size="sm"
         className="relative p-2 text-fg-muted hover:text-fg rounded-lg hover:bg-surface-muted"
+        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
         onClick={() => {
           updatePanelPosition();
           setIsOpen(!isOpen);
@@ -93,7 +97,7 @@ export function NotificationPanel({ tenantId }: { tenantId: string }) {
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
-      </button>
+      </Button>
 
       {/* Notification panel - Rendered via portal to avoid overflow clipping */}
       {isOpen && typeof document !== 'undefined' && createPortal(
@@ -122,19 +126,24 @@ export function NotificationPanel({ tenantId }: { tenantId: string }) {
               </h3>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
-                  <button
+                  <Button
+                    variant="link"
+                    size="sm"
                     className="text-xs text-info-color hover:text-info-color"
                     onClick={() => clearAllMutation.mutate()}
                   >
                     Clear all
-                  </button>
+                  </Button>
                 )}
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="text-fg-muted hover:text-fg-muted"
                   onClick={() => setIsOpen(false)}
+                  aria-label="Close notifications"
                 >
                   <X className="w-4 h-4" />
-                </button>
+                </Button>
               </div>
             </div>
 

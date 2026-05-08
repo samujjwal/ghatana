@@ -24,6 +24,7 @@ import {
 import { TextField, Collapse } from '@ghatana/design-system';
 import { Search } from 'lucide-react';
 import type { RailPanelProps, LayerNode } from '../UnifiedLeftRail.types';
+import { Input } from '../../../ui/Input';
 
 type CanvasNodeRecord = {
   id: string;
@@ -169,10 +170,12 @@ export function LayersPanel({
       <Box className="p-4 pb-2">
         <Box className="flex items-center gap-2 rounded-md border border-border bg-white px-3 py-2 dark:border-border dark:bg-surface">
           <Search size={16} className="text-fg-muted" />
-          <input
+          <Input
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Search layers..."
+            fullWidth
+            size="sm"
             className="min-w-0 flex-1 bg-transparent text-sm outline-none"
           />
         </Box>

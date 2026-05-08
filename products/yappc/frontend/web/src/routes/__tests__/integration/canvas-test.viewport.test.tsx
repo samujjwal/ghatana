@@ -12,6 +12,9 @@
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
+
+const TestButton = (props: React.ButtonHTMLAttributes<HTMLButtonElement>): React.ReactElement =>
+  React.createElement('button', props);
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock canvas-test component pieces
@@ -114,15 +117,15 @@ function TestViewport({ items, onViewportChange, initialViewport }: TestViewport
         Scale: {viewport.scale.toFixed(2)}, X: {viewport.translation.x.toFixed(0)}, Y:{' '}
         {viewport.translation.y.toFixed(0)}
       </div>
-      <button data-testid="fit-view-btn" onClick={fitView}>
+      <TestButton data-testid="fit-view-btn" onClick={fitView}>
         Fit View
-      </button>
-      <button data-testid="zoom-in-btn" onClick={() => handleZoom(0.1)}>
+      </TestButton>
+      <TestButton data-testid="zoom-in-btn" onClick={() => handleZoom(0.1)}>
         Zoom In
-      </button>
-      <button data-testid="zoom-out-btn" onClick={() => handleZoom(-0.1)}>
+      </TestButton>
+      <TestButton data-testid="zoom-out-btn" onClick={() => handleZoom(-0.1)}>
         Zoom Out
-      </button>
+      </TestButton>
       <div data-testid="items-container">
         {items.map((item) => (
           <div

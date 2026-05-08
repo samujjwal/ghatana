@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { Button } from '../../components/ui/Button';
 
 type IncidentSeverity = 'critical' | 'high' | 'medium' | 'low';
 type IncidentStatus = 'investigating' | 'identified' | 'monitoring' | 'resolved';
@@ -168,20 +169,20 @@ const WarRoomPage: React.FC = () => {
             )}
           </div>
           <div className="flex gap-2 shrink-0">
-            <button
+            <Button
               onClick={() => escalateMutation.mutate()}
               disabled={isResolved || escalateMutation.isPending}
               className="px-4 py-2 bg-warning-bg text-white text-sm font-medium rounded-lg hover:bg-warning-bg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {escalateMutation.isPending ? 'Escalating…' : 'Escalate'}
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => resolveMutation.mutate()}
               disabled={isResolved || resolveMutation.isPending}
               className="px-4 py-2 bg-success-bg text-white text-sm font-medium rounded-lg hover:bg-success-bg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {resolveMutation.isPending ? 'Resolving…' : 'Resolve'}
-            </button>
+            </Button>
           </div>
         </div>
         <div className="flex items-center gap-4 mt-3 text-xs text-fg-muted">

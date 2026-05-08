@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 
 // ============================================================================
 // Types
@@ -79,7 +81,7 @@ const EnvironmentSetupPage: React.FC = () => {
         {/* Environment Selector */}
         <div className="mb-6 flex gap-2">
           {(['development', 'staging', 'production'] as Environment[]).map((env) => (
-            <button
+            <Button
               key={env}
               onClick={() => setActiveEnv(env)}
               className={`rounded-full px-4 py-1.5 text-sm font-medium capitalize transition ${
@@ -89,7 +91,7 @@ const EnvironmentSetupPage: React.FC = () => {
               }`}
             >
               {env}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -135,31 +137,39 @@ const EnvironmentSetupPage: React.FC = () => {
                     : v.source === 'inherited' ? 'bg-success-bg text-success-color'
                     : 'bg-surface-muted text-fg-muted'
                 }`}>{v.source}</span>
-                <button onClick={() => removeVar(v.key)} className="text-fg-muted hover:text-destructive">✕</button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeVar(v.key)}
+                  className="text-fg-muted hover:text-destructive"
+                  aria-label={`Remove ${v.key}`}
+                >
+                  ✕
+                </Button>
               </div>
             ))}
           </div>
 
           {/* Add new */}
           <div className="flex gap-2">
-            <input
+            <Input
               placeholder="KEY"
               value={newKey}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewKey(e.target.value)}
               className="w-40 rounded border px-3 py-1.5 font-mono text-sm focus:border-info-border focus:outline-none"
             />
-            <input
+            <Input
               placeholder="value"
               value={newValue}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewValue(e.target.value)}
               className="flex-1 rounded border px-3 py-1.5 font-mono text-sm focus:border-info-border focus:outline-none"
             />
-            <button
+            <Button
               onClick={addVar}
               className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-white hover:bg-info-bg"
             >
               Add
-            </button>
+            </Button>
           </div>
         </div>
       </div>

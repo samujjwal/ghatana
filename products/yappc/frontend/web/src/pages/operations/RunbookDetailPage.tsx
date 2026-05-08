@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { Button } from '../../components/ui/Button';
 
 type StepStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 type RunStatus = 'success' | 'failure' | 'running' | 'cancelled';
@@ -147,7 +148,7 @@ const RunbookDetailPage: React.FC = () => {
             </div>
           )}
         </div>
-        <button
+        <Button
           onClick={() => runMutation.mutate()}
           disabled={runMutation.isPending}
           className="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-info-bg disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
@@ -157,13 +158,13 @@ const RunbookDetailPage: React.FC = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           {runMutation.isPending ? 'Starting…' : 'Run Runbook'}
-        </button>
+        </Button>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-border pb-1">
         {tabs.map((tab) => (
-          <button
+          <Button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -173,7 +174,7 @@ const RunbookDetailPage: React.FC = () => {
             }`}
           >
             {tab.label}
-          </button>
+          </Button>
         ))}
       </div>
 

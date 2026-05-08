@@ -15,6 +15,7 @@ import { X as Close, Pencil as Edit, Save, Trash2 as Delete, History } from 'luc
 import { Button, IconButton, Checkbox, Input } from '@ghatana/design-system';
 import type { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
 import { LIFECYCLE_ARTIFACT_CATALOG } from '@/shared/types/lifecycle-artifacts';
+import { Textarea } from '../ui/Textarea';
 
 export interface ArtifactDetailPanelProps {
     artifactId: string;
@@ -93,7 +94,7 @@ export const ArtifactDetailPanel: React.FC<ArtifactDetailPanelProps> = ({
     const renderEditableField = (key: string, value: unknown): React.ReactNode => {
         if (Array.isArray(value)) {
             return (
-                <textarea
+                <Textarea
                     value={JSON.stringify(value, null, 2)}
                     onChange={(e) => {
                         try {
@@ -111,7 +112,7 @@ export const ArtifactDetailPanel: React.FC<ArtifactDetailPanelProps> = ({
 
         if (typeof value === 'string' && value.length > 100) {
             return (
-                <textarea
+                <Textarea
                     value={value}
                     onChange={(e) => setEditedPayload({ ...editedPayload, [key]: e.target.value })}
                     className="w-full px-3 py-2 text-sm border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600"

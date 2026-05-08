@@ -30,7 +30,7 @@ import {
   type ImportedSourceArtifactInput,
 } from '@/components/canvas/page/artifactCompilerBridge';
 import type { PageArtifactDocument } from '@/components/canvas/page/pageArtifactDocument';
-import { ApiRequestError, yappcApi } from '@/lib/api/client';
+import { ApiRequestError, yappcApi, type SourceImportJobSnapshot } from '@/lib/api/client';
 import { assessComponentSafety } from '@/security/UnsafeComponentHandler';
 
 const compileImportedSourceToPageArtifactsSafe = compileImportedSourceToPageArtifacts as (
@@ -85,6 +85,10 @@ export interface ImportOptions {
   workspaceId?: string;
   /** Maximum allowed source locator size before the import request is rejected client-side. */
   maxSourceLength?: number;
+  /** Maximum import job status polling attempts for asynchronous governed imports. */
+  maxJobPollAttempts?: number;
+  /** Delay between import job polling attempts. */
+  jobPollIntervalMs?: number;
 }
 
 export interface ImportResult {
@@ -106,6 +110,8 @@ export interface ImportResult {
    * Used by importSourceToPageArtifacts to populate canvas nodes.
    */
   extractedComponents?: readonly ExtractedComponent[];
+  /** Governed server import job progress and audit status, when server orchestration is used. */
+  job?: SourceImportJobSnapshot;
 }
 
 export interface ImportToPageArtifactResult {
@@ -1130,7 +1136,11 @@ async function tryImportFromServer(options: ImportSourceOptions): Promise<Import
       throw new Error('Server import returned an invalid response payload');
     }
 
-    return result as ImportResult;
+    return pollImportJobUntilTerminal(result as ImportResult, {
+      tenantId: options.options?.tenantId ?? '',
+      workspaceId: options.options?.workspaceId ?? '',
+      projectId: options.projectId,
+    }, options.options);
   } catch (networkError) {
     if (
       networkError instanceof ApiRequestError &&
@@ -1149,6 +1159,52 @@ async function tryImportFromServer(options: ImportSourceOptions): Promise<Import
       }`,
     );
   }
+}
+
+const terminalImportJobStatuses = new Set(['REVIEW_REQUIRED', 'REJECTED', 'FAILED']);
+
+function isTerminalImportJob(job: SourceImportJobSnapshot | undefined): boolean {
+  return Boolean(job?.status && terminalImportJobStatuses.has(job.status));
+}
+
+async function pollImportJobUntilTerminal(
+  result: ImportResult,
+  scope: { readonly tenantId: string; readonly workspaceId: string; readonly projectId: string },
+  options: ImportOptions | undefined,
+): Promise<ImportResult> {
+  if (!result.job?.id || isTerminalImportJob(result.job)) {
+    return result;
+  }
+
+  const maxAttempts = Math.max(1, options?.maxJobPollAttempts ?? 5);
+  const intervalMs = Math.max(0, options?.jobPollIntervalMs ?? 250);
+  let latestJob = result.job;
+
+  for (let attempt = 0; attempt < maxAttempts && !isTerminalImportJob(latestJob); attempt += 1) {
+    if (attempt > 0 && intervalMs > 0) {
+      await delay(intervalMs);
+    }
+    const status = await yappcApi.sourceImports.status(latestJob.id, scope);
+    if (!isImportJobShape(status.job)) {
+      throw new Error('Server import job status returned an invalid response payload');
+    }
+    latestJob = status.job;
+  }
+
+  if (!isTerminalImportJob(latestJob)) {
+    throw new Error(`Server import job ${latestJob.id} did not reach a terminal status before polling timed out.`);
+  }
+
+  return {
+    ...result,
+    job: latestJob,
+  };
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 function shouldUseServerImport(options: ImportSourceOptions): boolean {
@@ -1176,6 +1232,22 @@ function isImportResultShape(value: unknown): value is ImportResult {
     Array.isArray(candidate.errors) &&
     typeof candidate.metadata === 'object' &&
     candidate.metadata != null
+  );
+}
+
+function isImportJobShape(value: unknown): value is SourceImportJobSnapshot {
+  if (!(value instanceof Object) || value == null) {
+    return false;
+  }
+
+  const candidate = value as Partial<SourceImportJobSnapshot>;
+  return (
+    typeof candidate.id === 'string' &&
+    typeof candidate.status === 'string' &&
+    typeof candidate.percentComplete === 'number' &&
+    typeof candidate.currentStep === 'string' &&
+    Array.isArray(candidate.steps) &&
+    typeof candidate.createdAt === 'string'
   );
 }
 

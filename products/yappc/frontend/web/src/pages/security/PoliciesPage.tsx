@@ -12,6 +12,7 @@
 import React from 'react';
 import { useParams } from 'react-router';
 import { FileCheck, Plus } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
 
 const PoliciesPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -29,9 +30,9 @@ const PoliciesPage: React.FC = () => {
               <p className="text-fg-muted">Enforcement rules and compliance policies</p>
             </div>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 transition-colors text-sm font-medium">
+          <Button variant="solid" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 transition-colors text-sm font-medium">
             <Plus className="w-4 h-4" /> New Policy
-          </button>
+          </Button>
         </div>
 
         <div className="flex flex-col items-center justify-center py-20 text-center">

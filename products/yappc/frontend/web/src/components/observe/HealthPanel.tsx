@@ -12,6 +12,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Heart as Favorite, CheckCircle, AlertTriangle as Warning, XCircle as Cancel, RefreshCw as Refresh, TrendingUp, TrendingDown, MoveRight as TrendingFlat, Gauge as Speed, Cpu as Memory, HardDrive as Storage, Cloud as CloudQueue } from 'lucide-react';
+import { Button } from '../ui/Button';
 
 export interface HealthMetric {
     id: string;
@@ -160,13 +161,15 @@ export const HealthPanel: React.FC<HealthPanelProps> = ({
                             Updated {new Date(lastUpdated).toLocaleTimeString()}
                         </span>
                     )}
-                    <button
+                    <Button
                         onClick={handleRefresh}
                         disabled={isRefreshing}
+                        variant="ghost"
+                        size="small"
                         className="p-2 text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors disabled:opacity-50"
                     >
                         <Refresh className={`w-4 h-4 ${isRefreshing || isPolling ? 'animate-spin' : ''}`} />
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -194,33 +197,36 @@ export const HealthPanel: React.FC<HealthPanelProps> = ({
 
             {/* Tabs */}
             <div className="flex border-b border-divider">
-                <button
+                <Button
                     onClick={() => setActiveTab('overview')}
+                    variant="ghost"
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'overview'
                             ? 'border-primary-600 text-primary-600'
                             : 'border-transparent text-text-secondary hover:text-text-primary'
                         }`}
                 >
                     Metrics
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={() => setActiveTab('slos')}
+                    variant="ghost"
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'slos'
                             ? 'border-primary-600 text-primary-600'
                             : 'border-transparent text-text-secondary hover:text-text-primary'
                         }`}
                 >
                     SLOs ({slos.length})
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={() => setActiveTab('services')}
+                    variant="ghost"
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'services'
                             ? 'border-primary-600 text-primary-600'
                             : 'border-transparent text-text-secondary hover:text-text-primary'
                         }`}
                 >
                     Services ({services.length})
-                </button>
+                </Button>
             </div>
 
             {/* Content */}

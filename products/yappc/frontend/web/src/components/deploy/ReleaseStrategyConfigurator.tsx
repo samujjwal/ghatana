@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
+import { Button } from '../ui/Button';
 import { Plus as Add, Minus as Remove, Save, Sparkles as AutoAwesome, Rocket as RocketLaunch, Cloud, Settings, Shield as Security } from 'lucide-react';
 import type { ReleaseStrategyPayload } from '@/shared/types/lifecycle-artifacts';
 
@@ -53,6 +54,21 @@ const ENVIRONMENT_COLORS: Record<EnvironmentType, string> = {
     staging: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
     production: 'bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color',
 };
+
+const NativeInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>((props, ref) =>
+    React.createElement('input', { ...props, ref }),
+);
+NativeInput.displayName = 'NativeInput';
+
+const NativeSelect = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>((props, ref) =>
+    React.createElement('select', { ...props, ref }),
+);
+NativeSelect.displayName = 'NativeSelect';
+
+const NativeTextarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) =>
+    React.createElement('textarea', { ...props, ref }),
+);
+NativeTextarea.displayName = 'NativeTextarea';
 
 const defaultData: ReleaseStrategyPayload = {
     releaseType: 'canary',
@@ -245,29 +261,29 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                 </div>
                 <div className="flex gap-2">
                     {onAIAssist && (
-                        <button
+                        <Button
                             onClick={handleAIAssist}
                             disabled={isAILoading || isSaving}
                             className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50"
                         >
                             <AutoAwesome className="w-4 h-4" />
                             {isAILoading ? 'Generating...' : 'Assist'}
-                        </button>
+                        </Button>
                     )}
-                    <button
+                    <Button
                         onClick={handleSave}
                         disabled={isSaving || isLoading}
                         className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
                     >
                         <Save className="w-4 h-4" />
                         {isSaving ? 'Saving...' : 'Save'}
-                    </button>
+                    </Button>
                 </div>
             </div>
 
             {/* Tabs */}
             <div className="flex border-b border-divider">
-                <button
+                <Button
                     onClick={() => setActiveTab('strategy')}
                     className={`flex items-center gap-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'strategy'
                             ? 'border-primary-600 text-primary-600'
@@ -275,8 +291,8 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                         }`}
                 >
                     <Settings className="w-4 h-4" /> Strategy
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={() => setActiveTab('environments')}
                     className={`flex items-center gap-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'environments'
                             ? 'border-primary-600 text-primary-600'
@@ -284,8 +300,8 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                         }`}
                 >
                     <Cloud className="w-4 h-4" /> Environments ({strategy.environments.length})
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={() => setActiveTab('rollout')}
                     className={`flex items-center gap-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'rollout'
                             ? 'border-primary-600 text-primary-600'
@@ -293,7 +309,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                         }`}
                 >
                     <RocketLaunch className="w-4 h-4" /> Rollout
-                </button>
+                </Button>
             </div>
 
             {/* Content */}
@@ -305,7 +321,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                             <h4 className="text-sm font-medium text-text-primary mb-3">Release Type</h4>
                             <div className="grid grid-cols-1 gap-2">
                                 {Object.entries(RELEASE_TYPE_INFO).map(([type, info]) => (
-                                    <button
+                                    <Button
                                         key={type}
                                         onClick={() => setStrategy((prev) => ({ ...prev, releaseType: type as ReleaseType }))}
                                         className={`flex items-start gap-3 p-3 text-left rounded-lg border-2 transition-all ${strategy.releaseType === type
@@ -327,7 +343,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                             <div className="font-medium text-text-primary">{info.label}</div>
                                             <div className="text-xs text-text-secondary">{info.description}</div>
                                         </div>
-                                    </button>
+                                    </Button>
                                 ))}
                             </div>
                         </div>
@@ -340,14 +356,14 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                             <div className="space-y-2">
                                 {strategy.approvalGates.map((gate, idx) => (
                                     <div key={idx} className="flex gap-2 items-start p-3 border border-divider rounded-lg bg-bg-paper">
-                                        <input
+                                        <NativeInput
                                             type="text"
                                             value={gate.name}
                                             onChange={(e) => updateApprovalGate(idx, { name: e.target.value })}
                                             placeholder="Gate name (e.g., QA Approval)"
                                             className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                         />
-                                        <input
+                                        <NativeInput
                                             type="text"
                                             value={gate.approvers.join(', ')}
                                             onChange={(e) =>
@@ -359,7 +375,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                             className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                         />
                                         <label className="flex items-center gap-1 text-xs text-text-secondary">
-                                            <input
+                                            <NativeInput
                                                 type="checkbox"
                                                 checked={gate.required}
                                                 onChange={(e) => updateApprovalGate(idx, { required: e.target.checked })}
@@ -367,27 +383,27 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                             />
                                             Required
                                         </label>
-                                        <button
+                                        <Button
                                             onClick={() => removeApprovalGate(idx)}
                                             className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                         >
                                             <Remove className="w-4 h-4" />
-                                        </button>
+                                        </Button>
                                     </div>
                                 ))}
-                                <button
+                                <Button
                                     onClick={addApprovalGate}
                                     className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors"
                                 >
                                     <Add className="w-3 h-3" /> Add approval gate
-                                </button>
+                                </Button>
                             </div>
                         </div>
 
                         {/* Rollback Plan */}
                         <div>
                             <h4 className="text-sm font-medium text-text-primary mb-2">Rollback Plan</h4>
-                            <textarea
+                            <NativeTextarea
                                 value={strategy.rollbackPlan}
                                 onChange={(e) => setStrategy((prev) => ({ ...prev, rollbackPlan: e.target.value }))}
                                 placeholder="Describe the rollback procedure..."
@@ -404,26 +420,26 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                             <div className="text-center py-8 text-text-secondary">
                                 <Cloud className="w-12 h-12 mx-auto mb-2 opacity-50" />
                                 <p className="text-sm">No environments configured</p>
-                                <button
+                                <Button
                                     onClick={addEnvironment}
                                     className="mt-2 text-sm text-primary-600 hover:text-primary-700"
                                 >
                                     Add first environment
-                                </button>
+                                </Button>
                             </div>
                         ) : (
                             <div className="space-y-3">
                                 {strategy.environments.map((env, idx) => (
                                     <div key={idx} className="border border-divider rounded-lg bg-bg-paper overflow-hidden">
                                         <div className="flex items-center gap-2 p-3 bg-grey-50 dark:bg-grey-800/50">
-                                            <input
+                                            <NativeInput
                                                 type="text"
                                                 value={env.name}
                                                 onChange={(e) => updateEnvironment(idx, { name: e.target.value })}
                                                 placeholder="Environment name"
                                                 className="flex-1 px-2 py-1 text-sm font-medium border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                             />
-                                            <select
+                                            <NativeSelect
                                                 value={env.type}
                                                 onChange={(e) => updateEnvironment(idx, { type: e.target.value as EnvironmentType })}
                                                 className={`px-2 py-1 text-xs rounded ${ENVIRONMENT_COLORS[env.type]}`}
@@ -431,16 +447,16 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                                 <option value="development">Development</option>
                                                 <option value="staging">Staging</option>
                                                 <option value="production">Production</option>
-                                            </select>
-                                            <button
+                                            </NativeSelect>
+                                            <Button
                                                 onClick={() => removeEnvironment(idx)}
                                                 className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                             >
                                                 <Remove className="w-4 h-4" />
-                                            </button>
+                                            </Button>
                                         </div>
                                         <div className="p-3 space-y-3">
-                                            <input
+                                            <NativeInput
                                                 type="url"
                                                 value={env.url}
                                                 onChange={(e) => updateEnvironment(idx, { url: e.target.value })}
@@ -454,7 +470,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                                 <div className="space-y-1">
                                                     {env.variables.map((variable, vIdx) => (
                                                         <div key={vIdx} className="flex gap-2 items-center">
-                                                            <input
+                                                            <NativeInput
                                                                 type="text"
                                                                 value={variable.key}
                                                                 onChange={(e) =>
@@ -463,7 +479,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                                                 placeholder="KEY"
                                                                 className="w-1/3 px-2 py-1 text-xs font-mono border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                                             />
-                                                            <input
+                                                            <NativeInput
                                                                 type={variable.isSecret ? 'password' : 'text'}
                                                                 value={variable.value}
                                                                 onChange={(e) =>
@@ -473,7 +489,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                                                 className="flex-1 px-2 py-1 text-xs font-mono border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                                             />
                                                             <label className="flex items-center gap-1 text-xs text-text-secondary">
-                                                                <input
+                                                                <NativeInput
                                                                     type="checkbox"
                                                                     checked={variable.isSecret}
                                                                     onChange={(e) =>
@@ -483,20 +499,20 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                                                 />
                                                                 🔒
                                                             </label>
-                                                            <button
+                                                            <Button
                                                                 onClick={() => removeEnvVariable(idx, vIdx)}
                                                                 className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                                             >
                                                                 <Remove className="w-3 h-3" />
-                                                            </button>
+                                                            </Button>
                                                         </div>
                                                     ))}
-                                                    <button
+                                                    <Button
                                                         onClick={() => addEnvVariable(idx)}
                                                         className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors"
                                                     >
                                                         <Add className="w-3 h-3" /> Add variable
-                                                    </button>
+                                                    </Button>
                                                 </div>
                                             </div>
                                         </div>
@@ -504,12 +520,12 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                 ))}
                             </div>
                         )}
-                        <button
+                        <Button
                             onClick={addEnvironment}
                             className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-divider rounded-lg text-text-secondary hover:text-primary-600 hover:border-primary-300 transition-colors"
                         >
                             <Add className="w-5 h-5" /> Add Environment
-                        </button>
+                        </Button>
                     </div>
                 )}
 
@@ -522,12 +538,12 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                             <div className="text-center py-8 text-text-secondary">
                                 <RocketLaunch className="w-12 h-12 mx-auto mb-2 opacity-50" />
                                 <p className="text-sm">No rollout steps defined</p>
-                                <button
+                                <Button
                                     onClick={addRolloutStep}
                                     className="mt-2 text-sm text-primary-600 hover:text-primary-700"
                                 >
                                     Add first step
-                                </button>
+                                </Button>
                             </div>
                         ) : (
                             <div className="space-y-3">
@@ -545,7 +561,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                                     <label className="block text-xs text-text-secondary mb-1">
                                                         Traffic %
                                                     </label>
-                                                    <input
+                                                    <NativeInput
                                                         type="number"
                                                         min={0}
                                                         max={100}
@@ -562,7 +578,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                                     <label className="block text-xs text-text-secondary mb-1">
                                                         Duration
                                                     </label>
-                                                    <input
+                                                    <NativeInput
                                                         type="text"
                                                         value={step.duration}
                                                         onChange={(e) => updateRolloutStep(idx, { duration: e.target.value })}
@@ -575,7 +591,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                                 <label className="block text-xs text-text-secondary mb-1">
                                                     Success Criteria (one per line)
                                                 </label>
-                                                <textarea
+                                                <NativeTextarea
                                                     value={step.successCriteria.join('\n')}
                                                     onChange={(e) =>
                                                         updateRolloutStep(idx, {
@@ -590,22 +606,22 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                                 />
                                             </div>
                                         </div>
-                                        <button
+                                        <Button
                                             onClick={() => removeRolloutStep(idx)}
                                             className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                         >
                                             <Remove className="w-4 h-4" />
-                                        </button>
+                                        </Button>
                                     </div>
                                 ))}
                             </div>
                         )}
-                        <button
+                        <Button
                             onClick={addRolloutStep}
                             className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-divider rounded-lg text-text-secondary hover:text-primary-600 hover:border-primary-300 transition-colors"
                         >
                             <Add className="w-5 h-5" /> Add Rollout Step
-                        </button>
+                        </Button>
 
                         {/* Progress Visualization */}
                         {strategy.rolloutSteps.length > 0 && (

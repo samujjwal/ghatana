@@ -31,6 +31,7 @@ import {
 
 import type { AiReadinessAssessment, IaPhase } from '@/hooks/usePhaseGate';
 import type { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
+import { Button } from '../ui/Button';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -144,15 +145,17 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
                 </Typography>
               </Box>
             </Box>
-            <button
+            <Button
               type="button"
               onClick={onClose}
+              variant="ghost"
+              size="small"
               className="rounded p-1 text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors"
               aria-label="Close"
               data-testid="phase-gate-close"
             >
               <X className="h-4 w-4" aria-hidden="true" />
-            </button>
+            </Button>
           </Box>
 
           {/* Missing artifacts */}
@@ -203,15 +206,17 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
             {/* AI assessment section */}
             <Box className="border-t border-divider pt-3">
               {!aiAssessment && !isAiAssessing && (
-                <button
+                <Button
                   type="button"
                   onClick={onRequestAiAssessment}
+                  variant="link"
+                  size="small"
                   className="flex items-center gap-2 text-sm text-primary hover:underline"
                   data-testid="phase-gate-ai-assess-btn"
                 >
                   <Brain className="h-4 w-4" aria-hidden="true" />
                   Get AI readiness assessment
-                </button>
+                </Button>
               )}
 
               {isAiAssessing && (
@@ -274,13 +279,14 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
 
           {/* Footer */}
           <Box className="flex justify-end border-t border-divider px-5 py-3">
-            <button
+            <Button
               type="button"
               onClick={onClose}
+              variant="ghost"
               className="rounded bg-grey-100 dark:bg-grey-800 px-4 py-2 text-sm font-medium text-text-primary hover:bg-grey-200 dark:hover:bg-grey-700 transition-colors"
             >
               Go back
-            </button>
+            </Button>
           </Box>
         </CardContent>
       </Card>

@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Brain, Database, Search, RefreshCw, AlertCircle, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { AIAssistLabel } from '../ai/AIAssistLabel';
+import { Button } from '../ui/Button';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -89,14 +90,16 @@ export function CodebaseKnowledgeSurface({
           <Brain size={18} className="text-violet-400" />
           <h2 className="text-base font-semibold text-fg-muted">What the assistant knows about your codebase</h2>
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => { void refetch(); }}
           className="p-1.5 rounded-lg hover:bg-surface text-fg-muted hover:text-fg-muted transition-colors"
           aria-label="Refresh knowledge"
           data-testid="knowledge-refresh-btn"
         >
           <RefreshCw size={14} />
-        </button>
+        </Button>
       </div>
 
       {/* Loading */}

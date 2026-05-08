@@ -1,6 +1,8 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 
 import type { Conflict, ResolutionSuggestion } from 'yappc-collab/crdt';
+import { Button } from '../ui/Button';
+import { Textarea } from '../ui/Textarea';
 
 export interface ManualConflictResolution {
   conflictId: string;
@@ -104,14 +106,16 @@ function OperationCard({ title, source, conflict, onChoose, disabled }: Operatio
             {operation.type} on {operation.targetId}
           </h3>
         </div>
-        <button
+        <Button
           type="button"
           className="rounded-full border border-info-border/50 px-3 py-1 text-sm font-medium text-info-color transition hover:border-info-border hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+          variant="outline"
+          size="sm"
           onClick={() => onChoose(source)}
           disabled={disabled}
         >
           Keep this version
-        </button>
+        </Button>
       </div>
 
       <dl className="grid gap-2 text-sm text-fg-muted sm:grid-cols-2">
@@ -266,13 +270,15 @@ export function ConflictResolver({
             <label htmlFor={mergeInputId} className="mb-2 block text-sm font-medium text-fg-muted">
               Merged payload
             </label>
-            <textarea
+            <Textarea
               id={mergeInputId}
               value={mergeValue}
               onChange={(event) => setMergeValue(event.target.value)}
               spellCheck={false}
               className="min-h-56 w-full rounded-2xl border border-border bg-surface/90 px-4 py-3 font-mono text-sm leading-6 text-fg-muted outline-none transition focus:border-info-border"
               aria-invalid={mergeState.error ? 'true' : 'false'}
+              resize="vertical"
+              fullWidth
             />
             {mergeState.error ? (
               <p className="mt-2 text-sm text-rose-300" role="alert">
@@ -287,12 +293,13 @@ export function ConflictResolver({
             <label htmlFor={notesInputId} className="mb-2 block text-sm font-medium text-fg-muted">
               Resolution notes
             </label>
-            <textarea
+            <Textarea
               id={notesInputId}
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
               className="min-h-24 w-full rounded-2xl border border-border bg-surface/90 px-4 py-3 text-sm leading-6 text-fg-muted outline-none transition focus:border-info-border"
               placeholder="Explain why this resolution should be applied."
+              fullWidth
             />
           </div>
         </div>
@@ -300,23 +307,24 @@ export function ConflictResolver({
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
         {onCancel ? (
-          <button
+          <Button
             type="button"
             className="rounded-full border border-border px-4 py-2 text-sm font-medium text-fg-muted transition hover:border-border hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            variant="outline"
             onClick={onCancel}
             disabled={isResolving}
           >
             Cancel
-          </button>
+          </Button>
         ) : null}
-        <button
+        <Button
           type="button"
           className="rounded-full bg-info-bg px-5 py-2 text-sm font-semibold text-fg transition hover:bg-info-bg disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-fg-muted"
           onClick={handleManualMerge}
           disabled={isResolving || mergeState.parsed === undefined}
         >
           Apply merged resolution
-        </button>
+        </Button>
       </div>
     </section>
   );

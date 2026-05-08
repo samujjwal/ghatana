@@ -84,6 +84,12 @@ ENV DATACLOUD_HTTP_ENABLED=true
 # CORS — restrict to known frontend origins; override in deployment
 ENV DATACLOUD_CORS_ALLOWED_ORIGINS=""
 
+# Explicitly mark this as a container environment.
+# The launcher refuses to default to LOCAL profile when this flag is set,
+# preventing silent production data loss when DATACLOUD_PROFILE is forgotten.
+# Operators MUST provide DATACLOUD_PROFILE=production (or staging) at runtime.
+ENV DATACLOUD_CONTAINER=true
+
 # Kafka (event log)
 ENV KAFKA_BOOTSTRAP_SERVERS=kafka:9092
 ENV KAFKA_ENABLED=false

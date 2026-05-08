@@ -91,6 +91,7 @@ function mockPhaseBootstrap({
   canAdvance = true,
   readiness = 92,
   requiredArtifacts = ['Requirements packet'],
+  aiNextActions = ['Review the latest lifecycle evidence'],
   projectAccess = {
     isOwned: true,
     isIncluded: false,
@@ -122,6 +123,7 @@ function mockPhaseBootstrap({
   readonly canAdvance?: boolean;
   readonly readiness?: number;
   readonly requiredArtifacts?: readonly string[];
+  readonly aiNextActions?: readonly string[];
   readonly projectAccess?: {
     readonly isOwned?: boolean;
     readonly isIncluded?: boolean;
@@ -158,7 +160,7 @@ function mockPhaseBootstrap({
             lifecyclePhase,
             status: 'ACTIVE',
             aiHealthScore: 80,
-            aiNextActions: ['Review the latest lifecycle evidence'],
+            aiNextActions,
             updatedAt: '2026-04-21T10:00:00.000Z',
             ...projectAccess,
           },
@@ -302,6 +304,79 @@ describe('phase cockpit routes', () => {
       flowStage: 'shape',
       phase: 'SHAPE',
     });
+  });
+
+  it('executes safe one-click cockpit suggestions through the backed phase action path', async () => {
+    mockPhaseBootstrap({
+      lifecyclePhase: 'CONTEXT',
+      nextPhase: 'PLAN',
+      canAdvance: true,
+      aiNextActions: [],
+      projectAccess: {
+        isOwned: true,
+        isIncluded: false,
+        readOnly: false,
+        role: 'OWNER',
+        capabilities: {
+          read: true,
+          update: true,
+          create: true,
+          delete: false,
+          include: true,
+          comment: true,
+        },
+      },
+    });
+    renderRouteWithUser(<ShapeRoute />, {
+      id: 'owner-1',
+      email: 'owner@example.com',
+      name: 'Owner',
+      role: 'ADMIN',
+      tenantId: 'tenant-1',
+      workspaceIds: ['workspace-1'],
+    });
+
+    expect(await screen.findByTestId('shape-cockpit')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Run guided action' })).toBeInTheDocument();
+
+    vi.mocked(fetch).mockImplementation((input) => {
+      const path = String(input);
+      if (path.includes('/api/audit/events')) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              id: 'audit-shape-one-click',
+              timestamp: '2026-05-07T12:00:00.000Z',
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          ),
+        );
+      }
+
+      if (path.includes('/api/projects/proj-42/activity')) {
+        return Promise.resolve(activityRefetchResponse());
+      }
+
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({ message: `Unexpected test request: ${path}` }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Run guided action' }));
+
+    await waitFor(() => expectFetchCalledWithPath('/api/audit/events'));
+    const auditCall = vi.mocked(fetch).mock.calls.find(([input]) => String(input).includes('/api/audit/events'));
+    expect(JSON.parse(String(auditCall?.[1]?.body))).toMatchObject({
+      type: 'phase.shape.builder_review_started',
+      userId: 'owner-1',
+      projectId: 'proj-42',
+      flowStage: 'shape',
+      phase: 'SHAPE',
+    });
+    expect(await screen.findByTestId('phase-action-result')).toHaveTextContent('Shape review started');
   });
 
   it('mounts observe with preview runtime observability diagnostics from backed activity', async () => {

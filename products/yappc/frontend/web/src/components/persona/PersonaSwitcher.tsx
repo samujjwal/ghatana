@@ -18,6 +18,8 @@ import {
   ALL_PERSONA_TYPES,
   type PersonaType
 } from '../../context/PersonaContext';
+import { Button } from '../ui/Button';
+import { Select } from '../ui/Select';
 
 interface PersonaSwitcherProps {
   variant?: 'compact' | 'expanded';
@@ -47,13 +49,15 @@ export function PersonaSwitcher({
     return (
       <div className={`${className}`} role="region" aria-label="Persona selection">
         {/* Compact view - show active persona icons */}
-        <button
+        <Button
           onClick={() => setIsExpanded(true)}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors"
           title="Switch persona"
           aria-expanded={isExpanded}
           aria-haspopup="listbox"
           aria-label={`Current role: ${PERSONA_DEFINITIONS[primaryPersona].name}. ${virtualPersonas.length} AI agents active. Click to change roles.`}
+          variant="ghost"
+          size="sm"
         >
           <div className="flex -space-x-1">
             {activePersonas.slice(0, 3).map((personaId) => {
@@ -86,7 +90,7 @@ export function PersonaSwitcher({
           <svg className="w-4 h-4 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
-        </button>
+        </Button>
       </div>
     );
   }
@@ -103,15 +107,17 @@ export function PersonaSwitcher({
           Your Roles
         </span>
         {variant === 'compact' && (
-          <button
+          <Button
             onClick={() => setIsExpanded(false)}
             className="p-1 rounded hover:bg-grey-100 dark:hover:bg-grey-800"
             aria-label="Collapse role selection"
+            variant="ghost"
+            size="sm"
           >
             <svg className="w-4 h-4 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
             </svg>
-          </button>
+          </Button>
         )}
       </div>
 
@@ -225,17 +231,18 @@ export function PersonaSwitcher({
       {allowMultiple && activePersonas.length > 1 && (
         <div className="px-3 py-2 border-t border-divider">
           <label className="text-xs text-text-secondary block mb-1">Primary Role:</label>
-          <select
+          <Select
             value={primaryPersona}
             onChange={(e) => setPrimaryPersona(e.target.value as PersonaType)}
             className="w-full text-sm px-2 py-1 rounded border border-divider bg-bg-default focus:outline-none focus:ring-2 focus:ring-primary-500"
+            fullWidth
           >
             {activePersonas.map((personaId) => (
               <option key={personaId} value={personaId}>
                 {PERSONA_DEFINITIONS[personaId].name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
       )}
     </div>
@@ -268,7 +275,7 @@ export function PersonaSwitcherCompact({ className = '' }: { className?: string 
 
   return (
     <div className={`relative ${className}`}>
-      <button
+      <Button
         ref={buttonRef}
         className="w-full p-2 rounded-lg hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors flex flex-col items-center gap-1"
         onMouseEnter={() => {
@@ -277,6 +284,8 @@ export function PersonaSwitcherCompact({ className = '' }: { className?: string 
         }}
         onMouseLeave={() => setShowTooltip(false)}
         title={`${primaryDef.name}${virtualPersonas.length > 0 ? ` + ${virtualPersonas.length} AI` : ''}`}
+        variant="ghost"
+        size="sm"
       >
         <div
           className="w-8 h-8 rounded-full flex items-center justify-center text-base"
@@ -289,7 +298,7 @@ export function PersonaSwitcherCompact({ className = '' }: { className?: string 
             {virtualPersonas.length}
           </div>
         )}
-      </button>
+      </Button>
 
       {/* Tooltip - Rendered via portal to avoid overflow clipping */}
       {showTooltip && typeof document !== 'undefined' && createPortal(
@@ -302,10 +311,6 @@ export function PersonaSwitcherCompact({ className = '' }: { className?: string 
             zIndex: 9999,
           }}
         >
-          {(() => {
-            console.log('PersonaSwitcher tooltip portal rendered with position:', tooltipPosition);
-            return null;
-          })()}
           <div className="text-xs font-medium text-text-primary mb-1">Active Roles</div>
           <div className="space-y-1">
             {activePersonas.map((id) => (

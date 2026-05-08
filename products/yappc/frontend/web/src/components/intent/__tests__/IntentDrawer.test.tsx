@@ -1,13 +1,14 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router';
+import React from 'react';
 import { IntentDrawer } from '../IntentDrawer';
 
 // Mock child form components
 vi.mock('../IdeaBriefForm', () => ({
   IdeaBriefForm: ({ onSubmit }: { onSubmit: (data: unknown) => Promise<void> }) => (
     <div data-testid="idea-brief-form">
-      <button onClick={() => onSubmit({ title: 'Test Idea' })}>Save Idea</button>
+      {React.createElement('button', { onClick: () => onSubmit({ title: 'Test Idea' }) }, 'Save Idea')}
     </div>
   ),
 }));
@@ -15,7 +16,7 @@ vi.mock('../IdeaBriefForm', () => ({
 vi.mock('../ResearchPackEditor', () => ({
   ResearchPackEditor: ({ onSubmit }: { onSubmit: (data: unknown) => Promise<void> }) => (
     <div data-testid="research-pack-editor">
-      <button onClick={() => onSubmit({ findings: 'Test' })}>Save Research</button>
+      {React.createElement('button', { onClick: () => onSubmit({ findings: 'Test' }) }, 'Save Research')}
     </div>
   ),
 }));
@@ -23,7 +24,7 @@ vi.mock('../ResearchPackEditor', () => ({
 vi.mock('../ProblemStatementEditor', () => ({
   ProblemStatementEditor: ({ onSubmit }: { onSubmit: (data: unknown) => Promise<void> }) => (
     <div data-testid="problem-statement-editor">
-      <button onClick={() => onSubmit({ problem: 'Test problem' })}>Save Problem</button>
+      {React.createElement('button', { onClick: () => onSubmit({ problem: 'Test problem' }) }, 'Save Problem')}
     </div>
   ),
 }));

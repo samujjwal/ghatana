@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { Button } from '../ui/Button';
+import { Textarea } from '../ui/Textarea';
 
 /**
  * Inline Code Panel component.
@@ -86,12 +88,14 @@ export function InlineCodePanel({
               {language}
             </span>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="small"
             onClick={() => setIsMinimized(false)}
-            className="text-fg-muted hover:text-fg dark:hover:text-fg-muted text-sm"
+            className="min-h-0 px-0 py-0 text-fg-muted hover:text-fg dark:hover:text-fg-muted text-sm"
           >
             ▲ Expand
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -129,50 +133,62 @@ export function InlineCodePanel({
 
         <div className="flex items-center gap-2">
           {onFormat && (
-            <button
+            <Button
+              variant="soft"
+              size="small"
               onClick={onFormat}
               tabIndex={0}
-              className="px-2 py-1 text-xs bg-surface-muted dark:bg-surface hover:bg-surface-muted dark:hover:bg-surface-muted rounded"
+              className="min-h-0 px-2 py-1 text-xs bg-surface-muted dark:bg-surface hover:bg-surface-muted dark:hover:bg-surface-muted rounded"
               title="Format Code (⌘⇧F)"
             >
               Format
-            </button>
+            </Button>
           )}
           {onRun && (
-            <button
+            <Button
+              variant="solid"
+              tone="success"
+              size="small"
               onClick={onRun}
               tabIndex={0}
-              className="px-2 py-1 text-xs bg-success-bg hover:bg-success-bg text-white rounded"
+              className="min-h-0 px-2 py-1 text-xs bg-success-bg hover:bg-success-bg text-white rounded"
               title="Run Code"
             >
               Run
-            </button>
+            </Button>
           )}
           {onAIFix && (
-            <button
+            <Button
+              variant="solid"
+              tone="info"
+              size="small"
               onClick={onAIFix}
-              className="px-2 py-1 text-xs bg-info-bg hover:bg-info-bg text-white rounded"
+              className="min-h-0 px-2 py-1 text-xs bg-info-bg hover:bg-info-bg text-white rounded"
               title="AI Fix (⌘.)"
             >
               ✨ AI Fix
-            </button>
+            </Button>
           )}
-          <button
+          <Button
+            variant="ghost"
+            size="small"
             onClick={() => setIsMinimized(true)}
-            className="text-fg-muted hover:text-fg dark:hover:text-fg-muted text-sm"
+            className="min-h-0 px-0 py-0 text-fg-muted hover:text-fg dark:hover:text-fg-muted text-sm"
             title="Minimize (⌘J)"
           >
             ▼
-          </button>
+          </Button>
           {onToggle && (
-            <button
+            <Button
+              variant="ghost"
+              size="small"
               onClick={onToggle}
               tabIndex={0}
-              className="text-fg-muted hover:text-fg dark:hover:text-fg-muted text-sm"
+              className="min-h-0 px-0 py-0 text-fg-muted hover:text-fg dark:hover:text-fg-muted text-sm"
               title="Close"
             >
               Hide Code Panel
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -184,10 +200,12 @@ export function InlineCodePanel({
         style={{ height: `${height - 44}px` }}
       >
         {/* Code Editor */}
-        <textarea
+        <Textarea
           role="textbox"
           value={code || ''}
           onChange={(e) => onCodeChange?.(e.target.value)}
+          fullWidth
+          resize="none"
           className="w-full h-full p-4 font-mono text-sm bg-transparent text-fg dark:text-fg-muted resize-none outline-none"
           placeholder="// Select a component on canvas to view its code"
           aria-label="Code editor"

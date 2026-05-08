@@ -13,6 +13,9 @@
 import React, { useState, useCallback } from 'react';
 import { Plus as Add, Minus as Remove, Sparkles as AutoAwesome, Save, ThumbsUp as ThumbUp, ThumbsDown as ThumbDown } from 'lucide-react';
 import type { AdrPayload } from '@/shared/types/lifecycle-artifacts';
+import { Button } from '../../ui/Button';
+import { Input } from '../../ui/Input';
+import { Textarea } from '../../ui/Textarea';
 
 export interface AdrPanelProps {
     data?: AdrPayload;
@@ -32,7 +35,7 @@ const STATUS_COLORS = {
     proposed: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color',
     accepted: 'bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color',
     superseded: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
-    deprecated: 'bg-grey-100 text-grey-700 dark:bg-grey-900/30 dark:text-grey-300',
+    deprecated: 'bg-surface-muted text-fg-muted dark:bg-surface-muted dark:text-fg-muted',
 };
 
 const defaultOption = (): Option => ({
@@ -178,23 +181,27 @@ export const AdrPanel: React.FC<AdrPanelProps> = ({
                 </div>
                 <div className="flex gap-2">
                     {onAIAssist && (
-                        <button
+                        <Button
                             onClick={handleAIAssist}
                             disabled={isAILoading || isSaving}
-                            className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50"
+                            variant="ghost"
+                            size="sm"
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm text-info-color hover:bg-info-bg dark:hover:bg-info-bg/20 rounded-lg transition-colors disabled:opacity-50"
                         >
                             <AutoAwesome className="w-4 h-4" />
                             {isAILoading ? 'Analyzing...' : 'AI Assist'}
-                        </button>
+                        </Button>
                     )}
-                    <button
+                    <Button
                         onClick={handleSave}
                         disabled={isSaving || isLoading}
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+                        variant="solid"
+                        size="sm"
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-info-color text-white rounded-lg hover:bg-info-color/90 transition-colors disabled:opacity-50"
                     >
                         <Save className="w-4 h-4" />
                         {isSaving ? 'Saving...' : 'Save'}
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -205,16 +212,18 @@ export const AdrPanel: React.FC<AdrPanelProps> = ({
                     <label className="block text-sm font-medium text-text-primary mb-2">Status</label>
                     <div className="flex gap-2">
                         {(['proposed', 'accepted', 'superseded', 'deprecated'] as const).map((status) => (
-                            <button
+                            <Button
                                 key={status}
                                 onClick={() => updateField('status', status)}
+                                variant="ghost"
+                                size="sm"
                                 className={`px-3 py-1.5 text-sm rounded-full transition-colors ${adr.status === status
                                         ? STATUS_COLORS[status]
-                                        : 'bg-grey-100 text-grey-600 dark:bg-grey-800 dark:text-grey-400 hover:bg-grey-200 dark:hover:bg-grey-700'
+                                        : 'bg-surface-muted text-fg-muted dark:bg-surface-muted dark:text-fg-muted hover:bg-surface-muted dark:hover:bg-surface-muted'
                                     }`}
                             >
                                 {status.charAt(0).toUpperCase() + status.slice(1)}
-                            </button>
+                            </Button>
                         ))}
                     </div>
                 </div>
@@ -227,13 +236,15 @@ export const AdrPanel: React.FC<AdrPanelProps> = ({
                     >
                         Context
                     </label>
-                    <textarea
+                    <Textarea
                         id="adr-context"
                         value={adr.context}
                         onChange={(e) => updateField('context', e.target.value)}
                         placeholder="What is the issue that we're seeing that is motivating this decision?"
                         rows={4}
-                        className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                        fullWidth
+                        resize="none"
+                        className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-info-border resize-none"
                     />
                 </div>
 
@@ -249,21 +260,25 @@ export const AdrPanel: React.FC<AdrPanelProps> = ({
                                     <span className="text-sm font-medium text-text-secondary">
                                         Option {optIdx + 1}
                                     </span>
-                                    <input
+                                    <Input
                                         type="text"
                                         value={option.name}
                                         onChange={(e) => updateOption(optIdx, { name: e.target.value })}
                                         placeholder="Option name"
-                                        className="flex-1 px-2 py-1 border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                        fullWidth
+                                        size="sm"
+                                        className="flex-1 px-2 py-1 border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
                                     />
                                     {adr.options.length > 1 && (
-                                        <button
+                                        <Button
                                             onClick={() => removeOption(optIdx)}
+                                            variant="ghost"
+                                            size="sm"
                                             className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                             aria-label="Remove option"
                                         >
                                             <Remove className="w-4 h-4" />
-                                        </button>
+                                        </Button>
                                     )}
                                 </div>
                                 <div className="grid grid-cols-2 divide-x divide-divider">
@@ -275,31 +290,38 @@ export const AdrPanel: React.FC<AdrPanelProps> = ({
                                         </div>
                                         {option.pros.map((pro, proIdx) => (
                                             <div key={proIdx} className="flex items-center gap-1">
-                                                <input
+                                                <Input
                                                     type="text"
                                                     value={pro}
                                                     onChange={(e) =>
                                                         updateProCon(optIdx, 'pros', proIdx, e.target.value)
                                                     }
                                                     placeholder="Pro..."
-                                                    className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                                    fullWidth
+                                                    size="sm"
+                                                    className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
                                                 />
                                                 {option.pros.length > 1 && (
-                                                    <button
+                                                    <Button
                                                         onClick={() => removeProCon(optIdx, 'pros', proIdx)}
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        aria-label={`Remove pro ${proIdx + 1}`}
                                                         className="p-0.5 text-text-secondary hover:text-error-color transition-colors"
                                                     >
                                                         <Remove className="w-3 h-3" />
-                                                    </button>
+                                                    </Button>
                                                 )}
                                             </div>
                                         ))}
-                                        <button
+                                        <Button
                                             onClick={() => addProCon(optIdx, 'pros')}
-                                            className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors"
+                                            variant="link"
+                                            size="sm"
+                                            className="flex items-center gap-1 text-xs text-info-color hover:text-info-color transition-colors"
                                         >
                                             <Add className="w-3 h-3" /> Add pro
-                                        </button>
+                                        </Button>
                                     </div>
                                     {/* Cons */}
                                     <div className="p-3 space-y-2">
@@ -309,41 +331,51 @@ export const AdrPanel: React.FC<AdrPanelProps> = ({
                                         </div>
                                         {option.cons.map((con, conIdx) => (
                                             <div key={conIdx} className="flex items-center gap-1">
-                                                <input
+                                                <Input
                                                     type="text"
                                                     value={con}
                                                     onChange={(e) =>
                                                         updateProCon(optIdx, 'cons', conIdx, e.target.value)
                                                     }
                                                     placeholder="Con..."
-                                                    className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                                    fullWidth
+                                                    size="sm"
+                                                    className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
                                                 />
                                                 {option.cons.length > 1 && (
-                                                    <button
+                                                    <Button
                                                         onClick={() => removeProCon(optIdx, 'cons', conIdx)}
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        aria-label={`Remove con ${conIdx + 1}`}
                                                         className="p-0.5 text-text-secondary hover:text-error-color transition-colors"
                                                     >
                                                         <Remove className="w-3 h-3" />
-                                                    </button>
+                                                    </Button>
                                                 )}
                                             </div>
                                         ))}
-                                        <button
+                                        <Button
                                             onClick={() => addProCon(optIdx, 'cons')}
-                                            className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors"
+                                            variant="link"
+                                            size="sm"
+                                            className="flex items-center gap-1 text-xs text-info-color hover:text-info-color transition-colors"
                                         >
                                             <Add className="w-3 h-3" /> Add con
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
                             </div>
                         ))}
-                        <button
+                        <Button
                             onClick={addOption}
-                            className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-divider rounded-lg text-text-secondary hover:text-primary-600 hover:border-primary-300 transition-colors"
+                            variant="ghost"
+                            size="sm"
+                            fullWidth
+                            className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-divider rounded-lg text-text-secondary hover:text-info-color hover:border-info-border transition-colors"
                         >
                             <Add className="w-5 h-5" /> Add Option
-                        </button>
+                        </Button>
                     </div>
                 </div>
 
@@ -355,13 +387,15 @@ export const AdrPanel: React.FC<AdrPanelProps> = ({
                     >
                         Decision
                     </label>
-                    <textarea
+                    <Textarea
                         id="adr-decision"
                         value={adr.decision}
                         onChange={(e) => updateField('decision', e.target.value)}
                         placeholder="What is the change that we're proposing and/or doing?"
                         rows={4}
-                        className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                        fullWidth
+                        resize="none"
+                        className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-info-border resize-none"
                     />
                 </div>
 
@@ -373,13 +407,15 @@ export const AdrPanel: React.FC<AdrPanelProps> = ({
                     >
                         Consequences
                     </label>
-                    <textarea
+                    <Textarea
                         id="adr-consequences"
                         value={adr.consequences}
                         onChange={(e) => updateField('consequences', e.target.value)}
                         placeholder="What becomes easier or more difficult to do because of this change?"
                         rows={4}
-                        className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                        fullWidth
+                        resize="none"
+                        className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-info-border resize-none"
                     />
                 </div>
             </div>

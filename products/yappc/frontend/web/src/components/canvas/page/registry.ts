@@ -6,6 +6,7 @@ import {
   type BuilderPaletteEntry,
 } from '@ghatana/ds-registry';
 import type { ComponentContract } from '@ghatana/ds-schema';
+import type { ComponentProp, PropType } from '@ghatana/ds-schema';
 import {
   getContractVersionProfile,
   migrateContractInstance,
@@ -40,11 +41,24 @@ export type LegacyComponentType = keyof typeof LEGACY_TO_CONTRACT_NAME;
 export interface RegistryFieldDescriptor {
   readonly name: string;
   readonly label: string;
-  readonly control: 'text' | 'number' | 'boolean' | 'toggle' | 'select';
+  readonly control:
+    | 'text'
+    | 'number'
+    | 'boolean'
+    | 'toggle'
+    | 'select'
+    | 'multiselect'
+    | 'color'
+    | 'token-select'
+    | 'json'
+    | 'code';
   /** @deprecated Use `control` instead. Present for backward-compat with callers that read `.type`. */
   readonly type: 'text' | 'number' | 'boolean';
+  readonly valueType: PropType;
   readonly required: boolean;
   readonly defaultValue?: unknown;
+  readonly description?: string;
+  readonly tokenTypes?: readonly string[];
   /** Ordered list of allowed values when `control === 'select'`. */
   readonly enumOptions?: readonly string[];
 }
@@ -185,7 +199,17 @@ export function getRegistryFields(contractName: string): readonly RegistryFieldD
       const enumValues = prop.validation?.enum;
 
       let control: RegistryFieldDescriptor['control'];
-      if (builderControl === 'select') {
+      if (builderControl === 'json' || prop.type === 'object' || prop.type === 'array') {
+        control = 'json';
+      } else if (builderControl === 'multiselect') {
+        control = 'multiselect';
+      } else if (builderControl === 'token-select' || prop.type === 'token-ref') {
+        control = 'token-select';
+      } else if (builderControl === 'color') {
+        control = 'color';
+      } else if (builderControl === 'code') {
+        control = 'code';
+      } else if (builderControl === 'select') {
         control = 'select';
       } else if (builderControl === 'toggle' || prop.type === 'boolean') {
         control = 'toggle';
@@ -203,8 +227,11 @@ export function getRegistryFields(contractName: string): readonly RegistryFieldD
         label: prop.name,
         control,
         type: legacyType,
+        valueType: prop.type,
         required: prop.required,
+        description: prop.description,
         defaultValue: prop.defaultValue,
+        tokenTypes: prop.builderMetadata?.tokenTypes,
         ...(control === 'select' && Array.isArray(enumValues)
           ? { enumOptions: enumValues as readonly string[] }
           : {}),
@@ -256,7 +283,7 @@ export type {
   ContractVersionProfile,
 };
 
-function mapPropType(propType: string): RegistryFieldDescriptor['type'] {
+function mapPropType(propType: ComponentProp['type']): RegistryFieldDescriptor['type'] {
   if (propType === 'number') {
     return 'number';
   }

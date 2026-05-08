@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 
 import { cn } from '../../utils/cn';
+import { Button } from '../ui/Button';
 
 // =============================================================================
 // Types
@@ -125,8 +126,10 @@ const ToolButton: React.FC<ToolButtonProps> = ({ tool, isActive, onClick }) => {
   const Icon = tool.icon;
 
   return (
-    <button
+    <Button
       onClick={onClick}
+      variant="ghost"
+      size="sm"
       className={cn(
         'group relative flex h-9 w-9 items-center justify-center rounded-lg transition-all',
         isActive
@@ -146,7 +149,7 @@ const ToolButton: React.FC<ToolButtonProps> = ({ tool, isActive, onClick }) => {
           </span>
         )}
       </div>
-    </button>
+    </Button>
   );
 };
 
@@ -169,8 +172,10 @@ const ToolDropdown: React.FC<ToolDropdownProps> = ({
 
   return (
     <div className="relative">
-      <button
+      <Button
         onClick={() => setIsOpen(!isOpen)}
+        variant="ghost"
+        size="sm"
         className={cn(
           'flex h-9 items-center gap-1 rounded-lg px-2 transition-all',
           activeToolConfig
@@ -181,7 +186,7 @@ const ToolDropdown: React.FC<ToolDropdownProps> = ({
       >
         <ActiveIcon className="h-4 w-4" />
         <ChevronDown className="h-3 w-3" />
-      </button>
+      </Button>
 
       <AnimatePresence>
         {isOpen && (
@@ -199,12 +204,15 @@ const ToolDropdown: React.FC<ToolDropdownProps> = ({
               {tools.map((tool) => {
                 const Icon = tool.icon;
                 return (
-                  <button
+                  <Button
                     key={tool.id}
                     onClick={() => {
                       onToolChange(tool.id);
                       setIsOpen(false);
                     }}
+                    variant="ghost"
+                    size="sm"
+                    fullWidth
                     className={cn(
                       'flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
                       activeTool === tool.id
@@ -217,7 +225,7 @@ const ToolDropdown: React.FC<ToolDropdownProps> = ({
                     {tool.shortcut && (
                       <span className="ml-auto text-xs text-fg-muted">{tool.shortcut}</span>
                     )}
-                  </button>
+                  </Button>
                 );
               })}
             </motion.div>
@@ -323,9 +331,11 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
 
       {/* History Controls */}
       <div className="flex items-center gap-0.5">
-        <button
+        <Button
           onClick={onUndo}
           disabled={!canUndo}
+          variant="ghost"
+          size="sm"
           className={cn(
             'flex h-9 w-9 items-center justify-center rounded-lg transition-all',
             canUndo
@@ -335,10 +345,12 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
           title="Undo (⌘Z)"
         >
           <Undo2 className="h-4 w-4" />
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={onRedo}
           disabled={!canRedo}
+          variant="ghost"
+          size="sm"
           className={cn(
             'flex h-9 w-9 items-center justify-center rounded-lg transition-all',
             canRedo
@@ -348,56 +360,66 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
           title="Redo (⌘⇧Z)"
         >
           <Redo2 className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
 
       <div className="mx-1 h-6 w-px bg-surface-muted dark:bg-surface-muted" />
 
       {/* Zoom Controls */}
       <div className="flex items-center gap-0.5">
-        <button
+        <Button
           onClick={onZoomOut}
+          variant="ghost"
+          size="sm"
           className="flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted transition-all hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface"
           title="Zoom Out"
         >
           <ZoomOut className="h-4 w-4" />
-        </button>
+        </Button>
         <span className="min-w-[3rem] text-center text-sm text-fg-muted dark:text-fg-muted">
           {Math.round(zoom * 100)}%
         </span>
-        <button
+        <Button
           onClick={onZoomIn}
+          variant="ghost"
+          size="sm"
           className="flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted transition-all hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface"
           title="Zoom In"
         >
           <ZoomIn className="h-4 w-4" />
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={onZoomFit}
+          variant="ghost"
+          size="sm"
           className="flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted transition-all hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface"
           title="Fit to Screen"
         >
           <Maximize2 className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
 
       <div className="mx-1 h-6 w-px bg-surface-muted dark:bg-surface-muted" />
 
       {/* AI Assist Button */}
       {onAIAssist && (
-        <button
+        <Button
           onClick={onAIAssist}
+          variant="solid"
+          size="sm"
           className="flex h-9 items-center gap-1 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 px-3 text-sm font-medium text-white transition-all hover:from-purple-600 hover:to-blue-600"
           title="AI Assist"
         >
           <Sparkles className="h-4 w-4" />
           <span className="hidden sm:inline">AI</span>
-        </button>
+        </Button>
       )}
 
       {/* Advanced Options Toggle */}
-      <button
+      <Button
         onClick={() => setShowAdvanced(!showAdvanced)}
+        variant="ghost"
+        size="sm"
         className={cn(
           'flex h-9 w-9 items-center justify-center rounded-lg transition-all',
           showAdvanced
@@ -407,7 +429,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
         title="More Options"
       >
         <MoreHorizontal className="h-4 w-4" />
-      </button>
+      </Button>
 
       {/* Advanced Options Panel */}
       <AnimatePresence>
@@ -422,8 +444,10 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
 
             {/* Grid Toggle */}
             {onToggleGrid && (
-              <button
+              <Button
                 onClick={onToggleGrid}
+                variant="ghost"
+                size="sm"
                 className={cn(
                   'flex h-9 w-9 items-center justify-center rounded-lg transition-all',
                   showGrid
@@ -433,13 +457,15 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
                 title="Toggle Grid"
               >
                 <Grid3X3 className="h-4 w-4" />
-              </button>
+              </Button>
             )}
 
             {/* Lock Toggle */}
             {onToggleLock && (
-              <button
+              <Button
                 onClick={onToggleLock}
+                variant="ghost"
+                size="sm"
                 className={cn(
                   'flex h-9 w-9 items-center justify-center rounded-lg transition-all',
                   isLocked
@@ -449,16 +475,18 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
                 title={isLocked ? 'Unlock Canvas' : 'Lock Canvas'}
               >
                 {isLocked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-              </button>
+              </Button>
             )}
 
             {/* Layers */}
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               className="flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted transition-all hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface"
               title="Layers"
             >
               <Layers className="h-4 w-4" />
-            </button>
+            </Button>
           </motion.div>
         )}
       </AnimatePresence>

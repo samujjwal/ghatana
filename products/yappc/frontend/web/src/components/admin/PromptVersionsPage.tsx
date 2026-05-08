@@ -30,6 +30,8 @@ import {
   updatePromptWeights,
   type PromptVersion,
 } from '../../services/admin/promptVersioningApi';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 
 interface PromptVersionsPageProps {
   className?: string;
@@ -140,15 +142,17 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
               Manage AI prompt versions, roll back to previous versions, and configure weight rebalancing for A/B testing.
             </p>
           </div>
-          <button
+          <Button
             type="button"
             onClick={() => void refetch()}
             className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-fg-muted transition-colors"
             aria-label="Refresh"
             title="Refresh"
+            variant="ghost"
+            size="sm"
           >
             <RefreshIcon size={16} />
-          </button>
+          </Button>
         </div>
 
         {/* Admin alert */}
@@ -222,35 +226,41 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <button
+                          <Button
                             type="button"
                             onClick={() => handleView(version)}
                             className="p-1.5 rounded hover:bg-surface-muted text-fg-muted hover:text-fg-muted transition-colors"
                             aria-label="View prompt version"
                             title="View content"
+                            variant="ghost"
+                            size="sm"
                           >
                             <ViewIcon size={14} />
-                          </button>
+                          </Button>
                           {!version.active && (
-                            <button
+                            <Button
                               type="button"
                               onClick={() => handleRollback(version)}
                               className="p-1.5 rounded hover:bg-surface-muted text-fg-muted hover:text-fg-muted transition-colors"
                               aria-label="Rollback to this version"
                               title="Rollback to this version"
+                              variant="ghost"
+                              size="sm"
                             >
                               <RollbackIcon size={14} />
-                            </button>
+                            </Button>
                           )}
-                          <button
+                          <Button
                             type="button"
                             onClick={() => handleWeightRebalance(version)}
                             className="p-1.5 rounded hover:bg-surface-muted text-fg-muted hover:text-fg-muted transition-colors"
                             aria-label="Configure weight"
                             title="Configure weight"
+                            variant="ghost"
+                            size="sm"
                           >
                             <WeightIcon size={14} />
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -275,13 +285,16 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
           <div className="bg-surface border border-border rounded-xl max-w-2xl w-full max-h-[80vh] overflow-auto">
             <div className="flex items-center justify-between p-4 border-b border-border">
               <h2 className="text-lg font-semibold text-fg-muted">Prompt Version Content</h2>
-              <button
+              <Button
                 type="button"
                 onClick={() => setViewDialogOpen(false)}
                 className="p-1 rounded hover:bg-surface text-fg-muted hover:text-fg-muted"
+                variant="ghost"
+                size="sm"
+                aria-label="Close prompt version content"
               >
                 <CloseIcon size={20} />
-              </button>
+              </Button>
             </div>
             <div className="p-4 space-y-3">
               <div className="text-sm text-fg-muted">
@@ -303,13 +316,14 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
               </div>
             </div>
             <div className="flex justify-end p-4 border-t border-border">
-              <button
+              <Button
                 type="button"
                 onClick={() => setViewDialogOpen(false)}
                 className="px-4 py-2 bg-surface hover:bg-surface-muted text-fg-muted rounded-lg text-sm font-medium transition-colors"
+                variant="ghost"
               >
                 Close
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -321,13 +335,16 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
           <div className="bg-surface border border-border rounded-xl max-w-md w-full">
             <div className="flex items-center justify-between p-4 border-b border-border">
               <h2 className="text-lg font-semibold text-fg-muted">Confirm Rollback</h2>
-              <button
+              <Button
                 type="button"
                 onClick={() => setRollbackDialogOpen(false)}
                 className="p-1 rounded hover:bg-surface text-fg-muted hover:text-fg-muted"
+                variant="ghost"
+                size="sm"
+                aria-label="Close rollback dialog"
               >
                 <CloseIcon size={20} />
-              </button>
+              </Button>
             </div>
             <div className="p-4 space-y-3">
               <p className="text-sm text-fg-muted">
@@ -339,13 +356,14 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
                 <label htmlFor="rollback-reason" className="block text-xs font-medium text-fg-muted mb-1">
                   Reason (required)
                 </label>
-                <input
+                <Input
                   id="rollback-reason"
                   type="text"
                   value={rollbackReason}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRollbackReason(e.target.value)}
                   placeholder="Reason for rollback…"
                   className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-fg-muted placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  fullWidth
                 />
               </div>
               {rollbackMutation.isError && (
@@ -357,14 +375,15 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
               )}
             </div>
             <div className="flex justify-end gap-2 p-4 border-t border-border">
-              <button
+              <Button
                 type="button"
                 onClick={() => setRollbackDialogOpen(false)}
                 className="px-4 py-2 bg-surface hover:bg-surface-muted text-fg-muted rounded-lg text-sm font-medium transition-colors"
+                variant="ghost"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleConfirmRollback}
                 disabled={!rollbackReason.trim() || rollbackMutation.isPending}
@@ -372,7 +391,7 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
               >
                 {rollbackMutation.isPending && <SpinnerIcon size={14} className="animate-spin" />}
                 Confirm Rollback
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -384,13 +403,16 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
           <div className="bg-surface border border-border rounded-xl max-w-md w-full">
             <div className="flex items-center justify-between p-4 border-b border-border">
               <h2 className="text-lg font-semibold text-fg-muted">Configure Weight</h2>
-              <button
+              <Button
                 type="button"
                 onClick={() => setWeightDialogOpen(false)}
                 className="p-1 rounded hover:bg-surface text-fg-muted hover:text-fg-muted"
+                variant="ghost"
+                size="sm"
+                aria-label="Close weight dialog"
               >
                 <CloseIcon size={20} />
-              </button>
+              </Button>
             </div>
             <div className="p-4 space-y-4">
               <p className="text-sm text-fg-muted">
@@ -402,7 +424,7 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
                 <label htmlFor="weight-value" className="block text-xs font-medium text-fg-muted mb-1">
                   Weight (0.0–1.0)
                 </label>
-                <input
+                <Input
                   id="weight-value"
                   type="number"
                   min="0"
@@ -411,6 +433,7 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
                   value={weightValue}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWeightValue(e.target.value)}
                   className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-fg-muted focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  fullWidth
                 />
               </div>
               {weightMutation.isError && (
@@ -422,14 +445,15 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
               )}
             </div>
             <div className="flex justify-end gap-2 p-4 border-t border-border">
-              <button
+              <Button
                 type="button"
                 onClick={() => setWeightDialogOpen(false)}
                 className="px-4 py-2 bg-surface hover:bg-surface-muted text-fg-muted rounded-lg text-sm font-medium transition-colors"
+                variant="ghost"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleConfirmWeight}
                 disabled={weightMutation.isPending}
@@ -437,7 +461,7 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
               >
                 {weightMutation.isPending && <SpinnerIcon size={14} className="animate-spin" />}
                 Save Weight
-              </button>
+              </Button>
             </div>
           </div>
         </div>

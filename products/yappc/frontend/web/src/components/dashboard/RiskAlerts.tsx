@@ -10,7 +10,7 @@
  * @doc.pattern Component
  */
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ChevronRight, AlertTriangle, Shield, Zap, Activity, FileCheck, ArrowUp, MoreVertical } from 'lucide-react';
 import { Typography, Button, Chip, Box, Surface as Paper } from '@ghatana/design-system';
 import type { RiskAlert, RiskSeverity, RiskCategory } from '../../clients/dashboard';
@@ -21,6 +21,12 @@ interface RiskAlertsProps {
   onUpdateStatus?: (alertId: string, status: RiskAlert['status']) => Promise<void>;
   onViewAll?: () => void;
   projectId?: string;
+}
+
+type CheckboxControlProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'>;
+
+function CheckboxControl(props: CheckboxControlProps): React.ReactElement {
+  return React.createElement('input', { ...props, type: 'checkbox' });
 }
 
 /**
@@ -157,8 +163,7 @@ export function RiskAlerts({
                 >
                   <div className="flex items-start gap-4">
                     {hasActions && (
-                      <input
-                        type="checkbox"
+                      <CheckboxControl
                         checked={selectedAlerts.has(alert.id)}
                         onChange={() => toggleSelection(alert.id)}
                         className="w-4 h-4 mt-1 rounded border-border text-info-color focus:ring-blue-500"
@@ -210,31 +215,40 @@ export function RiskAlerts({
                       {hasActions && (
                         <div className="flex gap-1">
                           {onEscalate && alert.status !== 'escalated' && (
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleEscalate(alert.id)}
                               className="p-2 rounded-md bg-info-bg text-info-color hover:bg-info-bg transition-colors"
                               title="Escalate"
+                              aria-label="Escalate"
                             >
                               <ArrowUp className="w-4 h-4" />
-                            </button>
+                            </Button>
                           )}
                           {onUpdateStatus && alert.status === 'open' && (
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleUpdateStatus(alert.id, 'mitigating')}
                               className="p-2 rounded-md bg-info-bg text-info-color hover:bg-info-bg transition-colors"
                               title="Start Mitigation"
+                              aria-label="Start Mitigation"
                             >
                               <Shield className="w-4 h-4" />
-                            </button>
+                            </Button>
                           )}
                           {onUpdateStatus && (alert.status === 'mitigating' || alert.status === 'escalated') && (
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleUpdateStatus(alert.id, 'mitigated')}
                               className="p-2 rounded-md bg-success-bg text-success-color hover:bg-success-bg transition-colors"
                               title="Mark as Mitigated"
+                              aria-label="Mark as Mitigated"
                             >
                               <FileCheck className="w-4 h-4" />
-                            </button>
+                            </Button>
                           )}
                         </div>
                       )}

@@ -5,6 +5,10 @@
  * ensuring 100% code coverage and all edge cases.
  */
 
+import React from 'react';
+
+const TestInput = (props: React.InputHTMLAttributes<HTMLInputElement>): React.ReactElement =>
+  React.createElement('input', props);
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -255,7 +259,7 @@ describe('UnifiedCanvasToolbar', () => {
     it('should not trigger shortcuts when typing in input', () => {
       render(
         <div>
-          <input data-testid="input" />
+          <TestInput data-testid="input" />
           <UnifiedCanvasToolbar {...defaultProps} />
         </div>
       );

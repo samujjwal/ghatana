@@ -36,6 +36,7 @@ import React, { useState } from 'react';
 import { Loader2, AlertCircle, FileWarning, Sparkles } from 'lucide-react';
 import { AIAssistLabel } from '../ai/AIAssistLabel';
 import type { AIAssistSource } from '../ai/AIAssistLabel';
+import { Button } from '../ui/Button';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -126,14 +127,16 @@ export function PostmortemDraftPanel({ incidentId, onAccept, className }: Postmo
       className={['space-y-3', className].filter(Boolean).join(' ')}
     >
       {state === 'idle' && (
-        <button
+        <Button
           data-testid="postmortem-generate-btn"
           onClick={() => void handleGenerate()}
           className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
+          variant="outline"
+          size="sm"
         >
           <Sparkles className="h-4 w-4" aria-hidden="true" />
           Generate postmortem draft
-        </button>
+        </Button>
       )}
 
       {state === 'loading' && (
@@ -149,9 +152,9 @@ export function PostmortemDraftPanel({ incidentId, onAccept, className }: Postmo
             <AlertCircle className="h-4 w-4" aria-hidden="true" />
             Could not generate postmortem draft.
           </div>
-          <button onClick={() => setState('idle')} className="text-xs text-muted underline">
+          <Button onClick={() => setState('idle')} className="text-xs text-muted underline" variant="link" size="sm">
             Try again
-          </button>
+          </Button>
         </div>
       )}
 
@@ -223,21 +226,24 @@ export function PostmortemDraftPanel({ incidentId, onAccept, className }: Postmo
 
           <div className="flex gap-2 pt-1">
             {onAccept && (
-              <button
+              <Button
                 data-testid="postmortem-accept-btn"
                 onClick={() => onAccept(draft)}
                 className="rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                size="sm"
               >
                 Accept draft
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               onClick={() => setState('idle')}
               data-testid="postmortem-regenerate-btn"
               className="rounded border border-border px-3 py-1 text-xs font-medium text-muted hover:bg-accent"
+              variant="outline"
+              size="sm"
             >
               Regenerate
-            </button>
+            </Button>
           </div>
         </div>
       )}

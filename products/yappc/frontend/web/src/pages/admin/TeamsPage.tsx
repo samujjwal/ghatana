@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 
 // ============================================================================
 // Types
@@ -85,14 +87,14 @@ const TeamsPage: React.FC = () => {
             {filtered?.length ?? 0} team{filtered?.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <button className="px-4 py-2 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors">
+        <Button className="px-4 py-2 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors">
           Create Team
-        </button>
+        </Button>
       </div>
 
       {/* Search & Filter Bar */}
       <div className="flex flex-wrap gap-3">
-        <input
+        <Input
           type="text"
           placeholder="Search teams..."
           value={search}
@@ -101,7 +103,7 @@ const TeamsPage: React.FC = () => {
         />
         <div className="flex rounded-lg border border-border overflow-hidden">
           {(['all', 'active', 'archived'] as StatusFilter[]).map((s) => (
-            <button
+            <Button
               key={s}
               onClick={() => setStatusFilter(s)}
               className={`px-3 py-2 text-xs font-medium capitalize transition-colors ${
@@ -111,7 +113,7 @@ const TeamsPage: React.FC = () => {
               }`}
             >
               {s}
-            </button>
+            </Button>
           ))}
         </div>
       </div>

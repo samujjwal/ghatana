@@ -153,7 +153,7 @@ const PhaseButton: React.FC<PhaseButtonProps> = ({
     let buttonClasses = 'relative flex flex-col items-center justify-center rounded-lg transition-all duration-200';
 
     if (isActive) {
-        buttonClasses += ' bg-primary text-white shadow-lg scale-105';
+        buttonClasses += ' bg-info-color text-white shadow-lg scale-105';
     } else if (isPast) {
         buttonClasses += ' bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color';
     } else if (isAccessible) {

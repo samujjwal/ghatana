@@ -25,6 +25,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { Button } from '../../../ui/Button';
 
 interface ThreadUser {
   id: string;
@@ -291,29 +292,29 @@ function ThreadNode({ data }: NodeProps<ThreadCanvasNode>) {
       <div className="p-4 border-b border-border">
         <div className="flex items-center gap-2">
           {onOpenThread && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onOpenThread}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-info-bg text-white rounded-lg hover:bg-primary transition-colors text-sm font-medium"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-info-bg text-white rounded-lg hover:bg-info-color transition-colors text-sm font-medium"
             >
               <Reply className="w-4 h-4" />
               View Thread
-            </button>
+            </Button>
           )}
           {!thread.isResolved && onResolve && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onResolve}
               className="flex items-center justify-center gap-2 px-3 py-2 bg-success-bg0/20 text-success-color rounded-lg hover:bg-success-bg0/30 transition-colors text-sm font-medium"
             >
               <CheckCircle2 className="w-4 h-4" />
-            </button>
+            </Button>
           )}
           {thread.isResolved && onReopen && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onReopen}
               className="flex items-center justify-center gap-2 px-3 py-2 bg-warning-bg0/20 text-warning-color rounded-lg hover:bg-warning-bg0/30 transition-colors text-sm font-medium"
             >
               <AlertCircle className="w-4 h-4" />
-            </button>
+            </Button>
           )}
         </div>
       </div>

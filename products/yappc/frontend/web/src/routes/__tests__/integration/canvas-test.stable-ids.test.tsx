@@ -48,6 +48,15 @@ import {
   type JSONPatchOperation,
 } from '../../../lib/canvas-legacy/persistence/idStrategy';
 import React, { useState, useCallback } from 'react';
+
+const TestButton = (props: React.ButtonHTMLAttributes<HTMLButtonElement>): React.ReactElement =>
+  React.createElement('button', props);
+
+const TestInput = (props: React.InputHTMLAttributes<HTMLInputElement>): React.ReactElement =>
+  React.createElement('input', props);
+
+const TestTextarea = (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>): React.ReactElement =>
+  React.createElement('textarea', props);
 import { describe, it, expect, beforeEach } from 'vitest';
 
 /**
@@ -182,39 +191,39 @@ const IDManager: React.FC<IDManagerProps> = ({
       </div>
 
       <div>
-        <textarea
+        <TestTextarea
           data-testid="content-input"
           value={contentInput}
           onChange={(e) => setContentInput(e.target.value)}
           placeholder="Enter JSON content"
         />
-        <button data-testid="generate-id-btn" onClick={handleGenerateID}>
+        <TestButton data-testid="generate-id-btn" onClick={handleGenerateID}>
           Generate ID
-        </button>
-        <button
+        </TestButton>
+        <TestButton
           data-testid="generate-hash-btn"
           onClick={handleGenerateContentHash}
         >
           Generate Hash
-        </button>
-        <button data-testid="batch-generate-btn" onClick={handleBatchGenerate}>
+        </TestButton>
+        <TestButton data-testid="batch-generate-btn" onClick={handleBatchGenerate}>
           Batch Generate (3 items)
-        </button>
+        </TestButton>
       </div>
 
       <div>
-        <input
+        <TestInput
           data-testid="id-to-check"
           value={idToCheck}
           onChange={(e) => setIdToCheck(e.target.value)}
           placeholder="ID to check collision"
         />
-        <button
+        <TestButton
           data-testid="check-collision-btn"
           onClick={handleCheckCollision}
         >
           Check Collision
-        </button>
+        </TestButton>
         {collisionResult && (
           <div data-testid="collision-result">
             Collision: {collisionResult.hasCollision ? 'YES' : 'NO'}
@@ -225,18 +234,18 @@ const IDManager: React.FC<IDManagerProps> = ({
       </div>
 
       <div>
-        <input
+        <TestInput
           data-testid="id-to-validate"
           value={idToValidate}
           onChange={(e) => setIdToValidate(e.target.value)}
           placeholder="ID to validate"
         />
-        <button data-testid="validate-id-btn" onClick={handleValidateID}>
+        <TestButton data-testid="validate-id-btn" onClick={handleValidateID}>
           Validate ID
-        </button>
-        <button data-testid="normalize-id-btn" onClick={handleNormalizeID}>
+        </TestButton>
+        <TestButton data-testid="normalize-id-btn" onClick={handleNormalizeID}>
           Normalize ID
-        </button>
+        </TestButton>
         {validationResult && (
           <div data-testid="validation-result">
             Valid: {validationResult.valid ? 'YES' : 'NO'}
@@ -249,30 +258,30 @@ const IDManager: React.FC<IDManagerProps> = ({
       </div>
 
       <div>
-        <button
+        <TestButton
           data-testid="change-strategy-content-hash"
           onClick={() => handleChangeStrategy('content-hash')}
         >
           Content Hash
-        </button>
-        <button
+        </TestButton>
+        <TestButton
           data-testid="change-strategy-uuid"
           onClick={() => handleChangeStrategy('uuid')}
         >
           UUID
-        </button>
-        <button
+        </TestButton>
+        <TestButton
           data-testid="change-strategy-sequential"
           onClick={() => handleChangeStrategy('sequential')}
         >
           Sequential
-        </button>
-        <button
+        </TestButton>
+        <TestButton
           data-testid="change-strategy-timestamp"
           onClick={() => handleChangeStrategy('timestamp')}
         >
           Timestamp
-        </button>
+        </TestButton>
       </div>
     </div>
   );
@@ -362,28 +371,28 @@ const DiffManager: React.FC<DiffManagerProps> = ({
     <div data-testid="diff-manager">
       <div data-testid="options">
         Detect Moves: {options.detectMoves ? 'ON' : 'OFF'}
-        <button
+        <TestButton
           data-testid="toggle-detect-moves"
           onClick={handleToggleDetectMoves}
         >
           Toggle Detect Moves
-        </button>
+        </TestButton>
       </div>
 
       <div>
-        <textarea
+        <TestTextarea
           data-testid="old-doc-input"
           placeholder="Old document JSON"
           onChange={(e) => handleSetOldDoc(e.target.value)}
         />
-        <textarea
+        <TestTextarea
           data-testid="new-doc-input"
           placeholder="New document JSON"
           onChange={(e) => handleSetNewDoc(e.target.value)}
         />
-        <button data-testid="generate-diff-btn" onClick={handleGenerateDiff}>
+        <TestButton data-testid="generate-diff-btn" onClick={handleGenerateDiff}>
           Generate Diff
-        </button>
+        </TestButton>
       </div>
 
       {diffResult && (
@@ -409,18 +418,18 @@ const DiffManager: React.FC<DiffManagerProps> = ({
       )}
 
       <div>
-        <button data-testid="apply-patch-btn" onClick={handleApplyPatch}>
+        <TestButton data-testid="apply-patch-btn" onClick={handleApplyPatch}>
           Apply Patches
-        </button>
-        <button
+        </TestButton>
+        <TestButton
           data-testid="filter-structural-btn"
           onClick={handleFilterStructural}
         >
           Filter Structural
-        </button>
-        <button data-testid="filter-styling-btn" onClick={handleFilterStyling}>
+        </TestButton>
+        <TestButton data-testid="filter-styling-btn" onClick={handleFilterStyling}>
           Filter Styling
-        </button>
+        </TestButton>
       </div>
     </div>
   );

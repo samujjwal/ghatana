@@ -12,6 +12,8 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router';
 import { ScrollText, Search, Filter, Download } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 
 const AuditPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -30,15 +32,15 @@ const AuditPage: React.FC = () => {
               <p className="text-fg-muted">Security-relevant events and access history</p>
             </div>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface hover:bg-surface-muted transition-colors text-sm text-fg-muted">
+          <Button variant="ghost" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface hover:bg-surface-muted transition-colors text-sm text-fg-muted">
             <Download className="w-4 h-4" /> Export
-          </button>
+          </Button>
         </div>
 
         <div className="flex items-center gap-3 mb-6">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
-            <input
+            <Input
               type="text"
               placeholder="Search audit events..."
               value={search}
@@ -46,9 +48,9 @@ const AuditPage: React.FC = () => {
               className="w-full pl-10 pr-4 py-2 rounded-lg bg-surface border border-border text-sm text-white placeholder-zinc-500 focus:border-violet-500 focus:outline-none"
             />
           </div>
-          <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-border text-sm text-fg-muted hover:text-white">
+          <Button variant="outline" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-border text-sm text-fg-muted hover:text-white">
             <Filter className="w-4 h-4" /> Filters
-          </button>
+          </Button>
         </div>
 
         <div className="p-6 rounded-xl bg-surface border border-border text-center">

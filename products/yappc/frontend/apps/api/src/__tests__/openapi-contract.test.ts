@@ -173,6 +173,7 @@ describe('OpenAPI Contract Compliance', () => {
       '/api/v1/yappc/generate/runs/{runId}/reject': ['post'],
       '/api/v1/yappc/generate/runs/{runId}/rollback': ['post'],
       '/api/v1/yappc/artifact/import-source': ['post'],
+      '/api/v1/yappc/artifact/import-source/{jobId}': ['get'],
       '/api/v1/yappc/run/rollback': ['post'],
       '/api/v1/yappc/run/promote': ['post'],
       '/api/v1/yappc/validate': ['post'],

@@ -261,9 +261,9 @@ export default function PreviewPage() {
             </div>
 
             {/* Preview Frame */}
-            <div className="flex-1 flex items-center justify-center bg-grey-100 dark:bg-grey-900 rounded-lg overflow-hidden">
+            <div className="flex-1 flex items-center justify-center bg-surface-muted dark:bg-surface-muted rounded-lg overflow-hidden">
                 <div 
-                    className="h-full bg-white dark:bg-grey-800 shadow-lg transition-all duration-300 overflow-hidden"
+                    className="h-full bg-white dark:bg-surface shadow-lg transition-all duration-300 overflow-hidden"
                     style={{ width: deviceDimensions[device].width, maxWidth: '100%' }}
                 >
                     <iframe

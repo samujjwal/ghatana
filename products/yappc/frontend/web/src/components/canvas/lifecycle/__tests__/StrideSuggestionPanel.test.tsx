@@ -97,7 +97,9 @@ describe('StrideSuggestionPanel (AI-Y11)', () => {
     );
 
     await screen.findByTestId('stride-suggestion-s1');
-    fireEvent.click(screen.getByTestId('stride-add-s1'));
+    const addButton = screen.getByTestId('stride-add-s1');
+    expect(addButton).toHaveClass('inline-flex');
+    fireEvent.click(addButton);
     expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ id: 's1' }));
   });
 

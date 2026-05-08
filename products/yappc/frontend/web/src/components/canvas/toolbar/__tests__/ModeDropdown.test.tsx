@@ -12,6 +12,10 @@
  * @doc.layer product
  */
 
+import React from 'react';
+
+const TestButton = (props: React.ButtonHTMLAttributes<HTMLButtonElement>): React.ReactElement =>
+  React.createElement('button', props);
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -305,7 +309,7 @@ describe('ModeDropdown', () => {
             render(
                 <div>
                     <ModeDropdown {...defaultProps} />
-                    <button data-testid="outside">Outside</button>
+                    <TestButton data-testid="outside">Outside</TestButton>
                 </div>
             );
             

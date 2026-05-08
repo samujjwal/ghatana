@@ -1,5 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
 
 // ============================================================================
 // Types
@@ -93,15 +96,17 @@ const TemplateGalleryPage: React.FC = () => {
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted">🔍</span>
-            <input
+            <Input
               type="text"
               placeholder="Search templates..."
               value={search}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-              className="w-full rounded-lg border bg-white py-2 pl-10 pr-4 text-sm focus:border-info-border focus:outline-none focus:ring-1 focus:ring-blue-500"
+              fullWidth
+              size="sm"
+              className="rounded-lg border bg-white py-2 pl-10 pr-4 text-sm focus:border-info-border focus:ring-1 focus:ring-blue-500"
             />
           </div>
-          <select
+          <Select
             value={sortBy}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
               setSortBy(e.target.value as 'stars' | 'name')
@@ -110,14 +115,17 @@ const TemplateGalleryPage: React.FC = () => {
           >
             <option value="stars">Most Popular</option>
             <option value="name">Alphabetical</option>
-          </select>
+          </Select>
         </div>
 
         {/* Category Chips */}
         <div className="mb-6 flex flex-wrap gap-2">
           {CATEGORIES.map((cat) => (
-            <button
+            <Button
               key={cat.key}
+              variant="ghost"
+              size="sm"
+              aria-pressed={category === cat.key}
               onClick={() => setCategory(cat.key)}
               className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition ${
                 category === cat.key
@@ -127,7 +135,7 @@ const TemplateGalleryPage: React.FC = () => {
             >
               <span>{cat.icon}</span>
               {cat.label}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -160,9 +168,9 @@ const TemplateGalleryPage: React.FC = () => {
                   </span>
                 ))}
               </div>
-              <button className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-white opacity-0 transition group-hover:opacity-100 hover:bg-info-bg">
+              <Button className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-white opacity-0 transition group-hover:opacity-100 hover:bg-info-bg">
                 Use Template
-              </button>
+              </Button>
             </div>
           ))}
         </div>
@@ -170,12 +178,13 @@ const TemplateGalleryPage: React.FC = () => {
         {filtered.length === 0 && (
           <div className="py-16 text-center text-fg-muted">
             <p className="text-lg">No templates match your search.</p>
-            <button
+            <Button
+              variant="ghost"
               onClick={() => { setSearch(''); setCategory('all'); }}
               className="mt-2 text-info-color hover:underline"
             >
               Clear filters
-            </button>
+            </Button>
           </div>
         )}
       </div>

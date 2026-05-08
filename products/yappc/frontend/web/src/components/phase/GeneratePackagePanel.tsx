@@ -183,8 +183,10 @@ export const GeneratePackagePanel: React.FC<GeneratePackagePanelProps> = ({
           <div className="divide-y divide-border rounded-lg border border-border overflow-hidden">
             {outputFiles.map((file) => (
               <div key={file.path}>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                     file.hasConflict ? 'bg-destructive-bg/30' : 'bg-surface'
                   }`}
@@ -214,7 +216,7 @@ export const GeneratePackagePanel: React.FC<GeneratePackagePanelProps> = ({
                       conflict
                     </span>
                   )}
-                </button>
+                </Button>
                 {expandedFile === file.path && file.content != null && (
                   <div className="bg-surface-muted border-t border-border px-4 py-3">
                     <pre className="text-xs font-mono text-fg whitespace-pre-wrap max-h-64 overflow-y-auto">

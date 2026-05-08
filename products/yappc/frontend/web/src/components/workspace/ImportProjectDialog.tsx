@@ -18,6 +18,8 @@ import {
     addIncludedProjectAtom,
     type ProjectWithOwnership
 } from '../../state/atoms/workspaceAtom';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 
 interface ImportProjectDialogProps {
     isOpen: boolean;
@@ -190,16 +192,18 @@ export function ImportProjectDialog({
                             Add external projects as read-only references
                         </p>
                     </div>
-                    <button
+                    <Button
                         type="button"
                         onClick={onClose}
+                        variant="ghost"
+                        size="small"
                         className="p-1 text-grey-400 hover:text-grey-600 dark:hover:text-grey-300 transition-colors"
                         aria-label="Close"
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Search */}
@@ -215,7 +219,7 @@ export function ImportProjectDialog({
                                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                             />
                         </svg>
-                        <input
+                        <Input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -253,9 +257,10 @@ export function ImportProjectDialog({
                         <ul className="space-y-2">
                             {filteredProjects.map((project) => (
                                 <li key={project.id}>
-                                    <button
+                                    <Button
                                         type="button"
                                         onClick={() => setSelectedProject(project)}
+                                        variant="ghost"
                                         className={`
                       w-full flex items-start gap-4 p-4 rounded-lg text-left
                       border transition-all
@@ -266,16 +271,16 @@ export function ImportProjectDialog({
                     `}
                                     >
                                         {/* Compatibility Score */}
-                                        <div className="flex-shrink-0 w-12 text-center">
+                                        <span className="flex-shrink-0 w-12 text-center">
                                             <span className={`text-lg font-bold ${getCompatibilityColor(project.aiCompatibilityScore)}`}>
                                                 {project.aiCompatibilityScore || '—'}
                                             </span>
                                             <p className="text-[10px] text-grey-400 uppercase">Match</p>
-                                        </div>
+                                        </span>
 
                                         {/* Project Info */}
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
+                                        <span className="flex-1 min-w-0">
+                                            <span className="flex items-center gap-2">
                                                 <span className="font-medium text-grey-900 dark:text-grey-100">
                                                     {project.name}
                                                 </span>
@@ -283,7 +288,7 @@ export function ImportProjectDialog({
                           bg-grey-100 dark:bg-grey-700 text-grey-600 dark:text-grey-400 rounded">
                                                     {project.type.replace('_', ' ')}
                                                 </span>
-                                            </div>
+                                            </span>
 
                                             <p className="text-sm text-grey-500 dark:text-grey-400 mt-0.5">
                                                 from <span className="font-medium">{project.ownerWorkspaceName}</span>
@@ -301,7 +306,7 @@ export function ImportProjectDialog({
                                                     ✨ {project.aiUsageHint}
                                                 </p>
                                             )}
-                                        </div>
+                                        </span>
 
                                         {/* Selected Check */}
                                         {selectedProject?.id === project.id && (
@@ -313,7 +318,7 @@ export function ImportProjectDialog({
                                                 />
                                             </svg>
                                         )}
-                                    </button>
+                                    </Button>
                                 </li>
                             ))}
                         </ul>
@@ -326,9 +331,10 @@ export function ImportProjectDialog({
                         Included projects are read-only
                     </p>
                     <div className="flex gap-3">
-                        <button
+                        <Button
                             type="button"
                             onClick={onClose}
+                            variant="ghost"
                             className="
                 px-4 py-2 text-sm font-medium
                 text-grey-700 dark:text-grey-300
@@ -337,11 +343,12 @@ export function ImportProjectDialog({
               "
                         >
                             Cancel
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="button"
                             onClick={handleImport}
                             disabled={!selectedProject || isImporting}
+                            variant="solid"
                             data-testid="import-project-submit"
                             className="
                 px-4 py-2 text-sm font-medium
@@ -352,7 +359,7 @@ export function ImportProjectDialog({
               "
                         >
                             {isImporting ? 'Including...' : 'Include Project'}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>

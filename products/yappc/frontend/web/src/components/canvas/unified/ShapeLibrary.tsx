@@ -363,7 +363,7 @@ export function ShapeLibrary({
                     <Box
                         key={cat.id}
                         onClick={() => setSelectedCategory(cat.id)}
-                        className={`flex-1 px-2 py-1 text-center cursor-pointer rounded-sm text-xs ${selectedCategory === cat.id ? 'bg-primary text-white' : 'bg-transparent text-fg dark:text-white'}`} style={{ fontWeight: selectedCategory === cat.id ? 600 : 400 }}
+                        className={`flex-1 px-2 py-1 text-center cursor-pointer rounded-sm text-xs ${selectedCategory === cat.id ? 'bg-info-color text-white' : 'bg-transparent text-fg dark:text-white'}`} style={{ fontWeight: selectedCategory === cat.id ? 600 : 400 }}
                     >
                         {cat.icon} {cat.name}
                     </Box>

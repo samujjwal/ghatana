@@ -54,7 +54,7 @@ describe('CanvasRightPanelHost', () => {
 
         it('shows close button when a panel is open', () => {
             renderHost(makeProps(), '/?panel=adr');
-            expect(screen.getByTitle('Close panel')).toBeInTheDocument();
+            expect(screen.getByTitle('Close panel')).toHaveClass('inline-flex');
         });
 
         it('shows panel navigation (previous panel button)', () => {
@@ -167,7 +167,7 @@ describe('CanvasRightPanelHost', () => {
 
         it('shows Expand panel button when collapsed', () => {
             renderHost(makeProps({ isCollapsed: true }), '/?panel=artifacts');
-            expect(screen.getByTitle('Expand panel')).toBeInTheDocument();
+            expect(screen.getByTitle('Expand panel')).toHaveClass('inline-flex');
         });
 
         it('calls onToggleCollapse when expand button clicked', () => {

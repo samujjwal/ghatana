@@ -1,5 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -34,6 +35,21 @@ vi.mock('@/hooks/useWorkspaceData', () => ({
 
 import { OnboardingFlow } from '../OnboardingFlow';
 
+function renderWithQueryClient(ui: React.ReactElement): ReturnType<typeof render> {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      {ui}
+    </QueryClientProvider>
+  );
+}
+
 describe('OnboardingFlow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -60,7 +76,7 @@ describe('OnboardingFlow', () => {
   it('persists starter project metadata and personas through the workspace bootstrap flow', async () => {
     const user = userEvent.setup();
 
-    render(<OnboardingFlow redirectTo="/workspaces" />);
+    renderWithQueryClient(<OnboardingFlow redirectTo="/workspaces" />);
 
     await user.click(screen.getByRole('button', { name: /let's go/i }));
 
@@ -86,16 +102,16 @@ describe('OnboardingFlow', () => {
     });
 
     expect(mockSetCurrentWorkspaceId).toHaveBeenCalledWith('ws-123');
-    expect(localStorage.getItem('onboarding_complete')).toBe('true');
+    expect(localStorage.getItem('onboarding_complete')).toBe(JSON.stringify('true'));
     expect(localStorage.getItem('yappc_active_personas')).toBe(JSON.stringify(['developer']));
-    expect(localStorage.getItem('yappc_primary_persona')).toBe('developer');
+    expect(localStorage.getItem('yappc_primary_persona')).toBe(JSON.stringify('developer'));
   });
 
   it('does not mark onboarding complete when workspace creation fails', async () => {
     const user = userEvent.setup();
     mockMutateAsync.mockRejectedValueOnce(new Error('service unavailable'));
 
-    render(<OnboardingFlow redirectTo="/workspaces" />);
+    renderWithQueryClient(<OnboardingFlow redirectTo="/workspaces" />);
 
     await user.click(screen.getByRole('button', { name: /let's go/i }));
     await screen.findByDisplayValue('Starter Workspace');

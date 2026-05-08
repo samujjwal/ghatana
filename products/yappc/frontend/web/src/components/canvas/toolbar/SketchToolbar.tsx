@@ -29,6 +29,7 @@ import {
     sketchStrokeWidthAtom,
     canvasInteractionModeAtom,
 } from '../workspace/canvasAtoms';
+import { Input } from '../../ui/Input';
 
 export interface SketchToolbarProps {
     className?: string;
@@ -198,7 +199,7 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({ className = '' }) 
                     className="rounded w-[24px]"
                     style={{ height: strokeWidth }}
                 />
-                <input
+                <Input
                     type="range"
                     value={strokeWidth}
                     onChange={(event) => setStrokeWidth(Number(event.target.value))}
@@ -206,6 +207,7 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({ className = '' }) 
                     max={20}
                     step={1}
                     aria-label="stroke width"
+                    size="sm"
                     className="w-[120px]"
                 />
             </Box>

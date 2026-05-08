@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Textarea } from '../../components/ui/Textarea';
 
 // ============================================================================
 // Types
@@ -104,12 +107,12 @@ const SetupWizardPage: React.FC = () => {
               <h2 className="text-lg font-semibold">Project Information</h2>
               <div>
                 <label className="mb-1 block text-sm font-medium text-fg">Project Name</label>
-                <input value={form.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => update('name', e.target.value)}
+                <Input value={form.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => update('name', e.target.value)}
                   placeholder="my-yappc-service" className="w-full rounded-lg border px-4 py-2 focus:border-info-border focus:outline-none" />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-fg">Description</label>
-                <textarea value={form.description} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => update('description', e.target.value)}
+                <Textarea value={form.description} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => update('description', e.target.value)}
                   rows={3} placeholder="A brief description..." className="w-full rounded-lg border px-4 py-2 focus:border-info-border focus:outline-none" />
               </div>
             </div>
@@ -122,10 +125,10 @@ const SetupWizardPage: React.FC = () => {
                 <label className="mb-2 block text-sm font-medium text-fg">Language</label>
                 <div className="flex flex-wrap gap-2">
                   {LANGUAGES.map((l) => (
-                    <button key={l} onClick={() => { update('language', l); update('framework', FRAMEWORKS[l]?.[0] ?? ''); }}
+                    <Button key={l} onClick={() => { update('language', l); update('framework', FRAMEWORKS[l]?.[0] ?? ''); }}
                       className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
                         form.language === l ? 'bg-primary text-white' : 'bg-surface-muted text-fg hover:bg-muted'
-                      }`}>{l}</button>
+                      }`}>{l}</Button>
                   ))}
                 </div>
               </div>
@@ -133,10 +136,10 @@ const SetupWizardPage: React.FC = () => {
                 <label className="mb-2 block text-sm font-medium text-fg">Framework</label>
                 <div className="flex flex-wrap gap-2">
                   {(FRAMEWORKS[form.language] ?? []).map((f) => (
-                    <button key={f} onClick={() => update('framework', f)}
+                    <Button key={f} onClick={() => update('framework', f)}
                       className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
                         form.framework === f ? 'bg-primary text-white' : 'bg-surface-muted text-fg hover:bg-muted'
-                      }`}>{f}</button>
+                      }`}>{f}</Button>
                   ))}
                 </div>
               </div>
@@ -150,10 +153,10 @@ const SetupWizardPage: React.FC = () => {
                 <label className="mb-2 block text-sm font-medium text-fg">Git Provider</label>
                 <div className="flex gap-2">
                   {GIT_PROVIDERS.map((g) => (
-                    <button key={g} onClick={() => update('gitProvider', g)}
+                    <Button key={g} onClick={() => update('gitProvider', g)}
                       className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
                         form.gitProvider === g ? 'bg-primary text-white' : 'bg-surface-muted text-fg'
-                      }`}>{g}</button>
+                      }`}>{g}</Button>
                   ))}
                 </div>
               </div>
@@ -161,10 +164,10 @@ const SetupWizardPage: React.FC = () => {
                 <label className="mb-2 block text-sm font-medium text-fg">CI Platform</label>
                 <div className="flex flex-wrap gap-2">
                   {CI_PLATFORMS.map((c) => (
-                    <button key={c} onClick={() => update('ciPlatform', c)}
+                    <Button key={c} onClick={() => update('ciPlatform', c)}
                       className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
                         form.ciPlatform === c ? 'bg-primary text-white' : 'bg-surface-muted text-fg'
-                      }`}>{c}</button>
+                      }`}>{c}</Button>
                   ))}
                 </div>
               </div>
@@ -177,12 +180,12 @@ const SetupWizardPage: React.FC = () => {
               <p className="text-sm text-fg-muted">Select capabilities to include in your project.</p>
               <div className="grid grid-cols-3 gap-2">
                 {FEATURE_OPTIONS.map((f) => (
-                  <button key={f} onClick={() => toggleFeature(f)}
+                  <Button key={f} onClick={() => toggleFeature(f)}
                     className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
                       form.features.includes(f)
                         ? 'border-info-border bg-info-bg text-info-color'
                         : 'text-fg-muted hover:bg-surface-muted'
-                    }`}>{form.features.includes(f) ? '✓ ' : ''}{f}</button>
+                    }`}>{form.features.includes(f) ? '✓ ' : ''}{f}</Button>
                 ))}
               </div>
             </div>
@@ -206,19 +209,19 @@ const SetupWizardPage: React.FC = () => {
 
         {/* Navigation */}
         <div className="mt-6 flex justify-between">
-          <button onClick={() => setStep((s) => Math.max(1, s - 1))} disabled={step === 1}
+          <Button onClick={() => setStep((s) => Math.max(1, s - 1))} disabled={step === 1}
             className="rounded-md border px-4 py-2 text-sm font-medium text-fg hover:bg-surface-muted disabled:opacity-30">
             ← Back
-          </button>
+          </Button>
           {step < 5 ? (
-            <button onClick={() => setStep((s) => Math.min(5, s + 1))} disabled={!canNext()}
+            <Button onClick={() => setStep((s) => Math.min(5, s + 1))} disabled={!canNext()}
               className="rounded-md bg-primary px-6 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">
               Next →
-            </button>
+            </Button>
           ) : (
-            <button className="rounded-md bg-success-color px-6 py-2 text-sm font-medium text-white hover:opacity-90">
+            <Button className="rounded-md bg-success-color px-6 py-2 text-sm font-medium text-white hover:opacity-90">
               🚀 Create Project
-            </button>
+            </Button>
           )}
         </div>
       </div>

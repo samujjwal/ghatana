@@ -33,6 +33,7 @@ import { FOW_STAGE_LABELS, getFOWStageForPhase } from '../../../types/fow-stages
 import { LIFECYCLE_PHASE } from '../../../types/lifecycle';
 import { PHASE_GATES } from '../../../shared/types/phase-gates';
 import { LegacyRouteCompatibilityNotice } from './LegacyRouteCompatibilityNotice';
+import { Button } from '../../../components/ui/Button';
 
 type RequirementPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 type RequirementStatus =
@@ -69,6 +70,14 @@ type ApprovalDecisionStatus =
     | 'REJECTED'
     | 'CHANGES_REQUESTED'
     | 'EXPIRED';
+
+type ButtonElementProps = React.ComponentProps<typeof Button> & {
+    'data-testid'?: string;
+};
+
+function createButtonProps(props: ButtonElementProps): ButtonElementProps {
+    return props;
+}
 
 interface ApprovalRecord {
     id: string;
@@ -753,7 +762,7 @@ export default function Component() {
                                     'div',
                                     {
                                         className:
-                                            'flex h-8 w-8 items-center justify-center rounded-full bg-primary-50 text-xs font-semibold text-primary-600 dark:bg-primary-900/30 dark:text-primary-300',
+                                            'flex h-8 w-8 items-center justify-center rounded-full bg-info-bg text-xs font-semibold text-info-color dark:bg-info-bg/30 dark:text-info-color',
                                     },
                                     'IN'
                                 ),
@@ -808,15 +817,15 @@ export default function Component() {
                         createElement('span', null, `Status: ${nextTask.status}`)
                     ),
                     createElement(
-                        'button',
-                        {
+                        Button,
+                        createButtonProps({
                             type: 'button',
                             className:
-                                'mt-4 rounded-lg bg-primary-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50',
+                                'mt-4 rounded-lg bg-info-color px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-info-color/90 disabled:cursor-not-allowed disabled:opacity-50',
                             disabled: executeTask.isPending,
                             'data-testid': 'workflow-automation-trigger',
                             onClick: () => void handleAutomationClick(nextTask.id, nextTask.title),
-                        },
+                        }),
                         executeTask.isPending ? 'Starting suggested task…' : 'Start suggested task'
                     ),
                     automationFeedback
@@ -856,14 +865,14 @@ export default function Component() {
                             'Decision defaults'
                         ),
                         createElement(
-                            'button',
-                            {
+                            Button,
+                            createButtonProps({
                                 type: 'button',
                                 className:
                                     'rounded-lg border border-divider px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-bg-subtle',
                                 onClick: () => setDecisionDetailVisible((currentValue) => !currentValue),
                                 'data-testid': 'decision-support-toggle',
-                            },
+                            }),
                             decisionDetailVisible ? 'Hide details' : 'Show details'
                         )
                     ),
@@ -904,16 +913,16 @@ export default function Component() {
                         'div',
                         { className: 'mt-4 flex flex-wrap gap-3' },
                         createElement(
-                            'button',
-                            {
+                            Button,
+                            createButtonProps({
                                 type: 'button',
                                 className:
-                                    'rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50',
+                                    'rounded-lg bg-success-bg px-3 py-2 text-sm font-medium text-success-color transition-colors hover:bg-success-bg/80 disabled:cursor-not-allowed disabled:opacity-50',
                                 disabled: isTransitioning || !automationPlan.canAutoAdvance || isGateBlocked,
                                 onClick: handleOneClickApproval,
                                 'data-testid': 'ai-one-click-approval-trigger',
                                 title: gateBlockReason || undefined,
-                            },
+                            }),
                             applyAutomationPlan.isPending
                                 ? 'Applying guided promotion…'
                                 : isGateBlocked
@@ -971,7 +980,7 @@ export default function Component() {
                         null,
                         createElement(
                             'p',
-                            { className: 'text-sm font-semibold uppercase tracking-[0.18em] text-primary-600' },
+                            { className: 'text-sm font-semibold uppercase tracking-[0.18em] text-info-color' },
                             'Lifecycle Summary'
                         ),
                         createElement(
@@ -989,7 +998,7 @@ export default function Component() {
                         'div',
                         {
                             className:
-                                'rounded-xl bg-primary-50 px-4 py-3 text-sm text-primary-800 dark:bg-primary-900/30 dark:text-primary-200',
+                                'rounded-xl bg-info-bg px-4 py-3 text-sm text-info-color dark:bg-info-bg/30 dark:text-info-color',
                         },
                         createElement('div', { className: 'font-semibold' }, 'Current stage'),
                         createElement('div', null, FOW_STAGE_LABELS[currentStage])
@@ -1009,7 +1018,7 @@ export default function Component() {
                         'div',
                         {
                             className:
-                                'flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-sm font-semibold text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300',
+                                'flex h-10 w-10 items-center justify-center rounded-full bg-success-bg text-sm font-semibold text-success-color dark:bg-success-bg/30 dark:text-success-color',
                         },
                         'ST'
                     ),
@@ -1230,7 +1239,7 @@ export default function Component() {
                                 'div',
                                 {
                                     className:
-                                        'flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-sm font-semibold text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300',
+                                        'flex h-10 w-10 items-center justify-center rounded-full bg-success-bg text-sm font-semibold text-success-color dark:bg-success-bg/30 dark:text-success-color',
                                 },
                                 'AP'
                             ),

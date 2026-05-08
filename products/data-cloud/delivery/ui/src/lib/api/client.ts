@@ -41,6 +41,8 @@ export interface ApiError {
   message: string;
   details?: Record<string, unknown>;
   status?: number;
+  /** Server-echoed X-Correlation-ID for operator diagnosis. Present on all HTTP error responses. */
+  correlationId?: string;
 }
 
 /**
@@ -277,6 +279,7 @@ export class ApiClient {
   }
 
   private static parseApiError(payload: unknown, response: Response): ApiError {
+    const correlationId = response.headers.get("X-Correlation-ID") ?? undefined;
     const fallbackCode =
       response.status === 401
         ? "AUTH_REQUIRED"
@@ -309,6 +312,7 @@ export class ApiClient {
         message,
         details,
         status: response.status,
+        correlationId,
       };
     }
 
@@ -316,6 +320,7 @@ export class ApiClient {
       code: "UNKNOWN_ERROR",
       message: response.statusText,
       status: response.status,
+      correlationId,
     };
   }
 

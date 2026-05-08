@@ -1,7 +1,21 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ChevronRight, Code as CodeIcon, ClipboardList as AssignmentIcon, CloudUpload as DeployIcon, ArrowRight as ArrowForwardIcon, CheckCircle as CheckCircleOutline, Clock as AccessTime, Ban as Block, Check, X, Loader2, AlertCircle } from 'lucide-react';
 import { Typography, Button, Chip, Box, Surface as Paper } from '@ghatana/design-system';
+
+type CheckboxControlProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'>;
+
+function CheckboxControl(props: CheckboxControlProps): React.ReactElement {
+    return React.createElement('input', { ...props, type: 'checkbox' });
+}
+
+interface NativeButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+    children: React.ReactNode;
+}
+
+function NativeButton({ children, type = 'button', ...props }: NativeButtonProps): React.ReactElement {
+    return React.createElement('button', { ...props, type }, children);
+}
 
 /**
  * Priority Task interface 
@@ -187,20 +201,20 @@ export function PriorityTasksList({
                     </Typography>
                     {hasActions && (
                         <div className="flex gap-1">
-                            <button
+                            <NativeButton
                                 className="px-2 py-1 text-sm text-info-color hover:text-info-color disabled:opacity-50 disabled:cursor-not-allowed"
                                 onClick={selectAll}
                                 disabled={selectedTasks.size === tasks.length}
                             >
                                 Select All
-                            </button>
-                            <button
+                            </NativeButton>
+                            <NativeButton
                                 className="px-2 py-1 text-sm text-fg-muted hover:text-fg disabled:opacity-50 disabled:cursor-not-allowed"
                                 onClick={clearSelection}
                                 disabled={selectedTasks.size === 0}
                             >
                                 Clear
-                            </button>
+                            </NativeButton>
                         </div>
                     )}
                 </div>
@@ -251,8 +265,7 @@ export function PriorityTasksList({
                                 >
                                     <div className="flex items-center gap-4">
                                         {hasActions && (
-                                            <input
-                                                type="checkbox"
+                                            <CheckboxControl
                                                 checked={selectedTasks.has(task.id)}
                                                 onChange={(e) => toggleSelection(task.id, e)}
                                                 onClick={(e) => e.stopPropagation()}
@@ -291,22 +304,28 @@ export function PriorityTasksList({
                                             <StatusIndicator status={task.status} />
                                             {hasActions && task.status === 'pending' && (
                                                 <div className="flex gap-1">
-                                                    <button
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
                                                         onClick={(e) => handleApprove(task.id, e)}
                                                         disabled={processingTasks.has(task.id)}
                                                         className="p-2 rounded-md bg-success-bg text-success-color hover:bg-success-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                                         title="Approve task"
+                                                        aria-label="Approve task"
                                                     >
                                                         <Check className="w-4 h-4" />
-                                                    </button>
-                                                    <button
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
                                                         onClick={(e) => handleReject(task.id, e)}
                                                         disabled={processingTasks.has(task.id)}
                                                         className="p-2 rounded-md bg-destructive-bg text-destructive hover:bg-destructive-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                                         title="Reject task"
+                                                        aria-label="Reject task"
                                                     >
                                                         <X className="w-4 h-4" />
-                                                    </button>
+                                                    </Button>
                                                 </div>
                                             )}
                                             <Chip label={task.type} size="sm" variant="outlined" />

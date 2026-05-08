@@ -14,6 +14,7 @@
 import React, { useCallback, Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router';
 import { Settings, Rocket as RocketLaunch, Heart as Favorite } from 'lucide-react';
+import { Button } from '../ui/Button';
 
 async function loadDeliveryPlanEditor() {
     const module = await import('./DeliveryPlanEditor');
@@ -165,7 +166,7 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
             {/* Segment Navigation */}
             <div className="flex items-center gap-1 px-4 py-2 bg-grey-50 dark:bg-grey-800/50 border-b border-divider">
                 {Object.entries(SEGMENT_CONFIG).map(([segment, config]) => (
-                    <button
+                    <Button
                         key={segment}
                         onClick={() => handleSegmentChange(segment as DeploySegment)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${currentSegment === segment
@@ -175,14 +176,14 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
                     >
                         {config.icon}
                         <span className="font-medium text-sm">{config.label}</span>
-                    </button>
+                    </Button>
                 ))}
             </div>
 
             {/* Panel Navigation (within segment) */}
             <div className="flex items-center gap-2 px-4 py-2 border-b border-divider">
                 {SEGMENT_CONFIG[currentSegment].panels.map((panel) => (
-                    <button
+                    <Button
                         key={panel}
                         onClick={() => handlePanelChange(currentPanel === panel ? null : panel)}
                         className={`px-3 py-1 text-xs rounded transition-colors ${currentPanel === panel
@@ -191,7 +192,7 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
                             }`}
                     >
                         {panel.replace('-', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                    </button>
+                    </Button>
                 ))}
             </div>
 
@@ -206,7 +207,7 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
                                 Set up your delivery plan and release strategy before deploying.
                             </p>
                             <div className="grid grid-cols-2 gap-4">
-                                <button
+                                <Button
                                     onClick={() => handlePanelChange('delivery-plan')}
                                     className="p-4 border border-divider rounded-lg bg-bg-paper hover:bg-grey-50 dark:hover:bg-grey-800/50 text-left transition-colors"
                                 >
@@ -214,8 +215,8 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
                                     <p className="text-xs text-text-secondary">
                                         Define milestones, tasks, and dependencies
                                     </p>
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     onClick={() => handlePanelChange('release-strategy')}
                                     className="p-4 border border-divider rounded-lg bg-bg-paper hover:bg-grey-50 dark:hover:bg-grey-800/50 text-left transition-colors"
                                 >
@@ -223,7 +224,7 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
                                     <p className="text-xs text-text-secondary">
                                         Configure environments and rollout plan
                                     </p>
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     )}
@@ -250,7 +251,7 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
                                 Monitor builds and manage releases.
                             </p>
                             <div className="grid grid-cols-2 gap-4">
-                                <button
+                                <Button
                                     onClick={() => handlePanelChange('builds')}
                                     className="p-4 border border-divider rounded-lg bg-bg-paper hover:bg-grey-50 dark:hover:bg-grey-800/50 text-left transition-colors"
                                 >
@@ -258,8 +259,8 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
                                     <p className="text-xs text-text-secondary">
                                         Track current build status and logs
                                     </p>
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     onClick={() => handlePanelChange('releases')}
                                     className="p-4 border border-divider rounded-lg bg-bg-paper hover:bg-grey-50 dark:hover:bg-grey-800/50 text-left transition-colors"
                                 >
@@ -267,8 +268,8 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
                                     <p className="text-xs text-text-secondary">
                                         View artifacts, evidence, and approvals
                                     </p>
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     onClick={() => handlePanelChange('strategy')}
                                     className="p-4 border border-divider rounded-lg bg-bg-paper hover:bg-grey-50 dark:hover:bg-grey-800/50 text-left transition-colors"
                                 >
@@ -276,7 +277,7 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
                                     <p className="text-xs text-text-secondary">
                                         Review deployment risk, rollout recommendation, and blockers
                                     </p>
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     )}
@@ -310,7 +311,7 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
                                 Monitor health metrics and manage incidents.
                             </p>
                             <div className="grid grid-cols-2 gap-4">
-                                <button
+                                <Button
                                     onClick={() => handlePanelChange('metrics')}
                                     className="p-4 border border-divider rounded-lg bg-bg-paper hover:bg-grey-50 dark:hover:bg-grey-800/50 text-left transition-colors"
                                 >
@@ -318,8 +319,8 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
                                     <p className="text-xs text-text-secondary">
                                         View SLOs, service health, and alerts
                                     </p>
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     onClick={() => handlePanelChange('incidents')}
                                     className="p-4 border border-divider rounded-lg bg-bg-paper hover:bg-grey-50 dark:hover:bg-grey-800/50 text-left transition-colors"
                                 >
@@ -327,8 +328,8 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
                                     <p className="text-xs text-text-secondary">
                                         Track and manage active incidents
                                     </p>
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     onClick={() => handlePanelChange('capacity')}
                                     className="p-4 border border-divider rounded-lg bg-bg-paper hover:bg-grey-50 dark:hover:bg-grey-800/50 text-left transition-colors"
                                 >
@@ -336,7 +337,7 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
                                     <p className="text-xs text-text-secondary">
                                         Review scaling recommendation and monthly cost outlook
                                     </p>
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     )}

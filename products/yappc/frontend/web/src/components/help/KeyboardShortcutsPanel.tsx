@@ -11,6 +11,8 @@
  */
 
 import React, { useState, useMemo } from 'react';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 
 interface Shortcut {
   keys: string[];
@@ -117,15 +119,17 @@ export function KeyboardShortcutsPanel({ open, onClose }: KeyboardShortcutsPanel
           <h2 className="text-lg font-semibold text-text-primary">
             Keyboard Shortcuts
           </h2>
-          <button
+          <Button
             onClick={onClose}
+            variant="ghost"
+            size="small"
             className="p-2 rounded-lg hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors"
             aria-label="Close"
           >
             <svg className="w-5 h-5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
-          </button>
+          </Button>
         </div>
 
         {/* Search */}
@@ -139,7 +143,7 @@ export function KeyboardShortcutsPanel({ open, onClose }: KeyboardShortcutsPanel
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <input
+            <Input
               type="text"
               placeholder="Search shortcuts..."
               value={searchQuery}

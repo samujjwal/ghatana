@@ -1,4 +1,8 @@
 import React, { useState } from 'react';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
+import { Textarea } from '../../components/ui/Textarea';
 
 // ============================================================================
 // Types
@@ -92,17 +96,19 @@ const TeamInvitePage: React.FC = () => {
         <div className="mb-8 rounded-lg border bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-fg">Send Invitations</h2>
-            <button
+            <Button
+              variant="link"
+              size="sm"
               onClick={() => setBulkMode(!bulkMode)}
               className="text-sm text-info-color hover:underline"
             >
               {bulkMode ? 'Single invite' : 'Bulk invite'}
-            </button>
+            </Button>
           </div>
 
           {bulkMode ? (
             <div className="space-y-3">
-              <textarea
+              <Textarea
                 value={bulkEmails}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setBulkEmails(e.target.value)}
                 rows={4}
@@ -110,7 +116,7 @@ const TeamInvitePage: React.FC = () => {
                 className="w-full rounded-lg border px-4 py-2 text-sm focus:border-info-border focus:outline-none"
               />
               <div className="flex items-center gap-3">
-                <select
+                <Select
                   value={role}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setRole(e.target.value as Role)}
                   className="rounded-lg border px-3 py-2 text-sm"
@@ -118,15 +124,15 @@ const TeamInvitePage: React.FC = () => {
                   <option value="developer">Developer</option>
                   <option value="admin">Admin</option>
                   <option value="viewer">Viewer</option>
-                </select>
-                <button onClick={bulkInvite} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg">
+                </Select>
+                <Button onClick={bulkInvite} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg">
                   Send Invites
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
             <div className="flex gap-3">
-              <input
+              <Input
                 type="email"
                 value={email}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
@@ -134,7 +140,7 @@ const TeamInvitePage: React.FC = () => {
                 onKeyDown={(e) => e.key === 'Enter' && invite()}
                 className="flex-1 rounded-lg border px-4 py-2 text-sm focus:border-info-border focus:outline-none"
               />
-              <select
+              <Select
                 value={role}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setRole(e.target.value as Role)}
                 className="rounded-lg border px-3 py-2 text-sm"
@@ -142,10 +148,10 @@ const TeamInvitePage: React.FC = () => {
                 <option value="developer">Developer</option>
                 <option value="admin">Admin</option>
                 <option value="viewer">Viewer</option>
-              </select>
-              <button onClick={invite} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg">
+              </Select>
+              <Button onClick={invite} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg">
                 Invite
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -173,13 +179,15 @@ const TeamInvitePage: React.FC = () => {
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_BADGES[m.status].className}`}>
                   {STATUS_BADGES[m.status].label}
                 </span>
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => remove(m.id)}
                   className="text-fg-muted hover:text-destructive"
-                  title="Remove member"
+                  aria-label={`Remove ${m.name}`}
                 >
                   ✕
-                </button>
+                </Button>
               </div>
             ))}
           </div>
@@ -191,9 +199,9 @@ const TeamInvitePage: React.FC = () => {
             {members.filter((m) => m.status === 'accepted').length} active ·{' '}
             {members.filter((m) => m.status === 'pending').length} pending
           </span>
-          <button className="rounded-md bg-primary px-6 py-2 text-sm font-medium text-white hover:bg-info-bg">
+          <Button className="rounded-md bg-primary px-6 py-2 text-sm font-medium text-white hover:bg-info-bg">
             Continue to Setup →
-          </button>
+          </Button>
         </div>
       </div>
     </div>

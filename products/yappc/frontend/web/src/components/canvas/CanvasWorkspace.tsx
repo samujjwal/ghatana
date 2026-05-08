@@ -363,7 +363,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                 source: connection.source!,
                 target: connection.target!,
                 type: 'dependency',
-                markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--color-primary, #1976d2)' },
+                markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--info-color, #1976d2)' },
                 data: { label: 'requires', type: 'requires' },
             };
             executeCommand(new AddEdgeCommand(newEdge));
@@ -441,7 +441,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                     target: linkedId,
                     type: 'dependency',
                     data: { type: 'requires', label: 'Requires' },
-                    markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--color-primary, #1976d2)' },
+                    markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--info-color, #1976d2)' },
                 });
             });
         });

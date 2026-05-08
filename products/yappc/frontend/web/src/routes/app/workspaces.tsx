@@ -9,6 +9,7 @@
  * @doc.pattern Route Module
  */
 
+import { Button } from '../../components/ui/Button';
 import { useNavigate } from "react-router";
 import { Plus as Add, Settings, Users as Group, FolderOpen } from 'lucide-react';
 import {
@@ -136,12 +137,12 @@ export default function Component() {
                 <div className="bg-error-50 border border-error-200 rounded-lg p-6 max-w-md">
                     <h2 className="text-lg font-semibold text-error-900 mb-2">Error Loading Workspaces</h2>
                     <p className="text-error-700 mb-4">{errorMessage}</p>
-                    <button
+                    <Button variant="ghost" size="sm"
                         onClick={handleRetry}
                         className="px-4 py-2 bg-error-600 text-white rounded-lg hover:bg-error-700 transition-colors"
                     >
                         Retry
-                    </button>
+                    </Button>
                 </div>
             </div>
         );
@@ -154,14 +155,14 @@ export default function Component() {
                 <div className="mb-8">
                     <div className="flex items-center justify-between mb-2">
                         <h1 className="text-3xl font-bold text-text-primary">Workspaces</h1>
-                        <button
+                        <Button variant="ghost" size="sm"
                             onClick={handleCreateWorkspace}
                             data-testid="create-workspace-button"
                             className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
                         >
                             <Add className="w-5 h-5" />
                             New Workspace
-                        </button>
+                        </Button>
                     </div>
                     <p className="text-text-secondary">Manage and switch between your workspaces</p>
                 </div>
@@ -204,7 +205,7 @@ export default function Component() {
 
                                     {/* Actions */}
                                     <div className="flex gap-2 pt-4 border-t border-surface-secondary">
-                                        <button
+                                        <Button variant="ghost" size="sm"
                                             className="flex-1 px-3 py-2 text-sm font-medium text-primary-500 hover:bg-primary-50 rounded transition-colors"
                                             onClick={(e) => {
                                                 e.stopPropagation();
@@ -213,8 +214,8 @@ export default function Component() {
                                         >
                                             <Settings className="w-4 h-4 inline mr-2" />
                                             Workspace Settings
-                                        </button>
-                                        <button
+                                        </Button>
+                                        <Button variant="ghost" size="sm"
                                             className="flex-1 px-3 py-2 text-sm font-medium text-text-primary hover:bg-surface-secondary rounded transition-colors"
                                             onClick={(e) => {
                                                 e.stopPropagation();
@@ -222,7 +223,7 @@ export default function Component() {
                                             }}
                                         >
                                             Open
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
                             </div>
@@ -246,7 +247,7 @@ export default function Component() {
                                     <>
                                         <p className="text-error-700 mb-2">Could not load a workspace suggestion: {suggestionError}</p>
                                         <div className="flex gap-3 justify-center mb-4">
-                                            <button
+                                            <Button variant="ghost" size="sm"
                                                 onClick={() => {
                                                     hasAttemptedStarterCreation.current = false;
                                                     void loadSuggestion();
@@ -255,13 +256,13 @@ export default function Component() {
                                             >
                                                 <Add className="w-5 h-5" />
                                                 Retry Suggestion
-                                            </button>
-                                            <button
+                                            </Button>
+                                            <Button variant="ghost" size="sm"
                                                 onClick={handleCreateWorkspace}
                                                 className="inline-flex items-center gap-2 px-4 py-2 border border-surface-secondary text-text-primary rounded-lg hover:bg-surface-secondary transition-colors"
                                             >
                                                 Create Manually
-                                            </button>
+                                            </Button>
                                         </div>
                                     </>
                                 ) : suggestedWorkspaceName ? (
@@ -273,7 +274,7 @@ export default function Component() {
                                             </div>
                                         )}
                                         <div className="flex gap-3 justify-center">
-                                            <button
+                                            <Button variant="ghost" size="sm"
                                                 onClick={async () => {
                                                     setStarterCreateError(null);
                                                     setIsAutoCreatingStarter(true);
@@ -296,13 +297,13 @@ export default function Component() {
                                             >
                                                 <Add className="w-5 h-5" />
                                                 Create "{suggestedWorkspaceName}" Workspace
-                                            </button>
-                                            <button
+                                            </Button>
+                                            <Button variant="ghost" size="sm"
                                                 onClick={handleCreateWorkspace}
                                                 className="inline-flex items-center gap-2 px-4 py-2 border border-surface-secondary text-text-primary rounded-lg hover:bg-surface-secondary transition-colors"
                                             >
                                                 Choose Different Name
-                                            </button>
+                                            </Button>
                                         </div>
                                     </>
                                 ) : null}
@@ -316,13 +317,13 @@ export default function Component() {
                         </div>
                         <h2 className="text-xl font-semibold text-text-primary mb-2">No workspaces yet</h2>
                         <p className="text-text-secondary mb-6">Create your first workspace to get started</p>
-                        <button
+                        <Button variant="ghost" size="sm"
                             onClick={handleCreateWorkspace}
                             className="inline-flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
                         >
                             <Add className="w-5 h-5" />
                             Create Workspace
-                        </button>
+                        </Button>
                     </div>
                 )}
             </div>

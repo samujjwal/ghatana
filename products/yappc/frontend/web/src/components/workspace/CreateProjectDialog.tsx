@@ -18,6 +18,9 @@ import {
 } from '../../state/atoms/workspaceAtom';
 import { useCreateProject, useNameSuggestions } from '../../hooks/useWorkspaceData';
 import { useProgressiveDisclosure } from '../../hooks/useProgressiveDisclosure';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
 
 interface CreateProjectDialogProps {
     isOpen: boolean;
@@ -208,16 +211,18 @@ export function CreateProjectDialog({
                             in {state.currentWorkspace?.name}
                         </p>
                     </div>
-                    <button
+                    <Button
                         type="button"
                         onClick={onClose}
+                        variant="ghost"
+                        size="small"
                         className="p-1 text-grey-400 hover:text-grey-600 dark:hover:text-grey-300 transition-colors"
                         aria-label="Close"
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Form */}
@@ -232,7 +237,7 @@ export function CreateProjectDialog({
                     )}
 
                     {/* AI Suggestion Banner */}
-                    {aiSuggestion && !name && (
+                    {aiSuggestion && (
                         <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-primary-50 to-violet-50 dark:from-primary-900/20 dark:to-violet-900/20 rounded-lg">
                             <span className="text-xl">✨</span>
                             <div className="flex-1">
@@ -246,14 +251,16 @@ export function CreateProjectDialog({
                                     {aiSuggestion.summary}
                                 </p>
                                 {!isAdvancedAiContextVisible && (
-                                    <button
+                                    <Button
                                         type="button"
                                         onClick={() => showFeature('advanced-ai-context')}
+                                        variant="link"
+                                        size="small"
                                         className="mt-2 text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-300 dark:hover:text-primary-200"
                                         data-testid="show-advanced-ai-context"
                                     >
                                         Show AI context
-                                    </button>
+                                    </Button>
                                 )}
                                 {isAdvancedAiContextVisible && (
                                     <div className="mt-2" data-testid="advanced-ai-context-panel">
@@ -287,15 +294,17 @@ export function CreateProjectDialog({
                                     </div>
                                 )}
                             </div>
-                            <button
+                            <Button
                                 type="button"
                                 onClick={handleUseSuggestion}
+                                variant="ghost"
+                                size="small"
                                 className="px-3 py-1.5 text-sm font-medium text-primary-600 dark:text-primary-400 
                   bg-white dark:bg-grey-800 rounded-md shadow-sm
                   hover:bg-grey-50 dark:hover:bg-grey-750 transition-colors"
                             >
                                 Use This
-                            </button>
+                            </Button>
                         </div>
                     )}
 
@@ -307,7 +316,7 @@ export function CreateProjectDialog({
                         >
                             Project Name
                         </label>
-                        <input
+                        <Input
                             ref={inputRef}
                             id="project-name"
                             type="text"
@@ -341,10 +350,11 @@ export function CreateProjectDialog({
                         </label>
                         <div className="grid grid-cols-5 gap-2">
                             {PROJECT_TYPES.map((pt) => (
-                                <button
+                                <Button
                                     key={pt.value}
                                     type="button"
                                     onClick={() => setType(pt.value)}
+                                    variant="ghost"
                                     className={`
                     flex flex-col items-center gap-1 p-3 rounded-lg
                     border transition-all
@@ -361,7 +371,7 @@ export function CreateProjectDialog({
                                         }`}>
                                         {pt.label}
                                     </span>
-                                </button>
+                                </Button>
                             ))}
                         </div>
                         <p className="mt-2 text-xs text-grey-500 dark:text-grey-400">
@@ -377,7 +387,7 @@ export function CreateProjectDialog({
                         >
                             Description <span className="text-grey-400">(optional)</span>
                         </label>
-                        <textarea
+                        <Textarea
                             id="project-description"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
@@ -400,9 +410,10 @@ export function CreateProjectDialog({
 
                 {/* Footer */}
                 <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-grey-200 dark:border-grey-800">
-                    <button
+                    <Button
                         type="button"
                         onClick={onClose}
+                        variant="ghost"
                         className="
               px-4 py-2 text-sm font-medium
               text-grey-700 dark:text-grey-300
@@ -411,11 +422,12 @@ export function CreateProjectDialog({
             "
                     >
                         Cancel
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         type="submit"
                         form="create-project-form"
                         disabled={!name.trim() || isCreating || Boolean(duplicateProject)}
+                        variant="solid"
                         data-testid="create-project-submit"
                         className="
               px-4 py-2 text-sm font-medium
@@ -436,7 +448,7 @@ export function CreateProjectDialog({
                         ) : (
                             'Create Project'
                         )}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

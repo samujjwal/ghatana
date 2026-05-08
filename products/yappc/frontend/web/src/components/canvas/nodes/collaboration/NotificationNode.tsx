@@ -33,6 +33,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { Button } from '../../../ui/Button';
 
 type NotificationType =
   | 'MENTION'
@@ -304,31 +305,31 @@ function NotificationNode({ data }: NodeProps<NotificationCanvasNode>) {
       <div className="p-4 border-b border-border">
         <div className="flex items-center gap-2">
           {notification.actionUrl && onNavigate && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onNavigate}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-info-bg text-white rounded-lg hover:bg-primary transition-colors text-sm font-medium"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-info-bg text-white rounded-lg hover:bg-info-color transition-colors text-sm font-medium"
             >
               <ExternalLink className="w-4 h-4" />
               View
-            </button>
+            </Button>
           )}
           {isUnread && onMarkRead && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onMarkRead}
               className="flex items-center justify-center gap-2 px-3 py-2 bg-surface-muted text-fg rounded-lg hover:bg-muted transition-colors text-sm font-medium"
               title="Mark as read"
             >
               <Eye className="w-4 h-4" />
-            </button>
+            </Button>
           )}
           {!isArchived && onArchive && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onArchive}
               className="flex items-center justify-center gap-2 px-3 py-2 bg-surface-muted text-fg rounded-lg hover:bg-muted transition-colors text-sm font-medium"
               title="Archive"
             >
               <Archive className="w-4 h-4" />
-            </button>
+            </Button>
           )}
         </div>
       </div>

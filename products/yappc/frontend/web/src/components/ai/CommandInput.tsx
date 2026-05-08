@@ -12,6 +12,8 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Sparkles as AutoAwesome, Send, X as Close } from 'lucide-react';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 
 // ============================================================================
 // Types
@@ -127,7 +129,7 @@ export function CommandInput({
                 `} />
 
                 {/* Input */}
-                <input
+                <Input
                     ref={inputRef}
                     type="text"
                     value={value}
@@ -141,26 +143,29 @@ export function CommandInput({
                         disabled:opacity-50 disabled:cursor-not-allowed
                     `}
                     aria-label="AI command input"
+                    fullWidth
                 />
 
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2">
                     {value && !isProcessing && (
-                        <button
+                        <Button
                             type="button"
                             onClick={() => handleChange('')}
-                            className="p-1 rounded-full hover:bg-grey-100 dark:hover:bg-grey-800 text-text-secondary transition-colors"
+                            className="p-1 min-h-0 rounded-full hover:bg-grey-100 dark:hover:bg-grey-800 text-text-secondary transition-colors"
+                            variant="ghost"
+                            size="sm"
                             aria-label="Clear input"
                         >
                             <Close className="w-4 h-4" />
-                        </button>
+                        </Button>
                     )}
 
-                    <button
+                    <Button
                         type="submit"
                         disabled={!value.trim() || isProcessing}
                         className={`
-                            p-2 rounded-lg transition-all duration-200
+                            p-2 min-h-0 rounded-lg transition-all duration-200
                             ${value.trim() && !isProcessing
                                 ? 'bg-primary-600 text-white hover:bg-primary-700 cursor-pointer'
                                 : 'bg-grey-200 dark:bg-grey-700 text-grey-400 cursor-not-allowed'
@@ -173,7 +178,7 @@ export function CommandInput({
                         ) : (
                             <Send className="w-5 h-5" />
                         )}
-                    </button>
+                    </Button>
                 </div>
             </div>
 

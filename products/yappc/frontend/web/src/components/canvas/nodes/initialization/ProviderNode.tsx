@@ -32,6 +32,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { Button } from '../../../ui/Button';
 
 type ProviderType =
   | 'GITHUB'
@@ -509,41 +510,41 @@ function ProviderNode({ data }: NodeProps<ProviderCanvasNode>) {
       {/* Actions */}
       <div className="px-4 py-3 flex items-center justify-between">
         {onViewDocs && (
-          <button
+          <Button variant="ghost" size="sm"
             onClick={onViewDocs}
             className="flex items-center gap-1 text-xs text-fg-muted hover:text-fg transition-colors"
           >
             <ExternalLink className="w-3 h-3" />
             View Docs
-          </button>
+          </Button>
         )}
         <div className="flex items-center gap-2">
           {isExpired && onRefresh && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onRefresh}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-warning-color hover:opacity-90 rounded-lg text-xs text-white transition-colors"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Refresh Token
-            </button>
+            </Button>
           )}
           {!isConnected && onConnect && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onConnect}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:opacity-90 rounded-lg text-xs text-primary-foreground transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-info-color hover:opacity-90 rounded-lg text-xs text-white transition-colors"
             >
               <Link className="w-3.5 h-3.5" />
               Connect
-            </button>
+            </Button>
           )}
           {isConnected && onDisconnect && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onDisconnect}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-destructive hover:opacity-90 rounded-lg text-xs text-white transition-colors"
             >
               <Unlink className="w-3.5 h-3.5" />
               Disconnect
-            </button>
+            </Button>
           )}
         </div>
       </div>

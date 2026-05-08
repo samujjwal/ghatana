@@ -3,9 +3,9 @@
 This manual is the practical developer guide for working on and integrating with Data Cloud in this repository. It complements, but does not replace, the contract and operations docs:
 
 - `README.md` for the product overview
-- `docs/api/docs/api/REST_API_DOCUMENTATION.md` for the human-readable API inventory
+- `docs/api/REST_API_DOCUMENTATION.md` for the human-readable API inventory
 - `contracts/openapi/data-cloud.yaml` for the canonical REST contract
-- `docs/operations/docs/operations/RUNBOOK.md` for validated deployment and recovery paths
+- `docs/operations/RUNBOOK.md` for validated deployment and recovery paths
 
 ## 1. What Data Cloud Owns
 
@@ -20,6 +20,10 @@ Data Cloud is Ghatana's data foundation product. It owns:
 - a React UI for operators and data users
 
 Data Cloud does not own higher-level agent orchestration. AEP integrates with Data Cloud through contracts, events, and persistence APIs.
+
+> **Canonical boundary (2026):** AEP is the Action Plane runtime implementation inside Data Cloud.
+> The Action Plane handles agent execution, workflow orchestration, memory management, and plugin dispatch.
+> Data Cloud planes (Data, Event, Context, Governance, Intelligence) provide the durable infrastructure the Action Plane depends on.
 
 ## 2. Repository Map
 
@@ -101,7 +105,7 @@ Typical variables:
 - `OPENAI_API_KEY` or `OLLAMA_HOST`
 - `TRINO_URL`
 
-See `docs/operations/docs/operations/RUNBOOK.md` for the durable provider expectations and failure signatures.
+See `docs/operations/RUNBOOK.md` for the durable provider expectations and failure signatures.
 
 ## 5. Running the Main Surfaces
 
@@ -148,7 +152,7 @@ Generated outputs are written under:
 
 1. Update the route and handler wiring in `delivery/launcher/`.
 2. Update `products/data-cloud/contracts/openapi/data-cloud.yaml` in the same change.
-3. Update `docs/api/docs/api/REST_API_DOCUMENTATION.md` if the endpoint should be visible in the human-readable inventory.
+3. Update `docs/api/REST_API_DOCUMENTATION.md` if the endpoint should be visible in the human-readable inventory.
 4. Run drift and contract checks before considering the work done.
 
 Useful command:
@@ -320,5 +324,5 @@ Use this doc set in the following order:
 2. `DEVELOPER_MANUAL.md` for day-to-day development
 3. `TEST_MANUAL.md` for verification and CI-facing workflows
 4. `USER_MANUAL.md` for operator and consumer workflows
-5. `docs/operations/docs/operations/RUNBOOK.md` for validated deployment and recovery procedures
-6. `docs/api/docs/api/REST_API_DOCUMENTATION.md` and `contracts/openapi/data-cloud.yaml` for API work
+5. `docs/operations/RUNBOOK.md` for validated deployment and recovery procedures
+6. `docs/api/REST_API_DOCUMENTATION.md` and `contracts/openapi/data-cloud.yaml` for API work

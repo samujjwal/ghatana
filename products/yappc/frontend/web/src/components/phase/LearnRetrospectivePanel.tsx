@@ -12,6 +12,9 @@
 
 import React, { useCallback, useState } from 'react';
 import { Button, Card, CardContent } from '@ghatana/design-system';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
+import { Textarea } from '../ui/Textarea';
 
 export type LessonCategory =
   | 'design'
@@ -216,7 +219,7 @@ export const LearnRetrospectivePanel: React.FC<LearnRetrospectivePanelProps> = (
                     <label htmlFor="lesson-title" className="block text-sm font-medium text-fg mb-1">
                       Title <span aria-hidden="true" className="text-destructive">*</span>
                     </label>
-                    <input
+                    <Input
                       id="lesson-title"
                       type="text"
                       value={draft.title}
@@ -233,7 +236,7 @@ export const LearnRetrospectivePanel: React.FC<LearnRetrospectivePanelProps> = (
                     <label htmlFor="lesson-description" className="block text-sm font-medium text-fg mb-1">
                       Description <span aria-hidden="true" className="text-destructive">*</span>
                     </label>
-                    <textarea
+                    <Textarea
                       id="lesson-description"
                       value={draft.description}
                       onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
@@ -250,7 +253,7 @@ export const LearnRetrospectivePanel: React.FC<LearnRetrospectivePanelProps> = (
                       <label htmlFor="lesson-category" className="block text-sm font-medium text-fg mb-1">
                         Category
                       </label>
-                      <select
+                      <Select
                         id="lesson-category"
                         value={draft.category}
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
@@ -263,13 +266,13 @@ export const LearnRetrospectivePanel: React.FC<LearnRetrospectivePanelProps> = (
                             {CATEGORY_LABELS[cat]}
                           </option>
                         ))}
-                      </select>
+                      </Select>
                     </div>
                     <div>
                       <label htmlFor="lesson-impact" className="block text-sm font-medium text-fg mb-1">
                         Impact
                       </label>
-                      <select
+                      <Select
                         id="lesson-impact"
                         value={draft.impact}
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
@@ -282,7 +285,7 @@ export const LearnRetrospectivePanel: React.FC<LearnRetrospectivePanelProps> = (
                             {IMPACT_STYLE[imp].label}
                           </option>
                         ))}
-                      </select>
+                      </Select>
                     </div>
                   </div>
                   {formError && (

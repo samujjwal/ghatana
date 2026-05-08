@@ -24,6 +24,8 @@ import {
   X as CloseIcon,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { Button } from '../ui/Button';
+import { Textarea } from '../ui/Textarea';
 
 interface OnboardingStep {
   id: string;
@@ -158,19 +160,20 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
             const isCurrent = index === currentStep;
 
             return (
-              <button
+              <Button
                 key={step.id}
-                type="button"
+                variant="ghost"
+                fullWidth
                 onClick={() => handleStepClick(index)}
                 disabled={!isClickable}
                 className={cn(
-                  'w-full flex items-center gap-4 p-4 rounded-xl border transition-all text-left',
+                  'justify-start gap-4 p-4 rounded-xl border transition-all text-left [&>span]:flex [&>span]:w-full [&>span]:items-center [&>span]:gap-4',
                   getStepStatusColor(step.status),
                   !isClickable && 'opacity-50 cursor-not-allowed',
                   isClickable && 'hover:border-border'
                 )}
               >
-                <div className={cn(
+                <span className={cn(
                   'flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center',
                   step.status === 'completed' ? 'bg-emerald-500/20' :
                   step.status === 'in-progress' ? 'bg-info-bg/20' :
@@ -181,22 +184,22 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
                   ) : (
                     <Icon className="w-5 h-5" />
                   )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">{step.title}</h3>
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="flex items-center gap-2">
+                    <span className="font-semibold">{step.title}</span>
                     {step.status === 'in-progress' && (
                       <span className="text-xs bg-info-bg/20 text-info-color px-2 py-0.5 rounded">
                         Current
                       </span>
                     )}
-                  </div>
-                  <p className="text-sm opacity-80">{step.description}</p>
-                </div>
+                  </span>
+                  <span className="block text-sm opacity-80">{step.description}</span>
+                </span>
                 {isClickable && !isCurrent && (
                   <ChevronRight className="w-5 h-5 opacity-50" />
                 )}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -218,8 +221,10 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
             {currentStepData.id === 'intent' && (
               <div>
                 <p className="mb-3">Describe what you want to build in a few sentences.</p>
-                <textarea
+                <Textarea
                   placeholder="e.g., I want to build a task management app with team collaboration features..."
+                  fullWidth
+                  resize="none"
                   className="w-full h-32 bg-surface border border-border rounded-lg p-3 text-fg-muted placeholder-zinc-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-info-border"
                 />
               </div>
@@ -265,24 +270,23 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
 
         {/* Navigation */}
         <div className="flex items-center justify-between">
-          <button
-            type="button"
+          <Button
+            variant="soft"
             onClick={handleBack}
             disabled={currentStep === 0}
             className="px-4 py-2 bg-surface hover:bg-surface-muted text-fg-muted text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Back
-          </button>
+          </Button>
           <div className="text-sm text-fg-muted">
             Step {currentStep + 1} of {steps.length}
           </div>
-          <button
-            type="button"
+          <Button
             onClick={handleNext}
             className="px-4 py-2 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors"
           >
             {currentStep === steps.length - 1 ? 'Complete' : 'Next'}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -292,13 +296,15 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
           <div className="bg-surface border border-border rounded-xl max-w-md w-full">
             <div className="flex items-center justify-between p-4 border-b border-border">
               <h2 className="text-lg font-semibold text-fg-muted">Onboarding Complete!</h2>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowCompletionDialog(false)}
                 className="p-1 rounded hover:bg-surface text-fg-muted hover:text-fg-muted"
+                aria-label="Close completion dialog"
               >
                 <CloseIcon className="w-5 h-5" />
-              </button>
+              </Button>
             </div>
             <div className="p-4 space-y-4">
               <div className="flex items-center justify-center py-8">
@@ -311,13 +317,12 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
               </p>
             </div>
             <div className="flex justify-end p-4 border-t border-border">
-              <button
-                type="button"
+              <Button
                 onClick={handleComplete}
                 className="px-4 py-2 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors"
               >
                 Go to Dashboard
-              </button>
+              </Button>
             </div>
           </div>
         </div>

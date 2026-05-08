@@ -16,7 +16,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.activej.promise.Promise;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -388,7 +388,7 @@ class EntitySchemaValidatorEnhancedTest {
         @DisplayName("should accept reference checker")
         void shouldAcceptReferenceChecker() { 
             ReferenceChecker checker = (tenantId, collection, field, value) -> 
-                CompletableFuture.completedFuture(true); 
+                Promise.of(true); 
 
             validator.setReferenceChecker(checker); 
 

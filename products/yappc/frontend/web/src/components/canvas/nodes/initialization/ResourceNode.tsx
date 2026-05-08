@@ -36,6 +36,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { Button } from '../../../ui/Button';
 
 type ResourceType =
   | 'REPOSITORY'
@@ -269,12 +270,12 @@ function ResourceNode({ data }: NodeProps<ResourceCanvasNode>) {
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-fg-muted">URL</span>
             {onOpenExternal && (
-              <button
+              <Button variant="ghost" size="sm"
                 onClick={onOpenExternal}
                 className="p-1 hover:bg-muted rounded text-fg-muted hover:text-fg transition-colors"
               >
                 <ExternalLink className="w-3 h-3" />
-              </button>
+              </Button>
             )}
           </div>
           <a
@@ -295,20 +296,20 @@ function ResourceNode({ data }: NodeProps<ResourceCanvasNode>) {
             <span className="text-xs text-fg-muted">Connection String</span>
             <div className="flex items-center gap-1">
               {onToggleCredentials && (
-                <button
+                <Button variant="ghost" size="sm"
                   onClick={onToggleCredentials}
                   className="p-1 hover:bg-muted rounded text-fg-muted hover:text-fg transition-colors"
                 >
                   {showCredentials ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                </button>
+                </Button>
               )}
               {onCopyConnectionString && (
-                <button
+                <Button variant="ghost" size="sm"
                   onClick={onCopyConnectionString}
                   className="p-1 hover:bg-muted rounded text-fg-muted hover:text-fg transition-colors"
                 >
                   <Copy className="w-3 h-3" />
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -412,22 +413,22 @@ function ResourceNode({ data }: NodeProps<ResourceCanvasNode>) {
         {!isFailed && <div />}
         <div className="flex items-center gap-2">
           {isActive && onSync && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onSync}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:opacity-90 rounded-lg text-xs text-fg transition-colors"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Sync
-            </button>
+            </Button>
           )}
           {onDelete && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onDelete}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-destructive hover:opacity-90 rounded-lg text-xs text-white transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Delete
-            </button>
+            </Button>
           )}
         </div>
       </div>

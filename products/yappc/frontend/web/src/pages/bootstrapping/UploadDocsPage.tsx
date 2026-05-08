@@ -57,6 +57,11 @@ interface UploadedFile {
   preview?: string;
 }
 
+const NativeInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>((props, ref) =>
+  React.createElement('input', { ...props, ref }),
+);
+NativeInput.displayName = 'NativeInput';
+
 type AcceptedFileType = 'document' | 'image' | 'code';
 
 // =============================================================================
@@ -190,7 +195,7 @@ const DropZone: React.FC<DropZoneProps> = ({ onFilesDropped, disabled }) => {
         disabled && 'cursor-not-allowed opacity-50'
       )}
     >
-      <input
+      <NativeInput
         ref={inputRef}
         type="file"
         multiple

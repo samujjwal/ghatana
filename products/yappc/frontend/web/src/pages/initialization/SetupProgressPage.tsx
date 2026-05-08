@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Button } from '../../components/ui/Button';
 
 // ============================================================================
 // Types
@@ -112,9 +113,10 @@ const SetupProgressPage: React.FC = () => {
             const isExpanded = expandedId === step.id;
             return (
               <div key={step.id} className="rounded-lg border bg-white shadow-sm">
-                <button
+                <Button
                   onClick={() => setExpandedId(isExpanded ? null : step.id)}
                   className="flex w-full items-center gap-4 p-4 text-left"
+                  aria-expanded={isExpanded}
                 >
                   {/* Timeline connector */}
                   <div className="flex flex-col items-center">
@@ -135,7 +137,7 @@ const SetupProgressPage: React.FC = () => {
                   {step.status === 'running' && (
                     <span className="text-xs font-medium text-info-color">{step.progress}%</span>
                   )}
-                </button>
+                </Button>
 
                 {/* Progress bar for running step */}
                 {step.status === 'running' && (

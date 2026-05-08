@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { Button } from '../../components/ui/Button';
 
 type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 
@@ -126,8 +127,8 @@ const ScanResultsPage: React.FC = () => {
           </div>
         </div>
         <div className="flex gap-3">
-          <button className="px-4 py-2 border border-border text-fg-muted hover:bg-surface text-sm font-medium rounded-lg transition-colors">Export</button>
-          <button className="px-4 py-2 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors">Re-scan</button>
+          <Button variant="outline" className="px-4 py-2 border border-border text-fg-muted hover:bg-surface text-sm font-medium rounded-lg transition-colors">Export</Button>
+          <Button variant="solid" className="px-4 py-2 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors">Re-scan</Button>
         </div>
       </div>
 
@@ -136,16 +137,17 @@ const ScanResultsPage: React.FC = () => {
         {(['critical', 'high', 'medium', 'low', 'info'] as const).map((sev) => {
           const card = SUMMARY_CARD[sev];
           return (
-            <button
+            <Button
               key={sev}
               onClick={() => setSeverityFilter(severityFilter === sev ? 'all' : sev)}
+              variant="ghost"
               className={`rounded-lg border p-4 text-center transition-all ${card.bg} ${
                 severityFilter === sev ? 'ring-2 ring-blue-500' : ''
               }`}
             >
-              <p className={`text-3xl font-bold ${card.text}`}>{summary[sev]}</p>
-              <p className="text-xs text-fg-muted mt-1 uppercase tracking-wide">{card.label}</p>
-            </button>
+              <span className={`block text-3xl font-bold ${card.text}`}>{summary[sev]}</span>
+              <span className="block text-xs text-fg-muted mt-1 uppercase tracking-wide">{card.label}</span>
+            </Button>
           );
         })}
       </div>
@@ -154,9 +156,9 @@ const ScanResultsPage: React.FC = () => {
       <div className="bg-surface border border-border rounded-lg p-4 flex items-center justify-between">
         <span className="text-sm text-fg-muted">Total findings: <span className="text-fg-muted font-semibold">{totalFindings}</span></span>
         {severityFilter !== 'all' && (
-          <button onClick={() => setSeverityFilter('all')} className="text-xs text-info-color hover:text-info-color">
+          <Button variant="link" size="small" onClick={() => setSeverityFilter('all')} className="text-xs text-info-color hover:text-info-color">
             Clear filter
-          </button>
+          </Button>
         )}
       </div>
 

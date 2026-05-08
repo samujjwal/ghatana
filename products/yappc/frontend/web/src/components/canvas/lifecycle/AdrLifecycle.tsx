@@ -29,6 +29,8 @@ import {
   RefreshCw,
   Search,
 } from 'lucide-react';
+import { Button } from '../../ui/Button';
+import { Textarea } from '../../ui/Textarea';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -91,9 +93,9 @@ const STATUS_LABEL: Record<AdrLifecycleStatus, string> = {
 };
 
 const STATUS_COLOR: Record<AdrLifecycleStatus, string> = {
-  DRAFT: 'bg-grey-100 text-grey-700 dark:bg-grey-800 dark:text-grey-200',
+  DRAFT: 'bg-surface-muted text-fg-muted dark:bg-surface-muted dark:text-fg-muted',
   IN_REVIEW: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
-  ACCEPTED: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200',
+  ACCEPTED: 'bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color',
   SUPERSEDED: 'bg-surface-muted text-fg-muted dark:bg-surface dark:text-fg-muted line-through',
 };
 
@@ -136,10 +138,10 @@ const StatusStepper: React.FC<StatusStepperProps> = ({ current }) => {
         const isActive = step === current;
         const isPast = stepIndex < currentIndex;
         const stateClass = isActive
-          ? 'bg-primary text-white shadow'
+          ? 'bg-info-color text-white shadow'
           : isPast
-          ? 'bg-emerald-500 text-white'
-          : 'bg-grey-200 text-grey-500 dark:bg-grey-700 dark:text-grey-400';
+          ? 'bg-success-bg text-success-color'
+          : 'bg-surface-muted text-fg-muted dark:bg-surface-muted dark:text-fg-muted';
         return (
           <React.Fragment key={step}>
             <Box
@@ -153,7 +155,7 @@ const StatusStepper: React.FC<StatusStepperProps> = ({ current }) => {
             </Box>
             {idx < forwardSteps.length - 1 && (
               <ChevronRight
-                className="h-3.5 w-3.5 shrink-0 text-grey-400"
+                className="h-3.5 w-3.5 shrink-0 text-fg-muted"
                 aria-hidden="true"
               />
             )}
@@ -180,7 +182,7 @@ const TransitionForm: React.FC<TransitionFormProps> = ({
   const [note, setNote] = useState('');
   return (
     <Box
-      className="space-y-2 rounded-md border border-divider bg-grey-50 dark:bg-grey-900 p-3"
+      className="space-y-2 rounded-md border border-divider bg-surface-muted dark:bg-surface-muted p-3"
       data-testid="adr-transition-form"
     >
       <Typography className="text-sm font-semibold">
@@ -194,33 +196,39 @@ const TransitionForm: React.FC<TransitionFormProps> = ({
       <label className="block text-xs text-text-secondary" htmlFor="adr-transition-note">
         Note (optional)
       </label>
-      <textarea
+      <Textarea
         id="adr-transition-note"
         value={note}
         onChange={(e) => setNote(e.target.value)}
         rows={2}
-        className="w-full rounded border border-divider bg-white dark:bg-grey-800 px-2 py-1 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+        fullWidth
+        resize="none"
+        className="w-full rounded border border-divider bg-bg-paper dark:bg-bg-paper px-2 py-1 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-info-border resize-none"
         placeholder="Reason for this transition…"
         aria-label="Transition note"
       />
       <Box className="flex justify-end gap-2">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="small"
           onClick={onCancel}
           disabled={isBusy}
-          className="rounded px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-grey-200 dark:hover:bg-grey-700 disabled:opacity-50"
+          className="min-h-0 rounded px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-muted disabled:opacity-50"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="solid"
+          size="small"
           onClick={() => onConfirm(note)}
           disabled={isBusy}
-          className="rounded bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
+          className="min-h-0 rounded bg-info-color px-3 py-1.5 text-xs font-semibold text-white hover:bg-info-color/90 disabled:opacity-50"
           aria-busy={isBusy}
         >
           {isBusy ? 'Saving…' : 'Confirm'}
-        </button>
+        </Button>
       </Box>
     </Box>
   );
@@ -289,16 +297,18 @@ export const AdrLifecycle: React.FC<AdrLifecycleProps> = ({
               className={STATUS_COLOR[adr.status]}
             />
           </Box>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="small"
             onClick={() => setShowAudit((prev) => !prev)}
-            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors"
+            className="min-h-0 gap-1 rounded px-2 py-1 text-xs text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-muted transition-colors"
             aria-expanded={showAudit}
             aria-label="Toggle audit trail"
           >
             <History className="h-3.5 w-3.5" aria-hidden="true" />
             Audit ({adr.auditTrail.length})
-          </button>
+          </Button>
         </Box>
 
         {/* Stepper */}
@@ -311,15 +321,17 @@ export const AdrLifecycle: React.FC<AdrLifecycleProps> = ({
               const key = `${adr.status}→${target}` as keyof typeof TRANSITION_BUTTON_LABEL;
               const label = TRANSITION_BUTTON_LABEL[key] ?? `Move to ${STATUS_LABEL[target]}`;
               return (
-                <button
+                <Button
                   key={target}
                   type="button"
+                  variant="outline"
+                  size="small"
                   onClick={() => setPendingTransition(target)}
-                  className="rounded border border-divider px-3 py-1.5 text-xs font-medium text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors"
+                  className="min-h-0 rounded border-divider px-3 py-1.5 text-xs font-medium text-text-primary hover:bg-surface-muted dark:hover:bg-surface-muted transition-colors"
                   data-testid={`adr-transition-${target}`}
                 >
                   {label}
-                </button>
+                </Button>
               );
             })}
           </Box>
@@ -356,7 +368,7 @@ export const AdrLifecycle: React.FC<AdrLifecycleProps> = ({
             {[...adr.auditTrail].reverse().map((entry) => (
               <Box
                 key={entry.id}
-                className="rounded-md border border-divider bg-grey-50 dark:bg-grey-900 px-3 py-2 text-xs"
+                className="rounded-md border border-divider bg-surface-muted dark:bg-surface-muted px-3 py-2 text-xs"
               >
                 <Box className="flex items-center gap-2 flex-wrap">
                   <Chip

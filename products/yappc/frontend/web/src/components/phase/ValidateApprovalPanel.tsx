@@ -13,6 +13,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Button, Card, CardContent } from '@ghatana/design-system';
+import { Textarea } from '../ui/Textarea';
 
 export type ApprovalDecision = 'approved' | 'changes-requested' | 'rejected' | 'pending';
 
@@ -265,7 +266,7 @@ export const ValidateApprovalPanel: React.FC<ValidateApprovalPanelProps> = ({
                 >
                   Comment (optional)
                 </label>
-                <textarea
+                <Textarea
                   id="approval-comment"
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}

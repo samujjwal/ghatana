@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { Button } from '../../components/ui/Button';
 
 type ReviewDecision = 'approved' | 'changes-requested' | 'pending' | 'commented';
 
@@ -133,7 +134,7 @@ const CodeReviewPage: React.FC = () => {
             </p>
           </div>
         </div>
-        <button className="px-4 py-2 bg-success-bg hover:bg-success-bg text-white text-sm font-medium rounded-lg transition-colors">Approve</button>
+        <Button className="px-4 py-2 bg-success-bg hover:bg-success-bg text-white text-sm font-medium rounded-lg transition-colors">Approve</Button>
       </div>
 
       {/* Diff Stats Bar */}
@@ -178,18 +179,18 @@ const CodeReviewPage: React.FC = () => {
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-border pb-1">
-        <button
+        <Button
           onClick={() => setActiveTab('files')}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'files' ? 'bg-surface-muted text-fg-muted' : 'text-fg-muted hover:text-fg-muted hover:bg-surface'}`}
         >
           Files ({files.length})
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => setActiveTab('comments')}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'comments' ? 'bg-surface-muted text-fg-muted' : 'text-fg-muted hover:text-fg-muted hover:bg-surface'}`}
         >
           Comments ({comments.length})
-        </button>
+        </Button>
       </div>
 
       {/* Files Tab */}

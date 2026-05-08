@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { Button } from '../../components/ui/Button';
+import { Textarea } from '../../components/ui/Textarea';
 
 interface DMUser {
   id: string;
@@ -202,21 +204,25 @@ const DirectMessagePage: React.FC = () => {
       {/* Compose input */}
       <div className="px-6 py-3 border-t border-border bg-surface shrink-0">
         <div className="flex items-end gap-3 bg-surface border border-border rounded-lg px-4 py-2">
-          <textarea
-            className="flex-1 bg-transparent text-sm text-fg-muted placeholder-zinc-500 resize-none outline-none max-h-32"
+          <Textarea
+            fullWidth
+            resize="none"
+            className="min-h-0 max-h-32 border-0 bg-transparent px-0 py-0 text-sm text-fg-muted placeholder-zinc-500 focus:ring-0 focus:ring-offset-0"
             rows={1}
             placeholder={`Message ${user?.name ?? ''}...`}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={handleKeyDown}
           />
-          <button
+          <Button
             onClick={handleSend}
             disabled={!draft.trim() || sendMessage.isPending}
-            className="px-3 py-1.5 bg-primary text-white text-sm font-medium rounded-md hover:bg-info-bg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            size="sm"
+            loading={sendMessage.isPending}
+            className="px-3 py-1.5 rounded-md"
           >
-            {sendMessage.isPending ? 'Sending…' : 'Send'}
-          </button>
+            Send
+          </Button>
         </div>
       </div>
     </div>

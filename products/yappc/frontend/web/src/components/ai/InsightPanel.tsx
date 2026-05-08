@@ -3,6 +3,7 @@ import { Bell, CircleAlert, CircleCheck, Info, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { InsightStreamItem } from '@/hooks/useInsightStream';
 import { ConfidenceBadge } from './ConfidenceBadge';
+import { Button } from '../ui/Button';
 
 export interface InsightPanelProps {
   open: boolean;
@@ -54,21 +55,25 @@ export function InsightPanel({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={onMarkAllRead}
             className="rounded-md px-2 py-1 text-xs font-medium text-primary-700 hover:bg-primary-50"
           >
             Mark all read
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={onClose}
             className="rounded-md p-1 text-text-secondary hover:bg-grey-100"
             aria-label="Close insights panel"
           >
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -122,14 +127,16 @@ export function InsightPanel({
                       <span>{new Date(insight.createdAt).toLocaleString()}</span>
                     </div>
                   </div>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => onDismiss(insight.id)}
                     className="rounded-md p-1 text-text-secondary hover:bg-grey-100"
                     aria-label={`Dismiss ${insight.title}`}
                   >
                     <X className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </div>
               </article>
             );

@@ -202,9 +202,10 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
             </Typography>
             <Box className="grid grid-cols-2 gap-2">
               {FORMAT_OPTIONS.map((opt) => (
-                <button
+                <Button
                   key={opt.value}
                   type="button"
+                  aria-label={`Select ${opt.label} format`}
                   aria-pressed={selectedFormat === opt.value}
                   onClick={() => setSelectedFormat(opt.value)}
                   className={cn(
@@ -213,6 +214,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                       ? 'border-info-border bg-info-bg text-info-color'
                       : 'border-border hover:border-border hover:bg-surface-muted'
                   )}
+                  variant="ghost"
                 >
                   <span className="mt-0.5">{opt.icon}</span>
                   <Box>
@@ -223,7 +225,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                       {opt.description}
                     </Typography>
                   </Box>
-                </button>
+                </Button>
               ))}
             </Box>
           </Box>
@@ -241,7 +243,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                   { key: 'code', label: 'Generated Code', value: includeCode, set: setIncludeCode },
                 ] as const
               ).map((item) => (
-                <button
+                <Button
                   key={item.key}
                   type="button"
                   aria-pressed={item.value}
@@ -252,9 +254,11 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                       ? 'border-info-border bg-info-bg text-info-color'
                       : 'border-border text-fg-muted hover:border-border'
                   )}
+                  variant="ghost"
+                  size="sm"
                 >
                   {item.label}
-                </button>
+                </Button>
               ))}
             </Box>
           </Box>

@@ -202,6 +202,14 @@ describe('pageArtifactPersistence — conflict detection', () => {
         importedAt: '2026-05-07T00:00:00.000Z',
         nodes: [
           {
+            id: 'commerce-app:product',
+            kind: 'product',
+            label: 'Commerce App',
+            metadata: {
+              pageCount: 2,
+            },
+          },
+          {
             id: 'artifact-1:page',
             kind: 'page',
             label: 'Landing',
@@ -223,6 +231,12 @@ describe('pageArtifactPersistence — conflict detection', () => {
           },
         ],
         edges: [
+          {
+            id: 'artifact-1:page-part-of-product',
+            from: 'artifact-1:page',
+            to: 'commerce-app:product',
+            kind: 'part-of',
+          },
           {
             id: 'artifact-1:page-derived-from-source',
             from: 'artifact-1:page',
@@ -273,6 +287,12 @@ describe('pageArtifactPersistence — conflict detection', () => {
       tenantId: scope.tenantId,
       nodes: expect.arrayContaining([
         expect.objectContaining({
+          id: 'commerce-app:product',
+          type: 'product',
+          projectId: scope.projectId,
+          tenantId: scope.tenantId,
+        }),
+        expect.objectContaining({
           id: 'artifact-1:page',
           type: 'page',
           projectId: scope.projectId,
@@ -282,12 +302,18 @@ describe('pageArtifactPersistence — conflict detection', () => {
       edges: expect.arrayContaining([
         expect.objectContaining({
           sourceNodeId: 'artifact-1:page',
+          targetNodeId: 'commerce-app:product',
+          relationshipType: 'part-of',
+        }),
+        expect.objectContaining({
+          sourceNodeId: 'artifact-1:page',
           targetNodeId: 'artifact-1:source',
           relationshipType: 'derived-from',
         }),
       ]),
     });
-    expect(graphRequest.nodes[1].properties).toMatchObject({
+    const sourceNode = graphRequest.nodes.find((node: { readonly id: string }) => node.id === 'artifact-1:source');
+    expect(sourceNode?.properties).toMatchObject({
       artifactId: document.artifactId,
       graphId: 'artifact-1:graph',
       sourceLocationFilePath: 'src/pages/Landing.tsx',

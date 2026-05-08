@@ -3,9 +3,9 @@
  * YAPPC release-readiness evidence gate.
  *
  * This is intentionally fast: it verifies the release-critical cockpit,
- * builder, preview, persistence, security, OpenAPI, dashboard, and visual
- * regression gates are present and wired into package scripts before CI runs
- * the heavier suites.
+ * builder, preview, persistence, security, OpenAPI, dashboard, visual
+ * regression, and accessibility gates are present and wired into package
+ * scripts before CI runs the heavier suites.
  *
  * @doc.type script
  * @doc.purpose Fail release readiness when critical YAPPC gate evidence is missing
@@ -92,9 +92,19 @@ const requiredEvidence = [
       'products/yappc/frontend/web/e2e/visual-regression.spec.ts-snapshots/import-chromium-darwin.png',
     ],
   },
+  {
+    area: 'accessibility',
+    files: [
+      'products/yappc/frontend/web/e2e/accessibility-contracts.spec.ts',
+      'products/yappc/frontend/web/src/components/command/__tests__/CommandPalette.test.tsx',
+      'products/yappc/frontend/web/src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx',
+      'products/yappc/frontend/web/src/components/canvas/page/__tests__/PageDesigner.test.tsx',
+    ],
+  },
 ];
 
 const requiredScripts = [
+  'test:e2e:a11y',
   'test:e2e:visual',
   'test:performance:budgets',
   'verify:release-readiness',

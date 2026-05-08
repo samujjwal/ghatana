@@ -74,6 +74,20 @@ async function get<T>(path: string, context: string): Promise<T> {
   return parseJsonResponse<T>(response, context);
 }
 
+async function getWithHeaders<T>(
+  path: string,
+  context: string,
+  headers: Readonly<Record<string, string>>,
+): Promise<T> {
+  const response = await fetch(path, {
+    method: 'GET',
+    headers: { Accept: 'application/json', ...headers },
+    credentials: 'same-origin',
+  });
+  if (!response.ok) return handleError(response, context);
+  return parseJsonResponse<T>(response, context);
+}
+
 async function post<TBody, TResult>(path: string, body: TBody, context: string): Promise<TResult> {
   const response = await fetch(path, {
     method: 'POST',
@@ -652,6 +666,41 @@ export interface SourceImportFile {
   readonly source?: string;
 }
 
+export type SourceImportJobStatus = 'VALIDATING' | 'FETCHING_SOURCE' | 'REVIEW_REQUIRED' | 'REJECTED' | 'FAILED';
+export type SourceImportProgressStepStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+
+export interface SourceImportProgressStep {
+  readonly id: string;
+  readonly label: string;
+  readonly status: SourceImportProgressStepStatus;
+  readonly percent: number;
+  readonly message?: string;
+  readonly startedAt?: string;
+  readonly completedAt?: string;
+}
+
+export interface SourceImportJobSnapshot {
+  readonly id: string;
+  readonly status: SourceImportJobStatus;
+  readonly reason?: string;
+  readonly tenantId?: string | null;
+  readonly workspaceId?: string | null;
+  readonly projectId?: string | null;
+  readonly sourceType?: string;
+  readonly source?: string;
+  readonly componentName?: string;
+  readonly percentComplete: number;
+  readonly currentStep: string;
+  readonly steps: readonly SourceImportProgressStep[];
+  readonly createdAt: string;
+  readonly updatedAt?: string;
+  readonly auditRecorded?: boolean;
+}
+
+export interface SourceImportJobStatusResponse {
+  readonly job: SourceImportJobSnapshot;
+}
+
 export interface SourceImportResponse {
   readonly success: boolean;
   readonly componentId?: string;
@@ -668,16 +717,7 @@ export interface SourceImportResponse {
     readonly totalSize: number;
   };
   readonly extractedComponents?: readonly unknown[];
-  readonly job?: {
-    readonly id?: string;
-    readonly status?: string;
-    readonly reason?: string;
-    readonly tenantId?: string;
-    readonly workspaceId?: string;
-    readonly projectId?: string;
-    readonly createdAt?: string;
-    readonly auditRecorded?: boolean;
-  };
+  readonly job?: SourceImportJobSnapshot;
 }
 
 export const sourceImports = {
@@ -689,6 +729,19 @@ export const sourceImports = {
       '/api/v1/yappc/artifact/import-source',
       body,
       'sourceImports.start',
+      {
+        'X-Tenant-ID': scope.tenantId,
+        'X-Workspace-ID': scope.workspaceId,
+        'X-Project-ID': scope.projectId,
+      },
+    ),
+  status: (
+    jobId: string,
+    scope: { readonly tenantId: string; readonly workspaceId: string; readonly projectId: string },
+  ) =>
+    getWithHeaders<SourceImportJobStatusResponse>(
+      `/api/v1/yappc/artifact/import-source/${encodeURIComponent(jobId)}`,
+      'sourceImports.status',
       {
         'X-Tenant-ID': scope.tenantId,
         'X-Workspace-ID': scope.workspaceId,

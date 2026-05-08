@@ -12,6 +12,14 @@ enum ModuleDomain {
   MATH
   SCIENCE
   TECH
+  ENGINEERING
+  MEDICINE
+  HEALTH
+  BUSINESS
+  MANAGEMENT
+  ECONOMICS
+  COMPUTER_SCIENCE
+  INTERDISCIPLINARY
 }
 
 enum ReviewStatus {
@@ -197,6 +205,7 @@ model Module {
   assessments         Assessment[]
   simulationTemplates SimulationTemplate[]
   simulationManifests SimulationManifest[]
+  animationManifests  AnimationManifest[]
   learningExperience  LearningExperience?
 
   @@unique([tenantId, slug])
@@ -1737,6 +1746,20 @@ enum SimulationDomain {
   MATHEMATICS
 }
 
+enum AnimationDomain {
+  MATH
+  SCIENCE
+  TECH
+  ENGINEERING
+  MEDICINE
+  HEALTH
+  BUSINESS
+  MANAGEMENT
+  ECONOMICS
+  COMPUTER_SCIENCE
+  INTERDISCIPLINARY
+}
+
 enum ContentStatus {
   PUBLISHED
   DRAFT
@@ -1832,6 +1855,7 @@ model SimulationManifest {
   extension        SimulationManifestExtension? @relation("SimulationManifestExtensions")
   linkAudits       SimulationLinkAudit[]        @relation("SimulationLinkAudits")
   claimSimulations ClaimSimulation[]
+  artifacts        ArtifactManifest[]           @relation("ArtifactSimulation")
 
   @@index([tenantId, domain])
   @@index([tenantId, moduleId])
@@ -2872,6 +2896,11 @@ model LearningExperience {
   simulationManifest   SimulationManifest? @relation("ExperienceSimulation", fields: [simulationManifestId], references: [id], onDelete: SetNull)
   simulationVersion    String? // Track simulation version for compatibility
 
+  // Animation reference with versioning
+  animationManifestId String?
+  animationManifest   AnimationManifest? @relation("ExperienceAnimation", fields: [animationManifestId], references: [id], onDelete: SetNull)
+  animationVersion    String? // Track animation version for compatibility
+
   // Assessment configuration (embedded)
   assessmentConfig Json // CBMAssessmentConfig
 
@@ -3240,6 +3269,86 @@ model SimulationLinkAudit {
 
   @@index([experienceId, createdAt])
   @@index([simulationManifestId, createdAt])
+}
+
+// =============================================================================
+// Animation Manifest (first-class visual artifact)
+// =============================================================================
+
+enum AnimationManifestStatus {
+  DRAFT
+  REVIEW
+  ACTIVE
+  DEPRECATED
+}
+
+model AnimationManifest {
+  id          String          @id // Stable manifest ID generated from concept
+  tenantId    String
+  domain      AnimationDomain
+  version     String
+  title       String
+  description String?
+  module      Module?         @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  moduleId    String?
+  manifest    Json // Full AnimationManifest payload
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  experiences LearningExperience[]        @relation("ExperienceAnimation")
+  versions    AnimationManifestVersion[]  @relation("AnimationManifestVersions")
+  extension   AnimationManifestExtension? @relation("AnimationManifestExtensions")
+  linkAudits  AnimationLinkAudit[]        @relation("AnimationLinkAudits")
+  artifacts   ArtifactManifest[]          @relation("ArtifactAnimation")
+
+  @@index([tenantId, domain])
+  @@index([tenantId, moduleId])
+}
+
+model AnimationManifestVersion {
+  id                String            @id @default(cuid())
+  manifestId        String
+  animationManifest AnimationManifest @relation("AnimationManifestVersions", fields: [manifestId], references: [id], onDelete: Cascade)
+
+  version           String
+  manifestJson      Json // Full manifest at this version
+  styleConstraints  Json // Style/presentation rules
+  accessibilityTags Json // A11y metadata
+  renderingPlan     Json // Rendering specifications
+
+  status          AnimationManifestStatus @default(DRAFT)
+  riskLevel       RiskLevel               @default(LOW)
+  confidenceScore Float?
+
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@unique([manifestId, version])
+  @@index([manifestId, status])
+}
+
+model AnimationManifestExtension {
+  id                String            @id
+  animationManifest AnimationManifest @relation("AnimationManifestExtensions", fields: [id], references: [id], onDelete: Cascade)
+
+  metadata Json? // Additional extension metadata
+}
+
+model AnimationLinkAudit {
+  id                  String            @id @default(cuid())
+  experienceId        String
+  animationManifestId String
+  animationManifest   AnimationManifest @relation("AnimationLinkAudits", fields: [animationManifestId], references: [id], onDelete: Cascade)
+
+  action        String // "linked", "unlinked", "version_changed"
+  beforeVersion String?
+  afterVersion  String?
+  actorId       String
+
+  createdAt DateTime @default(now())
+
+  @@index([experienceId, createdAt])
+  @@index([animationManifestId, createdAt])
 }
 
 // =============================================================================
@@ -4091,6 +4200,12 @@ model ArtifactManifest {
   manifest Json // Full artifact manifest payload
   schema   String? // Schema version for validation
 
+  // First-class manifest references (for simulations and animations)
+  simulationManifestId String?
+  simulationManifest   SimulationManifest? @relation("ArtifactSimulation", fields: [simulationManifestId], references: [id], onDelete: SetNull)
+  animationManifestId  String?
+  animationManifest    AnimationManifest?  @relation("ArtifactAnimation", fields: [animationManifestId], references: [id], onDelete: SetNull)
+
   // Quality & validation
   isValid          Boolean @default(false)
   validationErrors Json? // ValidationIssue[] from last check
@@ -4103,6 +4218,8 @@ model ArtifactManifest {
 
   @@index([assetId, manifestType])
   @@index([assetId, claimRef])
+  @@index([simulationManifestId])
+  @@index([animationManifestId])
 }
 
 // =============================================================================

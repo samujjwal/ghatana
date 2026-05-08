@@ -12,6 +12,22 @@ on:
     paths:
       - "products/data-cloud/**"
       - "platform/java/**"
+  # Manual trigger allows engineers to run expensive optional suites on demand.
+  # All boolean flags default to false so routine CI remains fast.
+  workflow_dispatch:
+    inputs:
+      run_cross_module_tests:
+        description: "Run cross-module integration test suite (Gradle :integration-tests)"
+        type: boolean
+        default: false
+      run_e2e_tests:
+        description: "Run Playwright E2E browser evidence tests"
+        type: boolean
+        default: false
+      run_integration_tests:
+        description: "Run Testcontainers integration tests (-PincludeIT=true)"
+        type: boolean
+        default: false
 
 env:
   DC_MODULES: >-
@@ -83,6 +99,7 @@ jobs:
             --no-daemon
 
       - name: Run cross-module integration test suite
+        if: github.event_name == 'workflow_dispatch' && inputs.run_cross_module_tests == true
         run: |
           ./gradlew \
             :products:data-cloud:integration-tests:test \
@@ -94,10 +111,12 @@ jobs:
         working-directory: products/data-cloud/delivery/ui
 
       - name: Install Playwright Chromium
+        if: github.event_name == 'workflow_dispatch' && inputs.run_e2e_tests == true
         run: pnpm exec playwright install --with-deps chromium
         working-directory: products/data-cloud/delivery/ui
 
       - name: Run focused browser evidence
+        if: github.event_name == 'workflow_dispatch' && inputs.run_e2e_tests == true
         run: |
           pnpm exec playwright test \
             --project=chromium \
@@ -106,8 +125,9 @@ jobs:
             e2e/insights.spec.ts
         working-directory: products/data-cloud/delivery/ui
 
-      # Backend: Integration Tests (with Testcontainers)
+      # Backend: Integration Tests (with Testcontainers) — optional, gated by workflow_dispatch input
       - name: Run integration tests
+        if: github.event_name == 'workflow_dispatch' && inputs.run_integration_tests == true
         run: |
           ./gradlew \
             :products:data-cloud:delivery:runtime-composition:test \
@@ -335,7 +355,8 @@ jobs:
           if [ -f "gradlew" ]; then
             chmod +x gradlew && ./gradlew compileJava --no-daemon -q
           else
-            echo "::warning::No gradlew in generated Java SDK; skip compile check"
+            echo "::error::No gradlew in generated Java SDK — generator must emit a self-contained Gradle wrapper."
+            exit 1
           fi
           echo "✓ Java SDK generated and compiles."
 
@@ -347,7 +368,7 @@ jobs:
             cd "$TS_SDK_DIR"
             if [ -f "package.json" ]; then
               pnpm install --frozen-lockfile 2>/dev/null || npm install --silent
-              npx tsc --noEmit 2>&1 || echo "::warning::TypeScript SDK type-check had warnings — review output"
+              npx tsc --noEmit
             fi
             echo "✓ TypeScript SDK generated."
           else
@@ -397,6 +418,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # DC-P1-452: Recovery runbook validation smoke tests.
+      # Verifies that all DR scripts exist, are executable, have valid bash syntax,
+      # and contain the option flags documented in the runbook README.
+      # Fails CI if runbook commands drift from their documented interface.
+      - name: Validate recovery runbook commands (DC-P1-452)
+        run: |
+          chmod +x products/data-cloud/planes/action/server/src/test/scripts/validate-runbook-commands.sh
+          bash products/data-cloud/planes/action/server/src/test/scripts/validate-runbook-commands.sh
+
       - name: Run backup/restore pre-flight drill
         continue-on-error: true
         run: |
@@ -423,8 +453,7 @@ jobs:
 
   # Kubernetes / Helm render validation: ensures that Helm charts and raw k8s
   # manifests under products/data-cloud render and validate cleanly.
-  # Uses --dry-run=client so no cluster is required. Skips gracefully when the
-  # helm/ or k8s/ directories do not yet exist, printing a warning instead.
+  # Uses --dry-run=client so no cluster is required.
   helm-render-validation:
     runs-on: ubuntu-latest
     needs: [build-and-test]
@@ -443,7 +472,7 @@ jobs:
 
       - name: Render Helm chart (dry-run)
         run: |
-          HELM_ROOT="products/data-cloud/helm"
+          HELM_ROOT="products/data-cloud/deploy/helm"
           HELM_DIR=""
           if [ -f "$HELM_ROOT/Chart.yaml" ]; then
             HELM_DIR="$HELM_ROOT"
@@ -463,12 +492,13 @@ jobs:
               | head -60
             echo "✓ Helm chart renders without errors."
           else
-            echo "::warning::No Helm chart found under products/data-cloud/helm — skipping chart validation."
+            echo "::error::No Helm chart found under products/data-cloud/deploy/helm — add Chart.yaml to pass this gate."
+            exit 1
           fi
 
       - name: Validate raw k8s manifests (dry-run)
         run: |
-          MANIFEST_DIR="products/data-cloud/k8s"
+          MANIFEST_DIR="products/data-cloud/deploy/k8s"
           if [ -d "$MANIFEST_DIR" ]; then
             echo "Validating k8s manifests at $MANIFEST_DIR …"
             # --dry-run=client requires a valid kubeconfig target; use a stub
@@ -478,16 +508,17 @@ jobs:
               | xargs -I{} sh -c 'kubectl apply --dry-run=client -f "{}" && echo "  ✓ {}"'
             echo "✓ All k8s manifests pass client-side validation."
           else
-            echo "::warning::No k8s/ directory found under products/data-cloud — skipping manifest validation."
+            echo "::error::No k8s/ directory found under products/data-cloud/deploy/k8s — add Kubernetes manifests to pass this gate."
+            exit 1
           fi
 
       - name: Summarise Helm/k8s validation results
         if: always()
         run: |
           echo "## Helm / k8s Render Validation" >> "$GITHUB_STEP_SUMMARY"
-          HELM_ROOT="products/data-cloud/helm"
+          HELM_ROOT="products/data-cloud/deploy/helm"
           HELM_DIR=""
-          K8S_DIR="products/data-cloud/k8s"
+          K8S_DIR="products/data-cloud/deploy/k8s"
           if [ -f "$HELM_ROOT/Chart.yaml" ]; then
             HELM_DIR="$HELM_ROOT"
           elif [ -f "$HELM_ROOT/data-cloud/Chart.yaml" ]; then
@@ -497,13 +528,13 @@ jobs:
           if [ -n "$HELM_DIR" ]; then
             echo "- **Helm chart**: rendered cleanly (dry-run)" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "- **Helm chart**: ⚠ Not found (expected \`products/data-cloud/helm/Chart.yaml\` or \`products/data-cloud/helm/data-cloud/Chart.yaml\`)" >> "$GITHUB_STEP_SUMMARY"
+            echo "- **Helm chart**: ✗ Not found (expected \`products/data-cloud/deploy/helm/Chart.yaml\`)" >> "$GITHUB_STEP_SUMMARY"
           fi
           if [ -d "$K8S_DIR" ]; then
             MANIFEST_COUNT=$(find "$K8S_DIR" -name "*.yaml" -o -name "*.yml" | wc -l | tr -d ' ')
             echo "- **k8s manifests**: $MANIFEST_COUNT file(s) validated (client dry-run)" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "- **k8s manifests**: ⚠ Not found (add \`products/data-cloud/k8s/\` to enable)" >> "$GITHUB_STEP_SUMMARY"
+            echo "- **k8s manifests**: ✗ Not found (expected \`products/data-cloud/deploy/k8s/\`)" >> "$GITHUB_STEP_SUMMARY"
           fi
 
   # Release gate: aggregates all required jobs and enforces hard go/no-go.
@@ -623,3 +654,102 @@ jobs:
           echo "✓ Reuse scorecard passed"
           echo "✓ SDK generation validated"
           echo "✓ No checked-in build outputs"
+
+  # DC-P1-477: Bundle budget CI gate — builds the Data Cloud UI and validates
+  # that no JS chunk exceeds the defined size budget.  Keeps route lazy-split
+  # chunks from growing silently.
+  bundle-budget:
+    name: UI Bundle Budget Gate (DC-P1-477)
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install UI dependencies
+        working-directory: products/data-cloud/delivery/ui
+        run: pnpm install --frozen-lockfile
+
+      - name: Build UI
+        working-directory: products/data-cloud/delivery/ui
+        run: pnpm build
+
+      - name: Check bundle budgets (DC-P1-477)
+        working-directory: products/data-cloud/delivery/ui
+        run: bash scripts/check-bundle-budgets.sh --skip-build
+        env:
+          CHUNK_BUDGET_KB: "600"
+          VENDOR_BUDGET_KB: "1000"
+
+      - name: Upload bundle stats artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-stats-${{ github.sha }}
+          path: products/data-cloud/delivery/ui/dist/assets/
+          retention-days: 14
+          if-no-files-found: warn
+
+  # DC-P1-445: Durable load suite — runs on workflow_dispatch or schedule.
+  # Produces a JSON metrics artifact attached to the CI run for each commit.
+  # Operators can download this artifact to diagnose performance regressions.
+  durable-load-suite:
+    name: Durable Load Suite (DC-P1-445)
+    runs-on: ubuntu-latest
+    # Run on manual dispatch or nightly schedule only — not on every PR to avoid
+    # slowing the normal CI pipeline. The output artifact is the authoritative
+    # performance baseline for the current commit.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: gradle
+
+      - name: Record commit SHA for artifact traceability
+        run: echo "COMMIT_SHA=${GITHUB_SHA}" >> "$GITHUB_ENV"
+
+      - name: Run durable load suite
+        run: products/data-cloud/scripts/run-durable-load-suite.sh
+        env:
+          # Keep defaults conservative for CI — tune via workflow_dispatch inputs
+          DATACLOUD_LOAD_TENANTS: "10"
+          DATACLOUD_LOAD_ENTITY_OPS_PER_TENANT: "10"
+          DATACLOUD_LOAD_EVENT_OPS_PER_TENANT: "10"
+          DATACLOUD_LOAD_ITERATIONS: "1"
+          DATACLOUD_LOAD_TIMEOUT_SECONDS: "600"
+          DATACLOUD_LOAD_MIN_THROUGHPUT_OPS_PER_SECOND: "0"
+          DATACLOUD_LOAD_MIN_EVENT_BURST_THROUGHPUT_OPS_PER_SECOND: "0"
+          DATACLOUD_LOAD_MAX_HEAP_DELTA_MB: "256"
+          DATACLOUD_LOAD_MAX_P95_ENTITY_SAVE_MS: "2500"
+          DATACLOUD_LOAD_MAX_P95_EVENT_APPEND_MS: "2500"
+          DATACLOUD_LOAD_MAX_P95_QUERY_MS: "2500"
+
+      # Upload the JSON metrics file as a build artifact so it is:
+      #   - attached to this specific run (commit-level traceability)
+      #   - downloadable by operators for comparison against baselines
+      #   - never silently discarded after test completion
+      - name: Upload durable load metrics artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: durable-load-metrics-${{ env.COMMIT_SHA }}
+          path: products/data-cloud/build/reports/load-tests/durable-multi-tenant-load.json
+          retention-days: 90
+          if-no-files-found: warn

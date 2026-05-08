@@ -34,6 +34,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { Button } from '../../../ui/Button';
 
 type InitializationStatus =
   | 'NOT_STARTED'
@@ -276,7 +277,7 @@ function ProvisioningProgressNode({ data }: NodeProps<ProvisioningProgressCanvas
 
       {/* Steps List (Collapsible) */}
       <div className="border-b border-border">
-        <button
+        <Button variant="ghost" size="sm"
           onClick={onToggleExpand}
           className="w-full px-4 py-2 flex items-center justify-between hover:bg-surface-muted transition-colors"
         >
@@ -289,7 +290,7 @@ function ProvisioningProgressNode({ data }: NodeProps<ProvisioningProgressCanvas
           ) : (
             <ChevronDown className="w-4 h-4 text-fg-muted" />
           )}
-        </button>
+        </Button>
         {expanded && (
           <div className="px-4 pb-3 space-y-2">
             {steps.map((step) => {
@@ -329,20 +330,20 @@ function ProvisioningProgressNode({ data }: NodeProps<ProvisioningProgressCanvas
                         </span>
                         <div className="flex items-center gap-1">
                           {onRetryStep && (
-                            <button
+                            <Button variant="ghost" size="sm"
                               onClick={() => onRetryStep(step.id)}
                               className="p-1 hover:bg-muted rounded text-fg-muted hover:text-white"
                             >
                               <RefreshCw className="w-3 h-3" />
-                            </button>
+                            </Button>
                           )}
                           {onSkipStep && step.canRollback && (
-                            <button
+                            <Button variant="ghost" size="sm"
                               onClick={() => onSkipStep(step.id)}
                               className="p-1 hover:bg-muted rounded text-fg-muted hover:text-white"
                             >
                               <SkipForward className="w-3 h-3" />
-                            </button>
+                            </Button>
                           )}
                         </div>
                       </div>
@@ -392,31 +393,31 @@ function ProvisioningProgressNode({ data }: NodeProps<ProvisioningProgressCanvas
       {(onPause || onResume || onCancel) && (
         <div className="px-4 py-3 flex items-center justify-end gap-2">
           {progress.status === 'IN_PROGRESS' && onPause && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onPause}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-warning-color hover:bg-warning-bg0 rounded-lg text-xs text-white transition-colors"
             >
               <PauseCircle className="w-3.5 h-3.5" />
               Pause
-            </button>
+            </Button>
           )}
           {progress.status === 'PAUSED' && onResume && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onResume}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-success-color hover:bg-success-bg0 rounded-lg text-xs text-white transition-colors"
             >
               <PlayCircle className="w-3.5 h-3.5" />
               Resume
-            </button>
+            </Button>
           )}
           {(progress.status === 'IN_PROGRESS' || progress.status === 'PAUSED') && onCancel && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={onCancel}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-destructive hover:bg-destructive-bg0 rounded-lg text-xs text-white transition-colors"
             >
               <StopCircle className="w-3.5 h-3.5" />
               Cancel
-            </button>
+            </Button>
           )}
         </div>
       )}

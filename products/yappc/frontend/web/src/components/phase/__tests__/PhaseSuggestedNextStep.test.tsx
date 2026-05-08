@@ -76,6 +76,7 @@ describe('PhaseSuggestedNextStep', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Run guided action' }));
     expect(onAccept).toHaveBeenCalledTimes(1);
+    expect(onAccept).toHaveBeenCalledWith(expect.objectContaining({ id: 'step-1' }));
   });
 
   it('uses review-specific action language when approval is required', () => {

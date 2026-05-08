@@ -13,6 +13,7 @@
 import React, { memo, useCallback, useState } from 'react';
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { cn } from '../../utils/cn';
+import { Button } from '../../../ui/Button';
 import {
   GitPullRequest,
   GitMerge,
@@ -298,7 +299,7 @@ const PullRequestNodeComponent: React.FC<PullRequestNodeProps> = ({
         'pr-node w-80 rounded-xl border shadow-sm transition-all duration-200',
         'bg-surface',
         statusConfig.bgColor,
-        selected && 'ring-2 ring-primary ring-offset-2',
+        selected && 'ring-2 ring-info-border ring-offset-2',
         dragging && 'opacity-75 shadow-lg scale-[1.02]'
       )}
       onDoubleClick={handleOpenExternal}
@@ -333,16 +334,16 @@ const PullRequestNodeComponent: React.FC<PullRequestNodeProps> = ({
 
           {/* Actions */}
           <div className="flex items-center gap-1">
-            <button
+            <Button variant="ghost" size="sm"
               onClick={handleOpenExternal}
               className="p-1.5 rounded hover:bg-surface-muted text-fg-muted hover:text-fg"
               title="Open in browser"
             >
               <ExternalLink className="w-4 h-4" />
-            </button>
+            </Button>
 
             <div className="relative">
-              <button
+              <Button variant="ghost" size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowMenu(!showMenu);
@@ -350,7 +351,7 @@ const PullRequestNodeComponent: React.FC<PullRequestNodeProps> = ({
                 className="p-1.5 rounded hover:bg-surface-muted text-fg-muted hover:text-fg"
               >
                 <MoreHorizontal className="w-4 h-4" />
-              </button>
+              </Button>
 
               {showMenu && (
                 <>
@@ -364,30 +365,30 @@ const PullRequestNodeComponent: React.FC<PullRequestNodeProps> = ({
                   <div className="absolute right-0 top-full mt-1 w-44 bg-surface rounded-lg shadow-lg border border-border py-1 z-20">
                     {data.status === 'pending' && (
                       <>
-                        <button
+                        <Button variant="ghost" size="sm"
                           onClick={handleApprove}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-success-color hover:bg-success-bg"
+                          className="flex w-full items-center justify-start gap-2 px-3 py-2 text-sm text-success-color hover:bg-success-bg"
                         >
                           <Check className="w-4 h-4" />
                           Approve
-                        </button>
-                        <button
+                        </Button>
+                        <Button variant="ghost" size="sm"
                           onClick={handleRequestChanges}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-warning-color hover:bg-warning-bg"
+                          className="flex w-full items-center justify-start gap-2 px-3 py-2 text-sm text-warning-color hover:bg-warning-bg"
                         >
                           <AlertCircle className="w-4 h-4" />
                           Request Changes
-                        </button>
+                        </Button>
                       </>
                     )}
                     {canMerge && (
-                      <button
+                      <Button variant="ghost" size="sm"
                         onClick={handleMerge}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-info-color hover:bg-info-bg"
+                        className="flex w-full items-center justify-start gap-2 px-3 py-2 text-sm text-info-color hover:bg-info-bg"
                       >
                         <GitMerge className="w-4 h-4" />
                         Merge PR
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </>
@@ -431,7 +432,7 @@ const PullRequestNodeComponent: React.FC<PullRequestNodeProps> = ({
 
         {/* Linked story */}
         {data.linkedStoryKey && (
-          <button
+          <Button variant="ghost" size="sm"
             onClick={handleOpenStory}
             className="mt-2 flex items-center gap-1.5 text-xs text-info-color hover:opacity-80"
           >
@@ -441,7 +442,7 @@ const PullRequestNodeComponent: React.FC<PullRequestNodeProps> = ({
                 {data.linkedStoryTitle}
               </span>
             )}
-          </button>
+          </Button>
         )}
       </div>
 

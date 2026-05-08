@@ -11,6 +11,7 @@
  */
 
 import { Fragment } from 'react';
+import { Button } from '@ghatana/design-system';
 import { ChevronRight, Home } from 'lucide-react';
 import type { LifecyclePhase } from '@/shared/types/lifecycle';
 import type { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
@@ -92,11 +93,12 @@ export function LifecycleBreadcrumb({
                     {index > 0 && (
                         <ChevronRight className="w-4 h-4 text-text-tertiary" />
                     )}
-                    <button
+                    <Button
+                        type="button"
                         onClick={item.onClick}
                         disabled={!item.onClick}
                         className={`flex items-center gap-1.5 transition-colors ${item.active
-                                ? 'text-primary-600 font-medium cursor-default'
+                                ? 'text-info-color font-medium cursor-default'
                                 : item.onClick
                                     ? 'hover:text-text-primary cursor-pointer'
                                     : 'text-text-tertiary cursor-default'
@@ -104,7 +106,7 @@ export function LifecycleBreadcrumb({
                     >
                         {item.icon}
                         <span>{item.label}</span>
-                    </button>
+                    </Button>
                 </Fragment>
             ))}
         </nav>

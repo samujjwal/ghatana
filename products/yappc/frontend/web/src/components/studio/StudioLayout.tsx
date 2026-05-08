@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { Button } from '../ui/Button';
 
 /**
  * Studio Mode Layout component.
@@ -122,15 +123,17 @@ export function StudioLayout({
             ⌘⇧S to toggle
           </span>
         </div>
-        <button
+        <Button
           onClick={() => { toggleStudioMode(); onClose?.(); }}
           aria-label="Close Studio Mode"
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter') { toggleStudioMode(); onClose?.(); } }}
           className="text-fg-muted hover:text-fg dark:hover:text-fg-muted"
+          variant="ghost"
+          size="sm"
         >
           ✕
-        </button>
+        </Button>
       </div>
 
       {/* Main Layout */}

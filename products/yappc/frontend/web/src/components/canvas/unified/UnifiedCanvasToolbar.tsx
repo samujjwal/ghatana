@@ -143,7 +143,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
                     <Tooltip title="Add Artifact" placement="right">
                         <IconButton
                             onClick={handleAddArtifact}
-                            className="bg-primary text-white hover:bg-info-bg"
+                            className="bg-info-color text-white hover:bg-info-bg"
                         >
                             <Description />
                         </IconButton>

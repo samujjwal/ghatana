@@ -11,6 +11,7 @@ import { useState } from 'react';
 
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
+import { Button } from '../../components/ui/Button';
 
 function ErrorPage(): React.ReactElement {
   const rawError = useRouteError();
@@ -51,8 +52,10 @@ function ErrorPage(): React.ReactElement {
         {/* Error Details (collapsible) */}
         {error && (
           <div className="mb-8 text-left">
-            <button
+            <Button
               onClick={() => setShowDetails(!showDetails)}
+              variant="ghost"
+              size="small"
               className="flex items-center gap-2 text-sm text-fg-muted hover:text-fg-muted transition-colors w-full justify-center"
             >
               {showDetails ? (
@@ -61,7 +64,7 @@ function ErrorPage(): React.ReactElement {
                 <ChevronDown className="w-4 h-4" />
               )}
               {showDetails ? 'Hide' : 'Show'} Error Details
-            </button>
+            </Button>
 
             {showDetails && (
               <motion.div
@@ -74,13 +77,15 @@ function ErrorPage(): React.ReactElement {
                   <span className="text-xs text-fg-muted uppercase tracking-wider">
                     Error Message
                   </span>
-                  <button
+                  <Button
                     onClick={handleCopyError}
+                    variant="ghost"
+                    size="small"
                     className="text-xs text-violet-400 hover:text-violet-300 flex items-center gap-1"
                   >
                     <Copy className="w-3 h-3" />
                     {copied ? 'Copied!' : 'Copy'}
-                  </button>
+                  </Button>
                 </div>
                 <p className="text-sm text-destructive font-mono mb-4">{error.message}</p>
 
@@ -101,8 +106,9 @@ function ErrorPage(): React.ReactElement {
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <button
+          <Button
             onClick={() => window.location.reload()}
+            variant="solid"
             className={cn(
               'flex items-center gap-2 px-6 py-3 rounded-lg font-medium',
               'bg-violet-500 text-white hover:bg-violet-600 transition-colors'
@@ -110,7 +116,7 @@ function ErrorPage(): React.ReactElement {
           >
             <RefreshCw className="w-4 h-4" />
             Refresh Page
-          </button>
+          </Button>
           <NavLink
             to={ROUTES.DASHBOARD}
             className={cn(

@@ -62,21 +62,23 @@
 /shared-services/infrastructure/    @ghatana/devops-team
 
 # ── Products ─────────────────────────────────────────────────────────────────
-/products/data-cloud/planes/action/                      @ghatana/aep-team
 /products/app-platform/             @ghatana/platform-team
 /products/audio-video/              @ghatana/av-team
 /products/aura/                     @ghatana/aura-team
 /products/data-cloud/               @ghatana/data-team
+# Specific data-cloud ownership (must come AFTER the general rule — GitHub uses last-match)
+/products/data-cloud/planes/action/                      @ghatana/aep-team
 /products/data-cloud/planes/shared-spi/           @ghatana/data-team @ghatana/platform-team
 /products/data-cloud/platform/      @ghatana/data-team
+/products/data-cloud/contracts/     @ghatana/data-team @ghatana/platform-team
 /products/data-cloud/delivery/launcher/      @ghatana/data-team
 /products/data-cloud/extensions/agent-registry/ @ghatana/data-team @ghatana/agent-team
 /products/data-cloud/delivery/sdk/           @ghatana/data-team @ghatana/platform-team
 /products/data-cloud/delivery/ui/            @ghatana/data-team @ghatana/frontend-team
 /products/data-cloud/delivery/ui/src/api/    @ghatana/data-team @ghatana/frontend-team
-/products/data-cloud/k8s/           @ghatana/data-team @ghatana/devops-team
-/products/data-cloud/helm/          @ghatana/data-team @ghatana/devops-team
-/products/data-cloud/terraform/     @ghatana/data-team @ghatana/devops-team
+/products/data-cloud/deploy/k8s/     @ghatana/data-team @ghatana/devops-team
+/products/data-cloud/deploy/helm/    @ghatana/data-team @ghatana/devops-team
+/products/data-cloud/deploy/terraform/ @ghatana/data-team @ghatana/devops-team
 /products/data-cloud/docs/          @ghatana/data-team
 /products/data-cloud/docs/openapi.yaml  @ghatana/data-team @ghatana/platform-team
 /products/dcmaar/                   @ghatana/dcmaar-team

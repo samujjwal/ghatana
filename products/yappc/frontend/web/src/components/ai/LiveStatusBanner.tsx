@@ -18,6 +18,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { Button } from '../ui/Button';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -152,14 +153,16 @@ export const LiveStatusBanner = React.memo<LiveStatusBannerProps>(function LiveS
       </span>
 
       {onDismiss && (
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={handleDismiss}
           aria-label="Dismiss status banner"
           className="ml-auto p-0.5 opacity-60 hover:opacity-100 transition-opacity"
         >
           ✕
-        </button>
+        </Button>
       )}
     </div>
   );

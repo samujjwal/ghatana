@@ -354,8 +354,8 @@ export function Layout() {
               [
                 'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors no-underline whitespace-nowrap',
                 isActive
-                  ? 'text-primary-600 bg-primary-50 dark:bg-primary-900/20'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800',
+                  ? 'text-info-color bg-info-bg dark:bg-info-bg/20'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-surface-muted dark:hover:bg-surface-muted',
               ].join(' ')
             }
           >

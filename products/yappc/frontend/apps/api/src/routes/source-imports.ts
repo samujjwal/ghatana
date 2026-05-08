@@ -13,6 +13,8 @@ import { getAuditService } from '../services/audit/audit.service';
 
 type SourceImportType = 'tsx' | 'route' | 'storybook' | 'artifact' | 'zip';
 type SourceImportFileType = 'component' | 'style' | 'test' | 'documentation' | 'other' | 'route';
+type SourceImportJobStatus = 'VALIDATING' | 'FETCHING_SOURCE' | 'REVIEW_REQUIRED' | 'REJECTED' | 'FAILED';
+type SourceImportProgressStepStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 
 interface SourceImportRequest {
   sourceType: SourceImportType;
@@ -50,9 +52,48 @@ interface SourceImportAuditContext {
   totalSize?: number;
 }
 
+interface SourceImportProgressStep {
+  id: string;
+  label: string;
+  status: SourceImportProgressStepStatus;
+  percent: number;
+  message?: string;
+  startedAt?: string;
+  completedAt?: string;
+}
+
+interface SourceImportJobSnapshot {
+  id: string;
+  status: SourceImportJobStatus;
+  tenantId: string | null;
+  workspaceId: string | null;
+  projectId: string | null;
+  sourceType: string;
+  source: string;
+  componentName?: string;
+  reason?: string;
+  auditRecorded?: boolean;
+  percentComplete: number;
+  currentStep: string;
+  steps: readonly SourceImportProgressStep[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 const allowedSourceTypes: readonly SourceImportType[] = ['tsx', 'route', 'storybook', 'artifact', 'zip'];
 const maxSourceLocatorLength = 4096;
 const maxFetchedBytes = 512 * 1024;
+const sourceImportJobTtlMs = 24 * 60 * 60 * 1000;
+const maxTrackedSourceImportJobs = 1000;
+const sourceImportJobs = new Map<string, SourceImportJobSnapshot>();
+
+const sourceImportStepTemplates: readonly Omit<SourceImportProgressStep, 'status'>[] = [
+  { id: 'validate_scope', label: 'Validate tenant workspace and project scope', percent: 20 },
+  { id: 'validate_source', label: 'Validate source locator and import type', percent: 35 },
+  { id: 'fetch_source', label: 'Fetch governed source content', percent: 65 },
+  { id: 'prepare_review', label: 'Prepare review-required import payload', percent: 90 },
+  { id: 'audit', label: 'Record governed import audit event', percent: 100 },
+];
 
 function getHeaderValue(value: string | string[] | undefined): string | null {
   if (Array.isArray(value)) {
@@ -96,6 +137,176 @@ function inferComponentName(source: string, fallback: string): string {
   return normalized.length > 0
     ? normalized.charAt(0).toUpperCase() + normalized.slice(1)
     : fallback;
+}
+
+function createSourceImportJob(input: {
+  tenantId: string | null;
+  workspaceId: string | null;
+  projectId: string | null;
+  sourceType: string;
+  source: string;
+  componentName?: string;
+}): SourceImportJobSnapshot {
+  const now = new Date().toISOString();
+  return {
+    id: `source-import-${randomUUID()}`,
+    status: 'VALIDATING',
+    tenantId: input.tenantId,
+    workspaceId: input.workspaceId,
+    projectId: input.projectId,
+    sourceType: input.sourceType,
+    source: input.source,
+    componentName: input.componentName,
+    percentComplete: 0,
+    currentStep: 'validate_scope',
+    steps: sourceImportStepTemplates.map((step, index) => ({
+      ...step,
+      status: index === 0 ? 'running' : 'pending',
+      startedAt: index === 0 ? now : undefined,
+    })),
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+function cleanupSourceImportJobs(now = Date.now()): void {
+  for (const [jobId, job] of sourceImportJobs) {
+    if (now - Date.parse(job.updatedAt) > sourceImportJobTtlMs) {
+      sourceImportJobs.delete(jobId);
+    }
+  }
+
+  if (sourceImportJobs.size <= maxTrackedSourceImportJobs) {
+    return;
+  }
+
+  const oldestJobs = [...sourceImportJobs.values()]
+    .sort((left, right) => Date.parse(left.updatedAt) - Date.parse(right.updatedAt))
+    .slice(0, sourceImportJobs.size - maxTrackedSourceImportJobs);
+  for (const job of oldestJobs) {
+    sourceImportJobs.delete(job.id);
+  }
+}
+
+function persistSourceImportJob(job: SourceImportJobSnapshot): SourceImportJobSnapshot {
+  cleanupSourceImportJobs();
+  sourceImportJobs.set(job.id, job);
+  return job;
+}
+
+function updateSourceImportJobStep(
+  job: SourceImportJobSnapshot,
+  stepId: string,
+  status: SourceImportProgressStepStatus,
+  message?: string,
+): SourceImportJobSnapshot {
+  const now = new Date().toISOString();
+  const steps = job.steps.map((step) => {
+    if (step.id !== stepId) {
+      return step;
+    }
+
+    return {
+      ...step,
+      status,
+      message,
+      startedAt: step.startedAt ?? now,
+      completedAt: status === 'completed' || status === 'failed' || status === 'skipped' ? now : step.completedAt,
+    };
+  });
+  const currentStep = steps.find((step) => step.status === 'running')?.id ?? stepId;
+  const percentComplete = Math.max(
+    0,
+    ...steps
+      .filter((step) => step.status === 'completed')
+      .map((step) => step.percent),
+  );
+
+  return {
+    ...job,
+    currentStep,
+    percentComplete,
+    steps,
+    updatedAt: now,
+  };
+}
+
+function startSourceImportJobStep(job: SourceImportJobSnapshot, stepId: string): SourceImportJobSnapshot {
+  const now = new Date().toISOString();
+  return {
+    ...job,
+    status: stepId === 'fetch_source' ? 'FETCHING_SOURCE' : job.status,
+    currentStep: stepId,
+    steps: job.steps.map((step) =>
+      step.id === stepId
+        ? {
+            ...step,
+            status: 'running',
+            startedAt: step.startedAt ?? now,
+          }
+        : step,
+    ),
+    updatedAt: now,
+  };
+}
+
+function completeSourceImportJob(
+  job: SourceImportJobSnapshot,
+  input: {
+    status: Extract<SourceImportJobStatus, 'REVIEW_REQUIRED' | 'REJECTED' | 'FAILED'>;
+    reason?: string;
+    auditRecorded: boolean;
+    failedStepId?: string;
+    componentName?: string;
+  },
+): SourceImportJobSnapshot {
+  const now = new Date().toISOString();
+  const failureStepId = input.failedStepId ?? job.currentStep;
+  const steps = job.steps.map((step) => {
+    if (input.status === 'REVIEW_REQUIRED') {
+      return {
+        ...step,
+        status: 'completed' as const,
+        startedAt: step.startedAt ?? now,
+        completedAt: step.completedAt ?? now,
+      };
+    }
+    if (step.id === failureStepId) {
+      return {
+        ...step,
+        status: 'failed' as const,
+        message: input.reason,
+        startedAt: step.startedAt ?? now,
+        completedAt: now,
+      };
+    }
+    if (step.status === 'pending') {
+      return {
+        ...step,
+        status: 'skipped' as const,
+        completedAt: now,
+      };
+    }
+    return step;
+  });
+
+  const percentComplete =
+    input.status === 'REVIEW_REQUIRED'
+      ? 100
+      : Math.max(0, ...steps.filter((step) => step.status === 'completed').map((step) => step.percent));
+  const currentStep = input.status === 'REVIEW_REQUIRED' ? 'audit' : failureStepId;
+
+  return persistSourceImportJob({
+    ...job,
+    status: input.status,
+    reason: input.reason,
+    auditRecorded: input.auditRecorded,
+    componentName: input.componentName ?? job.componentName,
+    percentComplete,
+    currentStep,
+    steps,
+    updatedAt: now,
+  });
 }
 
 async function readRemoteSource(source: string): Promise<string> {
@@ -179,6 +390,14 @@ export default async function sourceImportRoutes(fastify: FastifyInstance): Prom
       const workspaceId = getHeaderValue(request.headers['x-workspace-id']);
       const projectScopeId = getHeaderValue(request.headers['x-project-id']);
       const body = request.body;
+      const importJob = createSourceImportJob({
+        tenantId,
+        workspaceId,
+        projectId: projectScopeId ?? body?.projectId ?? null,
+        sourceType: body?.sourceType ?? 'unknown',
+        source: body?.source ?? '',
+        componentName: body?.targetComponentName,
+      });
 
       if (!tenantId || !workspaceId || !projectScopeId) {
         const auditRecorded = await logSourceImportAudit(request, {
@@ -204,11 +423,12 @@ export default async function sourceImportRoutes(fastify: FastifyInstance): Prom
             fileCount: 0,
             totalSize: 0,
           },
-          job: {
+          job: completeSourceImportJob(importJob, {
             status: 'REJECTED',
             reason: 'missing_scope',
             auditRecorded,
-          },
+            failedStepId: 'validate_scope',
+          }),
         });
       }
 
@@ -236,13 +456,22 @@ export default async function sourceImportRoutes(fastify: FastifyInstance): Prom
             fileCount: 0,
             totalSize: 0,
           },
-          job: {
+          job: completeSourceImportJob(importJob, {
             status: 'REJECTED',
             reason: 'project_scope_mismatch',
             auditRecorded,
-          },
+            failedStepId: 'validate_scope',
+          }),
         });
       }
+
+      const sourceValidatedJob = persistSourceImportJob(
+        updateSourceImportJobStep(
+          updateSourceImportJobStep(importJob, 'validate_scope', 'completed'),
+          'validate_source',
+          'running',
+        ),
+      );
 
       if (!isAllowedSourceType(body.sourceType)) {
         const auditRecorded = await logSourceImportAudit(request, {
@@ -268,11 +497,12 @@ export default async function sourceImportRoutes(fastify: FastifyInstance): Prom
             fileCount: 0,
             totalSize: 0,
           },
-          job: {
+          job: completeSourceImportJob(sourceValidatedJob, {
             status: 'REJECTED',
             reason: 'unsupported_source_type',
             auditRecorded,
-          },
+            failedStepId: 'validate_source',
+          }),
         });
       }
 
@@ -300,16 +530,25 @@ export default async function sourceImportRoutes(fastify: FastifyInstance): Prom
             fileCount: 0,
             totalSize: 0,
           },
-          job: {
+          job: completeSourceImportJob(sourceValidatedJob, {
             status: 'REJECTED',
             reason: 'untrusted_source_locator',
             auditRecorded,
-          },
+            failedStepId: 'validate_source',
+          }),
         });
       }
 
+      let activeJob = sourceValidatedJob;
       try {
         const importedAt = new Date().toISOString();
+        const fetchingJob = persistSourceImportJob(
+          startSourceImportJobStep(
+            updateSourceImportJobStep(sourceValidatedJob, 'validate_source', 'completed'),
+            'fetch_source',
+          ),
+        );
+        activeJob = fetchingJob;
         const content = await readRemoteSource(body.source);
         const componentName = body.targetComponentName ?? inferComponentName(body.source, 'ImportedSource');
         const file: SourceImportFile = {
@@ -318,7 +557,13 @@ export default async function sourceImportRoutes(fastify: FastifyInstance): Prom
           type: inferFileType(body.sourceType),
           source: body.source,
         };
-        const jobId = `source-import-${randomUUID()}`;
+        const reviewJob = persistSourceImportJob(
+          startSourceImportJobStep(
+            updateSourceImportJobStep(fetchingJob, 'fetch_source', 'completed'),
+            'prepare_review',
+          ),
+        );
+        activeJob = reviewJob;
         const auditRecorded = await logSourceImportAudit(request, {
           tenantId,
           workspaceId,
@@ -327,10 +572,18 @@ export default async function sourceImportRoutes(fastify: FastifyInstance): Prom
           source: body.source,
           outcome: 'REVIEW_REQUIRED',
           status: 200,
-          jobId,
+          jobId: reviewJob.id,
           componentName,
           totalSize: content.length,
         });
+        const completedJob = completeSourceImportJob(
+          updateSourceImportJobStep(reviewJob, 'prepare_review', 'completed'),
+          {
+            status: 'REVIEW_REQUIRED',
+            auditRecorded,
+            componentName,
+          },
+        );
 
         return {
           success: true,
@@ -347,15 +600,7 @@ export default async function sourceImportRoutes(fastify: FastifyInstance): Prom
             fileCount: 1,
             totalSize: content.length,
           },
-          job: {
-            id: jobId,
-            status: 'REVIEW_REQUIRED',
-            tenantId,
-            workspaceId,
-            projectId: body.projectId,
-            createdAt: importedAt,
-            auditRecorded,
-          },
+          job: completedJob,
         };
       } catch (error) {
         const auditRecorded = await logSourceImportAudit(request, {
@@ -381,13 +626,48 @@ export default async function sourceImportRoutes(fastify: FastifyInstance): Prom
             fileCount: 0,
             totalSize: 0,
           },
-          job: {
+          job: completeSourceImportJob(activeJob, {
             status: 'FAILED',
             reason: 'source_fetch_failed',
             auditRecorded,
-          },
+            failedStepId: 'fetch_source',
+          }),
         });
       }
+    },
+  );
+
+  fastify.get<{ Params: { jobId: string } }>(
+    '/yappc/artifact/import-source/:jobId',
+    async (request, reply) => {
+      const tenantId = getHeaderValue(request.headers['x-tenant-id']);
+      const workspaceId = getHeaderValue(request.headers['x-workspace-id']);
+      const projectScopeId = getHeaderValue(request.headers['x-project-id']);
+
+      if (!tenantId || !workspaceId || !projectScopeId) {
+        return reply.status(400).send({
+          error: 'missing_scope',
+          message: 'Governed source import job polling requires tenant, workspace, and project headers.',
+        });
+      }
+
+      cleanupSourceImportJobs();
+      const job = sourceImportJobs.get(request.params.jobId);
+      if (!job) {
+        return reply.status(404).send({
+          error: 'source_import_job_not_found',
+          message: 'Source import job was not found or has expired.',
+        });
+      }
+
+      if (job.tenantId !== tenantId || job.workspaceId !== workspaceId || job.projectId !== projectScopeId) {
+        return reply.status(403).send({
+          error: 'source_import_job_scope_mismatch',
+          message: 'Source import job scope does not match the request scope.',
+        });
+      }
+
+      return { job };
     },
   );
 }

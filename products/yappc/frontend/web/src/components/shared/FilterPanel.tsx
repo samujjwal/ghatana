@@ -12,6 +12,9 @@
 
 import React, { useState } from 'react';
 import { Filter as FilterList, XCircle as Clear, Search } from 'lucide-react';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
 
 export interface FilterOption {
     label: string;
@@ -63,7 +66,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                 return (
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
-                        <input
+                        <Input
                             type="text"
                             value={typeof value === 'string' || typeof value === 'number' ? value : ''}
                             onChange={(e) => onChange(filter.id, e.target.value)}
@@ -75,7 +78,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
 
             case 'select':
                 return (
-                    <select
+                    <Select
                         value={typeof value === 'string' || typeof value === 'number' ? value : ''}
                         onChange={(e) => onChange(filter.id, e.target.value)}
                         className="w-full px-3 py-2 text-sm border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600"
@@ -86,7 +89,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                                 {opt.label}
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 );
 
             case 'multi-select':
@@ -95,7 +98,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                     <div className="space-y-2">
                         {filter.options?.map((opt) => (
                             <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
-                                <input
+                                <Input
                                     type="checkbox"
                                     checked={selectedValues.includes(opt.value)}
                                     onChange={(e) => {
@@ -115,7 +118,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             case 'toggle':
                 return (
                     <label className="flex items-center gap-2 cursor-pointer">
-                        <input
+                        <Input
                             type="checkbox"
                             checked={typeof value === 'boolean' ? value : false}
                             onChange={(e) => onChange(filter.id, e.target.checked)}
@@ -133,11 +136,14 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     return (
         <div className="border border-divider rounded-lg bg-bg-paper">
             {/* Header */}
-            <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-grey-50 transition-colors"
-            >
-                <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between px-4 py-3 hover:bg-grey-50 transition-colors">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="flex items-center gap-2 p-0 text-left"
+                    aria-expanded={isExpanded}
+                >
                     <FilterList className="w-5 h-5 text-text-secondary" />
                     <span className="text-sm font-medium text-text-primary">Filters</span>
                     {activeFilterCount > 0 && (
@@ -145,10 +151,12 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                             {activeFilterCount}
                         </span>
                     )}
-                </div>
+                </Button>
                 <div className="flex items-center gap-2">
                     {hasActiveFilters && (
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onClear();
@@ -157,13 +165,13 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                         >
                             <Clear className="w-3 h-3" />
                             Clear
-                        </button>
+                        </Button>
                     )}
                     <span className="text-xs text-text-secondary">
                         {isExpanded ? '▲' : '▼'}
                     </span>
                 </div>
-            </button>
+            </div>
 
             {/* Filter Controls */}
             {isExpanded && (
@@ -178,12 +186,12 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                     ))}
 
                     {onApply && (
-                        <button
+                        <Button
                             onClick={onApply}
                             className="w-full px-4 py-2 text-sm font-medium bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
                         >
                             Apply Filters
-                        </button>
+                        </Button>
                     )}
                 </div>
             )}

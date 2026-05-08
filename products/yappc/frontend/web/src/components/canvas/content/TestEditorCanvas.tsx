@@ -10,6 +10,7 @@
  * @doc.pattern Component
  */
 
+import { Button } from '../../ui/Button';
 import { useState, useMemo } from 'react';
 import { BaseCanvasContent } from '../BaseCanvasContent';
 import {
@@ -78,7 +79,7 @@ const MOCK_TESTS: TestCase[] = [
         status: 'passing',
         duration: 18,
         code: `test('should display modal on trigger', () => {
-  render(<Modal trigger={<button>Open</button>}>Content</Modal>);
+  render(<Modal trigger={<Button variant="ghost" size="sm">Open</Button>}>Content</Modal>);
   fireEvent.click(screen.getByText('Open'));
   expect(screen.getByText('Content')).toBeVisible();
 });`,

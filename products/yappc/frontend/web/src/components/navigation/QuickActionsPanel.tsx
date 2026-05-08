@@ -15,7 +15,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router';
 import { Plus as Add, Folder, Briefcase as WorkOutline, Grid3x3 as GridView, Settings, Share2 as Share, Download as GetApp, History, HelpCircle as HelpOutline, MoreVertical as MoreVert } from 'lucide-react';
 
-import { Z_INDEX } from '../../styles/design-tokens';
+import { Button } from '../ui/Button';
 
 interface QuickAction {
     id: string;
@@ -221,7 +221,7 @@ export function QuickActionsPanel({
     return (
         <div className={`relative ${className}`}>
             {/* Trigger Button */}
-            <button
+            <Button
                 ref={buttonRef}
                 onClick={() => {
                     updateDropdownPosition();
@@ -232,9 +232,11 @@ export function QuickActionsPanel({
                 aria-haspopup="menu"
                 aria-expanded={isOpen}
                 title="Quick Actions"
+                variant="ghost"
+                size="sm"
             >
                 <MoreVert className="w-5 h-5" />
-            </button>
+            </Button>
 
             {/* Dropdown Menu - Rendered via portal to avoid overflow clipping */}
             {isOpen && typeof document !== 'undefined' && createPortal(
@@ -251,10 +253,12 @@ export function QuickActionsPanel({
                 >
                     {allActions.map((action, index) => (
                         <div key={action.id}>
-                            <button
+                            <Button
                                 onClick={action.onClick}
                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:bg-grey-50 dark:hover:bg-grey-800 transition-colors"
                                 role="menuitem"
+                                variant="ghost"
+                                size="sm"
                             >
                                 <span className="flex-shrink-0">{action.icon}</span>
                                 <span className="flex-1 text-left">{action.label}</span>
@@ -263,7 +267,7 @@ export function QuickActionsPanel({
                                         {action.shortcut}
                                     </span>
                                 )}
-                            </button>
+                            </Button>
                             {action.divider && index < allActions.length - 1 && (
                                 <div className="h-px bg-divider my-1" />
                             )}
@@ -378,7 +382,7 @@ export function NewButton({
     return (
         <div className={`relative ${className}`}>
             {/* Button */}
-            <button
+            <Button
                 ref={buttonRef}
                 onClick={() => {
                     updateDropdownPosition();
@@ -393,10 +397,11 @@ export function NewButton({
                 aria-label="Create new"
                 aria-haspopup="menu"
                 aria-expanded={isOpen}
+                size="sm"
             >
                 <Add className="w-4 h-4" />
                 {variant !== 'compact' && <span>New</span>}
-            </button>
+            </Button>
 
             {/* Dropdown - Rendered via portal to avoid overflow clipping */}
             {isOpen && typeof document !== 'undefined' && createPortal(
@@ -412,11 +417,13 @@ export function NewButton({
                     aria-orientation="vertical"
                 >
                     {createActions.map(action => (
-                        <button
+                        <Button
                             key={action.id}
                             onClick={action.onClick}
                             className="w-full flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:bg-grey-50 dark:hover:bg-grey-800 transition-colors"
                             role="menuitem"
+                            variant="ghost"
+                            size="sm"
                         >
                             <span className="flex-shrink-0">{action.icon}</span>
                             <span className="flex-1 text-left">{action.label}</span>
@@ -425,7 +432,7 @@ export function NewButton({
                                     {action.shortcut}
                                 </span>
                             )}
-                        </button>
+                        </Button>
                     ))}
                 </div>,
                 document.body

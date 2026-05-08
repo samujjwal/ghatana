@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle, CheckCircle2, Info, Lightbulb, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '../ui/Button';
 
 /**
  * Validation Panel component.
@@ -146,19 +147,21 @@ export function ValidationPanel({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <Button
             onClick={onRunTests}
             className="px-2 py-1 text-xs bg-info-bg text-white rounded hover:bg-primary"
+            size="sm"
           >
             Run Tests
-          </button>
+          </Button>
           {(stats.errors > 0 || stats.warnings > 0) && (
-            <button
+            <Button
               onClick={onFixAll}
               className="px-2 py-1 text-xs bg-success-bg text-white rounded hover:bg-success-bg"
+              size="sm"
             >
               Fix All
-            </button>
+            </Button>
           )}
         </div>
       </div>

@@ -29,6 +29,7 @@ import {
 
 import { cn } from '../../utils/cn';
 import { Input } from '@ghatana/design-system';
+import { Button } from '../ui/Button';
 import {
   globalSearchOpenAtom,
   globalSearchQueryAtom,
@@ -299,12 +300,13 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
               <kbd className="rounded bg-surface-muted px-2 py-1 font-mono dark:bg-surface">
                 <Command className="inline h-3 w-3" />K
               </kbd>
-              <button
+              <Button
                 onClick={handleClose}
                 className="rounded p-1 hover:bg-surface-muted dark:hover:bg-surface"
+                aria-label="Close search"
               >
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -321,7 +323,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                   const isSelected = index === selectedIndex;
 
                   return (
-                    <button
+                    <Button
                       key={result.id}
                       onClick={() => handleSelectResult(result)}
                       onMouseEnter={() => setSelectedIndex(index)}
@@ -346,7 +348,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                         )}
                       </div>
                       <ArrowRight className="h-4 w-4 text-fg-muted" />
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -364,14 +366,14 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                     </div>
                     <div className="space-y-1">
                       {recentSearches.map((search, index) => (
-                        <button
+                        <Button
                           key={index}
                           onClick={() => setQuery(search)}
                           className="flex w-full items-center gap-3 rounded-lg p-3 text-left text-sm text-fg transition-colors hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface"
                         >
                           <Clock className="h-4 w-4 text-fg-muted" />
                           {search}
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   </>

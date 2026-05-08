@@ -10,6 +10,7 @@ import { Home, ArrowLeft, Search, HelpCircle } from 'lucide-react';
 
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
+import { Button } from '../../components/ui/Button';
 
 function NotFoundPage(): React.ReactElement {
   return (
@@ -49,8 +50,9 @@ function NotFoundPage(): React.ReactElement {
             <Home className="w-4 h-4" />
             Go to Dashboard
           </NavLink>
-          <button
+          <Button
             onClick={() => window.history.back()}
+            variant="ghost"
             className={cn(
               'flex items-center gap-2 px-6 py-3 rounded-lg font-medium',
               'bg-surface text-fg-muted hover:bg-surface-muted transition-colors'
@@ -58,7 +60,7 @@ function NotFoundPage(): React.ReactElement {
           >
             <ArrowLeft className="w-4 h-4" />
             Go Back
-          </button>
+          </Button>
         </div>
 
         {/* Help Link */}

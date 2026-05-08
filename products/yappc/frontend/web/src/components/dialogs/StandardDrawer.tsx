@@ -49,6 +49,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X as Close } from 'lucide-react';
 import { TRANSITIONS, Z_INDEX } from '../../styles/design-tokens';
+import { Button } from '../ui/Button';
 
 export interface StandardDrawerProps {
     /** Whether drawer is open */
@@ -279,9 +280,11 @@ export function StandardDrawer({
                             </h2>
                         )}
                         {showCloseButton && (
-                            <button
+                            <Button
                                 onClick={onClose}
                                 disabled={isLoading}
+                                variant="ghost"
+                                size="small"
                                 className={`
                   min-w-[44px] min-h-[44px] p-2.5 rounded-md text-text-secondary
                   hover:bg-grey-100 dark:hover:bg-grey-800
@@ -292,7 +295,7 @@ export function StandardDrawer({
                                 aria-label="Close drawer"
                             >
                                 <Close className="w-5 h-5" />
-                            </button>
+                            </Button>
                         )}
                     </div>
                 )}
@@ -399,9 +402,10 @@ export function FormDrawer({
             error={error}
             actions={
                 <>
-                    <button
+                    <Button
                         onClick={handleCancel}
                         disabled={isLoading}
+                        variant="outline"
                         className={`
               min-h-[44px] px-4 py-2 rounded-md text-sm font-medium
               border border-divider text-text-primary
@@ -412,10 +416,11 @@ export function FormDrawer({
             `}
                     >
                         {cancelText}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         onClick={onSubmit}
                         disabled={isLoading}
+                        variant="solid"
                         className={`
               min-h-[44px] px-4 py-2 rounded-md text-sm font-medium
               bg-primary-600 hover:bg-primary-700 text-white
@@ -425,7 +430,7 @@ export function FormDrawer({
             `}
                     >
                         {submitText}
-                    </button>
+                    </Button>
                 </>
             }
         >

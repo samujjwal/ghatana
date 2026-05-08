@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { Button } from '../../components/ui/Button';
 
 // ============================================================================
 // Types
@@ -178,15 +179,27 @@ const CalendarPage: React.FC = () => {
           <div className="lg:col-span-2 bg-surface border border-border rounded-lg p-5">
             {/* Month Navigation */}
             <div className="flex items-center justify-between mb-4">
-              <button onClick={goToPrev} className="p-1.5 rounded-lg text-fg-muted hover:text-fg-muted hover:bg-surface transition-colors">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={goToPrev}
+                className="min-h-0 p-1.5 rounded-lg text-fg-muted hover:text-fg-muted hover:bg-surface"
+                aria-label="Previous month"
+              >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M15 19l-7-7 7-7" /></svg>
-              </button>
+              </Button>
               <h2 className="text-lg font-semibold text-fg-muted">
                 {MONTHS[currentMonth]} {currentYear}
               </h2>
-              <button onClick={goToNext} className="p-1.5 rounded-lg text-fg-muted hover:text-fg-muted hover:bg-surface transition-colors">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={goToNext}
+                className="min-h-0 p-1.5 rounded-lg text-fg-muted hover:text-fg-muted hover:bg-surface"
+                aria-label="Next month"
+              >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M9 5l7 7-7 7" /></svg>
-              </button>
+              </Button>
             </div>
 
             {/* Day Headers */}

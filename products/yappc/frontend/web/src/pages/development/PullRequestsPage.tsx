@@ -14,6 +14,7 @@ import { useParams, NavLink } from 'react-router';
 import { GitPullRequest, Search, Filter, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
+import { Button } from '../../components/ui/Button';
 
 type PRStatus = 'open' | 'merged' | 'closed';
 
@@ -42,7 +43,7 @@ const PullRequestsPage: React.FC = () => {
 
         <div className="flex items-center gap-4 mb-6 border-b border-border pb-3">
           {tabs.map((tab) => (
-            <button
+            <Button
               key={tab.status}
               onClick={() => setActiveTab(tab.status)}
               className={cn(
@@ -53,7 +54,7 @@ const PullRequestsPage: React.FC = () => {
               )}
             >
               {tab.label}
-            </button>
+            </Button>
           ))}
         </div>
 

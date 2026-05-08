@@ -12,6 +12,7 @@ import React from 'react';
 import { useParams, NavLink } from 'react-router';
 import { Eye, ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { ROUTES } from '../../router/paths';
+import { Button } from '../../components/ui/Button';
 
 const BootstrapPreviewPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -63,11 +64,13 @@ const BootstrapPreviewPage: React.FC = () => {
               <ArrowLeft className="w-4 h-4" />
               Back to Session
             </NavLink>
-            <button className="flex items-center gap-2 px-6 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 transition-colors text-sm font-medium">
-              <CheckCircle2 className="w-4 h-4" />
+            <Button
+              className="rounded-lg bg-violet-600 px-6 py-2 text-sm font-medium hover:bg-violet-500"
+              startIcon={<CheckCircle2 className="w-4 h-4" />}
+              endIcon={<ArrowRight className="w-4 h-4" />}
+            >
               Finalize &amp; Continue
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
         </div>
       </div>

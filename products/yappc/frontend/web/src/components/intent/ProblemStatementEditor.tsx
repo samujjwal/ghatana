@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Problem Statement Editor Component
  *
@@ -14,6 +13,9 @@
 import React, { useState, useCallback } from 'react';
 import { Sparkles as AutoAwesome, Plus as Add, Minus as Remove, Check } from 'lucide-react';
 import type { ProblemStatementPayload } from '@/shared/types/lifecycle-artifacts';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
 
 export interface ProblemStatementEditorProps {
     initialData?: Partial<ProblemStatementPayload>;
@@ -29,13 +31,32 @@ interface SuccessMetric {
     current?: string;
 }
 
-const defaultData: ProblemStatementPayload = {
+interface ProblemStatementFormData extends Omit<ProblemStatementPayload, 'successMetrics'> {
+    successMetrics: SuccessMetric[];
+}
+
+const defaultData: ProblemStatementFormData = {
     problem: '',
     who: '',
     when: '',
     whyNow: '',
     successMetrics: [{ name: '', target: '', current: '' }],
     nonGoals: [''],
+};
+
+const toMetricFormData = (metric: string | SuccessMetric): SuccessMetric => {
+    if (typeof metric !== 'string') {
+        return metric;
+    }
+
+    return { name: metric, target: '', current: '' };
+};
+
+const toMetricPayload = (metric: SuccessMetric): string => {
+    const current = metric.current?.trim();
+    return current
+        ? `${metric.name.trim()}: ${metric.target.trim()} (current: ${current})`
+        : `${metric.name.trim()}: ${metric.target.trim()}`;
 };
 
 /**
@@ -48,20 +69,20 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
     onCancel,
     isSubmitting = false,
 }) => {
-    const [data, setData] = useState<ProblemStatementPayload>({
+    const [data, setData] = useState<ProblemStatementFormData>({
         ...defaultData,
         ...initialData,
         successMetrics: initialData?.successMetrics?.length
-            ? initialData.successMetrics
+            ? initialData.successMetrics.map(toMetricFormData)
             : defaultData.successMetrics,
         nonGoals: initialData?.nonGoals?.length ? initialData.nonGoals : defaultData.nonGoals,
     });
     const [isAILoading, setIsAILoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    const updateField = useCallback(<K extends keyof ProblemStatementPayload>(
+    const updateField = useCallback(<K extends keyof ProblemStatementFormData>(
         field: K,
-        value: ProblemStatementPayload[K]
+        value: ProblemStatementFormData[K]
     ) => {
         setData((prev) => ({ ...prev, [field]: value }));
         setErrors((prev) => ({ ...prev, [field]: '' }));
@@ -121,7 +142,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                     ...prev,
                     ...suggestions,
                     successMetrics: suggestions.successMetrics?.length
-                        ? suggestions.successMetrics
+                        ? suggestions.successMetrics.map(toMetricFormData)
                         : prev.successMetrics,
                     nonGoals: suggestions.nonGoals?.length ? suggestions.nonGoals : prev.nonGoals,
                 }));
@@ -158,7 +179,9 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
 
         const cleanData: ProblemStatementPayload = {
             ...data,
-            successMetrics: data.successMetrics.filter((m) => m.name.trim() && m.target.trim()),
+            successMetrics: data.successMetrics
+                .filter((m) => m.name.trim() && m.target.trim())
+                .map(toMetricPayload),
             nonGoals: data.nonGoals.filter((g) => g.trim()),
         };
 
@@ -175,7 +198,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                 >
                     Problem Statement *
                 </label>
-                <textarea
+                <Textarea
                     id="problem-statement"
                     value={data.problem}
                     onChange={(e) => updateField('problem', e.target.value)}
@@ -198,7 +221,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                 >
                     Who experiences this problem? *
                 </label>
-                <input
+                <Input
                     id="problem-who"
                     type="text"
                     value={data.who}
@@ -221,7 +244,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                 >
                     When does this problem occur?
                 </label>
-                <input
+                <Input
                     id="problem-when"
                     type="text"
                     value={data.when}
@@ -240,7 +263,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                 >
                     Why solve this now? *
                 </label>
-                <textarea
+                <Textarea
                     id="problem-whynow"
                     value={data.whyNow}
                     onChange={(e) => updateField('whyNow', e.target.value)}
@@ -267,7 +290,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                             className="p-3 border border-divider rounded-lg bg-bg-paper space-y-2"
                         >
                             <div className="flex gap-2">
-                                <input
+                                <Input
                                     type="text"
                                     value={metric.name}
                                     onChange={(e) => updateMetric(index, { name: e.target.value })}
@@ -276,21 +299,23 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                                     disabled={isSubmitting}
                                 />
                                 {data.successMetrics.length > 1 && (
-                                    <button
+                                    <Button
                                         type="button"
                                         onClick={() => removeMetric(index)}
+                                        variant="ghost"
+                                        size="small"
                                         className="p-2 text-text-secondary hover:text-error-color transition-colors"
                                         aria-label="Remove metric"
                                         disabled={isSubmitting}
                                     >
                                         <Remove className="w-5 h-5" />
-                                    </button>
+                                    </Button>
                                 )}
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div>
                                     <label className="text-xs text-text-secondary">Target</label>
-                                    <input
+                                    <Input
                                         type="text"
                                         value={metric.target}
                                         onChange={(e) => updateMetric(index, { target: e.target.value })}
@@ -301,7 +326,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                                 </div>
                                 <div>
                                     <label className="text-xs text-text-secondary">Current (optional)</label>
-                                    <input
+                                    <Input
                                         type="text"
                                         value={metric.current || ''}
                                         onChange={(e) => updateMetric(index, { current: e.target.value })}
@@ -313,14 +338,16 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                             </div>
                         </div>
                     ))}
-                    <button
+                    <Button
                         type="button"
                         onClick={addMetric}
+                        variant="ghost"
+                        size="small"
                         className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 transition-colors"
                         disabled={isSubmitting}
                     >
                         <Add className="w-4 h-4" /> Add metric
-                    </button>
+                    </Button>
                 </div>
                 {errors.successMetrics && (
                     <p className="text-sm text-error-color mt-1">{errors.successMetrics}</p>
@@ -335,7 +362,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                 <div className="space-y-2">
                     {data.nonGoals.map((nonGoal, index) => (
                         <div key={index} className="flex gap-2">
-                            <input
+                            <Input
                                 type="text"
                                 value={nonGoal}
                                 onChange={(e) => updateNonGoal(index, e.target.value)}
@@ -344,61 +371,68 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                                 disabled={isSubmitting}
                             />
                             {data.nonGoals.length > 1 && (
-                                <button
+                                <Button
                                     type="button"
                                     onClick={() => removeNonGoal(index)}
+                                    variant="ghost"
+                                    size="small"
                                     className="p-2 text-text-secondary hover:text-error-color transition-colors"
                                     aria-label="Remove non-goal"
                                     disabled={isSubmitting}
                                 >
                                     <Remove className="w-5 h-5" />
-                                </button>
+                                </Button>
                             )}
                         </div>
                     ))}
-                    <button
+                    <Button
                         type="button"
                         onClick={addNonGoal}
+                        variant="ghost"
+                        size="small"
                         className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 transition-colors"
                         disabled={isSubmitting}
                     >
                         <Add className="w-4 h-4" /> Add non-goal
-                    </button>
+                    </Button>
                 </div>
             </div>
 
             {/* Actions */}
             <div className="flex items-center justify-between pt-4 border-t border-divider">
                 {onAIAssist && (
-                    <button
+                    <Button
                         type="button"
                         onClick={handleAIAssist}
                         disabled={isSubmitting || isAILoading}
+                        variant="ghost"
                         className="flex items-center gap-2 px-4 py-2 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50"
                     >
                         <AutoAwesome className="w-5 h-5" />
                         {isAILoading ? 'Synthesizing...' : 'AI Synthesis'}
-                    </button>
+                    </Button>
                 )}
                 <div className="flex gap-3 ml-auto">
                     {onCancel && (
-                        <button
+                        <Button
                             type="button"
                             onClick={onCancel}
                             disabled={isSubmitting}
+                            variant="ghost"
                             className="px-4 py-2 text-text-secondary hover:text-text-primary transition-colors"
                         >
                             Cancel
-                        </button>
+                        </Button>
                     )}
-                    <button
+                    <Button
                         type="submit"
                         disabled={isSubmitting}
+                        variant="solid"
                         className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                     >
                         <Check className="w-5 h-5" />
                         {isSubmitting ? 'Saving...' : 'Save Problem Statement'}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </form>

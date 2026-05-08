@@ -14,6 +14,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { Box, IconButton, Tooltip, Select, MenuItem, FormControl, Typography } from '@ghatana/design-system';
 import { Pencil as Edit, Play as PlayArrow, Copy as ContentCopy } from 'lucide-react';
+import { Textarea } from '../../../ui/Textarea';
 
 interface CodeNodeContentProps {
     data?: {
@@ -144,11 +145,13 @@ export const CodeNodeContent: React.FC<CodeNodeContentProps> = ({
 
                 {/* Code Editor */}
                 <Box className="rounded overflow-hidden flex-1 border border-solid border-[#ccc]">
-                    <textarea
+                    <Textarea
                         ref={textareaRef}
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
                         placeholder="Write your code here..."
+                        resize="none"
+                        fullWidth
                         style={{
                             width: '100%',
                             height: '100%',

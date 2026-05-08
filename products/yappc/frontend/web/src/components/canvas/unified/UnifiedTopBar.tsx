@@ -157,7 +157,7 @@ export function UnifiedTopBar({ projectId, onExportImport, onMindMapLayout, mode
             </Button>
 
             {/* User Avatar */}
-            <Avatar className="w-[32px] h-[32px] bg-primary">
+            <Avatar className="w-[32px] h-[32px] bg-info-color">
                 U
             </Avatar>
 

@@ -1,6 +1,7 @@
 package com.ghatana.datacloud.launcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.ghatana.datacloud.DataCloud;
 import java.util.Map;
@@ -218,5 +219,86 @@ class DataCloudLauncherSettingsTest {
     void storageCompactionSettingsFallBackToDefaults() { 
         assertThat(DataCloudLauncherSettings.resolveStorageCompactionThreshold(Map.of())).isEqualTo(25); 
         assertThat(DataCloudLauncherSettings.resolveStorageCompactionIntervalSeconds(Map.of())).isEqualTo(300L); 
+    }
+
+    // =========================================================================
+    // DC-P0-001: Fail-closed profile resolution in container/Kubernetes context
+    // =========================================================================
+
+    @Test
+    @DisplayName("resolveProfile throws when DATACLOUD_PROFILE absent in container environment")
+    void resolveProfileFailsWhenMissingInContainerEnvironment() {
+        assertThatThrownBy(() ->
+            DataCloudLauncherSettings.resolveProfile(
+                new String[0],
+                Map.of("DATACLOUD_CONTAINER", "true"))
+        ).isInstanceOf(IllegalStateException.class)
+         .hasMessageContaining("DATACLOUD_PROFILE must be set explicitly in container/Kubernetes deployments");
+    }
+
+    @Test
+    @DisplayName("resolveProfile throws when DATACLOUD_PROFILE absent in Kubernetes environment")
+    void resolveProfileFailsWhenMissingInKubernetesEnvironment() {
+        assertThatThrownBy(() ->
+            DataCloudLauncherSettings.resolveProfile(
+                new String[0],
+                Map.of("KUBERNETES_SERVICE_HOST", "10.0.0.1"))
+        ).isInstanceOf(IllegalStateException.class)
+         .hasMessageContaining("DATACLOUD_PROFILE must be set explicitly in container/Kubernetes deployments");
+    }
+
+    @Test
+    @DisplayName("resolveProfile resolves production when DATACLOUD_PROFILE=production in container")
+    void resolveProfileReturnsProductionWhenSetInContainerEnvironment() {
+        DataCloud.DataCloudConfig.DataCloudProfile profile =
+            DataCloudLauncherSettings.resolveProfile(
+                new String[0],
+                Map.of(
+                    "DATACLOUD_CONTAINER", "true",
+                    "DATACLOUD_PROFILE", "production"));
+
+        assertThat(profile).isEqualTo(DataCloud.DataCloudConfig.DataCloudProfile.PRODUCTION);
+    }
+
+    @Test
+    @DisplayName("resolveProfile resolves staging when DATACLOUD_PROFILE=staging in Kubernetes")
+    void resolveProfileReturnsStagingWhenSetInKubernetesEnvironment() {
+        DataCloud.DataCloudConfig.DataCloudProfile profile =
+            DataCloudLauncherSettings.resolveProfile(
+                new String[0],
+                Map.of(
+                    "KUBERNETES_SERVICE_HOST", "10.96.0.1",
+                    "DATACLOUD_PROFILE", "staging"));
+
+        assertThat(profile).isEqualTo(DataCloud.DataCloudConfig.DataCloudProfile.STAGING);
+    }
+
+    @Test
+    @DisplayName("resolveProfile defaults to LOCAL when DATACLOUD_PROFILE absent outside any container")
+    void resolveProfileDefaultsToLocalOnDeveloperWorkstation() {
+        DataCloud.DataCloudConfig.DataCloudProfile profile =
+            DataCloudLauncherSettings.resolveProfile(new String[0], Map.of());
+
+        assertThat(profile).isEqualTo(DataCloud.DataCloudConfig.DataCloudProfile.LOCAL);
+    }
+
+    @Test
+    @DisplayName("isContainerEnvironment returns true when DATACLOUD_CONTAINER=true")
+    void isContainerEnvironmentDetectsDockerContainerFlag() {
+        assertThat(DataCloudLauncherSettings.isContainerEnvironment(
+            Map.of("DATACLOUD_CONTAINER", "true"))).isTrue();
+    }
+
+    @Test
+    @DisplayName("isContainerEnvironment returns true when KUBERNETES_SERVICE_HOST is present")
+    void isContainerEnvironmentDetectsKubernetesServiceHost() {
+        assertThat(DataCloudLauncherSettings.isContainerEnvironment(
+            Map.of("KUBERNETES_SERVICE_HOST", "10.96.0.1"))).isTrue();
+    }
+
+    @Test
+    @DisplayName("isContainerEnvironment returns false when no container signals are present")
+    void isContainerEnvironmentReturnsFalseWithNoSignals() {
+        assertThat(DataCloudLauncherSettings.isContainerEnvironment(Map.of())).isFalse();
     }
 }

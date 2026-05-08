@@ -1,6 +1,7 @@
 package com.ghatana.datacloud.backpressure;
 
 import io.activej.promise.Promise;
+import io.activej.promise.SettablePromise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -258,11 +259,11 @@ public class BackpressureManager {
         }
 
         // Add to queue and return promise
-        CompletableFuture<T> future = new CompletableFuture<>();
+        SettablePromise<T> promise = new SettablePromise<>();
         @SuppressWarnings("unchecked")
         PendingRequest<T> request = new PendingRequest<>(priority,
             (Supplier<Promise<Object>>) (Supplier<?>) operation,
-            (CompletableFuture<Object>) (CompletableFuture<?>) future);
+            (SettablePromise<Object>) (SettablePromise<?>) promise);
 
         pendingQueue.offer(request);
         log.debug("Request queued (queue size: {})", pendingQueue.size());
@@ -270,7 +271,7 @@ public class BackpressureManager {
         // Try to process queue
         processQueue();
 
-        return Promise.ofFuture(future);
+        return promise;
     }
 
     private <T> Promise<T> executeWithThrottle(Priority priority, Supplier<Promise<T>> operation) {
@@ -300,14 +301,14 @@ public class BackpressureManager {
                 }
 
                 // Queue non-critical requests
-                CompletableFuture<T> future = new CompletableFuture<>();
+                SettablePromise<T> future = new SettablePromise<>();
                 @SuppressWarnings("unchecked")
                 PendingRequest<T> request = new PendingRequest<>(priority,
                     (Supplier<Promise<Object>>) (Supplier<?>) operation,
-                    (CompletableFuture<Object>) (CompletableFuture<?>) future);
+                    (SettablePromise<Object>) (SettablePromise<?>) future);
                 pendingQueue.offer(request);
                 processQueue();
-                return Promise.ofFuture(future);
+                return future;
             }
         }
 
@@ -372,10 +373,10 @@ public class BackpressureManager {
 
                         if (error != null) {
                             failedRequests.incrementAndGet();
-                            request.future.completeExceptionally(error);
+                            request.future.setException((Exception) (error instanceof Exception ? error : new RuntimeException(error)));
                         } else {
                             completedRequests.incrementAndGet();
-                            ((CompletableFuture<Object>) request.future).complete(result);
+                            request.future.set(result);
                         }
 
                         processQueue();
@@ -384,7 +385,7 @@ public class BackpressureManager {
                 activeRequests.decrementAndGet();
                 semaphore.release();
                 failedRequests.incrementAndGet();
-                request.future.completeExceptionally(e);
+                request.future.setException(e);
             }
         }
     }
@@ -557,10 +558,9 @@ public class BackpressureManager {
     private static class PendingRequest<T> {
         final Priority priority;
         final Supplier<Promise<Object>> operation;
-        final CompletableFuture<Object> future;
+        final SettablePromise<Object> future;
 
-        @SuppressWarnings("unchecked")
-        PendingRequest(Priority priority, Supplier<Promise<Object>> operation, CompletableFuture<Object> future) {
+        PendingRequest(Priority priority, Supplier<Promise<Object>> operation, SettablePromise<Object> future) {
             this.priority = priority;
             this.operation = operation;
             this.future = future;

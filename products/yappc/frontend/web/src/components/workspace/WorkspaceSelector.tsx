@@ -17,6 +17,7 @@ import {
     setCurrentWorkspaceAtom,
     type Workspace,
 } from '../../state/atoms/workspaceAtom';
+import { Button } from '../ui/Button';
 
 interface WorkspaceSelectorProps {
     onCreateNew?: () => void;
@@ -63,10 +64,11 @@ export function WorkspaceSelector({ onCreateNew, className = '' }: WorkspaceSele
     return (
         <div ref={dropdownRef} className={`relative ${className}`}>
             {/* Trigger Button */}
-            <button
+            <Button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 onKeyDown={handleKeyDown}
+                variant="ghost"
                 aria-expanded={isOpen}
                 aria-haspopup="listbox"
                 data-testid="workspace-selector"
@@ -101,7 +103,7 @@ export function WorkspaceSelector({ onCreateNew, className = '' }: WorkspaceSele
                 >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
-            </button>
+            </Button>
 
             {/* Dropdown Menu */}
             {isOpen && (
@@ -203,12 +205,13 @@ export function WorkspaceSelector({ onCreateNew, className = '' }: WorkspaceSele
 
                     {/* Create New Button */}
                     {onCreateNew && (
-                        <button
+                        <Button
                             type="button"
                             onClick={() => {
                                 setIsOpen(false);
                                 onCreateNew();
                             }}
+                            variant="ghost"
                             data-testid="create-workspace-btn"
                             className="
                 w-full flex items-center gap-2 px-3 py-2.5 
@@ -222,7 +225,7 @@ export function WorkspaceSelector({ onCreateNew, className = '' }: WorkspaceSele
                                 +
                             </span>
                             <span>Create Workspace</span>
-                        </button>
+                        </Button>
                     )}
                 </div>
             )}

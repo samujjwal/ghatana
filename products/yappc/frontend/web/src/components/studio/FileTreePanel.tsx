@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { Button } from '../ui/Button';
 
 /**
  * File Tree Panel component.
@@ -160,20 +161,24 @@ export function FileTreePanel({
             Files
           </h3>
           <div className="flex items-center gap-1">
-            <button
+            <Button
               onClick={() => onFileCreate?.('/', 'file')}
               className="p-1 text-fg-muted hover:text-fg dark:hover:text-fg-muted rounded"
               title="New File"
+              variant="ghost"
+              size="sm"
             >
               <span className="text-xs">📄+</span>
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => onFileCreate?.('/', 'directory')}
               className="p-1 text-fg-muted hover:text-fg dark:hover:text-fg-muted rounded"
               title="New Folder"
+              variant="ghost"
+              size="sm"
             >
               <span className="text-xs">📁+</span>
-            </button>
+            </Button>
           </div>
         </div>
       </div>

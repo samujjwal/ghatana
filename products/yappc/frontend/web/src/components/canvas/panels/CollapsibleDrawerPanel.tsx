@@ -167,7 +167,7 @@ export const CollapsibleDrawerPanel: React.FC<CollapsibleDrawerPanelProps> = ({
                             </Typography>
                             {badgeCount !== undefined && badgeCount > 0 && (
                                 <Box
-                                    className="px-2 py-0.5 text-xs font-semibold bg-primary text-white rounded-[12px]"
+                                    className="px-2 py-0.5 text-xs font-semibold bg-info-color text-white rounded-[12px]"
                                 >
                                     {badgeCount}
                                 </Box>
@@ -208,7 +208,7 @@ export const CollapsibleDrawerPanel: React.FC<CollapsibleDrawerPanelProps> = ({
 
                         {badgeCount !== undefined && badgeCount > 0 && (
                             <Box
-                                className="rounded-full flex items-center justify-center text-xs font-semibold bg-primary text-white w-[24px] h-[24px]"
+                                className="rounded-full flex items-center justify-center text-xs font-semibold bg-info-color text-white w-[24px] h-[24px]"
                             >
                                 {badgeCount}
                             </Box>

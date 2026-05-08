@@ -44,7 +44,7 @@ describe('AdrDraftPanel (AI-Y12)', () => {
 
   it('renders generate button in idle state', () => {
     render(<AdrDraftPanel nodeId="node-1" />);
-    expect(screen.getByTestId('adr-generate-btn')).toBeInTheDocument();
+    expect(screen.getByTestId('adr-generate-btn')).toHaveClass('inline-flex');
   });
 
   it('shows loading state while generating', async () => {
@@ -76,7 +76,9 @@ describe('AdrDraftPanel (AI-Y12)', () => {
     fireEvent.click(screen.getByTestId('adr-generate-btn'));
 
     await screen.findByTestId('adr-accept-btn');
-    fireEvent.click(screen.getByTestId('adr-accept-btn'));
+    const acceptButton = screen.getByTestId('adr-accept-btn');
+    expect(acceptButton).toHaveClass('inline-flex');
+    fireEvent.click(acceptButton);
     expect(onAccept).toHaveBeenCalledWith(sampleResult.draft);
   });
 

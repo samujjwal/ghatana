@@ -32,6 +32,8 @@ import {
   ShieldAlert,
   Shuffle,
 } from 'lucide-react';
+import { Button } from '../../ui/Button';
+import { Textarea } from '../../ui/Textarea';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -107,10 +109,10 @@ const STATUS_LABEL: Record<ThreatDispositionStatus, string> = {
 
 const STATUS_COLOR: Record<ThreatDispositionStatus, string> = {
   IDENTIFIED: 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive',
-  MITIGATED: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200',
+  MITIGATED: 'bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color',
   ACCEPTED: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
   TRANSFERRED: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color',
-  AVOIDED: 'bg-grey-100 text-grey-700 dark:bg-grey-800 dark:text-grey-300',
+  AVOIDED: 'bg-surface-muted text-fg-muted dark:bg-surface-muted dark:text-fg-muted',
 };
 
 const STATUS_ICON: Record<ThreatDispositionStatus, React.ReactElement> = {
@@ -122,7 +124,7 @@ const STATUS_ICON: Record<ThreatDispositionStatus, React.ReactElement> = {
 };
 
 const SEVERITY_COLOR: Record<ThreatSeverity, string> = {
-  LOW: 'bg-grey-100 text-grey-700',
+  LOW: 'bg-surface-muted text-fg-muted',
   MEDIUM: 'bg-warning-bg text-warning-color',
   HIGH: 'bg-warning-bg text-warning-color',
   CRITICAL: 'bg-destructive-bg text-destructive',
@@ -159,58 +161,66 @@ const ThreatDispositionForm: React.FC<ThreatDispositionFormProps> = ({
 
   return (
     <Box
-      className="mt-2 space-y-2 rounded-md border border-divider bg-grey-50 dark:bg-grey-900 p-3"
+      className="mt-2 space-y-2 rounded-md border border-divider bg-surface-muted dark:bg-surface-muted p-3"
       data-testid={`threat-disposition-form-${threatId}`}
     >
       <Typography className="text-xs font-semibold">Dispose as:</Typography>
       <Box className="flex flex-wrap gap-2">
         {FINAL_STATUSES.map((status) => (
-          <button
+          <Button
             key={status}
             type="button"
+            variant="ghost"
+            size="small"
             onClick={() => setSelected(status)}
             className={[
-              'flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all',
+              'min-h-0 gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all',
               selected === status
-                ? STATUS_COLOR[status] + ' ring-2 ring-primary ring-offset-1'
-                : 'bg-grey-200 text-grey-600 dark:bg-grey-700 dark:text-grey-300 hover:bg-grey-300',
+                ? STATUS_COLOR[status] + ' ring-2 ring-info-border ring-offset-1'
+                : 'bg-surface-muted text-fg-muted dark:bg-surface-muted dark:text-fg-muted hover:bg-surface-muted',
             ].join(' ')}
             aria-pressed={selected === status}
           >
             {STATUS_ICON[status]}
             {STATUS_LABEL[status]}
-          </button>
+          </Button>
         ))}
       </Box>
       <label htmlFor={`threat-note-${threatId}`} className="block text-xs text-text-secondary">
         Justification (optional)
       </label>
-      <textarea
+      <Textarea
         id={`threat-note-${threatId}`}
         value={note}
         onChange={(e) => setNote(e.target.value)}
         rows={2}
-        className="w-full rounded border border-divider bg-white dark:bg-grey-800 px-2 py-1 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+        fullWidth
+        resize="none"
+        className="w-full rounded border border-divider bg-bg-paper dark:bg-bg-paper px-2 py-1 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-info-border resize-none"
         placeholder="Explain the rationale for this disposition…"
       />
       <Box className="flex justify-end gap-2">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="small"
           onClick={onCancel}
           disabled={isBusy}
-          className="rounded px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-grey-200 dark:hover:bg-grey-700 disabled:opacity-50"
+          className="min-h-0 rounded px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-muted disabled:opacity-50"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="solid"
+          size="small"
           onClick={() => onConfirm(selected, note)}
           disabled={isBusy}
-          className="rounded bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
+          className="min-h-0 rounded bg-info-color px-3 py-1.5 text-xs font-semibold text-white hover:bg-info-color/90 disabled:opacity-50"
           aria-busy={isBusy}
         >
           {isBusy ? 'Saving…' : 'Confirm'}
-        </button>
+        </Button>
       </Box>
     </Box>
   );
@@ -266,7 +276,7 @@ const ThreatRow: React.FC<ThreatRowProps> = ({ threat: initialThreat, onDispose,
         <Box className="flex-1 min-w-0">
           <Typography className="text-sm font-medium line-clamp-2">{threat.description}</Typography>
           <Box className="mt-1 flex items-center gap-2 flex-wrap">
-            <Chip label={threat.asset} size="sm" className="bg-grey-100 text-grey-700 text-xs" />
+            <Chip label={threat.asset} size="sm" className="bg-surface-muted text-fg-muted text-xs" />
             <Chip
               label={threat.severity}
               size="sm"
@@ -280,15 +290,17 @@ const ThreatRow: React.FC<ThreatRowProps> = ({ threat: initialThreat, onDispose,
             {STATUS_LABEL[threat.status]}
           </Box>
           {threat.auditTrail.length > 0 && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="small"
               onClick={() => setShowAudit((prev) => !prev)}
-              className="rounded p-1 text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors"
+              className="min-h-0 rounded p-1 text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-muted transition-colors"
               aria-label="Toggle audit trail"
               aria-expanded={showAudit}
             >
               <History className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
+            </Button>
           )}
           {showAudit ? (
             <ChevronUp className="h-3.5 w-3.5 text-text-secondary" aria-hidden="true" />
@@ -298,16 +310,18 @@ const ThreatRow: React.FC<ThreatRowProps> = ({ threat: initialThreat, onDispose,
 
       {/* Dispose button (only for open threats) */}
       {isOpen && !isDisposing && (
-        <Box className="border-t border-divider bg-grey-50 dark:bg-grey-900 px-3 py-2">
-          <button
+        <Box className="border-t border-divider bg-surface-muted dark:bg-surface-muted px-3 py-2">
+          <Button
             type="button"
+            variant="ghost"
+            size="small"
             onClick={() => setIsDisposing(true)}
-            className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            className="min-h-0 gap-1 px-0 py-0 text-xs font-medium text-info-color hover:underline"
             data-testid={`threat-dispose-btn-${threat.id}`}
           >
             <ShieldAlert className="h-3.5 w-3.5" aria-hidden="true" />
             Record disposition
-          </button>
+          </Button>
         </Box>
       )}
 
@@ -334,7 +348,7 @@ const ThreatRow: React.FC<ThreatRowProps> = ({ threat: initialThreat, onDispose,
 
       {/* Audit trail */}
       {showAudit && threat.auditTrail.length > 0 && (
-        <Box className="space-y-1 border-t border-divider bg-grey-50 dark:bg-grey-900 px-3 py-2" data-testid={`threat-audit-${threat.id}`}>
+        <Box className="space-y-1 border-t border-divider bg-surface-muted dark:bg-surface-muted px-3 py-2" data-testid={`threat-audit-${threat.id}`}>
           {[...threat.auditTrail].reverse().map((entry) => (
             <Box key={entry.id} className="text-xs text-text-secondary">
               <Box className="flex items-center gap-1 flex-wrap">
@@ -396,7 +410,7 @@ export const ThreatLifecycle: React.FC<ThreatLifecycleProps> = ({
             <Chip
               label={`${threats.length} total`}
               size="sm"
-              className="bg-grey-100 text-grey-700"
+              className="bg-surface-muted text-fg-muted"
             />
           </Box>
         </Box>

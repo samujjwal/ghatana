@@ -14,11 +14,15 @@
 
 import React, { useCallback, useState } from 'react';
 import { Settings2 } from 'lucide-react';
-import { Accordion, Box, Button, Switch, Typography } from '@ghatana/design-system';
+import { Accordion, Box, Switch, Typography } from '@ghatana/design-system';
 import {
   FeatureFlag,
   useFeatureFlag,
 } from '../../providers/FeatureFlagProvider';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
+import { Textarea } from '../ui/Textarea';
 
 // ============================================================================
 // Types
@@ -162,7 +166,7 @@ export const AgentAdvancedSettings: React.FC<AgentAdvancedSettingsProps> = ({
         <label htmlFor="agent-model" className={labelCls}>
           Model
         </label>
-        <select
+        <Select
           id="agent-model"
           className={fieldCls}
           value={advanced.model}
@@ -177,7 +181,7 @@ export const AgentAdvancedSettings: React.FC<AgentAdvancedSettingsProps> = ({
               {opt.label}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {/* Temperature */}
@@ -185,7 +189,7 @@ export const AgentAdvancedSettings: React.FC<AgentAdvancedSettingsProps> = ({
         <label htmlFor="agent-temperature" className={labelCls}>
           Temperature (0 – 2)
         </label>
-        <input
+        <Input
           id="agent-temperature"
           type="number"
           min={0}
@@ -205,7 +209,7 @@ export const AgentAdvancedSettings: React.FC<AgentAdvancedSettingsProps> = ({
         <label htmlFor="agent-max-tokens" className={labelCls}>
           Max tokens
         </label>
-        <input
+        <Input
           id="agent-max-tokens"
           type="number"
           min={1}
@@ -223,7 +227,7 @@ export const AgentAdvancedSettings: React.FC<AgentAdvancedSettingsProps> = ({
         <label htmlFor="agent-timeout" className={labelCls}>
           Request timeout (ms)
         </label>
-        <input
+        <Input
           id="agent-timeout"
           type="number"
           min={1000}
@@ -260,9 +264,10 @@ export const AgentAdvancedSettings: React.FC<AgentAdvancedSettingsProps> = ({
         <span className={labelCls}>Memory mode</span>
         <div className="mt-1 flex gap-2 flex-wrap" role="radiogroup" aria-label="Memory mode">
           {MEMORY_MODE_OPTIONS.map((opt) => (
-            <button
+            <Button
               key={opt.value}
-              type="button"
+              variant="ghost"
+              size="sm"
               role="radio"
               aria-checked={advanced.memoryMode === opt.value}
               disabled={readOnly}
@@ -278,7 +283,7 @@ export const AgentAdvancedSettings: React.FC<AgentAdvancedSettingsProps> = ({
               ].join(' ')}
             >
               {opt.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -317,7 +322,7 @@ export const AgentAdvancedSettings: React.FC<AgentAdvancedSettingsProps> = ({
             <label htmlFor="agent-name" className={labelCls}>
               Agent name
             </label>
-            <input
+            <Input
               id="agent-name"
               type="text"
               className={fieldCls}
@@ -332,9 +337,10 @@ export const AgentAdvancedSettings: React.FC<AgentAdvancedSettingsProps> = ({
             <label htmlFor="agent-description" className={labelCls}>
               Description
             </label>
-            <textarea
+            <Textarea
               id="agent-description"
               rows={3}
+              resize="vertical"
               className={fieldCls}
               value={basic.description}
               disabled={readOnly}

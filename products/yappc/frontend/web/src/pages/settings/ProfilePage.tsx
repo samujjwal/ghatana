@@ -10,6 +10,21 @@ import DeleteMyDataSection from '@/components/admin/DeleteMyDataSection';
 
 type ThemePreference = 'dark' | 'light' | 'system';
 
+const NativeButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>((props, ref) =>
+  React.createElement('button', { ...props, ref }),
+);
+NativeButton.displayName = 'NativeButton';
+
+const NativeInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>((props, ref) =>
+  React.createElement('input', { ...props, ref }),
+);
+NativeInput.displayName = 'NativeInput';
+
+const NativeTextarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) =>
+  React.createElement('textarea', { ...props, ref }),
+);
+NativeTextarea.displayName = 'NativeTextarea';
+
 interface NotificationSettings {
   email: boolean;
   push: boolean;
@@ -75,7 +90,7 @@ const Toggle: React.FC<ToggleProps> = ({ enabled, onChange, label, description }
       <p className="text-sm font-medium text-fg-muted">{label}</p>
       {description && <p className="text-xs text-fg-muted mt-0.5">{description}</p>}
     </div>
-    <button
+    <NativeButton
       type="button"
       role="switch"
       aria-checked={enabled}
@@ -89,7 +104,7 @@ const Toggle: React.FC<ToggleProps> = ({ enabled, onChange, label, description }
           enabled ? 'translate-x-5' : 'translate-x-0'
         }`}
       />
-    </button>
+    </NativeButton>
   </div>
 );
 
@@ -191,19 +206,19 @@ const ProfilePage: React.FC = () => {
             <div className="flex-1 space-y-1">
               <p className="text-sm font-medium text-fg-muted">{merged.name}</p>
               <p className="text-xs text-fg-muted">{merged.role}</p>
-              <button
+              <NativeButton
                 type="button"
                 className="text-xs text-info-color hover:text-info-color transition-colors"
               >
                 Change avatar
-              </button>
+              </NativeButton>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="block">
               <span className="text-xs font-medium text-fg-muted">Full Name</span>
-              <input
+              <NativeInput
                 type="text"
                 value={merged.name}
                 onChange={(e) => handleFieldChange('name', e.target.value)}
@@ -212,7 +227,7 @@ const ProfilePage: React.FC = () => {
             </label>
             <label className="block">
               <span className="text-xs font-medium text-fg-muted">Email</span>
-              <input
+              <NativeInput
                 type="email"
                 value={merged.email}
                 onChange={(e) => handleFieldChange('email', e.target.value)}
@@ -223,7 +238,7 @@ const ProfilePage: React.FC = () => {
 
           <label className="block">
             <span className="text-xs font-medium text-fg-muted">Bio</span>
-            <textarea
+            <NativeTextarea
               value={merged.bio}
               onChange={(e) => handleFieldChange('bio', e.target.value)}
               rows={3}
@@ -233,7 +248,7 @@ const ProfilePage: React.FC = () => {
 
           <label className="block">
             <span className="text-xs font-medium text-fg-muted">Timezone</span>
-            <input
+            <NativeInput
               type="text"
               value={merged.timezone}
               onChange={(e) => handleFieldChange('timezone', e.target.value)}
@@ -247,7 +262,7 @@ const ProfilePage: React.FC = () => {
           <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider">Appearance</h2>
           <div className="flex gap-3">
             {(['dark', 'light', 'system'] as ThemePreference[]).map((t) => (
-              <button
+              <NativeButton
                 key={t}
                 type="button"
                 onClick={() => setFormData((prev) => ({ ...prev, theme: t }))}
@@ -258,7 +273,7 @@ const ProfilePage: React.FC = () => {
                 }`}
               >
                 {t}
-              </button>
+              </NativeButton>
             ))}
           </div>
         </section>
@@ -303,20 +318,20 @@ const ProfilePage: React.FC = () => {
             </p>
           )}
           <div className="ml-auto flex gap-3">
-            <button
+            <NativeButton
               type="button"
               onClick={() => setFormData({})}
               className="px-4 py-2 text-sm font-medium text-fg-muted hover:text-fg-muted transition-colors"
             >
               Reset
-            </button>
-            <button
+            </NativeButton>
+            <NativeButton
               type="submit"
               disabled={mutation.isPending || Object.keys(formData).length === 0}
               className="px-5 py-2 bg-primary hover:bg-info-bg disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
             >
               {mutation.isPending ? 'Saving...' : 'Save Changes'}
-            </button>
+            </NativeButton>
           </div>
         </div>
 

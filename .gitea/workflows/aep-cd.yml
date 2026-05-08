@@ -1,6 +1,6 @@
-# Ghatana AEP (Agentic Event Processor) — Continuous Deployment
+# Ghatana Data Cloud Action Plane — Continuous Deployment
 #
-# Deploys the AEP product to a target Kubernetes cluster after a
+# Deploys the Data Cloud Action Plane to a target Kubernetes cluster after a
 # successful CI run on the main branch or a release branch.
 #
 # Environments:
@@ -13,11 +13,11 @@
 #   GITEA_TOKEN           — registry pull secret token
 #   SLACK_WEBHOOK_URL     — optional Slack notification
 
-name: aep-cd
+name: data-cloud-action-plane-cd
 
 on:
   workflow_run:
-    workflows: ["aep-ci"]
+    workflows: ["data-cloud-action-plane-ci"]
     types:
       - completed
     branches:
@@ -40,8 +40,8 @@ on:
 
 env:
   REGISTRY: ${{ gitea.server_url | replace('https://', '') | replace('http://', '') }}
-  IMAGE_NAME: ${{ gitea.repository }}/aep
-  K8S_NAMESPACE: aep
+  IMAGE_NAME: ${{ gitea.repository }}/data-cloud-action-plane
+  K8S_NAMESPACE: data-cloud-action-plane
 
 jobs:
   # ---------------------------------------------------------------------------

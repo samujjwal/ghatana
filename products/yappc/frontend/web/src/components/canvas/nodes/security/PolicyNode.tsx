@@ -380,7 +380,7 @@ function PolicyNodeComponent({ data, selected }: NodeProps<PolicyCanvasNode>) {
         className={cn(
           'rounded-lg border-2 bg-white p-3 shadow-sm transition-all duration-200',
           typeConfig.borderColor,
-          selected && 'ring-2 ring-primary ring-offset-2',
+          selected && 'ring-2 ring-info-border ring-offset-2',
           'min-w-[200px]'
         )}
       >
@@ -404,7 +404,7 @@ function PolicyNodeComponent({ data, selected }: NodeProps<PolicyCanvasNode>) {
       className={cn(
         'rounded-lg border-2 bg-white shadow-md transition-all duration-200',
         typeConfig.borderColor,
-        selected && 'ring-2 ring-primary ring-offset-2',
+        selected && 'ring-2 ring-info-border ring-offset-2',
         hasViolations && isActive && 'shadow-destructive/20',
         'min-w-[320px] max-w-[400px]'
       )}

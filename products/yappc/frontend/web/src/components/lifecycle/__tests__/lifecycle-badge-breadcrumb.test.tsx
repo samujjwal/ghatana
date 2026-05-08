@@ -136,7 +136,9 @@ describe('LifecycleBreadcrumb', () => {
   it('calls onNavigateToRoot when project button clicked', () => {
     const onNavigateToRoot = vi.fn();
     render(<LifecycleBreadcrumb projectName="Test" onNavigateToRoot={onNavigateToRoot} />);
-    fireEvent.click(screen.getByText('Test'));
+    const projectButton = screen.getByRole('button', { name: /test/i });
+    expect(projectButton).toHaveClass('gh-button');
+    fireEvent.click(projectButton);
     expect(onNavigateToRoot).toHaveBeenCalledOnce();
   });
 

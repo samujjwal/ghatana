@@ -14,6 +14,7 @@
 import React, { useState } from 'react';
 import { PERSONA_DEFINITIONS, type PersonaType } from '../../context/PersonaContext';
 import type { AgentAction, AgentActionSeverity } from '../../services/VirtualAgentService';
+import { Button } from '../ui/Button';
 
 interface AgentActionPanelProps {
   actions: AgentAction[];
@@ -179,7 +180,7 @@ export function AgentActionPanel({
                     `}
                   >
                     {/* Action Header */}
-                    <button
+                    <Button
                       className="w-full px-3 py-2 flex items-start gap-2 text-left"
                       onClick={() => setExpandedId(isExpanded ? null : action.id)}
                     >
@@ -209,7 +210,7 @@ export function AgentActionPanel({
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
-                    </button>
+                    </Button>
 
                     {/* Expanded Content */}
                     {isExpanded && (
@@ -226,29 +227,29 @@ export function AgentActionPanel({
 
                         <div className="flex items-center gap-2">
                           {action.autoFixAvailable && onAutoFix && (
-                            <button
+                            <Button
                               onClick={() => onAutoFix(action)}
                               className="px-3 py-1.5 text-xs font-medium rounded-md bg-primary-600 text-white hover:bg-primary-700 transition-colors"
                             >
                               Auto-Fix
-                            </button>
+                            </Button>
                           )}
                           
                           {action.requiresHumanOverride && (
-                            <button
+                            <Button
                               onClick={() => onOverride(action.id)}
                               className="px-3 py-1.5 text-xs font-medium rounded-md bg-warning-bg text-white hover:bg-warning-bg transition-colors"
                             >
                               Override & Continue
-                            </button>
+                            </Button>
                           )}
 
-                          <button
+                          <Button
                             onClick={() => onDismiss(action.id)}
                             className="px-3 py-1.5 text-xs font-medium rounded-md border border-divider text-text-secondary hover:bg-grey-50 dark:hover:bg-grey-800 transition-colors"
                           >
                             Dismiss
-                          </button>
+                          </Button>
                         </div>
 
                         <p className="text-[10px] text-text-tertiary mt-2">
@@ -286,13 +287,13 @@ export function AgentActionBadge({
 
   if (totalActive === 0) {
     return (
-      <button
+      <Button
         onClick={onClick}
         className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-success-color dark:text-success-color hover:bg-success-bg dark:hover:bg-success-bg transition-colors ${className}`}
       >
         <span>✓</span>
         <span>AI OK</span>
-      </button>
+      </Button>
     );
   }
 
@@ -309,7 +310,7 @@ export function AgentActionBadge({
     : 'text-info-color dark:text-info-color';
 
   return (
-    <button
+    <Button
       onClick={onClick}
       className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors ${bgColor} ${textColor} ${className}`}
     >
@@ -324,7 +325,7 @@ export function AgentActionBadge({
           <span>{totalActive} AI issue{totalActive > 1 ? 's' : ''}</span>
         </>
       )}
-    </button>
+    </Button>
   );
 }
 

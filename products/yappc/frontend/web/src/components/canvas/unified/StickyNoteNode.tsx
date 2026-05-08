@@ -8,6 +8,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Box, Typography } from '@ghatana/design-system';
 import { Handle, Position, type NodeProps, NodeResizer } from '@xyflow/react';
+import { Textarea } from '../../ui/Textarea';
 
 export interface StickyNoteData {
   text: string;
@@ -116,13 +117,15 @@ export const StickyNoteNode = React.memo(
             className="flex-1 p-4 flex items-start overflow-auto"
           >
             {isEditing ? (
-              <textarea
+              <Textarea
                 ref={textareaRef}
                 value={localText}
                 onChange={handleChange}
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
                 placeholder="Type your note..."
+                resize="none"
+                fullWidth
                 style={{
                   width: '100%',
                   height: '100%',

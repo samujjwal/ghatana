@@ -1,3 +1,5 @@
+import { Input } from '../../ui/Input';
+import { Select } from '../../ui/Select';
 import { Plus as AddIcon, Trash2 as DeleteIcon, Pencil as EditIcon, AlertTriangle, Upload, X } from 'lucide-react';
 import {
   Box,
@@ -1341,7 +1343,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
               Redo
             </Button>
           </Box>
-          <input
+          <Input
             aria-label="Search registry components"
             value={paletteSearch}
             onChange={(event) => setPaletteSearch(event.target.value)}
@@ -1349,7 +1351,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
             className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
             data-testid="page-component-search"
           />
-          <select
+          <Select
             aria-label="Filter registry category"
             value={paletteCategory}
             onChange={(event) => setPaletteCategory(event.target.value)}
@@ -1362,7 +1364,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
                 {category}
               </option>
             ))}
-          </select>
+          </Select>
           <Typography variant="caption" color="muted" data-testid="page-component-palette-summary">
             {filteredPalette.length} of {palette.length} registry components shown
           </Typography>
@@ -1464,7 +1466,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
                 <Typography variant="caption" style={{ display: 'block', marginBottom: 4 }}>
                   Source type
                 </Typography>
-                <select
+                <Select
                   value={guidedSourceType}
                   onChange={(event) => {
                     setImportTemplateId('import-route');
@@ -1479,8 +1481,8 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
                   <option value="storybook">Storybook story</option>
                   <option value="artifact">Artifact ID</option>
                   <option value="zip">Zip archive</option>
-                </select>
-                <input
+                </Select>
+                <Input
                   value={guidedSourceLocator}
                   onChange={(event) => {
                     setGuidedSourceLocator(event.target.value);

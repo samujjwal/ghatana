@@ -13,6 +13,7 @@
 import React, { useCallback, Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router';
 import { X as Close, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '../../ui/Button';
 
 async function loadArtifactsPanel() {
     const module = await import('./ArtifactsPanel');
@@ -128,7 +129,7 @@ const PanelLoadingFallback: React.FC = () => (
 // P2-8: Read-only fallback when save handler is not available
 const ReadOnlyPanelFallback: React.FC<{ title: string; reason: string }> = ({ title, reason }) => (
     <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-        <div className="w-12 h-12 rounded-full bg-grey-100 dark:bg-grey-800 flex items-center justify-center mb-4">
+        <div className="w-12 h-12 rounded-full bg-surface-muted dark:bg-surface-muted flex items-center justify-center mb-4">
             <svg className="w-6 h-6 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
@@ -215,13 +216,16 @@ export const CanvasRightPanelHost: React.FC<CanvasRightPanelHostProps> = ({
     if (isCollapsed) {
         return (
             <div className="w-10 h-full bg-bg-paper border-l border-divider flex flex-col items-center py-2">
-                <button
+                <Button
+                    variant="ghost"
+                    size="small"
                     onClick={onToggleCollapse}
-                    className="p-2 text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 rounded transition-colors"
+                    className="min-h-0 p-2 text-text-secondary hover:text-text-primary hover:bg-surface-muted dark:hover:bg-surface-muted rounded transition-colors"
                     title="Expand panel"
+                    aria-label="Expand panel"
                 >
                     <ChevronLeft className="w-4 h-4" />
-                </button>
+                </Button>
             </div>
         );
     }
@@ -232,45 +236,57 @@ export const CanvasRightPanelHost: React.FC<CanvasRightPanelHostProps> = ({
             style={{ width: `${width}px` }}
         >
             {/* Panel Header with Navigation */}
-            <div className="flex items-center justify-between px-3 py-2 border-b border-divider bg-grey-50 dark:bg-grey-800/50">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-divider bg-surface-muted dark:bg-surface-muted">
                 <div className="flex items-center gap-2">
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="small"
                         onClick={() => handleNavigatePanel('prev')}
                         disabled={!hasPrev}
-                        className="p-1 text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
+                        className="min-h-0 p-1 text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
                         title="Previous panel"
+                        aria-label="Previous panel"
                     >
                         <ChevronLeft className="w-4 h-4" />
-                    </button>
+                    </Button>
                     <span className="text-xs text-text-secondary">
                         {currentIndex + 1}/{PANEL_ORDER.length}
                     </span>
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="small"
                         onClick={() => handleNavigatePanel('next')}
                         disabled={!hasNext}
-                        className="p-1 text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
+                        className="min-h-0 p-1 text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
                         title="Next panel"
+                        aria-label="Next panel"
                     >
                         <ChevronRight className="w-4 h-4" />
-                    </button>
+                    </Button>
                 </div>
                 <div className="flex items-center gap-2">
                     {onToggleCollapse && (
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="small"
                             onClick={onToggleCollapse}
-                            className="p-1 text-text-secondary hover:text-text-primary rounded transition-colors"
+                            className="min-h-0 p-1 text-text-secondary hover:text-text-primary rounded transition-colors"
                             title="Collapse panel"
+                            aria-label="Collapse panel"
                         >
                             <ChevronRight className="w-4 h-4" />
-                        </button>
+                        </Button>
                     )}
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="small"
                         onClick={handleClose}
-                        className="p-1 text-text-secondary hover:text-text-primary rounded transition-colors"
+                        className="min-h-0 p-1 text-text-secondary hover:text-text-primary rounded transition-colors"
                         title="Close panel"
+                        aria-label="Close panel"
                     >
                         <Close className="w-4 h-4" />
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -357,26 +373,28 @@ export const CanvasRightPanelHost: React.FC<CanvasRightPanelHostProps> = ({
             </div>
 
             {/* Quick Panel Navigation Tabs - P2-8: Disable tabs without save handlers */}
-            <div className="flex items-center gap-1 px-2 py-2 border-t border-divider bg-grey-50 dark:bg-grey-800/50 overflow-x-auto">
+            <div className="flex items-center gap-1 px-2 py-2 border-t border-divider bg-surface-muted dark:bg-surface-muted overflow-x-auto">
                 {PANEL_ORDER.map((panel) => {
                     const hasHandler = panelSaveAvailability[panel];
                     return (
-                        <button
+                        <Button
                             key={panel}
+                            variant="ghost"
+                            size="small"
                             onClick={() => hasHandler && handleOpenPanel(panel)}
                             disabled={!hasHandler}
                             title={hasHandler ? PANEL_TITLES[panel] : `${PANEL_TITLES[panel]} (Save handler not configured)`}
-                            className={`px-2 py-1 text-xs rounded whitespace-nowrap transition-colors ${
+                            className={`min-h-0 px-2 py-1 text-xs rounded whitespace-nowrap transition-colors ${
                                 currentPanel === panel
-                                    ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
+                                    ? 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color'
                                     : hasHandler
-                                        ? 'text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800'
+                                        ? 'text-text-secondary hover:text-text-primary hover:bg-surface-muted dark:hover:bg-surface-muted'
                                         : 'text-text-tertiary cursor-not-allowed opacity-50'
                             }`}
                         >
                             {PANEL_TITLES[panel]}
                             {!hasHandler && ' 🔒'}
-                        </button>
+                        </Button>
                     );
                 })}
             </div>

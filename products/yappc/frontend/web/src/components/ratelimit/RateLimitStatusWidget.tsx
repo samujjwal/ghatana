@@ -23,6 +23,7 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { Button } from '../ui/Button';
 
 /**
  * Rate limit status interface
@@ -194,12 +195,13 @@ export const RateLimitStatusWidget: React.FC<RateLimitStatusWidgetProps> = ({
           </div>
         </div>
         {onUpgrade && status.tier.toLowerCase() !== 'enterprise' && (
-          <button
+          <Button
+            size="sm"
             onClick={onUpgrade}
             className="px-3 py-1 bg-primary text-white text-sm rounded hover:opacity-90"
           >
             Upgrade
-          </button>
+          </Button>
         )}
       </div>
 
@@ -276,16 +278,16 @@ export const RateLimitStatusWidget: React.FC<RateLimitStatusWidgetProps> = ({
 
       {/* View details link */}
       {onViewDetails && (
-        <button
+        <Button
+          variant="ghost"
           onClick={onViewDetails}
           className="mt-4 w-full text-center text-sm text-info-color hover:text-info-color"
         >
           View detailed usage →
-        </button>
+        </Button>
       )}
     </div>
   );
 };
 
 export default RateLimitStatusWidget;
-

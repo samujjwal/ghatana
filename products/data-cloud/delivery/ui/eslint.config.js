@@ -7,6 +7,7 @@
  * - no-console (FINDING-DC-UI-L2: console.log in prod code)
  * - no-unused-vars (FINDING-DC-UI-L4: Unused imports)
  * - react/jsx-boolean-value, react/self-closing-comp — code style
+ * - no-restricted-imports: UI must not import backend internals (launcher, planes, plugins)
  */
 
 import js from '@eslint/js';
@@ -78,6 +79,36 @@ export default [
       // flag unguarded calls. Use a custom lint rule pattern.
       // Warn by default; engineers should wrap in DEV checks.
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+
+      // --- Import boundary: UI must not import backend internals (DC-boundary) -
+      // The UI boundary rule: delivery/ui must only use generated API clients,
+      // shared UI platform packages, or intra-UI modules. It must never import
+      // directly from the launcher, action plane, extension plugins, or any
+      // Java compilation output.
+      'no-restricted-imports': ['error', {
+        patterns: [
+          {
+            // Launcher internals (Java HTTP server, settings, bootstrap)
+            group: ['**/delivery/launcher/**', '*/launcher/**'],
+            message: 'Do not import launcher internals from the UI. Use generated API clients (lib/api/*) instead.',
+          },
+          {
+            // Data Cloud backend planes (action, intelligence, data, event, governance)
+            group: ['**/planes/**', '*/planes/**'],
+            message: 'Do not import Data Cloud plane internals from the UI. Use generated API clients (lib/api/*) instead.',
+          },
+          {
+            // Extension plugins (postgres, kafka, etc.)
+            group: ['**/extensions/plugins/**', '*/extensions/plugins/**'],
+            message: 'Do not import extension plugin code from the UI. Use generated API clients (lib/api/*) instead.',
+          },
+          {
+            // Build outputs that should not be directly referenced
+            group: ['**/build/generated/**'],
+            message: 'Do not import from build/generated directly. Use the generated SDK package instead.',
+          },
+        ],
+      }],
     },
   },
 

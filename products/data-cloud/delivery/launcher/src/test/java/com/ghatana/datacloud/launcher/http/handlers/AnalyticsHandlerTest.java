@@ -196,21 +196,19 @@ class AnalyticsHandlerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("invalid limit type → uses default, still returns 200")
+        @DisplayName("invalid limit type → returns 400 with validation error")
         void invalidLimit_usesDefault_returns200() {            when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-test");
             when(httpSupport.resolveCorrelationId(any())).thenReturn("trace-unit-001");
-            when(httpSupport.objectMapper()).thenReturn(mapper);            QueryResult result = buildResult("qid-lim", 1);
-            when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap()))
-                    .thenReturn(Promise.of(result));
-            HttpResponse ok200 = mock(HttpResponse.class);
-            when(ok200.getCode()).thenReturn(200);
-            when(httpSupport.jsonResponse(anyMap())).thenReturn(ok200);
+            when(httpSupport.objectMapper()).thenReturn(mapper);
+            HttpResponse err400 = mock(HttpResponse.class);
+            when(err400.getCode()).thenReturn(400);
+            when(httpSupport.errorResponse(eq(400), anyString())).thenReturn(err400);
 
             HttpRequest req = mockRequest("{\"query\":\"SELECT 1\",\"limit\":\"not-a-number\"}");
             HttpResponse response = runPromise(() -> handler.handleAnalyticsQuery(req));
 
-            assertThat(response.getCode()).isEqualTo(200);
-            verify(analyticsEngine).submitQuery(anyString(), anyString(), anyMap());
+            assertThat(response.getCode()).isEqualTo(400);
+            verifyNoInteractions(analyticsEngine);
         }
 
         @Test
@@ -265,6 +263,50 @@ class AnalyticsHandlerTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> handler.handleAnalyticsQuery(req));
 
             assertThat(response.getCode()).isEqualTo(200);
+        }
+
+        @Test
+        @DisplayName("DC-P1-005: defensive row cap — engine returning more rows than limit is capped (DC-P1-005)")
+        void submitQuery_defensiveRowCap_engineOverage() {
+            when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-test");
+            when(httpSupport.resolveCorrelationId(any())).thenReturn("trace-unit-005");
+            when(httpSupport.objectMapper()).thenReturn(mapper);
+
+            // Engine returns 3 rows but request limit is 2
+            QueryResult result = mock(QueryResult.class);
+            when(result.getQueryId()).thenReturn("qid-cap");
+            when(result.getQueryType()).thenReturn("SELECT");
+            when(result.getColumnCount()).thenReturn(2);
+            when(result.getExecutionTimeMs()).thenReturn(10L);
+            when(result.isOptimized()).thenReturn(false);
+            when(result.getTotalRows()).thenReturn(3);
+            when(result.getRows()).thenReturn(List.of(
+                    Map.of("id", "1"), Map.of("id", "2"), Map.of("id", "3")
+            ));
+            when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap()))
+                    .thenReturn(Promise.of(result));
+
+            HttpResponse ok200 = mock(HttpResponse.class);
+            when(ok200.getCode()).thenReturn(200);
+            when(httpSupport.jsonResponse(anyMap())).thenReturn(ok200);
+
+            // Request limit=2 — handler must not return the 3rd engine row
+            HttpRequest req = mockRequest("{\"query\":\"SELECT * FROM events\",\"limit\":2}");
+            HttpResponse response = runPromise(() -> handler.handleAnalyticsQuery(req));
+
+            assertThat(response.getCode()).isEqualTo(200);
+
+            @SuppressWarnings("unchecked")
+            ArgumentCaptor<Map<String, Object>> bodyCaptor = ArgumentCaptor.forClass(Map.class);
+            verify(httpSupport).jsonResponse(bodyCaptor.capture());
+            Map<String, Object> body = bodyCaptor.getValue();
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> rows = (List<Map<String, Object>>) body.get("rows");
+            assertThat(rows).hasSize(2);
+            assertThat(((Number) body.get("rowCount")).intValue()).isEqualTo(2);
+            assertThat(body.get("truncated")).isEqualTo(true);
+            assertThat(((Number) body.get("limit")).intValue()).isEqualTo(2);
         }
 
         @Test
@@ -471,33 +513,23 @@ class AnalyticsHandlerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("result retrieval uses default limit when query param is invalid")
-        void getResult_invalidLimitFallsBackToDefault() {
-            QueryResult result = buildResult("qid-get-default", 1);
-            when(result.getTotalRows()).thenReturn(100_000);
-            when(analyticsEngine.getResult("qid-get-default")).thenReturn(Promise.of(result));
-
-            HttpResponse ok200 = mock(HttpResponse.class);
-            when(ok200.getCode()).thenReturn(200);
+        @DisplayName("non-numeric limit query param → 400 (DC-P1-005)")
+        void getResult_invalidLimitQueryParam_returns400() {
+            // DC-P1-005: invalid limit string must return 400; it must not silently fall back to default.
             when(httpSupport.resolveCorrelationId(any())).thenReturn("trace-unit-001");
-            when(httpSupport.jsonResponse(anyMap())).thenReturn(ok200);
+            HttpResponse err400 = mock(HttpResponse.class);
+            when(err400.getCode()).thenReturn(400);
+            when(httpSupport.errorResponse(eq(400), contains("positive integer")))
+                    .thenReturn(err400);
 
             HttpRequest req = mockRequest("");
-            when(req.getPathParameter("queryId")).thenReturn("qid-get-default");
+            when(req.getPathParameter("queryId")).thenReturn("qid-get-bad-limit");
             when(req.getQueryParameter("limit")).thenReturn("not-a-number");
 
             HttpResponse response = runPromise(() -> handler.handleAnalyticsGetResult(req));
 
-            assertThat(response.getCode()).isEqualTo(200);
-
-            @SuppressWarnings("unchecked")
-            ArgumentCaptor<Map<String, Object>> bodyCaptor = ArgumentCaptor.forClass(Map.class);
-            verify(httpSupport).jsonResponse(bodyCaptor.capture());
-            Map<String, Object> body = bodyCaptor.getValue();
-
-            assertThat(((Number) body.get("limit")).intValue()).isEqualTo(10_000);
-            assertThat(((Number) body.get("rowCount")).intValue()).isEqualTo(1);
-            assertThat(body.get("truncated")).isEqualTo(true);
+            assertThat(response.getCode()).isEqualTo(400);
+            verifyNoInteractions(analyticsEngine);
         }
     }
 

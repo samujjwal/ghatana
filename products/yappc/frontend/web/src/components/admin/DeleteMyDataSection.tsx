@@ -18,6 +18,7 @@
 import React, { useState, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { userData } from '@/lib/api';
+import { Button } from '../ui/Button';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -93,13 +94,15 @@ const DeleteMyDataSection: React.FC<DeleteMyDataSectionProps> = ({ className }) 
       </p>
 
       {stage === 'idle' && (
-        <button
+        <Button
           type="button"
           onClick={handleRequestDelete}
+          variant="outline"
+          tone="danger"
           className="mt-4 rounded-md border border-destructive-border bg-white px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive-bg focus:outline-none focus:ring-2 focus:ring-red-500"
         >
           Request data deletion
-        </button>
+        </Button>
       )}
 
       {stage === 'confirm' && (
@@ -109,20 +112,22 @@ const DeleteMyDataSection: React.FC<DeleteMyDataSectionProps> = ({ className }) 
             AI memory. This cannot be undone.
           </p>
           <div className="flex gap-3">
-            <button
+            <Button
               type="button"
               onClick={handleConfirm}
+              variant="destructive"
               className="rounded-md bg-destructive-bg px-4 py-2 text-sm font-medium text-white hover:bg-destructive-bg focus:outline-none focus:ring-2 focus:ring-red-500"
             >
               Yes, delete my data
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={handleCancel}
+              variant="outline"
               className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-400"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -157,13 +162,15 @@ const DeleteMyDataSection: React.FC<DeleteMyDataSectionProps> = ({ className }) 
         <div className="mt-4 rounded-md border border-destructive-border bg-destructive-bg p-4 text-sm text-destructive" role="alert">
           <p className="font-medium">Request failed.</p>
           <p className="mt-1">{error?.message ?? 'An unexpected error occurred. Please try again.'}</p>
-          <button
+          <Button
             type="button"
             onClick={handleRetry}
+            variant="outline"
+            tone="danger"
             className="mt-2 rounded-md border border-destructive-border bg-white px-3 py-1 text-sm text-destructive hover:bg-destructive-bg"
           >
             Try again
-          </button>
+          </Button>
         </div>
       )}
     </div>

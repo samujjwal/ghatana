@@ -81,7 +81,7 @@ function getSuggestionEvidence(
 }
 
 function getSuggestionApplyMode(action: RankedNextAction): SuggestedStep['applyMode'] {
-  if (action.type === 'automation' && action.safeToRun && !action.requiresApproval) {
+  if (action.safeToRun && !action.requiresApproval) {
     return 'one-click';
   }
   if (action.requiresApproval || action.type === 'review') {

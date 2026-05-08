@@ -14,6 +14,7 @@ import React from 'react';
 import { useAtomValue, type Atom } from 'jotai';
 import { Plus, Circle } from 'lucide-react';
 import { activeSprintAtom, sprintStoriesAtom } from '../../state/atoms';
+import { Button } from '../ui/Button';
 
 // =============================================================================
 // Types
@@ -250,13 +251,15 @@ export const SprintBoard: React.FC<SprintBoardProps> = ({
                     </span>
                   </div>
                   {onCreateStory && (
-                    <button
+                    <Button
                       onClick={() => onCreateStory(col.id)}
                       title={`Add story to ${col.label}`}
                       className="w-5 h-5 rounded flex items-center justify-center text-fg-muted hover:text-fg-muted hover:bg-surface transition-colors"
+                      variant="ghost"
+                      size="sm"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                    </button>
+                    </Button>
                   )}
                 </div>
 

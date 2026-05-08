@@ -75,11 +75,11 @@ export function PhaseContextPanel({
             <Button
                 type="button"
                 onClick={() => setExpanded(!expanded)}
-                className="w-full flex items-center justify-between p-4 hover:bg-grey-50 dark:hover:bg-grey-800/50 transition-colors"
+                className="w-full flex items-center justify-between p-4 hover:bg-surface-muted dark:hover:bg-surface-muted transition-colors"
                 aria-expanded={expanded}
             >
                 <div className="flex items-center gap-3">
-                    <Info className="text-primary-500" />
+                    <Info className="text-info-color" />
                     <div className="text-left">
                         <h3 className="font-semibold text-text-primary">
                             {phasePrompt.title} Phase Guide
@@ -100,9 +100,9 @@ export function PhaseContextPanel({
                             <span className="text-text-secondary">Phase Completion</span>
                             <span className="font-medium text-text-primary">{progressPercentage}%</span>
                         </div>
-                        <div className="w-full bg-grey-200 dark:bg-grey-700 rounded-full h-2">
+                        <div className="w-full bg-surface-muted dark:bg-surface-muted rounded-full h-2">
                             <div
-                                className="bg-primary-500 h-2 rounded-full transition-all duration-300"
+                                className="bg-info-color h-2 rounded-full transition-all duration-300"
                                 style={{ width: `${progressPercentage}%` }}
                             />
                         </div>
@@ -120,14 +120,14 @@ export function PhaseContextPanel({
                     </div>
 
                     {/* Next Action */}
-                    <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-3">
+                    <div className="bg-info-bg dark:bg-info-bg/20 border border-info-border rounded-lg p-3">
                         <div className="flex items-start gap-2">
-                            <Lightbulb className="text-primary-600 w-5 h-5 mt-0.5" />
+                            <Lightbulb className="text-info-color w-5 h-5 mt-0.5" />
                             <div className="flex-1">
-                                <div className="text-sm font-medium text-primary-900 dark:text-primary-100">
+                                <div className="text-sm font-medium text-info-color dark:text-info-color">
                                     Next Suggested Action
                                 </div>
-                                <div className="text-sm text-primary-700 dark:text-primary-300 mt-1">
+                                <div className="text-sm text-info-color dark:text-info-color mt-1">
                                     {nextAction}
                                 </div>
                             </div>
@@ -149,7 +149,7 @@ export function PhaseContextPanel({
                                     type="button"
                                     key={idx}
                                     onClick={() => onActionClick?.(suggestion.title, suggestion.artifactKind)}
-                                    className="w-full text-left p-3 rounded-lg border border-divider bg-bg-default hover:bg-grey-50 dark:hover:bg-grey-800/50 transition-colors"
+                                    className="w-full text-left p-3 rounded-lg border border-divider bg-bg-default hover:bg-surface-muted dark:hover:bg-surface-muted transition-colors"
                                 >
                                     <div className="flex items-start gap-3">
                                         <div className={`

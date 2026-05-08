@@ -14,6 +14,14 @@ import React from 'react';
 import { ArrowRight, AlertTriangle, CheckCircle, Clock, TrendingUp, Link } from 'lucide-react';
 import { ProvenanceBadge } from '../shared/ProvenanceBadge';
 
+interface NativeButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children: React.ReactNode;
+}
+
+function NativeButton({ children, type = 'button', ...props }: NativeButtonProps): React.ReactElement {
+  return React.createElement('button', { ...props, type }, children);
+}
+
 export interface PhaseInfo {
   name: string;
   description: string;
@@ -135,7 +143,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
       </div>
 
       {/* Primary Next Action */}
-      <button
+      <NativeButton
         type="button"
         data-testid="next-action"
         className="w-full bg-primary-50 border border-primary-200 rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer text-left"
@@ -157,7 +165,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
             )}
           </div>
         </div>
-      </button>
+      </NativeButton>
 
       {/* Recent Backed Activity */}
       <div

@@ -12,6 +12,7 @@
 import React from 'react';
 import { useParams } from 'react-router';
 import { Layers, Plus, BarChart3 } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
 
 const EpicsPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -29,9 +30,12 @@ const EpicsPage: React.FC = () => {
               <p className="text-fg-muted">Track large features and initiatives</p>
             </div>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 transition-colors text-sm font-medium">
-            <Plus className="w-4 h-4" /> New Epic
-          </button>
+          <Button
+            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium hover:bg-violet-500"
+            startIcon={<Plus className="w-4 h-4" />}
+          >
+            New Epic
+          </Button>
         </div>
 
         <div className="flex flex-col items-center justify-center py-20 text-center">

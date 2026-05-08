@@ -17,6 +17,7 @@ import { Tooltip, Collapse, IconButton } from '@ghatana/design-system';
 
 import { useGuidanceContext, usePhaseContext } from '../../context/WorkflowContextProvider';
 import { LifecyclePhase, PHASE_LABELS, PHASE_DESCRIPTIONS } from '../../types/lifecycle';
+import { Button } from '../ui/Button';
 
 // ============================================================================
 // Types
@@ -116,8 +117,9 @@ const GuidanceStepItem: React.FC<GuidanceStepItemProps> = ({
             `}
         >
             {/* Completion Toggle */}
-            <button
-                type="button"
+            <Button
+                variant="ghost"
+                size="sm"
                 onClick={onComplete}
                 className={`
                     flex-shrink-0 w-5 h-5 mt-0.5 rounded-full transition-colors
@@ -128,7 +130,7 @@ const GuidanceStepItem: React.FC<GuidanceStepItemProps> = ({
                 aria-label={isCompleted ? 'Mark as incomplete' : 'Mark as complete'}
             >
                 {isCompleted ? <CompletedIcon /> : <PendingIcon />}
-            </button>
+            </Button>
 
             {/* Content */}
             <div className="flex-1 min-w-0">
@@ -156,14 +158,15 @@ const TipItem: React.FC<TipItemProps> = ({ tip, onDismiss }) => {
             <p className="flex-1 text-xs text-warning-color dark:text-warning-color pr-6">
                 {tip}
             </p>
-            <button
-                type="button"
+            <Button
+                variant="ghost"
+                size="sm"
                 onClick={onDismiss}
                 className="absolute top-2 right-2 p-0.5 text-warning-color hover:text-warning-color dark:hover:text-warning-color rounded"
                 aria-label="Dismiss tip"
             >
                 <CloseIcon className="w-3.5 h-3.5" />
-            </button>
+            </Button>
         </div>
     );
 };
@@ -425,13 +428,12 @@ export const GuidancePanel: React.FC<GuidancePanelProps> = ({
 
             {/* Footer - AI Assistant Quick Access */}
             <footer className="p-4 border-t border-grey-200 dark:border-grey-800">
-                <button
-                    type="button"
+                <Button
                     className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg transition-all shadow-sm hover:shadow"
                 >
                     <AiIcon className="w-4 h-4" />
                     <span className="text-sm font-medium">Get Guidance</span>
-                </button>
+                </Button>
             </footer>
         </aside>
     );

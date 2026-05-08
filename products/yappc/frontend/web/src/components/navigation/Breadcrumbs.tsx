@@ -10,7 +10,8 @@
  * @doc.pattern Navigation Component
  */
 
-import { useCallback } from 'react';
+import { createElement, useCallback } from 'react';
+import type { ButtonHTMLAttributes } from 'react';
 import { useNavigate } from 'react-router';
 import { useAtomValue } from 'jotai';
 
@@ -23,6 +24,12 @@ export interface BreadcrumbsProps {
   maxItems?: number;
   /** Additional CSS class applied to the nav container */
   className?: string;
+}
+
+type BreadcrumbButtonProps = ButtonHTMLAttributes<HTMLButtonElement>;
+
+function BreadcrumbButton(props: BreadcrumbButtonProps) {
+  return createElement('button', props);
 }
 
 interface BreadcrumbEntry {
@@ -70,7 +77,7 @@ export function Breadcrumbs({ showHome = false, maxItems, className }: Breadcrum
   return (
     <nav aria-label="Breadcrumb" className={className}>
       {showHome && (
-        <button
+        <BreadcrumbButton
           aria-label="Home"
           type="button"
           onClick={handleHomeClick}
@@ -86,7 +93,7 @@ export function Breadcrumbs({ showHome = false, maxItems, className }: Breadcrum
           >
             <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
           </svg>
-        </button>
+        </BreadcrumbButton>
       )}
       {visibleItems.map((item, index) => {
         if (item === '...') {
@@ -102,7 +109,7 @@ export function Breadcrumbs({ showHome = false, maxItems, className }: Breadcrum
 
         if (isLast) {
           return (
-            <button
+            <BreadcrumbButton
               key={itemKey}
               type="button"
               disabled
@@ -110,19 +117,19 @@ export function Breadcrumbs({ showHome = false, maxItems, className }: Breadcrum
               className="font-medium"
             >
               {item.label}
-            </button>
+            </BreadcrumbButton>
           );
         }
 
         return (
-          <button
+          <BreadcrumbButton
             key={itemKey}
             type="button"
             onClick={() => handleItemClick(item.href)}
             className="hover:text-fg"
           >
             {item.label}
-          </button>
+          </BreadcrumbButton>
         );
       })}
     </nav>

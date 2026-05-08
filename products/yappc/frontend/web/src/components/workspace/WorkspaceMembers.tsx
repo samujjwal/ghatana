@@ -30,6 +30,8 @@ import {
   CardContent,
   Chip,
 } from '@ghatana/design-system';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
 import {
   useQuery,
   useMutation,
@@ -179,13 +181,15 @@ function InvitePanel({ workspaceId, onInvited, onClose }: InvitePanelProps): Rea
               Invite Member
             </Typography>
           </div>
-          <button
+          <Button
+            size="sm"
+            variant="ghost"
             onClick={onClose}
             aria-label="Close invite panel"
             className="text-fg-muted hover:text-fg-muted dark:hover:text-fg-muted"
           >
             <CloseIcon className="h-4 w-4" aria-hidden="true" />
-          </button>
+          </Button>
         </div>
 
         <div className="flex gap-2 mb-3">
@@ -195,7 +199,7 @@ function InvitePanel({ workspaceId, onInvited, onClose }: InvitePanelProps): Rea
               className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-muted"
               aria-hidden="true"
             />
-            <input
+            <Input
               type="text"
               value={userSearch}
               onChange={handleSearchChange}
@@ -206,7 +210,7 @@ function InvitePanel({ workspaceId, onInvited, onClose }: InvitePanelProps): Rea
           </div>
 
           {/* Role selector */}
-          <select
+          <Select
             value={selectedRole}
             onChange={handleRoleChange}
             aria-label="Select role"
@@ -217,7 +221,7 @@ function InvitePanel({ workspaceId, onInvited, onClose }: InvitePanelProps): Rea
                 {role}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {/* Search results */}
@@ -328,7 +332,7 @@ function MemberRow({
 
       {/* Role badge / selector */}
       {canManage && member.role !== 'OWNER' ? (
-        <select
+        <Select
           value={member.role}
           onChange={handleRoleChange}
           disabled={isMutating}
@@ -340,7 +344,7 @@ function MemberRow({
               {role}
             </option>
           ))}
-        </select>
+        </Select>
       ) : (
         <span
           className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${getRoleColor(member.role)}`}

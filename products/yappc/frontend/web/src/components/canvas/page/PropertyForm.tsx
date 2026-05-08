@@ -6,6 +6,8 @@ import {
   TextField,
   Typography,
 } from '@ghatana/design-system';
+import { Select } from '../../ui/Select';
+import { Textarea } from '../../ui/Textarea';
 import type { Binding, ComponentInstance, ResponsiveVariant, StateVariant } from '@ghatana/ui-builder';
 import React, { useEffect, useMemo, useState } from 'react';
 
@@ -13,6 +15,7 @@ import {
   getConfiguratorGroups,
   getContractGovernanceProfile,
   getRegistryFields,
+  type RegistryFieldDescriptor,
 } from './registry';
 
 export interface PropertyFormUpdatePayload {
@@ -40,6 +43,7 @@ export interface PropertyFormProps {
 }
 
 type PrimitiveValue = string | number | boolean;
+type DraftProps = Record<string, unknown>;
 type EditableStateVariant = StateVariant['state'];
 type PrivacyClassification = NonNullable<ComponentInstance['metadata']['dataClassification']>;
 
@@ -73,6 +77,58 @@ function toPrimitiveValue(value: unknown): PrimitiveValue {
   }
 
   return '';
+}
+
+function isComplexField(field: RegistryFieldDescriptor): boolean {
+  return field.control === 'json' || field.valueType === 'object';
+}
+
+function isTokenCollectionField(field: RegistryFieldDescriptor): boolean {
+  return field.control === 'multiselect' || (field.valueType === 'array' && Boolean(field.tokenTypes?.length));
+}
+
+function isTokenReferenceField(field: RegistryFieldDescriptor): boolean {
+  return field.control === 'token-select' || field.valueType === 'token-ref';
+}
+
+function getInitialFieldValue(field: RegistryFieldDescriptor, props: Record<string, unknown>): unknown {
+  if (Object.prototype.hasOwnProperty.call(props, field.name)) {
+    return props[field.name];
+  }
+
+  if (field.defaultValue !== undefined) {
+    return field.defaultValue;
+  }
+
+  if (isComplexField(field)) {
+    return field.valueType === 'array' ? [] : {};
+  }
+
+  return toPrimitiveValue(undefined);
+}
+
+function createInitialDraftProps(
+  fields: readonly RegistryFieldDescriptor[],
+  props: Record<string, unknown>,
+): DraftProps {
+  const fieldEntries = fields.flatMap((field) => {
+    const hasInitialValue = Object.prototype.hasOwnProperty.call(props, field.name);
+    if (!hasInitialValue && field.defaultValue === undefined) {
+      return [];
+    }
+
+    const value = getInitialFieldValue(field, props);
+
+    if (isComplexField(field) || isTokenCollectionField(field)) {
+      return [[field.name, value] as const];
+    }
+
+    return [[field.name, toPrimitiveValue(value)] as const];
+  });
+  const fieldNames = new Set(fieldEntries.map(([name]) => name));
+  const passthroughEntries = Object.entries(props).filter(([name]) => !fieldNames.has(name));
+
+  return Object.fromEntries([...passthroughEntries, ...fieldEntries]);
 }
 
 function hasMeaningfulValue(value: unknown): boolean {
@@ -133,6 +189,52 @@ function parsePropsJson(value: string): { readonly props: Record<string, unknown
   }
 
   return { props: {}, error: 'Enter a JSON object, not an array or primitive.' };
+}
+
+function formatFieldJson(value: unknown, field: RegistryFieldDescriptor): string {
+  const fallback = field.valueType === 'array' ? [] : {};
+  return JSON.stringify(value ?? field.defaultValue ?? fallback, null, 2);
+}
+
+function parseFieldJson(
+  value: string,
+  field: RegistryFieldDescriptor,
+): { readonly value: unknown; readonly error?: string } {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return { value: field.valueType === 'array' ? [] : {} };
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (field.valueType === 'array' && !Array.isArray(parsed)) {
+      return { value: [], error: `${field.label} must be a JSON array.` };
+    }
+    if (field.valueType === 'object' && (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed))) {
+      return { value: {}, error: `${field.label} must be a JSON object.` };
+    }
+
+    return { value: parsed };
+  } catch {
+    return { value: field.valueType === 'array' ? [] : {}, error: `${field.label} must be valid JSON.` };
+  }
+}
+
+function formatTokenCollection(value: unknown): string {
+  if (Array.isArray(value)) {
+    return value
+      .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+      .join(', ');
+  }
+
+  return typeof value === 'string' ? value : '';
+}
+
+function parseTokenCollection(value: string): readonly string[] {
+  return value
+    .split(',')
+    .map((token) => token.trim())
+    .filter((token) => token.length > 0);
 }
 
 function stableStringify(value: unknown): string {
@@ -198,9 +300,12 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
     [governance.reviewRequiredProps],
   );
   const [draftName, setDraftName] = useState(instanceName ?? '');
-  const [draftProps, setDraftProps] = useState<Record<string, PrimitiveValue>>(() =>
+  const [draftProps, setDraftProps] = useState<DraftProps>(() => createInitialDraftProps(fields, initialProps));
+  const [complexDrafts, setComplexDrafts] = useState<Record<string, string>>(() =>
     Object.fromEntries(
-      Object.entries(initialProps).map(([key, value]) => [key, toPrimitiveValue(value)]),
+      fields
+        .filter(isComplexField)
+        .map((field) => [field.name, formatFieldJson(getInitialFieldValue(field, initialProps), field)]),
     ),
   );
   const [reviewAcknowledged, setReviewAcknowledged] = useState(false);
@@ -248,8 +353,13 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
   useEffect(() => {
     setDraftName(instanceName ?? '');
     setDraftProps(
+      createInitialDraftProps(fields, initialProps),
+    );
+    setComplexDrafts(
       Object.fromEntries(
-        Object.entries(initialProps).map(([key, value]) => [key, toPrimitiveValue(value)]),
+        fields
+          .filter(isComplexField)
+          .map((field) => [field.name, formatFieldJson(getInitialFieldValue(field, initialProps), field)]),
       ),
     );
     setReviewAcknowledged(false);
@@ -275,16 +385,18 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
     initialResponsiveVariant,
     initialStateVariant,
     instanceName,
+    fields,
   ]);
 
   const initialPrimitiveProps = useMemo(
-    () =>
-      Object.fromEntries(
-        Object.entries(initialProps).map(([key, value]) => [key, toPrimitiveValue(value)]),
-      ),
-    [initialProps],
+    () => createInitialDraftProps(fields, initialProps),
+    [fields, initialProps],
   );
 
+  const complexFieldErrors = fields
+    .filter(isComplexField)
+    .map((field) => parseFieldJson(complexDrafts[field.name] ?? '', field).error)
+    .filter((error): error is string => typeof error === 'string');
   const responsivePropsParse = parsePropsJson(responsivePropsJson);
   const stateVariantPropsParse = parsePropsJson(stateVariantPropsJson);
   const responsiveVariant: ResponsiveVariant | undefined = responsiveBreakpoint.trim()
@@ -366,6 +478,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
   const canSubmit =
     !readOnly &&
     isDirty &&
+    complexFieldErrors.length === 0 &&
     !responsivePropsParse.error &&
     !stateVariantPropsParse.error &&
     missingA11yProps.length === 0 &&
@@ -449,7 +562,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
                     <span aria-label="review-required"> {' '}(review required)</span>
                   )}
                 </Typography>
-                <select
+                <Select
                   aria-label={field.label}
                   value={String(value ?? '')}
                   required={field.required}
@@ -476,8 +589,101 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
                       {option}
                     </option>
                   ))}
-                </select>
+                </Select>
               </Box>
+            );
+          }
+
+          if (isComplexField(field)) {
+            const jsonValue = complexDrafts[field.name] ?? formatFieldJson(value, field);
+            const parseResult = parseFieldJson(jsonValue, field);
+
+            return (
+              <Box key={field.name} className="flex flex-col gap-1">
+                <Typography variant="caption" color="subtle">
+                  {field.label}
+                  {field.required && <span aria-hidden="true"> *</span>}
+                  {reviewRequiredProps.has(field.name) && (
+                    <span aria-label="review-required"> {' '}(review required)</span>
+                  )}
+                </Typography>
+                {field.description ? (
+                  <Typography variant="caption" color="muted">
+                    {field.description}
+                  </Typography>
+                ) : null}
+                <Textarea
+                  aria-label={`${field.label} JSON`}
+                  value={jsonValue}
+                  required={field.required}
+                  disabled={readOnly}
+                  rows={field.valueType === 'array' ? 5 : 6}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    const nextParse = parseFieldJson(nextValue, field);
+                    setComplexDrafts((current) => ({
+                      ...current,
+                      [field.name]: nextValue,
+                    }));
+                    if (!nextParse.error) {
+                      setDraftProps((current) => ({
+                        ...current,
+                        [field.name]: nextParse.value,
+                      }));
+                    }
+                  }}
+                  style={{ width: '100%', fontFamily: 'monospace', fontSize: 12 }}
+                />
+                {parseResult.error ? (
+                  <Typography
+                    variant="caption"
+                    color="danger"
+                    data-testid={`property-complex-json-error-${field.name}`}
+                  >
+                    {parseResult.error}
+                  </Typography>
+                ) : null}
+              </Box>
+            );
+          }
+
+          if (isTokenCollectionField(field)) {
+            return (
+              <TextField
+                key={field.name}
+                label={`${field.label}${field.tokenTypes?.length ? ` (${field.tokenTypes.join(', ')} tokens)` : ''}`}
+                value={formatTokenCollection(value)}
+                fullWidth
+                size="sm"
+                required={field.required}
+                disabled={readOnly}
+                onChange={(event) => {
+                  setDraftProps((current) => ({
+                    ...current,
+                    [field.name]: parseTokenCollection(event.target.value),
+                  }));
+                }}
+              />
+            );
+          }
+
+          if (isTokenReferenceField(field)) {
+            return (
+              <TextField
+                key={field.name}
+                label={`${field.label}${field.tokenTypes?.length ? ` (${field.tokenTypes.join(', ')} token)` : ''}`}
+                value={String(value ?? '')}
+                fullWidth
+                size="sm"
+                required={field.required}
+                disabled={readOnly}
+                onChange={(event) => {
+                  setDraftProps((current) => ({
+                    ...current,
+                    [field.name]: event.target.value,
+                  }));
+                }}
+              />
             );
           }
 
@@ -525,7 +731,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         />
         <label style={{ display: 'block', marginTop: 8 }}>
           <Typography variant="caption" color="subtle">Responsive props JSON</Typography>
-          <textarea
+          <Textarea
             aria-label="Responsive props JSON"
             value={responsivePropsJson}
             disabled={readOnly}
@@ -548,7 +754,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         </Typography>
         <Box className="flex flex-col gap-1">
           <Typography variant="caption" color="subtle">State</Typography>
-          <select
+          <Select
             aria-label="State variant"
             value={stateVariantState}
             disabled={readOnly}
@@ -566,11 +772,11 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
             {STATE_VARIANT_OPTIONS.map((option) => (
               <option key={option} value={option}>{option}</option>
             ))}
-          </select>
+          </Select>
         </Box>
         <label style={{ display: 'block', marginTop: 8 }}>
           <Typography variant="caption" color="subtle">State props JSON</Typography>
-          <textarea
+          <Textarea
             aria-label="State props JSON"
             value={stateVariantPropsJson}
             disabled={readOnly}
@@ -602,7 +808,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         />
         <Box className="flex flex-col gap-1">
           <Typography variant="caption" color="subtle">Data target prop</Typography>
-          <select
+          <Select
             aria-label="Data target prop"
             value={dataBindingTarget}
             disabled={readOnly}
@@ -621,7 +827,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
             {dataBindingTargetOptions.map((option) => (
               <option key={option} value={option}>{option}</option>
             ))}
-          </select>
+          </Select>
         </Box>
         <TextField
           label="Data transform"
@@ -650,7 +856,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         </Typography>
         <Box className="flex flex-col gap-1">
           <Typography variant="caption" color="subtle">Action event</Typography>
-          <select
+          <Select
             aria-label="Action event"
             value={actionBindingEvent}
             disabled={readOnly}
@@ -669,7 +875,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
             {actionBindingEventOptions.map((option) => (
               <option key={option} value={option}>{option}</option>
             ))}
-          </select>
+          </Select>
         </Box>
         <TextField
           label="Action target"
@@ -695,7 +901,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         <Typography variant="body2" style={{ fontWeight: 600, display: 'block', marginBottom: 8 }}>
           Privacy classification
         </Typography>
-        <select
+        <Select
           aria-label="Privacy classification"
           value={privacyClassification}
           disabled={readOnly}
@@ -715,7 +921,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
           {PRIVACY_CLASSIFICATION_OPTIONS.map((option) => (
             <option key={option} value={option}>{option}</option>
           ))}
-        </select>
+        </Select>
         <Typography variant="caption" color="muted">
           Classification is stored on the selected builder node and participates in privacy review gates.
         </Typography>

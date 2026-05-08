@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { Button } from '../../components/ui/Button';
 
 // ============================================================================
 // Types
@@ -102,9 +103,9 @@ const OnCallPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-fg-muted">On-Call Schedule</h1>
           <p className="text-sm text-fg-muted mt-1">Manage on-call rotations and escalation policies</p>
         </div>
-        <button className="px-4 py-2 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors">
+        <Button className="px-4 py-2 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors">
           Edit Schedule
-        </button>
+        </Button>
       </div>
 
       {/* Current On-Call */}
@@ -157,7 +158,7 @@ const OnCallPage: React.FC = () => {
       {/* Tabs */}
       <div className="flex border-b border-border">
         {(['schedule', 'escalation'] as TabType[]).map((tab) => (
-          <button
+          <Button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-2.5 text-sm font-medium capitalize transition-colors border-b-2 ${
@@ -167,7 +168,7 @@ const OnCallPage: React.FC = () => {
             }`}
           >
             {tab === 'schedule' ? 'Rotation Schedule' : 'Escalation Policies'}
-          </button>
+          </Button>
         ))}
       </div>
 

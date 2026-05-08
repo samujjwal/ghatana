@@ -20,6 +20,7 @@
 import { useCallback, useMemo } from 'react';
 import { Tooltip } from '@ghatana/design-system';
 import { CheckCircle, Circle as RadioButtonUnchecked, Circle, Lightbulb as LightbulbOutlined, Palette, CheckCircle as CheckCircleOutline, Hammer as Build, Rocket as RocketLaunch, Eye as Visibility, TrendingUp } from 'lucide-react';
+import { Button } from '../ui/Button';
 import { LifecyclePhase, PHASE_LABELS, PHASE_DESCRIPTIONS } from '../../types/lifecycle';
 import { useLifecyclePhase } from '../../hooks/useLifecyclePhase';
 import { TRANSITIONS } from '../../styles/design-tokens';
@@ -94,9 +95,9 @@ function PhaseItem({ phase, isActive, isAccessible, isPast, onClick }: PhaseItem
         } else if (isPast) {
             classes += ' bg-success-bg dark:bg-success-bg/20 text-success-color dark:text-success-color hover:bg-success-bg dark:hover:bg-success-bg/30';
         } else if (isAccessible) {
-            classes += ' bg-grey-50 dark:bg-grey-800 text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-700';
+            classes += ' bg-surface-muted dark:bg-surface-muted text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-muted';
         } else {
-            classes += ' bg-grey-50/50 dark:bg-grey-900/30 text-text-tertiary opacity-50 cursor-not-allowed';
+            classes += ' bg-surface-muted/50 dark:bg-surface-muted/50 text-text-tertiary opacity-50 cursor-not-allowed';
         }
 
         return classes;
@@ -110,7 +111,7 @@ function PhaseItem({ phase, isActive, isAccessible, isPast, onClick }: PhaseItem
 
     return (
         <Tooltip title={`${label}: ${description}`} placement="right">
-            <button
+            <Button
                 onClick={onClick}
                 disabled={!isAccessible}
                 className={buttonClasses}
@@ -125,7 +126,7 @@ function PhaseItem({ phase, isActive, isAccessible, isPast, onClick }: PhaseItem
 
                 {/* Status Icon */}
                 {statusIcon}
-            </button>
+            </Button>
         </Tooltip>
     );
 }
@@ -192,7 +193,7 @@ export function CanvasPhaseNavigator({ onPhaseClick, className = '' }: CanvasPha
 
             {/* Progress Summary */}
             {activePhase && (
-                <div className="mx-4 mb-4 px-4 py-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg text-xs text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800">
+                <div className="mx-4 mb-4 px-4 py-3 bg-info-bg dark:bg-info-bg/20 rounded-lg text-xs text-info-color dark:text-info-color border border-info-border">
                     <div className="flex items-center justify-between">
                         <span className="font-medium">Current Phase:</span>
                         <span className="font-semibold">{PHASE_LABELS[activePhase]}</span>

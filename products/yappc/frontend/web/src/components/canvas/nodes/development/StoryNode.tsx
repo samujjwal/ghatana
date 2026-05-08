@@ -13,6 +13,7 @@
 import React, { memo, useCallback, useState } from 'react';
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { cn } from '../../utils/cn';
+import { Button } from '../../../ui/Button';
 import {
   Layers,
   Bug,
@@ -205,14 +206,14 @@ const TaskList: React.FC<TaskListProps> = memo(({ tasks, onToggle }) => {
       </div>
       <div className="space-y-1">
         {tasks.slice(0, 3).map((task) => (
-          <button
+          <Button variant="ghost" size="sm"
             key={task.id}
             onClick={(e) => {
               e.stopPropagation();
               onToggle?.(task.id);
             }}
             className={cn(
-              'flex items-center gap-2 w-full text-left p-1.5 rounded-md',
+              'flex w-full items-center justify-start gap-2 text-left p-1.5 rounded-md',
               'hover:bg-muted/20 transition-colors',
               'text-xs'
             )}
@@ -230,7 +231,7 @@ const TaskList: React.FC<TaskListProps> = memo(({ tasks, onToggle }) => {
             >
               {task.title}
             </span>
-          </button>
+          </Button>
         ))}
         {tasks.length > 3 && (
           <div className="text-xs text-muted-foreground pl-6">
@@ -313,7 +314,7 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
         'story-node w-72 rounded-xl border shadow-sm transition-all duration-200',
         'bg-surface',
         typeConfig.bgColor,
-        selected && 'ring-2 ring-primary ring-offset-2',
+        selected && 'ring-2 ring-info-border ring-offset-2',
         dragging && 'opacity-75 shadow-lg scale-[1.02]'
       )}
       onDoubleClick={handleOpenDetail}
@@ -322,24 +323,24 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
       <Handle
         type="target"
         position={Position.Left}
-        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
+        className="!w-3 !h-3 !bg-info-color !border-2 !border-background"
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
+        className="!w-3 !h-3 !bg-info-color !border-2 !border-background"
       />
       <Handle
         type="target"
         position={Position.Top}
         id="top"
-        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
+        className="!w-3 !h-3 !bg-info-color !border-2 !border-background"
       />
       <Handle
         type="source"
         position={Position.Bottom}
         id="bottom"
-        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
+        className="!w-3 !h-3 !bg-info-color !border-2 !border-background"
       />
 
       {/* Header */}
@@ -372,7 +373,7 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
 
             {/* Menu */}
             <div className="relative">
-              <button
+              <Button variant="ghost" size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowMenu(!showMenu);
@@ -380,7 +381,7 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
                 className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-fg"
               >
                 <MoreHorizontal className="w-4 h-4" />
-              </button>
+              </Button>
 
               {showMenu && (
                 <>
@@ -392,20 +393,20 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
                     }}
                   />
                   <div className="absolute right-0 top-full mt-1 w-36 bg-surface rounded-lg shadow-lg border border-border py-1 z-20">
-                    <button
+                    <Button variant="ghost" size="sm"
                       onClick={handleEdit}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-fg hover:bg-muted/40"
+                      className="flex w-full items-center justify-start gap-2 px-3 py-2 text-sm text-fg hover:bg-muted/40"
                     >
                       <Edit2 className="w-4 h-4" />
                       Edit
-                    </button>
-                    <button
+                    </Button>
+                    <Button variant="ghost" size="sm"
                       onClick={handleDelete}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-destructive hover:bg-destructive-bg"
+                      className="flex w-full items-center justify-start gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive-bg"
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete
-                    </button>
+                    </Button>
                   </div>
                 </>
               )}
@@ -452,7 +453,7 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
               <span className="text-xs text-fg-muted">{data.assignee.name}</span>
             </div>
           ) : (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 data.onAssign?.(nodeId);
@@ -461,7 +462,7 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
             >
               <User className="w-3 h-3" />
               <span>Assign</span>
-            </button>
+            </Button>
           )}
         </div>
 
@@ -558,7 +559,7 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
         </div>
 
         {/* Expand toggle */}
-        <button
+        <Button variant="ghost" size="sm"
           onClick={handleToggleExpand}
           className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-fg"
         >
@@ -567,7 +568,7 @@ const StoryNodeComponent: React.FC<StoryNodeProps> = ({
           ) : (
             <ChevronDown className="w-4 h-4" />
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );

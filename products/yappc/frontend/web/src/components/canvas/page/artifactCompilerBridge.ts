@@ -62,6 +62,12 @@ interface SemanticProductModelLike {
   readonly pages?: readonly SemanticPageLike[];
 }
 
+interface SemanticPageGraphSummary {
+  readonly artifactId: string;
+  readonly name: string;
+  readonly index: number;
+}
+
 function asSerializedDocument(value: unknown): SerializedDocument | null {
   if (!value || typeof value !== 'object') {
     return null;
@@ -120,8 +126,19 @@ export function compileSemanticModelToPageArtifacts(
     ];
   }
 
+  const productId = model.id ?? 'semantic-model';
+  const productName = model.name ?? productId;
+  const graphId = `${productId}:graph`;
+  const importedAt = new Date().toISOString();
+  const pageSummaries: readonly SemanticPageGraphSummary[] = pages.map((page, index) => ({
+    artifactId: page.id ?? `${productId}-page-${index + 1}`,
+    name: page.name ?? `Page ${index + 1}`,
+    index,
+  }));
+
   return pages.map((page, index) => {
-    const artifactId = page.id ?? `${model.id ?? 'artifact'}-page-${index + 1}`;
+    const pageSummary = pageSummaries[index];
+    const artifactId = pageSummary?.artifactId ?? `${productId}-page-${index + 1}`;
     const document = resolveBuilderDocument(page, createdBy);
     const residualIslandIds = (page.residualIslands ?? []).map((island) => island.id);
 
@@ -137,10 +154,15 @@ export function compileSemanticModelToPageArtifacts(
       residualIslandIds,
       artifactGraph: buildSemanticModelGraphSnapshot({
         artifactId,
-        projectId: model.id ?? 'semantic-model',
-        source: model.id ?? 'semantic-model',
-        importedAt: new Date().toISOString(),
+        graphId,
+        projectId: productId,
+        productId,
+        productName,
+        source: productId,
+        importedAt,
         pageName: page.name ?? document.name,
+        pageIndex: pageSummary?.index ?? index,
+        pages: pageSummaries,
         residualIslandIds,
         createdBy,
         confidence: typeof page.confidence === 'number' ? page.confidence : 0.9,
@@ -316,15 +338,32 @@ function buildImportedSourceGraphSnapshot(params: {
 
 function buildSemanticModelGraphSnapshot(params: {
   readonly artifactId: string;
+  readonly graphId: string;
   readonly projectId: string;
+  readonly productId: string;
+  readonly productName: string;
   readonly source: string;
   readonly importedAt: string;
   readonly pageName: string;
+  readonly pageIndex: number;
+  readonly pages: readonly SemanticPageGraphSummary[];
   readonly residualIslandIds: readonly string[];
   readonly createdBy: string;
   readonly confidence: number;
 }): PageArtifactGraphSnapshot {
+  const productNodeId = `${params.productId}:product`;
   const pageNodeId = `${params.artifactId}:page`;
+  const peerPageNodes = params.pages
+    .filter((page) => page.artifactId !== params.artifactId)
+    .map((page) => ({
+      id: `${page.artifactId}:page`,
+      kind: 'page' as const,
+      label: page.name,
+      metadata: {
+        pageIndex: page.index,
+        peerPage: true,
+      },
+    }));
   const residualNodes = params.residualIslandIds.map((residualId) => ({
     id: `${params.artifactId}:residual:${residualId}`,
     kind: 'residual' as const,
@@ -332,25 +371,52 @@ function buildSemanticModelGraphSnapshot(params: {
   }));
 
   return {
-    graphId: `${params.artifactId}:graph`,
+    graphId: params.graphId,
     projectId: params.projectId,
     sourceType: 'semantic-model',
     source: params.source,
     importedAt: params.importedAt,
     nodes: [
       {
+        id: productNodeId,
+        kind: 'product',
+        label: params.productName,
+        metadata: {
+          pageCount: params.pages.length,
+        },
+      },
+      {
         id: pageNodeId,
         kind: 'page',
         label: params.pageName,
+        metadata: {
+          pageIndex: params.pageIndex,
+          currentArtifact: true,
+        },
       },
+      ...peerPageNodes,
       ...residualNodes,
     ],
-    edges: residualNodes.map((node) => ({
-      id: `${params.artifactId}:page-residual:${node.label}`,
-      from: node.id,
-      to: pageNodeId,
-      kind: 'residual-of' as const,
-    })),
+    edges: [
+      {
+        id: `${params.artifactId}:page-part-of-product`,
+        from: pageNodeId,
+        to: productNodeId,
+        kind: 'part-of',
+      },
+      ...peerPageNodes.map((node) => ({
+        id: `${node.id}-part-of-product`,
+        from: node.id,
+        to: productNodeId,
+        kind: 'part-of' as const,
+      })),
+      ...residualNodes.map((node) => ({
+        id: `${params.artifactId}:page-residual:${node.label}`,
+        from: node.id,
+        to: pageNodeId,
+        kind: 'residual-of' as const,
+      })),
+    ],
     provenance: {
       createdBy: params.createdBy,
       compiler: 'yappc-artifact-compiler',

@@ -334,6 +334,96 @@ describe('ImportSourceWorkflow', () => {
     }
   });
 
+  it('polls governed import jobs until the backend marks them ready for review', async () => {
+    const originalFetch = globalThis.fetch;
+    const calls: Array<{ input: RequestInfo | URL; init?: RequestInit }> = [];
+    const runningJob = {
+      id: 'source-import-async-1',
+      status: 'FETCHING_SOURCE',
+      tenantId: 'tenant-1',
+      workspaceId: 'workspace-1',
+      projectId: 'proj-1',
+      sourceType: 'tsx',
+      source: 'https://example.com/AsyncImport.tsx',
+      percentComplete: 65,
+      currentStep: 'fetch_source',
+      steps: [
+        { id: 'validate_scope', label: 'Validate scope', status: 'completed', percent: 20 },
+        { id: 'fetch_source', label: 'Fetch source', status: 'running', percent: 65 },
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const reviewJob = {
+      ...runningJob,
+      status: 'REVIEW_REQUIRED',
+      percentComplete: 100,
+      currentStep: 'audit',
+      steps: runningJob.steps.map((step) => ({ ...step, status: 'completed' })),
+    };
+    const startResponse = {
+      success: true,
+      componentId: 'proj-1/AsyncImport',
+      files: [],
+      warnings: [],
+      errors: [],
+      metadata: {
+        sourceType: 'tsx',
+        source: 'https://example.com/AsyncImport.tsx',
+        importedAt: new Date().toISOString(),
+        componentName: 'AsyncImport',
+        dependencies: [],
+        fileCount: 0,
+        totalSize: 0,
+      },
+      job: runningJob,
+    };
+
+    globalThis.fetch = async (input, init) => {
+      calls.push({ input, init });
+      const body = input === '/api/v1/yappc/artifact/import-source'
+        ? startResponse
+        : { job: reviewJob };
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    };
+
+    try {
+      const result = await importFromSource({
+        sourceType: 'tsx',
+        source: 'https://example.com/AsyncImport.tsx',
+        projectId: 'proj-1',
+        options: {
+          requireServerImport: true,
+          tenantId: 'tenant-1',
+          workspaceId: 'workspace-1',
+          jobPollIntervalMs: 0,
+        },
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.job).toMatchObject({
+        id: 'source-import-async-1',
+        status: 'REVIEW_REQUIRED',
+        percentComplete: 100,
+        currentStep: 'audit',
+      });
+      expect(calls.map((call) => call.input)).toEqual([
+        '/api/v1/yappc/artifact/import-source',
+        '/api/v1/yappc/artifact/import-source/source-import-async-1',
+      ]);
+      expect(calls[1]?.init?.headers).toMatchObject({
+        'X-Tenant-ID': 'tenant-1',
+        'X-Workspace-ID': 'workspace-1',
+        'X-Project-ID': 'proj-1',
+      });
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it('does not fall back to local browser import when governed server import is unavailable', async () => {
     const originalFetch = globalThis.fetch;
     globalThis.fetch = async () =>

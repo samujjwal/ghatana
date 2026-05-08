@@ -143,116 +143,140 @@ export function UnifiedLeftPanel({
         `}
       >
         <Tooltip title="Tasks" placement="right">
-          <button
+          <Button
             onClick={() => {
               handleCollapseChange(false);
               setActiveTab('tasks');
             }}
+            variant="ghost"
+            size="sm"
+            aria-label="Open tasks panel"
             className={`p-2 rounded transition-colors ${activeTab === 'tasks'
-              ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600'
-              : 'hover:bg-grey-100 dark:hover:bg-grey-800 text-text-secondary'
+              ? 'bg-info-bg dark:bg-info-bg/20 text-info-color'
+              : 'hover:bg-surface-muted dark:hover:bg-surface-muted text-text-secondary'
               }`}
           >
             <Assignment className="w-5 h-5" />
-          </button>
+          </Button>
         </Tooltip>
         <Tooltip title="Widgets" placement="right">
-          <button
+          <Button
             onClick={() => {
               handleCollapseChange(false);
               setActiveTab('components');
             }}
+            variant="ghost"
+            size="sm"
+            aria-label="Open widgets panel"
             className={`p-2 rounded transition-colors ${activeTab === 'components'
-              ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600'
-              : 'hover:bg-grey-100 dark:hover:bg-grey-800 text-text-secondary'
+              ? 'bg-info-bg dark:bg-info-bg/20 text-info-color'
+              : 'hover:bg-surface-muted dark:hover:bg-surface-muted text-text-secondary'
               }`}
           >
             <Widgets className="w-5 h-5" />
-          </button>
+          </Button>
         </Tooltip>
         <Tooltip title="Build" placement="right">
-          <button
+          <Button
             onClick={() => {
               handleCollapseChange(false);
               setActiveTab('artifacts');
             }}
+            variant="ghost"
+            size="sm"
+            aria-label="Open build panel"
             className={`p-2 rounded transition-colors ${activeTab === 'artifacts'
-              ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600'
-              : 'hover:bg-grey-100 dark:hover:bg-grey-800 text-text-secondary'
+              ? 'bg-info-bg dark:bg-info-bg/20 text-info-color'
+              : 'hover:bg-surface-muted dark:hover:bg-surface-muted text-text-secondary'
               }`}
           >
             <Build className="w-5 h-5" />
-          </button>
+          </Button>
         </Tooltip>
         <Tooltip title="Timeline" placement="right">
-          <button
+          <Button
             onClick={() => {
               handleCollapseChange(false);
               setActiveTab('phases');
             }}
+            variant="ghost"
+            size="sm"
+            aria-label="Open timeline panel"
             className={`p-2 rounded transition-colors ${activeTab === 'phases'
-              ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600'
-              : 'hover:bg-grey-100 dark:hover:bg-grey-800 text-text-secondary'
+              ? 'bg-info-bg dark:bg-info-bg/20 text-info-color'
+              : 'hover:bg-surface-muted dark:hover:bg-surface-muted text-text-secondary'
               }`}
           >
             <Timeline className="w-5 h-5" />
-          </button>
+          </Button>
         </Tooltip>
         <Tooltip title="History" placement="right">
-          <button
+          <Button
             onClick={() => {
               handleCollapseChange(false);
               setActiveTab('history');
             }}
+            variant="ghost"
+            size="sm"
+            aria-label="Open history panel"
             className={`p-2 rounded transition-colors ${activeTab === 'history'
-              ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600'
-              : 'hover:bg-grey-100 dark:hover:bg-grey-800 text-text-secondary'
+              ? 'bg-info-bg dark:bg-info-bg/20 text-info-color'
+              : 'hover:bg-surface-muted dark:hover:bg-surface-muted text-text-secondary'
               }`}
           >
             <History className="w-5 h-5" />
-          </button>
+          </Button>
         </Tooltip>
         <Tooltip title="Activity" placement="right">
-          <button
+          <Button
             onClick={() => {
               handleCollapseChange(false);
               setActiveTab('activity');
             }}
+            variant="ghost"
+            size="sm"
+            aria-label="Open activity panel"
             className={`p-2 rounded transition-colors ${activeTab === 'activity'
-              ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600'
-              : 'hover:bg-grey-100 dark:hover:bg-grey-800 text-text-secondary'
+              ? 'bg-info-bg dark:bg-info-bg/20 text-info-color'
+              : 'hover:bg-surface-muted dark:hover:bg-surface-muted text-text-secondary'
               }`}
           >
             <ListAlt className="w-5 h-5" />
-          </button>
+          </Button>
         </Tooltip>
         <Tooltip title="Governance" placement="right">
-          <button
+          <Button
             onClick={() => {
               handleCollapseChange(false);
               setActiveTab('governance');
             }}
+            variant="ghost"
+            size="sm"
+            aria-label="Open governance panel"
             className={`p-2 rounded transition-colors ${activeTab === 'governance'
-              ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600'
-              : 'hover:bg-grey-100 dark:hover:bg-grey-800 text-text-secondary'
+              ? 'bg-info-bg dark:bg-info-bg/20 text-info-color'
+              : 'hover:bg-surface-muted dark:hover:bg-surface-muted text-text-secondary'
               }`}
           >
             <Security className="w-5 h-5" />
-          </button>
+          </Button>
         </Tooltip>
         <Tooltip title="Visualize" placement="right">
-          <button
+          <Button
             onClick={() => {
               handleCollapseChange(false);
               setActiveTab('visualize');
             }}
+            variant="ghost"
+            size="sm"
+            aria-label="Open visualize panel"
             className={`p-2 rounded transition-colors ${activeTab === 'visualize'
-              ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600'
-              : 'hover:bg-grey-100 dark:hover:bg-grey-800 text-text-secondary'
+              ? 'bg-info-bg dark:bg-info-bg/20 text-info-color'
+              : 'hover:bg-surface-muted dark:hover:bg-surface-muted text-text-secondary'
               }`}
           >
             <AutoAwesome className="w-5 h-5" />
-          </button>
+          </Button>
         </Tooltip>
       </Paper>
     );

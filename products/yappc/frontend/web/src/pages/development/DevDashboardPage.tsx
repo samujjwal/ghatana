@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 
 import { cn } from '../../utils/cn';
+import { Button } from '../../components/ui/Button';
 import {
   activeSprintAtom,
   sprintStoriesAtom,
@@ -510,9 +511,9 @@ const DevDashboardPage: React.FC = () => {
           <div className="bg-surface border border-border rounded-xl p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-white">Recent Activity</h2>
-              <button className="text-sm text-violet-400 hover:text-violet-300">
+              <Button className="text-sm text-violet-400 hover:text-violet-300">
                 View All
-              </button>
+              </Button>
             </div>
             <ActivityFeed items={recentActivity} />
           </div>

@@ -1,6 +1,6 @@
 /**
  * Canvas Task Panel
- * 
+ *
  * Smart collapsible side panel showing tasks for the current lifecycle phase.
  * Features:
  * - Collapsed state: 48px with task count badge
@@ -8,7 +8,7 @@
  * - Hover-to-expand for quick peek
  * - Pin to keep expanded
  * - Displays task status, progress, and allows quick actions
- * 
+ *
  * @doc.type component
  * @doc.purpose Task visibility in canvas context
  * @doc.layer product
@@ -22,6 +22,8 @@ import { useProjectTasks, type ProjectTask, type TaskStatus } from '../../../hoo
 import { useLifecyclePhase } from '../../../hooks/useLifecyclePhase';
 import { PHASE_LABELS } from '../../../types/lifecycle';
 import { PANELS, TRANSITIONS, RADIUS } from '../../../styles/design-tokens';
+import { Button } from '../../ui/Button';
+import { Input } from '../../ui/Input';
 
 // ============================================================================
 // Types
@@ -176,13 +178,16 @@ export function CanvasTaskPanel({
                 data-testid="task-panel-collapsed"
             >
                 {/* Expand Button */}
-                <button
+                <Button
                     onClick={handleToggleCollapse}
-                    className={`p-2 ${RADIUS.button} hover:bg-grey-100 dark:hover:bg-grey-800 ${TRANSITIONS.fast}`}
+                    variant="ghost"
+                    size="sm"
+                    className={`p-2 ${RADIUS.button} hover:bg-surface-muted dark:hover:bg-surface-muted ${TRANSITIONS.fast}`}
                     title="Expand task panel (hover to preview)"
+                    aria-label="Expand task panel"
                 >
                     <ChevronRight className="w-5 h-5 text-text-secondary" />
-                </button>
+                </Button>
 
                 {/* Progress Circle */}
                 <div className="mt-4 flex flex-col items-center gap-2">
@@ -190,13 +195,13 @@ export function CanvasTaskPanel({
                         className="relative w-9 h-9 rounded-full flex items-center justify-center"
                         style={{
                             background: `conic-gradient(
-                                var(--primary-500) ${progress.percentage}%,
-                                var(--grey-200) ${progress.percentage}%
+                                var(--info-color) ${progress.percentage}%,
+                                var(--surface-muted) ${progress.percentage}%
                             )`,
                         }}
                     >
                         <div className="w-7 h-7 rounded-full bg-bg-paper flex items-center justify-center">
-                            <span className="text-[10px] font-bold text-primary-600">
+                            <span className="text-[10px] font-bold text-info-color">
                                 {progress.percentage}%
                             </span>
                         </div>
@@ -237,23 +242,23 @@ export function CanvasTaskPanel({
                     <h3 className="font-semibold text-text-primary text-sm">
                         Current Phase Tasks
                     </h3>
-                    <span className="px-1.5 py-0.5 text-xs bg-grey-100 dark:bg-grey-700 text-text-secondary rounded">
+                    <span className="px-1.5 py-0.5 text-xs bg-surface-muted dark:bg-surface-muted text-text-secondary rounded">
                         {phaseTasks.length}
                     </span>
                 </div>
             </div>
 
             {/* Progress Bar */}
-            <div className="px-3 py-2 border-b border-divider bg-grey-50 dark:bg-grey-800/50">
+            <div className="px-3 py-2 border-b border-divider bg-surface-muted dark:bg-surface-muted">
                 <div className="flex items-center justify-between text-xs mb-1">
                     <span className="text-text-secondary">Progress</span>
                     <span className="font-medium text-text-primary">
                         {progress.completed}/{progress.total}
                     </span>
                 </div>
-                <div className="h-1.5 bg-grey-200 dark:bg-grey-700 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-surface-muted dark:bg-surface-muted rounded-full overflow-hidden">
                     <div
-                        className={`h-full bg-primary-500 rounded-full ${TRANSITIONS.slow}`}
+                        className={`h-full bg-info-color rounded-full ${TRANSITIONS.slow}`}
                         style={{ width: `${progress.percentage}%` }}
                     />
                 </div>
@@ -266,15 +271,17 @@ export function CanvasTaskPanel({
                         <p className="text-sm text-text-secondary mb-3">
                             No tasks yet
                         </p>
-                        <button
+                        <Button
                             onClick={handleInitialize}
+                            variant="link"
+                            size="sm"
                             className={`
-                                text-sm text-primary-600 dark:text-primary-400 
+                                text-sm text-info-color dark:text-info-color
                                 hover:underline ${TRANSITIONS.fast}
                             `}
                         >
                             Initialize default tasks
-                        </button>
+                        </Button>
                     </div>
                 ) : phaseTasks.length === 0 ? (
                     <div className="px-3 py-6 text-center">
@@ -299,7 +306,7 @@ export function CanvasTaskPanel({
             <div className="border-t border-divider p-2">
                 {showAddTask ? (
                     <div className="flex gap-2">
-                        <input
+                        <Input
                             type="text"
                             value={newTaskName}
                             onChange={(e) => setNewTaskName(e.target.value)}
@@ -309,36 +316,43 @@ export function CanvasTaskPanel({
                             }}
                             placeholder="Task name..."
                             autoFocus
+                            fullWidth
+                            size="sm"
                             className={`
-                                flex-1 px-2 py-1 text-sm border border-divider 
-                                ${RADIUS.input} focus:outline-none focus:ring-1 focus:ring-primary-500 
+                                flex-1 px-2 py-1 text-sm border border-divider
+                                ${RADIUS.input} focus:outline-none focus:ring-1 focus:ring-info-border
                                 bg-bg-default
                             `}
                         />
-                        <button
+                        <Button
                             onClick={handleAddTask}
                             disabled={!newTaskName.trim()}
+                            variant="solid"
+                            size="sm"
                             className={`
-                                px-2 py-1 text-sm bg-primary-600 text-white 
-                                ${RADIUS.button} disabled:opacity-50 
-                                hover:bg-primary-700 ${TRANSITIONS.fast}
+                                px-2 py-1 text-sm bg-info-color text-white
+                                ${RADIUS.button} disabled:opacity-50
+                                hover:bg-info-color/90 ${TRANSITIONS.fast}
                             `}
                         >
                             Add
-                        </button>
+                        </Button>
                     </div>
                 ) : (
-                    <button
+                    <Button
                         onClick={() => setShowAddTask(true)}
+                        variant="ghost"
+                        size="sm"
+                        fullWidth
                         className={`
-                            flex items-center gap-2 w-full px-2 py-1.5 text-sm 
-                            text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800 
+                            flex items-center gap-2 w-full px-2 py-1.5 text-sm
+                            text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-muted
                             ${RADIUS.button} ${TRANSITIONS.fast}
                         `}
                     >
                         <Add className="w-4 h-4" />
                         <span>Add task</span>
-                    </button>
+                    </Button>
                 )}
             </div>
         </div>
@@ -361,10 +375,13 @@ function TaskItem({ task, onClick }: TaskItemProps) {
 
     return (
         <li>
-            <button
+            <Button
                 onClick={onClick}
+                variant="ghost"
+                size="sm"
+                fullWidth
                 className={`
-                    w-full text-left px-4 py-2.5 hover:bg-grey-50 dark:hover:bg-grey-800/50 
+                    w-full text-left px-4 py-2.5 hover:bg-surface-muted dark:hover:bg-surface-muted
                     transition-colors group
                     ${task.status === 'completed' ? 'opacity-60' : ''}
                 `}
@@ -408,7 +425,7 @@ function TaskItem({ task, onClick }: TaskItemProps) {
 
                         {/* Progress bar for in-progress tasks */}
                         {task.status === 'in-progress' && task.progress > 0 && task.progress < 100 && (
-                            <div className="mt-1.5 h-1 bg-grey-200 dark:bg-grey-700 rounded-full overflow-hidden">
+                            <div className="mt-1.5 h-1 bg-surface-muted dark:bg-surface-muted rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-info-bg rounded-full"
                                     style={{ width: `${task.progress}%` }}
@@ -417,7 +434,7 @@ function TaskItem({ task, onClick }: TaskItemProps) {
                         )}
                     </div>
                 </div>
-            </button>
+            </Button>
         </li>
     );
 }
@@ -448,7 +465,7 @@ function getStatusColor(status: TaskStatus): string {
         case 'blocked':
             return 'text-destructive';
         default:
-            return 'text-grey-400';
+            return 'text-fg-muted';
     }
 }
 
@@ -461,7 +478,7 @@ function getPriorityColor(priority: string): string {
         case 'medium':
             return 'text-warning-color';
         default:
-            return 'text-grey-400';
+            return 'text-fg-muted';
     }
 }
 

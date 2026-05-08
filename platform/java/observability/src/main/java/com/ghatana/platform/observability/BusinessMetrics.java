@@ -164,26 +164,6 @@ public class BusinessMetrics {
                 "type", reviewType).increment();
     }
 
-    // ─── Data Cloud Metrics ──────────────────────────────────────────────────
-
-    public void recordEventPublished(String eventType, String tenantId) {
-        registry.counter("business.datacloud.events.published",
-                "type", eventType,
-                "tenant", tenantId).increment();
-    }
-
-    public void recordEventConsumed(String eventType, String tenantId) {
-        registry.counter("business.datacloud.events.consumed",
-                "type", eventType,
-                "tenant", tenantId).increment();
-    }
-
-    public void recordEntityPersisted(String entityType, String tenantId) {
-        registry.counter("business.datacloud.entities.persisted",
-                "type", entityType,
-                "tenant", tenantId).increment();
-    }
-
     // ─── Tenant & Revenue Metrics ────────────────────────────────────────────
 
     public void recordTenantCreated(String tenantId, String plan) {

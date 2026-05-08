@@ -12,6 +12,10 @@
 import React, { useState, useCallback } from 'react';
 import { Plus as Add, Minus as Remove, Sparkles as AutoAwesome, Save, Shield as Security, AlertTriangle as Warning } from 'lucide-react';
 import type { ThreatModelPayload } from '@/shared/types/lifecycle-artifacts';
+import { Button } from '../../ui/Button';
+import { Input } from '../../ui/Input';
+import { Select } from '../../ui/Select';
+import { Textarea } from '../../ui/Textarea';
 
 export interface ThreatModelPanelProps {
     data?: ThreatModelPayload;
@@ -34,11 +38,34 @@ const STRIDE_LABELS: Record<StrideCategory, { label: string; abbrev: string }> =
 };
 
 const SEVERITY_COLORS: Record<Severity, string> = {
-    low: 'bg-grey-100 text-grey-700 dark:bg-grey-800 dark:text-grey-300',
+    low: 'bg-surface-muted text-fg-muted dark:bg-surface-muted dark:text-fg-muted',
     medium: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
     high: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
     critical: 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive',
 };
+
+const ACTOR_TYPE_OPTIONS = [
+    { value: 'external', label: 'External' },
+    { value: 'internal', label: 'Internal' },
+] as const;
+
+const STRIDE_OPTIONS = Object.entries(STRIDE_LABELS).map(([value, { label }]) => ({
+    value,
+    label,
+}));
+
+const SEVERITY_OPTIONS = [
+    { value: 'low', label: 'Low' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'high', label: 'High' },
+    { value: 'critical', label: 'Critical' },
+] as const;
+
+const MITIGATION_STATUS_OPTIONS = [
+    { value: 'planned', label: 'Planned' },
+    { value: 'implemented', label: 'Implemented' },
+    { value: 'verified', label: 'Verified' },
+] as const;
 
 const defaultData: ThreatModelPayload = {
     assets: [{ name: '', description: '' }],
@@ -205,7 +232,7 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-divider">
                 <div className="flex items-center gap-2">
-                    <Security className="w-5 h-5 text-primary-600" />
+                    <Security className="w-5 h-5 text-info-color" />
                     <div>
                         <h3 className="font-semibold text-text-primary">Threat Model</h3>
                         <p className="text-xs text-text-secondary">STRIDE-based security analysis</p>
@@ -213,56 +240,66 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                 </div>
                 <div className="flex gap-2">
                     {onAIAssist && (
-                        <button
+                        <Button
                             onClick={handleAIAssist}
                             disabled={isAILoading || isSaving}
-                            className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-text-secondary border border-transparent hover:border-divider hover:text-text-primary hover:bg-grey-50 dark:hover:bg-grey-800/40 rounded-lg transition-colors disabled:opacity-50"
+                            variant="ghost"
+                            size="sm"
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-text-secondary border border-transparent hover:border-divider hover:text-text-primary hover:bg-surface-muted dark:hover:bg-surface-muted rounded-lg transition-colors disabled:opacity-50"
                         >
                             <AutoAwesome className="w-4 h-4" />
                             {isAILoading ? 'Analyzing...' : 'AI Assist'}
-                        </button>
+                        </Button>
                     )}
-                    <button
+                    <Button
                         onClick={handleSave}
                         disabled={isSaving || isLoading}
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+                        variant="solid"
+                        size="sm"
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold bg-info-color text-white rounded-lg hover:bg-info-color/90 transition-colors disabled:opacity-50"
                     >
                         <Save className="w-4 h-4" />
                         {isSaving ? 'Saving...' : 'Save'}
-                    </button>
+                    </Button>
                 </div>
             </div>
 
             {/* Tabs */}
             <div className="flex border-b border-divider">
-                <button
+                <Button
                     onClick={() => setActiveTab('assets')}
+                    variant="ghost"
+                    size="sm"
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'assets'
-                            ? 'border-primary-600 text-primary-600'
+                            ? 'border-info-border text-info-color'
                             : 'border-transparent text-text-secondary hover:text-text-primary'
                         }`}
                 >
                     Assets & Actors
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={() => setActiveTab('threats')}
+                    variant="ghost"
+                    size="sm"
                     className={`flex items-center gap-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'threats'
-                            ? 'border-primary-600 text-primary-600'
+                            ? 'border-info-border text-info-color'
                             : 'border-transparent text-text-secondary hover:text-text-primary'
                         }`}
                 >
                     <Warning className="w-4 h-4" />
                     Threats ({model.threats.length})
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={() => setActiveTab('mitigations')}
+                    variant="ghost"
+                    size="sm"
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'mitigations'
-                            ? 'border-primary-600 text-primary-600'
+                            ? 'border-info-border text-info-color'
                             : 'border-transparent text-text-secondary hover:text-text-primary'
                         }`}
                 >
                     Mitigations ({model.mitigations.length})
-                </button>
+                </Button>
             </div>
 
             {/* Content */}
@@ -276,37 +313,46 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                                 {model.assets.map((asset, idx) => (
                                     <div key={idx} className="flex gap-2 items-start">
                                         <div className="flex-1 grid grid-cols-2 gap-2">
-                                            <input
+                                            <Input
                                                 type="text"
                                                 value={asset.name}
                                                 onChange={(e) => updateAsset(idx, { name: e.target.value })}
                                                 placeholder="Asset name"
-                                                className="px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                                fullWidth
+                                                size="sm"
+                                                className="px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
                                             />
-                                            <input
+                                            <Input
                                                 type="text"
                                                 value={asset.description}
                                                 onChange={(e) => updateAsset(idx, { description: e.target.value })}
                                                 placeholder="Description"
-                                                className="px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                                fullWidth
+                                                size="sm"
+                                                className="px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
                                             />
                                         </div>
                                         {model.assets.length > 1 && (
-                                            <button
+                                            <Button
                                                 onClick={() => removeAsset(idx)}
+                                                variant="ghost"
+                                                size="sm"
+                                                aria-label={`Remove asset ${idx + 1}`}
                                                 className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                             >
                                                 <Remove className="w-4 h-4" />
-                                            </button>
+                                            </Button>
                                         )}
                                     </div>
                                 ))}
-                                <button
+                                <Button
                                     onClick={addAsset}
-                                    className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors"
+                                    variant="link"
+                                    size="sm"
+                                    className="flex items-center gap-1 text-xs text-info-color hover:text-info-color transition-colors"
                                 >
                                     <Add className="w-3 h-3" /> Add asset
-                                </button>
+                                </Button>
                             </div>
                         </div>
 
@@ -317,45 +363,54 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                                 {model.actors.map((actor, idx) => (
                                     <div key={idx} className="flex gap-2 items-start">
                                         <div className="flex-1 grid grid-cols-3 gap-2">
-                                            <input
+                                            <Input
                                                 type="text"
                                                 value={actor.name}
                                                 onChange={(e) => updateActor(idx, { name: e.target.value })}
                                                 placeholder="Actor name"
-                                                className="px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                                fullWidth
+                                                size="sm"
+                                                className="px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
                                             />
-                                            <input
+                                            <Input
                                                 type="text"
                                                 value={actor.description}
                                                 onChange={(e) => updateActor(idx, { description: e.target.value })}
                                                 placeholder="Description"
-                                                className="px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                                fullWidth
+                                                size="sm"
+                                                className="px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
                                             />
-                                            <select
+                                            <Select
                                                 value={actor.type}
                                                 onChange={(e) => updateActor(idx, { type: e.target.value as 'internal' | 'external' })}
-                                                className="px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                            >
-                                                <option value="external">External</option>
-                                                <option value="internal">Internal</option>
-                                            </select>
+                                                options={ACTOR_TYPE_OPTIONS}
+                                                fullWidth
+                                                size="sm"
+                                                className="px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary focus:outline-none focus:ring-1 focus:ring-info-border"
+                                            />
                                         </div>
                                         {model.actors.length > 1 && (
-                                            <button
+                                            <Button
                                                 onClick={() => removeActor(idx)}
+                                                variant="ghost"
+                                                size="sm"
+                                                aria-label={`Remove actor ${idx + 1}`}
                                                 className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                             >
                                                 <Remove className="w-4 h-4" />
-                                            </button>
+                                            </Button>
                                         )}
                                     </div>
                                 ))}
-                                <button
+                                <Button
                                     onClick={addActor}
-                                    className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors"
+                                    variant="link"
+                                    size="sm"
+                                    className="flex items-center gap-1 text-xs text-info-color hover:text-info-color transition-colors"
                                 >
                                     <Add className="w-3 h-3" /> Add actor
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -364,10 +419,10 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                 {activeTab === 'threats' && (
                     <div className="space-y-4">
                         {/* STRIDE Legend */}
-                        <div className="flex flex-wrap gap-2 p-3 bg-grey-50 dark:bg-grey-800/50 rounded-lg">
+                        <div className="flex flex-wrap gap-2 p-3 bg-surface-muted dark:bg-surface-muted rounded-lg">
                             {Object.entries(STRIDE_LABELS).map(([key, { label, abbrev }]) => (
                                 <span key={key} className="text-xs text-text-secondary flex items-center gap-2">
-                                    <span className="inline-flex items-center justify-center min-w-7 px-1.5 py-0.5 rounded bg-grey-200 text-grey-700 dark:bg-grey-700 dark:text-grey-100 text-[10px] font-semibold">
+                                    <span className="inline-flex items-center justify-center min-w-7 px-1.5 py-0.5 rounded bg-surface-muted text-fg-muted dark:bg-surface-muted dark:text-fg-muted text-[10px] font-semibold">
                                         {abbrev}
                                     </span>
                                     {label}
@@ -380,77 +435,83 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                             <div className="text-center py-8 text-text-secondary">
                                 <Warning className="w-12 h-12 mx-auto mb-2 opacity-50" />
                                 <p className="text-sm">No threats yet</p>
-                                <button
+                                <Button
                                     onClick={addThreat}
-                                    className="mt-2 text-sm text-primary-600 hover:text-primary-700"
+                                    variant="link"
+                                    size="sm"
+                                    className="mt-2 text-sm text-info-color hover:text-info-color"
                                 >
                                     Add first threat
-                                </button>
+                                </Button>
                             </div>
                         ) : (
                             <div className="space-y-3">
                                 {model.threats.map((threat, idx) => (
                                     <div key={idx} className="border border-divider rounded-lg bg-bg-paper p-3 space-y-2">
                                         <div className="flex items-start gap-2">
-                                            <select
+                                            <Select
                                                 value={threat.category}
                                                 onChange={(e) => updateThreat(idx, { category: e.target.value as StrideCategory })}
-                                                className="px-2 py-1 text-xs border border-divider rounded bg-bg-default text-text-primary focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                            >
-                                                {Object.entries(STRIDE_LABELS).map(([key, { label }]) => (
-                                                    <option key={key} value={key}>{label}</option>
-                                                ))}
-                                            </select>
-                                            <select
+                                                options={STRIDE_OPTIONS}
+                                                size="sm"
+                                                className="px-2 py-1 text-xs border border-divider rounded bg-bg-default text-text-primary focus:outline-none focus:ring-1 focus:ring-info-border"
+                                            />
+                                            <Select
                                                 value={threat.asset}
                                                 onChange={(e) => updateThreat(idx, { asset: e.target.value })}
-                                                className="px-2 py-1 text-xs border border-divider rounded bg-bg-default text-text-primary focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                            >
-                                                <option value="">Select asset</option>
-                                                {model.assets.filter((a) => a.name.trim()).map((a, i) => (
-                                                    <option key={i} value={a.name}>{a.name}</option>
-                                                ))}
-                                            </select>
-                                            <select
+                                                options={model.assets.filter((a) => a.name.trim()).map((a) => ({ value: a.name, label: a.name }))}
+                                                placeholder="Select asset"
+                                                size="sm"
+                                                className="px-2 py-1 text-xs border border-divider rounded bg-bg-default text-text-primary focus:outline-none focus:ring-1 focus:ring-info-border"
+                                            />
+                                            <Select
                                                 value={threat.severity}
                                                 onChange={(e) => updateThreat(idx, { severity: e.target.value as Severity })}
+                                                options={SEVERITY_OPTIONS}
+                                                size="sm"
                                                 className={`px-2 py-1 text-xs rounded ${SEVERITY_COLORS[threat.severity]}`}
-                                            >
-                                                <option value="low">Low</option>
-                                                <option value="medium">Medium</option>
-                                                <option value="high">High</option>
-                                                <option value="critical">Critical</option>
-                                            </select>
-                                            <button
+                                            />
+                                            <Button
                                                 onClick={() => removeThreat(idx)}
+                                                variant="ghost"
+                                                size="sm"
+                                                aria-label={`Remove threat ${idx + 1}`}
                                                 className="ml-auto p-1 text-text-secondary hover:text-error-color transition-colors"
                                             >
                                                 <Remove className="w-4 h-4" />
-                                            </button>
+                                            </Button>
                                         </div>
-                                        <textarea
+                                        <Textarea
                                             value={threat.description}
                                             onChange={(e) => updateThreat(idx, { description: e.target.value })}
                                             placeholder="Describe the threat..."
                                             rows={2}
-                                            className="w-full px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none"
+                                            fullWidth
+                                            resize="none"
+                                            size="sm"
+                                            className="w-full px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border resize-none"
                                         />
-                                        <button
+                                        <Button
                                             onClick={() => addMitigation(threat.description)}
-                                            className="text-xs text-primary-600 hover:text-primary-700"
+                                            variant="link"
+                                            size="sm"
+                                            className="text-xs text-info-color hover:text-info-color"
                                         >
                                             + Add mitigation
-                                        </button>
+                                        </Button>
                                     </div>
                                 ))}
                             </div>
                         )}
-                        <button
+                        <Button
                             onClick={addThreat}
-                            className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-divider rounded-lg text-text-secondary hover:text-primary-600 hover:border-primary-300 transition-colors"
+                            variant="ghost"
+                            size="sm"
+                            fullWidth
+                            className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-divider rounded-lg text-text-secondary hover:text-info-color hover:border-info-border transition-colors"
                         >
                             <Add className="w-5 h-5" /> Add Threat
-                        </button>
+                        </Button>
                     </div>
                 )}
 
@@ -459,75 +520,88 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                         {model.mitigations.length === 0 ? (
                             <div className="text-center py-8 text-text-secondary">
                                 <p className="text-sm">No mitigations yet</p>
-                                <button
+                                <Button
                                     onClick={() => addMitigation()}
-                                    className="mt-2 text-sm text-primary-600 hover:text-primary-700"
+                                    variant="link"
+                                    size="sm"
+                                    className="mt-2 text-sm text-info-color hover:text-info-color"
                                 >
                                     Add first mitigation
-                                </button>
+                                </Button>
                             </div>
                         ) : (
                             <div className="space-y-3">
                                 {model.mitigations.map((mit, idx) => (
                                     <div key={idx} className="border border-divider rounded-lg bg-bg-paper p-3 space-y-2">
                                         <div className="flex items-start gap-2">
-                                            <input
+                                            <Input
                                                 type="text"
                                                 value={mit.threat}
                                                 onChange={(e) => updateMitigation(idx, { threat: e.target.value })}
                                                 placeholder="Related threat"
-                                                className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                                fullWidth
+                                                size="sm"
+                                                className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
                                             />
-                                            <select
+                                            <Select
                                                 value={mit.status}
                                                 onChange={(e) => updateMitigation(idx, { status: e.target.value as 'planned' | 'implemented' | 'verified' })}
+                                                options={MITIGATION_STATUS_OPTIONS}
+                                                size="sm"
                                                 className={`px-2 py-1 text-xs rounded ${mit.status === 'verified'
                                                         ? 'bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color'
                                                         : mit.status === 'implemented'
                                                             ? 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color'
-                                                            : 'bg-grey-100 text-grey-700 dark:bg-grey-800 dark:text-grey-300'
+                                                            : 'bg-surface-muted text-fg-muted dark:bg-surface-muted dark:text-fg-muted'
                                                     }`}
-                                            >
-                                                <option value="planned">Planned</option>
-                                                <option value="implemented">Implemented</option>
-                                                <option value="verified">Verified</option>
-                                            </select>
-                                            <button
+                                            />
+                                            <Button
                                                 onClick={() => removeMitigation(idx)}
+                                                variant="ghost"
+                                                size="sm"
+                                                aria-label={`Remove mitigation ${idx + 1}`}
                                                 className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                             >
                                                 <Remove className="w-4 h-4" />
-                                            </button>
+                                            </Button>
                                         </div>
-                                        <textarea
+                                        <Textarea
                                             value={mit.control}
                                             onChange={(e) => updateMitigation(idx, { control: e.target.value })}
                                             placeholder="Describe the security control..."
                                             rows={2}
-                                            className="w-full px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none"
+                                            fullWidth
+                                            resize="none"
+                                            size="sm"
+                                            className="w-full px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border resize-none"
                                         />
                                     </div>
                                 ))}
                             </div>
                         )}
-                        <button
+                        <Button
                             onClick={() => addMitigation()}
-                            className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-divider rounded-lg text-text-secondary hover:text-primary-600 hover:border-primary-300 transition-colors"
+                            variant="ghost"
+                            size="sm"
+                            fullWidth
+                            className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-divider rounded-lg text-text-secondary hover:text-info-color hover:border-info-border transition-colors"
                         >
                             <Add className="w-5 h-5" /> Add Mitigation
-                        </button>
+                        </Button>
 
                         {/* Residual Risk */}
                         <div className="pt-4 border-t border-divider">
                             <label className="block text-sm font-medium text-text-primary mb-1">
                                 Residual Risk Assessment
                             </label>
-                            <textarea
+                            <Textarea
                                 value={model.residualRisk}
                                 onChange={(e) => setModel((prev) => ({ ...prev, residualRisk: e.target.value }))}
                                 placeholder="Describe remaining risks after mitigations are applied..."
                                 rows={3}
-                                className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                                fullWidth
+                                resize="none"
+                                className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-info-border resize-none"
                             />
                         </div>
                     </div>

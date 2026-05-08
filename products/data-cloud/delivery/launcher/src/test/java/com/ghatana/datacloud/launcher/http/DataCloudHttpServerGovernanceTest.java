@@ -1397,7 +1397,7 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
                 )));
 
             assertThat(resp.statusCode()).isEqualTo(201);
-            Map<String, Object> created = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> created = (Map<String, Object>) mapper.readValue(resp.body(), Map.class).get("data");
             assertThat(created.get("id")).isNotNull();
             assertThat(created.get("name")).isEqualTo("GDPR Retention");
             assertThat(created.get("type")).isEqualTo("RETENTION");
@@ -1437,13 +1437,13 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
             // Create a policy
             HttpResponse<String> createResp = post("/api/v1/governance/policies",
                 mapper.writeValueAsString(Map.of("name", "Findable Policy", "type", "CUSTOM")));
-            Map<String, Object> created = mapper.readValue(createResp.body(), Map.class);
+            Map<String, Object> created = (Map<String, Object>) mapper.readValue(createResp.body(), Map.class).get("data");
             String policyId = (String) created.get("id");
 
             HttpResponse<String> getResp = get("/api/v1/governance/policies/" + policyId);
 
             assertThat(getResp.statusCode()).isEqualTo(200);
-            Map<String, Object> found = mapper.readValue(getResp.body(), Map.class);
+            Map<String, Object> found = (Map<String, Object>) mapper.readValue(getResp.body(), Map.class).get("data");
             assertThat(found.get("id")).isEqualTo(policyId);
             assertThat(found.get("name")).isEqualTo("Findable Policy");
         }
@@ -1467,7 +1467,7 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
             // Create policy
             HttpResponse<String> createResp = post("/api/v1/governance/policies",
                 mapper.writeValueAsString(Map.of("name", "Original Name", "type", "CUSTOM")));
-            Map<String, Object> created = mapper.readValue(createResp.body(), Map.class);
+            Map<String, Object> created = (Map<String, Object>) mapper.readValue(createResp.body(), Map.class).get("data");
             String policyId = (String) created.get("id");
 
             // Update name
@@ -1475,7 +1475,7 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
                 mapper.writeValueAsString(Map.of("name", "Updated Name", "description", "Updated desc")));
 
             assertThat(updateResp.statusCode()).isEqualTo(200);
-            Map<String, Object> updated = mapper.readValue(updateResp.body(), Map.class);
+            Map<String, Object> updated = (Map<String, Object>) mapper.readValue(updateResp.body(), Map.class).get("data");
             assertThat(updated.get("name")).isEqualTo("Updated Name");
             assertThat(updated.get("description")).isEqualTo("Updated desc");
             assertThat(updated.get("id")).isEqualTo(policyId);
@@ -1491,14 +1491,14 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
             // Create policy
             HttpResponse<String> createResp = post("/api/v1/governance/policies",
                 mapper.writeValueAsString(Map.of("name", "To Delete", "type", "CUSTOM")));
-            Map<String, Object> created = mapper.readValue(createResp.body(), Map.class);
+            Map<String, Object> created = (Map<String, Object>) mapper.readValue(createResp.body(), Map.class).get("data");
             String policyId = (String) created.get("id");
 
             // Delete
             HttpResponse<String> deleteResp = deleteByTenant("/api/v1/governance/policies/" + policyId);
 
             assertThat(deleteResp.statusCode()).isEqualTo(200);
-            Map<String, Object> deleteBody = mapper.readValue(deleteResp.body(), Map.class);
+            Map<String, Object> deleteBody = (Map<String, Object>) mapper.readValue(deleteResp.body(), Map.class).get("data");
             assertThat(deleteBody.get("id")).isEqualTo(policyId);
             assertThat(deleteBody.get("status")).isEqualTo("deleted");
 
@@ -1516,7 +1516,7 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
             // Create policy (enabled by default)
             HttpResponse<String> createResp = post("/api/v1/governance/policies",
                 mapper.writeValueAsString(Map.of("name", "Toggle Test", "type", "CUSTOM")));
-            Map<String, Object> created = mapper.readValue(createResp.body(), Map.class);
+            Map<String, Object> created = (Map<String, Object>) mapper.readValue(createResp.body(), Map.class).get("data");
             String policyId = (String) created.get("id");
             assertThat(created.get("enabled")).isEqualTo(true);
 
@@ -1525,7 +1525,7 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
                 mapper.writeValueAsString(Map.of("enabled", false)));
 
             assertThat(toggleResp.statusCode()).isEqualTo(200);
-            Map<String, Object> toggled = mapper.readValue(toggleResp.body(), Map.class);
+            Map<String, Object> toggled = (Map<String, Object>) mapper.readValue(toggleResp.body(), Map.class).get("data");
             assertThat(toggled.get("enabled")).isEqualTo(false);
         }
 
@@ -1544,14 +1544,14 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
                     "rules", List.of(Map.of("collection", "orders", "tier", "standard", "years", 3))
                 )));
             assertThat(createResp.statusCode()).isEqualTo(201);
-            Map<String, Object> created = mapper.readValue(createResp.body(), Map.class);
+            Map<String, Object> created = (Map<String, Object>) mapper.readValue(createResp.body(), Map.class).get("data");
             String policyId = (String) created.get("id");
             assertThat(policyId).isNotNull();
 
             // READ (GET by ID)
             HttpResponse<String> getResp = get("/api/v1/governance/policies/" + policyId);
             assertThat(getResp.statusCode()).isEqualTo(200);
-            Map<String, Object> read = mapper.readValue(getResp.body(), Map.class);
+            Map<String, Object> read = (Map<String, Object>) mapper.readValue(getResp.body(), Map.class).get("data");
             assertThat(read.get("name")).isEqualTo("E2E Policy");
 
             // READ (LIST)
@@ -1564,7 +1564,7 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
             HttpResponse<String> updateResp = put("/api/v1/governance/policies/" + policyId,
                 mapper.writeValueAsString(Map.of("description", "Updated by E2E test")));
             assertThat(updateResp.statusCode()).isEqualTo(200);
-            Map<String, Object> updated = mapper.readValue(updateResp.body(), Map.class);
+            Map<String, Object> updated = (Map<String, Object>) mapper.readValue(updateResp.body(), Map.class).get("data");
             assertThat(updated.get("description")).isEqualTo("Updated by E2E test");
             assertThat(updated.get("name")).isEqualTo("E2E Policy");
 

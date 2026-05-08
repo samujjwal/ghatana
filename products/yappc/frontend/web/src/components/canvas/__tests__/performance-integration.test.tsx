@@ -6,6 +6,9 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
+
+const TestButton = (props: React.ButtonHTMLAttributes<HTMLButtonElement>): React.ReactElement =>
+  React.createElement('button', props);
 import '@testing-library/jest-dom';
 
 import { useCollaboration } from '../collaboration/CollaborationEngine';
@@ -143,7 +146,7 @@ describe('Collaboration Tests', () => {
                         <div data-testid="user-count">{collaborationState.users.size}</div>
                         <div data-testid="cursor-count">{collaborationState.cursors.size}</div>
                         <div data-testid="selection-count">{collaborationState.selections.size}</div>
-                        <button
+                        <TestButton
                             data-testid="add-user"
                             onClick={() => addUser({
                                 id: 'user-2',
@@ -154,19 +157,19 @@ describe('Collaboration Tests', () => {
                             })}
                         >
                             Add User
-                        </button>
-                        <button
+                        </TestButton>
+                        <TestButton
                             data-testid="update-cursor"
                             onClick={() => updateCursor({ x: 100, y: 100 })}
                         >
                             Update Cursor
-                        </button>
-                        <button
+                        </TestButton>
+                        <TestButton
                             data-testid="update-selection"
                             onClick={() => updateSelection(['item-1', 'item-2'])}
                         >
                             Update Selection
-                        </button>
+                        </TestButton>
                     </div>
                 );
             };
@@ -213,9 +216,9 @@ describe('Collaboration Tests', () => {
                 return (
                     <div>
                         <div data-testid="user-count">{collaborationState.users.size}</div>
-                        <button data-testid="add-multiple" onClick={addMultipleUsers}>
+                        <TestButton data-testid="add-multiple" onClick={addMultipleUsers}>
                             Add Multiple Users
-                        </button>
+                        </TestButton>
                     </div>
                 );
             };
@@ -240,7 +243,7 @@ describe('History Tests', () => {
                         <div data-testid="item-count">{items.length}</div>
                         <div data-testid="can-undo">{actions.canUndo().toString()}</div>
                         <div data-testid="can-redo">{actions.canRedo().toString()}</div>
-                        <button
+                        <TestButton
                             data-testid="add-item"
                             onClick={() => actions.recordAction({
                                 type: 'create',
@@ -248,21 +251,21 @@ describe('History Tests', () => {
                             }, 'Add new item')}
                         >
                             Add Item
-                        </button>
-                        <button
+                        </TestButton>
+                        <TestButton
                             data-testid="undo"
                             onClick={() => actions.undo()}
                             disabled={!actions.canUndo()}
                         >
                             Undo
-                        </button>
-                        <button
+                        </TestButton>
+                        <TestButton
                             data-testid="redo"
                             onClick={() => actions.redo()}
                             disabled={!actions.canRedo()}
                         >
                             Redo
-                        </button>
+                        </TestButton>
                     </div>
                 );
             };
@@ -301,7 +304,7 @@ describe('History Tests', () => {
                     <div>
                         <div data-testid="active-branch">{historyState.activeBranchId}</div>
                         <div data-testid="branch-count">{historyState.branches.size}</div>
-                        <button
+                        <TestButton
                             data-testid="create-branch"
                             onClick={() => {
                                 const id = actions.createBranch('feature-branch');
@@ -309,8 +312,8 @@ describe('History Tests', () => {
                             }}
                         >
                             Create Branch
-                        </button>
-                        <button
+                        </TestButton>
+                        <TestButton
                             data-testid="switch-branch"
                             onClick={() => {
                                 if (featureBranchId) {
@@ -319,7 +322,7 @@ describe('History Tests', () => {
                             }}
                         >
                             Switch to Feature
-                        </button>
+                        </TestButton>
                     </div>
                 );
             };
@@ -401,7 +404,7 @@ describe('Integration Stress Tests', () => {
                     <div data-testid="metrics-items">{metrics.itemCount}</div>
                     <div data-testid="can-undo">{actions.canUndo().toString()}</div>
                     <div data-testid="users">{collaborationState.users.size}</div>
-                    <button
+                    <TestButton
                         data-testid="add-item"
                         onClick={() => {
                             const newItem = { ...mockItem, id: `item-${Date.now()}` };
@@ -413,7 +416,7 @@ describe('Integration Stress Tests', () => {
                         }}
                     >
                         Add Item
-                    </button>
+                    </TestButton>
                 </div>
             );
         };
@@ -444,12 +447,12 @@ describe('Integration Stress Tests', () => {
             return (
                 <div>
                     <div data-testid="status">ok</div>
-                    <button
+                    <TestButton
                         data-testid="trigger-error"
                         onClick={() => setShouldError(true)}
                     >
                         Trigger Error
-                    </button>
+                    </TestButton>
                 </div>
             );
         };

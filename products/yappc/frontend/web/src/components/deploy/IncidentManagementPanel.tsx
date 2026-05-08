@@ -12,6 +12,7 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { Button } from '../ui/Button';
 import {
     AlertCircle as ErrorIcon,
     CheckCircle,
@@ -54,6 +55,21 @@ interface NewIncidentForm {
     severity: IncidentSeverity;
     impact: string;
 }
+
+const NativeInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>((props, ref) =>
+    React.createElement('input', { ...props, ref }),
+);
+NativeInput.displayName = 'NativeInput';
+
+const NativeSelect = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>((props, ref) =>
+    React.createElement('select', { ...props, ref }),
+);
+NativeSelect.displayName = 'NativeSelect';
+
+const NativeTextarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) =>
+    React.createElement('textarea', { ...props, ref }),
+);
+NativeTextarea.displayName = 'NativeTextarea';
 
 const INITIAL_FORM: NewIncidentForm = {
     title: '',
@@ -219,13 +235,13 @@ export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = (
                     <h2 className="text-lg font-semibold text-text-primary">Incident Management</h2>
                     <p className="text-sm text-text-secondary">OBSERVE Phase – Issue Tracking</p>
                 </div>
-                <button
+                <Button
                     onClick={() => setShowNewIncidentDialog(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
                 >
                     <Add className="w-4 h-4" />
                     New Incident
-                </button>
+                </Button>
             </div>
 
             {/* Content */}
@@ -241,7 +257,7 @@ export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = (
                         {incidentSummaries.map((summary) => {
                             const isSelected = selectedSummary?.id === summary.id;
                             return (
-                                <button
+                                <Button
                                     key={summary.id}
                                     type="button"
                                     onClick={() => void handleSelectIncident(summary)}
@@ -261,7 +277,7 @@ export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = (
                                         </div>
                                     </div>
                                     <div className="text-xs text-text-secondary">{summary.status}</div>
-                                </button>
+                                </Button>
                             );
                         })}
                     </div>
@@ -405,14 +421,14 @@ export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = (
                             >
                                 New Incident
                             </h3>
-                            <button
+                            <Button
                                 type="button"
                                 onClick={() => setShowNewIncidentDialog(false)}
                                 className="text-text-secondary hover:text-text-primary"
                                 aria-label="Close dialog"
                             >
                                 <Close className="w-5 h-5" />
-                            </button>
+                            </Button>
                         </div>
 
                         <div className="space-y-3">
@@ -423,7 +439,7 @@ export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = (
                                 >
                                     Title <span aria-hidden="true">*</span>
                                 </label>
-                                <input
+                                <NativeInput
                                     id="incident-title"
                                     type="text"
                                     value={newIncidentForm.title}
@@ -443,7 +459,7 @@ export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = (
                                 >
                                     Severity
                                 </label>
-                                <select
+                                <NativeSelect
                                     id="incident-severity"
                                     value={newIncidentForm.severity}
                                     onChange={(e) =>
@@ -458,7 +474,7 @@ export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = (
                                     <option value="high">High</option>
                                     <option value="medium">Medium</option>
                                     <option value="low">Low</option>
-                                </select>
+                                </NativeSelect>
                             </div>
 
                             <div>
@@ -468,7 +484,7 @@ export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = (
                                 >
                                     Impact
                                 </label>
-                                <textarea
+                                <NativeTextarea
                                     id="incident-impact"
                                     value={newIncidentForm.impact}
                                     onChange={(e) =>
@@ -482,21 +498,21 @@ export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = (
                         </div>
 
                         <div className="flex justify-end gap-3 pt-2">
-                            <button
+                            <Button
                                 type="button"
                                 onClick={() => setShowNewIncidentDialog(false)}
                                 className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary border border-divider rounded-md transition-colors"
                             >
                                 Cancel
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 type="button"
                                 onClick={() => void handleCreateIncident()}
                                 disabled={isCreating || !newIncidentForm.title.trim()}
                                 className="px-4 py-2 text-sm bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"
                             >
                                 {isCreating ? 'Creating…' : 'Create Incident'}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>

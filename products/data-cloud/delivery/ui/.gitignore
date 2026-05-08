@@ -1,0 +1,3 @@
+# Playwright persisted authentication state.
+# Contains browser cookies and localStorage — never commit to source control.
+/e2e/.auth/

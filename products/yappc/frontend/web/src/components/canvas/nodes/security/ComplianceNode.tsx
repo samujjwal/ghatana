@@ -335,7 +335,7 @@ function ComplianceNodeComponent({ data, selected }: NodeProps<ComplianceCanvasN
         className={cn(
           'rounded-lg border-2 bg-white p-3 shadow-sm transition-all duration-200',
           frameworkConfig.borderColor,
-          selected && 'ring-2 ring-primary ring-offset-2',
+          selected && 'ring-2 ring-info-border ring-offset-2',
           'min-w-[180px]'
         )}
       >
@@ -358,7 +358,7 @@ function ComplianceNodeComponent({ data, selected }: NodeProps<ComplianceCanvasN
       className={cn(
         'rounded-lg border-2 bg-white shadow-md transition-all duration-200',
         frameworkConfig.borderColor,
-        selected && 'ring-2 ring-primary ring-offset-2',
+        selected && 'ring-2 ring-info-border ring-offset-2',
         'min-w-[320px] max-w-[400px]'
       )}
     >

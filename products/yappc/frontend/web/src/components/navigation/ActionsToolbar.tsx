@@ -210,9 +210,11 @@ export function ActionsToolbar({
                             })}
                         </div>
                     </div>
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         type="button"
-                        className="fixed inset-0 cursor-default"
+                        className="fixed inset-0 min-h-0 cursor-default rounded-none bg-transparent p-0 hover:bg-transparent"
                         aria-label="Close actions menu"
                         onClick={handleMoreClose}
                     />

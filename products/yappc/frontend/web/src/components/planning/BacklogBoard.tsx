@@ -231,13 +231,15 @@ function ItemCard({
 
           {/* Expand toggle */}
           {item.description && (
-            <button
+            <Button
               onClick={handleToggle}
               aria-label={expanded ? 'Collapse' : 'Expand'}
               className="flex-shrink-0 text-fg-muted hover:text-fg-muted dark:hover:text-fg-muted"
+              variant="ghost"
+              size="sm"
             >
               <ExpandIcon className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
-            </button>
+            </Button>
           )}
         </div>
 
@@ -414,7 +416,7 @@ export function BacklogBoard({
         {/* Type filter */}
         <div className="flex items-center gap-1 flex-wrap">
           {typeOptions.map(({ value, label }) => (
-            <button
+            <Button
               key={value}
               onClick={() => setFilterType(value)}
               aria-pressed={filterType === value}
@@ -423,9 +425,11 @@ export function BacklogBoard({
                   ? 'bg-primary text-white border-info-border'
                   : 'bg-transparent text-fg-muted dark:text-fg-muted border-border dark:border-border hover:border-info-border'
               }`}
+              variant="ghost"
+              size="sm"
             >
               {label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>

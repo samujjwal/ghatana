@@ -246,7 +246,7 @@ function RunbookNodeComponent({ data, selected }: RunbookNodeProps) {
       className={cn(
         'min-w-[250px] max-w-[300px] rounded-lg border bg-white shadow-md transition-all',
         isPublished ? 'border-success-border' : 'border-border',
-        selected && 'ring-2 ring-primary ring-offset-2'
+        selected && 'ring-2 ring-info-border ring-offset-2'
       )}
     >
       {/* Connection Handles */}

@@ -11,10 +11,11 @@
  */
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { Dialog, Input as InputBase, InteractiveList as List, ListItemButton, ListItemIcon, ListItemText, Box, Chip, Typography } from '@ghatana/design-system';
+import { Dialog, InteractiveList as List, ListItemButton, ListItemIcon, ListItemText, Box, Chip, Typography } from '@ghatana/design-system';
 import { Search as SearchIcon, Keyboard as KeyboardIcon } from 'lucide-react';
 
 import { useActions, type ActionState, type ActionDefinition, type GroupedActions } from '../../services/ActionRegistry';
+import { Input } from '../ui/Input';
 
 // ============================================================================
 // Types
@@ -264,7 +265,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 <Box className="border-b border-grey-200 dark:border-grey-700 p-4">
                     <Box className="flex items-center gap-2">
                         <SearchIcon className="text-grey-400 w-5 h-5" aria-hidden="true" />
-                        <input
+                        <Input
                             ref={inputRef}
                             aria-label="Search actions"
                             aria-controls={listboxId}
@@ -281,6 +282,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                             onKeyDown={handleKeyDown}
                             autoFocus
                             className="w-full bg-transparent text-lg outline-none"
+                            fullWidth
                         />
                         <Chip
                             icon={<KeyboardIcon className="w-3 h-3" aria-hidden="true" />}

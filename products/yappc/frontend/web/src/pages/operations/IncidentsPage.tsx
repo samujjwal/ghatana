@@ -14,6 +14,7 @@ import { useParams, NavLink } from 'react-router';
 import { AlertTriangle, Plus, Search, Filter, Clock, ArrowRight } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
+import { Button } from '../../components/ui/Button';
 
 const IncidentsPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -32,14 +33,14 @@ const IncidentsPage: React.FC = () => {
               <p className="text-fg-muted">Active and resolved incidents</p>
             </div>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive-bg hover:bg-destructive-bg transition-colors text-sm font-medium">
+          <Button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive-bg hover:bg-destructive-bg transition-colors text-sm font-medium">
             <Plus className="w-4 h-4" /> Declare Incident
-          </button>
+          </Button>
         </div>
 
         <div className="flex items-center gap-3 mb-6">
           {(['all', 'active', 'resolved'] as const).map((f) => (
-            <button
+            <Button
               key={f}
               onClick={() => setFilter(f)}
               className={cn(
@@ -48,7 +49,7 @@ const IncidentsPage: React.FC = () => {
               )}
             >
               {f}
-            </button>
+            </Button>
           ))}
         </div>
 

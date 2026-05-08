@@ -16,6 +16,7 @@ import { Lightbulb, GitBranch as AccountTree, Palette, Code, FlaskConical as Sci
 import { useCanvasMode, useCanvasModeShortcuts } from '../../hooks/useCanvasMode';
 import type { CanvasMode } from '../../types/canvasMode';
 import { CANVAS_MODE_CONFIG } from '../../types/canvasMode';
+import { Button } from '../ui/Button';
 
 // ============================================================================
 // Icon Mapping
@@ -119,22 +120,24 @@ export function CanvasModeSelector({
                 const isRecommended = recommendedModes.includes(mode);
 
                 return (
-                    <button
+                    <Button
                         key={mode}
+                        variant="ghost"
+                        size="small"
                         role="tab"
                         aria-selected={isActive}
                         onClick={() => handleModeSelect(mode)}
                         title={`${config.label}: ${config.description}${showShortcuts ? ` (${config.shortcut})` : ''}`}
                         className={`
-                            flex items-center gap-2 px-3 py-2 text-sm font-medium transition-all
+                            min-h-0 gap-2 px-3 py-2 text-sm font-medium transition-all
                             ${variant === 'pills'
                                 ? `rounded-md ${isActive
-                                    ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                                    : 'text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800'
+                                    ? 'bg-info-bg dark:bg-info-bg/30 text-info-color dark:text-info-color'
+                                    : 'text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-muted'
                                 }`
                                 : `border-b-2 -mb-px ${isActive
-                                    ? 'border-primary-500 text-primary-700 dark:text-primary-300'
-                                    : 'border-transparent text-text-secondary hover:text-text-primary hover:border-grey-300'
+                                    ? 'border-info-border text-info-color dark:text-info-color'
+                                    : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border'
                                 }`
                             }
                             ${isRecommended && !isActive ? 'relative' : ''}
@@ -152,16 +155,16 @@ export function CanvasModeSelector({
 
                         {/* Shortcut Badge */}
                         {showShortcuts && (
-                            <span className="hidden lg:inline text-[10px] text-text-tertiary bg-grey-100 dark:bg-grey-700 px-1.5 py-0.5 rounded">
+                            <span className="hidden lg:inline text-[10px] text-text-tertiary bg-surface-muted dark:bg-surface-muted px-1.5 py-0.5 rounded">
                                 {config.shortcut}
                             </span>
                         )}
 
                         {/* Recommended Indicator */}
                         {isRecommended && !isActive && (
-                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary-500 rounded-full" />
+                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-info-color rounded-full" />
                         )}
-                    </button>
+                    </Button>
                 );
             })}
         </div>
@@ -191,14 +194,16 @@ function DropdownSelector({
 
     return (
         <div className={`relative group ${className}`}>
-            <button
-                className="flex items-center gap-2 px-3 py-2 bg-bg-paper border border-divider rounded-lg hover:bg-grey-50 dark:hover:bg-grey-800 transition-colors"
+            <Button
+                variant="outline"
+                size="small"
+                className="min-h-0 gap-2 px-3 py-2 bg-bg-paper border-divider rounded-lg hover:bg-surface-muted dark:hover:bg-surface-muted transition-colors"
                 aria-haspopup="listbox"
             >
                 {MODE_ICONS[currentMode]}
                 <span className="font-medium text-text-primary">{config.label}</span>
                 <KeyboardArrowDown className="w-4 h-4 text-text-secondary" />
-            </button>
+            </Button>
 
             {/* Dropdown Menu */}
             <div className="absolute top-full left-0 mt-1 w-56 bg-bg-paper border border-divider rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
@@ -209,14 +214,16 @@ function DropdownSelector({
                         const isRecommended = recommendedModes.includes(mode);
 
                         return (
-                            <button
+                            <Button
                                 key={mode}
+                                variant="ghost"
+                                size="small"
                                 onClick={() => onSelect(mode)}
                                 className={`
-                                    w-full flex items-center gap-3 px-3 py-2 text-left transition-colors
+                                    w-full min-h-0 justify-start gap-3 px-3 py-2 text-left transition-colors
                                     ${isActive
-                                        ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                                        : 'hover:bg-grey-50 dark:hover:bg-grey-800'
+                                        ? 'bg-info-bg dark:bg-info-bg/20 text-info-color dark:text-info-color'
+                                        : 'hover:bg-surface-muted dark:hover:bg-surface-muted'
                                     }
                                 `}
                             >
@@ -225,7 +232,7 @@ function DropdownSelector({
                                     <div className="flex items-center gap-2">
                                         <span className="font-medium text-sm">{modeConfig.label}</span>
                                         {isRecommended && (
-                                            <span className="px-1.5 py-0.5 text-[10px] bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded">
+                                            <span className="px-1.5 py-0.5 text-[10px] bg-info-bg dark:bg-info-bg/30 text-info-color dark:text-info-color rounded">
                                                 Recommended
                                             </span>
                                         )}
@@ -235,7 +242,7 @@ function DropdownSelector({
                                 {showShortcuts && (
                                     <span className="text-xs text-text-tertiary">{modeConfig.shortcut}</span>
                                 )}
-                            </button>
+                            </Button>
                         );
                     })}
                 </div>
@@ -271,35 +278,39 @@ function CompactSelector({
                 const isRecommended = recommendedModes.includes(mode);
 
                 return (
-                    <button
+                    <Button
                         key={mode}
+                        variant="ghost"
+                        size="small"
                         onClick={() => onSelect(mode)}
                         title={config.label}
                         className={`
-                            relative p-2 rounded-lg transition-all
+                            relative min-h-0 p-2 rounded-lg transition-all
                             ${isActive
-                                ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
-                                : 'text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800'
+                                ? 'bg-info-bg dark:bg-info-bg/30 text-info-color dark:text-info-color'
+                                : 'text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-muted'
                             }
                         `}
                     >
                         {MODE_ICONS[mode]}
                         {isRecommended && !isActive && (
-                            <span className="absolute top-0 right-0 w-1.5 h-1.5 bg-primary-500 rounded-full" />
+                            <span className="absolute top-0 right-0 w-1.5 h-1.5 bg-info-color rounded-full" />
                         )}
-                    </button>
+                    </Button>
                 );
             })}
 
             {/* More Button */}
             {hiddenModes.length > 0 && (
                 <div className="relative group">
-                    <button
-                        className="p-2 rounded-lg text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors"
+                    <Button
+                        variant="ghost"
+                        size="small"
+                        className="min-h-0 p-2 rounded-lg text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-muted transition-colors"
                         title="More modes"
                     >
                         <KeyboardArrowDown className="w-4 h-4" />
-                    </button>
+                    </Button>
 
                     {/* Dropdown */}
                     <div className="absolute top-full right-0 mt-1 w-48 bg-bg-paper border border-divider rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
@@ -309,20 +320,22 @@ function CompactSelector({
                                 const isActive = mode === currentMode;
 
                                 return (
-                                    <button
+                                    <Button
                                         key={mode}
+                                        variant="ghost"
+                                        size="small"
                                         onClick={() => onSelect(mode)}
                                         className={`
-                                            w-full flex items-center gap-2 px-3 py-2 text-left transition-colors
+                                            w-full min-h-0 justify-start gap-2 px-3 py-2 text-left transition-colors
                                             ${isActive
-                                                ? 'bg-primary-50 dark:bg-primary-900/20'
-                                                : 'hover:bg-grey-50 dark:hover:bg-grey-800'
+                                                ? 'bg-info-bg dark:bg-info-bg/20'
+                                                : 'hover:bg-surface-muted dark:hover:bg-surface-muted'
                                             }
                                         `}
                                     >
                                         {MODE_ICONS[mode]}
                                         <span className="text-sm">{config.label}</span>
-                                    </button>
+                                    </Button>
                                 );
                             })}
                         </div>
@@ -332,5 +345,3 @@ function CompactSelector({
         </div>
     );
 }
-
-

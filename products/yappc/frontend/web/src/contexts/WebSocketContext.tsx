@@ -12,6 +12,7 @@ import {
     useWebSocketStatus
 } from 'yappc-state/crdt/websocket';
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Button } from '../components/ui/Button';
 
 import type {
     UseWebSocketReturn
@@ -311,7 +312,9 @@ function ConnectionStatusNotification() {
                     {notification.message}
                 </div>
             </div>
-            <button
+            <Button
+                variant="ghost"
+                size="sm"
                 onClick={(e) => {
                     e.stopPropagation();
                     setIsVisible(false);
@@ -333,7 +336,7 @@ function ConnectionStatusNotification() {
                 aria-label="Close notification"
             >
                 ×
-            </button>
+            </Button>
         </div>
     );
 }

@@ -4,7 +4,7 @@
  */
 package com.ghatana.datacloud.entity.validation;
 
-import java.util.concurrent.CompletableFuture;
+import io.activej.promise.Promise;
 
 /**
  * Interface for validating foreign key-like references between collections.
@@ -40,7 +40,7 @@ public interface ReferenceChecker {
      * @param collection target collection name
      * @param field      target field name within the collection
      * @param value      the reference value to check
-     * @return CompletableFuture resolving to {@code true} if the reference exists
+     * @return Promise resolving to {@code true} if the reference exists
      */
-    CompletableFuture<Boolean> referenceExists(String tenantId, String collection, String field, Object value);
+    Promise<Boolean> referenceExists(String tenantId, String collection, String field, Object value);
 }

@@ -21,6 +21,8 @@ import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
 import { writeStorage, writeFlag } from '../../services/storage';
 import { useOnboardingStatus } from '../../services/onboarding/OnboardingStatusService';
 import { PERSONA_DEFINITIONS, ALL_PERSONA_TYPES, type PersonaType } from '../../context/PersonaContext';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 
 // ============================================================================
 // Types
@@ -142,13 +144,14 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
             </p>
 
             <div className="flex flex-col items-center gap-4">
-                <button
+                <Button
                     onClick={onNext}
+                    variant="solid"
                     className="group px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium text-lg hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 flex items-center gap-2"
                 >
                     Let's Go
                     <span className="group-hover:translate-x-1 transition-transform inline-block">→</span>
-                </button>
+                </Button>
 
                 <p className="text-sm text-text-secondary">
                     The product can suggest a starting name, and you can change it before creation.
@@ -217,7 +220,7 @@ function WorkspaceStep({
                     <label className="block text-sm font-medium text-text-primary mb-1">
                         Workspace Name
                     </label>
-                    <input
+                    <Input
                         type="text"
                         value={workspaceName}
                         onChange={(e) => setWorkspaceName(e.target.value)}
@@ -237,12 +240,14 @@ function WorkspaceStep({
                             ) : (
                                 <span className="text-sm text-info-color dark:text-info-color">
                                     Suggested:{' '}
-                                    <button
+                                    <Button
                                         onClick={useSuggestion}
+                                        variant="link"
+                                        size="small"
                                         className="font-medium underline hover:no-underline"
                                     >
                                         {suggestedName}
-                                    </button>
+                                    </Button>
                                 </span>
                             )}
                         </div>
@@ -259,19 +264,20 @@ function WorkspaceStep({
                             const persona = PERSONA_DEFINITIONS[personaId];
                             const isSelected = selectedPersonas.includes(personaId);
                             return (
-                                <button
+                                <Button
                                     key={personaId}
                                     onClick={() => togglePersona(personaId)}
+                                    variant="ghost"
                                     className={`p-3 rounded-lg border-2 transition-all text-center ${isSelected
                                             ? 'border-info-border bg-info-bg dark:bg-info-bg'
                                             : 'border-border dark:border-border hover:border-border dark:hover:border-border'
                                         }`}
                                 >
-                                    <div className="text-2xl mb-1">{persona.icon}</div>
-                                    <p className="text-xs font-medium text-text-primary">
+                                    <span className="block text-2xl mb-1">{persona.icon}</span>
+                                    <span className="block text-xs font-medium text-text-primary">
                                         {persona.shortName}
-                                    </p>
-                                    <div className={`w-4 h-4 mx-auto mt-2 rounded border-2 flex items-center justify-center ${isSelected
+                                    </span>
+                                    <span className={`w-4 h-4 mx-auto mt-2 rounded border-2 flex items-center justify-center ${isSelected
                                             ? 'border-info-border bg-info-bg'
                                             : 'border-border dark:border-border'
                                         }`}>
@@ -280,8 +286,8 @@ function WorkspaceStep({
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                             </svg>
                                         )}
-                                    </div>
-                                </button>
+                                    </span>
+                                </Button>
                             );
                         })}
                     </div>
@@ -292,19 +298,21 @@ function WorkspaceStep({
             </div>
 
             <div className="flex gap-3 mt-8">
-                <button
+                <Button
                     onClick={onBack}
+                    variant="outline"
                     className="flex-1 px-4 py-3 border border-border dark:border-border text-text-primary rounded-xl font-medium hover:bg-surface-muted dark:hover:bg-surface transition-colors"
                 >
                     ← Back
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={onNext}
                     disabled={!workspaceName.trim() || selectedPersonas.length === 0}
+                    variant="solid"
                     className="flex-1 px-4 py-3 bg-info-bg text-white rounded-xl font-medium hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 >
                     Continue →
-                </button>
+                </Button>
             </div>
         </div>
     );
@@ -353,22 +361,23 @@ function ProjectStep({
                 {PROJECT_TYPES.map((type) => {
                     const isSelected = projectType === type.id;
                     return (
-                        <button
+                        <Button
                             key={type.id}
                             onClick={() => setProjectType(type.id)}
+                            variant="ghost"
                             className={`p-4 rounded-xl border-2 transition-all text-left ${isSelected
                                 ? 'border-info-border bg-info-bg dark:bg-info-bg'
                                 : 'border-border dark:border-border hover:border-border dark:hover:border-border'
                                 }`}
                         >
-                            <div
+                            <span
                                 className={`w-10 h-10 rounded-lg bg-gradient-to-br ${type.color} flex items-center justify-center mb-2`}
                             >
                                 <span className="text-white">{type.icon}</span>
-                            </div>
-                            <p className="font-medium text-text-primary text-sm">{type.name}</p>
-                            <p className="text-xs text-text-secondary">{type.description}</p>
-                        </button>
+                            </span>
+                            <span className="block font-medium text-text-primary text-sm">{type.name}</span>
+                            <span className="block text-xs text-text-secondary">{type.description}</span>
+                        </Button>
                     );
                 })}
             </div>
@@ -378,7 +387,7 @@ function ProjectStep({
                     <label className="block text-sm font-medium text-text-primary mb-1">
                         Project Name
                     </label>
-                    <input
+                    <Input
                         type="text"
                         value={projectName}
                         onChange={(e) => setProjectName(e.target.value)}
@@ -397,12 +406,14 @@ function ProjectStep({
                             ) : (
                                 <span className="text-sm text-success-color dark:text-success-color">
                                     Suggested:{' '}
-                                    <button
+                                    <Button
                                         onClick={useSuggestion}
+                                        variant="link"
+                                        size="small"
                                         className="font-medium underline hover:no-underline"
                                     >
                                         {suggestedName}
-                                    </button>
+                                    </Button>
                                 </span>
                             )}
                         </div>
@@ -411,20 +422,22 @@ function ProjectStep({
             </div>
 
             <div className="flex gap-3 mt-8">
-                <button
+                <Button
                     onClick={onBack}
+                    variant="outline"
                     className="flex-1 px-4 py-3 border border-border dark:border-border text-text-primary rounded-xl font-medium hover:bg-surface-muted dark:hover:bg-surface transition-colors"
                 >
                     Back
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={onNext}
                     disabled={!projectName.trim() || !projectType}
+                    variant="solid"
                     className="flex-1 px-4 py-3 bg-success-bg text-white rounded-xl font-medium hover:bg-success-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 >
                     Create & Finish
                     <span>✓</span>
-                </button>
+                </Button>
             </div>
         </div>
     );
@@ -467,12 +480,13 @@ function CompleteStep({ onFinish, isCreating }: { onFinish: () => void; isCreati
                             Redirecting you to your new workspace...
                         </p>
 
-                        <button
+                        <Button
                             onClick={onFinish}
+                            variant="solid"
                             className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg transition-shadow"
                         >
                             Go to Dashboard
-                        </button>
+                        </Button>
                     </div>
                 </>
             )}

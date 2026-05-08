@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { Button } from '../../components/ui/Button';
 
 type RiskLevel = 'critical' | 'high' | 'medium' | 'low';
 type MitigationStatus = 'implemented' | 'in-progress' | 'planned' | 'not-started';
@@ -120,8 +121,8 @@ const ThreatModelPage: React.FC = () => {
           </div>
         </div>
         <div className="flex gap-3">
-          <button className="px-4 py-2 border border-border text-fg-muted hover:bg-surface text-sm font-medium rounded-lg transition-colors">Export</button>
-          <button className="px-4 py-2 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors">Add Threat</button>
+          <Button variant="outline" className="px-4 py-2 border border-border text-fg-muted hover:bg-surface text-sm font-medium rounded-lg transition-colors">Export</Button>
+          <Button variant="solid" className="px-4 py-2 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors">Add Threat</Button>
         </div>
       </div>
 

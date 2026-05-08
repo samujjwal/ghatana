@@ -18,6 +18,7 @@ import {
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
 import { CategoryContextPanel } from '../CategoryContextPanel';
+import { Textarea } from '../../ui/Textarea';
 
 import type { IntentStepData, WorkflowType, WorkflowCategory } from 'yappc-core/types';
 import { WORKFLOW_TYPE_TO_CATEGORY } from 'yappc-core/types';
@@ -198,11 +199,12 @@ export function IntentStep() {
                         <Typography component="p" color="text.secondary" className="mb-4 text-sm">
                             Clearly describe what you want to achieve. Be specific and actionable.
                         </Typography>
-                        <textarea
+                        <Textarea
                             className="min-h-[112px] w-full rounded border border-border p-3 text-sm"
                             placeholder="Example: Implement user authentication with OAuth 2.0 to allow users to sign in with their Google or GitHub accounts..."
                             value={currentData.goalStatement ?? ''}
                             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange('goalStatement', e.target.value)}
+                            fullWidth
                         />
                     </Box>
 

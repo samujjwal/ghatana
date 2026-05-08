@@ -14,6 +14,7 @@ import { useParams, NavLink } from 'react-router';
 import { ShieldAlert, Search, Filter } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
+import { Button } from '../../components/ui/Button';
 
 const VulnerabilitiesPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -34,16 +35,18 @@ const VulnerabilitiesPage: React.FC = () => {
 
         <div className="flex items-center gap-3 mb-6">
           {(['all', 'critical', 'high', 'medium', 'low'] as const).map((s) => (
-            <button
+            <Button
               key={s}
               onClick={() => setSeverity(s)}
+              variant="ghost"
+              size="small"
               className={cn(
                 'px-3 py-1.5 rounded-lg text-sm capitalize transition-colors',
                 severity === s ? 'bg-surface text-white' : 'text-fg-muted hover:text-white'
               )}
             >
               {s}
-            </button>
+            </Button>
           ))}
         </div>
 

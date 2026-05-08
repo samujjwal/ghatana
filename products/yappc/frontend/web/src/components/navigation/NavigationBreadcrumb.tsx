@@ -213,8 +213,10 @@ export function NavigationBreadcrumb({
             {showCanvasMode && canvasMode && (
                 <div className="flex items-center gap-1 bg-grey-100 dark:bg-grey-800 rounded-lg p-1">
                     {CANVAS_MODES.map(({ mode, label, icon: Icon }) => (
-                        <button
+                        <Button
                             key={mode}
+                            variant="ghost"
+                            size="sm"
                             onClick={() => onCanvasModeChange?.(mode)}
                             className={cn(
                                 'flex items-center gap-1.5 px-3 py-1.5 rounded-md',
@@ -231,7 +233,7 @@ export function NavigationBreadcrumb({
                                 {React.createElement(Icon)}
                             </span>
                             <span className="hidden sm:inline">{label}</span>
-                        </button>
+                        </Button>
                     ))}
                 </div>
             )}

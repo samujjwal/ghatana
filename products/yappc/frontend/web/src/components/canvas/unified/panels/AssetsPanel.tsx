@@ -35,6 +35,7 @@ import {
   getPrioritizedCategories,
 } from '../rail-config';
 import { SHAPE_TEMPLATES } from '../ShapeLibrary';
+import { Button } from '../../../ui/Button';
 
 const CATEGORY_MAP: Record<ShapeTemplate['category'], AssetCategory> = {
   basic: 'basic',
@@ -204,9 +205,12 @@ export function AssetsPanel({ context, onInsertNode }: RailPanelProps) {
               key={categoryId}
               className={`mb-2 rounded border border-border dark:border-border ${isPriority ? 'bg-surface-muted dark:bg-surface' : 'bg-transparent'}`}
             >
-              <button
+              <Button
                 type="button"
                 onClick={() => handleAccordionChange(categoryId)}
+                variant="ghost"
+                size="sm"
+                fullWidth
                 className="flex w-full items-center gap-2 px-3 py-2 text-left"
               >
                 <Box className="flex items-center gap-2 w-full">
@@ -228,7 +232,7 @@ export function AssetsPanel({ context, onInsertNode }: RailPanelProps) {
                     {expandedCategories.has(categoryId) ? '▲' : '▼'}
                   </Typography>
                 </Box>
-              </button>
+              </Button>
               {expandedCategories.has(categoryId) && (
                 <Box className="px-3 pb-3 pt-0">
                 {/* Grid View */}

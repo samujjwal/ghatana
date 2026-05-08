@@ -49,6 +49,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X as Close } from 'lucide-react';
 import { TRANSITIONS, RADIUS, Z_INDEX } from '../../styles/design-tokens';
+import { Button } from '../ui/Button';
 
 export interface StandardModalProps {
     /** Whether modal is open */
@@ -267,9 +268,11 @@ export function StandardModal({
                             </h2>
                         )}
                         {showCloseButton && (
-                            <button
+                            <Button
                                 onClick={onClose}
                                 disabled={isLoading}
+                                variant="ghost"
+                                size="small"
                                 className={`
                   min-w-[44px] min-h-[44px] p-2.5 rounded-md text-text-secondary
                   hover:bg-grey-100 dark:hover:bg-grey-800
@@ -280,7 +283,7 @@ export function StandardModal({
                                 aria-label="Close dialog"
                             >
                                 <Close className="w-5 h-5" />
-                            </button>
+                            </Button>
                         )}
                     </div>
                 )}
@@ -382,9 +385,10 @@ export function ConfirmDialog({
             isLoading={isLoading}
             actions={
                 <>
-                    <button
+                    <Button
                         onClick={handleCancel}
                         disabled={isLoading}
+                        variant="outline"
                         className={`
               px-4 py-2 rounded-md text-sm font-medium
               border border-divider text-text-primary
@@ -394,10 +398,11 @@ export function ConfirmDialog({
             `}
                     >
                         {cancelText}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         onClick={onConfirm}
                         disabled={isLoading}
+                        variant={confirmVariant === 'danger' ? 'destructive' : 'solid'}
                         className={`
               px-4 py-2 rounded-md text-sm font-medium
               ${confirmButtonClass}
@@ -406,7 +411,7 @@ export function ConfirmDialog({
             `}
                     >
                         {confirmText}
-                    </button>
+                    </Button>
                 </>
             }
         >

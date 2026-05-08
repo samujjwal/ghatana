@@ -12,6 +12,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Hammer as Build, CheckCircle, XCircle as Cancel, Hourglass as HourglassEmpty, RefreshCw as Refresh, Terminal, ChevronDown as ExpandMore, ChevronUp as ExpandLess, Download } from 'lucide-react';
+import { Button } from '../ui/Button';
 
 export interface BuildStep {
     id: string;
@@ -163,28 +164,35 @@ export const BuildProgressTracker: React.FC<BuildProgressTrackerProps> = ({
                 </div>
                 <div className="flex gap-2">
                     {build.status === 'running' && onCancel && (
-                        <button
+                        <Button
                             onClick={onCancel}
                             className="px-3 py-1.5 text-sm text-destructive hover:bg-destructive-bg dark:hover:bg-destructive-bg/20 rounded-lg transition-colors"
+                            variant="ghost"
+                            size="sm"
                         >
                             Cancel
-                        </button>
+                        </Button>
                     )}
                     {build.status === 'failed' && onRetry && (
-                        <button
+                        <Button
                             onClick={onRetry}
                             className="px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
+                            variant="ghost"
+                            size="sm"
                         >
                             Retry
-                        </button>
+                        </Button>
                     )}
-                    <button
+                    <Button
                         onClick={handleRefresh}
                         disabled={isRefreshing}
                         className="p-2 text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors disabled:opacity-50"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Refresh build status"
                     >
                         <Refresh className={`w-4 h-4 ${isRefreshing || isPolling ? 'animate-spin' : ''}`} />
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -240,9 +248,11 @@ export const BuildProgressTracker: React.FC<BuildProgressTrackerProps> = ({
                                         : ''
                                 }`}
                         >
-                            <button
+                            <Button
                                 onClick={() => toggleStep(step.id)}
                                 className={`w-full flex items-center gap-3 p-3 text-left transition-colors ${STATUS_CONFIG[step.status].bgColor}`}
+                                variant="ghost"
+                                aria-expanded={expandedSteps.has(step.id)}
                             >
                                 <div className="w-6 h-6 flex items-center justify-center bg-bg-paper rounded-full text-xs font-medium text-text-secondary">
                                     {idx + 1}
@@ -263,7 +273,7 @@ export const BuildProgressTracker: React.FC<BuildProgressTrackerProps> = ({
                                 ) : (
                                     <ExpandMore className="w-4 h-4 text-text-secondary" />
                                 )}
-                            </button>
+                            </Button>
 
                             {expandedSteps.has(step.id) && (
                                 <div className="border-t border-divider bg-bg-paper">
@@ -290,10 +300,12 @@ export const BuildProgressTracker: React.FC<BuildProgressTrackerProps> = ({
                                             </div>
                                             <div className="space-y-1">
                                                 {step.artifacts.map((artifact, aIdx) => (
-                                                    <button
+                                                    <Button
                                                         key={aIdx}
                                                         onClick={() => onDownloadArtifact?.(artifact)}
                                                         className="flex items-center gap-2 w-full p-2 text-left text-xs bg-grey-50 dark:bg-grey-800/50 rounded hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors"
+                                                        variant="ghost"
+                                                        size="sm"
                                                     >
                                                         <Download className="w-3 h-3 text-primary-600" />
                                                         <span className="flex-1 text-text-primary truncate">
@@ -304,7 +316,7 @@ export const BuildProgressTracker: React.FC<BuildProgressTrackerProps> = ({
                                                                 {artifact.size}
                                                             </span>
                                                         )}
-                                                    </button>
+                                                    </Button>
                                                 ))}
                                             </div>
                                         </div>

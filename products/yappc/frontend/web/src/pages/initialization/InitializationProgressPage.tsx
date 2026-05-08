@@ -16,6 +16,7 @@ import {
   type Resource,
   type WizardStep,
 } from 'yappc-initialization-ui';
+import { Button } from '../../components/ui/Button';
 
 interface InitializationState {
   id: string;
@@ -293,9 +294,9 @@ export const InitializationProgressPage: React.FC = () => {
         </div>
 
         {(initState.status === 'completed' || initState.status === 'failed') && (
-          <button type="button" className="btn btn-primary" onClick={handleContinue}>
+          <Button type="button" className="btn btn-primary" onClick={handleContinue}>
             {initState.status === 'completed' ? 'Continue to Project' : 'View Recovery Options'}
-          </button>
+          </Button>
         )}
       </header>
 

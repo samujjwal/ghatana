@@ -12,6 +12,9 @@
 import React, { useState, useCallback } from 'react';
 import { Plus as Add, Minus as Remove, Sparkles as AutoAwesome, Save, Accessibility, Route as RouteOutlined, FileText as Description, AlertTriangle as WarningAmber } from 'lucide-react';
 import type { UxSpecPayload } from '@/shared/types/lifecycle-artifacts';
+import { Button } from '../../ui/Button';
+import { Input } from '../../ui/Input';
+import { Textarea } from '../../ui/Textarea';
 
 export interface UxSpecPanelProps {
     data?: UxSpecPayload;
@@ -189,58 +192,68 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
                 </div>
                 <div className="flex gap-2">
                     {onAIAssist && (
-                        <button
+                        <Button
                             onClick={handleAIAssist}
                             disabled={isAILoading || isSaving}
-                            className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-text-secondary border border-transparent hover:border-divider hover:text-text-primary hover:bg-grey-50 dark:hover:bg-grey-800/40 rounded-lg transition-colors disabled:opacity-50"
+                            variant="ghost"
+                            size="sm"
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-text-secondary border border-transparent hover:border-divider hover:text-text-primary hover:bg-surface-muted dark:hover:bg-surface-muted rounded-lg transition-colors disabled:opacity-50"
                         >
                             <AutoAwesome className="w-4 h-4" />
                             {isAILoading ? 'Analyzing...' : 'AI Critique'}
-                        </button>
+                        </Button>
                     )}
-                    <button
+                    <Button
                         onClick={handleSave}
                         disabled={isSaving || isLoading}
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+                        variant="solid"
+                        size="sm"
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold bg-info-color text-white rounded-lg hover:bg-info-color/90 transition-colors disabled:opacity-50"
                     >
                         <Save className="w-4 h-4" />
                         {isSaving ? 'Saving...' : 'Save'}
-                    </button>
+                    </Button>
                 </div>
             </div>
 
             {/* Tabs */}
             <div className="flex border-b border-divider">
-                <button
+                <Button
                     onClick={() => setActiveTab('flows')}
+                    variant="ghost"
+                    size="sm"
                     className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'flows'
-                            ? 'border-primary-600 text-primary-600'
+                            ? 'border-info-border text-info-color'
                             : 'border-transparent text-text-secondary hover:text-text-primary'
                         }`}
                 >
                     <RouteOutlined className="w-4 h-4" />
                     Flows
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={() => setActiveTab('a11y')}
+                    variant="ghost"
+                    size="sm"
                     className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'a11y'
-                            ? 'border-primary-600 text-primary-600'
+                            ? 'border-info-border text-info-color'
                             : 'border-transparent text-text-secondary hover:text-text-primary'
                         }`}
                 >
                     <Accessibility className="w-4 h-4" />
                     Accessibility
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={() => setActiveTab('content')}
+                    variant="ghost"
+                    size="sm"
                     className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'content'
-                            ? 'border-primary-600 text-primary-600'
+                            ? 'border-info-border text-info-color'
                             : 'border-transparent text-text-secondary hover:text-text-primary'
                         }`}
                 >
                     <Description className="w-4 h-4" />
                     Content
-                </button>
+                </Button>
             </div>
 
             {/* Content */}
@@ -250,68 +263,85 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
                         {uxSpec.primaryFlows.map((flow, flowIdx) => (
                             <div key={flowIdx} className="border border-divider rounded-lg bg-bg-paper">
                                 <div className="flex items-center gap-2 p-3 border-b border-divider">
-                                    <input
+                                    <Input
                                         type="text"
                                         value={flow.name}
                                         onChange={(e) => updateFlow(flowIdx, { name: e.target.value })}
                                         placeholder="Flow name (e.g., User Registration)"
-                                        className="flex-1 px-2 py-1 text-sm font-medium border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                        fullWidth
+                                        size="sm"
+                                        className="flex-1 px-2 py-1 text-sm font-medium border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
                                     />
                                     {uxSpec.primaryFlows.length > 1 && (
-                                        <button
+                                        <Button
                                             onClick={() => removeFlow(flowIdx)}
+                                            variant="ghost"
+                                            size="sm"
                                             className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                             aria-label="Remove flow"
                                         >
                                             <Remove className="w-4 h-4" />
-                                        </button>
+                                        </Button>
                                     )}
                                 </div>
                                 <div className="p-3 space-y-2">
                                     {flow.steps.map((step, stepIdx) => (
                                         <div key={stepIdx} className="flex items-center gap-2">
-                                            <span className="w-6 h-6 flex items-center justify-center text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 rounded-full">
+                                            <span className="w-6 h-6 flex items-center justify-center text-xs font-medium bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color rounded-full">
                                                 {stepIdx + 1}
                                             </span>
-                                            <input
+                                            <Input
                                                 type="text"
                                                 value={step}
                                                 onChange={(e) => updateFlowStep(flowIdx, stepIdx, e.target.value)}
                                                 placeholder="Step description"
-                                                className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                                fullWidth
+                                                size="sm"
+                                                className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
                                             />
                                             {flow.steps.length > 1 && (
-                                                <button
+                                                <Button
                                                     onClick={() => removeFlowStep(flowIdx, stepIdx)}
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    aria-label={`Remove step ${stepIdx + 1}`}
                                                     className="p-0.5 text-text-secondary hover:text-error-color transition-colors"
                                                 >
                                                     <Remove className="w-4 h-4" />
-                                                </button>
+                                                </Button>
                                             )}
                                         </div>
                                     ))}
-                                    <button
+                                    <Button
                                         onClick={() => addFlowStep(flowIdx)}
-                                        className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors ml-8"
+                                        variant="link"
+                                        size="sm"
+                                        className="flex items-center gap-1 text-xs text-info-color hover:text-info-color transition-colors ml-8"
                                     >
                                         <Add className="w-3 h-3" /> Add step
-                                    </button>
-                                    <textarea
+                                    </Button>
+                                    <Textarea
                                         value={flow.notes || ''}
                                         onChange={(e) => updateFlow(flowIdx, { notes: e.target.value })}
                                         placeholder="Additional notes for this flow..."
                                         rows={2}
-                                        className="w-full px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none mt-2"
+                                        fullWidth
+                                        resize="none"
+                                        size="sm"
+                                        className="w-full px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border resize-none mt-2"
                                     />
                                 </div>
                             </div>
                         ))}
-                        <button
+                        <Button
                             onClick={addFlow}
-                            className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-divider rounded-lg text-text-secondary hover:text-primary-600 hover:border-primary-300 transition-colors"
+                            variant="ghost"
+                            size="sm"
+                            fullWidth
+                            className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-divider rounded-lg text-text-secondary hover:text-info-color hover:border-info-border transition-colors"
                         >
                             <Add className="w-5 h-5" /> Add Flow
-                        </button>
+                        </Button>
 
                         {/* Edge Cases */}
                         <div className="pt-4 border-t border-divider">
@@ -320,29 +350,36 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
                                 {uxSpec.edgeCases.map((edgeCase, idx) => (
                                     <div key={idx} className="flex items-center gap-2">
                                         <WarningAmber className="w-4 h-4 text-warning-600" />
-                                        <input
+                                        <Input
                                             type="text"
                                             value={edgeCase}
                                             onChange={(e) => updateEdgeCase(idx, e.target.value)}
                                             placeholder="Edge case scenario"
-                                            className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                            fullWidth
+                                            size="sm"
+                                            className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
                                         />
                                         {uxSpec.edgeCases.length > 1 && (
-                                            <button
+                                            <Button
                                                 onClick={() => removeEdgeCase(idx)}
+                                                variant="ghost"
+                                                size="sm"
+                                                aria-label={`Remove edge case ${idx + 1}`}
                                                 className="p-0.5 text-text-secondary hover:text-error-color transition-colors"
                                             >
                                                 <Remove className="w-4 h-4" />
-                                            </button>
+                                            </Button>
                                         )}
                                     </div>
                                 ))}
-                                <button
+                                <Button
                                     onClick={addEdgeCase}
-                                    className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors"
+                                    variant="link"
+                                    size="sm"
+                                    className="flex items-center gap-1 text-xs text-info-color hover:text-info-color transition-colors"
                                 >
                                     <Add className="w-3 h-3" /> Add edge case
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -354,12 +391,14 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
                             <label className="block text-sm font-medium text-text-primary mb-1">
                                 Accessibility Notes (WCAG)
                             </label>
-                            <textarea
+                            <Textarea
                                 value={uxSpec.a11yNotes}
                                 onChange={(e) => updateField('a11yNotes', e.target.value)}
                                 placeholder="Document accessibility considerations, keyboard navigation, screen reader support, color contrast requirements..."
                                 rows={8}
-                                className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                                fullWidth
+                                resize="none"
+                                className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-info-border resize-none"
                             />
                         </div>
                         <div className="p-3 bg-info-bg dark:bg-info-bg/20 rounded-lg">
@@ -382,24 +421,28 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
                             <label className="block text-sm font-medium text-text-primary mb-1">
                                 IA Notes (Information Architecture)
                             </label>
-                            <textarea
+                            <Textarea
                                 value={uxSpec.iaNotes}
                                 onChange={(e) => updateField('iaNotes', e.target.value)}
                                 placeholder="Navigation structure, page hierarchy, content organization..."
                                 rows={5}
-                                className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                                fullWidth
+                                resize="none"
+                                className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-info-border resize-none"
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-text-primary mb-1">
                                 Content Notes
                             </label>
-                            <textarea
+                            <Textarea
                                 value={uxSpec.contentNotes}
                                 onChange={(e) => updateField('contentNotes', e.target.value)}
                                 placeholder="Tone of voice, microcopy guidelines, error messages, empty states..."
                                 rows={5}
-                                className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                                fullWidth
+                                resize="none"
+                                className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-info-border resize-none"
                             />
                         </div>
                     </div>

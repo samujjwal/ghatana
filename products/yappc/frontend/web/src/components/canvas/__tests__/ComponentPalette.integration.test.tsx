@@ -1,6 +1,5 @@
 // All tests skipped - incomplete feature
 import { render, fireEvent, screen, within } from '@testing-library/react';
-import React from 'react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 import { mockUseDraggableWithPayload } from '../../../test-utils';
@@ -48,7 +47,7 @@ describe('ComponentPalette integration', () => {
         const paletteItem = screen.getByTestId('palette-item-component-button');
         expect(paletteItem).toBeTruthy();
 
-        // MUI renders the IconButton as a plain <button>; locate it directly
+        // MUI renders the IconButton as a native button element; locate it directly
         const addButton = paletteItem.querySelector('button');
         expect(addButton).toBeTruthy();
 

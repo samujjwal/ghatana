@@ -62,6 +62,21 @@ interface TeamStats {
   channelsCount: number;
 }
 
+const NativeButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>((props, ref) =>
+  React.createElement('button', { ...props, ref }),
+);
+NativeButton.displayName = 'NativeButton';
+
+const NativeInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>((props, ref) =>
+  React.createElement('input', { ...props, ref }),
+);
+NativeInput.displayName = 'NativeInput';
+
+const NativeSelect = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>((props, ref) =>
+  React.createElement('select', { ...props, ref }),
+);
+NativeSelect.displayName = 'NativeSelect';
+
 // ============================================================================
 // Sub-components
 // ============================================================================
@@ -156,7 +171,7 @@ const ChannelItem: React.FC<{
   const Icon = typeIcons[channel.type] ?? Hash;
 
   return (
-    <button
+    <NativeButton
       onClick={onClick}
       className="w-full flex items-center gap-3 px-3 py-2 hover:bg-surface-muted rounded-lg transition-colors text-left"
     >
@@ -167,7 +182,7 @@ const ChannelItem: React.FC<{
           {channel.unreadCount}
         </span>
       )}
-    </button>
+    </NativeButton>
   );
 };
 
@@ -327,19 +342,20 @@ const TeamDashboardPage: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button
+              <NativeButton
                 onClick={() => setShowInviteModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-primary hover:opacity-90 rounded-lg text-sm font-medium text-primary-foreground transition-colors"
               >
                 <UserPlus className="w-4 h-4" />
                 Invite
-              </button>
-              <button
+              </NativeButton>
+              <NativeButton
                 onClick={() => navigate(`/teams/${teamId}/settings`)}
                 className="p-2 hover:bg-surface-muted rounded-lg transition-colors"
+                aria-label="Team settings"
               >
                 <Settings className="w-5 h-5 text-fg-muted" />
-              </button>
+              </NativeButton>
             </div>
           </div>
         </div>
@@ -362,7 +378,7 @@ const TeamDashboardPage: React.FC = () => {
           <div className="col-span-2 space-y-6">
             {/* Tabs */}
             <div className="flex items-center gap-4 border-b border-border pb-2">
-              <button
+              <NativeButton
                 onClick={() => setSelectedTab('members')}
                 className={cn(
                   'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
@@ -373,8 +389,8 @@ const TeamDashboardPage: React.FC = () => {
               >
                 <Users className="w-4 h-4 inline-block mr-2" />
                 Members ({members.length})
-              </button>
-              <button
+              </NativeButton>
+              <NativeButton
                 onClick={() => setSelectedTab('channels')}
                 className={cn(
                   'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
@@ -385,8 +401,8 @@ const TeamDashboardPage: React.FC = () => {
               >
                 <Hash className="w-4 h-4 inline-block mr-2" />
                 Channels ({channels.length})
-              </button>
-              <button
+              </NativeButton>
+              <NativeButton
                 onClick={() => setSelectedTab('activity')}
                 className={cn(
                   'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
@@ -397,7 +413,7 @@ const TeamDashboardPage: React.FC = () => {
               >
                 <Activity className="w-4 h-4 inline-block mr-2" />
                 Activity
-              </button>
+              </NativeButton>
             </div>
 
             {/* Members Tab */}
@@ -405,7 +421,7 @@ const TeamDashboardPage: React.FC = () => {
               <div className="space-y-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
-                  <input
+                  <NativeInput
                     type="text"
                     placeholder="Search members..."
                     value={searchQuery}
@@ -431,13 +447,13 @@ const TeamDashboardPage: React.FC = () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-medium text-fg-muted">All Channels</h3>
-                  <button
+                  <NativeButton
                     onClick={() => navigate(`/teams/${teamId}/channels/new`)}
                     className="flex items-center gap-1 text-sm text-info-color hover:opacity-80"
                   >
                     <PlusCircle className="w-4 h-4" />
                     Create Channel
-                  </button>
+                  </NativeButton>
                 </div>
                 <div className="bg-surface rounded-lg divide-y divide-border border border-border">
                   {channels.map((channel) => (
@@ -570,7 +586,7 @@ const TeamDashboardPage: React.FC = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-fg-muted mb-1">Email</label>
-                  <input
+                  <NativeInput
                     name="email"
                     type="email"
                     required
@@ -580,31 +596,31 @@ const TeamDashboardPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm text-fg-muted mb-1">Role</label>
-                  <select
+                  <NativeSelect
                     name="role"
                     className="w-full px-3 py-2 bg-surface-muted border border-border rounded-lg text-fg focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="MEMBER">Member</option>
                     <option value="ADMIN">Admin</option>
                     <option value="GUEST">Guest</option>
-                  </select>
+                  </NativeSelect>
                 </div>
               </div>
               <div className="flex justify-end gap-3 mt-6">
-                <button
+                <NativeButton
                   type="button"
                   onClick={() => setShowInviteModal(false)}
                   className="px-4 py-2 text-sm text-fg-muted hover:text-fg transition-colors"
                 >
                   Cancel
-                </button>
-                <button
+                </NativeButton>
+                <NativeButton
                   type="submit"
                   disabled={inviting}
                   className="px-4 py-2 bg-primary hover:opacity-90 rounded-lg text-sm font-medium text-primary-foreground transition-colors disabled:opacity-50"
                 >
                   {inviting ? 'Sending...' : 'Send Invite'}
-                </button>
+                </NativeButton>
               </div>
             </form>
           </div>

@@ -12,6 +12,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { Button, Card, CardContent } from '@ghatana/design-system';
+import { Select } from '../ui/Select';
 
 export type RoadmapPhase =
   | 'intent'
@@ -269,15 +270,17 @@ export const EvolveRoadmapPanel: React.FC<EvolveRoadmapPanelProps> = ({
                 <Card key={item.id} variant="outlined">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         className="flex flex-col items-center px-2 py-1 rounded border border-border bg-surface-muted hover:bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-ring flex-shrink-0"
                         onClick={() => onVoteBacklogItem(item.id)}
                         aria-label={`Vote for "${item.title}" (${item.votes} votes)`}
                       >
                         <span className="text-xs text-fg-muted" aria-hidden="true">▲</span>
                         <span className="text-xs font-medium text-fg">{item.votes}</span>
-                      </button>
+                      </Button>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className={`text-sm font-medium ${PRIORITY_STYLE[item.priority]}`}>
@@ -302,7 +305,7 @@ export const EvolveRoadmapPanel: React.FC<EvolveRoadmapPanelProps> = ({
                             <label htmlFor={`promote-phase-${item.id}`} className="text-xs text-fg-muted">
                               Target phase
                             </label>
-                            <select
+                            <Select
                               id={`promote-phase-${item.id}`}
                               value={promotePhase}
                               onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
@@ -315,13 +318,13 @@ export const EvolveRoadmapPanel: React.FC<EvolveRoadmapPanelProps> = ({
                                   {PHASE_LABELS[p]}
                                 </option>
                               ))}
-                            </select>
+                            </Select>
                           </div>
                           <div>
                             <label htmlFor={`promote-priority-${item.id}`} className="text-xs text-fg-muted">
                               Priority
                             </label>
-                            <select
+                            <Select
                               id={`promote-priority-${item.id}`}
                               value={promotePriority}
                               onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
@@ -334,7 +337,7 @@ export const EvolveRoadmapPanel: React.FC<EvolveRoadmapPanelProps> = ({
                                   {p.charAt(0).toUpperCase() + p.slice(1)}
                                 </option>
                               ))}
-                            </select>
+                            </Select>
                           </div>
                           <div className="flex gap-1">
                             <Button variant="solid" size="sm" onClick={handleConfirmPromote}>

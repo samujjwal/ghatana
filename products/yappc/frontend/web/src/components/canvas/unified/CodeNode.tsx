@@ -8,6 +8,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Box, Typography } from '@ghatana/design-system';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Textarea } from '../../ui/Textarea';
 
 export interface CodeNodeData {
     code: string;
@@ -83,12 +84,14 @@ export const CodeNode = React.memo(({ data, selected, id }: NodeProps<CodeNodeDa
             </Box>
 
             {isEditing ? (
-                <textarea
+                <Textarea
                     ref={textareaRef}
                     value={localCode}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     onKeyDown={handleKeyDown}
+                    resize="none"
+                    fullWidth
                     style={{
                         flex: 1,
                         border: 'none',

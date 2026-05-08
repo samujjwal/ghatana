@@ -12,6 +12,7 @@
 import React from 'react';
 import { useParams } from 'react-router';
 import { BarChart3, Plus, Search } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
 
 const MetricsPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -29,9 +30,9 @@ const MetricsPage: React.FC = () => {
               <p className="text-fg-muted">Explore, query, and visualize system metrics</p>
             </div>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 transition-colors text-sm font-medium">
+          <Button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 transition-colors text-sm font-medium">
             <Plus className="w-4 h-4" /> New Chart
-          </button>
+          </Button>
         </div>
 
         <div className="flex flex-col items-center justify-center py-20 text-center">

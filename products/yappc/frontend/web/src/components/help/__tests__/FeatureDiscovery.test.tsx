@@ -42,6 +42,9 @@ function TestWrapper({ children }: { children: React.ReactNode }) {
   return <FeatureDiscoveryProvider>{children}</FeatureDiscoveryProvider>;
 }
 
+const TestButton = (props: React.ButtonHTMLAttributes<HTMLButtonElement>): React.ReactElement =>
+  React.createElement('button', props);
+
 /** Consumer component to exercise the context hook. */
 function ContextConsumer() {
   const { activeFeature, dismissedFeatures, showFeature, dismissFeature } = useFeatureDiscovery();
@@ -49,8 +52,8 @@ function ContextConsumer() {
     <div>
       <span data-testid="active">{activeFeature ?? 'none'}</span>
       <span data-testid="dismissed">{dismissedFeatures.join(',')}</span>
-      <button onClick={() => showFeature('command-palette')}>show</button>
-      <button onClick={() => dismissFeature('command-palette')}>dismiss</button>
+      <TestButton onClick={() => showFeature('command-palette')}>show</TestButton>
+      <TestButton onClick={() => dismissFeature('command-palette')}>dismiss</TestButton>
     </div>
   );
 }
@@ -178,7 +181,7 @@ describe('FeatureBadge', () => {
     render(
       <TestWrapper>
         <FeatureBadge featureId="command-palette">
-          <button>Palette</button>
+          <TestButton>Palette</TestButton>
         </FeatureBadge>
       </TestWrapper>,
     );
@@ -187,7 +190,7 @@ describe('FeatureBadge', () => {
     const { container } = render(
       <TestWrapper>
         <FeatureBadge featureId="command-palette">
-          <button>Palette</button>
+          <TestButton>Palette</TestButton>
         </FeatureBadge>
       </TestWrapper>,
     );
@@ -199,7 +202,7 @@ describe('FeatureBadge', () => {
     const { container } = render(
       <TestWrapper>
         <FeatureBadge featureId="command-palette">
-          <button>Palette</button>
+          <TestButton>Palette</TestButton>
         </FeatureBadge>
       </TestWrapper>,
     );

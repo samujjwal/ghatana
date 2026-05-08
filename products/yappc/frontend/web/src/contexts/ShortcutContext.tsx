@@ -8,6 +8,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { KeyboardShortcutsPanel } from '../components/help/KeyboardShortcutsPanel';
+import { Button } from '../components/ui/Button';
 
 /**
  *
@@ -287,20 +288,21 @@ export function ShortcutProvider({ children }: ShortcutProviderProps) {
                     <div className="w-full max-w-2xl rounded-xl bg-white p-4 shadow-xl">
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="text-lg font-semibold">Command Palette</h2>
-                            <button type="button" onClick={hideCommandPalette} aria-label="Close command palette">
+                            <Button variant="ghost" size="sm" onClick={hideCommandPalette} aria-label="Close command palette">
                                 ×
-                            </button>
+                            </Button>
                         </div>
                         <div className="max-h-[60vh] overflow-auto">
                             {allCommands.map((command) => (
-                                <button
+                                <Button
                                     key={command.id}
-                                    type="button"
+                                    variant="ghost"
+                                    fullWidth
                                     onClick={() => {
                                         command.action();
                                         hideCommandPalette();
                                     }}
-                                    className="flex w-full items-start justify-between rounded-lg px-3 py-2 text-left hover:bg-surface-muted"
+                                    className="items-start justify-between rounded-lg px-3 py-2 text-left hover:bg-surface-muted [&>span]:flex [&>span]:w-full [&>span]:items-start [&>span]:justify-between"
                                 >
                                     <span>
                                         <span className="block font-medium">{command.title}</span>
@@ -311,7 +313,7 @@ export function ShortcutProvider({ children }: ShortcutProviderProps) {
                                     {command.shortcut ? (
                                         <span className="text-xs text-fg-muted">{command.shortcut}</span>
                                     ) : null}
-                                </button>
+                                </Button>
                             ))}
                         </div>
                     </div>

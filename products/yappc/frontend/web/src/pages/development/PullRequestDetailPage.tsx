@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { Button } from '../../components/ui/Button';
+import { Select } from '../../components/ui/Select';
 
 type PRState = 'open' | 'closed' | 'merged' | 'draft';
 type CheckStatus = 'success' | 'failure' | 'pending' | 'skipped';
@@ -290,17 +292,18 @@ const PullRequestDetailPage: React.FC = () => {
           )}
 
           <div className="flex items-center gap-4">
-            <select
+            <Select
               value={mergeMethod}
               onChange={(e) => setMergeMethod(e.target.value as MergeMethod)}
-              className="bg-surface border border-border text-fg-muted text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              size="sm"
+              className="bg-surface border-border text-fg-muted text-sm rounded-lg px-3 py-2 focus:ring-blue-500"
             >
               <option value="squash">Squash and merge</option>
               <option value="merge">Create a merge commit</option>
               <option value="rebase">Rebase and merge</option>
-            </select>
+            </Select>
 
-            <button
+            <Button
               onClick={() => mergeMutation.mutate()}
               disabled={!canMerge || mergeMutation.isPending}
               className={`px-6 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -310,7 +313,7 @@ const PullRequestDetailPage: React.FC = () => {
               }`}
             >
               {mergeMutation.isPending ? 'Merging...' : 'Merge Pull Request'}
-            </button>
+            </Button>
 
             {!allChecksPassed && (
               <span className="text-xs text-warning-color">Some checks have not passed</span>

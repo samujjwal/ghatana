@@ -8,7 +8,7 @@ import { PhaseCockpitLayout } from '../../../components/phase/PhaseCockpitLayout
 import { PhaseEvidencePanel } from '../../../components/phase/PhaseEvidencePanel';
 import { PhaseGovernanceTrace } from '../../../components/phase/PhaseGovernanceTrace';
 import { PhasePrimaryActionCard } from '../../../components/phase/PhasePrimaryActionCard';
-import { PhaseSuggestedNextStep } from '../../../components/phase/PhaseSuggestedNextStep';
+import { PhaseSuggestedNextStep, type SuggestedStep } from '../../../components/phase/PhaseSuggestedNextStep';
 import {
   describePhaseActionError,
   executeGenerateReviewDecision,
@@ -285,6 +285,16 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     scrollToSupportingSurface();
   };
 
+  const handleSuggestionAction = useCallback((step: SuggestedStep) => {
+    if (step.applyMode === 'one-click' && !step.approvalRequired) {
+      handlePrimaryAction();
+      return;
+    }
+
+    setFeedback(`Reviewing suggestion: ${step.title}.`);
+    scrollToSupportingSurface();
+  }, [handlePrimaryAction, scrollToSupportingSurface]);
+
   const handleGenerateReviewDecision = (decision: GenerateReviewDecision) => {
     if (!projectId || !actionResult?.runId) {
       setActionError('Missing generation run context for review decision.');
@@ -319,6 +329,10 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
 
   const project = projectQuery.data;
   const phaseDetailCopy = PHASE_DETAIL_COPY[phase];
+  const cockpitSuggestions = suggestions.map((step) => ({
+    ...step,
+    onAccept: handleSuggestionAction,
+  }));
 
   if (projectQuery.isLoading || !project) {
     return (
@@ -411,7 +425,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
         )}
         blockers={<div id={`${phase}-blocker-panel`}><PhaseBlockerPanel blockers={blockers} /></div>}
         evidence={<PhaseEvidencePanel evidence={evidence} />}
-        suggestedAutomation={<PhaseSuggestedNextStep steps={suggestions} />}
+        suggestedAutomation={<PhaseSuggestedNextStep steps={cockpitSuggestions} />}
         governanceTrace={<PhaseGovernanceTrace records={governance} />}
         advancedTools={advancedDetails}
         advancedToolsLabel={phaseDetailCopy.label}

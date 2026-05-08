@@ -5,8 +5,13 @@
 This index provides a complete map of the **Day 17: Data Fabric Admin UI** implementation for the Data Cloud. All code, documentation, and resources are organized below for easy navigation.
 
 **Implementation Date**: 2024-11-05  
-**Status**: ✅ **COMPLETE & PRODUCTION READY**  
+**Status**: 🔶 **PREVIEW — NOT PRODUCTION READY**  
 **Version**: 1.0.0
+
+> ⚠️ **Preview notice**: This feature is gated by the `data.cloud.fabric` capability flag
+> and disabled by default in all profiles. Live fabric metrics are not exposed by the
+> current Data Cloud launcher API — the page shows a preview topology only.
+> Do **not** deploy to production until real backend endpoints are implemented and tested.
 
 ---
 
@@ -479,7 +484,9 @@ A: See API_CONTRACTS.md → All 17 endpoints fully specified
 A: See TESTING_GUIDE.md → 52 example tests provided
 
 **Q: Is it ready for production?**  
-A: Yes! See DEPLOYMENT_CHECKLIST.md for deployment procedures
+A: **No.** This surface is preview-only. Live fabric metrics endpoints do not exist in the
+current Data Cloud launcher. Enable via `VITE_FEATURE_FABRIC=true` only in non-production
+environments. See `unsupportedSurfaceRegistry.ts` for the authoritative preview boundary declaration.
 
 **Q: What types are used?**  
 A: See README.md → Types Section → Shows all 8 interfaces + 3 enums
@@ -563,7 +570,7 @@ Before deployment, verify:
 Feature: Data Fabric Admin UI (Day 17)
 Version: 1.0.0
 Release: 2024-11-05
-Status: ✅ READY FOR PRODUCTION
+Status: 🔶 PREVIEW (not production ready — live fabric API endpoints not yet implemented)
 
 Files: 15 (9 code + 6 documentation)
 Lines: 3,700+ (1,300 code + 2,400 documentation)
@@ -575,12 +582,14 @@ Quality: 100% TypeScript + ESLint compliance
 
 ## 🎉 Summary
 
-This feature is **complete and production-ready**. All code has been written, documented, and exemplified. Teams can proceed with:
+The **UI scaffolding** for this feature is complete. However, the feature is **preview-only**
+because the required backend API endpoints (17 total) have not been implemented in the
+Data Cloud launcher. Do not deploy to production until:
 
-1. ✅ **Backend Implementation** (follow API_CONTRACTS.md)
-2. ✅ **Frontend Integration** (follow INTEGRATION_GUIDE.md)
-3. ✅ **Testing** (follow TESTING_GUIDE.md)
-4. ✅ **Deployment** (follow DEPLOYMENT_CHECKLIST.md)
+1. ❌ **Backend Implementation** — 17 fabric API endpoints not yet implemented
+2. ✅ **Frontend Integration** — UI is scaffolded and gated by `VITE_FEATURE_FABRIC`
+3. ❌ **Live Tests** — No backend integration tests exist; current tests are UI-only
+4. ❌ **Deployment** — Not safe for production; feature flag must remain off by default
 
 ---
 
@@ -594,7 +603,7 @@ This feature is **complete and production-ready**. All code has been written, do
 
 ---
 
-**Status**: 🟢 **COMPLETE & READY FOR USE**
+**Status**: � **PREVIEW — awaiting backend API implementation**
 
 ---
 

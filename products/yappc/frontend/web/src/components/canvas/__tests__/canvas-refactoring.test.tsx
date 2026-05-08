@@ -7,6 +7,9 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
+
+const TestButton = (props: React.ButtonHTMLAttributes<HTMLButtonElement>): React.ReactElement =>
+  React.createElement('button', props);
 import '@testing-library/jest-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -78,10 +81,10 @@ function MockToolbarRenderer({ onViewModeChange, onItemCreate }: {
 }) {
     return (
         <div>
-            <button data-testid="view-mode-list" onClick={() => onViewModeChange('list')}>
+            <TestButton data-testid="view-mode-list" onClick={() => onViewModeChange('list')}>
                 List View
-            </button>
-            <button
+            </TestButton>
+            <TestButton
                 data-testid="toolbar-add-item"
                 onClick={() => {
                     if (typeof onItemCreate === 'function') {
@@ -93,7 +96,7 @@ function MockToolbarRenderer({ onViewModeChange, onItemCreate }: {
                 }}
             >
                 Add Item
-            </button>
+            </TestButton>
         </div>
     );
 }
@@ -186,12 +189,12 @@ describe('Phase 1: Generic Canvas Foundation', () => {
                     <div>
                         <div data-testid="item-count">{canvasResult.filteredItems.length}</div>
                         <div data-testid="selected-count">{canvasResult.selectedItems.length}</div>
-                        <button
+                        <TestButton
                             data-testid="select-item"
                             onClick={() => canvasResult.actions.selectItem('test-item-1')}
                         >
                             Select Item
-                        </button>
+                        </TestButton>
                     </div>
                 );
             };
@@ -393,7 +396,7 @@ describe('Phase 3: Performance & Advanced Features', () => {
                 return (
                     <div>
                         <div data-testid="item-count">{items.length}</div>
-                        <button
+                        <TestButton
                             data-testid="add-item"
                             onClick={() => actions.recordAction({
                                 type: 'create',
@@ -401,14 +404,14 @@ describe('Phase 3: Performance & Advanced Features', () => {
                             }, 'Add new item')}
                         >
                             Add Item
-                        </button>
-                        <button
+                        </TestButton>
+                        <TestButton
                             data-testid="undo"
                             onClick={() => actions.undo()}
                             disabled={!actions.canUndo()}
                         >
                             Undo
-                        </button>
+                        </TestButton>
                     </div>
                 );
             };
@@ -437,12 +440,12 @@ describe('Phase 3: Performance & Advanced Features', () => {
                     <div>
                         <div data-testid="active-branch">{historyState.activeBranchId}</div>
                         <div data-testid="branch-count">{historyState.branches.size}</div>
-                        <button
+                        <TestButton
                             data-testid="create-branch"
                             onClick={() => actions.createBranch('feature-branch')}
                         >
                             Create Branch
-                        </button>
+                        </TestButton>
                     </div>
                 );
             };
@@ -473,7 +476,7 @@ describe('Phase 3: Performance & Advanced Features', () => {
                     <div>
                         <div data-testid="user-count">{collaborationState.users.size}</div>
                         <div data-testid="cursor-count">{collaborationState.cursors.size}</div>
-                        <button
+                        <TestButton
                             data-testid="add-user"
                             onClick={() => addUser({
                                 id: 'user-2',
@@ -484,13 +487,13 @@ describe('Phase 3: Performance & Advanced Features', () => {
                             })}
                         >
                             Add User
-                        </button>
-                        <button
+                        </TestButton>
+                        <TestButton
                             data-testid="update-cursor"
                             onClick={() => updateCursor({ x: 100, y: 100 })}
                         >
                             Update Cursor
-                        </button>
+                        </TestButton>
                     </div>
                 );
             };

@@ -3,6 +3,7 @@ import { OperationStatus, AILabel } from '@ghatana/design-system';
 import type { OperationState } from '@ghatana/design-system';
 import { cn } from '@/lib/utils';
 import { AITypeChip, type AITypeChipProps } from './AITypeChip';
+import { Button } from '../ui/Button';
 
 /**
  * AI Status Bar component.
@@ -144,14 +145,16 @@ export function AIStatusBar({
       {/* Phase Progress */}
       <div className="relative flex items-center gap-2 min-w-[200px]">
         <span className="text-sm text-fg-muted dark:text-fg-muted">Current Phase: {currentPhase}</span>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           className="sr-only"
           onClick={() => setShowPhaseSelector((v) => !v)}
           aria-haspopup="listbox"
           aria-label="Select phase"
         >
           {currentPhase}
-        </button>
+        </Button>
         <ProgressBar value={phaseProgress} className="w-24" />
         <span className="text-sm text-fg-muted dark:text-fg-muted">
           {Math.round(phaseProgress)}%

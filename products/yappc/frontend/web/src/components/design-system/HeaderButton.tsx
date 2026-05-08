@@ -12,6 +12,7 @@
 import { Box, IconButton, Tooltip } from '@ghatana/design-system';
 import { cn } from '../../lib/utils';
 import type { MouseEvent, ReactNode } from 'react';
+import { Button } from '../ui/Button';
 
 export interface HeaderButtonProps {
     /** Button icon */
@@ -78,7 +79,7 @@ export function HeaderButton({
             {icon}
         </IconButton>
     ) : variant === 'text' ? (
-        <button
+        <Button
             disabled={disabled}
             onClick={onClick}
             aria-label={ariaLabel || tooltip || label}
@@ -90,12 +91,14 @@ export function HeaderButton({
                 disabled && 'opacity-50 cursor-not-allowed',
                 className
             )}
+            variant="ghost"
+            size={size === 'small' ? 'sm' : 'md'}
         >
             {icon && <span className="mr-1.5 inline-flex">{icon}</span>}
             {label}
-        </button>
+        </Button>
     ) : (
-        <button
+        <Button
             disabled={disabled}
             onClick={onClick}
             aria-label={ariaLabel || tooltip || label}
@@ -106,10 +109,11 @@ export function HeaderButton({
                 disabled && 'opacity-50 cursor-not-allowed',
                 className
             )}
+            size={size === 'small' ? 'sm' : 'md'}
         >
             {icon && <span className="mr-1.5 inline-flex">{icon}</span>}
             {label}
-        </button>
+        </Button>
     );
 
     const wrappedButton = badgeCount && badgeCount > 0 ? (

@@ -127,6 +127,14 @@ const PHASE_TABS: PhaseTab[] = [
   },
 ];
 
+interface NativeButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children: React.ReactNode;
+}
+
+function NativeButton({ children, type = 'button', ...props }: NativeButtonProps): React.ReactElement {
+  return React.createElement('button', { ...props, type }, children);
+}
+
 // =============================================================================
 // Component
 // =============================================================================
@@ -221,12 +229,17 @@ const UnifiedProjectDashboard: React.FC = () => {
                   {breadcrumbs.map((crumb) => (
                     <React.Fragment key={crumb.id}>
                       <ChevronRight className="h-4 w-4" />
-                      <button
-                        onClick={() => navigate(crumb.href)}
+                      <NativeButton
+                        disabled={!crumb.href}
+                        onClick={() => {
+                          if (crumb.href) {
+                            navigate(crumb.href);
+                          }
+                        }}
                         className="hover:text-fg dark:hover:text-fg-muted"
                       >
                         {crumb.label}
-                      </button>
+                      </NativeButton>
                     </React.Fragment>
                   ))}
                 </div>
@@ -281,9 +294,10 @@ const UnifiedProjectDashboard: React.FC = () => {
               const isActive = activePhase === phase.id;
 
               return (
-                <button
+                <NativeButton
                   key={phase.id}
                   onClick={() => handlePhaseChange(phase.id)}
+                  aria-pressed={isActive}
                   className={cn(
                     'group relative flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors',
                     isActive
@@ -304,7 +318,7 @@ const UnifiedProjectDashboard: React.FC = () => {
                     {phase.description}
                     <div className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-surface dark:bg-surface" />
                   </div>
-                </button>
+                </NativeButton>
               );
             })}
           </div>
@@ -328,7 +342,7 @@ const UnifiedProjectDashboard: React.FC = () => {
               {quickActions.map((action) => {
                 const Icon = action.icon;
                 return (
-                  <button
+                  <NativeButton
                     key={action.id}
                     onClick={() => handleQuickAction(action)}
                     className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-fg transition-colors hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface"
@@ -342,7 +356,7 @@ const UnifiedProjectDashboard: React.FC = () => {
                         {action.badge}
                       </span>
                     )}
-                  </button>
+                  </NativeButton>
                 );
               })}
             </div>

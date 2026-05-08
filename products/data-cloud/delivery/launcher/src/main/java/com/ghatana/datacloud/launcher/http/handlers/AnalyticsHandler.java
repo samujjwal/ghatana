@@ -36,7 +36,9 @@ public class AnalyticsHandler {
     // P2-PERF-1: Performance limits to prevent resource exhaustion
     private static final int DEFAULT_ROW_LIMIT = 10000;
     private static final int MAX_ROW_LIMIT = 50000;
-    private static final long QUERY_TIMEOUT_MS = 300000; // 5 minutes
+    // Note: query timeout enforcement is delegated to AnalyticsQueryEngine implementations.
+    // AnalyticsHandler enforces row-count limits only; engine-level timeouts are configured
+    // per-deployment in the engine's own settings (e.g. ClickHouse query_timeout_seconds).
 
     private final AnalyticsQueryEngine analyticsEngine;
     private final HttpHandlerSupport http;
@@ -116,7 +118,8 @@ public class AnalyticsHandler {
                                 int requestedLimit = ((Number) payload.get("limit")).intValue();
                                 rowLimit = Math.min(Math.max(requestedLimit, 1), MAX_ROW_LIMIT);
                             } catch (Exception e) {
-                                log.warn("[P2-PERF-1] Invalid limit parameter, using default: {}", e.getMessage());
+                                log.warn("[DC-P1-005] Invalid limit parameter type in analytics submit: {}", e.getMessage());
+                                return Promise.of(http.errorResponse(400, "Invalid 'limit' field: must be a positive integer between 1 and " + MAX_ROW_LIMIT));
                             }
                         }
                         Map<String, Object> params = payload.containsKey("parameters")
@@ -131,13 +134,18 @@ public class AnalyticsHandler {
                     final int finalRowLimit = rowLimit;
                     return analyticsEngine.submitQuery(tenantId, queryText, paramsWithLimit)
                         .map(result -> {
-                            List<Map<String, Object>> rows = result.getRows();
+                            List<Map<String, Object>> allRows = result.getRows();
+                            // DC-P1-005: Defensive cap — engine may return more rows than requested.
+                            // Apply subList so the response cannot exceed MAX_ROW_LIMIT regardless
+                            // of what the engine returned.
+                            int cappedCount = Math.min(allRows.size(), finalRowLimit);
+                            List<Map<String, Object>> rows = allRows.subList(0, cappedCount);
                             int rowCount = rows.size();
                             int totalRows = result.getTotalRows();
-                            boolean truncated = totalRows > rowCount;
+                            boolean truncated = totalRows > rowCount || allRows.size() > finalRowLimit;
                             if (truncated) {
-                                log.info("[P2-PERF-1] Query result truncated to {} rows (limit: {}) for tenant={} traceId={}",
-                                    rowCount, finalRowLimit, tenantId, traceId);
+                                log.info("[DC-P1-005] Submit-path result capped to {} rows (requested: {}, engine returned: {}, totalRows: {}) for tenant={} traceId={}",
+                                    rowCount, finalRowLimit, allRows.size(), totalRows, tenantId, traceId);
                             }
                             Map<String, Object> responseBody = new LinkedHashMap<>();
                             responseBody.put("queryId",         result.getQueryId());
@@ -190,7 +198,8 @@ public class AnalyticsHandler {
             try {
                 rowLimit = Math.min(Math.max(Integer.parseInt(limitParam), 1), MAX_ROW_LIMIT);
             } catch (NumberFormatException e) {
-                log.warn("[P2-PERF-1] Invalid limit parameter in request: {}", limitParam);
+                log.warn("[DC-P1-005] Invalid limit query parameter '{}' in analytics get-result", limitParam);
+                return Promise.of(http.errorResponse(400, "Invalid 'limit' query parameter: must be a positive integer between 1 and " + MAX_ROW_LIMIT));
             }
         }
         final int finalRowLimit = rowLimit;

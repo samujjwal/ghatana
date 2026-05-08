@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 
 // ============================================================================
 // Types
@@ -85,18 +87,22 @@ const InfrastructureConfigPage: React.FC = () => {
                           <p className="font-semibold text-fg">{svc.name}</p>
                           <p className="text-sm text-fg-muted">{svc.description}</p>
                         </div>
-                        <button
+                        <Button
                           onClick={(e) => { e.stopPropagation(); toggle(svc.id); }}
+                          variant="ghost"
+                          size="sm"
                           className={`relative h-6 w-11 rounded-full transition ${
                             svc.enabled ? 'bg-primary' : 'bg-surface-muted'
                           }`}
+                          aria-pressed={svc.enabled}
+                          aria-label={`${svc.enabled ? 'Disable' : 'Enable'} ${svc.name}`}
                         >
                           <span
                             className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${
                               svc.enabled ? 'left-[22px]' : 'left-0.5'
                             }`}
                           />
-                        </button>
+                        </Button>
                       </div>
                     ))}
                 </div>
@@ -123,16 +129,16 @@ const InfrastructureConfigPage: React.FC = () => {
                   {Object.entries(selected.config).map(([k, v]) => (
                     <div key={k}>
                       <label className="mb-1 block text-xs font-medium text-fg-muted">{k}</label>
-                      <input
+                      <Input
                         defaultValue={v}
                         className="w-full rounded border px-3 py-1.5 font-mono text-sm focus:border-info-border focus:outline-none"
                       />
                     </div>
                   ))}
                 </div>
-                <button className="mt-4 w-full rounded-md bg-primary py-2 text-sm font-medium text-white hover:bg-info-bg">
+                <Button className="mt-4 w-full rounded-md bg-primary py-2 text-sm font-medium text-white hover:bg-info-bg">
                   Save Configuration
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="rounded-lg border bg-white p-8 text-center text-sm text-fg-muted shadow-sm">

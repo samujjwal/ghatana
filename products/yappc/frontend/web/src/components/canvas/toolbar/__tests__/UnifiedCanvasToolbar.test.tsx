@@ -191,21 +191,21 @@ describe('UnifiedCanvasToolbar', () => {
             render(<UnifiedCanvasToolbar {...defaultProps} validationScore={100} errorCount={0} warningCount={0} />);
             
             const badge = screen.getByText('100');
-            expect(badge.closest('button')).toHaveClass('bg-green-500');
+            expect(badge.closest('button')).toHaveClass('bg-success-bg');
         });
 
         it('shows warning variant when warnings exist', () => {
             render(<UnifiedCanvasToolbar {...defaultProps} validationScore={80} errorCount={0} warningCount={2} />);
             
             const badge = screen.getByText('80');
-            expect(badge.closest('button')).toHaveClass('bg-yellow-500');
+            expect(badge.closest('button')).toHaveClass('bg-warning-bg');
         });
 
         it('shows error variant when errors exist', () => {
             render(<UnifiedCanvasToolbar {...defaultProps} validationScore={60} errorCount={1} warningCount={0} />);
             
             const badge = screen.getByText('60');
-            expect(badge.closest('button')).toHaveClass('bg-red-500');
+            expect(badge.closest('button')).toHaveClass('bg-destructive-bg');
         });
 
         it('shows loading state when validating', () => {
@@ -337,7 +337,8 @@ describe('UnifiedCanvasToolbar', () => {
             render(<UnifiedCanvasToolbar {...defaultProps} onOpenUnifiedPanel={vi.fn()} unifiedPanelOpen={true} />);
             
             const button = screen.getByRole('button', { name: /assistant panel/i });
-            expect(button).toHaveClass('bg-grey-100');
+            expect(button).toHaveClass('bg-surface-muted');
+            expect(button).toHaveClass('text-info-color');
         });
 
         it('calls onOpenUnifiedPanel when clicked', async () => {

@@ -32,6 +32,7 @@ import {
   Grid3X3,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { Button } from '../../../ui/Button';
 
 type PresetCategory =
   | 'STARTER'
@@ -109,7 +110,7 @@ function PresetNode({ data }: NodeProps<PresetCanvasNode>) {
     <div
       className={cn(
         'bg-surface rounded-lg border shadow-xl min-w-[340px] max-w-[400px] transition-all',
-        isSelected ? 'border-primary ring-2 ring-primary/30' : 'border-border'
+        isSelected ? 'border-info-border ring-2 ring-info-border/30' : 'border-border'
       )}
     >
       <Handle type="target" position={Position.Left} className="!bg-info-color" />
@@ -137,7 +138,7 @@ function PresetNode({ data }: NodeProps<PresetCanvasNode>) {
           </div>
         </div>
         {isSelected && (
-          <div className="p-1 bg-primary rounded-full">
+          <div className="p-1 bg-info-color rounded-full">
             <Check className="w-3 h-3 text-white" />
           </div>
         )}
@@ -322,25 +323,25 @@ function PresetNode({ data }: NodeProps<PresetCanvasNode>) {
       {/* Actions */}
       <div className="px-4 py-3 flex items-center justify-end gap-2">
         {onPreview && (
-          <button
+          <Button variant="ghost" size="sm"
             onClick={onPreview}
             className="px-3 py-1.5 bg-muted hover:opacity-90 rounded-lg text-xs text-fg transition-colors"
           >
             Preview
-          </button>
+          </Button>
         )}
         {onSelect && (
-          <button
+          <Button variant="ghost" size="sm"
             onClick={onSelect}
             className={cn(
               'px-3 py-1.5 rounded-lg text-xs transition-colors',
               isSelected
                 ? 'bg-success-color text-white'
-                : 'bg-primary hover:opacity-90 text-primary-foreground'
+                : 'bg-info-color hover:opacity-90 text-white'
             )}
           >
             {isSelected ? 'Selected' : 'Use Preset'}
-          </button>
+          </Button>
         )}
       </div>
     </div>

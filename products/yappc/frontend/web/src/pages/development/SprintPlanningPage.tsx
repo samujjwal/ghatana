@@ -160,6 +160,11 @@ const submitVote = async (
 
 const FIBONACCI_SEQUENCE = [0, 1, 2, 3, 5, 8, 13, 21];
 
+const NativeButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>((props, ref) =>
+  React.createElement('button', { ...props, ref }),
+);
+NativeButton.displayName = 'NativeButton';
+
 const getCapacityStatus = (
   committed: number,
   capacity: number
@@ -223,7 +228,7 @@ interface PointingCardProps {
 const PointingCards: React.FC<PointingCardProps> = ({ selected, onSelect, disabled }) => (
   <div className="pointing-cards">
     {FIBONACCI_SEQUENCE.map((points) => (
-      <button
+      <NativeButton
         key={points}
         type="button"
         className={`pointing-card ${selected === points ? 'pointing-card--selected' : ''}`}
@@ -231,7 +236,7 @@ const PointingCards: React.FC<PointingCardProps> = ({ selected, onSelect, disabl
         disabled={disabled}
       >
         {points}
-      </button>
+      </NativeButton>
     ))}
   </div>
 );
@@ -460,7 +465,7 @@ export const SprintPlanningPage: React.FC = () => {
         <div className="error-container">
           <h2>Failed to load planning session</h2>
           <p>{error || 'Session not found'}</p>
-          <button onClick={() => window.location.reload()}>Retry</button>
+          <NativeButton onClick={() => window.location.reload()}>Retry</NativeButton>
         </div>
       </div>
     );
@@ -478,21 +483,21 @@ export const SprintPlanningPage: React.FC = () => {
             </span>
           </div>
           <div className="header-actions">
-            <button
+            <NativeButton
               type="button"
               className="secondary-btn"
               onClick={() => navigate(`/projects/${projectId}/sprints/${sprintId}`)}
             >
               Cancel
-            </button>
-            <button
+            </NativeButton>
+            <NativeButton
               type="button"
               className="primary-btn"
               onClick={handleStartSprint}
               disabled={session.plannedStories.length === 0}
             >
               Start Sprint
-            </button>
+            </NativeButton>
           </div>
         </header>
 
@@ -531,14 +536,14 @@ export const SprintPlanningPage: React.FC = () => {
                       onClick={() => setSelectedStory(story)}
                       compact
                     />
-                    <button
+                    <NativeButton
                       type="button"
                       className="add-to-sprint-btn"
                       onClick={() => handleAddToSprint(story)}
                       title="Add to sprint"
                     >
                       →
-                    </button>
+                    </NativeButton>
                   </div>
                 ))
               )}
@@ -571,14 +576,14 @@ export const SprintPlanningPage: React.FC = () => {
                       onClick={() => setSelectedStory(story)}
                       compact
                     />
-                    <button
+                    <NativeButton
                       type="button"
                       className="remove-from-sprint-btn"
                       onClick={() => handleRemoveFromSprint(story)}
                       title="Remove from sprint"
                     >
                       ×
-                    </button>
+                    </NativeButton>
                   </div>
                 ))
               )}
@@ -595,13 +600,13 @@ export const SprintPlanningPage: React.FC = () => {
             <div className="story-modal" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h3 className="modal-title">{selectedStory.title}</h3>
-                <button
+                <NativeButton
                   type="button"
                   className="modal-close"
                   onClick={() => setSelectedStory(null)}
                 >
                   ×
-                </button>
+                </NativeButton>
               </div>
               <div className="modal-body">
                 <p className="story-description">{selectedStory.description}</p>
@@ -629,7 +634,7 @@ export const SprintPlanningPage: React.FC = () => {
                 </div>
               </div>
               <div className="modal-footer">
-                <button
+                <NativeButton
                   type="button"
                   className="secondary-btn"
                   onClick={() => {
@@ -638,8 +643,8 @@ export const SprintPlanningPage: React.FC = () => {
                   }}
                 >
                   Cancel
-                </button>
-                <button
+                </NativeButton>
+                <NativeButton
                   type="button"
                   className="primary-btn"
                   onClick={() => {
@@ -650,7 +655,7 @@ export const SprintPlanningPage: React.FC = () => {
                   disabled={pointingVote === null}
                 >
                   Set Points
-                </button>
+                </NativeButton>
               </div>
             </div>
           </div>

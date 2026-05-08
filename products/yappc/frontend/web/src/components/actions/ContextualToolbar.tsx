@@ -522,12 +522,12 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
                             </MenuItem>
                         ))}
                     </div>
-                    <button
-                        type="button"
-                        className="fixed inset-0 cursor-default"
-                        aria-label="Close overflow actions"
-                        onClick={handleMoreClose}
-                    />
+                    {React.createElement('button', {
+                        type: 'button',
+                        className: 'fixed inset-0 cursor-default',
+                        'aria-label': 'Close overflow actions',
+                        onClick: handleMoreClose,
+                    })}
                     </div>
                     ) : null}
                 </>

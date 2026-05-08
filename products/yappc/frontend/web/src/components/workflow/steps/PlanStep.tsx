@@ -17,6 +17,7 @@ import {
     draftStepDataAtom,
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
+import { Textarea } from '../../ui/Textarea';
 
 interface PlanTask {
     id: string;
@@ -342,11 +343,12 @@ export function PlanStep() {
                             </Typography>
                         </AccordionSummary>
                         <AccordionDetails>
-                            <textarea
+                            <Textarea
                                 className="min-h-[96px] w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none dark:border-border"
                                 placeholder="Describe the rollback strategy if something goes wrong..."
                                 value={riskAssessment.rollbackPlan ?? ''}
                                 onChange={(e) => handleRiskChange('rollbackPlan', e.target.value)}
+                                fullWidth
                             />
                         </AccordionDetails>
                     </Accordion>

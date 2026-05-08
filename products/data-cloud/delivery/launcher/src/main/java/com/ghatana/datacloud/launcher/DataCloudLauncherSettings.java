@@ -94,9 +94,29 @@ public final class DataCloudLauncherSettings {
 
         String rawProfile = env.get("DATACLOUD_PROFILE");
         if (rawProfile == null || rawProfile.isBlank()) {
+            if (isContainerEnvironment(env)) {
+                throw new IllegalStateException(
+                    "DATACLOUD_PROFILE must be set explicitly in container/Kubernetes deployments. "
+                    + "Refusing to default to LOCAL to prevent silent data loss in production. "
+                    + "Set DATACLOUD_PROFILE to 'production' or 'staging'.");
+            }
             return DataCloud.DataCloudConfig.DataCloudProfile.LOCAL;
         }
         return parseProfile(rawProfile);
+    }
+
+    /**
+     * Returns {@code true} when the JVM is running inside a container or Kubernetes pod.
+     *
+     * <p>Detection signals (checked in order):
+     * <ol>
+     *   <li>{@code DATACLOUD_CONTAINER=true} — set explicitly in the production Dockerfile.</li>
+     *   <li>{@code KUBERNETES_SERVICE_HOST} — injected automatically by the Kubernetes control plane.</li>
+     * </ol>
+     */
+    static boolean isContainerEnvironment(Map<String, String> env) {
+        return "true".equalsIgnoreCase(env.get("DATACLOUD_CONTAINER"))
+            || env.containsKey("KUBERNETES_SERVICE_HOST");
     }
 
     public static boolean isEmbeddedProfile(DataCloud.DataCloudConfig.DataCloudProfile profile) {

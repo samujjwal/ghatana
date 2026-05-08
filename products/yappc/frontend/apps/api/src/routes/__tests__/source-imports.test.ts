@@ -82,11 +82,39 @@ describe('sourceImportRoutes', () => {
         fileCount: 1,
       },
       job: {
+        id: expect.stringMatching(/^source-import-/),
         status: 'REVIEW_REQUIRED',
         tenantId: 'tenant-1',
         workspaceId: 'workspace-1',
         projectId: 'project-1',
         auditRecorded: true,
+        percentComplete: 100,
+        currentStep: 'audit',
+        steps: expect.arrayContaining([
+          expect.objectContaining({ id: 'validate_scope', status: 'completed' }),
+          expect.objectContaining({ id: 'fetch_source', status: 'completed' }),
+          expect.objectContaining({ id: 'audit', status: 'completed' }),
+        ]),
+      },
+    });
+    const jobId = response.json().job.id as string;
+    const statusResponse = await app.inject({
+      method: 'GET',
+      url: `/api/v1/yappc/artifact/import-source/${jobId}`,
+      headers: {
+        'x-tenant-id': 'tenant-1',
+        'x-workspace-id': 'workspace-1',
+        'x-project-id': 'project-1',
+      },
+    });
+
+    expect(statusResponse.statusCode).toBe(200);
+    expect(statusResponse.json()).toMatchObject({
+      job: {
+        id: jobId,
+        status: 'REVIEW_REQUIRED',
+        percentComplete: 100,
+        currentStep: 'audit',
       },
     });
     expect(auditLogMock).toHaveBeenCalledWith(
@@ -151,5 +179,45 @@ describe('sourceImportRoutes', () => {
         }),
       }),
     );
+  });
+
+  it('prevents polling source import jobs from a different tenant workspace or project scope', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response('export function ScopedPanel() { return <main>Scoped</main>; }', {
+        status: 200,
+        headers: { 'content-type': 'text/plain' },
+      }),
+    ));
+
+    const createResponse = await app.inject({
+      method: 'POST',
+      url: '/api/v1/yappc/artifact/import-source',
+      headers: {
+        'x-tenant-id': 'tenant-1',
+        'x-workspace-id': 'workspace-1',
+        'x-project-id': 'project-1',
+      },
+      payload: {
+        sourceType: 'tsx',
+        source: 'https://example.com/ScopedPanel.tsx',
+        projectId: 'project-1',
+      },
+    });
+    const jobId = createResponse.json().job.id as string;
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/v1/yappc/artifact/import-source/${jobId}`,
+      headers: {
+        'x-tenant-id': 'tenant-2',
+        'x-workspace-id': 'workspace-1',
+        'x-project-id': 'project-1',
+      },
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(response.json()).toMatchObject({
+      error: 'source_import_job_scope_mismatch',
+    });
   });
 });

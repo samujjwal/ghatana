@@ -124,6 +124,7 @@ export type PageArtifactSyncStatus =
   | 'offline';
 
 export type PageArtifactGraphNodeKind =
+  | 'product'
   | 'page'
   | 'component'
   | 'source'
@@ -132,6 +133,7 @@ export type PageArtifactGraphNodeKind =
 export type PageArtifactGraphEdgeKind =
   | 'contains'
   | 'derived-from'
+  | 'part-of'
   | 'references'
   | 'residual-of';
 

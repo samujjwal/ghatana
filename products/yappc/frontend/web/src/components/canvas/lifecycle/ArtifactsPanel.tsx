@@ -19,6 +19,7 @@ import {
     getArtifactsForSurface,
 } from '@/shared/types/lifecycle-artifacts';
 import { LifecyclePhase, PHASE_LABELS } from '../../../types/lifecycle';
+import { Button } from '../../ui/Button';
 
 export interface ArtifactItem {
     kind: LifecycleArtifactKind;
@@ -113,8 +114,10 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
                                 const hasPanelId = meta.placement.param;
 
                                 return (
-                                    <button
+                                    <Button
                                         key={meta.kind}
+                                        variant="ghost"
+                                        size="small"
                                         onClick={() => {
                                             if (artifact?.status === 'missing') {
                                                 onCreateArtifact(meta.kind);
@@ -122,7 +125,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
                                                 openArtifactPanel(hasPanelId);
                                             }
                                         }}
-                                        className="w-full flex items-center gap-3 p-3 rounded-lg border border-divider hover:border-primary-300 dark:hover:border-primary-700 bg-bg-paper hover:bg-grey-50 dark:hover:bg-grey-800 transition-colors text-left group"
+                                        className="w-full min-h-0 justify-start gap-3 p-3 rounded-lg border border-divider hover:border-info-border dark:hover:border-info-border bg-bg-paper hover:bg-surface-muted dark:hover:bg-surface-muted transition-colors text-left group"
                                     >
                                         <span className="text-sm font-semibold text-text-secondary" aria-hidden="true">
                                             {meta.label.slice(0, 3).toUpperCase()}
@@ -139,11 +142,11 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
                                             </p>
                                         </div>
                                         {!artifact || artifact.status === 'missing' ? (
-                                            <Add className="w-5 h-5 text-primary-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <Add className="w-5 h-5 text-info-color opacity-0 group-hover:opacity-100 transition-opacity" />
                                         ) : (
                                             <ChevronRight className="w-5 h-5 text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
                                         )}
-                                    </button>
+                                    </Button>
                                 );
                             })}
                         </div>
@@ -157,13 +160,15 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
                     Quick Actions
                 </h4>
                 <div className="space-y-1">
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="small"
                         onClick={() => openArtifactPanel('traceability')}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors"
+                        className="w-full min-h-0 justify-start gap-2 px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-muted dark:hover:bg-surface-muted rounded-lg transition-colors"
                     >
                         <Share className="w-4 h-4" />
                         View Traceability Graph
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

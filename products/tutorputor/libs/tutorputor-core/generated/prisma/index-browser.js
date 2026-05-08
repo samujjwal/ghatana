@@ -1719,6 +1719,8 @@ exports.Prisma.LearningExperienceScalarFieldEnum = {
   gradeAdaptations: 'gradeAdaptations',
   simulationManifestId: 'simulationManifestId',
   simulationVersion: 'simulationVersion',
+  animationManifestId: 'animationManifestId',
+  animationVersion: 'animationVersion',
   assessmentConfig: 'assessmentConfig',
   status: 'status',
   version: 'version',
@@ -1887,6 +1889,50 @@ exports.Prisma.SimulationLinkAuditScalarFieldEnum = {
   id: 'id',
   experienceId: 'experienceId',
   simulationManifestId: 'simulationManifestId',
+  action: 'action',
+  beforeVersion: 'beforeVersion',
+  afterVersion: 'afterVersion',
+  actorId: 'actorId',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.AnimationManifestScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  domain: 'domain',
+  version: 'version',
+  title: 'title',
+  description: 'description',
+  moduleId: 'moduleId',
+  manifest: 'manifest',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.AnimationManifestVersionScalarFieldEnum = {
+  id: 'id',
+  manifestId: 'manifestId',
+  version: 'version',
+  manifestJson: 'manifestJson',
+  styleConstraints: 'styleConstraints',
+  accessibilityTags: 'accessibilityTags',
+  renderingPlan: 'renderingPlan',
+  status: 'status',
+  riskLevel: 'riskLevel',
+  confidenceScore: 'confidenceScore',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.AnimationManifestExtensionScalarFieldEnum = {
+  id: 'id',
+  metadata: 'metadata'
+};
+
+exports.Prisma.AnimationLinkAuditScalarFieldEnum = {
+  id: 'id',
+  experienceId: 'experienceId',
+  animationManifestId: 'animationManifestId',
   action: 'action',
   beforeVersion: 'beforeVersion',
   afterVersion: 'afterVersion',
@@ -2337,6 +2383,8 @@ exports.Prisma.ArtifactManifestScalarFieldEnum = {
   claimRef: 'claimRef',
   manifest: 'manifest',
   schema: 'schema',
+  simulationManifestId: 'simulationManifestId',
+  animationManifestId: 'animationManifestId',
   isValid: 'isValid',
   validationErrors: 'validationErrors',
   generatedBy: 'generatedBy',
@@ -2635,7 +2683,15 @@ exports.Prisma.JsonNullValueFilter = {
 exports.ModuleDomain = exports.$Enums.ModuleDomain = {
   MATH: 'MATH',
   SCIENCE: 'SCIENCE',
-  TECH: 'TECH'
+  TECH: 'TECH',
+  ENGINEERING: 'ENGINEERING',
+  MEDICINE: 'MEDICINE',
+  HEALTH: 'HEALTH',
+  BUSINESS: 'BUSINESS',
+  MANAGEMENT: 'MANAGEMENT',
+  ECONOMICS: 'ECONOMICS',
+  COMPUTER_SCIENCE: 'COMPUTER_SCIENCE',
+  INTERDISCIPLINARY: 'INTERDISCIPLINARY'
 };
 
 exports.ModuleDifficulty = exports.$Enums.ModuleDifficulty = {
@@ -3127,6 +3183,27 @@ exports.SimulationManifestStatus = exports.$Enums.SimulationManifestStatus = {
   DEPRECATED: 'DEPRECATED'
 };
 
+exports.AnimationDomain = exports.$Enums.AnimationDomain = {
+  MATH: 'MATH',
+  SCIENCE: 'SCIENCE',
+  TECH: 'TECH',
+  ENGINEERING: 'ENGINEERING',
+  MEDICINE: 'MEDICINE',
+  HEALTH: 'HEALTH',
+  BUSINESS: 'BUSINESS',
+  MANAGEMENT: 'MANAGEMENT',
+  ECONOMICS: 'ECONOMICS',
+  COMPUTER_SCIENCE: 'COMPUTER_SCIENCE',
+  INTERDISCIPLINARY: 'INTERDISCIPLINARY'
+};
+
+exports.AnimationManifestStatus = exports.$Enums.AnimationManifestStatus = {
+  DRAFT: 'DRAFT',
+  REVIEW: 'REVIEW',
+  ACTIVE: 'ACTIVE',
+  DEPRECATED: 'DEPRECATED'
+};
+
 exports.ReviewerRole = exports.$Enums.ReviewerRole = {
   SME: 'SME',
   PEDAGOGY: 'PEDAGOGY',
@@ -3461,6 +3538,10 @@ exports.Prisma.ModelName = {
   SimulationManifestVersion: 'SimulationManifestVersion',
   SimulationManifestExtension: 'SimulationManifestExtension',
   SimulationLinkAudit: 'SimulationLinkAudit',
+  AnimationManifest: 'AnimationManifest',
+  AnimationManifestVersion: 'AnimationManifestVersion',
+  AnimationManifestExtension: 'AnimationManifestExtension',
+  AnimationLinkAudit: 'AnimationLinkAudit',
   AIPromptCache: 'AIPromptCache',
   ValidationRecordExtended: 'ValidationRecordExtended',
   ReviewQueue: 'ReviewQueue',
