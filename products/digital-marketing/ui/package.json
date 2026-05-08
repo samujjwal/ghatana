@@ -7,11 +7,12 @@
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "pnpm run test:route-contract && tsc --noEmit && vite build && node ./scripts/check-bundle-budget.mjs",
     "preview": "vite preview",
     "lint": "eslint src --max-warnings=0",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
+    "test:route-contract": "vitest run src/__tests__/route-contracts.test.tsx",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",

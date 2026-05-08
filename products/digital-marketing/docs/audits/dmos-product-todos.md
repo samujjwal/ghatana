@@ -1,0 +1,38 @@
+# DMOS Product TODO Backlog
+
+**Repository:** `samujjwal/ghatana`  
+**Target head:** `1577a8559f3ae6a973452465a2cedf8d52c0a0ef`  
+**Scope:** `products/digital-marketing`
+
+| Priority | Area | Issue | Evidence/File(s) | Required Fix | Acceptance Criteria | Tests Required |
+|---|---|---|---|---|---|---|
+| P0 | Production wiring | PostgreSQL composition does not register `AiActionLogRepository`, but services require it. | `DmosApiServer.java` | Register `PostgresAiActionLogRepository` in production wiring. | Production profile starts and AI action endpoints work with Postgres. | Production boot IT; AI action API DB roundtrip. |
+| P0 | Google Ads connector | Command handler registry uses in-memory connector/credential/link repositories. | `DmosApiServer#wireCommandHandlerRegistry` | Wire durable Postgres connector, credential, and link repositories. | No in-memory connector repo is reachable in production. | Production startup proof; Google Ads command IT. |
+| P0 | Google Ads connector | Fallback to `InMemoryDmGoogleAdsCampaignApiClient` can expose fake connector behavior. | `DmosApiServer#wireCommandHandlerRegistry` | Fail closed if connector is enabled and credentials are missing; dev-only fallback. | Production never reports fake Google Ads success. | Enabled/disabled/missing credential tests. |
+| P0 | AI strategy | Production cannot run real strategy generation without `GovernedAgentWorkflowService`. | `DmosApiServer`, `StrategyGeneratorServiceImpl` | Wire real governed workflow or disable feature in production. | Production behavior is explicit and safe. | Boot + strategy API tests. |
+| P0 | Governance | Default-deny policy validation is skipped/not implemented. | `ProductionBootstrapValidator.java` | Implement real rule-pack validation. | Missing/malformed default-deny pack fails bootstrap. | Bootstrap pack tests. |
+| P0 | Tenant isolation | Campaign table/repo are workspace-only, no `tenant_id`. | `V1__create_dmos_campaigns.sql`, `PostgresCampaignRepository.java` | Add tenant scoping or enforce workspace ownership everywhere. | Cross-tenant guessed workspace/campaign access fails. | Cross-tenant API/repo tests. |
+| P0 | Tenant isolation | Approval snapshots are workspace-only, no tenant context. | `PostgresApprovalSnapshotRepository.java` | Add tenant-scoped constraints or ownership checks. | Cross-tenant approval access fails. | Cross-tenant approval tests. |
+| P1 | API contract | Approval servlet error body is non-canonical. | `DmosApprovalServlet.java` | Use shared error envelope with error/status/correlationId. | All servlets return canonical errors. | Contract tests for every servlet. |
+| P1 | API correctness | GET pending approvals incorrectly requires idempotency key. | `DmosApprovalServlet#handleListPending*` | Use read context flag for GET endpoints. | GET pending approvals works without idempotency key. | Servlet tests. |
+| P1 | Security | Production context can fall back if identity provider is null. | `DmosHttpContextFactory.java` | Fail closed in production without identity provider. | Client headers cannot grant production identity. | Unit/servlet tests. |
+| P1 | Privacy | PII hashing/encryption/DSAR/redaction/key management pending. | README + privacy modules | Implement complete PII and DSAR controls. | No raw PII/tokens in storage/logs/traces; DSAR works. | Privacy API and redaction tests. |
+| P1 | Token storage | Google Ads credential repo uses single `Connection` and is not wired. | `PostgresDmGoogleAdsCredentialRepository.java`, `DmosApiServer.java` | Convert to DataSource-backed repo and wire. | Thread-safe encrypted token storage used by commands. | Concurrent repo tests; wiring test. |
+| P1 | AI provenance | Strategy silently falls back to deterministic output on AI failure/parse failure. | `StrategyGeneratorServiceImpl.java` | Persist fallback reason and show provenance. | User sees deterministic/fallback vs real AI. | AI failure and UI provenance tests. |
+| P1 | AI action logging | AI/content automation flows must log actions durably. | Strategy/content/budget services | Enforce AI action log writes. | All AI actions queryable by workspace. | Service/API/UI tests. |
+| P1 | Google Ads hardening | HTTP adapter lacks retry/backoff/rate-limit normalization. | `HttpDmGoogleAdsCampaignApiClientAdapter.java` | Add bounded retry/backoff and error normalization. | 429/5xx/timeouts handled safely. | MockWebServer failure matrix. |
+| P1 | Command/outbox | External commands need durable idempotent outbox behavior. | `DmCommandService`, command handlers | Ensure persisted, claimable, retryable commands. | Duplicate launch cannot create duplicate campaigns. | Outbox concurrency/idempotency IT. |
+| P1 | Production health | Health indicator is no-op. | `DmosApiServer.java` | Real DB/kernel/plugin/connector readiness checks. | Readiness reflects dependency failures. | Health endpoint IT. |
+| P1 | API tests | Servlet tests use dev constructors/headers. | Servlet tests | Add production-mode tests with trusted identity provider. | Tests catch auth/idempotency regressions. | Production-mode servlet suite. |
+| P1 | E2E tests | Playwright fixtures mock all API routes. | `ui/e2e/fixtures.ts` | Add real backend+Postgres E2E lane. | Critical journey passes without route mocks. | Playwright real-backend CI. |
+| P1 | Runtime proof | Static production proof checks file existence only. | `ProductionPersistenceWiringProofTest.java` | Add Testcontainers production graph boot test. | Missing runtime dependency fails CI. | Production graph boot IT. |
+| P1 | Docs | Deployment/local docs use older env/path assumptions. | README, `docs/DEPLOYMENT.md`, `docs/LOCAL_DEVELOPMENT.md` | Align env vars and monorepo commands. | Docs match startup validation exactly. | Documentation lint/check. |
+| P1 | Capability contract | UI route manifest and backend capability resolver can drift. | `routeManifest.tsx`, `DmosHttpContextFactory.java` | Generate/shared route-capability contract. | Every route capability is tested. | Route/capability contract test. |
+| P1 | Approval snapshots | Repository comment says immutable but upsert mutates version/fields. | `PostgresApprovalSnapshotRepository.java` | Decide insert-only or revision history. | Audit semantics are clear and enforced. | Snapshot revision tests. |
+| P2 | UI performance | Route manifest eagerly imports all pages. | `routeManifest.tsx` | Lazy-load heavy/boundary pages. | Bundle size budget met. | Bundle analyzer CI. |
+| P2 | Boundary UX | Reporting pages duplicate feature-unavailable UI. | `FunnelAnalyticsPage`, `AttributionPage`, `RoiRoasPage` | Shared `FeatureUnavailable` component. | Consistent boundary UX. | Component tests. |
+| P2 | Performance tests | Large-data test may not run regularly. | `DmosLargeDataIT.java` | Add scheduled/optional CI profile. | Query regressions caught. | CI large-data profile. |
+| P2 | Observability privacy | Raw principal/idempotency attributes can appear in spans. | `DmosTelemetry.java` | Hash/redact sensitive attributes. | Privacy scan passes. | Redaction tests. |
+| P2 | Composition maintainability | `DmosApiServer` is too large/mixed. | `DmosApiServer.java` | Split persistence/security/connectors/AI/plugins/servlets factories. | Smaller testable wiring units. | Factory unit tests + boot IT. |
+| P3 | Reporting backend | Reporting pages are intentionally unavailable. | Reporting pages | Implement only when prioritized, with real data. | No fake metrics. | Reporting API/UI/E2E tests. |
+| P3 | Webhooks | No webhook verification observed. | Connector scope | Add only when webhooks enter scope. | Signed/replay-safe webhooks. | Webhook security tests. |

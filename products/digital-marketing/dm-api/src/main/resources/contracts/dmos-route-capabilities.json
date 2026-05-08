@@ -1,0 +1,176 @@
+{
+  "roleOrder": {
+    "viewer": 0,
+    "brand-manager": 1,
+    "marketing-director": 2,
+    "exec-sponsor": 3,
+    "admin": 4
+  },
+  "routes": [
+    {
+      "path": "/workspaces/:workspaceId/dashboard",
+      "label": "Dashboard",
+      "minimumRole": "viewer",
+      "personas": ["analyst", "approver", "executive"],
+      "tiers": ["core"],
+      "actions": ["view-dashboard"],
+      "cards": ["launch-readiness", "approval-queue", "workflow-health"]
+    },
+    {
+      "path": "/workspaces/:workspaceId/approvals",
+      "label": "Approvals",
+      "minimumRole": "viewer",
+      "personas": ["approver", "executive"],
+      "tiers": ["core"],
+      "actions": ["review-approval"],
+      "cards": ["pending-approvals", "decision-sla"]
+    },
+    {
+      "path": "/workspaces/:workspaceId/approvals/:requestId",
+      "label": "Approval Detail",
+      "minimumRole": "viewer",
+      "personas": ["approver", "executive"],
+      "tiers": ["core"],
+      "actions": ["approve", "reject"],
+      "cards": ["approval-context", "evidence-snapshot"]
+    },
+    {
+      "path": "/workspaces/:workspaceId/ai-actions",
+      "label": "AI Action Log",
+      "minimumRole": "viewer",
+      "personas": ["analyst", "approver", "executive"],
+      "tiers": ["core"],
+      "actions": ["view-audit-log"],
+      "cards": ["recent-ai-actions", "audit-filters"]
+    },
+    {
+      "path": "/workspaces/:workspaceId/ai-actions/:actionId",
+      "label": "AI Action Detail",
+      "minimumRole": "viewer",
+      "personas": ["analyst", "approver", "executive"],
+      "tiers": ["core"],
+      "actions": ["view-audit-log"],
+      "cards": ["action-evidence", "approval-trace"]
+    },
+    {
+      "path": "/workspaces/:workspaceId/campaigns",
+      "label": "Campaigns",
+      "minimumRole": "brand-manager",
+      "personas": ["planner", "approver"],
+      "tiers": ["growth"],
+      "actions": ["launch-campaign"],
+      "cards": ["campaign-summary", "launch-checklist"],
+      "capabilityKey": "dmos.campaigns"
+    },
+    {
+      "path": "/workspaces/:workspaceId/strategy",
+      "label": "Strategy",
+      "minimumRole": "brand-manager",
+      "personas": ["planner", "approver"],
+      "tiers": ["growth"],
+      "actions": ["submit-strategy", "approve-strategy"],
+      "cards": ["strategy-brief", "approval-dependencies"],
+      "capabilityKey": "dmos.strategy"
+    },
+    {
+      "path": "/workspaces/:workspaceId/budget",
+      "label": "Budget",
+      "minimumRole": "marketing-director",
+      "personas": ["approver", "executive"],
+      "tiers": ["growth"],
+      "actions": ["submit-budget", "approve-budget"],
+      "cards": ["budget-recommendations", "approval-readiness"],
+      "capabilityKey": "dmos.budget"
+    },
+    {
+      "path": "/workspaces/:workspaceId/funnel-analytics",
+      "label": "Funnel Analytics",
+      "minimumRole": "brand-manager",
+      "personas": ["planner", "approver", "executive"],
+      "tiers": ["growth"],
+      "actions": ["view-funnel"],
+      "cards": ["funnel-overview"],
+      "capabilityKey": "dmos.reporting"
+    },
+    {
+      "path": "/workspaces/:workspaceId/attribution",
+      "label": "Attribution",
+      "minimumRole": "brand-manager",
+      "personas": ["planner", "approver", "executive"],
+      "tiers": ["growth"],
+      "actions": ["view-attribution"],
+      "cards": ["attribution-model"],
+      "capabilityKey": "dmos.reporting"
+    },
+    {
+      "path": "/workspaces/:workspaceId/roi-roas",
+      "label": "ROI & ROAS",
+      "minimumRole": "marketing-director",
+      "personas": ["approver", "executive"],
+      "tiers": ["growth"],
+      "actions": ["view-roi"],
+      "cards": ["roi-summary", "roas-breakdown"],
+      "capabilityKey": "dmos.reporting"
+    },
+    {
+      "path": "/workspaces/:workspaceId/ai-optimization",
+      "label": "AI Optimization",
+      "minimumRole": "brand-manager",
+      "personas": ["planner", "analyst", "approver"],
+      "tiers": ["enterprise"],
+      "actions": ["view-recommendations", "approve-optimizations"],
+      "cards": ["next-best-actions", "anomaly-detection", "budget-reallocation"],
+      "capabilityKey": "dmos.ai_optimization"
+    },
+    {
+      "path": "/workspaces/:workspaceId/self-marketing-funnel",
+      "label": "Self-Marketing Funnel",
+      "minimumRole": "brand-manager",
+      "personas": ["planner", "approver"],
+      "tiers": ["enterprise"],
+      "actions": ["manage-funnel"],
+      "cards": ["funnel-stages", "trial-onboarding"],
+      "capabilityKey": "dmos.self_marketing"
+    },
+    {
+      "path": "/workspaces/:workspaceId/market-research",
+      "label": "Market Research",
+      "minimumRole": "brand-manager",
+      "personas": ["planner", "analyst"],
+      "tiers": ["enterprise"],
+      "actions": ["view-research"],
+      "cards": ["trend-analysis", "buyer-personas"],
+      "capabilityKey": "dmos.market_research"
+    },
+    {
+      "path": "/workspaces/:workspaceId/advanced-channels",
+      "label": "Advanced Channels",
+      "minimumRole": "marketing-director",
+      "personas": ["planner", "approver"],
+      "tiers": ["enterprise"],
+      "actions": ["manage-channels"],
+      "cards": ["programmatic-dsp", "ctv-campaigns", "influencer-roster"],
+      "capabilityKey": "dmos.advanced_channels"
+    },
+    {
+      "path": "/workspaces/:workspaceId/localization",
+      "label": "Localization",
+      "minimumRole": "brand-manager",
+      "personas": ["planner"],
+      "tiers": ["enterprise"],
+      "actions": ["manage-locales"],
+      "cards": ["locale-list", "translation-status"],
+      "capabilityKey": "dmos.localization"
+    },
+    {
+      "path": "/workspaces/:workspaceId/agency",
+      "label": "Agency Operations",
+      "minimumRole": "admin",
+      "personas": ["approver", "executive"],
+      "tiers": ["enterprise"],
+      "actions": ["manage-agency"],
+      "cards": ["client-roster", "white-label-reports"],
+      "capabilityKey": "dmos.agency"
+    }
+  ]
+}

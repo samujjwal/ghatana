@@ -326,15 +326,15 @@ function inferDomain(
 }
 
 function normalizeGradeRange(raw: string | null | undefined): GradeRange {
-  if (!raw) return "grade_6_8";
+  if (!raw) {
+    throw new Error("Grade range is required and cannot be empty");
+  }
   const normalized = raw.toLowerCase();
-  if (normalized === "k_2") return "k_2";
-  if (normalized === "grade_3_5") return "grade_3_5";
-  if (normalized === "grade_6_8") return "grade_6_8";
-  if (normalized === "grade_9_12") return "grade_9_12";
-  if (normalized === "undergraduate") return "undergraduate";
-  if (normalized === "graduate") return "graduate";
-  return "professional";
+  const validRanges: GradeRange[] = ["k_2", "grade_3_5", "grade_6_8", "grade_9_12", "undergraduate", "graduate", "professional"];
+  if (validRanges.includes(normalized as GradeRange)) {
+    return normalized as GradeRange;
+  }
+  throw new Error(`Invalid grade range: ${raw}. Valid values are: ${validRanges.join(", ")}`);
 }
 
 function toGradeEnum(grade: GradeRange): string {
@@ -850,9 +850,13 @@ const evidenceTypes: readonly EvidenceType[] = [
 ];
 
 function evidenceTypeFromRow(value: string | null | undefined): EvidenceType {
-  return evidenceTypes.includes(value as EvidenceType)
-    ? (value as EvidenceType)
-    : "observation";
+  if (!value) {
+    throw new Error("Evidence type is required and cannot be empty");
+  }
+  if (evidenceTypes.includes(value as EvidenceType)) {
+    return value as EvidenceType;
+  }
+  throw new Error(`Invalid evidence type: ${value}. Valid values are: ${evidenceTypes.join(", ")}`);
 }
 
 const taskTypes: readonly TaskType[] = [
@@ -863,9 +867,13 @@ const taskTypes: readonly TaskType[] = [
 ];
 
 function taskTypeFromRow(value: string | null | undefined): TaskType {
-  return taskTypes.includes(value as TaskType)
-    ? (value as TaskType)
-    : "simulation";
+  if (!value) {
+    throw new Error("Task type is required and cannot be empty");
+  }
+  if (taskTypes.includes(value as TaskType)) {
+    return value as TaskType;
+  }
+  throw new Error(`Invalid task type: ${value}. Valid values are: ${taskTypes.join(", ")}`);
 }
 
 function observablesFromRow(
@@ -891,7 +899,9 @@ function evidenceIdsFromTask(task: ContentStudioTaskRow): string[] {
 function bloomFromInput(
   value: string | undefined,
 ): Prisma.LearningClaimUncheckedCreateInput["bloomLevel"] {
-  if (!value) return "UNDERSTAND";
+  if (!value) {
+    throw new Error("Bloom level is required and cannot be empty");
+  }
   const up = value.toUpperCase();
   const valid = [
     "REMEMBER",
@@ -901,16 +911,19 @@ function bloomFromInput(
     "EVALUATE",
     "CREATE",
   ];
-  return (
-    valid.includes(up) ? up : "UNDERSTAND"
-  ) as Prisma.LearningClaimUncheckedCreateInput["bloomLevel"];
+  if (valid.includes(up)) {
+    return up as Prisma.LearningClaimUncheckedCreateInput["bloomLevel"];
+  }
+  throw new Error(`Invalid Bloom level: ${value}. Valid values are: ${valid.join(", ")}`);
 }
 
 function extractPrimaryGrade(experience: {
   targetGrades?: unknown;
 }): GradeRange {
   const grades = safeJsonArray(experience.targetGrades);
-  if (grades.length === 0) return "grade_6_8";
+  if (grades.length === 0) {
+    throw new Error("Target grades are required and cannot be empty");
+  }
   return normalizeGradeRange(String(grades[0]));
 }
 

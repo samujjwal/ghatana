@@ -32,14 +32,12 @@ jobs:
 
       - name: Run npm audit
         run: pnpm audit --audit-level=moderate
-        continue-on-error: true
 
       - name: Install Snyk CLI
         run: npm install -g snyk
 
       - name: Run Snyk to check for vulnerabilities
         run: snyk test --severity-threshold=high
-        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
@@ -92,7 +90,6 @@ jobs:
       - name: Check licenses
         run: |
           npx license-checker --summary --onlyAllow "MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;Unlicense"
-        continue-on-error: true
 
   container-scan:
     name: Container Image Scan
@@ -104,7 +101,6 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t yappc-app-creator:${{ github.sha }} .
-        continue-on-error: true
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.29.0
@@ -112,13 +108,11 @@ jobs:
           image-ref: yappc-app-creator:${{ github.sha }}
           format: "sarif"
           output: "trivy-results.sarif"
-        continue-on-error: true
 
       - name: Upload Trivy results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: "trivy-results.sarif"
-        continue-on-error: true
 
   security-summary:
     name: Security Summary

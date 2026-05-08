@@ -59,12 +59,9 @@ type ValidationCheckType = ValidationCheck["type"];
 
 function mapContentType(
   contentType: GeneratedContentType,
-): "claim" | "example" | "explanation" | "task" {
-  if (contentType === "simulation" || contentType === "animation") {
-    return "explanation";
-  }
-
-  return contentType;
+): "claim" | "example" | "explanation" | "task" | "simulation" | "animation" {
+  // Return the content type directly - dedicated validators will handle each type
+  return contentType as "claim" | "example" | "explanation" | "task" | "simulation" | "animation";
 }
 
 function getCheckScore(

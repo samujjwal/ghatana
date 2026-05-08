@@ -68,7 +68,6 @@ jobs:
 
       - name: Run visual tests
         run: pnpm test:visual
-        continue-on-error: true
 
       - name: Upload visual test results
         if: always()

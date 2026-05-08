@@ -163,10 +163,10 @@ public final class DmosApprovalServlet {
             }
             return handleSubmitInternal(request, workspaceId, null, null);
         } catch (IllegalArgumentException e) {
-            return Promise.of(badRequest("Invalid request: " + e.getMessage()));
+            return Promise.of(badRequest(request, "Invalid request: " + e.getMessage()));
         } catch (Exception e) {
             LOG.error("Error in handleSubmit", e);
-            return Promise.of(internalError("Error processing request"));
+            return Promise.of(internalError(request, "Error processing request"));
         }
     }
 
@@ -189,7 +189,7 @@ public final class DmosApprovalServlet {
                             LOG.warn("Invalid submit approval request body: {}", e.getMessage());
                             telemetry.recordException(span, e);
                             span.end();
-                            return Promise.of(badRequest("Invalid request body: " + e.getMessage()));
+                            return Promise.of(badRequest(request, "Invalid request body: " + e.getMessage()));
                         }
 
                         ApprovalTargetType targetType;
@@ -198,7 +198,7 @@ public final class DmosApprovalServlet {
                         } catch (IllegalArgumentException e) {
                             telemetry.recordException(span, e);
                             span.end();
-                            return Promise.of(badRequest("Unknown targetType: " + req.targetType()));
+                            return Promise.of(badRequest(request, "Unknown targetType: " + req.targetType()));
                         }
 
                         SubmitForApprovalCommand command = new SubmitForApprovalCommand(
@@ -239,17 +239,17 @@ public final class DmosApprovalServlet {
                             .then(r -> Promise.of(r), e -> {
                                 telemetry.recordException(span, e);
                                 span.end();
-                                return mapServiceError("submit", e);
+                                return mapServiceError("submit", e, request);
                             });
                     } catch (IllegalArgumentException e) {
                         telemetry.recordException(span, e);
                         span.end();
-                        return Promise.of(badRequest("Invalid request: " + e.getMessage()));
+                        return Promise.of(badRequest(request, "Invalid request: " + e.getMessage()));
                     } catch (Exception e) {
                         LOG.error("Unexpected error during submit approval", e);
                         telemetry.recordException(span, e);
                         span.end();
-                        return Promise.of(internalError("Unexpected error"));
+                        return Promise.of(internalError(request, "Unexpected error"));
                     }
                 });
         }
@@ -276,7 +276,7 @@ public final class DmosApprovalServlet {
                                 LOG.warn("Invalid decide request body: {}", e.getMessage());
                                 telemetry.recordException(span, e);
                                 span.end();
-                                return Promise.of(badRequest("Invalid request body: " + e.getMessage()));
+                                return Promise.of(badRequest(request, "Invalid request body: " + e.getMessage()));
                             }
 
                             ApprovalDecision decision;
@@ -285,7 +285,7 @@ public final class DmosApprovalServlet {
                             } catch (IllegalArgumentException e) {
                                 telemetry.recordException(span, e);
                                 span.end();
-                                return Promise.of(badRequest("Unknown decision: " + req.decision()));
+                                return Promise.of(badRequest(request, "Unknown decision: " + req.decision()));
                             }
 
                             RecordApprovalDecisionCommand command = new RecordApprovalDecisionCommand(
@@ -304,25 +304,25 @@ public final class DmosApprovalServlet {
                                 .then(r -> Promise.of(r), e -> {
                                     telemetry.recordException(span, e);
                                     span.end();
-                                    return mapServiceError("decide", e);
+                                    return mapServiceError("decide", e, request);
                                 });
                         } catch (IllegalArgumentException e) {
                             telemetry.recordException(span, e);
                             span.end();
-                            return Promise.of(badRequest("Invalid request: " + e.getMessage()));
+                            return Promise.of(badRequest(request, "Invalid request: " + e.getMessage()));
                         } catch (Exception e) {
                             LOG.error("Unexpected error during decide approval", e);
                             telemetry.recordException(span, e);
                             span.end();
-                            return Promise.of(internalError("Unexpected error"));
+                            return Promise.of(internalError(request, "Unexpected error"));
                         }
                     });
             }
         } catch (IllegalArgumentException e) {
-            return Promise.of(badRequest("Invalid request: " + e.getMessage()));
+            return Promise.of(badRequest(request, "Invalid request: " + e.getMessage()));
         } catch (Exception e) {
             LOG.error("Error in handleDecide", e);
-            return Promise.of(internalError("Error processing request"));
+            return Promise.of(internalError(request, "Error processing request"));
         }
     }
 
@@ -332,7 +332,7 @@ public final class DmosApprovalServlet {
 
         try {
             // P1-001: Use shared fail-closed HTTP context factory
-            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
             return Promises.toList(
                     approvalService.getApprovalStatus(ctx, requestId),
                     approvalService.getSnapshot(ctx, requestId))
@@ -342,19 +342,19 @@ public final class DmosApprovalServlet {
                     @SuppressWarnings("unchecked")
                     Optional<ApprovalSnapshot> snapshotOpt = (Optional<ApprovalSnapshot>) tuple.get(1);
                     if (recordOpt.isEmpty()) {
-                        return Promise.of(notFound("Approval not found: " + requestId));
+                        return Promise.of(notFound(request, "Approval not found: " + requestId));
                     }
                     ApprovalRecord record = recordOpt.get();
                     ApprovalSnapshot snapshot = snapshotOpt.orElse(null);
                     DmosApprovalDto dto = toDmosApprovalDto(ctx, record, snapshot);
                     return Promise.of(jsonResponse(200, dto));
                 })
-                .then(r -> Promise.of(r), e -> mapServiceError("get-status", e));
+                .then(r -> Promise.of(r), e -> mapServiceError("get-status", e, request));
         } catch (IllegalArgumentException e) {
-            return Promise.of(badRequest("Invalid request: " + e.getMessage()));
+            return Promise.of(badRequest(request, "Invalid request: " + e.getMessage()));
         } catch (Exception e) {
             LOG.error("Error in handleGetStatus", e);
-            return Promise.of(internalError("Error processing request"));
+            return Promise.of(internalError(request, "Error processing request"));
         }
     }
 
@@ -364,7 +364,7 @@ public final class DmosApprovalServlet {
 
         try {
             // P1-001: Use shared fail-closed HTTP context factory
-            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
             return approvalService.getSnapshot(ctx, requestId)
                 .map(opt -> opt.map(s -> new SnapshotResponse(
                     s.requestId(),
@@ -377,13 +377,13 @@ public final class DmosApprovalServlet {
                     s.requiredApproverRole(),
                     s.snapshotAt()
                 )).orElse(null))
-                .map(r -> r != null ? jsonResponse(200, r) : notFound("Snapshot not found: " + requestId))
-                .then(r -> Promise.of(r), e -> mapServiceError("get-snapshot", e));
+                .map(r -> r != null ? jsonResponse(200, r) : notFound(request, "Snapshot not found: " + requestId))
+                .then(r -> Promise.of(r), e -> mapServiceError("get-snapshot", e, request));
         } catch (IllegalArgumentException e) {
-            return Promise.of(badRequest("Invalid request: " + e.getMessage()));
+            return Promise.of(badRequest(request, "Invalid request: " + e.getMessage()));
         } catch (Exception e) {
             LOG.error("Error in handleGetSnapshot", e);
-            return Promise.of(internalError("Error processing request"));
+            return Promise.of(internalError(request, "Error processing request"));
         }
     }
 
@@ -393,17 +393,17 @@ public final class DmosApprovalServlet {
 
         try {
             // P1-001: Use shared fail-closed HTTP context factory
-            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
             return approvalService.listPendingApprovals(ctx, subjectId)
                 .map(list -> list.stream().map(this::toRecordResponse).toList())
                 .map(list -> jsonResponse(200, new PendingListResponse(list)))
                 .map(r -> (HttpResponse) r)
-                .then(r -> Promise.of(r), e -> mapServiceError("list-pending", e));
+                .then(r -> Promise.of(r), e -> mapServiceError("list-pending", e, request));
         } catch (IllegalArgumentException e) {
-            return Promise.of(badRequest("Invalid request: " + e.getMessage()));
+            return Promise.of(badRequest(request, "Invalid request: " + e.getMessage()));
         } catch (Exception e) {
             LOG.error("Error in handleListPending", e);
-            return Promise.of(internalError("Error processing request"));
+            return Promise.of(internalError(request, "Error processing request"));
         }
     }
 
@@ -413,17 +413,17 @@ public final class DmosApprovalServlet {
 
         try {
             // P1-001: Use shared fail-closed HTTP context factory
-            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
             return approvalService.listPendingApprovalsForWorkspace(ctx, workspaceId)
                 .map(list -> list.stream().map(this::toRecordResponse).toList())
                 .map(list -> jsonResponse(200, new PendingListResponse(list)))
                 .map(r -> (HttpResponse) r)
-                .then(r -> Promise.of(r), e -> mapServiceError("list-pending-workspace", e));
+                .then(r -> Promise.of(r), e -> mapServiceError("list-pending-workspace", e, request));
         } catch (IllegalArgumentException e) {
-            return Promise.of(badRequest("Invalid request: " + e.getMessage()));
+            return Promise.of(badRequest(request, "Invalid request: " + e.getMessage()));
         } catch (Exception e) {
             LOG.error("Error in handleListPendingForWorkspace", e);
-            return Promise.of(internalError("Error processing request"));
+            return Promise.of(internalError(request, "Error processing request"));
         }
     }
 
@@ -474,57 +474,67 @@ public final class DmosApprovalServlet {
         );
     }
 
-    private Promise<HttpResponse> mapServiceError(String operation, Throwable e) {
+    private Promise<HttpResponse> mapServiceError(String operation, Throwable e, HttpRequest request) {
         LOG.warn("Approval service error [{}]: {}", operation, e.getMessage());
         if (e instanceof SecurityException) {
-            return Promise.of(forbidden(e.getMessage()));
+            return Promise.of(forbidden(request, e.getMessage()));
         }
         if (e instanceof IllegalArgumentException) {
-            return Promise.of(badRequest(e.getMessage()));
+            return Promise.of(badRequest(request, e.getMessage()));
         }
         if (e instanceof NoSuchElementException) {
-            return Promise.of(notFound(e.getMessage()));
+            return Promise.of(notFound(request, e.getMessage()));
         }
         if (e instanceof DmosFeatureDisabledException || e instanceof DmosConnectorDisabledException) {
-            return Promise.of(locked(e.getMessage()));
+            return Promise.of(locked(request, e.getMessage()));
         }
-        return Promise.of(internalError("Unexpected error during " + operation));
+        return Promise.of(internalError(request, "Unexpected error during " + operation));
     }
 
     // -------------------------------------------------------------------------
     // HTTP response helpers
     // -------------------------------------------------------------------------
 
-    private static HttpResponse locked(String message) {
-        return errorResponse(423, message);
+    private static HttpResponse locked(HttpRequest request, String message) {
+        return errorResponse(423, message, resolveCorrelationId(request));
     }
 
-    private static HttpResponse badRequest(String message) {
-        return errorResponse(400, message);
+    private static HttpResponse badRequest(HttpRequest request, String message) {
+        return errorResponse(400, message, resolveCorrelationId(request));
     }
 
-    private static HttpResponse forbidden(String message) {
-        return errorResponse(403, message);
+    private static HttpResponse forbidden(HttpRequest request, String message) {
+        return errorResponse(403, message, resolveCorrelationId(request));
     }
 
-    private static HttpResponse notFound(String message) {
-        return errorResponse(404, message);
+    private static HttpResponse notFound(HttpRequest request, String message) {
+        return errorResponse(404, message, resolveCorrelationId(request));
     }
 
-    private static HttpResponse internalError(String message) {
-        return errorResponse(500, message);
+    private static HttpResponse internalError(HttpRequest request, String message) {
+        return errorResponse(500, message, resolveCorrelationId(request));
     }
 
-    private static HttpResponse errorResponse(int code, String message) {
+    private static HttpResponse errorResponse(int code, String message, String correlationId) {
         try {
-            String json = MAPPER.writeValueAsString(new ErrorBody(code, message));
+            StandardErrorEnvelope envelope = StandardErrorEnvelope.of(code, message, correlationId);
+            String json = MAPPER.writeValueAsString(envelope);
             return HttpResponse.ofCode(code)
                 .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_JSON)
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), correlationId)
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
         } catch (Exception ex) {
             return HttpResponse.ofCode(code).build();
         }
+    }
+
+    private static String resolveCorrelationId(HttpRequest request) {
+        String incoming = request.getHeader(HttpHeaders.of("X-Correlation-ID"));
+        if (incoming != null && !incoming.isBlank()) {
+            return incoming;
+        }
+        return DmCorrelationId.generate().getValue();
     }
 
     private HttpResponse jsonResponse(int code, Object body) {
@@ -612,6 +622,4 @@ public final class DmosApprovalServlet {
     /** Response body for listing pending approvals. */
     record PendingListResponse(List<ApprovalRecordResponse> items) {}
 
-    /** Generic error response. */
-    record ErrorBody(int code, String message) {}
 }

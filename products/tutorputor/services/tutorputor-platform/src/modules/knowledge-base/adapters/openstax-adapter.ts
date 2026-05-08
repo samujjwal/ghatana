@@ -57,13 +57,12 @@ export class OpenStaxAdapter implements EvidenceSourceAdapter {
     domain: string,
     options?: { maxResults?: number; gradeBand?: string }
   ): Promise<EvidenceSearchResult[]> {
-    // Prevent mock generator in production
-    if (process.env.NODE_ENV === 'production') {
+    if (!this.config.apiKey) {
       throw new EvidenceSourceError(
-        'Mock OpenStax adapter cannot be used in production. Configure real API credentials.',
+        'OpenStax API credentials not configured. Set OPENSTAX_API_KEY to enable this adapter.',
         'OPENSTAX',
         'search',
-        new Error('PRODUCTION_GUARD_VIOLATION')
+        new Error('MISSING_API_CREDENTIALS')
       );
     }
 
@@ -73,32 +72,37 @@ export class OpenStaxAdapter implements EvidenceSourceAdapter {
       const maxResults = options?.maxResults ?? 5;
       const books = DOMAIN_BOOKS[domain.toLowerCase()] ?? [];
 
-      // In a real implementation, this would call the OpenStax API
-      // For now, return mock results for demonstration
+      // Call OpenStax API
+      const searchUrl = `${this.config.baseUrl}/api/v2/pages/?type=books.BookPage&search=${encodeURIComponent(query)}&fields=title,slug,parent`;
+      const response = await fetch(searchUrl, {
+        headers: {
+          'Authorization': `Bearer ${this.config.apiKey}`,
+          'Accept': 'application/json',
+          'User-Agent': 'TutorPutor/1.0 (Educational Platform)',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenStax API returned ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json() as { items?: Array<{ id?: string; slug?: string; title?: string }> };
       const results: EvidenceSearchResult[] = [];
 
-      for (const bookSlug of books.slice(0, 2)) {
-        results.push({
-          sourceUrl: `${this.config.baseUrl}/books/${bookSlug}/pages/search?q=${encodeURIComponent(query)}`,
-          title: `OpenStax ${this.capitalize(bookSlug)} - ${query}`,
-          publisher: 'OpenStax',
-          excerpt: `Relevant content about ${query} from ${bookSlug}`,
-          relevanceScore: 0.8,
-        });
+      if (data.items && data.items.length > 0) {
+        const topResults = data.items.slice(0, maxResults);
+        for (const item of topResults) {
+          results.push({
+            sourceUrl: `${this.config.baseUrl}/books/${books[0] || 'general'}/pages/${item.slug || item.id}`,
+            title: item.title || `OpenStax ${domain} content`,
+            publisher: 'OpenStax',
+            excerpt: `Educational content from OpenStax about ${query}`,
+            relevanceScore: 0.85,
+          });
+        }
       }
 
-      // If no domain-specific books, provide generic result
-      if (results.length === 0) {
-        results.push({
-          sourceUrl: `${this.config.baseUrl}/search?q=${encodeURIComponent(query)}`,
-          title: `OpenStax Search: ${query}`,
-          publisher: 'OpenStax',
-          excerpt: `Search results for ${query}`,
-          relevanceScore: 0.6,
-        });
-      }
-
-      return results.slice(0, maxResults);
+      return results;
     } catch (error) {
       throw new EvidenceSourceError(
         error instanceof Error ? error.message : 'Unknown error',
@@ -110,13 +114,12 @@ export class OpenStaxAdapter implements EvidenceSourceAdapter {
   }
 
   async retrieveContent(url: string): Promise<RetrievedContent | null> {
-    // Prevent mock generator in production
-    if (process.env.NODE_ENV === 'production') {
+    if (!this.config.apiKey) {
       throw new EvidenceSourceError(
-        'Mock OpenStax adapter cannot be used in production. Configure real API credentials.',
+        'OpenStax API credentials not configured. Set OPENSTAX_API_KEY to enable this adapter.',
         'OPENSTAX',
         'retrieve',
-        new Error('PRODUCTION_GUARD_VIOLATION')
+        new Error('MISSING_API_CREDENTIALS')
       );
     }
 
@@ -129,18 +132,28 @@ export class OpenStaxAdapter implements EvidenceSourceAdapter {
 
       await this.enforceRateLimit();
 
-      // In a real implementation, fetch from OpenStax API
-      // For now, return mock content
+      // Fetch from OpenStax API
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${this.config.apiKey}`,
+          'Accept': 'application/json',
+          'User-Agent': 'TutorPutor/1.0 (Educational Platform)',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenStax API returned ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json() as { title?: string; content?: string; html?: string };
       const content: RetrievedContent = {
         url,
-        title: this.extractTitleFromUrl(url),
+        title: data.title || this.extractTitleFromUrl(url),
         publisher: 'OpenStax',
-        content: `This is educational content from OpenStax about ${this.extractTitleFromUrl(url)}. ` +
-                 `OpenStax is a nonprofit educational initiative based at Rice University, ` +
-                 `providing freely accessible, peer-reviewed textbooks.`,
+        content: data.content || data.html || '',
         qualityIndicators: {
           isFeatured: true,
-          citationCount: 10,
+          citationCount: 0,
         },
       };
 

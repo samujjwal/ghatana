@@ -258,9 +258,15 @@ export class ContentWorkerService {
             default:
               this.logger.error(
                 { jobId: job.id, name: job.name },
-                "Unknown job name - treating as failure",
+                "Unknown job name - treating as failure with DLQ routing",
               );
-              throw new Error(`Unknown job name: ${job.name}`);
+              // Explicitly mark as failed and throw to ensure DLQ routing
+              await this.jobDeduplicator.updateJobStatus(trackedJobId, "FAILED");
+              await this.telemetryPublisher.publishFailed(
+                asTypedJob<ContentWorkerJobData>(job),
+                new Error(`Unknown job name: ${job.name}. No processor found for this job type.`),
+              );
+              throw new Error(`Unknown job name: ${job.name}. No processor found for this job type.`);
           }
 
           await this.jobDeduplicator.updateJobStatus(trackedJobId, "COMPLETED");

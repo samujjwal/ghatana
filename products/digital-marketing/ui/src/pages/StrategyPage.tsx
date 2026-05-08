@@ -402,8 +402,8 @@ export function StrategyPage(): React.ReactElement {
           entityLabel="Marketing Strategy"
           entityId={strategy.strategyId}
           snapshotLines={[
-            `Service area: ${strategy.serviceArea ?? '—'}`,
-            `Primary offer: ${strategy.primaryOffer ?? '—'}`,
+            `Goals: ${strategy.goals.length}`,
+            `Budget cap: $${strategy.budgetCap.toLocaleString()}`,
             `Status: ${strategy.status}`,
             `Generated: ${strategy.generatedAt ? new Date(strategy.generatedAt).toLocaleString() : '—'}`,
           ]}

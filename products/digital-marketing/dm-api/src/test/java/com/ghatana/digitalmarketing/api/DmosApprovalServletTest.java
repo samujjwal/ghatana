@@ -75,7 +75,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.post(
                 "http://localhost/v1/workspaces/ws-1/approvals")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
             .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .withBody(VALID_SUBMIT_BODY.getBytes(StandardCharsets.UTF_8))
             .build();
 
@@ -105,6 +109,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.post(
                 "http://localhost/v1/workspaces/ws-1/approvals")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .withBody(body.getBytes(StandardCharsets.UTF_8))
             .build();
 
@@ -119,6 +128,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.post(
                 "http://localhost/v1/workspaces/ws-1/approvals")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .withBody("{invalid json".getBytes(StandardCharsets.UTF_8))
             .build();
 
@@ -135,6 +149,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.post(
                 "http://localhost/v1/workspaces/ws-1/approvals")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .withBody(VALID_SUBMIT_BODY.getBytes(StandardCharsets.UTF_8))
             .build();
 
@@ -151,6 +170,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.post(
                 "http://localhost/v1/workspaces/ws-1/approvals")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .withBody(VALID_SUBMIT_BODY.getBytes(StandardCharsets.UTF_8))
             .build();
 
@@ -167,6 +191,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.post(
                 "http://localhost/v1/workspaces/ws-1/approvals")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .withBody(VALID_SUBMIT_BODY.getBytes(StandardCharsets.UTF_8))
             .build();
 
@@ -185,6 +214,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.post(
                 "http://localhost/v1/workspaces/ws-1/approvals/req-1/decide")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .withBody(APPROVE_BODY.getBytes(StandardCharsets.UTF_8))
             .build();
 
@@ -199,6 +233,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.post(
                 "http://localhost/v1/workspaces/ws-1/approvals/req-1/decide")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .withBody(REJECT_BODY.getBytes(StandardCharsets.UTF_8))
             .build();
 
@@ -215,6 +254,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.post(
                 "http://localhost/v1/workspaces/ws-1/approvals/req-1/decide")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .withBody(body.getBytes(StandardCharsets.UTF_8))
             .build();
 
@@ -244,6 +288,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.post(
                 "http://localhost/v1/workspaces/ws-1/approvals/req-1/decide")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .withBody(APPROVE_BODY.getBytes(StandardCharsets.UTF_8))
             .build();
 
@@ -260,6 +309,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.post(
                 "http://localhost/v1/workspaces/ws-1/approvals/req-1/decide")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .withBody("{\"decision\":\"REJECTED\"}".getBytes(StandardCharsets.UTF_8))
             .build();
 
@@ -276,6 +330,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.post(
                 "http://localhost/v1/workspaces/ws-1/approvals/req-1/decide")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .withBody(APPROVE_BODY.getBytes(StandardCharsets.UTF_8))
             .build();
 
@@ -294,6 +353,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.get(
                 "http://localhost/v1/workspaces/ws-1/approvals/req-1")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
@@ -309,6 +373,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.get(
                 "http://localhost/v1/workspaces/ws-1/approvals/req-missing")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
@@ -324,6 +393,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.get(
                 "http://localhost/v1/workspaces/ws-1/approvals/req-1")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
@@ -339,6 +413,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.get(
                 "http://localhost/v1/workspaces/ws-1/approvals/req-1")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
@@ -356,6 +435,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.get(
                 "http://localhost/v1/workspaces/ws-1/approvals/req-1/snapshot")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
@@ -371,6 +455,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.get(
                 "http://localhost/v1/workspaces/ws-1/approvals/req-missing/snapshot")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
@@ -386,6 +475,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.get(
                 "http://localhost/v1/workspaces/ws-1/approvals/req-1/snapshot")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
@@ -403,6 +497,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.get(
                 "http://localhost/v1/workspaces/ws-1/approvals/pending/subject-ws1")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
@@ -418,6 +517,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.get(
                 "http://localhost/v1/workspaces/ws-1/approvals/pending/subject-ws1")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
@@ -433,6 +537,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.get(
                 "http://localhost/v1/workspaces/ws-1/approvals/pending/subject-ws1")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
@@ -492,6 +601,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.get(
                 "http://localhost/v1/workspaces/ws-1/approvals/req-gone")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
@@ -509,6 +623,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.post(
                 "http://localhost/v1/workspaces/ws-1/approvals")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .withHeader(HttpHeaders.of("X-Roles"), "brand-manager,admin")
             .withHeader(HttpHeaders.of("X-Permissions"), "approve:write")
             .withBody(VALID_SUBMIT_BODY.getBytes(java.nio.charset.StandardCharsets.UTF_8))
@@ -527,6 +646,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.post(
                 "http://localhost/v1/workspaces/ws-1/approvals")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .withBody(body.getBytes(java.nio.charset.StandardCharsets.UTF_8))
             .build();
 
@@ -544,6 +668,11 @@ class DmosApprovalServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.post(
                 "http://localhost/v1/workspaces/ws-1/approvals")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "user-alice")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
             .withBody(body.getBytes(java.nio.charset.StandardCharsets.UTF_8))
             .build();
 
@@ -628,3 +757,8 @@ class DmosApprovalServletTest extends EventloopTestBase {
         }
     }
 }
+
+
+
+
+

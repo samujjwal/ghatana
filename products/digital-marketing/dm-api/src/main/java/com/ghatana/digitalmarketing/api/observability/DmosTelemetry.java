@@ -18,6 +18,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -95,16 +98,16 @@ public final class DmosTelemetry {
 
         // P1-026: Add standard DMOS attributes
         if (ctx.getTenantId() != null) {
-            builder.setAttribute(ATTR_TENANT_ID, ctx.getTenantId().getValue());
+            builder.setAttribute(ATTR_TENANT_ID, redactForTelemetry(ctx.getTenantId().getValue()));
         }
         if (ctx.getWorkspaceId() != null) {
-            builder.setAttribute(ATTR_WORKSPACE_ID, ctx.getWorkspaceId().getValue());
+            builder.setAttribute(ATTR_WORKSPACE_ID, redactForTelemetry(ctx.getWorkspaceId().getValue()));
         }
         if (ctx.getCorrelationId() != null) {
             builder.setAttribute(ATTR_CORRELATION_ID, ctx.getCorrelationId().getValue());
         }
         if (ctx.getActor() != null) {
-            builder.setAttribute(ATTR_PRINCIPAL_ID, ctx.getActor().getPrincipalId());
+            builder.setAttribute(ATTR_PRINCIPAL_ID, redactForTelemetry(ctx.getActor().getPrincipalId()));
         }
 
         return builder;
@@ -271,8 +274,34 @@ public final class DmosTelemetry {
     public void setIdempotencyKey(String idempotencyKey) {
         Span currentSpan = Span.current();
         if (currentSpan != null) {
-            currentSpan.setAttribute(ATTR_IDEMPOTENCY_KEY, idempotencyKey);
+            currentSpan.setAttribute(ATTR_IDEMPOTENCY_KEY, redactForTelemetry(idempotencyKey));
         }
+    }
+
+    private static String redactForTelemetry(String rawValue) {
+        if (rawValue == null || rawValue.isBlank()) {
+            return "redacted:empty";
+        }
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(rawValue.getBytes(StandardCharsets.UTF_8));
+            return "sha256:" + toHex(hash, 12);
+        } catch (NoSuchAlgorithmException e) {
+            LOG.warn("[DMOS-TELEMETRY] SHA-256 unavailable; using fixed redaction token", e);
+            return "redacted";
+        }
+    }
+
+    private static String toHex(byte[] bytes, int maxChars) {
+        StringBuilder hex = new StringBuilder(bytes.length * 2);
+        for (byte value : bytes) {
+            hex.append(Character.forDigit((value >> 4) & 0xF, 16));
+            hex.append(Character.forDigit(value & 0xF, 16));
+            if (hex.length() >= maxChars) {
+                return hex.substring(0, maxChars);
+            }
+        }
+        return hex.toString();
     }
 
     /**

@@ -27,6 +27,12 @@ import type {
 } from "@tutorputor/contracts/v1/content-studio";
 import type { HealthAwareContentStudioService } from "./service.js";
 import type { AnimationSpec } from "../../animation-runtime/service.js";
+import type {
+  ContentGenerationFlags,
+} from "../../../config/feature-flags.js";
+import {
+  isFeatureEnabled,
+} from "../../../config/feature-flags.js";
 
 // =============================================================================
 // Types
@@ -123,6 +129,7 @@ interface RouteContext {
   contentStudioService: HealthAwareContentStudioService;
   animationIntegration?: AnimationContentIntegration;
   prefixes?: string[];
+  featureFlags?: ContentGenerationFlags;
 }
 
 const experienceFilterSchema = z.object({
@@ -466,16 +473,43 @@ export function registerContentStudioRoutes(
     });
 
     // =========================================================================
-    // AI Generation Routes
+    // AI Generation Routes (Deprecated)
+    // Scheduled for removal: 2026-09-01
+    // Migration path: Use unified /generation/requests lifecycle
     // =========================================================================
 
-    // Generate tasks for claim
+    // Generate tasks for claim (deprecated - use unified /generation/requests)
     fastify.post<{
       Params: { experienceId: string; claimId: string };
       Body: GenerateTaskRequest;
     }>(
       `${prefix}/experiences/:experienceId/claims/:claimId/generate-tasks`,
       async (request, reply) => {
+        // Log telemetry for deprecated endpoint access
+        request.log.warn({
+          endpoint: `${prefix}/experiences/:experienceId/claims/:claimId/generate-tasks`,
+          deprecated: true,
+          removalDate: "2026-09-01",
+          migrationPath: "/generation/requests",
+        }, "Deprecated endpoint accessed");
+
+        // Check if deprecated endpoints are enabled
+        if (
+          !context.featureFlags ||
+          !isFeatureEnabled(
+            context.featureFlags,
+            "enableDeprecatedContentStudioEndpoints",
+          )
+        ) {
+          return reply.code(410).send({
+            error: "Gone",
+            message:
+              "This endpoint is deprecated. Use the unified /generation/requests lifecycle instead.",
+            migrationPath: "/generation/requests",
+            removalDate: "2026-09-01",
+          });
+        }
+
         const paramsResult = experienceClaimParamsSchema.safeParse(
           request.params,
         );
@@ -1139,12 +1173,39 @@ export function registerContentStudioRoutes(
     }));
 
     // =========================================================================
-    // AI & Authoring Helper Routes
+    // AI & Authoring Helper Routes (Deprecated)
+    // Scheduled for removal: 2026-09-01
+    // Migration path: Use unified /generation/requests lifecycle
     // =========================================================================
 
     fastify.post<{
       Body: AnalyzeIntentRequest;
     }>(`${prefix}/ai/analyze-intent`, async (request, reply) => {
+      // Log telemetry for deprecated endpoint access
+      request.log.warn({
+        endpoint: `${prefix}/ai/analyze-intent`,
+        deprecated: true,
+        removalDate: "2026-09-01",
+        migrationPath: "/generation/requests",
+      }, "Deprecated endpoint accessed");
+
+      // Check if deprecated endpoints are enabled
+      if (
+        !context.featureFlags ||
+        !isFeatureEnabled(
+          context.featureFlags,
+          "enableDeprecatedContentStudioEndpoints",
+        )
+      ) {
+        return reply.code(410).send({
+          error: "Gone",
+          message:
+            "This endpoint is deprecated. Use the unified /generation/requests lifecycle instead.",
+          migrationPath: "/generation/requests",
+          removalDate: "2026-09-01",
+        });
+      }
+
       const body = request.body || {};
       return reply.send({
         data: {
@@ -1195,6 +1256,31 @@ export function registerContentStudioRoutes(
     fastify.post<{
       Body: { topic: string; gradeRange?: string; domain?: string };
     }>(`${prefix}/ai/autofill`, async (request, reply) => {
+      // Log telemetry for deprecated endpoint access
+      request.log.warn({
+        endpoint: `${prefix}/ai/autofill`,
+        deprecated: true,
+        removalDate: "2026-09-01",
+        migrationPath: "/generation/requests",
+      }, "Deprecated endpoint accessed");
+
+      // Check if deprecated endpoints are enabled
+      if (
+        !context.featureFlags ||
+        !isFeatureEnabled(
+          context.featureFlags,
+          "enableDeprecatedContentStudioEndpoints",
+        )
+      ) {
+        return reply.code(410).send({
+          error: "Gone",
+          message:
+            "This endpoint is deprecated. Use the unified /generation/requests lifecycle instead.",
+          migrationPath: "/generation/requests",
+          removalDate: "2026-09-01",
+        });
+      }
+
       const bodyResult = autofillBodySchema.safeParse(request.body ?? {});
       if (!bodyResult.success) {
         return reply.code(400).send(validationErrorResponse(bodyResult.error.issues));
@@ -1242,6 +1328,31 @@ export function registerContentStudioRoutes(
     fastify.post<{
       Body: { claimRef?: string };
     }>(`${prefix}/ai/generate-simulation`, async (request, reply) => {
+      // Log telemetry for deprecated endpoint access
+      request.log.warn({
+        endpoint: `${prefix}/ai/generate-simulation`,
+        deprecated: true,
+        removalDate: "2026-09-01",
+        migrationPath: "/generation/requests",
+      }, "Deprecated endpoint accessed");
+
+      // Check if deprecated endpoints are enabled
+      if (
+        !context.featureFlags ||
+        !isFeatureEnabled(
+          context.featureFlags,
+          "enableDeprecatedContentStudioEndpoints",
+        )
+      ) {
+        return reply.code(410).send({
+          error: "Gone",
+          message:
+            "This endpoint is deprecated. Use the unified /generation/requests lifecycle instead.",
+          migrationPath: "/generation/requests",
+          removalDate: "2026-09-01",
+        });
+      }
+
       const body = request.body || {};
       return reply.send({
         data: {
@@ -1256,6 +1367,31 @@ export function registerContentStudioRoutes(
     fastify.post<{
       Body: GenerateExperienceFromPromptRequest;
     }>(`${prefix}/ai/generate`, async (request, reply) => {
+      // Log telemetry for deprecated endpoint access
+      request.log.warn({
+        endpoint: `${prefix}/ai/generate`,
+        deprecated: true,
+        removalDate: "2026-09-01",
+        migrationPath: "/generation/requests",
+      }, "Deprecated endpoint accessed");
+
+      // Check if deprecated endpoints are enabled
+      if (
+        !context.featureFlags ||
+        !isFeatureEnabled(
+          context.featureFlags,
+          "enableDeprecatedContentStudioEndpoints",
+        )
+      ) {
+        return reply.code(410).send({
+          error: "Gone",
+          message:
+            "This endpoint is deprecated. Use the unified /generation/requests lifecycle instead.",
+          migrationPath: "/generation/requests",
+          removalDate: "2026-09-01",
+        });
+      }
+
       const tenantId = getTenantId(request);
       const authorId = getUserId(request);
       const body = request.body || {};
@@ -1275,6 +1411,31 @@ export function registerContentStudioRoutes(
     fastify.post<{
       Body: ChatRequest;
     }>(`${prefix}/ai/chat`, async (request, reply) => {
+      // Log telemetry for deprecated endpoint access
+      request.log.warn({
+        endpoint: `${prefix}/ai/chat`,
+        deprecated: true,
+        removalDate: "2026-09-01",
+        migrationPath: "/generation/requests",
+      }, "Deprecated endpoint accessed");
+
+      // Check if deprecated endpoints are enabled
+      if (
+        !context.featureFlags ||
+        !isFeatureEnabled(
+          context.featureFlags,
+          "enableDeprecatedContentStudioEndpoints",
+        )
+      ) {
+        return reply.code(410).send({
+          error: "Gone",
+          message:
+            "This endpoint is deprecated. Use the unified /generation/requests lifecycle instead.",
+          migrationPath: "/generation/requests",
+          removalDate: "2026-09-01",
+        });
+      }
+
       const body = request.body || {};
       return reply.send({
         data: {

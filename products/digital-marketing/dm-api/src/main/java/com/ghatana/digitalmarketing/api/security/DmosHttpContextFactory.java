@@ -79,6 +79,10 @@ public final class DmosHttpContextFactory {
      */
     public DmosHttpContextFactory(boolean productionMode, IdentityProvider identityProvider) {
         this.productionMode = productionMode;
+        if (productionMode && identityProvider == null) {
+            throw new IllegalStateException(
+                "IdentityProvider must be configured in production mode");
+        }
         this.identityProvider = identityProvider;
     }
 

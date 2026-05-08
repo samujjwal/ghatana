@@ -22,6 +22,45 @@ interface InitializeContentWorkerOptions {
   workerFactory?: (config: ContentWorkerConfig) => ContentWorkerController;
 }
 
+/**
+ * Typed error for startup configuration failures.
+ */
+export class ContentWorkerStartupError extends Error {
+  constructor(message: string, public readonly code: string = "STARTUP_CONFIG_ERROR") {
+    super(message);
+    this.name = "ContentWorkerStartupError";
+  }
+}
+
+/**
+ * Validate Redis URL format.
+ * Throws ContentWorkerStartupError if invalid.
+ */
+function validateRedisUrl(redisUrl: string): void {
+  if (!redisUrl || typeof redisUrl !== "string" || redisUrl.trim() === "") {
+    throw new ContentWorkerStartupError(
+      "REDIS_URL is required for content worker initialization",
+      "MISSING_REDIS_URL",
+    );
+  }
+
+  try {
+    new URL(redisUrl);
+  } catch (error) {
+    throw new ContentWorkerStartupError(
+      `Invalid REDIS_URL format: ${redisUrl}`,
+      "INVALID_REDIS_URL",
+    );
+  }
+
+  if (!redisUrl.startsWith("redis://") && !redisUrl.startsWith("rediss://")) {
+    throw new ContentWorkerStartupError(
+      `REDIS_URL must use redis:// or rediss:// protocol: ${redisUrl}`,
+      "INVALID_REDIS_PROTOCOL",
+    );
+  }
+}
+
 export function buildContentWorkerConfig(
   redisUrl: string,
   grpcServerAddress: string,
@@ -29,6 +68,9 @@ export function buildContentWorkerConfig(
   logger: Logger,
   prisma: PrismaClient,
 ): ContentWorkerConfig {
+  // Validate Redis URL before constructing URL object
+  validateRedisUrl(redisUrl);
+
   const redisUrlObj = new URL(redisUrl);
   const redisDb = redisUrlObj.pathname?.slice(1);
 

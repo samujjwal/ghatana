@@ -32,7 +32,7 @@ class FlywayMigrationValidationTest {
         .withUsername("test")
         .withPassword("test");
 
-    private static final int EXPECTED_MIGRATION_COUNT = 30; // V1 through V30
+    private static final int EXPECTED_MIGRATION_COUNT = 33; // V1 through V33
 
     @Test
     @DisplayName("P1-006: Fresh migration from empty database succeeds")
@@ -40,7 +40,9 @@ class FlywayMigrationValidationTest {
         Flyway flyway = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
             .locations("filesystem:src/main/resources/db/migration")
+            .cleanDisabled(false)
             .load();
+        flyway.clean();
 
         // When: Run all migrations from empty database
         var migrationResult = flyway.migrate();
@@ -113,7 +115,9 @@ class FlywayMigrationValidationTest {
         Flyway flyway = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
             .locations("filesystem:src/main/resources/db/migration")
+            .cleanDisabled(false)
             .load();
+        flyway.clean();
         flyway.migrate();
 
         // When: Query migration info
@@ -135,7 +139,9 @@ class FlywayMigrationValidationTest {
         Flyway flyway = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
             .locations("filesystem:src/main/resources/db/migration")
+            .cleanDisabled(false)
             .load();
+        flyway.clean();
         flyway.migrate();
 
         // When: Run migrations again (should be no-op)

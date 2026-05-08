@@ -103,6 +103,51 @@ export interface GenerateSimulationRequest {
     interactionType: string;
     complexity: string;
     context?: Record<string, string>;
+    // Canonical SimKit contract fields
+    seed?: number;
+    parameterBounds?: Array<{
+        parameterId: string;
+        label: string;
+        min: number;
+        max: number;
+        defaultValue: number;
+        unit?: string;
+    }>;
+    telemetryEvents?: Array<{
+        eventType: "sim.start" | "sim.control.change" | "sim.snapshot" | "sim.capture" | "sim.failure" | "sim.complete";
+        required: boolean;
+    }>;
+    failureStates?: Array<{
+        id: string;
+        condition: string;
+        learnerMessage: string;
+        recoverable: boolean;
+    }>;
+    stateSnapshots?: Array<{
+        snapshotId: string;
+        description: string;
+        triggerCondition: string;
+        includeParameters: boolean;
+        includeTelemetry: boolean;
+    }>;
+    exportConfig?: {
+        formats: Array<"json" | "csv" | "pdf">;
+        includeTelemetry: boolean;
+        includeSnapshots: boolean;
+        maxExportSizeBytes: number;
+        retentionPeriodDays: number;
+    };
+    claimLinks?: Array<{
+        claimId: string;
+        evidenceIds: string[];
+        taskIds: string[];
+    }>;
+    accessibility?: {
+        altText?: string;
+        screenReaderNarration?: boolean;
+        reducedMotion?: boolean;
+        highContrast?: boolean;
+    };
 }
 
 export interface GenerateAnimationRequest {
@@ -115,6 +160,24 @@ export interface GenerateAnimationRequest {
     domain: string;
     gradeLevel: string;
     context?: Record<string, string>;
+    // Animation enhancement fields
+    pedagogicalPurpose?: string;
+    claimIds?: string[];
+    evidenceIds?: string[];
+    transcriptRequired?: boolean;
+    captionsRequired?: boolean;
+    reducedMotionFallback?: boolean;
+    visualDescription?: string;
+    durationBounds?: {
+        minSeconds: number;
+        maxSeconds: number;
+    };
+    accessibility?: {
+        altText?: string;
+        screenReaderDescription?: boolean;
+        highContrast?: boolean;
+        colorblindFriendly?: boolean;
+    };
 }
 
 export interface ValidateContentRequest {
@@ -125,6 +188,27 @@ export interface ValidateContentRequest {
     description: string;
     claimTexts: string[];
     domain: string;
+}
+
+export interface GenerateAssessmentRequest {
+    requestId: string;
+    tenantId: string;
+    claimText: string;
+    claimRef: string;
+    gradeLevel: string;
+    domain: string;
+    assessmentTypes: Array<"PREDICTION" | "MANIPULATION" | "EXPLANATION" | "CONSTRUCTED_RESPONSE">;
+    itemCount: number;
+    context?: Record<string, string>;
+    // CBM and rubric configuration
+    cbmEnabled: boolean;
+    includeRubrics: boolean;
+    includeDistractorRationales: boolean;
+    // Evidence linkage
+    claimIds?: string[];
+    evidenceIds?: string[];
+    // Simulation linkage for simulation-first modules
+    simulationBased?: boolean;
 }
 
 // =============================================================================
@@ -205,6 +289,53 @@ export interface Example {
 export interface GenerateExamplesResponse {
     requestId: string;
     examples: Example[];
+    metadata: GenerationMetadata;
+}
+
+export interface AssessmentItem {
+    itemId: string;
+    type: string;
+    prompt: string;
+    guidance: string;
+    solution: string;
+    cbm: {
+        confidenceRequired: boolean;
+        confidenceLevels: Array<{
+            level: number;
+            label: string;
+            score: number;
+        }>;
+        scoringPolicy: string;
+    };
+    rubric: {
+        criteria: Array<{
+            id: string;
+            description: string;
+            maxPoints: number;
+            levels: Array<{
+                points: number;
+                description: string;
+            }>;
+        }>;
+    };
+    answerKey: {
+        correctAnswer: string;
+        alternativeAnswers: string[];
+        partialCreditRules: string[];
+    };
+    distractorRationales: Array<{
+        option: string;
+        rationale: string;
+    }> | undefined;
+    claimIds: string[];
+    evidenceIds: string[];
+    simulationBased: boolean | undefined;
+    simulationTaskId: string | undefined;
+}
+
+export interface GenerateAssessmentResponse {
+    requestId: string;
+    assessments: AssessmentItem[];
     metadata: GenerationMetadata;
 }
 
@@ -629,7 +760,7 @@ export class RealContentGenerationClient {
     async generateSimulation(request: GenerateSimulationRequest): Promise<any> {
         if (!this.isReady) throw new Error('gRPC client not initialized');
 
-        const grpcRequest = {
+        const grpcRequest: Record<string, unknown> = {
             request_id: request.requestId,
             tenant_id: request.tenantId,
             claim_text: request.claimText,
@@ -640,6 +771,32 @@ export class RealContentGenerationClient {
             complexity: normalizeComplexity(request.complexity),
             context: request.context || {},
         };
+
+        // Add canonical SimKit contract fields if provided
+        if (request.seed !== undefined) {
+            grpcRequest.seed = request.seed;
+        }
+        if (request.parameterBounds && request.parameterBounds.length > 0) {
+            grpcRequest.parameter_bounds = request.parameterBounds;
+        }
+        if (request.telemetryEvents && request.telemetryEvents.length > 0) {
+            grpcRequest.telemetry_events = request.telemetryEvents;
+        }
+        if (request.failureStates && request.failureStates.length > 0) {
+            grpcRequest.failure_states = request.failureStates;
+        }
+        if (request.stateSnapshots && request.stateSnapshots.length > 0) {
+            grpcRequest.state_snapshots = request.stateSnapshots;
+        }
+        if (request.exportConfig) {
+            grpcRequest.export_config = request.exportConfig;
+        }
+        if (request.claimLinks && request.claimLinks.length > 0) {
+            grpcRequest.claim_links = request.claimLinks;
+        }
+        if (request.accessibility) {
+            grpcRequest.accessibility = request.accessibility;
+        }
 
         if (!this.contentClient) {
             throw new ContentGenerationError('Client not initialized', 'CLIENT_NOT_READY');
@@ -676,6 +833,125 @@ export class RealContentGenerationClient {
             ['generateAnimation', 'GenerateAnimation'],
             grpcRequest,
         );
+    }
+
+    async generateAssessment(request: GenerateAssessmentRequest): Promise<GenerateAssessmentResponse> {
+        if (!this.isReady) throw new Error('gRPC client not initialized');
+
+        const grpcRequest: Record<string, unknown> = {
+            request_id: request.requestId,
+            tenant_id: request.tenantId,
+            claim_text: request.claimText,
+            claim_ref: request.claimRef,
+            grade_level: normalizeGradeLevel(request.gradeLevel),
+            domain: normalizeDomain(request.domain),
+            assessment_types: request.assessmentTypes,
+            item_count: request.itemCount,
+            context: request.context || {},
+            cbm_enabled: request.cbmEnabled,
+            include_rubrics: request.includeRubrics,
+            include_distractor_rationales: request.includeDistractorRationales,
+        };
+
+        if (request.claimIds && request.claimIds.length > 0) {
+            grpcRequest.claim_ids = request.claimIds;
+        }
+        if (request.evidenceIds && request.evidenceIds.length > 0) {
+            grpcRequest.evidence_ids = request.evidenceIds;
+        }
+        if (request.simulationBased !== undefined) {
+            grpcRequest.simulation_based = request.simulationBased;
+        }
+
+        if (!this.contentClient) {
+            throw new ContentGenerationError('Client not initialized', 'CLIENT_NOT_READY');
+        }
+
+        const response = await this.makeRequest(
+            this.contentClient,
+            ['generateAssessment', 'GenerateAssessment'],
+            grpcRequest,
+        );
+
+        return this.transformGenerateAssessmentResponse(response);
+    }
+
+    private transformGenerateAssessmentResponse(
+        response: Record<string, unknown>
+    ): GenerateAssessmentResponse {
+        const metadata = response.metadata as Record<string, unknown> | undefined;
+        const assessments = response.assessments as Array<Record<string, unknown>> | undefined;
+
+        return {
+            requestId: String(response.request_id ?? ''),
+            assessments: assessments?.map((item): AssessmentItem => {
+                const cbmData = item.cbm as Record<string, unknown> | undefined;
+                const rubricData = item.rubric as Record<string, unknown> | undefined;
+                const answerKeyData = item.answerKey as Record<string, unknown> | undefined;
+                const distractorData = item.distractor_rationales as Array<Record<string, unknown>> | undefined;
+
+                return {
+                    itemId: String(item.item_id ?? ''),
+                    type: String(item.type ?? ''),
+                    prompt: String(item.prompt ?? ''),
+                    guidance: String(item.guidance ?? ''),
+                    solution: String(item.solution ?? ''),
+                    cbm: {
+                        confidenceRequired: Boolean(cbmData?.confidence_required ?? true),
+                        confidenceLevels: Array.isArray(cbmData?.confidence_levels)
+                            ? cbmData.confidence_levels.map((cl: Record<string, unknown>) => ({
+                                level: Number(cl.level ?? 1),
+                                label: String(cl.label ?? ''),
+                                score: Number(cl.score ?? 0),
+                            }))
+                            : [],
+                        scoringPolicy: String(cbmData?.scoring_policy ?? 'confidence_weighted'),
+                    },
+                    rubric: {
+                        criteria: Array.isArray(rubricData?.criteria)
+                            ? rubricData.criteria.map((crit: Record<string, unknown>) => ({
+                                id: String(crit.id ?? ''),
+                                description: String(crit.description ?? ''),
+                                maxPoints: Number(crit.max_points ?? 0),
+                                levels: Array.isArray(crit.levels)
+                                    ? crit.levels.map((lvl: Record<string, unknown>) => ({
+                                        points: Number(lvl.points ?? 0),
+                                        description: String(lvl.description ?? ''),
+                                    }))
+                                    : [],
+                            }))
+                            : [],
+                    },
+                    answerKey: {
+                        correctAnswer: String(answerKeyData?.correct_answer ?? ''),
+                        alternativeAnswers: Array.isArray(answerKeyData?.alternative_answers)
+                            ? answerKeyData.alternative_answers.map(String)
+                            : [],
+                        partialCreditRules: Array.isArray(answerKeyData?.partial_credit_rules)
+                            ? answerKeyData.partial_credit_rules.map(String)
+                            : [],
+                    },
+                    distractorRationales: Array.isArray(distractorData)
+                        ? distractorData.map((dr: Record<string, unknown>) => ({
+                            option: String(dr.option ?? ''),
+                            rationale: String(dr.rationale ?? ''),
+                        }))
+                        : undefined,
+                    claimIds: Array.isArray(item.claim_ids) ? item.claim_ids.map(String) : [],
+                    evidenceIds: Array.isArray(item.evidence_ids) ? item.evidence_ids.map(String) : [],
+                    simulationBased: item.simulation_based !== undefined ? Boolean(item.simulation_based) : undefined,
+                    simulationTaskId: item.simulation_task_id !== undefined ? String(item.simulation_task_id) : undefined,
+                };
+            }) ?? [],
+            metadata: {
+                modelName: String(metadata?.model_name ?? ''),
+                tokensUsed: Number(metadata?.tokens_used ?? 0),
+                generationTimeMs: Number(metadata?.generation_time_ms ?? 0),
+                temperature: Number(metadata?.temperature ?? 0),
+                promptHash: String(metadata?.prompt_hash ?? ''),
+                timestamp: String(metadata?.timestamp ?? ''),
+            },
+        };
     }
 
     async validateContent(request: ValidateContentRequest): Promise<ValidateContentResponse> {

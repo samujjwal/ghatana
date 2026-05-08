@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Integration tests for {@link PostgresApprovalSnapshotRepository} using a real PostgreSQL container.
@@ -60,7 +61,8 @@ class PostgresApprovalSnapshotRepositoryIT extends EventloopTestBase {
                 "('ws-e','test-tenant','ws-e','ACTIVE',NOW(),NOW(),'test')," +
                 "('ws-f','test-tenant','ws-f','ACTIVE',NOW(),NOW(),'test')," +
                 "('ws-g','test-tenant','ws-g','ACTIVE',NOW(),NOW(),'test')," +
-                "('ws-owner','test-tenant','ws-owner','ACTIVE',NOW(),NOW(),'test') " +
+                "('ws-owner','test-tenant','ws-owner','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-other','foreign-tenant','ws-other','ACTIVE',NOW(),NOW(),'test') " +
                 "ON CONFLICT (id) DO NOTHING"
             );
         } catch (Exception e) {
@@ -241,5 +243,35 @@ class PostgresApprovalSnapshotRepositoryIT extends EventloopTestBase {
             .isPresent().get().extracting(ApprovalSnapshot::riskLevel).isEqualTo(1);
         assertThat(runPromise(() -> repository.findByRequestId("ws-e", "req-7")))
             .isPresent().get().extracting(ApprovalSnapshot::riskLevel).isEqualTo(5);
+    }
+
+    @Test
+    @DisplayName("P0 tenant isolation: save rejects target workspace in different tenant")
+    void save_rejectsCrossTenantTargetWorkspace() {
+        ApprovalSnapshot crossTenant = buildSnapshot("req-x-tenant", "ws-other", ApprovalTargetType.STRATEGY, 2);
+
+        assertThatThrownBy(() -> runPromise(() -> repository.save("ws-a", crossTenant)))
+            .isInstanceOf(com.ghatana.digitalmarketing.persistence.campaign.DmPersistenceException.class)
+            .hasMessageContaining("Tenant isolation violation");
+    }
+
+    @Test
+    @DisplayName("P0 tenant isolation: snapshot tenant id stored from workspace")
+    void save_persistsTenantIdFromWorkspace() {
+        ApprovalSnapshot snapshot = buildSnapshot("req-tenant", "ws-a", ApprovalTargetType.STRATEGY, 3);
+        runPromise(() -> repository.save("ws-a", snapshot));
+
+        try (var conn = POSTGRES.createConnection("");
+             var stmt = conn.prepareStatement(
+                 "SELECT tenant_id FROM dmos_approval_snapshots WHERE request_id = ? AND workspace_id = ?")) {
+            stmt.setString(1, "req-tenant");
+            stmt.setString(2, "ws-a");
+            try (var rs = stmt.executeQuery()) {
+                assertThat(rs.next()).isTrue();
+                assertThat(rs.getString(1)).isEqualTo("test-tenant");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to verify approval snapshot tenant_id", e);
+        }
     }
 }

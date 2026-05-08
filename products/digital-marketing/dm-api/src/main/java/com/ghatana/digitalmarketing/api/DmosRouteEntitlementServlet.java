@@ -10,6 +10,8 @@ import io.activej.http.HttpResponse;
 import io.activej.http.RoutingServlet;
 import io.activej.promise.Promise;
 
+import java.io.InputStream;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -26,6 +28,7 @@ public final class DmosRouteEntitlementServlet {
 
     private static final String CONTENT_JSON = "application/json; charset=utf-8";
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final RouteContract ROUTE_CONTRACT = loadRouteContract();
 
     private final Eventloop eventloop;
 
@@ -64,48 +67,47 @@ public final class DmosRouteEntitlementServlet {
     }
 
     private static List<Map<String, Object>> routesFor(String role) {
-        List<Map<String, Object>> base = List.of(
-            route("/workspaces/:workspaceId/dashboard", "Dashboard", "viewer", List.of("view-dashboard"), List.of("launch-readiness")),
-            route("/workspaces/:workspaceId/approvals", "Approvals", "viewer", List.of("review-approval"), List.of("pending-approvals")),
-            route("/workspaces/:workspaceId/ai-actions", "AI Action Log", "viewer", List.of("view-audit-log"), List.of("recent-ai-actions"))
-        );
-        if ("marketing-director".equals(role) || "exec-sponsor".equals(role) || "admin".equals(role)) {
-            return List.of(
-                base.get(0),
-                base.get(1),
-                base.get(2),
-                route("/workspaces/:workspaceId/campaigns", "Campaigns", "brand-manager", List.of("launch-campaign"), List.of("campaign-summary")),
-                route("/workspaces/:workspaceId/strategy", "Strategy", "brand-manager", List.of("submit-strategy"), List.of("strategy-brief")),
-                route("/workspaces/:workspaceId/budget", "Budget", "marketing-director", List.of("submit-budget", "approve-budget"), List.of("budget-recommendations"))
-            );
-        }
-        if ("brand-manager".equals(role)) {
-            return List.of(
-                base.get(0),
-                base.get(1),
-                base.get(2),
-                route("/workspaces/:workspaceId/campaigns", "Campaigns", "brand-manager", List.of("launch-campaign"), List.of("campaign-summary")),
-                route("/workspaces/:workspaceId/strategy", "Strategy", "brand-manager", List.of("submit-strategy"), List.of("strategy-brief"))
-            );
-        }
-        return base;
+        return ROUTE_CONTRACT.routes().stream()
+            .filter(route -> isRouteVisibleForRole(route.minimumRole(), role))
+            .map(DmosRouteEntitlementServlet::toRouteMap)
+            .toList();
     }
 
-    private static Map<String, Object> route(
-            String path,
-            String label,
-            String minimumRole,
-            List<String> actions,
-            List<String> cards) {
-        return Map.of(
-            "path", path,
-            "label", label,
-            "minimumRole", minimumRole,
-            "personas", List.of("analyst", "approver", "executive"),
-            "tiers", List.of("core", "growth"),
-            "actions", actions,
-            "cards", cards
-        );
+    private static boolean isRouteVisibleForRole(String minimumRole, String currentRole) {
+        return roleOrder(currentRole) >= roleOrder(minimumRole);
+    }
+
+    private static int roleOrder(String role) {
+        Integer value = ROUTE_CONTRACT.roleOrder().get(role);
+        return value == null ? 0 : value;
+    }
+
+    private static Map<String, Object> toRouteMap(RouteDefinition definition) {
+        Map<String, Object> route = new LinkedHashMap<>();
+        route.put("path", definition.path());
+        route.put("label", definition.label());
+        route.put("minimumRole", definition.minimumRole());
+        route.put("personas", definition.personas());
+        route.put("tiers", definition.tiers());
+        route.put("actions", definition.actions());
+        route.put("cards", definition.cards());
+        if (definition.capabilityKey() != null && !definition.capabilityKey().isBlank()) {
+            route.put("capabilityKey", definition.capabilityKey());
+        }
+        return route;
+    }
+
+    private static RouteContract loadRouteContract() {
+        try (InputStream inputStream = DmosRouteEntitlementServlet.class
+            .getClassLoader()
+            .getResourceAsStream("contracts/dmos-route-capabilities.json")) {
+            if (inputStream == null) {
+                throw new IllegalStateException("Missing contracts/dmos-route-capabilities.json");
+            }
+            return MAPPER.readValue(inputStream, RouteContract.class);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to load DMOS route-capability contract", e);
+        }
     }
 
     private static Map<String, Object> action(String id, String label, String routePath) {
@@ -133,5 +135,20 @@ public final class DmosRouteEntitlementServlet {
                 .withJson("{\"error\":\"SERIALIZATION_ERROR\"}")
                 .build());
         }
+    }
+
+    private record RouteContract(Map<String, Integer> roleOrder, List<RouteDefinition> routes) {
+    }
+
+    private record RouteDefinition(
+        String path,
+        String label,
+        String minimumRole,
+        List<String> personas,
+        List<String> tiers,
+        List<String> actions,
+        List<String> cards,
+        String capabilityKey
+    ) {
     }
 }

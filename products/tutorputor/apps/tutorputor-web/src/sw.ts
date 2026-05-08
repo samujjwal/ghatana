@@ -38,6 +38,62 @@ function inferMutationType(url: string): OfflineMutationType {
 }
 
 /**
+ * Generate stable SHA-256 hash for idempotency keys
+ * Includes tenant, user, entity type, entity ID, logical operation, and client mutation ID
+ */
+async function generateIdempotencyKey(
+  url: string,
+  method: string,
+  headers: Headers,
+  body: string | null,
+): Promise<string> {
+  // Extract tenant and user from headers
+  const tenantId = headers.get('x-tenant-id') || '';
+  const userId = headers.get('x-user-id') || '';
+  
+  // Extract entity type and ID from URL
+  const urlParts = url.split('/').filter(Boolean);
+  const entityType = urlParts[urlParts.length - 2] || 'unknown';
+  const entityId = urlParts[urlParts.length - 1] || 'unknown';
+  
+  // Infer logical operation from method and URL
+  const logicalOperation = `${method}:${entityType}`;
+  
+  // Extract client mutation ID from body if present
+  let clientMutationId = '';
+  if (body) {
+    try {
+      const parsed = JSON.parse(body);
+      clientMutationId = parsed.clientMutationId || parsed.mutationId || '';
+    } catch {
+      // Body is not JSON, ignore
+    }
+  }
+  
+  // Build canonical string for hashing
+  const canonicalString = [
+    tenantId,
+    userId,
+    entityType,
+    entityId,
+    logicalOperation,
+    clientMutationId,
+    body || '',
+  ].join('|');
+  
+  // Generate SHA-256 hash using Web Crypto API
+  const encoder = new TextEncoder();
+  const data = encoder.encode(canonicalString);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  
+  // Convert to hex string
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  return hashHex;
+}
+
+/**
  * Queue a mutation using the centralized IndexedDB module
  */
 async function queueMutation(
@@ -50,9 +106,8 @@ async function queueMutation(
   const authHeader = headers.get('authorization') || '';
   const contentType = headers.get('content-type') || 'application/json';
   
-  // Generate idempotency key from URL + method + body hash
-  const bodyHash = body ? btoa(body).slice(0, 16) : 'no-body';
-  const idempotencyKey = `${method}:${url}:${bodyHash}`;
+  // Generate stable idempotency key using SHA-256
+  const idempotencyKey = await generateIdempotencyKey(url, method, headers, body);
   
   const request: OfflineMutationRequest = {
     url,

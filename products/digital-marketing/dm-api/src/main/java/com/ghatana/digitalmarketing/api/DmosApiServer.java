@@ -2,6 +2,7 @@ package com.ghatana.digitalmarketing.api;
 
 import com.ghatana.digitalmarketing.application.DmosObservability;
 import com.ghatana.digitalmarketing.application.ai.GovernedAgentWorkflowService;
+import com.ghatana.digitalmarketing.application.ai.KernelAgentOrchestrationAdapter;
 import com.ghatana.digitalmarketing.application.approval.ApprovalSnapshotRepository;
 import com.ghatana.digitalmarketing.application.approval.ApprovalWorkflowService;
 import com.ghatana.digitalmarketing.application.approval.ApprovalWorkflowServiceImpl;
@@ -35,6 +36,7 @@ import com.ghatana.digitalmarketing.application.strategy.StrategyGeneratorServic
 import com.ghatana.digitalmarketing.application.transparency.AiActionLogRepository;
 import com.ghatana.digitalmarketing.application.transparency.AiActionLogService;
 import com.ghatana.digitalmarketing.application.transparency.AiActionLogServiceImpl;
+import com.ghatana.digitalmarketing.application.privacy.ContactEncryptionService;
 import com.ghatana.digitalmarketing.application.workspace.WorkspaceRepository;
 import com.ghatana.digitalmarketing.application.workspace.WorkspaceService;
 import com.ghatana.digitalmarketing.application.workspace.WorkspaceServiceImpl;
@@ -58,9 +60,13 @@ import com.ghatana.digitalmarketing.persistence.approval.PostgresApprovalSnapsho
 import com.ghatana.digitalmarketing.persistence.audit.PostgresWebsiteAuditReportRepository;
 import com.ghatana.digitalmarketing.persistence.budget.PostgresBudgetRecommendationRepository;
 import com.ghatana.digitalmarketing.persistence.campaign.PostgresCampaignRepository;
+import com.ghatana.digitalmarketing.persistence.connector.PostgresDmConnectorRepository;
 import com.ghatana.digitalmarketing.persistence.eventstore.PostgresEventLogStore;
+import com.ghatana.digitalmarketing.persistence.googleads.PostgresDmGoogleAdsCampaignLinkRepository;
+import com.ghatana.digitalmarketing.persistence.googleads.PostgresDmGoogleAdsCredentialRepository;
 import com.ghatana.digitalmarketing.persistence.preflight.PostgresCampaignPreflightDataProvider;
 import com.ghatana.digitalmarketing.persistence.strategy.PostgresMarketingStrategyRepository;
+import com.ghatana.digitalmarketing.persistence.transparency.PostgresAiActionLogRepository;
 import com.ghatana.digitalmarketing.persistence.workspace.PostgresWorkspaceRepository;
 import com.ghatana.digitalmarketing.persistence.command.PostgresDmCommandRepository;
 import com.ghatana.digitalmarketing.persistence.governance.PostgresDmKillSwitchService;
@@ -252,7 +258,9 @@ public final class DmosApiServer extends Launcher {
         // Wire kernel bridge ports with production-grade implementations
         BridgeAuthorizationService authService = createAuthorizationService();
         BridgeAuditEmitter auditEmitter = createAuditEmitter();
-        BridgeHealthIndicator healthIndicator = BridgeHealthIndicator.noOp();
+        DmosBridgeHealthIndicator healthIndicator = new DmosBridgeHealthIndicator();
+        register(DmosBridgeHealthIndicator.class, healthIndicator);
+        register(BridgeHealthIndicator.class, healthIndicator);
 
         // Wire kernel plugins with production-grade implementations
         ConsentPlugin consentPlugin = createConsentPlugin();
@@ -282,9 +290,6 @@ public final class DmosApiServer extends Launcher {
             wireInMemoryRepositories();
         }
 
-        // P1-004: Run production bootstrap validation
-        runProductionBootstrapValidation(kernelAdapter);
-
         // Wire compliance plugin
         CompliancePlugin compliancePlugin = createCompliancePlugin();
         register(CompliancePlugin.class, compliancePlugin);
@@ -294,6 +299,9 @@ public final class DmosApiServer extends Launcher {
 
         // Wire command handler registry with observability (P1: OpenTelemetry)
         wireCommandHandlerRegistry();
+
+        // P1-004: Run production bootstrap validation after service and command wiring
+        runProductionBootstrapValidation(kernelAdapter);
 
         // Wire servlets
         wireServlets(kernelAdapter, eventloop);
@@ -404,22 +412,56 @@ public final class DmosApiServer extends Launcher {
      */
     private void wireCommandHandlerRegistry() {
         DmosObservability observability = get(DmosObservability.class);
+        boolean productionMode = environment.equals(PRODUCTION);
 
-        DmConnectorRepository connectorRepo = new DmConnectorInMemoryRepository();
-        DmGoogleAdsCredentialRepository credentialRepo = new DmGoogleAdsCredentialInMemoryRepository();
-        DmGoogleAdsCampaignLinkRepository linkRepo = new DmGoogleAdsCampaignLinkInMemoryRepository();
+        DmConnectorRepository connectorRepo;
+        DmGoogleAdsCredentialRepository credentialRepo;
+        DmGoogleAdsCampaignLinkRepository linkRepo;
+        if (usePostgres()) {
+            DataSource dataSource = get(DataSource.class);
+            Executor executor = get(Executor.class);
+            connectorRepo = new PostgresDmConnectorRepository(dataSource, executor);
+            credentialRepo = new PostgresDmGoogleAdsCredentialRepository(
+                dataSource,
+                new ContactEncryptionService(),
+                executor);
+            linkRepo = new PostgresDmGoogleAdsCampaignLinkRepository(dataSource, executor);
+        } else {
+            connectorRepo = new DmConnectorInMemoryRepository();
+            credentialRepo = new DmGoogleAdsCredentialInMemoryRepository();
+            linkRepo = new DmGoogleAdsCampaignLinkInMemoryRepository();
+        }
 
         CampaignRepository campaignRepo = get(CampaignRepository.class);
 
         // Read Google Ads config from environment
+        boolean googleAdsEnabled = Boolean.parseBoolean(System.getenv("DMOS_GOOGLE_ADS_ENABLED"));
         String developerToken = System.getenv("GOOGLE_ADS_DEVELOPER_TOKEN");
         String customerId = System.getenv("GOOGLE_ADS_CUSTOMER_ID");
         DmGoogleAdsCampaignApiClient apiClient;
-        if (developerToken != null && !developerToken.isBlank()
-                && customerId != null && !customerId.isBlank()) {
+        boolean hasCredentials = developerToken != null && !developerToken.isBlank()
+            && customerId != null && !customerId.isBlank();
+        if (hasCredentials) {
             ObjectMapper objectMapper = new ObjectMapper();
             apiClient = HttpDmGoogleAdsCampaignApiClientAdapter.create(
                 objectMapper, developerToken, customerId);
+        } else if (productionMode && googleAdsEnabled) {
+            throw new IllegalStateException(
+                "Google Ads connector is enabled in production but credentials are missing. " +
+                    "Set GOOGLE_ADS_DEVELOPER_TOKEN and GOOGLE_ADS_CUSTOMER_ID or disable DMOS_GOOGLE_ADS_ENABLED.");
+        } else if (productionMode) {
+            // Fail closed in production when connector is disabled.
+            apiClient = new DmGoogleAdsCampaignApiClient() {
+                @Override
+                public Promise<String> createSearchCampaign(String accessToken, CreateGoogleSearchCampaignRequest request) {
+                    return Promise.ofException(new IllegalStateException("Google Ads connector is disabled in production"));
+                }
+
+                @Override
+                public Promise<String> pauseCampaign(String accessToken, String externalCampaignId) {
+                    return Promise.ofException(new IllegalStateException("Google Ads connector is disabled in production"));
+                }
+            };
         } else {
             // Dev/test: use a no-op implementation until credentials are configured
             apiClient = new InMemoryDmGoogleAdsCampaignApiClient();
@@ -464,6 +506,7 @@ public final class DmosApiServer extends Launcher {
         register(WorkspaceRepository.class, new PostgresWorkspaceRepository(dataSource, executor));
         register(CampaignRepository.class, new PostgresCampaignRepository(dataSource, executor));
         register(ApprovalSnapshotRepository.class, new PostgresApprovalSnapshotRepository(dataSource, executor));
+        register(AiActionLogRepository.class, new PostgresAiActionLogRepository(dataSource, executor));
         register(MarketingStrategyRepository.class, new PostgresMarketingStrategyRepository(dataSource, executor));
         register(BudgetRecommendationRepository.class, new PostgresBudgetRecommendationRepository(dataSource, executor));
         register(WebsiteAuditReportRepository.class, new PostgresWebsiteAuditReportRepository(dataSource, executor));
@@ -744,10 +787,21 @@ public final class DmosApiServer extends Launcher {
 
         // Strategy Generator Service
         MarketingStrategyRepository strategyRepo = get(MarketingStrategyRepository.class);
-        if (environment.equals(PRODUCTION)) {
-            throw new IllegalStateException("GovernedAgentWorkflowService must be configured in production mode");
-        }
         GovernedAgentWorkflowService governedWorkflowService = null;
+        if (environment.equals(PRODUCTION)) {
+            boolean governedEnabled = !"false".equalsIgnoreCase(System.getenv("DMOS_GOVERNED_AI_ENABLED"));
+            if (governedEnabled) {
+                String kernelEndpoint = System.getenv("DMOS_KERNEL_AGENT_ENDPOINT");
+                if (kernelEndpoint == null || kernelEndpoint.isBlank()) {
+                    kernelEndpoint = "http://localhost:8080";
+                }
+                KernelAgentOrchestrationAdapter agentPort =
+                    new KernelAgentOrchestrationAdapter(kernelEndpoint, true);
+                governedWorkflowService = new GovernedAgentWorkflowService(agentPort, aiLogRepo);
+            } else {
+                LOG.warn("[PRODUCTION] Governed AI workflow disabled via DMOS_GOVERNED_AI_ENABLED=false; strategy generation will use deterministic fallback");
+            }
+        }
         StrategyGeneratorService strategyService = new StrategyGeneratorServiceImpl(
             kernelAdapter, strategyRepo, governedWorkflowService);
         register(StrategyGeneratorService.class, strategyService);
@@ -812,6 +866,16 @@ public final class DmosApiServer extends Launcher {
 
         WebsiteAuditService websiteAuditService = get(WebsiteAuditService.class);
         register(DmosWebsiteAuditServlet.class, new DmosWebsiteAuditServlet(websiteAuditService, eventloop, httpContextFactory));
+
+        if (usePostgres()) {
+            DataSource dataSource = get(DataSource.class);
+            CampaignRepository campaignRepository = get(CampaignRepository.class);
+            DmosBridgeHealthIndicator bridgeHealthIndicator = get(DmosBridgeHealthIndicator.class);
+            register(
+                DmosHealthServlet.class,
+                new DmosHealthServlet(dataSource, campaignRepository, kernelAdapter, eventloop, bridgeHealthIndicator)
+            );
+        }
 
         LOG.info("Core servlets wired - additional servlets pending");
     }

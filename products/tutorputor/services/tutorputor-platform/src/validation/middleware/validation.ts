@@ -12,6 +12,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { ZodError, type ZodType } from 'zod';
 import { createStandaloneLogger } from '@tutorputor/core/logger';
+import { createStandardErrorResponse } from '../../core/middleware/standard-error-response.js';
 
 const logger = createStandaloneLogger({ component: 'ValidationMiddleware' });
 
@@ -24,11 +25,13 @@ export function validateBody<T>(schema: ZodType<T>) {
       request.body = schema.parse(request.body);
     } catch (error) {
       if (error instanceof ZodError) {
-        reply.status(400).send({
-          error: 'Validation Error',
-          message: 'Invalid request body',
-          details: error.issues,
-        });
+        const response = createStandardErrorResponse(
+          'VALIDATION_ERROR',
+          'Invalid request body',
+          400,
+          error.issues,
+        );
+        reply.status(400).send(response);
         return;
       }
       throw error;
@@ -45,11 +48,13 @@ export function validateQuery<T>(schema: ZodType<T>) {
       request.query = schema.parse(request.query);
     } catch (error) {
       if (error instanceof ZodError) {
-        reply.status(400).send({
-          error: 'Validation Error',
-          message: 'Invalid query parameters',
-          details: error.issues,
-        });
+        const response = createStandardErrorResponse(
+          'VALIDATION_ERROR',
+          'Invalid query parameters',
+          400,
+          error.issues,
+        );
+        reply.status(400).send(response);
         return;
       }
       throw error;
@@ -66,11 +71,13 @@ export function validateParams<T>(schema: ZodType<T>) {
       request.params = schema.parse(request.params);
     } catch (error) {
       if (error instanceof ZodError) {
-        reply.status(400).send({
-          error: 'Validation Error',
-          message: 'Invalid path parameters',
-          details: error.issues,
-        });
+        const response = createStandardErrorResponse(
+          'VALIDATION_ERROR',
+          'Invalid path parameters',
+          400,
+          error.issues,
+        );
+        reply.status(400).send(response);
         return;
       }
       throw error;

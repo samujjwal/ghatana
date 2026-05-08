@@ -3,10 +3,15 @@ package com.ghatana.digitalmarketing.persistence.googleads;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCredentialRepository;
 import com.ghatana.digitalmarketing.application.privacy.ContactEncryptionService;
 import com.ghatana.digitalmarketing.domain.googleads.DmGoogleAdsCredential;
+import com.ghatana.digitalmarketing.persistence.campaign.DmPersistenceException;
 import io.activej.promise.Promise;
 
-import java.sql.*;
-import java.time.Instant;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -24,12 +29,12 @@ import java.util.concurrent.Executor;
  */
 public final class PostgresDmGoogleAdsCredentialRepository implements DmGoogleAdsCredentialRepository {
 
-    private final Connection connection;
+    private final DataSource dataSource;
     private final ContactEncryptionService encryptionService;
     private final Executor executor;
 
-    public PostgresDmGoogleAdsCredentialRepository(Connection connection, ContactEncryptionService encryptionService, Executor executor) {
-        this.connection = connection;
+    public PostgresDmGoogleAdsCredentialRepository(DataSource dataSource, ContactEncryptionService encryptionService, Executor executor) {
+        this.dataSource = dataSource;
         this.encryptionService = encryptionService;
         this.executor = executor;
     }
@@ -55,21 +60,16 @@ public final class PostgresDmGoogleAdsCredentialRepository implements DmGoogleAd
             String encryptedAccessToken = encryptionService.encrypt(credential.getAccessToken());
             String encryptedRefreshToken = encryptionService.encrypt(credential.getRefreshToken());
 
-            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-                stmt.setString(1, credential.getId());
-                stmt.setString(2, credential.getTenantId());
-                stmt.setString(3, credential.getConnectorId());
-                stmt.setString(4, encryptedAccessToken);
-                stmt.setString(5, encryptedRefreshToken);
-                stmt.setTimestamp(6, Timestamp.from(credential.getExpiresAt()));
-                stmt.setString(7, String.join(",", credential.getScopes()));
-                stmt.setTimestamp(8, Timestamp.from(credential.getCreatedAt()));
-                stmt.setTimestamp(9, Timestamp.from(credential.getUpdatedAt()));
-                stmt.setBoolean(10, credential.isRevoked());
-                stmt.setTimestamp(11, credential.getRevokedAt() != null ? Timestamp.from(credential.getRevokedAt()) : null);
-
-                stmt.executeUpdate();
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement stmt = connection.prepareStatement(sql)) {
+                bindCredential(credential, encryptedAccessToken, encryptedRefreshToken, stmt);
+                int updatedRows = stmt.executeUpdate();
+                if (updatedRows == 0) {
+                    throw new DmPersistenceException("No rows affected while saving credential " + credential.getId(), null);
+                }
                 return credential;
+            } catch (SQLException e) {
+                throw new DmPersistenceException("Failed to save Google Ads credential " + credential.getId(), e);
             }
         });
     }
@@ -84,14 +84,17 @@ public final class PostgresDmGoogleAdsCredentialRepository implements DmGoogleAd
                 WHERE id = ?
                 """;
 
-            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setString(1, id);
-                ResultSet rs = stmt.executeQuery();
-
-                if (rs.next()) {
-                    return Optional.of(mapRow(rs));
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        return Optional.of(mapRow(rs));
+                    }
+                    return Optional.empty();
                 }
-                return Optional.empty();
+            } catch (SQLException e) {
+                throw new DmPersistenceException("Failed to find Google Ads credential by id " + id, e);
             }
         });
     }
@@ -106,14 +109,17 @@ public final class PostgresDmGoogleAdsCredentialRepository implements DmGoogleAd
                 WHERE connector_id = ?
                 """;
 
-            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setString(1, connectorId);
-                ResultSet rs = stmt.executeQuery();
-
-                if (rs.next()) {
-                    return Optional.of(mapRow(rs));
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        return Optional.of(mapRow(rs));
+                    }
+                    return Optional.empty();
                 }
-                return Optional.empty();
+            } catch (SQLException e) {
+                throw new DmPersistenceException("Failed to find Google Ads credential by connectorId " + connectorId, e);
             }
         });
     }
@@ -127,12 +133,33 @@ public final class PostgresDmGoogleAdsCredentialRepository implements DmGoogleAd
     public Promise<Void> delete(String id) {
         return Promise.ofBlocking(executor, () -> {
             String sql = "DELETE FROM dmos_google_ads_credentials WHERE id = ?";
-            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setString(1, id);
                 stmt.executeUpdate();
                 return null;
+            } catch (SQLException e) {
+                throw new DmPersistenceException("Failed to delete Google Ads credential " + id, e);
             }
         });
+    }
+
+    private static void bindCredential(
+            DmGoogleAdsCredential credential,
+            String encryptedAccessToken,
+            String encryptedRefreshToken,
+            PreparedStatement stmt) throws SQLException {
+        stmt.setString(1, credential.getId());
+        stmt.setString(2, credential.getTenantId());
+        stmt.setString(3, credential.getConnectorId());
+        stmt.setString(4, encryptedAccessToken);
+        stmt.setString(5, encryptedRefreshToken);
+        stmt.setTimestamp(6, Timestamp.from(credential.getExpiresAt()));
+        stmt.setString(7, String.join(",", credential.getScopes()));
+        stmt.setTimestamp(8, Timestamp.from(credential.getCreatedAt()));
+        stmt.setTimestamp(9, Timestamp.from(credential.getUpdatedAt()));
+        stmt.setBoolean(10, credential.isRevoked());
+        stmt.setTimestamp(11, credential.getRevokedAt() != null ? Timestamp.from(credential.getRevokedAt()) : null);
     }
 
     private DmGoogleAdsCredential mapRow(ResultSet rs) throws SQLException {

@@ -85,7 +85,7 @@ export interface CurriculumStandard {
 
 export interface ValidationRequest {
   content: string;
-  contentType: "claim" | "example" | "explanation" | "task";
+  contentType: "claim" | "example" | "explanation" | "task" | "simulation" | "animation";
   domain: string;
   gradeRange: string;
   context?: {
@@ -109,7 +109,16 @@ export interface ValidationCheck {
     | "completeness"
     | "age_appropriateness"
     | "clarity"
-    | "pedagogical_soundness";
+    | "pedagogical_soundness"
+    | "simulation_schema"
+    | "simulation_determinism"
+    | "simulation_parameter_bounds"
+    | "simulation_telemetry"
+    | "simulation_accessibility"
+    | "simulation_scientific_correctness"
+    | "animation_storyboard"
+    | "animation_captions"
+    | "animation_accessibility";
   passed: boolean;
   score: number;
   message: string;
@@ -452,25 +461,28 @@ export class KnowledgeBaseServiceImpl {
     const startTime = Date.now();
     const checks: ValidationCheck[] = [];
 
-    // Factual accuracy check
-    const factualCheck = await this.checkFactualAccuracy(request);
-    checks.push(factualCheck);
+    // Route to appropriate validator based on content type
+    if (request.contentType === "simulation") {
+      checks.push(...(await this.validateSimulation(request)));
+    } else if (request.contentType === "animation") {
+      checks.push(...(await this.validateAnimation(request)));
+    } else {
+      // Standard validation for claim, example, explanation, task
+      const factualCheck = await this.checkFactualAccuracy(request);
+      checks.push(factualCheck);
 
-    // Completeness check
-    const completenessCheck = await this.checkCompleteness(request);
-    checks.push(completenessCheck);
+      const completenessCheck = await this.checkCompleteness(request);
+      checks.push(completenessCheck);
 
-    // Age appropriateness check
-    const ageCheck = await this.checkAgeAppropriateness(request);
-    checks.push(ageCheck);
+      const ageCheck = await this.checkAgeAppropriateness(request);
+      checks.push(ageCheck);
 
-    // Clarity check
-    const clarityCheck = await this.checkClarity(request);
-    checks.push(clarityCheck);
+      const clarityCheck = await this.checkClarity(request);
+      checks.push(clarityCheck);
 
-    // Pedagogical soundness check
-    const pedagogicalCheck = await this.checkPedagogicalSoundness(request);
-    checks.push(pedagogicalCheck);
+      const pedagogicalCheck = await this.checkPedagogicalSoundness(request);
+      checks.push(pedagogicalCheck);
+    }
 
     // Calculate overall score and risk level
     const passedChecks = checks.filter((check) => check.passed).length;
@@ -1181,6 +1193,380 @@ export class KnowledgeBaseServiceImpl {
 
     // Remove duplicates
     return [...new Set(recommendations)];
+  }
+
+  /**
+   * Validate simulation content with dedicated checks
+   */
+  private async validateSimulation(request: ValidationRequest): Promise<ValidationCheck[]> {
+    const checks: ValidationCheck[] = [];
+    let contentObj: Record<string, unknown> = {};
+
+    try {
+      contentObj = typeof request.content === "string" 
+        ? JSON.parse(request.content) 
+        : request.content as Record<string, unknown>;
+    } catch {
+      // If content is not valid JSON, treat as plain text
+      contentObj = { raw: request.content };
+    }
+
+    // Schema validation
+    checks.push(this.checkSimulationSchema(contentObj));
+
+    // Determinism validation
+    checks.push(this.checkSimulationDeterminism(contentObj));
+
+    // Parameter bounds validation
+    checks.push(this.checkSimulationParameterBounds(contentObj));
+
+    // Telemetry configuration validation
+    checks.push(this.checkSimulationTelemetry(contentObj));
+
+    // Accessibility validation
+    checks.push(this.checkSimulationAccessibility(contentObj));
+
+    // Scientific correctness validation
+    checks.push(await this.checkSimulationScientificCorrectness(contentObj, request.domain));
+
+    return checks;
+  }
+
+  /**
+   * Validate animation content with dedicated checks
+   */
+  private async validateAnimation(request: ValidationRequest): Promise<ValidationCheck[]> {
+    const checks: ValidationCheck[] = [];
+    let contentObj: Record<string, unknown> = {};
+
+    try {
+      contentObj = typeof request.content === "string" 
+        ? JSON.parse(request.content) 
+        : request.content as Record<string, unknown>;
+    } catch {
+      contentObj = { raw: request.content };
+    }
+
+    // Storyboard validation
+    checks.push(this.checkAnimationStoryboard(contentObj));
+
+    // Captions validation
+    checks.push(this.checkAnimationCaptions(contentObj));
+
+    // Accessibility validation
+    checks.push(this.checkAnimationAccessibility(contentObj));
+
+    return checks;
+  }
+
+  private checkSimulationSchema(content: Record<string, unknown>): ValidationCheck {
+    const requiredFields = ["seed", "parameterBounds", "telemetryEvents"];
+    const missingFields = requiredFields.filter(field => !(field in content));
+    
+    const passed = missingFields.length === 0;
+    
+    return {
+      type: "simulation_schema",
+      passed,
+      score: passed ? 100 : Math.max(0, 100 - (missingFields.length * 25)),
+      message: passed 
+        ? "Simulation manifest has all required fields"
+        : `Simulation manifest missing required fields: ${missingFields.join(", ")}`,
+      suggestions: passed 
+        ? [] 
+        : missingFields.map(f => `Add ${f} to simulation manifest`),
+      evidence: { missingFields, presentFields: Object.keys(content) },
+    };
+  }
+
+  private checkSimulationDeterminism(content: Record<string, unknown>): ValidationCheck {
+    const seed = content.seed;
+    const passed = typeof seed === "number" && seed > 0 && Number.isInteger(seed);
+    
+    return {
+      type: "simulation_determinism",
+      passed,
+      score: passed ? 100 : 0,
+      message: passed 
+        ? "Simulation has deterministic seed for reproducible execution"
+        : "Simulation lacks valid deterministic seed",
+      suggestions: passed 
+        ? [] 
+        : ["Add a positive integer seed to ensure reproducible simulation execution"],
+      evidence: { seed },
+    };
+  }
+
+  private checkSimulationParameterBounds(content: Record<string, unknown>): ValidationCheck {
+    const parameterBounds = content.parameterBounds;
+    let passed = false;
+    let score = 0;
+    const issues: string[] = [];
+
+    if (Array.isArray(parameterBounds) && parameterBounds.length > 0) {
+      const validBounds = parameterBounds.filter((pb: unknown) => {
+        if (typeof pb !== "object" || pb === null) return false;
+        const obj = pb as Record<string, unknown>;
+        return "parameterId" in obj && "min" in obj && "max" in obj && "defaultValue" in obj;
+      });
+      
+      passed = validBounds.length === parameterBounds.length;
+      score = Math.round((validBounds.length / parameterBounds.length) * 100);
+      
+      if (!passed) {
+        issues.push(`${parameterBounds.length - validBounds.length} parameter bounds missing required fields`);
+      }
+    } else {
+      issues.push("No parameter bounds defined");
+    }
+
+    return {
+      type: "simulation_parameter_bounds",
+      passed,
+      score,
+      message: passed 
+        ? "All parameter bounds are properly defined"
+        : `Parameter bounds validation failed: ${issues.join("; ")}`,
+      suggestions: passed 
+        ? [] 
+        : ["Ensure each parameter bound has parameterId, min, max, and defaultValue"],
+      evidence: { parameterBounds, issues },
+    };
+  }
+
+  private checkSimulationTelemetry(content: Record<string, unknown>): ValidationCheck {
+    const telemetryEvents = content.telemetryEvents;
+    let passed = false;
+    let score = 0;
+    const issues: string[] = [];
+
+    if (Array.isArray(telemetryEvents) && telemetryEvents.length > 0) {
+      const requiredEvents = ["sim.start", "sim.complete", "sim.failure"];
+      const presentEvents = telemetryEvents
+        .filter((te: unknown) => typeof te === "object" && te !== null)
+        .map((te: unknown) => (te as Record<string, unknown>).eventType);
+      
+      const missingRequired = requiredEvents.filter(re => !presentEvents.includes(re));
+      passed = missingRequired.length === 0;
+      score = Math.max(0, 100 - (missingRequired.length * 30));
+      
+      if (!passed) {
+        issues.push(`Missing required telemetry events: ${missingRequired.join(", ")}`);
+      }
+    } else {
+      issues.push("No telemetry events defined");
+    }
+
+    return {
+      type: "simulation_telemetry",
+      passed,
+      score,
+      message: passed 
+        ? "Simulation telemetry is properly configured"
+        : `Telemetry validation failed: ${issues.join("; ")}`,
+      suggestions: passed 
+        ? [] 
+        : ["Add required telemetry events: sim.start, sim.complete, sim.failure"],
+      evidence: { telemetryEvents, issues },
+    };
+  }
+
+  private checkSimulationAccessibility(content: Record<string, unknown>): ValidationCheck {
+    const accessibility = content.accessibility;
+    let passed = false;
+    let score = 0;
+    const issues: string[] = [];
+
+    if (typeof accessibility === "object" && accessibility !== null) {
+      const acc = accessibility as Record<string, unknown>;
+      const hasAltText = typeof acc.altText === "string" && acc.altText.length > 0;
+      const hasScreenReader = acc.screenReaderNarration === true;
+      const hasReducedMotion = acc.reducedMotion === true;
+      
+      passed = hasAltText && hasScreenReader && hasReducedMotion;
+      score = Math.round(((hasAltText ? 1 : 0) + (hasScreenReader ? 1 : 0) + (hasReducedMotion ? 1 : 0)) / 3 * 100);
+      
+      if (!hasAltText) issues.push("Missing alt text");
+      if (!hasScreenReader) issues.push("Missing screen reader narration support");
+      if (!hasReducedMotion) issues.push("Missing reduced motion support");
+    } else {
+      issues.push("No accessibility metadata defined");
+    }
+
+    return {
+      type: "simulation_accessibility",
+      passed,
+      score,
+      message: passed 
+        ? "Simulation meets accessibility requirements"
+        : `Accessibility validation failed: ${issues.join("; ")}`,
+      suggestions: passed 
+        ? [] 
+        : ["Add alt text, enable screen reader narration, and support reduced motion"],
+      evidence: { accessibility, issues },
+    };
+  }
+
+  private async checkSimulationScientificCorrectness(
+    content: Record<string, unknown>,
+    domain: string,
+  ): Promise<ValidationCheck> {
+    // For governed domains, verify against knowledge base
+    if (this.isGovernedEvidenceDomain(domain)) {
+      const claimText = typeof content.claimText === "string" ? content.claimText : null;
+      const description = typeof content.description === "string" ? content.description : null;
+      const claimToCheck = claimText || description;
+
+      if (claimToCheck) {
+        try {
+          const factCheck = await this.verifyFact({
+            claim: claimToCheck,
+            domain,
+          });
+          
+          return {
+            type: "simulation_scientific_correctness",
+            passed: factCheck.verified,
+            score: Math.round(factCheck.confidence * 100),
+            message: factCheck.verified 
+              ? "Simulation content is scientifically accurate"
+              : "Simulation content may contain scientific inaccuracies",
+            suggestions: factCheck.recommendations,
+            evidence: { factCheck },
+          };
+        } catch (error) {
+          this.logger.warn({ error }, "Scientific correctness check failed");
+        }
+      }
+    }
+
+    // Default check for non-governed domains or when fact-checking fails
+    return {
+      type: "simulation_scientific_correctness",
+      passed: true,
+      score: 70,
+      message: "Scientific correctness verification skipped - domain not governed or verification unavailable",
+      suggestions: ["Consider human review for scientific accuracy in high-stakes domains"],
+      evidence: { domain, governed: this.isGovernedEvidenceDomain(domain) },
+    };
+  }
+
+  private checkAnimationStoryboard(content: Record<string, unknown>): ValidationCheck {
+    const storyboard = content.storyboard;
+    let passed = false;
+    let score = 0;
+    const issues: string[] = [];
+
+    if (Array.isArray(storyboard) && storyboard.length > 0) {
+      const validFrames = storyboard.filter((frame: unknown) => {
+        if (typeof frame !== "object" || frame === null) return false;
+        const obj = frame as Record<string, unknown>;
+        return "description" in obj && "duration" in obj;
+      });
+      
+      passed = validFrames.length === storyboard.length && storyboard.length >= 2;
+      score = Math.round((validFrames.length / Math.max(storyboard.length, 1)) * 100);
+      
+      if (!passed) {
+        if (storyboard.length < 2) issues.push("Storyboard has fewer than 2 frames");
+        if (validFrames.length < storyboard.length) issues.push("Some storyboard frames missing description or duration");
+      }
+    } else {
+      issues.push("No storyboard defined");
+    }
+
+    return {
+      type: "animation_storyboard",
+      passed,
+      score,
+      message: passed 
+        ? "Animation storyboard is properly structured"
+        : `Storyboard validation failed: ${issues.join("; ")}`,
+      suggestions: passed 
+        ? [] 
+        : ["Add at least 2 storyboard frames with description and duration for each"],
+      evidence: { storyboard, issues },
+    };
+  }
+
+  private checkAnimationCaptions(content: Record<string, unknown>): ValidationCheck {
+    const captions = content.captions;
+    const transcriptRequired = content.transcriptRequired === true;
+    let passed = false;
+    let score = 0;
+    const issues: string[] = [];
+
+    if (!transcriptRequired) {
+      // Captions not required for this animation
+      return {
+        type: "animation_captions",
+        passed: true,
+        score: 100,
+        message: "Captions not required for this animation",
+        suggestions: [],
+        evidence: { transcriptRequired },
+      };
+    }
+
+    if (typeof captions === "string" && captions.length > 0) {
+      passed = true;
+      score = 100;
+    } else if (Array.isArray(captions) && captions.length > 0) {
+      const validCaptions = captions.filter((c: unknown) => typeof c === "string" && c.length > 0);
+      passed = validCaptions.length > 0;
+      score = Math.round((validCaptions.length / captions.length) * 100);
+    } else {
+      issues.push("No captions or transcript provided");
+    }
+
+    return {
+      type: "animation_captions",
+      passed,
+      score,
+      message: passed 
+        ? "Animation has captions/transcript"
+        : `Captions validation failed: ${issues.join("; ")}`,
+      suggestions: passed 
+        ? [] 
+        : ["Add captions or transcript for accessibility and compliance"],
+      evidence: { captions, transcriptRequired, issues },
+    };
+  }
+
+  private checkAnimationAccessibility(content: Record<string, unknown>): ValidationCheck {
+    const accessibility = content.accessibility;
+    let passed = false;
+    let score = 0;
+    const issues: string[] = [];
+
+    if (typeof accessibility === "object" && accessibility !== null) {
+      const acc = accessibility as Record<string, unknown>;
+      const hasAltText = typeof acc.altText === "string" && acc.altText.length > 0;
+      const hasVisualDescription = typeof acc.visualDescription === "string" && acc.visualDescription.length > 0;
+      const hasColorblindSupport = acc.colorblindFriendly === true;
+      
+      passed = hasAltText && hasVisualDescription;
+      score = Math.round(((hasAltText ? 1 : 0) + (hasVisualDescription ? 1 : 0) + (hasColorblindSupport ? 1 : 0)) / 3 * 100);
+      
+      if (!hasAltText) issues.push("Missing alt text");
+      if (!hasVisualDescription) issues.push("Missing visual description");
+      if (!hasColorblindSupport) issues.push("Missing colorblind-friendly support");
+    } else {
+      issues.push("No accessibility metadata defined");
+    }
+
+    return {
+      type: "animation_accessibility",
+      passed,
+      score,
+      message: passed 
+        ? "Animation meets accessibility requirements"
+        : `Accessibility validation failed: ${issues.join("; ")}`,
+      suggestions: passed 
+        ? [] 
+        : ["Add alt text, visual description, and enable colorblind-friendly mode"],
+      evidence: { accessibility, issues },
+    };
   }
 }
 

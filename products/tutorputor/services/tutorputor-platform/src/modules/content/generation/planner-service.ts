@@ -46,9 +46,19 @@ import type {
   ReviewPath,
 } from "../types.js";
 import {
-  assertSameTenant,
   buildTenantScopedWhere,
+  assertSameTenant,
 } from "../../policy/resource-access-helpers.js";
+import {
+  mapRequest,
+  mapJob,
+  enumToReviewPath,
+  statusToDb,
+  jobTypeToDb,
+  riskLevelToDb,
+  normalizeDomain,
+  normalizeGrade,
+} from "./generation-mappers.js";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -186,7 +196,7 @@ export class GenerationPlannerService {
     options: { status?: string; limit?: number; offset?: number } = {},
   ): Promise<{ items: GenerationRequest[]; total: number }> {
     const where: Record<string, unknown> = { tenantId };
-    if (options.status) where.status = options.status.toUpperCase();
+    if (options.status) where.status = statusToDb(options.status);
 
     const [rows, total] = await Promise.all([
       this.prisma.generationRequest.findMany({
@@ -215,7 +225,10 @@ export class GenerationPlannerService {
    *  - Cost estimation
    *
    * Transitions the request from DRAFT to PLANNED and creates
-   * corresponding GenerationJob records.
+   * corresponding GenerationJob records in a single atomic transaction.
+   *
+   * If planning fails, transitions to FAILED_PLANNING with error details
+   * and creates an audit event for observability.
    */
   async planRequest(
     tenantId: string,
@@ -237,6 +250,7 @@ export class GenerationPlannerService {
       );
     }
 
+    // Perform all planning logic first (no side effects)
     const requestConfig = this.normalizeRequestConfig(
       (request.requestConfig as GenerationRequestConfig | null) ?? null,
     );
@@ -280,14 +294,14 @@ export class GenerationPlannerService {
             cacheSavingsUsd:
               blueprint.estimatedCost.estimatedSpendUsd ??
               routingDecision.estimatedSpendUsd,
-          }
+        }
         : {}),
     };
 
     // Create jobs for each planned asset
     const jobData = plannedAssets.map((planned) => ({
       requestId,
-      jobType: planned.jobType.toUpperCase() as
+      jobType: jobTypeToDb(planned.jobType) as
         | "CLAIM"
         | "EXPLAINER"
         | "WORKED_EXAMPLE"
@@ -304,72 +318,108 @@ export class GenerationPlannerService {
       status: "PENDING" as "PENDING",
     }));
 
-    // Persist jobs and update request atomically in a single transaction
-    // This ensures DRAFT → PLANNING → PLANNED transition is atomic
-    await this.prisma.$transaction(async (tx) => {
-      // Transition to PLANNING
-      await tx.generationRequest.update({
-        where: { id: requestId },
-        data: { status: "PLANNING" },
+    try {
+      // Execute entire planning workflow in a single atomic transaction
+      // This ensures DRAFT → PLANNED transition and job creation are atomic
+      // If any step fails, the transaction rolls back and status returns to DRAFT
+      await this.prisma.$transaction(async (tx) => {
+        // First, transition to PLANNING to indicate planning is in progress
+        await tx.generationRequest.update({
+          where: { id: requestId },
+          data: { status: "PLANNING" },
+        });
+
+        // Create jobs
+        for (const job of jobData) {
+          await tx.generationJob.create({ data: job });
+        }
+
+        // Transition to PLANNED with all planning data
+        await tx.generationRequest.update({
+          where: { id: requestId },
+          data: {
+            status: "PLANNED",
+            plannedAssets: JSON.parse(JSON.stringify(plannedAssets)),
+            artifactNeeds: JSON.parse(JSON.stringify(artifactNeeds)),
+            riskLevel: riskLevelToDb(riskAssessment.riskLevel) as "CRITICAL" | "HIGH" | "MEDIUM" | "LOW",
+            riskFactors: riskAssessment.riskFactors,
+            reviewPath: reviewPathToEnum(reviewPath) as
+              | "AUTO_PUBLISH"
+              | "HUMAN_REVIEW"
+              | "EXPERT_REVIEW",
+            estimatedCost: JSON.parse(JSON.stringify(estimatedCost)),
+            routingDecision: JSON.parse(JSON.stringify(routingDecision)),
+            totalJobs: plannedAssets.length,
+            plannedAt: new Date(),
+          },
+        });
       });
 
-      // Create jobs
-      for (const job of jobData) {
-        await tx.generationJob.create({ data: job });
+      // Cache the blueprint (outside transaction for performance)
+      if (!cachedBlueprint) {
+        const storableBlueprint: CachedPlanningBlueprint = {
+          plannedAssets: this.stripRequestScopedRefs(plannedAssets),
+          artifactNeeds,
+          riskLevel: riskAssessment.riskLevel,
+          riskFactors: riskAssessment.riskFactors,
+          reviewPath,
+          estimatedCost,
+          routingDecision,
+        };
+
+        if (this.cache.shouldCacheBlueprint(storableBlueprint)) {
+          await this.cache.setPlanningBlueprint(cacheKey, storableBlueprint);
+        }
       }
 
-      // Transition to PLANNED with all planning data
-      await tx.generationRequest.update({
-        where: { id: requestId },
-        data: {
-          status: "PLANNED",
-          plannedAssets: JSON.parse(JSON.stringify(plannedAssets)),
-          artifactNeeds: JSON.parse(JSON.stringify(artifactNeeds)),
-          riskLevel: riskAssessment.riskLevel.toUpperCase() as
-            | "LOW"
-            | "MEDIUM"
-            | "HIGH"
-            | "CRITICAL",
-          riskFactors: riskAssessment.riskFactors,
-          reviewPath: reviewPathToEnum(reviewPath) as
-            | "AUTO_PUBLISH"
-            | "HUMAN_REVIEW"
-            | "EXPERT_REVIEW",
-          estimatedCost: JSON.parse(JSON.stringify(estimatedCost)),
-          routingDecision: JSON.parse(JSON.stringify(routingDecision)),
-          totalJobs: plannedAssets.length,
-          plannedAt: new Date(),
-        },
-      });
-    });
-
-    if (!cachedBlueprint) {
-      const storableBlueprint: CachedPlanningBlueprint = {
-        plannedAssets: this.stripRequestScopedRefs(plannedAssets),
+      return {
+        requestId,
+        plannedAssets,
         artifactNeeds,
         riskLevel: riskAssessment.riskLevel,
         riskFactors: riskAssessment.riskFactors,
         reviewPath,
         estimatedCost,
         routingDecision,
+        totalJobs: plannedAssets.length,
       };
+    } catch (error) {
+      // If transaction fails, transition to FAILED_PLANNING with error details
+      // This ensures requests don't get stuck in PLANNING state even if transaction rolls back
+      const errorMessage = error instanceof Error ? error.message : "Unknown planning error";
+      
+      try {
+        await this.prisma.generationRequest.update({
+          where: { id: requestId },
+          data: {
+            status: "FAILED_PLANNING",
+            artifactNeeds: {
+              error: errorMessage,
+              failedAt: new Date().toISOString(),
+            } as Prisma.InputJsonValue,
+          },
+        });
 
-      if (this.cache.shouldCacheBlueprint(storableBlueprint)) {
-        await this.cache.setPlanningBlueprint(cacheKey, storableBlueprint);
+        // Create audit event for observability
+        await this.prisma.experienceEvent.create({
+          data: {
+            experienceId: requestId,
+            eventType: "PLANNING_FAILED",
+            actorId: request.requestedBy,
+            metadata: {
+              error: errorMessage,
+              failedAt: new Date().toISOString(),
+            } as Prisma.InputJsonValue,
+          } as never,
+        });
+      } catch (updateError) {
+        // Log but don't throw if status update fails - the original error is more important
+        console.error(`Failed to update request status to FAILED_PLANNING: ${updateError}`);
       }
-    }
 
-    return {
-      requestId,
-      plannedAssets,
-      artifactNeeds,
-      riskLevel: riskAssessment.riskLevel,
-      riskFactors: riskAssessment.riskFactors,
-      reviewPath,
-      estimatedCost,
-      routingDecision,
-      totalJobs: plannedAssets.length,
-    };
+      // Re-throw the original error so callers can handle it
+      throw new Error(`Planning failed for request ${requestId}: ${errorMessage}`);
+    }
   }
 
   /**
@@ -428,7 +478,7 @@ export class GenerationPlannerService {
     targetGrades?: unknown;
   }): PlannedAssetDescriptor[] {
     const assets: PlannedAssetDescriptor[] = [];
-    const domain = (request.domain ?? "").toLowerCase();
+    const domain = normalizeDomain(request.domain);
     const title = request.title ?? "";
 
     // Standard artifact set
@@ -505,7 +555,7 @@ export class GenerationPlannerService {
       " " +
       (request.description ?? "")
     ).toLowerCase();
-    const domain = (request.domain ?? "").toLowerCase();
+    const domain = normalizeDomain(request.domain);
 
     // Check domain and title for high-risk keywords
     for (const kw of HIGH_RISK_KEYWORDS) {
@@ -544,24 +594,21 @@ export class GenerationPlannerService {
   }
 
   /**
-   * Determine the review path based on risk level and feature flags.
-   * AUTO_PUBLISH is only allowed when the feature flag is enabled.
+   * Determine the review path based on risk level.
+   *
+   * AUTO_PUBLISH is disabled until semantic validation, golden datasets,
+   * and human-review bypass criteria are production-proven.
+   *
+   * All content requires human review regardless of risk level until
+   * the validation infrastructure is production-ready.
    */
   private determineReviewPath(riskLevel: RiskLevel): ReviewPath {
-    const autoPublishEnabled = isFeatureEnabled(
-      this.featureFlags,
-      "enableAutoPublish",
-    );
-
     switch (riskLevel) {
       case "critical":
       case "high":
         return "expert_review";
       case "medium":
-        return "human_review";
       case "low":
-        // Only allow auto_publish for low-risk content when feature flag is enabled
-        return autoPublishEnabled ? "auto_publish" : "human_review";
       default:
         return "human_review";
     }
@@ -714,7 +761,7 @@ export class GenerationPlannerService {
 // ---------------------------------------------------------------------------
 
 function isYoungLearnerGrade(grade: string): boolean {
-  const lower = grade.toLowerCase();
+  const lower = normalizeGrade(grade);
   return (
     lower.includes("k") ||
     lower.includes("kindergarten") ||
@@ -747,105 +794,4 @@ function clamp(value: number, min: number, max: number): number {
 function stripRequestRef(ref: string): string {
   const slashIndex = ref.indexOf("/");
   return slashIndex === -1 ? ref : `__REQUEST__/${ref.slice(slashIndex + 1)}`;
-}
-
-/** Safely convert a Date or ISO string from DB/stub rows to an ISO string. */
-function toIso(value: unknown): string {
-  if (value instanceof Date) return value.toISOString();
-  if (typeof value === "string") return value;
-  return new Date().toISOString();
-}
-
-function mapRequest(row: Record<string, unknown>): GenerationRequest {
-  return {
-    id: row.id as string,
-    tenantId: row.tenantId as string,
-    title: row.title as string,
-    ...(row.description ? { description: row.description as string } : {}),
-    domain: row.domain as string,
-    ...(row.conceptId ? { conceptId: row.conceptId as string } : {}),
-    ...(row.targetGrades ? { targetGrades: row.targetGrades as string[] } : {}),
-    requestedBy: row.requestedBy as string,
-    ...(row.requestConfig
-      ? { requestConfig: row.requestConfig as GenerationRequestConfig }
-      : {}),
-    status: (row.status as string).toLowerCase() as GenerationRequest["status"],
-    ...(row.plannedAssets
-      ? { plannedAssets: row.plannedAssets as PlannedAssetDescriptor[] }
-      : {}),
-    ...(row.artifactNeeds
-      ? { artifactNeeds: row.artifactNeeds as Record<string, number> }
-      : {}),
-    riskLevel: row.riskLevel
-      ? ((row.riskLevel as string).toLowerCase() as RiskLevel)
-      : "low",
-    ...(row.riskFactors ? { riskFactors: row.riskFactors as string[] } : {}),
-    reviewPath: enumToReviewPath((row.reviewPath as string | null) ?? null),
-    ...(row.estimatedCost
-      ? { estimatedCost: row.estimatedCost as GenerationCostEstimate }
-      : {}),
-    ...(row.routingDecision
-      ? { routingDecision: row.routingDecision as GenerationRoutingDecision }
-      : {}),
-    totalJobs: row.totalJobs as number,
-    completedJobs: row.completedJobs as number,
-    failedJobs: row.failedJobs as number,
-    ...(row.plannedAt
-      ? { plannedAt: toIso(row.plannedAt) }
-      : {}),
-    ...(row.startedAt
-      ? { startedAt: toIso(row.startedAt) }
-      : {}),
-    ...(row.completedAt
-      ? { completedAt: toIso(row.completedAt) }
-      : {}),
-    createdAt: toIso(row.createdAt),
-    updatedAt: toIso(row.updatedAt),
-  };
-}
-
-function mapJob(row: Record<string, unknown>): GenerationJob {
-  return {
-    id: row.id as string,
-    requestId: row.requestId as string,
-    jobType: (row.jobType as string).toLowerCase() as GenerationJob["jobType"],
-    ...(row.targetRef ? { targetRef: row.targetRef as string } : {}),
-    ...(row.inputPrompt ? { inputPrompt: row.inputPrompt as string } : {}),
-    ...(row.parameters
-      ? { parameters: row.parameters as Record<string, unknown> }
-      : {}),
-    status: (row.status as string).toLowerCase() as GenerationJob["status"],
-    progress: row.progress as number,
-    ...(row.outputAssetId
-      ? { outputAssetId: row.outputAssetId as string }
-      : {}),
-    ...(row.outputData
-      ? { outputData: row.outputData as Record<string, unknown> }
-      : {}),
-    ...(row.diagnostics
-      ? { diagnostics: row.diagnostics as Record<string, unknown> }
-      : {}),
-    ...(row.errorMessage ? { errorMessage: row.errorMessage as string } : {}),
-    retryCount: row.retryCount as number,
-    maxRetries: row.maxRetries as number,
-    ...(row.startedAt
-      ? { startedAt: toIso(row.startedAt) }
-      : {}),
-    ...(row.completedAt
-      ? { completedAt: toIso(row.completedAt) }
-      : {}),
-    createdAt: toIso(row.createdAt),
-    updatedAt: toIso(row.updatedAt),
-  };
-}
-
-function enumToReviewPath(value: string | null): ReviewPath {
-  switch (value) {
-    case "AUTO_PUBLISH":
-      return "auto_publish";
-    case "EXPERT_REVIEW":
-      return "expert_review";
-    default:
-      return "human_review";
-  }
 }

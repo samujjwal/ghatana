@@ -28,6 +28,17 @@ const workspaceAliases = {
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  build: {
+    chunkSizeWarningLimit: 250,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          query: ["@tanstack/react-query"],
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       ...workspaceAliases,

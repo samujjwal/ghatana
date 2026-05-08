@@ -128,7 +128,7 @@ export class GenerationQualityLoopService {
     );
 
     const shouldAutoPublish =
-      (options?.autoPublish ?? true) &&
+      (options?.autoPublish === true) &&
       reviewPath === "auto_publish" &&
       evaluation.recommendation === "auto_publish" &&
       eligibleAssetIds.length > 0;

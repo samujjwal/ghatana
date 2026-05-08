@@ -40,24 +40,28 @@ public final class PostgresCampaignRepository implements CampaignRepository {
     private static final int MAX_PAGE_SIZE = 100;
 
     private static final String UPSERT_SQL =
-        "INSERT INTO dmos_campaigns (id, workspace_id, name, status, type, created_at, updated_at, created_by) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
+        "INSERT INTO dmos_campaigns (id, workspace_id, tenant_id, name, status, type, created_at, updated_at, created_by) " +
+        "SELECT ?, ?, ws.tenant_id, ?, ?, ?, ?, ?, ? " +
+        "FROM dmos_workspaces ws WHERE ws.id = ? " +
         "ON CONFLICT (id, workspace_id) DO UPDATE SET " +
-        "  name = EXCLUDED.name, status = EXCLUDED.status, type = EXCLUDED.type, " +
+        "  tenant_id = EXCLUDED.tenant_id, name = EXCLUDED.name, status = EXCLUDED.status, type = EXCLUDED.type, " +
         "  updated_at = EXCLUDED.updated_at";
 
     private static final String SELECT_BY_ID_SQL =
         "SELECT id, workspace_id, name, status, type, created_at, updated_at, created_by " +
-        "FROM dmos_campaigns WHERE id = ? AND workspace_id = ?";
+        "FROM dmos_campaigns WHERE id = ? AND workspace_id = ? " +
+        "AND tenant_id = (SELECT tenant_id FROM dmos_workspaces WHERE id = ?)";
 
     private static final String LIST_BY_WORKSPACE_SQL =
         "SELECT id, workspace_id, name, status, type, created_at, updated_at, created_by " +
         "FROM dmos_campaigns WHERE workspace_id = ? " +
+        "AND tenant_id = (SELECT tenant_id FROM dmos_workspaces WHERE id = ?) " +
         "ORDER BY created_at DESC, id DESC " +
         "LIMIT ? OFFSET ?";
 
     private static final String COUNT_BY_WORKSPACE_SQL =
-        "SELECT COUNT(*) FROM dmos_campaigns WHERE workspace_id = ?";
+        "SELECT COUNT(*) FROM dmos_campaigns WHERE workspace_id = ? " +
+        "AND tenant_id = (SELECT tenant_id FROM dmos_workspaces WHERE id = ?)";
 
     private final DataSource dataSource;
     private final Executor executor;
@@ -81,7 +85,13 @@ public final class PostgresCampaignRepository implements CampaignRepository {
                 stmt.setTimestamp(6, Timestamp.from(campaign.getCreatedAt()));
                 stmt.setTimestamp(7, Timestamp.from(campaign.getUpdatedAt()));
                 stmt.setString(8, campaign.getCreatedBy());
-                stmt.executeUpdate();
+                stmt.setString(9, campaign.getWorkspaceId().getValue());
+                int rowsUpdated = stmt.executeUpdate();
+                if (rowsUpdated == 0) {
+                    throw new DmPersistenceException(
+                        "Workspace not found for campaign save: " + campaign.getWorkspaceId().getValue(),
+                        new IllegalStateException("Workspace missing during campaign upsert"));
+                }
                 LOG.info("[DMOS-PERSIST] campaign upserted: id={} workspace={} status={}",
                     campaign.getId(), campaign.getWorkspaceId().getValue(), campaign.getStatus());
                 return campaign;
@@ -101,6 +111,7 @@ public final class PostgresCampaignRepository implements CampaignRepository {
                  PreparedStatement stmt = conn.prepareStatement(SELECT_BY_ID_SQL)) {
                 stmt.setString(1, campaignId);
                 stmt.setString(2, workspaceId.getValue());
+                stmt.setString(3, workspaceId.getValue());
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
                         return Optional.of(mapRow(rs));
@@ -124,8 +135,9 @@ public final class PostgresCampaignRepository implements CampaignRepository {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(LIST_BY_WORKSPACE_SQL)) {
                 stmt.setString(1, workspaceId.getValue());
-                stmt.setInt(2, boundedLimit);
-                stmt.setInt(3, boundedOffset);
+                stmt.setString(2, workspaceId.getValue());
+                stmt.setInt(3, boundedLimit);
+                stmt.setInt(4, boundedOffset);
                 try (ResultSet rs = stmt.executeQuery()) {
                     List<Campaign> results = new ArrayList<>();
                     while (rs.next()) {
@@ -151,6 +163,7 @@ public final class PostgresCampaignRepository implements CampaignRepository {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(COUNT_BY_WORKSPACE_SQL)) {
                 stmt.setString(1, workspaceId.getValue());
+                stmt.setString(2, workspaceId.getValue());
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
                         return rs.getLong(1);

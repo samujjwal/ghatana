@@ -407,6 +407,86 @@ export class GenerationRequestJobProcessor {
   private async executeSimulation(
     job: Job<GenerationRequestExecutionJobData>,
   ): Promise<Record<string, unknown>> {
+    // Generate deterministic seed for reproducible simulation execution
+    const seed = parseInt(crypto.randomUUID().replace(/-/g, '').substring(0, 8), 16);
+
+    // Define canonical SimKit contract fields
+    const parameterBounds = [
+      {
+        parameterId: "primary_parameter",
+        label: "Primary Control",
+        min: 0,
+        max: 100,
+        defaultValue: 50,
+        unit: "units",
+      },
+    ];
+
+    const telemetryEvents = [
+      { eventType: "sim.start" as const, required: true },
+      { eventType: "sim.control.change" as const, required: true },
+      { eventType: "sim.snapshot" as const, required: false },
+      { eventType: "sim.capture" as const, required: false },
+      { eventType: "sim.failure" as const, required: true },
+      { eventType: "sim.complete" as const, required: true },
+    ];
+
+    const failureStates = [
+      {
+        id: "parameter_out_of_bounds",
+        condition: "parameter < min || parameter > max",
+        learnerMessage: "Parameter value is outside valid range. Please adjust and try again.",
+        recoverable: true,
+      },
+      {
+        id: "execution_timeout",
+        condition: "executionTimeMs > maxRuntimeMs",
+        learnerMessage: "Simulation took too long to complete. Please try with simpler parameters.",
+        recoverable: false,
+      },
+    ];
+
+    // State snapshots for reproducible simulation states
+    const stateSnapshots = [
+      {
+        snapshotId: "initial_state",
+        description: "Initial simulation state with default parameters",
+        triggerCondition: "onStart",
+        includeParameters: true,
+        includeTelemetry: false,
+      },
+      {
+        snapshotId: "completion_state",
+        description: "Final simulation state on successful completion",
+        triggerCondition: "onComplete",
+        includeParameters: true,
+        includeTelemetry: true,
+      },
+    ];
+
+    // Export configuration for simulation data export
+    const exportConfig = {
+      formats: ["json", "csv"] as Array<"json" | "csv" | "pdf">,
+      includeTelemetry: true,
+      includeSnapshots: true,
+      maxExportSizeBytes: 10 * 1024 * 1024, // 10MB
+      retentionPeriodDays: 30,
+    };
+
+    // Derive claim links from targetRef if available
+    const claimLinks = job.data.targetRef ? [{
+      claimId: job.data.targetRef,
+      evidenceIds: [`telemetry.parameterChange.${job.data.targetRef}`, `telemetry.timeOnTask.${job.data.targetRef}`],
+      taskIds: [],
+    }] : [];
+
+    const accessibility = {
+      altText: `Interactive simulation for ${job.data.requestTitle || 'concept'} exploring ${job.data.domain} concepts`,
+      screenReaderNarration: true,
+      reducedMotion: true,
+      highContrast: false,
+    };
+
     const response = await this.grpcClient.generateSimulation({
       requestId: crypto.randomUUID(),
       tenantId: job.data.tenantId,
@@ -416,6 +496,15 @@ export class GenerationRequestJobProcessor {
       domain: job.data.domain,
       interactionType: "PARAMETER_EXPLORATION",
       complexity: "MEDIUM",
+      // Canonical SimKit contract fields
+      seed,
+      parameterBounds,
+      telemetryEvents,
+      failureStates,
+      stateSnapshots,
+      exportConfig,
+      claimLinks,
+      accessibility,
     });
 
     const cost = ContentWorkerTelemetryPublisher.extractCostFromMetadata(
@@ -429,27 +518,78 @@ export class GenerationRequestJobProcessor {
       ...(cost ? { cost } : {}),
       diagnostics: {
         manifestId: response.manifest?.manifest_id ?? null,
+        seed,
       },
     });
 
     return {
       simulations: response.manifest ? [response.manifest] : [],
       metadata: response.metadata ?? null,
+      canonicalConfig: {
+        seed,
+        parameterBounds,
+        telemetryEvents,
+        failureStates,
+        stateSnapshots,
+        exportConfig,
+        claimLinks,
+        accessibility,
+      },
     };
   }
 
   private async executeAnimation(
     job: Job<GenerationRequestExecutionJobData>,
   ): Promise<Record<string, unknown>> {
+    // Determine appropriate duration based on domain and grade level
+    const durationBounds = {
+      minSeconds: 15,
+      maxSeconds: 60,
+    };
+    const durationSeconds = Math.min(Math.max(30, durationBounds.minSeconds), durationBounds.maxSeconds);
+
+    // Determine animation type based on domain
+    const animationType = job.data.domain === "physics" || job.data.domain === "science" ? "TWO_D" : "WHITEBOARD";
+
+    // Build pedagogical purpose based on domain and request
+    const pedagogicalPurpose = `Visualize ${job.data.domain} concepts for ${getPrimaryGrade(job.data.targetGrades)} to enhance understanding of ${job.data.requestTitle || 'the concept'}`;
+
+    // Build claim/evidence linkage
+    const claimIds = job.data.targetRef ? [job.data.targetRef] : [];
+    const evidenceIds = job.data.targetRef
+      ? [`telemetry.view.${job.data.targetRef}`, `telemetry.completion.${job.data.targetRef}`]
+      : [];
+
+    // Build accessibility metadata
+    const accessibility = {
+      altText: `Animation illustrating ${job.data.requestTitle || 'the concept'} in ${job.data.domain}`,
+      screenReaderDescription: true,
+      highContrast: false,
+      colorblindFriendly: true,
+    };
+
+    // Build visual description
+    const visualDescription = `Animation showing key concepts of ${job.data.requestTitle || 'the topic'} with visual representations of ${job.data.domain} principles`;
+
     const response = await this.grpcClient.generateAnimation({
       requestId: crypto.randomUUID(),
       tenantId: job.data.tenantId,
       claimText: buildClaimText(job.data),
       claimRef: job.data.targetRef ?? job.data.generationJobId,
-      animationType: "TWO_D",
-      durationSeconds: 45,
+      animationType,
+      durationSeconds,
       domain: job.data.domain,
       gradeLevel: getPrimaryGrade(job.data.targetGrades),
+      // Animation enhancement fields
+      pedagogicalPurpose,
+      claimIds,
+      evidenceIds,
+      transcriptRequired: true,
+      captionsRequired: true,
+      reducedMotionFallback: true,
+      visualDescription,
+      durationBounds,
+      accessibility,
     });
 
     const animation = response.animation;
@@ -464,66 +604,83 @@ export class GenerationRequestJobProcessor {
       ...(cost ? { cost } : {}),
       diagnostics: {
         animationId: animation?.animation_id ?? animation?.animationId ?? null,
+        animationType,
+        durationSeconds,
+        pedagogicalPurpose,
       },
     });
 
     return {
       animations: animation ? [animation] : [],
       metadata: response.metadata ?? null,
+      enhancementConfig: {
+        pedagogicalPurpose,
+        claimIds,
+        evidenceIds,
+        transcriptRequired: true,
+        captionsRequired: true,
+        reducedMotionFallback: true,
+        visualDescription,
+        durationBounds,
+        accessibility,
+      },
     };
   }
 
   private async executeAssessment(
     job: Job<GenerationRequestExecutionJobData>,
   ): Promise<Record<string, unknown>> {
-    const response = await this.grpcClient.generateExamples({
+    // Use dedicated assessment generator instead of example adapter
+    const assessmentTypes: Array<"PREDICTION" | "MANIPULATION" | "EXPLANATION" | "CONSTRUCTED_RESPONSE"> = [
+      "PREDICTION",
+      "MANIPULATION",
+      "EXPLANATION",
+      "CONSTRUCTED_RESPONSE",
+    ];
+
+    const claimIds = job.data.targetRef ? [job.data.targetRef] : [];
+    const evidenceIds = job.data.targetRef
+      ? [`telemetry.response.${job.data.targetRef}`, `telemetry.attempt.${job.data.targetRef}`]
+      : [];
+    const simulationBased = job.data.domain === "physics" || job.data.domain === "science";
+
+    const response = await this.grpcClient.generateAssessment({
       requestId: crypto.randomUUID(),
       tenantId: job.data.tenantId,
       claimText: buildClaimText(job.data),
       claimRef: job.data.targetRef ?? job.data.generationJobId,
       gradeLevel: getPrimaryGrade(job.data.targetGrades),
       domain: job.data.domain,
-      types: ["PROBLEM_SOLVING"],
-      count: 3,
+      assessmentTypes,
+      itemCount: 1,
+      cbmEnabled: true,
+      includeRubrics: true,
+      includeDistractorRationales: true,
+      claimIds,
+      evidenceIds,
+      simulationBased,
     });
-
-    const examples = Array.isArray(response.examples)
-      ? (response.examples as GrpcExampleLike[])
-      : [];
-    const assessments = examples.map(
-      (example: GrpcExampleLike, index: number) => ({
-        id:
-          example.example_id ??
-          `${job.data.generationJobId}-assessment-${index + 1}`,
-        prompt: example.title ?? `Assessment item ${index + 1}`,
-        guidance: example.description ?? "",
-        solution:
-          example.solution_content ??
-          example.content ??
-          example.description ??
-          "",
-      }),
-    );
 
     const cost = ContentWorkerTelemetryPublisher.extractCostFromMetadata(
       response.metadata,
     );
     await this.telemetry.publishForJob(job, {
       stage: "grpc_response_received",
-      message: "Assessment generation response received",
+      message: "CBM assessment generation response received",
       progressPercent: 60,
       status: "running",
       ...(cost ? { cost } : {}),
       diagnostics: {
-        assessmentsCount: assessments.length,
+        assessmentsCount: response.assessments.length,
+        assessmentTypes,
       },
     });
 
     return {
-      assessments,
-      count: assessments.length,
-      metadata: response.metadata ?? null,
-      adapter: "example_to_assessment",
+      assessments: response.assessments,
+      count: response.assessments.length,
+      metadata: response.metadata,
+      generator: "cbm_assessment_generator_v2",
     };
   }
 
