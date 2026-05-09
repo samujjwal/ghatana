@@ -33,30 +33,15 @@ export const router = createBrowserRouter([
     path: "/",
     element: <AppLayout />,
     children: [
-      // === LEARN SECTION ===
+      // === LANDING PAGE ===
       {
         index: true,
         lazy: async () =>
-          loadNamedComponent(() => import("../pages/DashboardPage"), "DashboardPage"),
-      },
-      {
-        path: "dashboard",
-        lazy: async () =>
-          loadNamedComponent(() => import("../pages/DashboardPage"), "DashboardPage"),
-      },
-      {
-        path: "onboarding",
-        lazy: async () =>
-          loadNamedComponent(() => import("../pages/OnboardingPage"), "OnboardingPage"),
-      },
-      {
-        path: "diagnostic",
-        lazy: async () =>
-          loadNamedComponent(() => import("../pages/DiagnosticPage"), "DiagnosticPage"),
+          loadNamedComponent(() => import("../pages/LandingPage"), "LandingPage"),
       },
       {
         path: "home",
-        element: <Navigate to="/dashboard" replace />,
+        element: <Navigate to="/" replace />,
       },
       {
         path: "modules",
@@ -75,6 +60,23 @@ export const router = createBrowserRouter([
       {
         path: "learning-paths",
         element: <Navigate to="/pathways" replace />,
+      },
+
+      // === LEARN SECTION ===
+      {
+        path: "dashboard",
+        lazy: async () =>
+          loadNamedComponent(() => import("../pages/DashboardPage"), "DashboardPage"),
+      },
+      {
+        path: "onboarding",
+        lazy: async () =>
+          loadNamedComponent(() => import("../pages/OnboardingPage"), "OnboardingPage"),
+      },
+      {
+        path: "diagnostic",
+        lazy: async () =>
+          loadNamedComponent(() => import("../pages/DiagnosticPage"), "DiagnosticPage"),
       },
 
       // === PRACTICE SECTION ===
@@ -167,6 +169,13 @@ export const router = createBrowserRouter([
       {
         path: "simulations/studio/:id?",
         lazy: async () => loadDefaultComponent(() => import("../pages/SimulationStudio")),
+      },
+
+      // === CONTENT REVIEW ===
+      {
+        path: "content/review/generated/:artifactId",
+        lazy: async () =>
+          loadNamedComponent(() => import("../pages/ContentReviewPage"), "ContentReviewPage"),
       },
     ],
   },

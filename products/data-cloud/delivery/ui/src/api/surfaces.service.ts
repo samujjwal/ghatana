@@ -245,14 +245,26 @@ export async function fetchCapabilityRegistry(): Promise<CapabilityRegistrySnaps
   };
 }
 
-export function useCapabilityRegistry(): UseQueryResult<CapabilityRegistrySnapshot, Error> {
+/**
+ * Canonical hook for fetching Runtime Truth surface registry.
+ * DC-P1-004: Replaces useCapabilityRegistry as the standard API.
+ */
+export function useSurfaceRegistry(): UseQueryResult<CapabilityRegistrySnapshot, Error> {
   return useQuery({
-    queryKey: ['capability-registry'],
+    queryKey: ['surface-registry'],
     queryFn: fetchCapabilityRegistry,
     staleTime: 60_000,
     refetchInterval: 60_000,
     refetchOnWindowFocus: false,
   });
+}
+
+/**
+ * @deprecated Use useSurfaceRegistry instead. This compatibility alias will be removed in a future release.
+ * DC-P1-004: Deprecated in favor of useSurfaceRegistry terminology.
+ */
+export function useCapabilityRegistry(): UseQueryResult<CapabilityRegistrySnapshot, Error> {
+  return useSurfaceRegistry();
 }
 
 export function getCapabilitySignal(

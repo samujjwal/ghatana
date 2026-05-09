@@ -8,22 +8,37 @@
  * @doc.purpose Reviewer detail — inspect and decide on a single approval request
  * @doc.layer frontend
  */
-import React, { useMemo, useState } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useParams, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApprovalDetail } from '@/hooks/useApprovalDetail';
-import { hasApproverRole } from '@/lib/role-utils';
 import { ApiError } from '@/lib/http-client';
 import { ApprovalSnapshotPanel } from '@/components/approval/ApprovalSnapshotPanel';
 import { DecideDialog } from '@/components/approval/DecideDialog';
-import { canApprove } from '@/lib/role-utils';
+import { PageStateNotice } from '@/components/PageStateNotice';
+import { canPerformAction } from '@/lib/action-permissions';
+import { hasMinimumRole, validateRoles, type ValidRole } from '@/lib/role-utils';
+import { Badge, Button } from '@ghatana/design-system';
 
-const STATUS_CLASSES: Record<string, string> = {
-  PENDING: 'bg-yellow-100 text-yellow-800',
-  APPROVED: 'bg-green-100 text-green-800',
-  REJECTED: 'bg-red-100 text-red-800',
-  CANCELLED: 'bg-gray-100 text-gray-700',
-};
+function statusTone(status: string): 'warning' | 'success' | 'danger' | 'neutral' {
+  if (status === 'APPROVED') return 'success';
+  if (status === 'REJECTED') return 'danger';
+  if (status === 'CANCELLED') return 'neutral';
+  return 'warning';
+}
+
+function hasRequiredApprovalRole(roles: readonly string[], requiredApproverRole: string | null | undefined): boolean {
+  if (!requiredApproverRole) {
+    return false;
+  }
+
+  const normalizedRequiredRole = requiredApproverRole.toLowerCase().trim();
+  if (!validateRoles([normalizedRequiredRole])) {
+    return false;
+  }
+
+  return hasMinimumRole(roles, normalizedRequiredRole as ValidRole);
+}
 
 export function ApprovalDetailPage(): React.ReactElement {
   const { workspaceId, requestId } = useParams<{
@@ -42,7 +57,10 @@ export function ApprovalDetailPage(): React.ReactElement {
     return <Navigate to="/login" replace />;
   }
 
-  const canDecide = canApprove(roles, request);
+  const canDecide = request !== null
+    && canPerformAction(roles, 'approve')
+    && canPerformAction(roles, 'reject')
+    && hasRequiredApprovalRole(roles, request.requiredApproverRole);
 
   const isPending = request?.status === 'PENDING';
   const riskLevel = request?.riskLevel ?? snapshot?.riskLevel ?? 0;
@@ -70,22 +88,19 @@ export function ApprovalDetailPage(): React.ReactElement {
       </nav>
 
       {isLoading && (
-        <p
-          data-testid="approval-detail-loading"
-          className="text-sm text-gray-400"
-        >
-          Loading…
-        </p>
+        <PageStateNotice
+          testId="approval-detail-loading"
+          tone="loading"
+          message="Loading…"
+        />
       )}
 
       {isError && (
-        <p
-          data-testid="approval-detail-error"
-          role="alert"
-          className="text-sm text-red-600"
-        >
-          {error instanceof ApiError ? error.getUserMessage() : 'Failed to load approval.'}
-        </p>
+        <PageStateNotice
+          testId="approval-detail-error"
+          tone="error"
+          message={error instanceof ApiError ? error.getUserMessage() : 'Failed to load approval.'}
+        />
       )}
 
       {request && (
@@ -100,12 +115,13 @@ export function ApprovalDetailPage(): React.ReactElement {
               </h1>
               <p className="text-sm text-gray-500 mt-1">ID: {request.requestId}</p>
             </div>
-            <span
+            <Badge
               data-testid="approval-status-badge"
-              className={`px-2 py-0.5 rounded text-xs font-semibold ${STATUS_CLASSES[request.status] ?? 'bg-gray-100 text-gray-700'}`}
+              tone={statusTone(request.status)}
+              variant="soft"
             >
               {request.status}
-            </span>
+            </Badge>
           </div>
 
           <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
@@ -160,25 +176,23 @@ export function ApprovalDetailPage(): React.ReactElement {
           </dl>
 
           {!canDecide && (
-            <p
-              data-testid="approval-permission-denied"
-              role="alert"
-              className="text-sm text-yellow-700 bg-yellow-50 px-3 py-2 rounded"
-            >
-              You do not have permission to approve or reject this request.
-            </p>
+            <PageStateNotice
+              testId="approval-permission-denied"
+              tone="warning"
+              message="You do not have permission to approve or reject this request."
+            />
           )}
 
           {canDecide && isPending && (
             <div className="flex gap-3 pt-2">
-              <button
-                type="button"
+              <Button
                 data-testid="open-decide-dialog"
                 onClick={() => setShowDecide(true)}
-                className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                tone="primary"
+                size="sm"
               >
                 Approve / Reject
-              </button>
+              </Button>
             </div>
           )}
         </section>

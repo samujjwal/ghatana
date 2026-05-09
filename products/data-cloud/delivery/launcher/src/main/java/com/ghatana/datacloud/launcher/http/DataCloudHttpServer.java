@@ -8,6 +8,8 @@ import com.ghatana.datacloud.launcher.ai.AiRecommendationMetrics;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
 import com.ghatana.datacloud.launcher.anomaly.AnomalyDetectionTask;
 import com.ghatana.datacloud.launcher.compaction.StorageCompactionTask;
+import com.ghatana.datacloud.spi.TransactionManager;
+import com.ghatana.datacloud.spi.WriteIdempotencyStore;
 import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
 import com.ghatana.datacloud.storage.H2SovereignEntityStore;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
@@ -84,7 +86,7 @@ import com.ghatana.datacloud.launcher.http.handlers.StorageCostHandler;
 import com.ghatana.datacloud.launcher.http.handlers.FederatedQueryHandler;
 import com.ghatana.datacloud.launcher.http.handlers.TierMigrationHandler;
 import com.ghatana.datacloud.launcher.http.handlers.DataSourceRegistryHandler;
-import com.ghatana.datacloud.launcher.http.handlers.CapabilityRegistryHandler;
+import com.ghatana.datacloud.launcher.http.handlers.SurfaceRegistryHandler;
 import com.ghatana.datacloud.launcher.http.handlers.CollectionContextHandler;
 import com.ghatana.datacloud.launcher.http.handlers.ComplianceHandler;
 import com.ghatana.datacloud.launcher.http.handlers.ContextLayerHandler;
@@ -302,6 +304,18 @@ public class DataCloudHttpServer {
     private EntityWriteIdempotencyStore entityWriteIdempotencyStore;
 
     /**
+     * Optional durable generic idempotency store for all mutating routes (DC-BE-002).
+     * When {@code null}, falls back to an in-memory ConcurrentHashMap (local/embedded only).
+     */
+    private WriteIdempotencyStore genericIdempotencyStore;
+
+    /**
+     * Optional transaction manager for atomic multi-step writes (DC-BE-003).
+     * When {@code null}, multi-step writes execute without transaction boundaries.
+     */
+    private TransactionManager transactionManager;
+
+    /**
      * Optional JWT provider for bearer authentication (DC-E1).
      * When {@code null}, JWT bearer authentication is disabled.
      */
@@ -373,7 +387,7 @@ public class DataCloudHttpServer {
     private PluginInstallHandler pluginInstallHandler; // B6: plugin install/upgrade lifecycle API
     private boolean pluginUpgradeEnabled = false;
     private DataCloudRuntimePluginManager runtimePluginManager;
-    private CapabilityRegistryHandler capabilityRegistryHandler; // P2.7: runtime surface registry API
+    private SurfaceRegistryHandler surfaceRegistryHandler; // P2.7: runtime surface registry API
     private ContextLayerHandler contextLayerHandler; // P3.1: tenant-scoped context layer API
     private CollectionContextHandler collectionContextHandler; // P3.1: unified collection context API
     private McpToolsHandler mcpToolsHandler; // P3.1.2: MCP tool registry and invocation
@@ -695,6 +709,40 @@ public class DataCloudHttpServer {
     }
 
     /**
+     * Attaches a generic idempotency store for all mutating routes (DC-BE-002).
+     *
+     * <p>When {@code null}, falls back to an in-memory ConcurrentHashMap (local/embedded only).
+     *
+     * @param store the generic idempotency store
+     * @return {@code this} for method chaining
+     *
+     * @doc.type method
+     * @doc.purpose Attach generic idempotency store for all mutating routes
+     * @doc.layer product
+     */
+    public DataCloudHttpServer withGenericIdempotencyStore(WriteIdempotencyStore store) {
+        this.genericIdempotencyStore = store;
+        return this;
+    }
+
+    /**
+     * Attaches a transaction manager for atomic multi-step writes (DC-BE-003).
+     *
+     * <p>When {@code null}, multi-step writes execute without transaction boundaries.
+     *
+     * @param transactionManager the transaction manager
+     * @return {@code this} for method chaining
+     *
+     * @doc.type method
+     * @doc.purpose Attach transaction manager for atomic multi-step writes
+     * @doc.layer product
+     */
+    public DataCloudHttpServer withTransactionManager(TransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+        return this;
+    }
+
+    /**
      * Attaches a {@link TraceExportService} so spans produced during request handling
      * are flushed to ClickHouse (B4).
      *
@@ -865,6 +913,10 @@ public class DataCloudHttpServer {
 
     /**
      * Attaches an {@link AuditService} for security and governance audit persistence.
+     *
+     * <p><b>DC-BE-003 Note:</b> Transaction boundaries for multi-step writes (entity write + event append + audit logging)
+     * are not currently implemented. This requires wrapping write + event + audit flows atomically to prevent
+     * partial writes from leaving invalid state. Failure injection tests are required to verify atomic behavior.
      *
      * @param service audit service; must not be {@code null}
      * @return {@code this} for method chaining
@@ -1303,6 +1355,7 @@ public class DataCloudHttpServer {
         if (schemaValidator != null) entityHandler.withSchemaValidator(schemaValidator);
         if (openSearchConnector != null) entityHandler.withOpenSearchConnector(openSearchConnector);
         if (tenantQuotaService != null) entityHandler.withTenantQuotaService(tenantQuotaService);
+        if (transactionManager != null) entityHandler.withTransactionManager(transactionManager);
         entityHandler.withTraceSupport(traceSpanSupport);
         entityHandler.withSemanticSearchPorts(semanticSearchHandler::indexEntity, semanticSearchHandler::deleteEntity);
 
@@ -1313,11 +1366,14 @@ public class DataCloudHttpServer {
         eventHandler = new EventHandler(client, httpSupport);
         eventHandler.withTraceSupport(traceSpanSupport);
         if (tenantQuotaService != null) eventHandler.withTenantQuotaService(tenantQuotaService);
+        if (genericIdempotencyStore != null) eventHandler.withIdempotencyStore(genericIdempotencyStore);
         pipelineCheckpointHandler = new PipelineCheckpointHandler(client, httpSupport);
+        if (genericIdempotencyStore != null) pipelineCheckpointHandler.withIdempotencyStore(genericIdempotencyStore);
         workflowExecutionHandler = new WorkflowExecutionHandler(client, httpSupport);
         // DC-OPS-002: Emit dc.http.requests, dc.http.request.latency, and dc.http.errors for pipeline/workflow routes.
         workflowExecutionHandler.withMetrics(new DataCloudHttpMetrics(metricsCollector));
         alertingHandler = new AlertingHandler(client, httpSupport).withAutonomyController(autonomyController);
+        if (genericIdempotencyStore != null) alertingHandler.withIdempotencyStore(genericIdempotencyStore);
         if (runtimePluginManager == null) {
             runtimePluginManager = new DataCloudRuntimePluginManager();
         }
@@ -1417,6 +1473,7 @@ public class DataCloudHttpServer {
         // DC-E5: Data lifecycle and governance handler
         dataLifecycleHandler = new DataLifecycleHandler(client, objectMapper, httpSupport, auditService);
         dataLifecycleHandler.withTraceSupport(traceSpanSupport);
+        if (genericIdempotencyStore != null) dataLifecycleHandler.withIdempotencyStore(genericIdempotencyStore);
 
         // B9: Autonomy management handler — nullable controller enables graceful 503
         autonomyHandler = new AutonomyHandler(autonomyController, httpSupport);
@@ -1424,7 +1481,7 @@ public class DataCloudHttpServer {
         // B3: Agent catalog runtime handler — loads YAML definitions from classpath
         agentCatalogHandler = new AgentCatalogHandler(httpSupport, metricsCollector);
 
-        capabilityRegistryHandler = new CapabilityRegistryHandler(
+        surfaceRegistryHandler = new SurfaceRegistryHandler(
             httpSupport,
             objectMapper,
             this::buildCapabilitySnapshot);
@@ -1542,7 +1599,7 @@ public class DataCloudHttpServer {
             .withAiAssistRoutes(aiAssistHandler)
             .withVoiceRoutes(voiceHandler)
             .withGovernanceRoutes(dataLifecycleHandler)
-            .withCapabilityRoutes(capabilityRegistryHandler)
+            .withCapabilityRoutes(surfaceRegistryHandler)
             .withLineageRoutes(lineageHandler)
             .withContextRoutes(contextLayerHandler, collectionContextHandler, semanticSearchHandler)
             .withMcpRoutes(mcpToolsHandler)
@@ -1751,6 +1808,10 @@ public class DataCloudHttpServer {
         capabilities.put("storage.compaction", capabilityEntry(storageCompactionTask != null, resolveSubsystemStatus("storage_compaction")));
         capabilities.put("tierMigration.warm", capabilityEntry(warmMigrationScheduler != null, null));
         capabilities.put("tierMigration.cold", capabilityEntry(coldMigrationScheduler != null, null));
+        // DC-P1-012: Optional 501/503 services are represented in Runtime Truth with capabilityEntry()
+        // - search.openSearch, entityExport, anomalyDetection, reporting, ai.modelRegistry, ai.featureStore
+        // - federatedQuery.trino, tierMigration.warm, tierMigration.cold
+        // These are marked available/unavailable based on handler/service presence, enabling UI to gate actions
         // P1.4: Document tier routing policy in capability registry
         List<Map<String, Object>> tiers = new ArrayList<>();
         Map<String, Object> hotTier = new java.util.LinkedHashMap<>();
@@ -1859,9 +1920,10 @@ public class DataCloudHttpServer {
     /**
      * Builds a capability entry exposing both legacy and descriptive readiness fields.
      *
-     * <p>The {@code status} field preserves legacy contract values used by existing
+     * <p>DC-BE-001: Uses centralized RuntimeTruthStatus enum to prevent status value drift.
+     * The {@code status} field preserves legacy contract values used by existing
      * UI and tests ({@code ACTIVE}/{@code DEGRADED}/{@code NOT_CONFIGURED}).
-     * The {@code maturity} field exposes descriptive labels ({@code live}/{@code partial}/{@code unavailable}).
+     * The {@code mode} field exposes descriptive labels ({@code live}/{@code degraded}/{@code preview}/{@code unavailable}).
      */
     private Map<String, Object> capabilityEntry(boolean configured, String subsystemStatus) {
         return capabilityEntry(configured, subsystemStatus, null);
@@ -1869,12 +1931,11 @@ public class DataCloudHttpServer {
 
     private Map<String, Object> capabilityEntry(boolean configured, String subsystemStatus, String docsUrl) {
         Map<String, Object> entry = new LinkedHashMap<>();
-        String status = legacyCapabilityStatus(configured, subsystemStatus);
-        String maturity = subsystemStatusToMaturityStatus(configured, subsystemStatus);
+        RuntimeTruthStatus status = RuntimeTruthStatus.fromRuntimeState(configured, subsystemStatus);
         // P0.1: Runtime capability truth — unified schema
-        entry.put("status", status);
-        entry.put("mode", maturity);           // live / degraded / preview / unavailable
-        entry.put("maturity", maturity);       // backward compatibility
+        entry.put("status", status.toLegacyValue()); // legacy contract value
+        entry.put("mode", status.toJsonValue()); // canonical taxonomy value
+        entry.put("maturity", status.toJsonValue()); // backward compatibility
         entry.put("configured", configured);
         entry.put("dependency", subsystemStatus != null ? "healthCheck" : "runtime");
         entry.put("probe", subsystemStatus != null ? "healthCheck" : "runtime");
@@ -1898,36 +1959,21 @@ public class DataCloudHttpServer {
         return entry;
     }
 
+    /**
+     * DC-BE-001: Returns legacy contract status value using centralized RuntimeTruthStatus enum.
+     */
     private String legacyCapabilityStatus(boolean configured, String subsystemStatus) {
-        if (!configured || "NOT_CONFIGURED".equals(subsystemStatus)) {
-            return "NOT_CONFIGURED";
-        }
-        if ("DOWN".equals(subsystemStatus) || "DEGRADED".equals(subsystemStatus)) {
-            return "DEGRADED";
-        }
-        return "ACTIVE";
+        RuntimeTruthStatus status = RuntimeTruthStatus.fromRuntimeState(configured, subsystemStatus);
+        return status.toLegacyValue();
     }
 
     /**
-     * Maps subsystem health status to a descriptive maturity label.
-     *
-     * <p>DC-AUD-022: Replaces generic ACTIVE/DEGRADED/NOT_CONFIGURED with
-     * consumer-friendly live / partial / preview / unavailable labels.
+     * DC-BE-001: Maps subsystem health status to canonical Runtime Truth status using centralized enum.
+     * Replaces generic ACTIVE/DEGRADED/NOT_CONFIGURED with consumer-friendly live/degraded/preview/unavailable labels.
      */
     private String subsystemStatusToMaturityStatus(boolean configured, String subsystemStatus) {
-        if (!configured) {
-            return "unavailable";
-        }
-        if ("DOWN".equals(subsystemStatus) || "DEGRADED".equals(subsystemStatus)) {
-            return "partial";
-        }
-        if ("NOT_CONFIGURED".equals(subsystemStatus)) {
-            return "unavailable";
-        }
-        if (subsystemStatus == null || subsystemStatus.isBlank() || "UP".equals(subsystemStatus)) {
-            return "live";
-        }
-        return "live";
+        RuntimeTruthStatus status = RuntimeTruthStatus.fromRuntimeState(configured, subsystemStatus);
+        return status.toJsonValue();
     }
 
     private String resolveSubsystemStatus(String subsystemName) {

@@ -163,13 +163,13 @@ public final class DmosPublicIntakeServlet {
                     .then(abuseResult -> {
                         if (abuseResult.blocked()) {
                             LOG.warn("[P1-038] Abuse blocked: {} - {}", abuseResult.blockCode(), abuseResult.blockReason());
-                            return Promise.of(errorResponse(429, abuseResult.blockReason()));
+                            return Promise.of(DmosApiErrorResponses.error(429, abuseResult.blockReason(), request));
                         }
 
                         return suppressionService.isSuppressed(ctx, body.email())
                             .then(suppressed -> {
                                 if (suppressed) {
-                                    return Promise.of(errorResponse(409, "Lead email is suppressed"));
+                                    return Promise.of(DmosApiErrorResponses.error(409, "Lead email is suppressed", request));
                                 }
 
                                 LeadService.CaptureLeadCommand command = new LeadService.CaptureLeadCommand(
@@ -192,19 +192,19 @@ public final class DmosPublicIntakeServlet {
                     })
                             .then(r -> Promise.of(r), e -> {
                                 if (e instanceof SecurityException) {
-                                    return Promise.of(errorResponse(403, "Access denied"));
+                                    return Promise.of(DmosApiErrorResponses.error(403, "Access denied", request));
                                 }
                                 if (e instanceof IllegalArgumentException) {
-                                    return Promise.of(errorResponse(400, e.getMessage()));
+                                    return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
                                 }
                                 LOG.error("[DMOS] Failed to capture lead", e);
-                                return Promise.of(errorResponse(500, "Internal error"));
+                                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
                             });
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to handle intake request", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -281,10 +281,6 @@ public final class DmosPublicIntakeServlet {
         }
     }
 
-    private HttpResponse errorResponse(int code, String message) {
-        return jsonResponse(code, new ErrorBody(code, message));
-    }
-
     record CaptureLeadRequest(
         String campaignId,
         String email,
@@ -307,6 +303,4 @@ public final class DmosPublicIntakeServlet {
         }
     }
 
-    record ErrorBody(int status, String message) {
-    }
 }

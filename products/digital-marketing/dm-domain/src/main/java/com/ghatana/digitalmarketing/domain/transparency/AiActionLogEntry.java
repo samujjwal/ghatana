@@ -22,6 +22,9 @@ public record AiActionLogEntry(
         AiActionStatus status,
         String actor,
         boolean initiatedByAi,
+    String provider,
+    String modelVersion,
+    boolean humanEdited,
         Double confidence,
         List<String> evidenceLinks,
         List<String> policyChecks,
@@ -30,6 +33,44 @@ public record AiActionLogEntry(
         String relatedEntityId,
         Instant occurredAt,
         long version) {
+
+    public AiActionLogEntry(
+            String actionId,
+            String workspaceId,
+            String correlationId,
+            AiActionType actionType,
+            AiActionStatus status,
+            String actor,
+            boolean initiatedByAi,
+            Double confidence,
+            List<String> evidenceLinks,
+            List<String> policyChecks,
+            String summary,
+            String details,
+            String relatedEntityId,
+            Instant occurredAt,
+            long version) {
+        this(
+            actionId,
+            workspaceId,
+            correlationId,
+            actionType,
+            status,
+            actor,
+            initiatedByAi,
+            null,
+            null,
+            false,
+            confidence,
+            evidenceLinks,
+            policyChecks,
+            summary,
+            details,
+            relatedEntityId,
+            occurredAt,
+            version
+        );
+    }
 
     public AiActionLogEntry {
         Objects.requireNonNull(actionId, "actionId must not be null");
@@ -48,6 +89,8 @@ public record AiActionLogEntry(
         if (actor.isBlank()) throw new IllegalArgumentException("actor must not be blank");
         if (summary.isBlank()) throw new IllegalArgumentException("summary must not be blank");
         if (details.isBlank()) throw new IllegalArgumentException("details must not be blank");
+        if (provider != null && provider.isBlank()) throw new IllegalArgumentException("provider must not be blank when provided");
+        if (modelVersion != null && modelVersion.isBlank()) throw new IllegalArgumentException("modelVersion must not be blank when provided");
 
         if (confidence != null && (confidence < 0.0 || confidence > 1.0)) {
             throw new IllegalArgumentException("confidence must be between 0 and 1 when provided");
@@ -71,6 +114,9 @@ public record AiActionLogEntry(
             status,
             actor,
             initiatedByAi,
+            provider,
+            modelVersion,
+            humanEdited,
             confidence,
             List.of(),
             policyChecks,

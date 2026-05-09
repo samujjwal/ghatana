@@ -20,14 +20,15 @@ import type { FastifyPluginAsync } from "fastify";
  * - tutorputor-analytics (Done)
  */
 export const learningModule: FastifyPluginAsync = async (fastify) => {
-  const prisma = fastify.prisma;
-  const redis = fastify.redis;
+  let prisma = fastify.prisma;
 
+  // Fallback: create prisma client if not available on app instance
   if (!prisma) {
-    throw new Error(
-      "Prisma client not found on Fastify instance. Ensure database plugin is registered.",
-    );
+    const { createPrismaClient } = await import("@tutorputor/core/db");
+    prisma = createPrismaClient();
   }
+
+  const redis = fastify.redis;
 
   // 1. Create Core Services
   const learningService = createLearningService(prisma);

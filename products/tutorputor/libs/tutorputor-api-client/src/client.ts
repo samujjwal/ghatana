@@ -37,6 +37,24 @@ export interface TutorPutorClientConfig {
   onUnauthorized?: () => Promise<string | null | undefined>;
 
   /**
+   * Optional: tenant ID for multi-tenant context.
+   * Automatically added as X-Tenant-ID header to all requests.
+   */
+  getTenantId?: () => string | null;
+
+  /**
+   * Optional: user ID for request context.
+   * Automatically added as X-User-ID header to all requests.
+   */
+  getUserId?: () => string | null;
+
+  /**
+   * Optional: locale for i18n context.
+   * Automatically added as X-Locale header to all requests.
+   */
+  getLocale?: () => string | null;
+
+  /**
    * Request timeout in milliseconds. Defaults to 30 000.
    */
   timeoutMs?: number;
@@ -160,6 +178,22 @@ export async function apiRequest<T>(
 
     try {
       const authHeaders = buildAuthHeaders(accessToken, options.headers);
+      
+      // Add automatic tenant/locale headers
+      const tenantId = config.getTenantId?.();
+      const userId = config.getUserId?.();
+      const locale = config.getLocale?.();
+      
+      if (tenantId) {
+        authHeaders["X-Tenant-ID"] = tenantId;
+      }
+      if (userId) {
+        authHeaders["X-User-ID"] = userId;
+      }
+      if (locale) {
+        authHeaders["X-Locale"] = locale;
+      }
+      
       return await fetch(url, {
         method: options.method ?? "GET",
         headers: authHeaders,

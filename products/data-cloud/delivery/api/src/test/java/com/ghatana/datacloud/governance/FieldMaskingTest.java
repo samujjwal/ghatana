@@ -14,7 +14,18 @@ import java.util.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests for data field masking (PII redaction) by sensitivity level and regulation. 
+ * Tests for data field masking (PII redaction) by sensitivity level and regulation.
+ *
+ * <p>Covers field-level masking logic for PIIs like email, phone, credit card, SSN.
+ *
+ * <p><b>DC-P1-015 Note:</b> Additional governance integration tests required to verify:
+ * - Data redaction effects across entities and events
+ * - Event log redaction during append/replay
+ * - Audit log redaction for sensitive operations
+ * - Derived-index redaction (search, lineage)
+ * - Retention policy enforcement
+ * - Legal-hold preservation overrides
+ * These require end-to-end governance integration tests against real storage.
  *
  * @doc.type    class
  * @doc.purpose Tests for field-level masking and PII redaction logic

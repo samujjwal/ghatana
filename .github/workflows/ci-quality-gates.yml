@@ -1,0 +1,238 @@
+name: TutorPutor CI Quality Gates
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: products/tutorputor/pnpm-lock.yaml
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./products/tutorputor
+
+      - name: Type check platform service
+        run: pnpm --filter @tutorputor/platform type-check
+        working-directory: ./products/tutorputor
+
+      - name: Type check admin app
+        run: pnpm --filter @tutorputor/admin type-check
+        working-directory: ./products/tutorputor
+
+      - name: Type check mobile app
+        run: pnpm --filter @tutorputor/mobile type-check
+        working-directory: ./products/tutorputor
+
+      - name: Type check learner app
+        run: pnpm --filter @tutorputor/learner type-check
+        working-directory: ./products/tutorputor
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: products/tutorputor/pnpm-lock.yaml
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./products/tutorputor
+
+      - name: Lint platform service
+        run: pnpm --filter @tutorputor/platform lint
+        working-directory: ./products/tutorputor
+
+      - name: Lint admin app
+        run: pnpm --filter @tutorputor/admin lint
+        working-directory: ./products/tutorputor
+
+      - name: Lint mobile app
+        run: pnpm --filter @tutorputor/mobile lint
+        working-directory: ./products/tutorputor
+
+      - name: Lint learner app
+        run: pnpm --filter @tutorputor/learner lint
+        working-directory: ./products/tutorputor
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: products/tutorputor/pnpm-lock.yaml
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./products/tutorputor
+
+      - name: Test platform service
+        run: pnpm --filter @tutorputor/platform test
+        working-directory: ./products/tutorputor
+
+      - name: Test admin app
+        run: pnpm --filter @tutorputor/admin test
+        working-directory: ./products/tutorputor
+
+      - name: Test learner app
+        run: pnpm --filter @tutorputor/learner test
+        working-directory: ./products/tutorputor
+
+      - name: Test mobile app
+        run: pnpm --filter @tutorputor/mobile test
+        working-directory: ./products/tutorputor
+
+  java-tests:
+    name: Java Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Test content generation service
+        run: cd products/tutorputor/services/tutorputor-content-generation && ./gradlew test --no-daemon
+
+      - name: Test cache service
+        run: cd products/tutorputor/tutorputor-cache && ./gradlew test --no-daemon
+
+  contract-validation:
+    name: Contract Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: products/tutorputor/pnpm-lock.yaml
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./products/tutorputor
+
+      - name: Validate content-studio contracts
+        run: pnpm --filter @tutorputor/contracts test
+        working-directory: ./products/tutorputor
+
+      - name: Validate gRPC contracts
+        run: cd products/tutorputor/services/tutorputor-platform/src/workers/content/grpc && pnpm test
+        working-directory: ./products/tutorputor
+
+  route-ownership-validation:
+    name: Route Ownership Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate route ownership
+        run: node products/tutorputor/scripts/validate-route-ownership.mjs
+
+  quality-gate-summary:
+    name: Quality Gate Summary
+    runs-on: ubuntu-latest
+    needs: [typecheck, lint, tests, java-tests, contract-validation, route-ownership-validation]
+    if: always()
+    steps:
+      - name: Check job results
+        run: |
+          if [ "${{ needs.typecheck.result }}" != "success" ]; then
+            echo "❌ Type check failed"
+            exit 1
+          fi
+          if [ "${{ needs.lint.result }}" != "success" ]; then
+            echo "❌ Lint failed"
+            exit 1
+          fi
+          if [ "${{ needs.tests.result }}" != "success" ]; then
+            echo "❌ Tests failed"
+            exit 1
+          fi
+          if [ "${{ needs.java-tests.result }}" != "success" ]; then
+            echo "❌ Java tests failed"
+            exit 1
+          fi
+          if [ "${{ needs.contract-validation.result }}" != "success" ]; then
+            echo "❌ Contract validation failed"
+            exit 1
+          fi
+          if [ "${{ needs.route-ownership-validation.result }}" != "success" ]; then
+            echo "❌ Route ownership validation failed"
+            exit 1
+          fi
+          echo "✅ All quality gates passed"

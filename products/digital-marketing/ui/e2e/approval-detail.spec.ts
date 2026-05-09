@@ -17,7 +17,8 @@ const DETAIL_URL = `/workspaces/${TEST_WORKSPACE}/approvals/${APPROVAL_PENDING.r
 test.describe('approval detail', () => {
   test.beforeEach(async ({ page }) => {
     await mockDmosApi(page);
-    await loginAs(page);
+    await loginAs(page, { roles: ['viewer'] });
+    await page.waitForURL(new RegExp(`/workspaces/${TEST_WORKSPACE}/dashboard`));
     await navigateInApp(page, DETAIL_URL);
     await expect(page.locator('[data-testid="approval-detail-page"]')).toBeVisible();
   });
@@ -37,7 +38,7 @@ test.describe('approval detail', () => {
   });
 
   test('hides decide button and shows permission notice when user has no approver role', async ({ page }) => {
-    // Default login provides no roles (least-privilege) — button must be absent
+    // Viewer can access detail but cannot decide
     await expect(page.locator('[data-testid="open-decide-dialog"]')).not.toBeVisible();
     await expect(page.locator('[data-testid="approval-permission-denied"]')).toBeVisible();
   });
@@ -56,9 +57,9 @@ test.describe('approval detail', () => {
     await loginAs(page, { roles: ['marketing-director'] });
     await navigateInApp(page, DETAIL_URL);
     await page.click('[data-testid="open-decide-dialog"]');
-    await page.locator('[data-testid="decision-approve"]').click();
-    await page.fill('[data-testid="decision-comment"]', 'Approved for Q3 strategy');
-    await page.click('[data-testid="decision-submit"]');
+    await page.selectOption('[data-testid="decision-select"]', 'APPROVE');
+    await page.fill('[data-testid="decide-comment"]', 'Approved for Q3 strategy');
+    await page.click('[data-testid="decide-submit"]');
     await expect(page.locator('[data-testid="approval-status-badge"]')).toContainText('APPROVED');
     await expect(page.locator('[data-testid="approval-permission-denied"]')).not.toBeVisible();
   });
@@ -68,9 +69,9 @@ test.describe('approval detail', () => {
     await loginAs(page, { roles: ['marketing-director'] });
     await navigateInApp(page, DETAIL_URL);
     await page.click('[data-testid="open-decide-dialog"]');
-    await page.locator('[data-testid="decision-reject"]').click();
-    await page.fill('[data-testid="decision-comment"]', 'Needs more detail on budget');
-    await page.click('[data-testid="decision-submit"]');
+    await page.selectOption('[data-testid="decision-select"]', 'REJECT');
+    await page.fill('[data-testid="decide-comment"]', 'Needs more detail on budget');
+    await page.click('[data-testid="decide-submit"]');
     await expect(page.locator('[data-testid="approval-status-badge"]')).toContainText('REJECTED');
   });
 
@@ -84,9 +85,9 @@ test.describe('approval detail', () => {
     );
     await navigateInApp(page, DETAIL_URL);
     await page.click('[data-testid="open-decide-dialog"]');
-    await page.locator('[data-testid="decision-approve"]').click();
-    await page.click('[data-testid="decision-submit"]');
-    await expect(page.locator('[data-testid="decision-error"]')).toContainText('comment');
+    await page.selectOption('[data-testid="decision-select"]', 'APPROVE');
+    await expect(page.locator('[data-testid="decide-submit"]')).toBeDisabled();
+    await expect(page.getByText('Comment is required for high-risk decisions.')).toBeVisible();
   });
 
   test('shows error state when API returns error @a11y', async ({ page }) => {
@@ -109,9 +110,9 @@ test.describe('approval detail', () => {
       `**/v1/workspaces/${TEST_WORKSPACE}/approvals/${APPROVAL_PENDING.requestId}/decide`,
       (route) => route.fulfill({ status: 403, body: 'Forbidden' }),
     );
-    await page.locator('[data-testid="decision-approve"]').click();
-    await page.fill('[data-testid="decision-comment"]', 'Should fail');
-    await page.click('[data-testid="decision-submit"]');
-    await expect(page.locator('[data-testid="decision-error"]')).toContainText('403');
+    await page.selectOption('[data-testid="decision-select"]', 'APPROVE');
+    await page.fill('[data-testid="decide-comment"]', 'Should fail');
+    await page.click('[data-testid="decide-submit"]');
+    await expect(page.locator('[data-testid="decide-error"]')).toContainText('permission');
   });
 });

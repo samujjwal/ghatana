@@ -145,6 +145,7 @@ export class OllamaAIProxyService implements AIProxyService {
           title: true,
           searchableText: true,
           difficultyLevel: true,
+          domain: true,
         },
       });
 
@@ -181,7 +182,7 @@ export class OllamaAIProxyService implements AIProxyService {
       return {
         title: module.title,
         description: module.searchableText as string | null,
-        domain: module.difficultyLevel as string | null,
+        domain: module.domain as string | null,
         contentBlocks,
         learningObjectives,
         misconceptions,

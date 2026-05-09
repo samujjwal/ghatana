@@ -125,7 +125,7 @@ class DataCloudRouterBuilderIntegrationTest {
         AiAssistHandler aiAssistHandler = mock(AiAssistHandler.class);
         VoiceGatewayHandler voiceHandler = mock(VoiceGatewayHandler.class);
         DataLifecycleHandler dataLifecycleHandler = mock(DataLifecycleHandler.class);
-        CapabilityRegistryHandler capabilityRegistryHandler = mock(CapabilityRegistryHandler.class);
+        SurfaceRegistryHandler surfaceRegistryHandler = mock(SurfaceRegistryHandler.class);
         LineageHandler lineageHandler = mock(LineageHandler.class);
         ContextLayerHandler contextLayerHandler = mock(ContextLayerHandler.class);
         CollectionContextHandler collectionContextHandler = mock(CollectionContextHandler.class);
@@ -163,7 +163,7 @@ class DataCloudRouterBuilderIntegrationTest {
             .withAiAssistRoutes(aiAssistHandler)
             .withVoiceRoutes(voiceHandler)
             .withGovernanceRoutes(dataLifecycleHandler)
-            .withCapabilityRoutes(capabilityRegistryHandler)
+            .withCapabilityRoutes(surfaceRegistryHandler)
             .withLineageRoutes(lineageHandler)
             .withContextRoutes(contextLayerHandler, collectionContextHandler, semanticSearchHandler)
             .withMcpRoutes(mcpToolsHandler)

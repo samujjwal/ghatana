@@ -10,17 +10,24 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import type { ApprovalRecordResponse } from '@/types/approval';
+import { Badge, Table, TableHead, TableBody, TableRow, TableCell } from '@ghatana/design-system';
 
 interface ApprovalQueueTableProps {
   workspaceId: string;
   approvals: ApprovalRecordResponse[];
 }
 
-function statusBadgeClass(status: string): string {
-  if (status === 'APPROVED') return 'text-green-700 bg-green-100';
-  if (status === 'REJECTED') return 'text-red-700 bg-red-100';
-  if (status === 'CANCELLED') return 'text-gray-600 bg-gray-100';
-  return 'text-yellow-700 bg-yellow-100';
+function statusBadgeClass(status: string): 'success' | 'danger' | 'neutral' | 'warning' {
+  if (status === 'APPROVED') return 'success';
+  if (status === 'REJECTED') return 'danger';
+  if (status === 'CANCELLED') return 'neutral';
+  return 'warning';
+}
+
+function riskBadgeTone(riskLevel: number): 'success' | 'warning' | 'danger' {
+  if (riskLevel >= 4) return 'danger';
+  if (riskLevel >= 2) return 'warning';
+  return 'success';
 }
 
 export const ApprovalQueueTable: React.FC<ApprovalQueueTableProps> = ({
@@ -39,55 +46,48 @@ export const ApprovalQueueTable: React.FC<ApprovalQueueTableProps> = ({
   }
 
   return (
-    <table
-      data-testid="approval-queue-table"
-      className="w-full text-sm border-collapse"
-    >
-      <thead>
-        <tr className="border-b text-left text-gray-600">
-          <th className="py-2 pr-4">Type</th>
-          <th className="py-2 pr-4">Target</th>
-          <th className="py-2 pr-4">Risk</th>
-          <th className="py-2 pr-4">Status</th>
-          <th className="py-2 pr-4">Submitted By</th>
-          <th className="py-2 pr-4">Submitted At</th>
-          <th className="py-2" />
-        </tr>
-      </thead>
-      <tbody>
+    <Table data-testid="approval-queue-table" size="small">
+      <TableHead>
+        <TableRow className="border-b text-left text-gray-600">
+          <TableCell component="th" className="py-2 pr-4">Type</TableCell>
+          <TableCell component="th" className="py-2 pr-4">Target</TableCell>
+          <TableCell component="th" className="py-2 pr-4">Risk</TableCell>
+          <TableCell component="th" className="py-2 pr-4">Status</TableCell>
+          <TableCell component="th" className="py-2 pr-4">Submitted By</TableCell>
+          <TableCell component="th" className="py-2 pr-4">Submitted At</TableCell>
+          <TableCell component="th" className="py-2" />
+        </TableRow>
+      </TableHead>
+      <TableBody>
         {approvals.map((a) => (
-            <tr
+            <TableRow
               key={a.requestId}
               data-testid={`approval-row-${a.requestId}`}
               className="border-b hover:bg-gray-50"
             >
-              <td className="py-2 pr-4 font-mono text-xs">{a.targetType ?? 'Unknown'}</td>
-              <td className="py-2 pr-4 max-w-xs truncate text-xs text-gray-700">{a.targetId ?? 'N/A'}</td>
-              <td className="py-2 pr-4">
-                <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                  a.riskLevel >= 4 ? 'text-red-700 bg-red-100' :
-                  a.riskLevel >= 3 ? 'text-orange-700 bg-orange-100' :
-                  a.riskLevel >= 2 ? 'text-yellow-700 bg-yellow-100' :
-                  'text-green-700 bg-green-100'
-                }`}>
+              <TableCell className="py-2 pr-4 font-mono text-xs">{a.targetType ?? 'Unknown'}</TableCell>
+              <TableCell className="py-2 pr-4 max-w-xs truncate text-xs text-gray-700">{a.targetId ?? 'N/A'}</TableCell>
+              <TableCell className="py-2 pr-4">
+                <Badge tone={riskBadgeTone(a.riskLevel)} variant="soft">
                   {a.riskLevel}
-                </span>
-              </td>
-              <td className="py-2 pr-4">
-                <span
+                </Badge>
+              </TableCell>
+              <TableCell className="py-2 pr-4">
+                <Badge
                   data-testid={`status-badge-${a.requestId}`}
-                  className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${statusBadgeClass(a.status)}`}
+                  tone={statusBadgeClass(a.status)}
+                  variant="soft"
                 >
                   {a.status}
-                </span>
-              </td>
-              <td className="py-2 pr-4 text-xs text-gray-600">
+                </Badge>
+              </TableCell>
+              <TableCell className="py-2 pr-4 text-xs text-gray-600">
                 {a.submittedBy}
-              </td>
-              <td className="py-2 pr-4 text-xs text-gray-500">
+              </TableCell>
+              <TableCell className="py-2 pr-4 text-xs text-gray-500">
                 {new Date(a.submittedAt).toLocaleDateString()}
-              </td>
-              <td className="py-2">
+              </TableCell>
+              <TableCell className="py-2">
                 <Link
                   to={`/workspaces/${workspaceId}/approvals/${a.requestId}`}
                   data-testid={`review-link-${a.requestId}`}
@@ -95,10 +95,10 @@ export const ApprovalQueueTable: React.FC<ApprovalQueueTableProps> = ({
                 >
                   Review
                 </Link>
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   );
 };

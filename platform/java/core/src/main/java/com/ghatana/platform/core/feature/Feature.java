@@ -36,18 +36,16 @@ public enum Feature {
     SECURITY_GATEWAY_ZERO_TRUST,
 
     // ==========================================================================
-    // Product Features
+    // Product-Specific Features
     // ==========================================================================
-
-    /** AEP advanced event-processing patterns */
-    AEP_ADVANCED_PATTERNS,
-
-    /** AEP machine-learning pipelines */
-    AEP_MACHINE_LEARNING,
-
-    /** YAPPC code scaffolding */
-    YAPPC_SCAFFOLDING,
-
-    /** Data-Cloud knowledge graph */
-    DATA_CLOUD_KNOWLEDGE_GRAPH
+    // NOTE: Product-specific feature flags must be defined in the product layer,
+    // not in platform modules. This ensures platform modules remain genuinely
+    // reusable across all Ghatana products.
+    //
+    // Examples of where product features should be defined:
+    // - products/data-cloud: DataCloudFeature enum
+    // - products/aep: AepFeature enum
+    // - products/yappc: YappcFeature enum
+    //
+    // See DC-BND-003 remediation for details.
 }

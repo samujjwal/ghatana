@@ -9,6 +9,7 @@
  */
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { DashboardWidgetCard } from '@/components/dashboard/DashboardWidgetCard';
 
 interface CampaignStatusWidgetProps {
   workspaceId: string;
@@ -31,34 +32,38 @@ export function CampaignStatusWidget({
 
   if (isLoading) {
     return (
-      <div
-        data-testid="campaign-status-widget"
-        className="bg-white border border-gray-200 rounded-lg p-4"
-      >
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Campaign Status</h2>
-        <div className="animate-pulse h-20 bg-gray-100 rounded" />
-      </div>
+      <DashboardWidgetCard
+        testId="campaign-status-widget"
+        title="Campaign Status"
+        state="loading"
+      />
     );
   }
 
   if (isError) {
     return (
-      <div
-        data-testid="campaign-status-widget"
-        className="bg-white border border-gray-200 rounded-lg p-4"
-      >
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Campaign Status</h2>
-        <div className="text-sm text-red-600">Failed to load campaign status</div>
-      </div>
+      <DashboardWidgetCard
+        testId="campaign-status-widget"
+        title="Campaign Status"
+        state="error"
+        message="Failed to load campaign status"
+      />
     );
   }
 
   return (
-    <div
-      data-testid="campaign-status-widget"
-      className="bg-white border border-gray-200 rounded-lg p-4"
+    <DashboardWidgetCard
+      testId="campaign-status-widget"
+      title="Campaign Status"
+      footer={(
+        <Link
+          to={`/workspaces/${workspaceId}/campaigns`}
+          className="mt-3 block text-xs text-blue-600 hover:underline"
+        >
+          View all campaigns →
+        </Link>
+      )}
     >
-      <h2 className="text-sm font-semibold text-gray-700 mb-3">Campaign Status</h2>
       <div className="space-y-2">
         <div className="flex justify-between items-center">
           <span className="text-xs text-gray-600">Active</span>
@@ -79,12 +84,6 @@ export function CampaignStatusWidget({
           </div>
         </div>
       </div>
-      <Link
-        to={`/workspaces/${workspaceId}/campaigns`}
-        className="mt-3 block text-xs text-blue-600 hover:underline"
-      >
-        View all campaigns →
-      </Link>
-    </div>
+    </DashboardWidgetCard>
   );
 }

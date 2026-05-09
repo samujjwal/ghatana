@@ -153,15 +153,21 @@ export async function apiRequest<T>(
  */
 export class ApiError extends Error {
   readonly status: number;
+  readonly code: string | null;
   readonly correlationId: string | null;
   readonly body: string;
+  readonly details: Record<string, unknown>;
 
   constructor(message: string, status: number, correlationId: string | null, body: string) {
-    super(message);
+    const parsed = parseErrorEnvelope(body);
+    const resolvedMessage = parsed?.message ?? message;
+    super(resolvedMessage);
     this.name = 'ApiError';
     this.status = status;
-    this.correlationId = correlationId;
+    this.code = parsed?.error ?? null;
+    this.correlationId = parsed?.correlationId ?? correlationId;
     this.body = body;
+    this.details = parsed?.details ?? {};
   }
 
   /**
@@ -169,6 +175,17 @@ export class ApiError extends Error {
    * P1-011: All status codes return sanitized messages only.
    */
   getUserMessage(): string {
+    const hasCanonicalEnvelope = this.code !== null;
+    if (this.status === 423) {
+      return hasCanonicalEnvelope
+        ? this.message
+        : 'This feature is currently locked or disabled.';
+    }
+    if (this.status === 422) {
+      return hasCanonicalEnvelope
+        ? this.message
+        : 'The request violates policy or domain constraints.';
+    }
     if (this.status >= 500) {
       return `Server error. Please try again later.${this.correlationId ? ` (Ref: ${this.correlationId})` : ''}`;
     }
@@ -188,9 +205,56 @@ export class ApiError extends Error {
       return 'Your session has expired. Please log in again.';
     }
     if (this.status === 400) {
-      return `Invalid request. Please check your inputs.${this.correlationId ? ` (Ref: ${this.correlationId})` : ''}`;
+      return hasCanonicalEnvelope
+        ? this.message
+        : `Invalid request. Please check your inputs.${this.correlationId ? ` (Ref: ${this.correlationId})` : ''}`;
+    }
+    if (hasCanonicalEnvelope && this.status >= 400 && this.status < 500 && this.message) {
+      return this.message;
     }
     // Fallback: never expose raw message / backend body
     return `Request failed (HTTP ${this.status}).${this.correlationId ? ` (Ref: ${this.correlationId})` : ''}`;
+  }
+}
+
+interface CanonicalErrorEnvelope {
+  error: string;
+  message: string;
+  status: number;
+  correlationId: string;
+  details?: Record<string, unknown>;
+}
+
+function parseErrorEnvelope(body: string): CanonicalErrorEnvelope | null {
+  if (!body) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(body) as unknown;
+    if (!parsed || typeof parsed !== 'object') {
+      return null;
+    }
+
+    const envelope = parsed as Record<string, unknown>;
+    if (
+      typeof envelope.error !== 'string' ||
+      typeof envelope.message !== 'string' ||
+      typeof envelope.status !== 'number' ||
+      typeof envelope.correlationId !== 'string'
+    ) {
+      return null;
+    }
+
+    const details = envelope.details;
+    return {
+      error: envelope.error,
+      message: envelope.message,
+      status: envelope.status,
+      correlationId: envelope.correlationId,
+      details: details && typeof details === 'object' ? (details as Record<string, unknown>) : {},
+    };
+  } catch {
+    return null;
   }
 }

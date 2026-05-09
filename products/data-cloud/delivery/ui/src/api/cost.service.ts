@@ -19,6 +19,7 @@ import {
   MigrateCollectionResultSchema,
 } from '../contracts/schemas';
 import { COST_PREDICTIVE_ROUTING_BOUNDARY_WARNING, COST_QUERY_OPTIMIZATION_BOUNDARY_MESSAGE, COST_APPLY_OPTIMIZATION_BOUNDARY_MESSAGE } from '../lib/runtime-boundaries';
+import type { components } from '../contracts/generated/data-cloud';
 
 export interface CostBreakdown {
   total: number;
@@ -253,8 +254,8 @@ export default costService;
 // Tier Migration API (B10)
 // =============================================================================
 
-/** Storage tiers eligible as manual migration targets. */
-export type MigrationTargetTier = 'WARM' | 'COLD';
+/** DC-P1-006: Migrated to use generated type from OpenAPI spec */
+export type MigrationTargetTier = components['schemas']['MigrationTargetTier'];
 
 /** Response shape from POST /api/v1/collections/:id/migrate */
 export type MigrateCollectionResult = SharedMigrateCollectionResult;

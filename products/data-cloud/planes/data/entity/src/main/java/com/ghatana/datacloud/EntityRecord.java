@@ -2,6 +2,8 @@ package com.ghatana.datacloud;
 
 import com.ghatana.datacloud.entity.DataCloudColumnNames;
 import com.ghatana.datacloud.entity.EntityInterface;
+import com.ghatana.datacloud.spi.DeletionMode;
+import com.ghatana.datacloud.spi.DeletionTombstone;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -110,6 +112,40 @@ public class EntityRecord extends DataRecord implements EntityInterface {
     private Boolean active = true;
 
     /**
+     * DC-BE-004: Deletion mode for this entity.
+     * <p>
+     * Tracks how this entity was deleted (SOFT_DELETE, HARD_DELETE, ARCHIVE, RETENTION_PURGE).
+     * Used for lifecycle management and policy enforcement.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "deletion_mode", length = 20)
+    private DeletionMode deletionMode;
+
+    /**
+     * DC-BE-004: Timestamp when the entity was deleted.
+     * <p>
+     * Set when the entity is soft-deleted or archived. Used for retention calculations.
+     */
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+    /**
+     * DC-BE-004: User or system that deleted this entity.
+     * <p>
+     * Set when the entity is soft-deleted or archived. Used for audit trail.
+     */
+    @Column(name = "deleted_by", length = 255)
+    private String deletedBy;
+
+    /**
+     * DC-BE-004: Reason for deletion.
+     * <p>
+     * Optional field to record why the entity was deleted. Used for audit trail.
+     */
+    @Column(name = "deletion_reason", length = 500)
+    private String deletionReason;
+
+    /**
      * Timestamp of last update.
      */
     @Column(name = DataCloudColumnNames.UPDATED_AT)
@@ -152,13 +188,62 @@ public class EntityRecord extends DataRecord implements EntityInterface {
     /**
      * Soft delete this entity.
      * <p>
-     * Sets active to false and records who performed the delete.
+     * Sets active to false, records deletion mode, and records who performed the delete.
+     *
+     * @param deletedBy user performing the delete
+     * @param reason optional reason for deletion
+     */
+    public void softDelete(String deletedBy, String reason) {
+        this.active = false;
+        this.deletionMode = DeletionMode.SOFT_DELETE;
+        this.deletedAt = Instant.now();
+        this.deletedBy = deletedBy;
+        this.deletionReason = reason;
+        this.updatedBy = deletedBy;
+        this.updatedAt = Instant.now();
+    }
+
+    /**
+     * Soft delete this entity (legacy method for backward compatibility).
      *
      * @param deletedBy user performing the delete
      */
     public void softDelete(String deletedBy) {
+        softDelete(deletedBy, null);
+    }
+
+    /**
+     * DC-BE-004: Archive this entity.
+     * <p>
+     * Marks the entity as archived for long-term retention in cold storage.
+     *
+     * @param archivedBy user or system performing the archive
+     * @param reason optional reason for archival
+     */
+    public void archive(String archivedBy, String reason) {
         this.active = false;
-        this.updatedBy = deletedBy;
+        this.deletionMode = DeletionMode.ARCHIVE;
+        this.deletedAt = Instant.now();
+        this.deletedBy = archivedBy;
+        this.deletionReason = reason;
+        this.updatedBy = archivedBy;
+        this.updatedAt = Instant.now();
+    }
+
+    /**
+     * DC-BE-004: Mark this entity for retention purge.
+     * <p>
+     * Marks the entity as scheduled for automated deletion based on retention policies.
+     *
+     * @param purgedBy system identifier performing the purge
+     * @param reason reason for purge (e.g., "retention policy expired")
+     */
+    public void markForRetentionPurge(String purgedBy, String reason) {
+        this.deletionMode = DeletionMode.RETENTION_PURGE;
+        this.deletedAt = Instant.now();
+        this.deletedBy = purgedBy;
+        this.deletionReason = reason;
+        this.updatedBy = purgedBy;
         this.updatedAt = Instant.now();
     }
 
@@ -169,6 +254,10 @@ public class EntityRecord extends DataRecord implements EntityInterface {
      */
     public void restore(String restoredBy) {
         this.active = true;
+        this.deletionMode = null;
+        this.deletedAt = null;
+        this.deletedBy = null;
+        this.deletionReason = null;
         this.updatedBy = restoredBy;
         this.updatedAt = Instant.now();
     }
@@ -182,6 +271,46 @@ public class EntityRecord extends DataRecord implements EntityInterface {
         return !Boolean.TRUE.equals(active);
     }
 
+    /**
+     * DC-BE-004: Check if this entity is archived.
+     *
+     * @return true if entity is archived
+     */
+    public boolean isArchived() {
+        return deletionMode == DeletionMode.ARCHIVE;
+    }
+
+    /**
+     * DC-BE-004: Check if this entity is marked for retention purge.
+     *
+     * @return true if entity is marked for retention purge
+     */
+    public boolean isMarkedForPurge() {
+        return deletionMode == DeletionMode.RETENTION_PURGE;
+    }
+
+    /**
+     * DC-BE-004: Create a tombstone for this entity.
+     *
+     * @return deletion tombstone
+     */
+    public DeletionTombstone toTombstone() {
+        if (!isDeleted()) {
+            throw new IllegalStateException("Cannot create tombstone for active entity");
+        }
+        return DeletionTombstone.builder(
+                id.toString(),
+                tenantId,
+                "entity",
+                id.toString()
+            )
+            .deletionMode(deletionMode)
+            .deletedAt(deletedAt)
+            .deletedBy(deletedBy)
+            .reason(deletionReason)
+            .build();
+    }
+
     @Override
     public String toString() {
         return "EntityRecord{"
@@ -190,6 +319,7 @@ public class EntityRecord extends DataRecord implements EntityInterface {
                 + ", collectionName='" + collectionName + '\''
                 + ", version=" + version
                 + ", active=" + active
+                + ", deletionMode=" + deletionMode
                 + '}';
     }
 }

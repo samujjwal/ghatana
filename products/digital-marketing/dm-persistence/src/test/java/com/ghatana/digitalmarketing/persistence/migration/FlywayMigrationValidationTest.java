@@ -8,9 +8,11 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import javax.sql.DataSource;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,6 +39,19 @@ class FlywayMigrationValidationTest {
         .withUsername("test")
         .withPassword("test");
 
+    private static String migrationLocation() {
+        try {
+            Path migrationMarker = Path.of(Objects.requireNonNull(
+                FlywayMigrationValidationTest.class.getClassLoader()
+                    .getResource("db/migration/V1__create_dmos_campaigns.sql"),
+                "DMOS migration marker not found on classpath"
+            ).toURI());
+            return "filesystem:" + migrationMarker.getParent().toAbsolutePath().normalize();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to resolve DMOS migration directory", e);
+        }
+    }
+
     @Test
     @DisplayName("P1-006: Fresh migration from empty database succeeds")
     void freshMigrationSucceeds() {
@@ -46,7 +61,7 @@ class FlywayMigrationValidationTest {
         // When: Flyway migrates from scratch
         Flyway flyway = Flyway.configure()
             .dataSource(dataSource)
-            .locations("filesystem:src/main/resources/db/migration")
+            .locations(migrationLocation())
             .cleanDisabled(false)
             .load();
 
@@ -171,6 +186,31 @@ class FlywayMigrationValidationTest {
     }
 
     @Test
+    @DisplayName("P1-006: AI action log has provenance columns (V35)")
+    void aiActionLogHasProvenanceColumns() {
+        DataSource dataSource = createDataSource();
+        runMigrations(dataSource);
+
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(
+                 "SELECT column_name FROM information_schema.columns WHERE table_name = 'dmos_ai_action_log'")) {
+
+            Set<String> columns = new java.util.HashSet<>();
+            while (rs.next()) {
+                columns.add(rs.getString("column_name"));
+            }
+
+            assertThat(columns)
+                .as("AI action log should have provenance columns from V35")
+                .contains("provider", "model_version", "human_edited");
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to verify AI action log provenance columns", e);
+        }
+    }
+
+    @Test
     @DisplayName("P1-006: System config table exists for PII HMAC key (V23)")
     void systemConfigTableExistsForPiiHmacKey() {
         // Given: Migrated database
@@ -201,7 +241,7 @@ class FlywayMigrationValidationTest {
         // First migration
         Flyway flyway1 = Flyway.configure()
             .dataSource(dataSource)
-            .locations("filesystem:src/main/resources/db/migration")
+            .locations(migrationLocation())
             .cleanDisabled(false)
             .load();
 
@@ -266,7 +306,7 @@ class FlywayMigrationValidationTest {
     private void runMigrations(DataSource dataSource) {
         Flyway flyway = Flyway.configure()
             .dataSource(dataSource)
-            .locations("filesystem:src/main/resources/db/migration")
+            .locations(migrationLocation())
             .cleanDisabled(false)
             .load();
         flyway.clean();

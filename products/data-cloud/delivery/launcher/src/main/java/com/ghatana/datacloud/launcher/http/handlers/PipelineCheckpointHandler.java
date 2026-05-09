@@ -1,6 +1,7 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.spi.WriteIdempotencyStore;
 import io.activej.http.*;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -32,10 +33,23 @@ public class PipelineCheckpointHandler {
 
     private final DataCloudClient client;
     private final HttpHandlerSupport http;
+    /** DC-BE-002: Generic idempotency store for pipeline operations. */
+    private WriteIdempotencyStore idempotencyStore;
 
     public PipelineCheckpointHandler(DataCloudClient client, HttpHandlerSupport http) {
         this.client = client;
         this.http = http;
+    }
+
+    /**
+     * DC-BE-002: Attaches a generic idempotency store for pipeline operations.
+     *
+     * @param idempotencyStore the idempotency store
+     * @return {@code this} for method chaining
+     */
+    public PipelineCheckpointHandler withIdempotencyStore(WriteIdempotencyStore idempotencyStore) {
+        this.idempotencyStore = idempotencyStore;
+        return this;
     }
 
     // ==================== Pipeline Endpoints ====================
@@ -88,12 +102,31 @@ public class PipelineCheckpointHandler {
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
+
+        // DC-BE-002: Check idempotency for pipeline save
+        String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
+        String operationScope = "pipelines:save";
+        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+            var cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
+            if (cached.isPresent()) {
+                log.info("[DC-BE-002] Returning cached pipeline save response for key={}", idempotencyKey);
+                return Promise.of(http.jsonResponse(cached.get()));
+            }
+        }
+
         return request.loadBody().then(buf -> {
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> data = http.objectMapper().readValue(body, Map.class);
                 return client.save(tenantId, DC_PIPELINES_COLLECTION, data)
-                        .map(entity -> http.createdResponse(flattenPipelineEntity(entity, tenantId)));
+                        .map(entity -> {
+                            Map<String, Object> responseBody = flattenPipelineEntity(entity, tenantId);
+                            // DC-BE-002: Store idempotency response
+                            if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+                                idempotencyStore.put(tenantId, operationScope, idempotencyKey, responseBody);
+                            }
+                            return http.createdResponse(responseBody);
+                        });
             } catch (Exception e) {
                 log.warn("[DC-Pipelines] save failed tenant={}: {}", tenantId, e.getMessage());
                 return Promise.of(http.errorResponse(400, "Invalid pipeline definition: " + e.getMessage()));

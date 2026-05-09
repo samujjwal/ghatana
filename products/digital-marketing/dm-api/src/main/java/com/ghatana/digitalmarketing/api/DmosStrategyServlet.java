@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
+import com.ghatana.digitalmarketing.application.capabilities.DmosCapabilityRegistry;
 import com.ghatana.digitalmarketing.application.strategy.StrategyGeneratorService;
 import com.ghatana.digitalmarketing.api.observability.DmosTelemetry;
 import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
@@ -107,7 +108,13 @@ public final class DmosStrategyServlet {
             try {
                 String workspaceId = request.getPathParameter("workspaceId");
                 // P1-001: Use shared fail-closed HTTP context factory
-                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+                DmOperationContext ctx = httpContextFactory.buildContext(
+                    request,
+                    workspaceId,
+                    true,
+                    DmosCapabilityRegistry.STRATEGY,
+                    "generate-strategy"
+                );
                 GenerateStrategyRequest body = MAPPER.readValue(
                     request.getBody().getString(StandardCharsets.UTF_8),
                     GenerateStrategyRequest.class
@@ -138,14 +145,16 @@ public final class DmosStrategyServlet {
                         .then(r -> Promise.of(r), e -> {
                             telemetry.recordException(span, e);
                             span.end();
-                            return mapServiceError("generate strategy", e);
+                            return mapServiceError("generate strategy", e, request);
                         });
                 }
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
+            } catch (SecurityException e) {
+                return Promise.of(DmosApiErrorResponses.error(403, "Access denied", request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to generate strategy", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -156,7 +165,13 @@ public final class DmosStrategyServlet {
                 String workspaceId = request.getPathParameter("workspaceId");
                 String strategyId = request.getPathParameter("strategyId");
                 // P1-001: Use shared fail-closed HTTP context factory
-                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+                DmOperationContext ctx = httpContextFactory.buildContext(
+                    request,
+                    workspaceId,
+                    true,
+                    DmosCapabilityRegistry.STRATEGY,
+                    "submit-strategy"
+                );
 
                 // P1-026: Create span for strategy submission
                 io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /strategy/:strategyId/submit", ctx).startSpan();
@@ -171,14 +186,16 @@ public final class DmosStrategyServlet {
                         .then(r -> Promise.of(r), e -> {
                             telemetry.recordException(span, e);
                             span.end();
-                            return mapServiceError("submit strategy for approval", e);
+                            return mapServiceError("submit strategy for approval", e, request);
                         });
                 }
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
+            } catch (SecurityException e) {
+                return Promise.of(DmosApiErrorResponses.error(403, "Access denied", request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to submit strategy for approval", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -189,7 +206,13 @@ public final class DmosStrategyServlet {
                 String workspaceId = request.getPathParameter("workspaceId");
                 String strategyId = request.getPathParameter("strategyId");
                 // P1-001: Use shared fail-closed HTTP context factory
-                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+                DmOperationContext ctx = httpContextFactory.buildContext(
+                    request,
+                    workspaceId,
+                    true,
+                    DmosCapabilityRegistry.STRATEGY,
+                    "approve-strategy"
+                );
 
                 // P1-026: Create span for strategy approval
                 io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /strategy/:strategyId/approve", ctx).startSpan();
@@ -204,14 +227,16 @@ public final class DmosStrategyServlet {
                         .then(r -> Promise.of(r), e -> {
                             telemetry.recordException(span, e);
                             span.end();
-                            return mapServiceError("approve strategy", e);
+                            return mapServiceError("approve strategy", e, request);
                         });
                 }
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
+            } catch (SecurityException e) {
+                return Promise.of(DmosApiErrorResponses.error(403, "Access denied", request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to approve strategy", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -224,33 +249,33 @@ public final class DmosStrategyServlet {
 
             return strategyService.getLatestStrategy(ctx)
                 .map(strategy -> jsonResponse(200, StrategyResponse.from(strategy)))
-                .then(r -> Promise.of(r), e -> mapServiceError("get latest strategy", e));
+                .then(r -> Promise.of(r), e -> mapServiceError("get latest strategy", e, request));
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to get latest strategy", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
         }
     }
 
-    private Promise<HttpResponse> mapServiceError(String operation, Throwable error) {
+    private Promise<HttpResponse> mapServiceError(String operation, Throwable error, HttpRequest request) {
         if (error instanceof SecurityException) {
-            return Promise.of(errorResponse(403, "Access denied"));
+            return Promise.of(DmosApiErrorResponses.error(403, "Access denied", request));
         }
         if (error instanceof NoSuchElementException) {
-            return Promise.of(errorResponse(404, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(404, error.getMessage(), request));
         }
         if (error instanceof IllegalArgumentException) {
-            return Promise.of(errorResponse(400, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, error.getMessage(), request));
         }
         if (error instanceof IllegalStateException) {
-            return Promise.of(errorResponse(409, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(409, error.getMessage(), request));
         }
         if (error instanceof DmosFeatureDisabledException || error instanceof DmosConnectorDisabledException) {
-            return Promise.of(errorResponse(423, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(423, error.getMessage(), request));
         }
         LOG.error("[DMOS] Failed to {}", operation, error);
-        return Promise.of(errorResponse(500, "Internal error"));
+        return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
     }
 
     // P1-001: Local buildContext method removed - using shared DmosHttpContextFactory
@@ -267,10 +292,6 @@ public final class DmosStrategyServlet {
             LOG.error("[DMOS] Serialization failure", e);
             return HttpResponse.ofCode(500).build();
         }
-    }
-
-    private HttpResponse errorResponse(int code, String message) {
-        return jsonResponse(code, new ErrorBody(code, message));
     }
 
     record GenerateStrategyRequest(
@@ -347,6 +368,4 @@ public final class DmosStrategyServlet {
         }
     }
 
-    record ErrorBody(int status, String message) {
-    }
 }

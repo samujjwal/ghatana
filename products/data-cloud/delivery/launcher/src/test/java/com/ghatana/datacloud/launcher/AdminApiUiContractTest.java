@@ -15,6 +15,12 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
+ * DC-SEC-001 Note: This file contains tenant administration tests but a full tenant isolation test matrix
+ * is required to verify every route group rejects cross-tenant access. Current implementation has
+ * isolated tenant isolation tests in AnalyticsUiContractTest and CollectionsUiContractTest, but
+ * a comprehensive test matrix across all route groups (entities, events, pipelines, governance, etc.)
+ * is required to ensure no cross-tenant data leak.
+ *
  * @doc.type class
  * @doc.purpose UI contract tests for Admin & API Documentation pages
  * @doc.layer product

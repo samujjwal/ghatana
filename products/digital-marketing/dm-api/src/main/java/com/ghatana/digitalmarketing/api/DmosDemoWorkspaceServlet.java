@@ -59,13 +59,13 @@ public final class DmosDemoWorkspaceServlet {
             io.activej.http.RoutingServlet.builder(eventloop)
                 .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/demo-workspaces",
                     this::handleProvision)
-                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/demo-workspaces/:workspaceId/activate",
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/demo-workspaces/:demoWorkspaceId/activate",
                     this::handleActivate)
-                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/demo-workspaces/:workspaceId/deactivate",
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/demo-workspaces/:demoWorkspaceId/deactivate",
                     this::handleDeactivate)
-                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/demo-workspaces/:workspaceId/expire",
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/demo-workspaces/:demoWorkspaceId/expire",
                     this::handleExpire)
-                .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/demo-workspaces/:workspaceId",
+                .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/demo-workspaces/:demoWorkspaceId",
                     this::handleGetById)
                 .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/demo-workspaces",
                     this::handleList)
@@ -102,21 +102,18 @@ public final class DmosDemoWorkspaceServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("demo_workspace.provision.error", Map.of());
                     LOG.error("Failed to provision demo workspace", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("demo_workspace.provision.error", Map.of());
             LOG.error("Failed to parse provision request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
     private Promise<HttpResponse> handleActivate(HttpRequest request) {
         String workspaceId = request.getPathParameter("workspaceId");
-        String demoWorkspaceId = request.getPathParameter("workspaceId");
+        String demoWorkspaceId = request.getPathParameter("demoWorkspaceId");
         boolean isWriteOperation = true;
 
         try {
@@ -133,21 +130,18 @@ public final class DmosDemoWorkspaceServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("demo_workspace.activate.error", Map.of());
                     LOG.error("Failed to activate demo workspace", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("demo_workspace.activate.error", Map.of());
             LOG.error("Failed to process activate request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
     private Promise<HttpResponse> handleDeactivate(HttpRequest request) {
         String workspaceId = request.getPathParameter("workspaceId");
-        String demoWorkspaceId = request.getPathParameter("workspaceId");
+        String demoWorkspaceId = request.getPathParameter("demoWorkspaceId");
         boolean isWriteOperation = true;
 
         try {
@@ -166,21 +160,18 @@ public final class DmosDemoWorkspaceServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("demo_workspace.deactivate.error", Map.of());
                     LOG.error("Failed to deactivate demo workspace", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("demo_workspace.deactivate.error", Map.of());
             LOG.error("Failed to parse deactivate request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
     private Promise<HttpResponse> handleExpire(HttpRequest request) {
         String workspaceId = request.getPathParameter("workspaceId");
-        String demoWorkspaceId = request.getPathParameter("workspaceId");
+        String demoWorkspaceId = request.getPathParameter("demoWorkspaceId");
         boolean isWriteOperation = true;
 
         try {
@@ -197,21 +188,18 @@ public final class DmosDemoWorkspaceServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("demo_workspace.expire.error", Map.of());
                     LOG.error("Failed to expire demo workspace", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("demo_workspace.expire.error", Map.of());
             LOG.error("Failed to process expire request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
     private Promise<HttpResponse> handleGetById(HttpRequest request) {
         String workspaceId = request.getPathParameter("workspaceId");
-        String demoWorkspaceId = request.getPathParameter("workspaceId");
+        String demoWorkspaceId = request.getPathParameter("demoWorkspaceId");
         boolean isWriteOperation = false;
 
         try {
@@ -220,10 +208,7 @@ public final class DmosDemoWorkspaceServlet {
             return demoWorkspaceService.findById(ctx, demoWorkspaceId)
                 .map(workspaceOpt -> {
                     if (workspaceOpt.isEmpty()) {
-                        return HttpResponse.ofCode(404)
-                            .withBody("{\"error\":\"Demo workspace not found\"}")
-                            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                            .build();
+                        return DmosApiErrorResponses.error(404, "Demo workspace not found", ctx.getCorrelationId().getValue());
                     }
                     return HttpResponse.ofCode(200)
                         .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -233,15 +218,12 @@ public final class DmosDemoWorkspaceServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("demo_workspace.get.error", Map.of());
                     LOG.error("Failed to get demo workspace", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("demo_workspace.get.error", Map.of());
             LOG.error("Failed to process get request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -263,29 +245,20 @@ public final class DmosDemoWorkspaceServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("demo_workspace.list.error", Map.of());
                     LOG.error("Failed to list demo workspaces", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("demo_workspace.list.error", Map.of());
             LOG.error("Failed to process list request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
-    private HttpResponse mapServiceError(Exception e) {
+    private HttpResponse mapServiceError(Exception e, DmOperationContext ctx) {
         if (e instanceof IllegalArgumentException) {
-            return HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"" + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build();
+            return DmosApiErrorResponses.error(400, e.getMessage(), ctx.getCorrelationId().getValue());
         }
-        return HttpResponse.ofCode(500)
-            .withBody("{\"error\":\"Internal server error\"}")
-            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-            .build();
+        return DmosApiErrorResponses.error(500, "Internal server error", ctx.getCorrelationId().getValue());
     }
 
     private DemoWorkspaceDto toDto(DemoWorkspace workspace) {

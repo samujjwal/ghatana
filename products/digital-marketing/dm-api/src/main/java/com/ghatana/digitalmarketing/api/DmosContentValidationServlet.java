@@ -102,7 +102,7 @@ public final class DmosContentValidationServlet {
                             req = MAPPER.readValue(body.getString(StandardCharsets.UTF_8), ValidateRequest.class);
                         } catch (Exception e) {
                             LOG.warn("Invalid validate request body: {}", e.getMessage());
-                            return Promise.of(badRequest("Invalid request body: " + e.getMessage()));
+                            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request body: " + e.getMessage(), request));
                         }
 
                         DmOperationContext ctx = buildContext(request, workspaceId);
@@ -115,19 +115,19 @@ public final class DmosContentValidationServlet {
                         return validationService.validateVersion(ctx, command)
                             .map(this::toResponse)
                             .map(r -> jsonResponse(200, r))
-                            .then(r -> Promise.of(r), e -> mapServiceError("validate", e));
+                            .then(r -> Promise.of(r), e -> mapServiceError("validate", e, request));
                     } catch (IllegalArgumentException e) {
-                        return Promise.of(badRequest("Invalid request: " + e.getMessage()));
+                        return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
                     } catch (Exception e) {
                         LOG.error("Unexpected error during validate", e);
-                        return Promise.of(internalError("Unexpected error"));
+                        return Promise.of(DmosApiErrorResponses.error(500, "Unexpected error", request));
                     }
                 });
         } catch (IllegalArgumentException e) {
-            return Promise.of(badRequest("Invalid request: " + e.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         } catch (Exception e) {
             LOG.error("Error in handleValidate", e);
-            return Promise.of(internalError("Error processing request"));
+            return Promise.of(DmosApiErrorResponses.error(500, "Error processing request", request));
         }
     }
 
@@ -140,12 +140,12 @@ public final class DmosContentValidationServlet {
             return validationService.listResults(ctx, versionId)
                 .map(results -> results.stream().map(this::toResponse).toList())
                 .map(responses -> jsonResponse(200, new ListResultsResponse(responses)))
-                .then(r -> Promise.of(r), e -> mapServiceError("list-results", e));
+                .then(r -> Promise.of(r), e -> mapServiceError("list-results", e, request));
         } catch (IllegalArgumentException e) {
-            return Promise.of(badRequest("Invalid request: " + e.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         } catch (Exception e) {
             LOG.error("Error in handleListResults", e);
-            return Promise.of(internalError("Error processing request"));
+            return Promise.of(DmosApiErrorResponses.error(500, "Error processing request", request));
         }
     }
 
@@ -199,53 +199,21 @@ public final class DmosContentValidationServlet {
             result.validatedBy());
     }
 
-    private Promise<HttpResponse> mapServiceError(String operation, Throwable e) {
+    private Promise<HttpResponse> mapServiceError(String operation, Throwable e, HttpRequest request) {
         LOG.warn("Content validation service error [{}]: {}", operation, e.getMessage());
         if (e instanceof SecurityException) {
-            return Promise.of(forbidden(e.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(403, e.getMessage(), request));
         }
         if (e instanceof IllegalArgumentException) {
-            return Promise.of(badRequest(e.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
         }
         if (e instanceof NoSuchElementException) {
-            return Promise.of(notFound(e.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(404, e.getMessage(), request));
         }
         if (e instanceof DmosFeatureDisabledException || e instanceof DmosConnectorDisabledException) {
-            return Promise.of(locked(e.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(423, e.getMessage(), request));
         }
-        return Promise.of(internalError("Unexpected error during " + operation));
-    }
-
-    private static HttpResponse locked(String message) {
-        return errorResponse(423, message);
-    }
-
-    private static HttpResponse badRequest(String message) {
-        return errorResponse(400, message);
-    }
-
-    private static HttpResponse forbidden(String message) {
-        return errorResponse(403, message);
-    }
-
-    private static HttpResponse notFound(String message) {
-        return errorResponse(404, message);
-    }
-
-    private static HttpResponse internalError(String message) {
-        return errorResponse(500, message);
-    }
-
-    private static HttpResponse errorResponse(int code, String message) {
-        try {
-            String json = MAPPER.writeValueAsString(new ErrorBody(code, message));
-            return HttpResponse.ofCode(code)
-                .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_JSON)
-                .withBody(json.getBytes(StandardCharsets.UTF_8))
-                .build();
-        } catch (Exception ex) {
-            return HttpResponse.ofCode(code).build();
-        }
+        return Promise.of(DmosApiErrorResponses.error(500, "Unexpected error during " + operation, request));
     }
 
     private HttpResponse jsonResponse(int code, Object body) {
@@ -314,5 +282,4 @@ public final class DmosContentValidationServlet {
 
     record ListResultsResponse(List<ValidationResultResponse> results) {}
 
-    record ErrorBody(int code, String message) {}
 }

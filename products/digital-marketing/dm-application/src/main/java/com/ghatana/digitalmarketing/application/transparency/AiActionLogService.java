@@ -30,12 +30,45 @@ public interface AiActionLogService {
             AiActionStatus status,
             String actor,
             boolean initiatedByAi,
+            String provider,
+            String modelVersion,
+            boolean humanEdited,
             Double confidence,
             List<String> evidenceLinks,
             List<String> policyChecks,
             String summary,
             String details,
             String relatedEntityId) {
+
+                public RecordActionCommand(
+                                String correlationId,
+                                AiActionType actionType,
+                                AiActionStatus status,
+                                String actor,
+                                boolean initiatedByAi,
+                                Double confidence,
+                                List<String> evidenceLinks,
+                                List<String> policyChecks,
+                                String summary,
+                                String details,
+                                String relatedEntityId) {
+                        this(
+                                correlationId,
+                                actionType,
+                                status,
+                                actor,
+                                initiatedByAi,
+                                null,
+                                null,
+                                false,
+                                confidence,
+                                evidenceLinks,
+                                policyChecks,
+                                summary,
+                                details,
+                                relatedEntityId
+                        );
+                }
     }
 
     record ListActionsQuery(

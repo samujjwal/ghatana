@@ -70,6 +70,24 @@ export interface InstructorEvidenceDashboardTiles {
     completed: number;
     completionRate: number;
   };
+  misconceptionClusters: Array<{
+    clusterId: string;
+    description: string;
+    affectedClaims: string[];
+    affectedLearners: number;
+    severity: 'low' | 'medium' | 'high';
+  }>;
+  cbmCalibrationMetrics: {
+    reliabilityScore: number;
+    discriminationIndex: number;
+    confidenceAccuracy: {
+      low: number;
+      medium: number;
+      high: number;
+    };
+    overconfidenceRate: number;
+    underconfidenceRate: number;
+  };
 }
 
 type EnrollmentAnalyticsRecord = {
@@ -153,7 +171,7 @@ export class TeacherAnalyticsService {
 
     return {
       classroomId: classroom.id,
-      classroomName: classroom.title,
+      classroomName: classroom.name,
       totalStudents,
       activeStudents,
       averageProgress,
@@ -297,7 +315,15 @@ export class TeacherAnalyticsService {
         vivaQueue: { total: 0, highPriority: 0 },
         atRiskLearners: [],
         remediationCompletion: { assigned: 0, completed: 0, completionRate: 0 },
-      };
+        misconceptionClusters: [],
+        cbmCalibrationMetrics: {
+          reliabilityScore: 0,
+          discriminationIndex: 0,
+          confidenceAccuracy: { low: 0, medium: 0, high: 0 },
+          overconfidenceRate: 0,
+          underconfidenceRate: 0,
+        },
+      } as InstructorEvidenceDashboardTiles;
     }
 
     const [attempts, events] = await Promise.all([
@@ -352,6 +378,8 @@ export class TeacherAnalyticsService {
         completionRate:
           remediationAssigned > 0 ? remediationCompleted / remediationAssigned : 0,
       },
+      misconceptionClusters: this.detectMisconceptionClusters(answerEvents, memberIds),
+      cbmCalibrationMetrics: this.calculateCBMCalibrationMetrics(answerEvents),
     };
   }
 
@@ -552,13 +580,21 @@ export class TeacherAnalyticsService {
   private async calculateModuleProgress(tenantId: string, classroomId: string): Promise<Array<{ moduleId: string; moduleName: string; averageProgress: number; completionRate: number }>> {
     const enrollments = await this.prisma.enrollment.findMany({
       where: { tenantId, classroom: { id: classroomId } },
-      include: { module: { select: { id: true, title: true } } },
     });
+
+    // Get module IDs and fetch module names
+    const moduleIds = [...new Set(enrollments.map((e) => e.moduleId))];
+    const modules = await this.prisma.module.findMany({
+      where: { id: { in: moduleIds } },
+      select: { id: true, title: true },
+    });
+
+    const moduleNamesById = new Map(modules.map((m) => [m.id, m.title || '']));
 
     const moduleProgress = new Map<string, { moduleName: string; progresses: number[]; completions: number }>();
     enrollments.forEach((e) => {
       const moduleId = e.moduleId;
-      const data = moduleProgress.get(moduleId) || { moduleName: e.module?.title || '', progresses: [], completions: 0 };
+      const data = moduleProgress.get(moduleId) || { moduleName: moduleNamesById.get(moduleId) || '', progresses: [], completions: 0 };
       data.progresses.push(e.progressPercent || 0);
       if (e.status === 'COMPLETED') data.completions++;
       moduleProgress.set(moduleId, data);
@@ -578,15 +614,23 @@ export class TeacherAnalyticsService {
         tenantId,
         user: { enrollments: { some: { classroom: { id: classroomId } } } },
       },
-      include: { assessment: { select: { id: true, title: true } } },
     });
+
+    // Get assessment IDs and fetch assessment names
+    const assessmentIds = [...new Set(attempts.map((a) => a.assessmentId))];
+    const assessments = await this.prisma.assessment.findMany({
+      where: { id: { in: assessmentIds } },
+      select: { id: true, title: true },
+    });
+
+    const assessmentNamesById = new Map(assessments.map((a) => [a.id, a.title || '']));
 
     const assignmentData = new Map<string, { assignmentName: string; scores: number[]; totalStudents: number }>();
     const studentCount = new Set(attempts.map((a) => a.userId)).size;
 
     attempts.forEach((a) => {
       const assignmentId = a.assessmentId;
-      const data = assignmentData.get(assignmentId) || { assignmentName: a.assessment?.title || '', scores: [], totalStudents: 0 };
+      const data = assignmentData.get(assignmentId) || { assignmentName: assessmentNamesById.get(assignmentId) || '', scores: [], totalStudents: 0 };
       data.scores.push(a.scorePercent || 0);
       data.totalStudents = studentCount;
       assignmentData.set(assignmentId, data);
@@ -635,5 +679,173 @@ export class TeacherAnalyticsService {
     else if (riskScore >= 30) riskLevel = 'medium';
 
     return { riskLevel, riskFactors, recommendations };
+  }
+
+  /**
+   * Detect misconception clusters from assessment answer events.
+   * Groups similar incorrect answers to identify common misconceptions.
+   */
+  private detectMisconceptionClusters(
+    answerEvents: Array<{ userId: string; payload: unknown }>,
+    memberIds: string[],
+  ): InstructorEvidenceDashboardTiles["misconceptionClusters"] {
+    const incorrectAnswers = answerEvents.filter((event) => {
+      const payload = event.payload as { result?: { correct?: boolean } };
+      return !payload.result?.correct;
+    });
+
+    // Group by claim and answer pattern
+    const byClaim = new Map<string, Map<string, Set<string>>>();
+    for (const event of incorrectAnswers) {
+      const payload = event.payload as {
+        object?: { claimId?: string };
+        result?: { answer?: string };
+      };
+      const claimId = payload.object?.claimId || 'unknown';
+      const answer = payload.result?.answer || 'unknown';
+
+      if (!byClaim.has(claimId)) {
+        byClaim.set(claimId, new Map());
+      }
+      const claimMap = byClaim.get(claimId)!;
+
+      if (!claimMap.has(answer)) {
+        claimMap.set(answer, new Set());
+      }
+      claimMap.get(answer)!.add(event.userId);
+    }
+
+    // Identify clusters (claims with multiple learners making similar mistakes)
+    const clusters: InstructorEvidenceDashboardTiles["misconceptionClusters"] = [];
+    let clusterId = 0;
+
+    for (const [claimId, answerMap] of byClaim.entries()) {
+      const affectedLearners = new Set<string>();
+      const answers: string[] = [];
+
+      for (const [answer, learners] of answerMap.entries()) {
+        if (learners.size >= 2) {
+          // Only consider if at least 2 learners made the same mistake
+          answers.push(answer);
+          learners.forEach((learnerId) => affectedLearners.add(learnerId));
+        }
+      }
+
+      if (affectedLearners.size >= 3) {
+        // Only create cluster if at least 3 learners are affected
+        const severity: 'low' | 'medium' | 'high' =
+          affectedLearners.size >= 10 ? 'high' : affectedLearners.size >= 5 ? 'medium' : 'low';
+
+        clusters.push({
+          clusterId: `cluster-${clusterId++}`,
+          description: `Common incorrect answer pattern on claim ${claimId}: ${answers.slice(0, 3).join(', ')}`,
+          affectedClaims: [claimId],
+          affectedLearners: affectedLearners.size,
+          severity,
+        });
+      }
+    }
+
+    return clusters.sort((a: InstructorEvidenceDashboardTiles["misconceptionClusters"][0], b: InstructorEvidenceDashboardTiles["misconceptionClusters"][0]) => b.affectedLearners - a.affectedLearners).slice(0, 10);
+  }
+
+  /**
+   * Calculate CBM (Confidence-Based Marking) calibration metrics.
+   * Measures how well learners' confidence levels match their actual performance.
+   */
+  private calculateCBMCalibrationMetrics(
+    answerEvents: Array<{ payload: unknown }>,
+  ): InstructorEvidenceDashboardTiles["cbmCalibrationMetrics"] {
+    if (answerEvents.length === 0) {
+      return {
+        reliabilityScore: 0,
+        discriminationIndex: 0,
+        confidenceAccuracy: { low: 0, medium: 0, high: 0 },
+        overconfidenceRate: 0,
+        underconfidenceRate: 0,
+      };
+    }
+
+    const confidenceToProbability = {
+      low: 0.33,
+      medium: 0.66,
+      high: 0.9,
+    } as const;
+
+    let correctByConfidence = { low: 0, medium: 0, high: 0 };
+    let totalByConfidence = { low: 0, medium: 0, high: 0 };
+    let overconfidentCount = 0;
+    let underconfidentCount = 0;
+
+    for (const event of answerEvents) {
+      const payload = event.payload as {
+        result?: { confidence?: 'low' | 'medium' | 'high'; correct?: boolean };
+      };
+      const confidence = payload.result?.confidence ?? 'medium';
+      const isCorrect = payload.result?.correct ?? false;
+
+      totalByConfidence[confidence]++;
+      if (isCorrect) {
+        correctByConfidence[confidence]++;
+      }
+
+      // Detect overconfidence (high confidence but incorrect)
+      if (confidence === 'high' && !isCorrect) {
+        overconfidentCount++;
+      }
+
+      // Detect underconfidence (low confidence but correct)
+      if (confidence === 'low' && isCorrect) {
+        underconfidentCount++;
+      }
+    }
+
+    // Calculate accuracy by confidence level
+    const confidenceAccuracy = {
+      low: totalByConfidence.low > 0 ? correctByConfidence.low / totalByConfidence.low : 0,
+      medium: totalByConfidence.medium > 0 ? correctByConfidence.medium / totalByConfidence.medium : 0,
+      high: totalByConfidence.high > 0 ? correctByConfidence.high / totalByConfidence.high : 0,
+    };
+
+    // Calculate reliability score (how well confidence predicts correctness)
+    const reliabilityScore = this.calculateReliabilityScore(confidenceAccuracy);
+
+    // Calculate discrimination index (separation between confidence levels)
+    const discriminationIndex = this.calculateDiscriminationIndex(confidenceAccuracy);
+
+    return {
+      reliabilityScore,
+      discriminationIndex,
+      confidenceAccuracy,
+      overconfidenceRate: overconfidentCount / answerEvents.length,
+      underconfidenceRate: underconfidentCount / answerEvents.length,
+    };
+  }
+
+  /**
+   * Calculate reliability score based on confidence accuracy.
+   * Measures monotonic relationship between confidence and accuracy.
+   */
+  private calculateReliabilityScore(accuracy: { low: number; medium: number; high: number }): number {
+    // Ideal: low < medium < high
+    const monotonicIncrease = accuracy.low < accuracy.medium && accuracy.medium < accuracy.high;
+    if (!monotonicIncrease) {
+      return 0;
+    }
+
+    // Score based on how much accuracy increases with confidence
+    const range = accuracy.high - accuracy.low;
+    const idealRange = 1.0; // Perfect calibration would have 0.33 to 1.0 range
+    return Math.min(range / idealRange, 1.0);
+  }
+
+  /**
+   * Calculate discrimination index between confidence levels.
+   * Measures how well confidence levels separate correct from incorrect answers.
+   */
+  private calculateDiscriminationIndex(accuracy: { low: number; medium: number; high: number }): number {
+    // High confidence should have high accuracy, low confidence should have low accuracy
+    const separation = accuracy.high - accuracy.low;
+    return Math.min(separation, 1.0);
   }
 }

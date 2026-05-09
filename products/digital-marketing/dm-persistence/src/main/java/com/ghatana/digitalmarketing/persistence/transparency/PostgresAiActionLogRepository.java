@@ -44,28 +44,28 @@ public final class PostgresAiActionLogRepository implements AiActionLogRepositor
     private static final String INSERT_SQL =
         "INSERT INTO dmos_ai_action_log " +
         "  (action_id, workspace_id, correlation_id, action_type, status, actor, " +
-        "   initiated_by_ai, confidence, evidence_links, policy_checks, " +
+        "   initiated_by_ai, provider, model_version, human_edited, confidence, evidence_links, policy_checks, " +
         "   summary, details, related_entity_id, occurred_at, version) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1) " +
         "ON CONFLICT (action_id, workspace_id) DO NOTHING";
 
     private static final String UPDATE_SQL =
         "UPDATE dmos_ai_action_log SET " +
-        "  action_type = ?, status = ?, actor = ?, initiated_by_ai = ?, confidence = ?, " +
+        "  action_type = ?, status = ?, actor = ?, initiated_by_ai = ?, provider = ?, model_version = ?, human_edited = ?, confidence = ?, " +
         "  evidence_links = ?, policy_checks = ?, summary = ?, details = ?, " +
         "  related_entity_id = ?, occurred_at = ?, version = version + 1 " +
         "WHERE action_id = ? AND workspace_id = ? AND version = ?";
 
     private static final String SELECT_BY_ID_SQL =
         "SELECT action_id, workspace_id, correlation_id, action_type, status, actor, " +
-        "       initiated_by_ai, confidence, evidence_links, policy_checks, " +
+        "       initiated_by_ai, provider, model_version, human_edited, confidence, evidence_links, policy_checks, " +
         "       summary, details, related_entity_id, occurred_at, version " +
         "FROM dmos_ai_action_log " +
         "WHERE action_id = ? AND workspace_id = ?";
 
     private static final String SELECT_BY_WORKSPACE_SQL =
         "SELECT action_id, workspace_id, correlation_id, action_type, status, actor, " +
-        "       initiated_by_ai, confidence, evidence_links, policy_checks, " +
+        "       initiated_by_ai, provider, model_version, human_edited, confidence, evidence_links, policy_checks, " +
         "       summary, details, related_entity_id, occurred_at, version " +
         "FROM dmos_ai_action_log " +
         "WHERE workspace_id = ? " +
@@ -96,17 +96,20 @@ public final class PostgresAiActionLogRepository implements AiActionLogRepositor
                     stmt.setString(5, entry.status().name());
                     stmt.setString(6, entry.actor());
                     stmt.setBoolean(7, entry.initiatedByAi());
+                    stmt.setString(8, entry.provider());
+                    stmt.setString(9, entry.modelVersion());
+                    stmt.setBoolean(10, entry.humanEdited());
                     if (entry.confidence() != null) {
-                        stmt.setDouble(8, entry.confidence());
+                        stmt.setDouble(11, entry.confidence());
                     } else {
-                        stmt.setNull(8, Types.DOUBLE);
+                        stmt.setNull(11, Types.DOUBLE);
                     }
-                    stmt.setArray(9, toTextArray(conn, entry.evidenceLinks()));
-                    stmt.setArray(10, toTextArray(conn, entry.policyChecks()));
-                    stmt.setString(11, entry.summary());
-                    stmt.setString(12, entry.details());
-                    stmt.setString(13, entry.relatedEntityId());
-                    stmt.setTimestamp(14, Timestamp.from(entry.occurredAt()));
+                    stmt.setArray(12, toTextArray(conn, entry.evidenceLinks()));
+                    stmt.setArray(13, toTextArray(conn, entry.policyChecks()));
+                    stmt.setString(14, entry.summary());
+                    stmt.setString(15, entry.details());
+                    stmt.setString(16, entry.relatedEntityId());
+                    stmt.setTimestamp(17, Timestamp.from(entry.occurredAt()));
                     // version=1 is hardcoded in SQL for new inserts
                     int inserted = stmt.executeUpdate();
                     if (inserted == 0) {
@@ -130,7 +133,7 @@ public final class PostgresAiActionLogRepository implements AiActionLogRepositor
                     return new AiActionLogEntry(
                         entry.actionId(), entry.workspaceId(), entry.correlationId(),
                         entry.actionType(), entry.status(), entry.actor(),
-                        entry.initiatedByAi(), entry.confidence(), entry.evidenceLinks(),
+                        entry.initiatedByAi(), entry.provider(), entry.modelVersion(), entry.humanEdited(), entry.confidence(), entry.evidenceLinks(),
                         entry.policyChecks(), entry.summary(), entry.details(),
                         entry.relatedEntityId(), entry.occurredAt(), 1L);
                 } catch (DmPersistenceException e) {
@@ -150,20 +153,23 @@ public final class PostgresAiActionLogRepository implements AiActionLogRepositor
                     stmt.setString(2, entry.status().name());
                     stmt.setString(3, entry.actor());
                     stmt.setBoolean(4, entry.initiatedByAi());
+                    stmt.setString(5, entry.provider());
+                    stmt.setString(6, entry.modelVersion());
+                    stmt.setBoolean(7, entry.humanEdited());
                     if (entry.confidence() != null) {
-                        stmt.setDouble(5, entry.confidence());
+                        stmt.setDouble(8, entry.confidence());
                     } else {
-                        stmt.setNull(5, Types.DOUBLE);
+                        stmt.setNull(8, Types.DOUBLE);
                     }
-                    stmt.setArray(6, toTextArray(conn, entry.evidenceLinks()));
-                    stmt.setArray(7, toTextArray(conn, entry.policyChecks()));
-                    stmt.setString(8, entry.summary());
-                    stmt.setString(9, entry.details());
-                    stmt.setString(10, entry.relatedEntityId());
-                    stmt.setTimestamp(11, Timestamp.from(entry.occurredAt()));
-                    stmt.setString(12, entry.actionId());
-                    stmt.setString(13, entry.workspaceId());
-                    stmt.setLong(14, entry.version());
+                    stmt.setArray(9, toTextArray(conn, entry.evidenceLinks()));
+                    stmt.setArray(10, toTextArray(conn, entry.policyChecks()));
+                    stmt.setString(11, entry.summary());
+                    stmt.setString(12, entry.details());
+                    stmt.setString(13, entry.relatedEntityId());
+                    stmt.setTimestamp(14, Timestamp.from(entry.occurredAt()));
+                    stmt.setString(15, entry.actionId());
+                    stmt.setString(16, entry.workspaceId());
+                    stmt.setLong(17, entry.version());
                     int updated = stmt.executeUpdate();
                     if (updated == 0) {
                         throw new DmPersistenceException(
@@ -176,7 +182,7 @@ public final class PostgresAiActionLogRepository implements AiActionLogRepositor
                     return new AiActionLogEntry(
                         entry.actionId(), entry.workspaceId(), entry.correlationId(),
                         entry.actionType(), entry.status(), entry.actor(),
-                        entry.initiatedByAi(), entry.confidence(), entry.evidenceLinks(),
+                        entry.initiatedByAi(), entry.provider(), entry.modelVersion(), entry.humanEdited(), entry.confidence(), entry.evidenceLinks(),
                         entry.policyChecks(), entry.summary(), entry.details(),
                         entry.relatedEntityId(), entry.occurredAt(), newVersion);
                 } catch (DmPersistenceException e) {
@@ -274,6 +280,9 @@ public final class PostgresAiActionLogRepository implements AiActionLogRepositor
             AiActionStatus.valueOf(rs.getString("status")),
             rs.getString("actor"),
             rs.getBoolean("initiated_by_ai"),
+            rs.getString("provider"),
+            rs.getString("model_version"),
+            rs.getBoolean("human_edited"),
             confidence,
             evidenceLinks,
             policyChecks,

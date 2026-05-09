@@ -435,6 +435,7 @@ components:
             - NOT_FOUND
             - CONFLICT
             - UNPROCESSABLE_ENTITY
+            - LOCKED
             - RATE_LIMITED
             - INTERNAL_ERROR
         message:

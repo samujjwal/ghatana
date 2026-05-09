@@ -22,7 +22,8 @@ vi.mock('@/lib/feature-flags', () => ({
 
 const mockListPending = vi.fn();
 vi.mock('@/api/approvals', () => ({
-  listPendingApprovals: (...args: unknown[]) => mockListPending(...args),
+  listPendingApprovalsForWorkspace: (...args: unknown[]) => mockListPending(...args),
+  listPendingApprovals: vi.fn(),
   getApprovalStatus: vi.fn(),
   getApprovalSnapshot: vi.fn(),
   decideApproval: vi.fn(),
@@ -95,7 +96,32 @@ function renderPage(token: string | null = 'test-token'): void {
         initialToken={token}
         initialWorkspaceId="ws-1"
         initialTenantId="tenant-1"
-        initialRoles={['marketing-approver']}
+        initialPrincipalId="reviewer-1"
+        initialRoles={['brand-manager']}
+      >
+        <MemoryRouter initialEntries={['/workspaces/ws-1/approvals']}>
+          <Routes>
+            <Route path="/login" element={<div data-testid="login-page" />} />
+            <Route
+              path="/workspaces/:workspaceId/approvals"
+              element={<ApprovalQueuePage />}
+            />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>
+    </QueryClientProvider>,
+  );
+}
+
+function renderPageWithRoles(roles: string[], token: string | null = 'test-token'): void {
+  render(
+    <QueryClientProvider client={buildQueryClient()}>
+      <AuthProvider
+        initialToken={token}
+        initialWorkspaceId="ws-1"
+        initialTenantId="tenant-1"
+        initialPrincipalId="reviewer-1"
+        initialRoles={roles}
       >
         <MemoryRouter initialEntries={['/workspaces/ws-1/approvals']}>
           <Routes>
@@ -149,7 +175,7 @@ describe('ApprovalQueuePage', () => {
     mockListPending.mockRejectedValue(new Error('Network error'));
     renderPage();
     expect(await screen.findByTestId('approval-queue-error')).toBeInTheDocument();
-    expect(screen.getByText(/Network error/i)).toBeInTheDocument();
+    expect(screen.getByText(/Failed to load approvals\./i)).toBeInTheDocument();
   });
 
   it('renders PENDING status badge for pending approval', async () => {
@@ -169,35 +195,23 @@ describe('ApprovalQueuePage', () => {
     expect(screen.getByTestId('approval-row-req-2')).toBeInTheDocument();
   });
 
-  it('shows permission-denied banner when user has no approver role', () => {
-    render(
-      <QueryClientProvider client={buildQueryClient()}>
-        <AuthProvider
-          initialToken="test-token"
-          initialWorkspaceId="ws-1"
-          initialTenantId="tenant-1"
-          initialRoles={[]}
-        >
-          <MemoryRouter initialEntries={['/workspaces/ws-1/approvals']}>
-            <Routes>
-              <Route
-                path="/workspaces/:workspaceId/approvals"
-                element={<ApprovalQueuePage />}
-              />
-            </Routes>
-          </MemoryRouter>
-        </AuthProvider>
-      </QueryClientProvider>,
-    );
+  it('shows permission-denied banner when user is viewer-only', () => {
+    renderPageWithRoles(['viewer']);
     expect(screen.getByTestId('permission-denied-banner')).toBeInTheDocument();
   });
 
-  it('does NOT show permission-denied banner when user has approver role', async () => {
-    renderPage();
+  it('does NOT show permission-denied banner when user has approve/reject permission level', async () => {
+    renderPageWithRoles(['brand-manager']);
     await screen.findByTestId('approval-queue-page');
     expect(
       screen.queryByTestId('permission-denied-banner'),
     ).not.toBeInTheDocument();
+  });
+
+  it('does NOT show permission-denied banner for admin', async () => {
+    renderPageWithRoles(['admin']);
+    await screen.findByTestId('approval-queue-page');
+    expect(screen.queryByTestId('permission-denied-banner')).not.toBeInTheDocument();
   });
 
   it('renders review links pointing to detail page', async () => {

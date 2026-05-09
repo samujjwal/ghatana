@@ -4,11 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.digitalmarketing.application.funnel.TrialOnboardingService;
 import com.ghatana.digitalmarketing.application.funnel.TrialOnboardingService.CreateTrialOnboardingCommand;
 import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
-import com.ghatana.digitalmarketing.api.observability.DmosTelemetry;
 import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.funnel.TrialOnboarding;
-import com.ghatana.digitalmarketing.domain.funnel.TrialOnboardingStatus;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
@@ -20,7 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.UUID;
+import java.util.NoSuchElementException;
 
 /**
  * API servlet for trial onboarding workflow management in self-marketing acquisition funnel.
@@ -102,15 +100,12 @@ public final class DmosTrialOnboardingServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("trial_onboarding.create.error", Map.of());
                     LOG.error("Failed to create trial onboarding", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, request));
                 });
         } catch (Exception e) {
             metrics.increment("trial_onboarding.create.error", Map.of());
             LOG.error("Failed to parse create request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request", request));
         }
     }
 
@@ -133,15 +128,12 @@ public final class DmosTrialOnboardingServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("trial_onboarding.start.error", Map.of());
                     LOG.error("Failed to start trial onboarding", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, request));
                 });
         } catch (Exception e) {
             metrics.increment("trial_onboarding.start.error", Map.of());
             LOG.error("Failed to process start request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request", request));
         }
     }
 
@@ -166,15 +158,12 @@ public final class DmosTrialOnboardingServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("trial_onboarding.advance.error", Map.of());
                     LOG.error("Failed to advance trial onboarding step", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, request));
                 });
         } catch (Exception e) {
             metrics.increment("trial_onboarding.advance.error", Map.of());
             LOG.error("Failed to parse advance step request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request", request));
         }
     }
 
@@ -197,15 +186,12 @@ public final class DmosTrialOnboardingServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("trial_onboarding.complete.error", Map.of());
                     LOG.error("Failed to complete trial onboarding", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, request));
                 });
         } catch (Exception e) {
             metrics.increment("trial_onboarding.complete.error", Map.of());
             LOG.error("Failed to process complete request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request", request));
         }
     }
 
@@ -230,15 +216,12 @@ public final class DmosTrialOnboardingServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("trial_onboarding.cancel.error", Map.of());
                     LOG.error("Failed to cancel trial onboarding", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, request));
                 });
         } catch (Exception e) {
             metrics.increment("trial_onboarding.cancel.error", Map.of());
             LOG.error("Failed to parse cancel request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request", request));
         }
     }
 
@@ -253,10 +236,7 @@ public final class DmosTrialOnboardingServlet {
             return trialOnboardingService.findById(ctx, onboardingId)
                 .map(onboardingOpt -> {
                     if (onboardingOpt.isEmpty()) {
-                        return HttpResponse.ofCode(404)
-                            .withBody("{\"error\":\"Trial onboarding not found\"}")
-                            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                            .build();
+                        return DmosApiErrorResponses.error(404, "Trial onboarding not found", request);
                     }
                     return HttpResponse.ofCode(200)
                         .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -266,15 +246,12 @@ public final class DmosTrialOnboardingServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("trial_onboarding.get.error", Map.of());
                     LOG.error("Failed to get trial onboarding", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, request));
                 });
         } catch (Exception e) {
             metrics.increment("trial_onboarding.get.error", Map.of());
             LOG.error("Failed to process get request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request", request));
         }
     }
 
@@ -296,29 +273,29 @@ public final class DmosTrialOnboardingServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("trial_onboarding.list.error", Map.of());
                     LOG.error("Failed to list trial onboardings", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, request));
                 });
         } catch (Exception e) {
             metrics.increment("trial_onboarding.list.error", Map.of());
             LOG.error("Failed to process list request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request", request));
         }
     }
 
-    private HttpResponse mapServiceError(Exception e) {
-        if (e instanceof IllegalArgumentException) {
-            return HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"" + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build();
+    private HttpResponse mapServiceError(Throwable e, HttpRequest request) {
+        if (e instanceof SecurityException) {
+            return DmosApiErrorResponses.error(403, e.getMessage(), request);
         }
-        return HttpResponse.ofCode(500)
-            .withBody("{\"error\":\"Internal server error\"}")
-            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-            .build();
+        if (e instanceof NoSuchElementException) {
+            return DmosApiErrorResponses.error(404, e.getMessage(), request);
+        }
+        if (e instanceof IllegalStateException) {
+            return DmosApiErrorResponses.error(409, e.getMessage(), request);
+        }
+        if (e instanceof IllegalArgumentException) {
+            return DmosApiErrorResponses.error(400, e.getMessage(), request);
+        }
+        return DmosApiErrorResponses.error(500, "Internal server error", request);
     }
 
     private TrialOnboardingDto toDto(TrialOnboarding onboarding) {

@@ -5,20 +5,25 @@
  * @doc.purpose Strategy generation, review, and approval
  * @doc.layer frontend
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/Toast';
 import { ApprovalDialog } from '@/components/ApprovalDialog';
 import { AIProvenancePanel } from '@/components/AIProvenancePanel';
+import { PageStateNotice } from '@/components/PageStateNotice';
 import { ApiError } from '@/lib/http-client';
+import { canPerformAction } from '@/lib/action-permissions';
 import {
   useStrategy,
   useGenerateStrategy,
   useSubmitStrategyApproval,
   useApproveStrategy,
 } from '@/hooks/useStrategy';
+import { useIntakeProfile } from '@/hooks/useIntakeProfile';
+import { useLatestWebsiteAudit } from '@/hooks/useWebsiteAudit';
+import { useLatestCompetitorResearch } from '@/hooks/useCompetitorResearch';
 import {
   Button,
   TextField,
@@ -32,9 +37,12 @@ import {
 
 export function StrategyPage(): React.ReactElement {
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, roles } = useAuth();
   const { toasts, showSuccess, showError, dismissToast } = useToast();
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
+  const canGenerateStrategy = canPerformAction(roles, 'generate-strategy');
+  const canSubmitStrategy = canPerformAction(roles, 'submit-strategy');
+  const canApproveStrategy = canPerformAction(roles, 'approve-strategy');
 
   const handleMutationError = useCallback((err: unknown, context: string) => {
     const apiErr = err instanceof ApiError ? err : null;
@@ -44,16 +52,77 @@ export function StrategyPage(): React.ReactElement {
     );
   }, [showError]);
 
-  const [serviceArea, setServiceArea] = useState('');
+  const [businessObjective, setBusinessObjective] = useState('');
   const [primaryOffer, setPrimaryOffer] = useState('');
+  const [targetAudience, setTargetAudience] = useState('');
+  const [primaryGeography, setPrimaryGeography] = useState('');
+  const [constraints, setConstraints] = useState('');
+  const [websiteUrl, setWebsiteUrl] = useState('');
   const [monthlyBudget, setMonthlyBudget] = useState('');
-  const [intakeCompletionPct, setIntakeCompletionPct] = useState('100');
-  const [auditFindingCount, setAuditFindingCount] = useState('0');
-  const [trackingGapsDetected, setTrackingGapsDetected] = useState(false);
-  const [keywordOpportunityCount, setKeywordOpportunityCount] = useState('0');
-  const [topCompetitorCount, setTopCompetitorCount] = useState('0');
 
   const { strategy, isLoading, isError, error } = useStrategy(workspaceId ?? null);
+  const { intake } = useIntakeProfile(workspaceId ?? null);
+  const { report: latestAudit } = useLatestWebsiteAudit(workspaceId ?? null);
+  const { snapshot: latestResearch } = useLatestCompetitorResearch(workspaceId ?? null);
+
+  const derivedInputs = useMemo(() => {
+    const auditFindingCount = latestAudit?.findings.length ?? 0;
+    const trackingGapsDetected =
+      latestAudit?.findings.some((finding) =>
+        /tracking|analytics|tag|pixel/i.test(
+          `${finding.category} ${finding.evidence} ${finding.recommendedAction}`,
+        ),
+      ) ?? false;
+    const keywordOpportunityCount = latestResearch?.keywordFindings.length ?? 0;
+    const topCompetitorCount = latestResearch?.competitorFindings.length ?? 0;
+
+    return {
+      auditFindingCount,
+      trackingGapsDetected,
+      keywordOpportunityCount,
+      topCompetitorCount,
+    };
+  }, [latestAudit, latestResearch]);
+
+  const intakeCompletionPct = useMemo(() => {
+    const guidedFields = [
+      businessObjective,
+      primaryOffer,
+      targetAudience,
+      primaryGeography,
+      monthlyBudget,
+      constraints,
+    ];
+    const completed = guidedFields.filter((value) => value.trim().length > 0).length;
+    return Math.round((completed / guidedFields.length) * 100);
+  }, [businessObjective, primaryOffer, targetAudience, primaryGeography, monthlyBudget, constraints]);
+
+  useEffect(() => {
+    if (!intake) {
+      return;
+    }
+    if (!primaryOffer.trim() && intake.offerSummary) {
+      setPrimaryOffer(intake.offerSummary);
+    }
+    if (!targetAudience.trim() && intake.targetAudience) {
+      setTargetAudience(intake.targetAudience);
+    }
+    if (!primaryGeography.trim() && intake.primaryGeography) {
+      setPrimaryGeography(intake.primaryGeography);
+    }
+    if (!businessObjective.trim() && intake.growthGoal) {
+      setBusinessObjective(intake.growthGoal);
+    }
+    if (!constraints.trim() && intake.constraints.length > 0) {
+      setConstraints(intake.constraints.join(', '));
+    }
+    if (!websiteUrl.trim() && intake.websiteUrl) {
+      setWebsiteUrl(intake.websiteUrl);
+    }
+    if (!monthlyBudget.trim() && intake.monthlyBudgetAmount != null) {
+      setMonthlyBudget(String(intake.monthlyBudgetAmount));
+    }
+  }, [intake, primaryOffer, targetAudience, primaryGeography, businessObjective, constraints, websiteUrl, monthlyBudget]);
   const { generate, isPending: isGenerating } = useGenerateStrategy(workspaceId ?? null, {
     onError: (err) => handleMutationError(err, 'Strategy generation failed'),
   });
@@ -68,64 +137,47 @@ export function StrategyPage(): React.ReactElement {
     async (e: React.FormEvent) => {
       e.preventDefault();
       const budget = parseInt(monthlyBudget, 10);
-      const intake = parseInt(intakeCompletionPct, 10);
-      const audit = parseInt(auditFindingCount, 10);
-      const keywords = parseInt(keywordOpportunityCount, 10);
-      const competitors = parseInt(topCompetitorCount, 10);
 
       if (
-        !serviceArea.trim() ||
+        !businessObjective.trim() ||
         !primaryOffer.trim() ||
+        !targetAudience.trim() ||
+        !primaryGeography.trim() ||
+        !constraints.trim() ||
         Number.isNaN(budget) ||
         budget < 0 ||
-        Number.isNaN(intake) ||
-        intake < 0 ||
-        intake > 100 ||
-        Number.isNaN(audit) ||
-        audit < 0 ||
-        Number.isNaN(keywords) ||
-        keywords < 0 ||
-        Number.isNaN(competitors) ||
-        competitors < 0 ||
         !workspaceId
       )
         return;
 
       try {
         await generate({
-          serviceArea: serviceArea.trim(),
+          serviceArea: primaryGeography.trim(),
           primaryOffer: primaryOffer.trim(),
           monthlyBudget: budget,
-          intakeCompletionPct: intake,
-          auditFindingCount: audit,
-          trackingGapsDetected,
-          keywordOpportunityCount: keywords,
-          topCompetitorCount: competitors,
+          intakeCompletionPct,
+          auditFindingCount: derivedInputs.auditFindingCount,
+          trackingGapsDetected: derivedInputs.trackingGapsDetected,
+          keywordOpportunityCount: derivedInputs.keywordOpportunityCount,
+          topCompetitorCount: derivedInputs.topCompetitorCount,
         });
         showSuccess('Strategy generated successfully');
-        setServiceArea('');
-        setPrimaryOffer('');
-        setMonthlyBudget('');
-        setIntakeCompletionPct('100');
-        setAuditFindingCount('0');
-        setTrackingGapsDetected(false);
-        setKeywordOpportunityCount('0');
-        setTopCompetitorCount('0');
       } catch {
         // Error is surfaced through the onError callback registered in useGenerateStrategy
       }
     },
     [
       generate,
-      serviceArea,
+      businessObjective,
       primaryOffer,
+      targetAudience,
+      primaryGeography,
+      constraints,
       monthlyBudget,
       intakeCompletionPct,
-      auditFindingCount,
-      trackingGapsDetected,
-      keywordOpportunityCount,
-      topCompetitorCount,
+      derivedInputs,
       workspaceId,
+      showSuccess,
     ],
   );
 
@@ -143,17 +195,20 @@ export function StrategyPage(): React.ReactElement {
       </div>
 
       <section className="mb-8 p-4 border rounded bg-white">
-        <h2 className="text-lg font-semibold mb-3">Generate 30-Day Marketing Strategy</h2>
+        <h2 className="text-lg font-semibold mb-1">Guided Strategy Builder</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Describe your outcome. DMOS derives audit and market signals from existing workspace services.
+        </p>
         <form onSubmit={handleGenerate} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <TextField
-            id="strategy-service-area"
-            name="serviceArea"
-            data-testid="strategy-service-area-input"
-            label="Service Area"
+            id="strategy-objective"
+            name="businessObjective"
+            data-testid="strategy-objective-input"
+            label="Business Objective"
             type="text"
-            value={serviceArea}
-            onChange={(e) => setServiceArea(e.target.value)}
-            placeholder="e.g. Austin, TX"
+            value={businessObjective}
+            onChange={(e) => setBusinessObjective(e.target.value)}
+            placeholder="e.g. increase qualified leads in 30 days"
             required
             fullWidth
           />
@@ -170,10 +225,34 @@ export function StrategyPage(): React.ReactElement {
             fullWidth
           />
           <TextField
+            id="strategy-audience"
+            name="targetAudience"
+            data-testid="strategy-audience-input"
+            label="Target Audience"
+            type="text"
+            value={targetAudience}
+            onChange={(e) => setTargetAudience(e.target.value)}
+            placeholder="e.g. working professionals, ages 30-55"
+            required
+            fullWidth
+          />
+          <TextField
+            id="strategy-geography"
+            name="primaryGeography"
+            data-testid="strategy-geography-input"
+            label="Geography"
+            type="text"
+            value={primaryGeography}
+            onChange={(e) => setPrimaryGeography(e.target.value)}
+            placeholder="e.g. Austin metro area"
+            required
+            fullWidth
+          />
+          <TextField
             id="strategy-monthly-budget"
             name="monthlyBudget"
             data-testid="strategy-budget-input"
-            label="Monthly Budget"
+            label="Monthly Budget (USD)"
             type="number"
             inputProps={{ min: '0' }}
             value={monthlyBudget}
@@ -183,58 +262,67 @@ export function StrategyPage(): React.ReactElement {
             fullWidth
           />
           <TextField
-            data-testid="strategy-intake-input"
-            label="Intake Completion (%)"
-            type="number"
-            inputProps={{ min: '0', max: '100' }}
-            value={intakeCompletionPct}
-            onChange={(e) => setIntakeCompletionPct(e.target.value)}
+            id="strategy-constraints"
+            name="constraints"
+            data-testid="strategy-constraints-input"
+            label="Constraints"
+            type="text"
+            value={constraints}
+            onChange={(e) => setConstraints(e.target.value)}
+            placeholder="e.g. no claims without evidence, no weekend ad spend"
             required
             fullWidth
           />
           <TextField
-            data-testid="strategy-audit-input"
-            label="Audit Findings"
-            type="number"
-            inputProps={{ min: '0' }}
-            value={auditFindingCount}
-            onChange={(e) => setAuditFindingCount(e.target.value)}
+            id="strategy-website-url"
+            name="websiteUrl"
+            data-testid="strategy-website-url-input"
+            label="Website URL (for audit provenance)"
+            type="url"
+            value={websiteUrl}
+            onChange={(e) => setWebsiteUrl(e.target.value)}
+            placeholder="https://example.com"
             fullWidth
           />
-          <TextField
-            data-testid="strategy-keywords-input"
-            label="Keyword Opportunities"
-            type="number"
-            inputProps={{ min: '0' }}
-            value={keywordOpportunityCount}
-            onChange={(e) => setKeywordOpportunityCount(e.target.value)}
-            fullWidth
-          />
-          <TextField
-            data-testid="strategy-competitors-input"
-            label="Top Competitors"
-            type="number"
-            inputProps={{ min: '0' }}
-            value={topCompetitorCount}
-            onChange={(e) => setTopCompetitorCount(e.target.value)}
-            fullWidth
-          />
-          <div className="flex items-center gap-2 sm:pt-6">
-            <Checkbox
-              data-testid="strategy-tracking-gaps-input"
-              id="strategy-tracking-gaps"
-              checked={trackingGapsDetected}
-              onChange={(e) => setTrackingGapsDetected((e.target as HTMLInputElement).checked)}
-            />
-            <label htmlFor="strategy-tracking-gaps" className="text-sm cursor-pointer">
-              Tracking gaps detected
-            </label>
+          <div className="sm:col-span-2 border rounded bg-gray-50 p-3" data-testid="strategy-derived-inputs">
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Derived Market Inputs</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-700">
+              <p data-testid="strategy-derived-intake">Intake completion: {intakeCompletionPct}%</p>
+              <p data-testid="strategy-derived-audit">Audit findings: {derivedInputs.auditFindingCount}</p>
+              <p data-testid="strategy-derived-keywords">Keyword opportunities: {derivedInputs.keywordOpportunityCount}</p>
+              <p data-testid="strategy-derived-competitors">Competitor count: {derivedInputs.topCompetitorCount}</p>
+            </div>
+            <div className="mt-2 flex items-center gap-2 text-sm">
+              <Checkbox
+                data-testid="strategy-derived-tracking-gaps"
+                id="strategy-derived-tracking-gaps"
+                checked={derivedInputs.trackingGapsDetected}
+                disabled
+              />
+              <label htmlFor="strategy-derived-tracking-gaps" className="cursor-default">
+                Tracking gaps detected (derived)
+              </label>
+            </div>
+            {!latestAudit && (
+              <PageStateNotice
+                testId="strategy-missing-audit"
+                tone="warning"
+                message="Latest website audit is unavailable. Strategy generation will use conservative defaults."
+              />
+            )}
+            {!latestResearch && (
+              <PageStateNotice
+                testId="strategy-missing-research"
+                tone="warning"
+                message="Latest competitor research is unavailable. Strategy generation will use conservative defaults."
+              />
+            )}
           </div>
           <div className="sm:col-span-2">
             <Button
               data-testid="generate-strategy-btn"
               type="submit"
-              disabled={isGenerating}
+              disabled={isGenerating || !canGenerateStrategy}
               loading={isGenerating}
               loadingText="Generating…"
               tone="primary"
@@ -246,19 +334,31 @@ export function StrategyPage(): React.ReactElement {
       </section>
 
       {isLoading && (
-        <p data-testid="strategy-loading" className="text-sm text-gray-400">
-          Loading strategy…
-        </p>
+        <PageStateNotice
+          testId="strategy-loading"
+          tone="loading"
+          message="Loading strategy…"
+        />
       )}
 
       {isError && (
-        <p data-testid="strategy-error" role="alert" className="text-sm text-red-600">
-          {error instanceof ApiError ? error.getUserMessage() : 'Failed to load strategy.'}
-        </p>
+        <PageStateNotice
+          testId="strategy-error"
+          tone="error"
+          message={error instanceof ApiError ? error.getUserMessage() : 'Failed to load strategy.'}
+        />
       )}
 
       {!isLoading && !isError && strategy && (
         <div data-testid="strategy-detail" className="border rounded p-4 bg-white">
+          {!canGenerateStrategy && (
+            <p
+              data-testid="strategy-action-permission-banner"
+              className="mb-4 text-sm text-yellow-700 bg-yellow-50 px-3 py-2 rounded"
+            >
+              You have view-only strategy access. Mutation actions are restricted by role.
+            </p>
+          )}
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-lg font-semibold">Latest Strategy</h2>
@@ -277,7 +377,7 @@ export function StrategyPage(): React.ReactElement {
                       showSuccess('Strategy submitted for approval'),
                     );
                   }}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !canSubmitStrategy}
                   loading={isSubmitting}
                   loadingText="Submitting…"
                 >
@@ -289,8 +389,8 @@ export function StrategyPage(): React.ReactElement {
                   data-testid="approve-strategy-btn"
                   size="sm"
                   tone="success"
-                  onClick={() => setShowApprovalDialog(true)}
-                  disabled={isApproving}
+                  onClick={() => canApproveStrategy && setShowApprovalDialog(true)}
+                  disabled={isApproving || !canApproveStrategy}
                   loading={isApproving}
                   loadingText="Approving…"
                 >
@@ -390,9 +490,11 @@ export function StrategyPage(): React.ReactElement {
       )}
 
       {!isLoading && !isError && !strategy && (
-        <p data-testid="strategy-empty" className="text-sm text-gray-500">
-          No strategy generated yet. Fill out the form above to create one.
-        </p>
+        <PageStateNotice
+          testId="strategy-empty"
+          tone="empty"
+          message="No strategy generated yet. Complete the guided form above to create one."
+        />
       )}
 
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />

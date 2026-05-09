@@ -109,12 +109,12 @@ public final class DmosLeadScoringServlet {
 
                 return leadScoringService.generateScore(ctx, command)
                     .map(score -> jsonResponse(200, LeadScoreResponse.from(score)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("generate lead score", e));
+                    .then(r -> Promise.of(r), e -> mapServiceError("generate lead score", e, request));
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to generate lead score", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -126,30 +126,30 @@ public final class DmosLeadScoringServlet {
 
             return leadScoringService.getLatestScore(ctx)
                 .map(score -> jsonResponse(200, LeadScoreResponse.from(score)))
-                .then(r -> Promise.of(r), e -> mapServiceError("get lead score", e));
+                .then(r -> Promise.of(r), e -> mapServiceError("get lead score", e, request));
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to get lead score", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
         }
     }
 
-    private Promise<HttpResponse> mapServiceError(String operation, Throwable error) {
+    private Promise<HttpResponse> mapServiceError(String operation, Throwable error, HttpRequest request) {
         if (error instanceof SecurityException) {
-            return Promise.of(errorResponse(403, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(403, error.getMessage(), request));
         }
         if (error instanceof NoSuchElementException) {
-            return Promise.of(errorResponse(404, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(404, error.getMessage(), request));
         }
         if (error instanceof IllegalArgumentException) {
-            return Promise.of(errorResponse(400, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, error.getMessage(), request));
         }
         if (error instanceof DmosFeatureDisabledException || error instanceof DmosConnectorDisabledException) {
-            return Promise.of(errorResponse(423, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(423, error.getMessage(), request));
         }
         LOG.error("[DMOS] Failed to {}", operation, error);
-        return Promise.of(errorResponse(500, "Internal error"));
+        return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
     }
 
     // P2-025: Using shared DmosHttpContextFactory for server-side identity derivation
@@ -165,10 +165,6 @@ public final class DmosLeadScoringServlet {
             LOG.error("[DMOS] Serialization failure", e);
             return HttpResponse.ofCode(500).build();
         }
-    }
-
-    private HttpResponse errorResponse(int code, String message) {
-        return jsonResponse(code, new ErrorBody(code, message));
     }
 
     record GenerateScoreRequest(
@@ -217,6 +213,4 @@ public final class DmosLeadScoringServlet {
         }
     }
 
-    record ErrorBody(int status, String message) {
-    }
 }

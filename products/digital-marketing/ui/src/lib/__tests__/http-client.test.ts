@@ -8,6 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   apiRequest,
+  ApiError,
   clearAuthToken,
   clearRequestContext,
   setAuthToken,
@@ -24,6 +25,7 @@ beforeEach(() => {
   });
   clearAuthToken();
   clearRequestContext();
+  setRequestContext('tenant-default', 'principal-default', 'session-default', [], []);
 });
 
 afterEach(() => {
@@ -102,19 +104,64 @@ describe('apiRequest — header injection', () => {
     expect(getHeader(init, 'X-Permissions')).toBeNull();
   });
 
-  it('clears context headers after clearRequestContext()', async () => {
-    setRequestContext('t1', 'u1', 'session-1', ['admin'], []);
+  it('throws when request context is cleared', async () => {
     clearRequestContext();
     mockFetch.mockResolvedValue(okResponse());
-    await apiRequest('/v1/test');
-    const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
-    expect(getHeader(init, 'X-Tenant-ID')).toBeNull();
-    expect(getHeader(init, 'X-Principal-ID')).toBeNull();
-    expect(getHeader(init, 'X-Roles')).toBeNull();
+    await expect(apiRequest('/v1/test')).rejects.toThrow('X-Tenant-ID is required but not set in request context');
   });
 
   it('throws ApiError on non-ok response', async () => {
     mockFetch.mockResolvedValue(new Response('Not Found', { status: 404 }));
     await expect(apiRequest('/v1/missing')).rejects.toThrow('API error 404');
+  });
+
+  it('parses canonical DMOS error envelope safely', async () => {
+    const body = JSON.stringify({
+      error: 'LOCKED',
+      message: 'Connector is disabled for this workspace.',
+      status: 423,
+      correlationId: 'corr-locked-1',
+      details: { connector: 'google-ads' },
+    });
+    mockFetch.mockResolvedValue(new Response(body, {
+      status: 423,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Correlation-ID': 'corr-header-fallback',
+      },
+    }));
+
+    await expect(apiRequest('/v1/locked')).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 423,
+      code: 'LOCKED',
+      correlationId: 'corr-locked-1',
+    });
+  });
+
+  it('returns user-safe messages across canonical status matrix', () => {
+    const matrix = [
+      { status: 400, code: 'BAD_REQUEST', message: 'Invalid field', expectContains: 'Invalid field' },
+      { status: 401, code: 'UNAUTHORIZED', message: 'Auth required', expectContains: 'session has expired' },
+      { status: 403, code: 'FORBIDDEN', message: 'Denied', expectContains: 'do not have permission' },
+      { status: 404, code: 'NOT_FOUND', message: 'Not found', expectContains: 'requested resource was not found' },
+      { status: 409, code: 'CONFLICT', message: 'Conflict', expectContains: 'conflicts with the current state' },
+      { status: 422, code: 'UNPROCESSABLE_ENTITY', message: 'Policy violation', expectContains: 'Policy violation' },
+      { status: 423, code: 'LOCKED', message: 'Feature disabled', expectContains: 'Feature disabled' },
+      { status: 429, code: 'RATE_LIMITED', message: 'Slow down', expectContains: 'Too many requests' },
+      { status: 500, code: 'INTERNAL_ERROR', message: 'Internal error', expectContains: 'Server error' },
+    ] as const;
+
+    for (const sample of matrix) {
+      const body = JSON.stringify({
+        error: sample.code,
+        message: sample.message,
+        status: sample.status,
+        correlationId: 'corr-matrix',
+        details: {},
+      });
+      const err = new ApiError('fallback', sample.status, 'corr-header', body);
+      expect(err.getUserMessage().toLowerCase()).toContain(sample.expectContains.toLowerCase());
+    }
   });
 });

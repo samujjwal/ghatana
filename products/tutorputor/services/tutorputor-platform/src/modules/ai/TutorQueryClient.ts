@@ -85,6 +85,7 @@ export class TutorQueryClient {
           title: true,
           searchableText: true,
           difficultyLevel: true,
+          domain: true,
         },
       });
 
@@ -93,7 +94,7 @@ export class TutorQueryClient {
       return {
         title: module.title,
         description: (module.searchableText as string | null) || null,
-        domain: module.difficultyLevel as string | null,
+        domain: module.domain as string | null,
       };
     } catch (error) {
       console.warn("Failed to fetch module context", error);

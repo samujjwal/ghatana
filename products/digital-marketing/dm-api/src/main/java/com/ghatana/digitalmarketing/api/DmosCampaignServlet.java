@@ -204,7 +204,13 @@ public final class DmosCampaignServlet {
             try {
                 String workspaceId = request.getPathParameter("workspaceId");
                 // P1-001: Use shared fail-closed HTTP context factory
-            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+            DmOperationContext ctx = httpContextFactory.buildContext(
+                request,
+                workspaceId,
+                true,
+                DmosCapabilityRegistry.CAMPAIGNS,
+                "create-campaign"
+            );
 
                 // P0-6: Check campaigns capability
                 return checkCapability(ctx, DmosCapabilityRegistry.CAMPAIGNS)
@@ -318,7 +324,13 @@ public final class DmosCampaignServlet {
             String workspaceId = request.getPathParameter("workspaceId");
             String campaignId  = request.getPathParameter("id");
             // P1-001: Use shared fail-closed HTTP context factory
-            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+            DmOperationContext ctx = httpContextFactory.buildContext(
+                request,
+                workspaceId,
+                true,
+                DmosCapabilityRegistry.CAMPAIGNS,
+                "launch-campaign"
+            );
 
             // P0-6: Check campaigns capability
             return checkCapability(ctx, DmosCapabilityRegistry.CAMPAIGNS)
@@ -375,7 +387,13 @@ public final class DmosCampaignServlet {
             String workspaceId = request.getPathParameter("workspaceId");
             String campaignId  = request.getPathParameter("id");
             // P1-001: Use shared fail-closed HTTP context factory
-            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+            DmOperationContext ctx = httpContextFactory.buildContext(
+                request,
+                workspaceId,
+                true,
+                DmosCapabilityRegistry.CAMPAIGNS,
+                "pause-campaign"
+            );
 
             // P0-6: Check campaigns capability
             return checkCapability(ctx, DmosCapabilityRegistry.CAMPAIGNS)
@@ -428,7 +446,13 @@ public final class DmosCampaignServlet {
         try {
             String workspaceId = request.getPathParameter("workspaceId");
             String campaignId  = request.getPathParameter("id");
-            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+            DmOperationContext ctx = httpContextFactory.buildContext(
+                request,
+                workspaceId,
+                true,
+                DmosCapabilityRegistry.CAMPAIGNS,
+                "complete-campaign"
+            );
 
             // P0-6: Check campaigns capability
             return checkCapability(ctx, DmosCapabilityRegistry.CAMPAIGNS)
@@ -480,7 +504,13 @@ public final class DmosCampaignServlet {
         try {
             String workspaceId = request.getPathParameter("workspaceId");
             String campaignId  = request.getPathParameter("id");
-            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+            DmOperationContext ctx = httpContextFactory.buildContext(
+                request,
+                workspaceId,
+                true,
+                DmosCapabilityRegistry.CAMPAIGNS,
+                "archive-campaign"
+            );
 
             // P0-6: Check campaigns capability
             return checkCapability(ctx, DmosCapabilityRegistry.CAMPAIGNS)
@@ -532,7 +562,13 @@ public final class DmosCampaignServlet {
         try {
             String workspaceId = request.getPathParameter("workspaceId");
             String campaignId  = request.getPathParameter("id");
-            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+            DmOperationContext ctx = httpContextFactory.buildContext(
+                request,
+                workspaceId,
+                true,
+                DmosCapabilityRegistry.CAMPAIGNS,
+                "rollback-campaign"
+            );
 
             // P0-6: Check campaigns capability
             return checkCapability(ctx, DmosCapabilityRegistry.CAMPAIGNS)
@@ -585,7 +621,13 @@ public final class DmosCampaignServlet {
             try {
                 String workspaceId = request.getPathParameter("workspaceId");
                 String campaignId  = request.getPathParameter("id");
-                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+                DmOperationContext ctx = httpContextFactory.buildContext(
+                    request,
+                    workspaceId,
+                    true,
+                    DmosCapabilityRegistry.CAMPAIGNS,
+                    "duplicate-campaign"
+                );
                 DuplicateCampaignRequest body = MAPPER.readValue(
                     request.getBody().getString(StandardCharsets.UTF_8),
                     DuplicateCampaignRequest.class);
@@ -715,8 +757,7 @@ public final class DmosCampaignServlet {
      * <p>Error envelope format: {@code {error, message, status, correlationId, details?}}</p>
      */
     private HttpResponse errorResponse(int code, String message, String correlationId) {
-        String errorCode = mapStatusToErrorCode(code);
-        return jsonResponse(code, new ErrorBody(errorCode, message, code, correlationId, null));
+        return DmosApiErrorResponses.error(code, message, correlationId);
     }
 
     /**
@@ -725,20 +766,6 @@ public final class DmosCampaignServlet {
      */
     private HttpResponse errorResponse(int code, String message) {
         return errorResponse(code, message, DmCorrelationId.generate().getValue());
-    }
-
-    private static String mapStatusToErrorCode(int status) {
-        return switch (status) {
-            case 400 -> "BAD_REQUEST";
-            case 401 -> "UNAUTHORIZED";
-            case 403 -> "FORBIDDEN";
-            case 404 -> "NOT_FOUND";
-            case 409 -> "CONFLICT";
-            case 422 -> "UNPROCESSABLE_ENTITY";
-            case 429 -> "RATE_LIMITED";
-            case 500 -> "INTERNAL_ERROR";
-            default -> "ERROR";
-        };
     }
 
     // -------------------------------------------------------------------------
@@ -804,16 +831,4 @@ public final class DmosCampaignServlet {
         int offset
     ) { }
 
-    /**
-     * Canonical DMOS error response body.
-     *
-     * <p>Format: {@code {error, message, status, correlationId, details?}}</p>
-     */
-    record ErrorBody(
-        String error,
-        String message,
-        int status,
-        String correlationId,
-        Object details
-    ) { }
 }

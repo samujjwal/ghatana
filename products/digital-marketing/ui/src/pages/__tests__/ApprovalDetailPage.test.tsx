@@ -43,7 +43,7 @@ const APPROVAL: ApprovalRecordResponse = {
   targetId: 'content-99',
   description: null,
   riskLevel: 2,
-  requiredApproverRole: 'content-approver',
+  requiredApproverRole: 'brand-manager',
   status: 'PENDING',
   submittedAt: '2026-01-05T08:00:00Z',
   submittedBy: 'user-1',
@@ -62,6 +62,13 @@ const APPROVAL: ApprovalRecordResponse = {
 const HIGH_RISK_APPROVAL: ApprovalRecordResponse = {
   ...APPROVAL,
   requestId: 'req-99',
+  riskLevel: 5,
+};
+
+const DIRECTOR_APPROVAL: ApprovalRecordResponse = {
+  ...APPROVAL,
+  requestId: 'req-77',
+  requiredApproverRole: 'marketing-director',
 };
 
 const SNAPSHOT: ApprovalSnapshot = {
@@ -72,7 +79,7 @@ const SNAPSHOT: ApprovalSnapshot = {
   snapshotSummary: 'Blog post for product launch',
   validationResultId: null,
   riskLevel: 2,
-  requiredApproverRole: 'content-approver',
+  requiredApproverRole: 'brand-manager',
   snapshotAt: '2026-01-05T08:00:01Z',
 };
 
@@ -82,13 +89,19 @@ const HIGH_RISK_SNAPSHOT: ApprovalSnapshot = {
   riskLevel: 5,
 };
 
+const DIRECTOR_SNAPSHOT: ApprovalSnapshot = {
+  ...SNAPSHOT,
+  requestId: 'req-77',
+  requiredApproverRole: 'marketing-director',
+};
+
 function buildQueryClient(): QueryClient {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
 
 function renderPage(
   requestId: string,
-  roles: string[] = ['content-approver'],
+  roles: string[] = ['brand-manager'],
   token: string | null = 'test-token',
 ): void {
   render(
@@ -152,7 +165,7 @@ describe('ApprovalDetailPage', () => {
     mockGetStatus.mockRejectedValue(new Error('Not found'));
     renderPage('req-42');
     await screen.findByTestId('approval-detail-error');
-    expect(screen.getByText(/Not found/i)).toBeInTheDocument();
+    expect(screen.getByText(/Failed to load approval\./i)).toBeInTheDocument();
   });
 
   it('shows decide button for authorised approver', async () => {
@@ -160,8 +173,23 @@ describe('ApprovalDetailPage', () => {
     expect(await screen.findByTestId('open-decide-dialog')).toBeInTheDocument();
   });
 
-  it('hides decide button for user with no approver role', async () => {
-    renderPage('req-42', []);
+  it('hides decide button for viewer-only user', async () => {
+    renderPage('req-42', ['viewer']);
+    await screen.findByTestId('approval-status-badge');
+    expect(screen.queryByTestId('open-decide-dialog')).not.toBeInTheDocument();
+    expect(screen.getByTestId('approval-permission-denied')).toBeInTheDocument();
+  });
+
+  it('shows decide button for admin', async () => {
+    renderPage('req-42', ['admin']);
+    expect(await screen.findByTestId('open-decide-dialog')).toBeInTheDocument();
+  });
+
+  it('hides decide button when request requires a higher approver role', async () => {
+    mockGetStatus.mockResolvedValue(DIRECTOR_APPROVAL);
+    mockGetSnapshot.mockResolvedValue(DIRECTOR_SNAPSHOT);
+    renderPage('req-77', ['brand-manager']);
+
     await screen.findByTestId('approval-status-badge');
     expect(screen.queryByTestId('open-decide-dialog')).not.toBeInTheDocument();
     expect(screen.getByTestId('approval-permission-denied')).toBeInTheDocument();
@@ -185,7 +213,7 @@ describe('ApprovalDetailPage', () => {
       expect(mockDecide).toHaveBeenCalledWith('ws-1', 'req-42', {
         decision: 'APPROVE',
         notes: undefined,
-      }),
+      }, expect.any(String)),
     );
   });
 
@@ -195,6 +223,7 @@ describe('ApprovalDetailPage', () => {
     renderPage('req-99');
     const user = userEvent.setup();
     await user.click(await screen.findByTestId('open-decide-dialog'));
+    await user.selectOptions(screen.getByTestId('decision-select'), 'REJECT');
 
     // Submit is disabled until comment is entered
     const submitBtn = screen.getByTestId('decide-submit');
@@ -202,6 +231,22 @@ describe('ApprovalDetailPage', () => {
 
     await user.type(screen.getByTestId('decide-comment'), 'Needs revision');
     expect(submitBtn).not.toBeDisabled();
+  });
+
+  it('renders an accessible decision dialog with labeled controls', async () => {
+    mockGetStatus.mockResolvedValue(HIGH_RISK_APPROVAL);
+    mockGetSnapshot.mockResolvedValue(HIGH_RISK_SNAPSHOT);
+    renderPage('req-99');
+
+    const user = userEvent.setup();
+    await user.click(await screen.findByTestId('open-decide-dialog'));
+
+    expect(screen.getByRole('dialog', { name: /submit decision/i })).toBeInTheDocument();
+    expect(screen.getByLabelText('Decision')).toBeInTheDocument();
+
+    const commentInput = screen.getByLabelText('Comment (required)');
+    expect(commentInput).toBeInTheDocument();
+    expect(commentInput).toHaveAttribute('aria-required', 'true');
   });
 
   it('dismisses decide dialog on cancel', async () => {

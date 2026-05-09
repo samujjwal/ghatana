@@ -5,6 +5,7 @@ import com.ghatana.datacloud.governance.QuotaCheckResult;
 import com.ghatana.datacloud.governance.TenantQuotaService;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
+import com.ghatana.datacloud.spi.WriteIdempotencyStore;
 import io.activej.http.*;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -35,6 +36,8 @@ public class EventHandler {
     private final HttpHandlerSupport http;
     private TraceSpanSupport traceSupport = TraceSpanSupport.disabled();
     private TenantQuotaService tenantQuotaService;
+    /** DC-BE-002: Generic idempotency store for event append operations. */
+    private WriteIdempotencyStore idempotencyStore;
 
     public EventHandler(DataCloudClient client, HttpHandlerSupport http) {
         this.client = client;
@@ -48,6 +51,17 @@ public class EventHandler {
 
     public EventHandler withTenantQuotaService(TenantQuotaService tenantQuotaService) {
         this.tenantQuotaService = tenantQuotaService;
+        return this;
+    }
+
+    /**
+     * DC-BE-002: Attaches a generic idempotency store for event append operations.
+     *
+     * @param idempotencyStore the idempotency store
+     * @return {@code this} for method chaining
+     */
+    public EventHandler withIdempotencyStore(WriteIdempotencyStore idempotencyStore) {
+        this.idempotencyStore = idempotencyStore;
         return this;
     }
 
@@ -75,6 +89,17 @@ public class EventHandler {
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
+
+        // DC-BE-002: Check idempotency for event append
+        String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
+        String operationScope = "events:append";
+        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+            var cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
+            if (cached.isPresent()) {
+                log.info("[DC-BE-002] Returning cached event append response for key={}", idempotencyKey);
+                return Promise.of(http.jsonResponse(cached.get()));
+            }
+        }
 
         Promise<HttpResponse> quotaErr = checkQuotaOrNull(tenantId, "EVENT", 1);
         if (quotaErr != null) return quotaErr;
@@ -125,12 +150,19 @@ public class EventHandler {
                     handlerSpan.spanId(),
                     Map.of("event.type", eventType),
                     () -> client.appendEvent(tenantId, event))
-                    .map(offset -> http.jsonResponse(Map.of(
-                        "offset", offset.value(),
-                        "type", eventType,
-                        "eventType", eventType,
-                        "timestamp", Instant.now().toString()
-                    )));
+                    .map(offset -> {
+                        Map<String, Object> responseBody = Map.of(
+                            "offset", offset.value(),
+                            "type", eventType,
+                            "eventType", eventType,
+                            "timestamp", Instant.now().toString()
+                        );
+                        // DC-BE-002: Store idempotency response
+                        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+                            idempotencyStore.put(tenantId, operationScope, idempotencyKey, responseBody);
+                        }
+                        return http.jsonResponse(responseBody);
+                    });
             } catch (Exception e) {
                 log.error("Error appending event", e);
                 return Promise.of(http.errorResponse(400, "Invalid event data: " + e.getMessage()));

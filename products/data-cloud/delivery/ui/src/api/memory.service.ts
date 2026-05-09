@@ -25,12 +25,14 @@ import {
   type LearningStatusResponse,
   type MemoryItem as BackendMemoryItem,
 } from '../contracts/schemas';
+import type { components } from '../contracts/generated/data-cloud';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type MemoryType = 'EPISODIC' | 'SEMANTIC' | 'PROCEDURAL' | 'PREFERENCE';
+// DC-P1-006: Migrated to use generated type from OpenAPI spec
+export type MemoryType = components['schemas']['MemoryType'];
 
 export type MemoryItem = BackendMemoryItem;
 

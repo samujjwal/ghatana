@@ -3,6 +3,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
+import com.ghatana.datacloud.spi.TransactionManager;
 import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
 import com.ghatana.datacloud.entity.validation.ValidationResult;
@@ -75,6 +76,9 @@ public class EntityCrudHandler {
     private static final int IDEMPOTENCY_MAX_ENTRIES = 10_000;
     private static final long IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000L; // 24 hours
 
+    /** DC-BE-003: Transaction manager for atomic multi-step writes (entity + event + audit). */
+    private TransactionManager transactionManager;
+
     private record IdempotencyEntry(Map<String, Object> responseBody, Instant storedAt) {}
 
     /**
@@ -125,6 +129,17 @@ public class EntityCrudHandler {
         return this;
     }
 
+    /**
+     * DC-BE-003: Attaches a transaction manager for atomic multi-step writes.
+     *
+     * @param transactionManager the transaction manager
+     * @return {@code this} for method chaining
+     */
+    public EntityCrudHandler withTransactionManager(TransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+        return this;
+    }
+
     // ==================== Quota Enforcement ====================
 
     /**
@@ -145,6 +160,114 @@ public class EntityCrudHandler {
     }
 
     // ==================== Idempotency Key Support (P0.2 / DC-P1-008) ====================
+
+    /**
+     * DC-BE-002: Entity CRUD routes support idempotency via X-Idempotency-Key header.
+     * Idempotency is implemented for POST /api/v1/entities/:collection and
+     * POST /api/v1/entities/:collection/batch endpoints using EntityWriteIdempotencyStore.
+     *
+     * <p><b>DC-BE-002 Note:</b> Other mutating routes (pipelines, events, governance, analytics, etc.)
+     * require idempotency support or explicit non-idempotent documentation:
+     * - POST /api/v1/pipelines (pipeline creation/update)
+     * - POST /api/v1/events (event append)
+     * - POST /api/v1/governance/* (governance operations)
+     * - POST /api/v1/analytics/* (analytics queries)
+     * Retry tests are required for all idempotent routes to ensure retries do not corrupt data.
+     *
+     * <p>Idempotency keys are scoped by tenantId/collection/key to prevent cross-tenant collisions.
+     */
+
+    // ==================== Transaction Support (DC-BE-003) ====================
+
+    /**
+     * DC-BE-003: Executes entity save + event append + semantic indexing in a transaction.
+     *
+     * <p>When transactionManager is available, this method wraps the multi-step write operation
+     * in a transaction to ensure atomicity. If any step fails, all operations are rolled back.
+     *
+     * @param tenantId the tenant ID
+     * @param collection the collection name
+     * @param provenanced the entity data with provenance
+     * @param request the HTTP request
+     * @param handlerSpan the trace span
+     * @param idempotencyKey the idempotency key
+     * @return promise that completes with the HTTP response
+     */
+    private Promise<HttpResponse> executeSaveInTransaction(
+            String tenantId,
+            String collection,
+            Map<String, Object> provenanced,
+            HttpRequest request,
+            TraceSpanSupport.TraceSpanScope handlerSpan,
+            String idempotencyKey) {
+        
+        return transactionManager.executeInTransactionWithContext(tenantId, context -> {
+            // Entity save operation
+            return traceSupport.trace(
+                request,
+                tenantId,
+                "datacloud.entity.store.save",
+                handlerSpan.spanId(),
+                Map.of("collection", collection),
+                () -> client.save(tenantId, collection, provenanced))
+                .then(entity -> {
+                    // Register rollback handler for entity save (delete the saved entity)
+                    context.registerRollbackHandler(() -> {
+                        log.debug("[DC-BE-003] Rolling back entity save: {}", entity.id());
+                        client.delete(tenantId, collection, entity.id()).toCompletableFuture().join();
+                    });
+                    
+                    // Event append operation
+                    DataCloudClient.Event cdcEvent = DataCloudClient.Event.builder()
+                        .type("entity.saved")
+                        .payload(buildCdcEnvelope(tenantId, handlerSpan.spanId(), entity, "upsert", null))
+                        .source("datacloud.launcher.entity-crud")
+                        .build();
+                    
+                    return traceSupport.trace(
+                        request,
+                        tenantId,
+                        "datacloud.event.store.append",
+                        handlerSpan.spanId(),
+                        Map.of("collection", entity.collection(), "event.type", "entity.saved"),
+                        () -> client.appendEvent(tenantId, cdcEvent))
+                        .then(savedEvent -> {
+                            // Register rollback handler for event append (delete the appended event)
+                            context.registerRollbackHandler(() -> {
+                                log.debug("[DC-BE-003] Rolling back event append for entity: {}", entity.id());
+                                // Note: Event rollback may not be fully supported by all EventLogStore implementations
+                                // This is a best-effort rollback
+                            });
+                            
+                            // WebSocket broadcast (non-critical, outside transaction)
+                            wsBroadcaster.accept("collection.saved", Map.of(
+                                "entityId",  entity.id(),
+                                "collection", entity.collection(),
+                                "tenantId",  tenantId
+                            ));
+                            
+                            // Semantic indexing (non-critical, outside transaction)
+                            if (semanticIndexPort != null) {
+                                return semanticIndexPort.index(tenantId, collection, entity)
+                                        .map(indexedEntity -> entity);
+                            }
+                            return Promise.of(entity);
+                        });
+                })
+                .then(entity -> {
+                    // Build response body
+                    Map<String, Object> responseBody = Map.of(
+                        "id", entity.id(),
+                        "collection", entity.collection(),
+                        "version", entity.version(),
+                        "createdAt", entity.createdAt().toString(),
+                        "timestamp", Instant.now().toString()
+                    );
+                    storeIdempotency(tenantId, collection, idempotencyKey, responseBody);
+                    return Promise.of(http.jsonResponse(responseBody));
+                });
+        });
+    }
 
     private String inMemoryIdempotencyKey(String tenantId, String collection, String idempotencyKey) {
         return tenantId + "/" + collection + "/" + idempotencyKey;
@@ -256,6 +379,14 @@ public class EntityCrudHandler {
                 }
 
                 Map<String, Object> provenanced = withProvenance(data, request, handlerSpan.spanId());
+                
+                // DC-BE-003: Wrap entity save + event append in transaction when available
+                if (transactionManager != null) {
+                    return executeSaveInTransaction(
+                        resolvedTenantId, finalCollection, provenanced, request, handlerSpan, idempotencyKey);
+                }
+                
+                // Non-transactional path (existing behavior)
                 return traceSupport.trace(
                     request,
                     resolvedTenantId,

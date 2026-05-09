@@ -1,6 +1,6 @@
 package com.ghatana.digitalmarketing.api.middleware;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.digitalmarketing.api.DmosApiErrorResponses;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import io.activej.eventloop.Eventloop;
@@ -47,7 +47,6 @@ import java.util.Set;
 public final class IdempotencyMiddleware {
 
     private static final Logger LOG = LoggerFactory.getLogger(IdempotencyMiddleware.class);
-    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final Set<HttpMethod> IDEMPOTENT_METHODS = Set.of(
         HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH, HttpMethod.DELETE
     );
@@ -106,13 +105,11 @@ public final class IdempotencyMiddleware {
                 // P1-021: Require idempotency key for mutating operations
                 LOG.warn("[DMOS-IDEMPOTENCY] Missing X-Idempotency-Key for {} {}",
                     method, request.getRelativePath());
-                return Promise.of(HttpResponse.ofCode(400)
-                    .withJson(MAPPER.writeValueAsString(Map.of(
-                        "error", "MISSING_IDEMPOTENCY_KEY",
-                        "message", "X-Idempotency-Key header is required for " + method + " operations",
-                        "status", 400
-                    )))
-                    .build());
+                return Promise.of(DmosApiErrorResponses.error(
+                    400,
+                    "X-Idempotency-Key header is required for " + method + " operations",
+                    request
+                ));
             }
 
             String tenantId = request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"));
@@ -266,17 +263,6 @@ public final class IdempotencyMiddleware {
     public static class IdempotencyKeyCollisionException extends RuntimeException {
         public IdempotencyKeyCollisionException(String message) {
             super(message);
-        }
-    }
-
-    // Helper class for JSON serialization
-    private static class Map {
-        static java.util.Map<String, Object> of(String k1, Object v1, String k2, Object v2, String k3, Object v3) {
-            java.util.Map<String, Object> map = new java.util.HashMap<>();
-            map.put(k1, v1);
-            map.put(k2, v2);
-            map.put(k3, v3);
-            return map;
         }
     }
 }

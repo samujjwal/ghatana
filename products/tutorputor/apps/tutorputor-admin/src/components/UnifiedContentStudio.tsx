@@ -301,192 +301,71 @@ export function UnifiedContentStudio() {
     },
   ];
 
-  // Simulate real-time data for content creation system
+  // Load real metrics from service instead of fake random values
   useEffect(() => {
-    const interval = setInterval(() => {
-      setContentStats({
-        totalContent: Math.floor(Math.random() * 10000) + 5000,
-        byType: {
-          examples: Math.floor(Math.random() * 3000) + 1500,
-          simulations: Math.floor(Math.random() * 2000) + 1000,
-          animations: Math.floor(Math.random() * 1500) + 800,
-          assessments: Math.floor(Math.random() * 2500) + 1200,
-          explanations: Math.floor(Math.random() * 3000) + 1500,
-        },
-        byDomain: {
-          physics: Math.floor(Math.random() * 1500) + 800,
-          chemistry: Math.floor(Math.random() * 1200) + 600,
-          biology: Math.floor(Math.random() * 1000) + 500,
-          mathematics: Math.floor(Math.random() * 2000) + 1000,
-          computerScience: Math.floor(Math.random() * 1300) + 700,
-          economics: Math.floor(Math.random() * 800) + 400,
-          medicine: Math.floor(Math.random() * 900) + 450,
-          general: Math.floor(Math.random() * 1000) + 500,
-        },
-        qualityDistribution: {
-          excellent: Math.floor(Math.random() * 3000) + 2000,
-          good: Math.floor(Math.random() * 4000) + 2500,
-          fair: Math.floor(Math.random() * 1500) + 800,
-          poor: Math.floor(Math.random() * 200) + 100,
-        },
-      });
+    let isMounted = true;
 
-      setInfrastructureStatus({
-        aiModels: {
-          openai: {
-            status: Math.random() > 0.1 ? "healthy" : "degraded",
-            latency: Math.floor(Math.random() * 2000) + 500,
-            successRate: Math.random() * 10 + 90,
-          },
-          ollama: {
-            status: Math.random() > 0.05 ? "healthy" : "degraded",
-            latency: Math.floor(Math.random() * 3000) + 1000,
-            successRate: Math.random() * 5 + 95,
-          },
-          claude: {
-            status: Math.random() > 0.15 ? "healthy" : "degraded",
-            latency: Math.floor(Math.random() * 1500) + 800,
-            successRate: Math.random() * 8 + 92,
-          },
-        },
-        databases: {
-          postgres: {
-            status: "healthy",
-            connections: Math.floor(Math.random() * 50) + 20,
-            queryTime: Math.floor(Math.random() * 100) + 10,
-          },
-          redis: {
-            status: "healthy",
-            memory: Math.floor(Math.random() * 70) + 20,
-            hitRate: Math.random() * 20 + 80,
-          },
-        },
-        storage: {
-          s3: {
-            status: "healthy",
-            size: Math.floor(Math.random() * 100) + 50,
-            objects: Math.floor(Math.random() * 50000) + 10000,
-          },
-          local: {
-            status: "healthy",
-            size: Math.floor(Math.random() * 20) + 5,
-            objects: Math.floor(Math.random() * 5000) + 1000,
-          },
-        },
-      });
+    const loadMetrics = async () => {
+      try {
+        const { getContentGenerationMetricsService } = await import(
+          "../services/contentGenerationMetrics"
+        );
+        const metricsService = getContentGenerationMetricsService();
 
-      setTemplateStats({
-        totalTemplates: Math.floor(Math.random() * 100) + 50,
-        byDomain: {
-          physics: Math.floor(Math.random() * 20) + 10,
-          chemistry: Math.floor(Math.random() * 15) + 8,
-          biology: Math.floor(Math.random() * 12) + 6,
-          mathematics: Math.floor(Math.random() * 25) + 15,
-          computerScience: Math.floor(Math.random() * 18) + 10,
-        },
-        usageStats: {
-          mostUsed: "Pendulum Simulation",
-          leastUsed: "Economics Supply-Demand",
-          avgUsage: Math.floor(Math.random() * 100) + 50,
-        },
-        recentTemplates: [
-          {
-            id: "1",
-            name: "Projectile Motion",
-            domain: "physics",
-            usageCount: 245,
-            lastUsed: "2 hours ago",
-          },
-          {
-            id: "2",
-            name: "Chemical Reactions",
-            domain: "chemistry",
-            usageCount: 189,
-            lastUsed: "5 hours ago",
-          },
-          {
-            id: "3",
-            name: "Algorithm Sorting",
-            domain: "computerScience",
-            usageCount: 156,
-            lastUsed: "1 day ago",
-          },
-        ],
-      });
+        const [contentStats, infrastructureStatus] = await Promise.all([
+          metricsService.getContentStats(),
+          metricsService.getInfrastructureStatus(),
+        ]);
 
-      setAutomatedJobs([
-        {
-          id: "1",
-          name: "Physics Content Generation",
-          description:
-            "Generate physics simulations and examples for grades 9-12",
-          schedule: "0 2 * * *", // Daily at 2 AM
-          status: Math.random() > 0.2 ? "active" : "paused",
-          lastRun: "2 hours ago",
-          nextRun: "22 hours from now",
-          totalRuns: Math.floor(Math.random() * 100) + 50,
-          successRate: Math.random() * 10 + 90,
-          averageDuration: Math.floor(Math.random() * 300) + 120,
-          config: {
-            domains: ["physics"],
-            gradeLevels: ["Grade 9", "Grade 10", "Grade 11", "Grade 12"],
-            contentTypes: ["simulations", "examples", "animations"],
-            batchSize: 10,
-            aiProvider: "openai",
-          },
-        },
-        {
-          id: "2",
-          name: "Mathematics Weekly Batch",
-          description: "Generate math content for all grade levels",
-          schedule: "0 3 * * 1", // Weekly on Monday at 3 AM
-          status: Math.random() > 0.3 ? "active" : "paused",
-          lastRun: "3 days ago",
-          nextRun: "4 days from now",
-          totalRuns: Math.floor(Math.random() * 50) + 25,
-          successRate: Math.random() * 15 + 85,
-          averageDuration: Math.floor(Math.random() * 450) + 200,
-          config: {
-            domains: ["mathematics"],
-            gradeLevels: [
-              "Grade 1",
-              "Grade 2",
-              "Grade 3",
-              "Grade 4",
-              "Grade 5",
-              "Grade 6",
-              "Grade 7",
-              "Grade 8",
-            ],
-            contentTypes: ["examples", "assessments"],
-            batchSize: 20,
-            aiProvider: "claude",
-          },
-        },
-      ]);
+        if (isMounted) {
+          setContentStats(contentStats as any);
+          setInfrastructureStatus(infrastructureStatus as any);
+          // Set template stats to degraded state (will be replaced with real API later)
+          setTemplateStats({
+            totalTemplates: 0,
+            byDomain: {},
+            usageStats: {
+              mostUsed: "N/A",
+              leastUsed: "N/A",
+              avgUsage: 0,
+            },
+            recentTemplates: [],
+          });
+          // Set automated jobs to empty (will be replaced with real API later)
+          setAutomatedJobs([]);
+          // Set job queue to degraded state
+          setJobQueue({
+            pending: 0,
+            running: 0,
+            completed: 0,
+            failed: 0,
+            averageWaitTime: 0,
+          });
+          // Set generation metrics to degraded state
+          setGenerationMetrics({
+            jobsPerHour: 0,
+            successRate: 0,
+            averageDuration: 0,
+            contentGenerated: 0,
+            errorsByType: {},
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load metrics:", error);
+        // Keep existing state on error to prevent UI flicker
+      }
+    };
 
-      setJobQueue({
-        pending: Math.floor(Math.random() * 10) + 5,
-        running: Math.floor(Math.random() * 3) + 1,
-        completed: Math.floor(Math.random() * 100) + 50,
-        failed: Math.floor(Math.random() * 5) + 1,
-        averageWaitTime: Math.floor(Math.random() * 300) + 60,
-      });
+    // Initial load
+    loadMetrics();
 
-      setGenerationMetrics({
-        jobsPerHour: Math.floor(Math.random() * 20) + 5,
-        successRate: Math.random() * 10 + 90,
-        averageDuration: Math.floor(Math.random() * 200) + 100,
-        contentGenerated: Math.floor(Math.random() * 500) + 200,
-        errorsByType: {
-          AI_TIMEOUT: Math.floor(Math.random() * 5) + 1,
-          TEMPLATE_NOT_FOUND: Math.floor(Math.random() * 3) + 1,
-          VALIDATION_FAILED: Math.floor(Math.random() * 2) + 1,
-        },
-      });
-    }, 3000);
+    // Refresh metrics every 30 seconds instead of 3 seconds
+    const interval = setInterval(loadMetrics, 30000);
 
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   // Navigation handlers

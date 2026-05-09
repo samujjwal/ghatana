@@ -42,19 +42,17 @@ export const setupCorePlugins: FastifyPluginAsync<CorePluginsOptions> = async (
 
   // 1. Setup Prisma
   if (options.prisma) {
-    app.prisma = options.prisma;
+    app.decorate('prisma', options.prisma);
   } else {
-    const { PrismaClient } = await import("@tutorputor/core/db");
-    app.prisma = new PrismaClient({
-      datasourceUrl: process.env.DATABASE_URL,
-    } as ConstructorParameters<typeof PrismaClient>[0]) as PrismaClient;
+    const { createPrismaClient } = await import("@tutorputor/core/db");
+    app.decorate('prisma', createPrismaClient() as PrismaClient);
   }
 
   // 2. Setup Redis
   if (options.redis) {
-    app.redis = options.redis as Redis;
+    app.decorate('redis', options.redis as Redis);
   } else {
-    app.redis = getRedisClient(options.redisUrl);
+    app.decorate('redis', getRedisClient(options.redisUrl));
   }
 
   // 3. Setup JWT

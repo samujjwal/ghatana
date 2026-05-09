@@ -302,6 +302,57 @@ class DmosApprovalServletTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("POST /approvals/:requestId/decide returns 403 when viewer lacks approve action")
+    void shouldReturn403ForViewerDecideAction() {
+        HttpRequest request = HttpRequest.post(
+                "http://localhost/v1/workspaces/ws-1/approvals/req-1/decide")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Roles"), "viewer")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
+            .withBody(APPROVE_BODY.getBytes(StandardCharsets.UTF_8))
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("POST /approvals/:requestId/decide returns 200 when brand-manager decides approval")
+    void shouldAllowBrandManagerDecideAction() {
+        HttpRequest request = HttpRequest.post(
+                "http://localhost/v1/workspaces/ws-1/approvals/req-1/decide")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Roles"), "brand-manager")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
+            .withBody(APPROVE_BODY.getBytes(StandardCharsets.UTF_8))
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("POST /approvals/:requestId/decide returns 200 when admin decides approval")
+    void shouldAllowAdminDecideAction() {
+        HttpRequest request = HttpRequest.post(
+                "http://localhost/v1/workspaces/ws-1/approvals/req-1/decide")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Roles"), "admin")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
+            .withBody(APPROVE_BODY.getBytes(StandardCharsets.UTF_8))
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+    }
+
+    @Test
     @DisplayName("POST /approvals/:requestId/decide returns 400 when service says notes required")
     void shouldReturn400WhenRejectNotesRequired() {
         approvalService.throwOnDecide = new IllegalArgumentException("Notes are required");
@@ -358,6 +409,21 @@ class DmosApprovalServletTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
             .withHeader(HttpHeaders.of("X-Permissions"), "dmos.approvals")
             .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idem-1")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("GET /approvals/:requestId returns 200 for viewer read-only access")
+    void shouldAllowViewerReadOnlyGetApprovalStatus() {
+        HttpRequest request = HttpRequest.get(
+                "http://localhost/v1/workspaces/ws-1/approvals/req-1")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
+            .withHeader(HttpHeaders.of("X-Roles"), "viewer")
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));

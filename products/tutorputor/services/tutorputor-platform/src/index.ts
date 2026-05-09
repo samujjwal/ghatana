@@ -14,6 +14,14 @@ export { integrationModule } from "./modules/integration/index.js";
 export { tenantModule } from "./modules/tenant/index.js";
 export { aiModule } from "./modules/ai/index.js";
 
+// Content Generation Metrics
+export {
+  getContentGenerationMetricsService,
+  type ContentGenerationMetrics,
+  type ContentStats,
+  type InfrastructureStatus,
+} from "./modules/content-generation/ContentGenerationMetricsService.js";
+
 // Core Utilities & Observability
 export { setupPlatform } from "./setup.js";
 export {

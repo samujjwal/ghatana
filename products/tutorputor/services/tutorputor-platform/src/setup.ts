@@ -77,12 +77,18 @@ export async function setupPlatform(
   const businessModulesOptions: {
     startLearnerProfileGrpcServer?: boolean;
     learnerProfileGrpcAddress?: string;
+    prisma?: PrismaClient;
   } = {};
   if (options.startLearnerProfileGrpcServer !== undefined) {
-    businessModulesOptions.startLearnerProfileGrpcServer = options.startLearnerProfileGrpcServer;
+    businessModulesOptions.startLearnerProfileGrpcServer =
+      options.startLearnerProfileGrpcServer;
   }
   if (options.learnerProfileGrpcAddress !== undefined) {
-    businessModulesOptions.learnerProfileGrpcAddress = options.learnerProfileGrpcAddress;
+    businessModulesOptions.learnerProfileGrpcAddress =
+      options.learnerProfileGrpcAddress;
+  }
+  if (app.prisma) {
+    businessModulesOptions.prisma = app.prisma;
   }
   await app.register(setupBusinessModules, businessModulesOptions);
 

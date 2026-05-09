@@ -115,16 +115,26 @@ All errors should use a consistent shape:
 
 ```json
 {
-  "error": {
-    "code": "DMOS_ERROR_CODE",
-    "message": "User-safe message",
-    "correlationId": "corr-123",
-    "details": {
-      "field": "optional context"
-    }
+  "error": "DMOS_ERROR_CODE",
+  "message": "User-safe message",
+  "status": 400,
+  "correlationId": "corr-123",
+  "details": {
+    "field": "optional context"
   }
 }
 ```
+
+Canonical error codes:
+- `BAD_REQUEST`
+- `UNAUTHORIZED`
+- `FORBIDDEN`
+- `NOT_FOUND`
+- `CONFLICT`
+- `UNPROCESSABLE_ENTITY`
+- `LOCKED`
+- `RATE_LIMITED`
+- `INTERNAL_ERROR`
 
 ## Standard Status Codes
 

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.budget.BudgetRecommendationService;
+import com.ghatana.digitalmarketing.application.capabilities.DmosCapabilityRegistry;
 import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.api.observability.DmosTelemetry;
 import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
@@ -121,7 +122,13 @@ public final class DmosBudgetRecommendationServlet {
             try {
                 String workspaceId = request.getPathParameter("workspaceId");
                 // P1-001: Use shared fail-closed HTTP context factory
-                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+                DmOperationContext ctx = httpContextFactory.buildContext(
+                    request,
+                    workspaceId,
+                    true,
+                    DmosCapabilityRegistry.BUDGET,
+                    "generate-budget"
+                );
                 GenerateBudgetRequest body = MAPPER.readValue(
                     request.getBody().getString(StandardCharsets.UTF_8),
                     GenerateBudgetRequest.class
@@ -146,14 +153,16 @@ public final class DmosBudgetRecommendationServlet {
                         .then(r -> Promise.of(r), e -> {
                             telemetry.recordException(span, e);
                             span.end();
-                            return mapServiceError("recommend budget", e);
+                            return mapServiceError("recommend budget", e, request);
                         });
                 }
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
+            } catch (SecurityException e) {
+                return Promise.of(DmosApiErrorResponses.error(403, "Access denied", request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to recommend budget", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -164,7 +173,13 @@ public final class DmosBudgetRecommendationServlet {
                 String workspaceId = request.getPathParameter("workspaceId");
                 String recId = request.getPathParameter("recId");
                 // P1-001: Use shared fail-closed HTTP context factory
-                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+                DmOperationContext ctx = httpContextFactory.buildContext(
+                    request,
+                    workspaceId,
+                    true,
+                    DmosCapabilityRegistry.BUDGET,
+                    "submit-budget"
+                );
 
                 // P1-026: Create span for budget submission
                 io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /budget-recommendation/:recId/submit", ctx).startSpan();
@@ -179,14 +194,16 @@ public final class DmosBudgetRecommendationServlet {
                         .then(r -> Promise.of(r), e -> {
                             telemetry.recordException(span, e);
                             span.end();
-                            return mapServiceError("submit for approval", e);
+                            return mapServiceError("submit for approval", e, request);
                         });
                 }
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
+            } catch (SecurityException e) {
+                return Promise.of(DmosApiErrorResponses.error(403, "Access denied", request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to submit budget recommendation for approval", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -197,7 +214,13 @@ public final class DmosBudgetRecommendationServlet {
                 String workspaceId = request.getPathParameter("workspaceId");
                 String recId = request.getPathParameter("recId");
                 // P1-001: Use shared fail-closed HTTP context factory
-                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+                DmOperationContext ctx = httpContextFactory.buildContext(
+                    request,
+                    workspaceId,
+                    true,
+                    DmosCapabilityRegistry.BUDGET,
+                    "approve-budget"
+                );
 
                 // P1-026: Create span for budget approval
                 io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /budget-recommendation/:recId/approve", ctx).startSpan();
@@ -212,14 +235,16 @@ public final class DmosBudgetRecommendationServlet {
                         .then(r -> Promise.of(r), e -> {
                             telemetry.recordException(span, e);
                             span.end();
-                            return mapServiceError("approve recommendation", e);
+                            return mapServiceError("approve recommendation", e, request);
                         });
                 }
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
+            } catch (SecurityException e) {
+                return Promise.of(DmosApiErrorResponses.error(403, "Access denied", request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to approve budget recommendation", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -231,35 +256,35 @@ public final class DmosBudgetRecommendationServlet {
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
             return budgetService.getLatestRecommendation(ctx)
                 .map(rec -> jsonResponse(200, BudgetRecommendationResponse.from(rec)))
-                .then(r -> Promise.of(r), e -> mapServiceError("get latest recommendation", e));
+                .then(r -> Promise.of(r), e -> mapServiceError("get latest recommendation", e, request));
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to get latest budget recommendation", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
         }
     }
 
     // ---- error mapping ----
 
-    private Promise<HttpResponse> mapServiceError(String operation, Throwable error) {
+    private Promise<HttpResponse> mapServiceError(String operation, Throwable error, HttpRequest request) {
         if (error instanceof SecurityException) {
-            return Promise.of(errorResponse(403, "Access denied"));
+            return Promise.of(DmosApiErrorResponses.error(403, "Access denied", request));
         }
         if (error instanceof NoSuchElementException) {
-            return Promise.of(errorResponse(404, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(404, error.getMessage(), request));
         }
         if (error instanceof IllegalArgumentException) {
-            return Promise.of(errorResponse(400, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, error.getMessage(), request));
         }
         if (error instanceof IllegalStateException) {
-            return Promise.of(errorResponse(409, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(409, error.getMessage(), request));
         }
         if (error instanceof DmosFeatureDisabledException || error instanceof DmosConnectorDisabledException) {
-            return Promise.of(errorResponse(423, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(423, error.getMessage(), request));
         }
         LOG.error("[DMOS] Failed to {}", operation, error);
-        return Promise.of(errorResponse(500, "Internal error"));
+        return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
     }
 
     // ---- context builder ----
@@ -280,10 +305,6 @@ public final class DmosBudgetRecommendationServlet {
             LOG.error("[DMOS] Serialization failure", e);
             return HttpResponse.ofCode(500).build();
         }
-    }
-
-    private HttpResponse errorResponse(int code, String message) {
-        return jsonResponse(code, new ErrorBody(code, message));
     }
 
     // ---- request / response records ----
@@ -333,6 +354,4 @@ public final class DmosBudgetRecommendationServlet {
         }
     }
 
-    record ErrorBody(int status, String message) {
-    }
 }

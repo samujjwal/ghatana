@@ -138,13 +138,13 @@ public final class DmosAdCopyServlet {
 
                 return generatorService.generateAdCopyDraft(ctx, command)
                     .map(version -> jsonResponse(201, ContentVersionResponse.from(version)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("generate ad copy draft", e));
+                    .then(r -> Promise.of(r), e -> mapServiceError("generate ad copy draft", e, request));
 
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to parse generate ad copy request", e);
-                return Promise.of(errorResponse(500, "Internal server error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal server error", request));
             }
         });
     }
@@ -157,13 +157,13 @@ public final class DmosAdCopyServlet {
 
             return generatorService.getLatestApproved(ctx, itemId)
                 .map(version -> jsonResponse(200, ContentVersionResponse.from(version)))
-                .then(r -> Promise.of(r), e -> mapServiceError("get latest approved ad copy", e));
+                .then(r -> Promise.of(r), e -> mapServiceError("get latest approved ad copy", e, request));
 
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to process get latest approved ad copy request", e);
-            return Promise.of(errorResponse(500, "Internal server error"));
+            return Promise.of(DmosApiErrorResponses.error(500, "Internal server error", request));
         }
     }
 
@@ -243,28 +243,24 @@ public final class DmosAdCopyServlet {
         }
     }
 
-    private HttpResponse errorResponse(int code, String message) {
-        return jsonResponse(code, new ErrorBody(code, message));
-    }
-
-    private Promise<HttpResponse> mapServiceError(String operation, Throwable error) {
+    private Promise<HttpResponse> mapServiceError(String operation, Throwable error, HttpRequest request) {
         if (error instanceof SecurityException) {
-            return Promise.of(errorResponse(403, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(403, error.getMessage(), request));
         }
         if (error instanceof NoSuchElementException) {
-            return Promise.of(errorResponse(404, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(404, error.getMessage(), request));
         }
         if (error instanceof IllegalArgumentException) {
-            return Promise.of(errorResponse(400, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, error.getMessage(), request));
         }
         if (error instanceof IllegalStateException) {
-            return Promise.of(errorResponse(409, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(409, error.getMessage(), request));
         }
         if (error instanceof DmosFeatureDisabledException || error instanceof DmosConnectorDisabledException) {
-            return Promise.of(errorResponse(423, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(423, error.getMessage(), request));
         }
         LOG.error("[DMOS] Unexpected error in operation: {}", operation, error);
-        return Promise.of(errorResponse(500, "Internal server error"));
+        return Promise.of(DmosApiErrorResponses.error(500, "Internal server error", request));
     }
 
     // -------------------------------------------------------------------------
@@ -328,5 +324,4 @@ public final class DmosAdCopyServlet {
         }
     }
 
-    record ErrorBody(int code, String error) {}
 }

@@ -60,3 +60,40 @@ export function useAdvancePathway() {
     });
 }
 
+/**
+ * Hook to get pathway recommendations based on user goals.
+ */
+export function useRecommendPath() {
+    return useMutation({
+        mutationFn: ({ goals }: { goals: string[] }) =>
+            apiClient.generatePathway(goals.join(", ")),
+        onSuccess: () => {
+            // Invalidate relevant queries
+        }
+    });
+}
+
+/**
+ * Hook to enroll in a learning pathway.
+ */
+export function useEnrollInPath() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ pathId }: { pathId: string }) =>
+            apiClient.createPathway("", "", []),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["activePathway"] });
+        }
+    });
+}
+
+/**
+ * Hook to get user's pathway enrollments.
+ */
+export function usePathEnrollments() {
+    return useQuery({
+        queryKey: ["pathEnrollments"],
+        queryFn: () => apiClient.getActivePathway()
+    });
+}

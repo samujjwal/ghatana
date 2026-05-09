@@ -21,6 +21,13 @@ import org.slf4j.LoggerFactory;
  * builder methods for better maintainability. Each domain (entities, events, analytics, etc.)
  * has its own builder method, making it easier to add new routes and understand the structure.
  *
+ * <p><b>Action Plane Route Namespace (DC-P1-007):</b>
+ * Canonical Action Plane routes should live under {@code /api/v1/action/*} to avoid
+ * implementation naming in product routes. When Action Plane features are implemented
+ * (agents, pipelines, patterns, runs, reviews, learning, deployments, reports), they should
+ * be registered under the {@code /api/v1/action} namespace rather than at the root level.
+ * This ensures clear ownership and prevents route collision with other product domains.
+ *
  * <p><b>Usage:</b>
  * <pre>{@code
  * RoutingServlet router = new DataCloudRouterBuilder(eventloop)
@@ -455,9 +462,9 @@ public class DataCloudRouterBuilder {
      * Adds Runtime Truth surface endpoints.
      * DC-P1.12: Removed compatibility /api/v1/capabilities aliases; use canonical /api/v1/surfaces only.
      */
-    public DataCloudRouterBuilder withCapabilityRoutes(CapabilityRegistryHandler capabilityRegistryHandler) {
-        builder.with(HttpMethod.GET, "/api/v1/surfaces", capabilityRegistryHandler::handleSurfaces);
-        builder.with(HttpMethod.GET, "/api/v1/surfaces/schema", capabilityRegistryHandler::handleSurfaceSchema);
+    public DataCloudRouterBuilder withCapabilityRoutes(SurfaceRegistryHandler surfaceRegistryHandler) {
+        builder.with(HttpMethod.GET, "/api/v1/surfaces", surfaceRegistryHandler::handleSurfaces);
+        builder.with(HttpMethod.GET, "/api/v1/surfaces/schema", surfaceRegistryHandler::handleSurfaceSchema);
         return this;
     }
 

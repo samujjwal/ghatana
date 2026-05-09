@@ -43,9 +43,14 @@ import java.time.Instant;
  * All tests share the same server startup and HTTP client infrastructure.
  *
  * <p>Covers: POST/GET/DELETE single entity, GET query, batch save/delete,
- * export (501 without service), anomaly detection (501 without detector), 
- * full-text search (501 without connector), request validation and tenant 
+ * export (501 without service), anomaly detection (501 without detector),
+ * full-text search (501 without connector), request validation and tenant
  * isolation headers.
+ *
+ * <p><b>DC-P1-013 Note:</b> These tests use mock DataCloudClient/EntityStore.
+ * Durable store integration tests (create/update/query/delete/history/idempotency/tenant
+ * boundaries against real DB) require additional test infrastructure and should be added
+ * to prove entity behavior against durable storage.
  *
  * @doc.type class
  * @doc.purpose Integration tests for /api/v1/entities/** HTTP endpoints

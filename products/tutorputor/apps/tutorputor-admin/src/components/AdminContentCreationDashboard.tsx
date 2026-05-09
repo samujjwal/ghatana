@@ -23,6 +23,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+// Types will be defined locally to avoid cross-workspace import issues
 
 interface ContentCreationStats {
   totalContent: number;
@@ -134,96 +135,42 @@ export const AdminContentCreationDashboard: React.FC = () => {
     },
   });
 
-  // Simulate real-time admin metrics
+  // Load real metrics from service instead of fake random values
   useEffect(() => {
-    const interval = setInterval(() => {
-      setStats((prev) => ({
-        totalContent: prev.totalContent + Math.floor(Math.random() * 10),
-        byType: {
-          examples: prev.byType.examples + Math.floor(Math.random() * 3),
-          simulations: prev.byType.simulations + Math.floor(Math.random() * 2),
-          animations: prev.byType.animations + Math.floor(Math.random() * 2),
-          assessments: prev.byType.assessments + Math.floor(Math.random() * 4),
-          explanations:
-            prev.byType.explanations + Math.floor(Math.random() * 3),
-        },
-        byDomain: {
-          physics: prev.byDomain.physics + Math.floor(Math.random() * 2),
-          chemistry: prev.byDomain.chemistry + Math.floor(Math.random() * 2),
-          mathematics:
-            prev.byDomain.mathematics + Math.floor(Math.random() * 3),
-          biology: prev.byDomain.biology + Math.floor(Math.random() * 1),
-          computerScience:
-            prev.byDomain.computerScience + Math.floor(Math.random() * 2),
-        },
-        byQuality: {
-          auto: prev.byQuality.auto + Math.floor(Math.random() * 5),
-          reviewed: prev.byQuality.reviewed + Math.floor(Math.random() * 2),
-          manual: prev.byQuality.manual + Math.floor(Math.random() * 1),
-        },
-      }));
+    let isMounted = true;
 
-      setInfrastructure((prev) => ({
-        aiModels: {
-          gpt4: {
-            ...prev.aiModels.gpt4,
-            requests:
-              prev.aiModels.gpt4.requests + Math.floor(Math.random() * 5),
-            latency: 1.2 + Math.random() * 0.8,
-            cost: prev.aiModels.gpt4.cost + Math.random() * 0.05,
-          },
-          claude: {
-            ...prev.aiModels.claude,
-            requests:
-              prev.aiModels.claude.requests + Math.floor(Math.random() * 3),
-            latency: 1.0 + Math.random() * 0.6,
-            cost: prev.aiModels.claude.cost + Math.random() * 0.03,
-          },
-          gemini: {
-            ...prev.aiModels.gemini,
-            requests:
-              prev.aiModels.gemini.requests + Math.floor(Math.random() * 4),
-            latency: 1.5 + Math.random() * 1.0,
-            cost: prev.aiModels.gemini.cost + Math.random() * 0.04,
-          },
-        },
-        databases: {
-          postgresql: {
-            ...prev.databases.postgresql,
-            connections: 15 + Math.floor(Math.random() * 10),
-            performance: 85 + Math.random() * 10,
-            size: `${(12.5 + Math.random() * 5).toFixed(1)} GB`,
-          },
-          redis: {
-            ...prev.databases.redis,
-            memory: `${(256 + Math.random() * 128).toFixed(0)} MB`,
-            keys: prev.databases.redis.keys + Math.floor(Math.random() * 20),
-            hitRate: 92 + Math.random() * 6,
-          },
-          minio: {
-            ...prev.databases.minio,
-            storage: `${(45.2 + Math.random() * 10).toFixed(1)} GB`,
-            objects:
-              prev.databases.minio.objects + Math.floor(Math.random() * 15),
-            bandwidth: Math.random() * 100,
-          },
-        },
-        templates: {
-          ...prev.templates,
-          total: prev.templates.total + Math.floor(Math.random() * 2),
-          usage: [
-            ...prev.templates.usage.slice(-5),
-            {
-              template: `Template_${Date.now()}`,
-              uses: Math.floor(Math.random() * 50),
-              successRate: 85 + Math.random() * 10,
-            },
-          ],
-        },
-      }));
-    }, 4000);
+    const loadMetrics = async () => {
+      try {
+        const { getContentGenerationMetricsService } = await import(
+          "../services/contentGenerationMetrics"
+        );
+        const metricsService = getContentGenerationMetricsService();
 
-    return () => clearInterval(interval);
+        const [contentStats, infrastructureStatus] = await Promise.all([
+          metricsService.getContentStats(),
+          metricsService.getInfrastructureStatus(),
+        ]);
+
+        if (isMounted) {
+          setStats(contentStats as any);
+          setInfrastructure(infrastructureStatus as any);
+        }
+      } catch (error) {
+        console.error("Failed to load metrics:", error);
+        // Keep existing state on error to prevent UI flicker
+      }
+    };
+
+    // Initial load
+    loadMetrics();
+
+    // Refresh metrics every 30 seconds instead of 4 seconds
+    const interval = setInterval(loadMetrics, 30000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const renderOverview = () => (

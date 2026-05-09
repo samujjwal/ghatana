@@ -1,7 +1,6 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
 import type { ApprovalRecordResponse } from '../models/ApprovalRecordResponse';
 import type { DecideApprovalRequest } from '../models/DecideApprovalRequest';
 import type { PendingApprovalsResponse } from '../models/PendingApprovalsResponse';

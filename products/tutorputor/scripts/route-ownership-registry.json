@@ -1,0 +1,233 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-03-27",
+  "description": "Route ownership registry for TutorPutor API routes",
+  "routes": {
+    "platform": {
+      "owner": "platform-team",
+      "contact": "platform-team@ghatana.com",
+      "routes": [
+        {
+          "path": "/api/knowledge-base/*",
+          "description": "Knowledge base integration endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/metrics/content-stats",
+          "description": "Content generation metrics",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/metrics/infrastructure",
+          "description": "Infrastructure status metrics",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/telemetry/*",
+          "description": "Telemetry event ingestion",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/content-generation/*",
+          "description": "Content generation endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/assessment/*",
+          "description": "Assessment endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/learning/*",
+          "description": "Learning pathway endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/tenant/*",
+          "description": "Tenant management endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/user/*",
+          "description": "User management endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/auth/*",
+          "description": "Authentication endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/payments/*",
+          "description": "Payment processing endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/subscription/*",
+          "description": "Subscription management endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/lti/*",
+          "description": "LTI integration endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/social/*",
+          "description": "Social learning endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/study-groups/*",
+          "description": "Study group endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/forums/*",
+          "description": "Forum endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/tutoring/*",
+          "description": "Tutoring endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/vr/*",
+          "description": "VR simulation endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/plugins/*",
+          "description": "Plugin marketplace endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/ai/*",
+          "description": "AI service endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/analytics/*",
+          "description": "Analytics endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/compliance/*",
+          "description": "Compliance endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/privacy/*",
+          "description": "Privacy endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/achievements/*",
+          "description": "Achievement endpoints",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/health",
+          "description": "Health check endpoint",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/api/health",
+          "description": "Health check endpoint",
+          "since": "2026-03-01"
+        }
+      ]
+    },
+    "admin": {
+      "owner": "admin-team",
+      "contact": "admin-team@ghatana.com",
+      "routes": [
+        {
+          "path": "/admin/*",
+          "description": "Admin dashboard routes",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/content/*",
+          "description": "Content management routes",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/users/*",
+          "description": "User management routes",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/settings/*",
+          "description": "Settings routes",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/marketplace/*",
+          "description": "Marketplace routes",
+          "since": "2026-03-01"
+        }
+      ]
+    },
+    "learner": {
+      "owner": "learner-team",
+      "contact": "learner-team@ghatana.com",
+      "routes": [
+        {
+          "path": "/",
+          "description": "Learner home page",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/dashboard",
+          "description": "Learner dashboard",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/modules/*",
+          "description": "Module learning routes",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/simulations/*",
+          "description": "Simulation routes",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/assessments/*",
+          "description": "Assessment routes",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/pathways/*",
+          "description": "Learning pathway routes",
+          "since": "2026-03-01"
+        },
+        {
+          "path": "/profile",
+          "description": "User profile",
+          "since": "2026-03-01"
+        }
+      ]
+    },
+    "mobile": {
+      "owner": "mobile-team",
+      "contact": "mobile-team@ghatana.com",
+      "routes": [
+        {
+          "path": "native://*",
+          "description": "Native mobile app deep links",
+          "since": "2026-03-01"
+        }
+      ]
+    }
+  },
+  "rules": {
+    "requireOwnership": true,
+    "requireContact": true,
+    "requireDescription": true,
+    "allowWildcards": true,
+    "wildcardPattern": "/*"
+  }
+}

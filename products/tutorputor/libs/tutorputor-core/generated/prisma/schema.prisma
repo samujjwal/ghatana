@@ -79,6 +79,7 @@ enum AssessmentAttemptStatus {
   IN_PROGRESS
   SUBMITTED
   GRADED
+  PENDING_HUMAN_REVIEW
   EXPIRED
 }
 
@@ -615,7 +616,7 @@ model Payout {
   status          String    @default("PENDING")
   arrivalDate     DateTime?
   description     String?
-  metadata        String? // JSON string
+  metadata        Json?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -971,9 +972,9 @@ model StudySession {
   maxParticipants Int?
   rsvpDeadline    DateTime?
   moduleId        String?
-  lessonIds       String? // JSON array
+  lessonIds       Json? // JSON array
   agenda          String?
-  attachments     String? // JSON array
+  attachments     Json? // JSON array
   status          StudySessionStatus @default(SCHEDULED)
   startedAt       DateTime?
   endedAt         DateTime?
@@ -1104,7 +1105,7 @@ model ForumPost {
   isAnonymous      Boolean     @default(false)
   content          String
   contentFormat    String      @default("markdown")
-  attachments      String? // JSON array
+  attachments      Json? // JSON array
   parentId         String?
   depth            Int         @default(0)
   likeCount        Int         @default(0)
@@ -1114,7 +1115,7 @@ model ForumPost {
   moderatedAt      DateTime?
   isEdited         Boolean     @default(false)
   editedAt         DateTime?
-  editHistory      String? // JSON array of PostEdit
+  editHistory      Json? // JSON array of PostEdit
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 
@@ -1982,10 +1983,13 @@ model User {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  ssoLinks       SsoUserLink[]
-  learnerProfile LearnerProfile?
-  consents       UserConsent[]
-  userRoles      UserRole[]
+  ssoLinks         SsoUserLink[]
+  learnerProfile   LearnerProfile?
+  consents         UserConsent[]
+  userRoles        UserRole[]
+  ageVerification  UserAgeVerification?
+  moderationQueue  ContentModerationQueue[]
+  safetyViolations SafetyViolationLog[]
 
   @@unique([tenantId, email])
   @@index([tenantId, role])
@@ -4343,6 +4347,25 @@ model EmbeddingVector {
 }
 
 // =============================================================================
+// P2.4 — Evidence Embedding for Semantic Search
+// =============================================================================
+
+model EvidenceEmbedding {
+  id         String   @id @default(cuid())
+  evidenceId String   @unique
+  claimRef   String
+  text       String
+  vector     Json // Embedding vector stored as JSON (migrate to pgvector later)
+  model      String // Model used for embedding
+  dimensions Int // Vector dimensionality
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([claimRef])
+  @@index([evidenceId])
+}
+
+// =============================================================================
 // P2.3 — Recommendation Edges
 // =============================================================================
 
@@ -4891,5 +4914,315 @@ model PayoutNotification {
   @@index([tenantId, userId])
   @@index([tenantId, status])
   @@index([stripePayoutId])
+  @@index([createdAt])
+}
+
+// =============================================================================
+// Offline Learning Sync Queue
+// =============================================================================
+
+enum SyncOperationType {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum SyncOperationStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CONFLICT
+}
+
+enum ConflictResolutionStrategy {
+  SERVER_WINS
+  CLIENT_WINS
+  MANUAL
+  MERGE
+}
+
+model OfflineSyncQueue {
+  id       String @id @default(cuid())
+  tenantId String
+  userId   String
+  deviceId String // Unique device identifier for conflict detection
+
+  // Operation details
+  operationType   SyncOperationType
+  operationStatus SyncOperationStatus @default(PENDING)
+
+  // Resource being synced
+  resourceType    String // "assessment_attempt", "enrollment_progress", "simulation_state", "learning_evidence"
+  resourceId      String
+  resourceVersion Int    @default(1) // Optimistic locking version
+
+  // Payload data
+  payload       Json // The actual data to sync
+  serverVersion Json? // Server version when conflict detected
+  clientVersion Json? // Client version for conflict resolution
+
+  // Conflict handling
+  conflictDetected Boolean                     @default(false)
+  conflictStrategy ConflictResolutionStrategy?
+  conflictReason   String? // "version_mismatch", "concurrent_edit", "data_inconsistency"
+  resolvedAt       DateTime?
+  resolvedBy       String? // "auto" or userId
+
+  // Retry tracking
+  attemptCount  Int       @default(0)
+  lastAttemptAt DateTime?
+  nextAttemptAt DateTime?
+
+  // Metadata
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  completedAt  DateTime?
+  errorMessage String?
+
+  @@index([tenantId, userId, deviceId])
+  @@index([tenantId, operationStatus])
+  @@index([resourceType, resourceId])
+  @@index([conflictDetected, operationStatus])
+  @@index([nextAttemptAt])
+}
+
+model SyncConflictLog {
+  id          String @id @default(cuid())
+  tenantId    String
+  userId      String
+  deviceId    String
+  syncQueueId String
+
+  // Conflict details
+  resourceType   String
+  resourceId     String
+  conflictType   String // "version_mismatch", "concurrent_edit", "data_inconsistency"
+  conflictReason String
+
+  // Versions involved
+  clientPayload Json
+  serverPayload Json
+  mergedPayload Json?
+
+  // Resolution
+  resolutionStrategy ConflictResolutionStrategy
+  resolvedBy         String // "auto" or userId
+  resolvedAt         DateTime
+  resolutionNotes    String?
+
+  // Impact assessment
+  dataLossRisk Boolean @default(false)
+  userNotified Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, userId, deviceId])
+  @@index([syncQueueId])
+  @@index([resourceType, resourceId])
+  @@index([createdAt])
+}
+
+// =============================================================================
+// Child Safety & Content Moderation
+// =============================================================================
+
+enum AgeGroup {
+  UNDER_13
+  AGE_13_17
+  AGE_18_PLUS
+  ADULT_ONLY
+}
+
+enum ContentModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FLAGGED
+  AUTO_REJECTED
+}
+
+enum ModerationSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ModerationAction {
+  ALLOW
+  BLOCK
+  FLAG_FOR_REVIEW
+  AUTO_REJECT
+  REQUIRE_PARENTAL_CONSENT
+}
+
+model UserAgeVerification {
+  id       String @id @default(cuid())
+  tenantId String
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Age verification
+  birthDate      DateTime
+  ageGroup       AgeGroup
+  verifiedAt     DateTime @default(now())
+  verifiedMethod String // "parent_consent", "id_verification", "self_declaration"
+  verifiedBy     String? // Parent ID if parent consent
+
+  // Parental consent (for under 13)
+  parentalConsentGiven     Boolean   @default(false)
+  parentalConsentAt        DateTime?
+  parentalConsentExpiresAt DateTime?
+  parentId                 String?
+
+  // Restrictions
+  restrictedFeatures  Json? // Array of features restricted due to age
+  requiresSupervision Boolean @default(false)
+
+  // Compliance
+  dataRetentionLimited Boolean @default(false)
+  marketingOptOut      Boolean @default(true) // Default true for children
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, userId])
+  @@index([tenantId, ageGroup])
+}
+
+model ContentModerationQueue {
+  id       String  @id @default(cuid())
+  tenantId String
+  userId   String?
+  user     User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Content details
+  contentType     String // "chat_message", "forum_post", "study_group_name", "tutoring_request"
+  contentId       String
+  contentText     String
+  contentMetadata Json?
+
+  // Moderation
+  status          ContentModerationStatus @default(PENDING)
+  severity        ModerationSeverity
+  action          ModerationAction
+  confidenceScore Float? // AI confidence in moderation decision
+
+  // Flagged content
+  flaggedReasons   String[] // Array of reason codes
+  detectedPatterns Json? // Detected PII, profanity, etc.
+
+  // Review
+  reviewedBy     String?
+  reviewedAt     DateTime?
+  reviewNotes    String?
+  overrideReason String?
+
+  // Appeal
+  appealedBy   String?
+  appealedAt   DateTime?
+  appealReason String?
+  appealStatus String? // "pending", "approved", "rejected"
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, status])
+  @@index([contentType, contentId])
+  @@index([status, severity])
+  @@index([createdAt])
+}
+
+model ChildSafetyPolicy {
+  id          String @id @default(cuid())
+  tenantId    String
+  name        String
+  description String
+
+  // Policy scope
+  ageGroup  AgeGroup
+  appliesTo String[] // Array of feature types: "chat", "forums", "tutoring", "study_groups"
+
+  // Restrictions
+  requireParentalConsent  Boolean @default(false)
+  requireAdultSupervision Boolean @default(false)
+  limitCommunicationHours Boolean @default(false)
+  allowedHoursStart       Int? // Hour of day (0-23)
+  allowedHoursEnd         Int? // Hour of day (0-23)
+
+  // Content restrictions
+  blockProfanity           Boolean @default(true)
+  blockPersonalInfoSharing Boolean @default(true)
+  blockExternalLinks       Boolean @default(true)
+  blockMediaSharing        Boolean @default(false)
+
+  // Moderation
+  autoModerateChat         Boolean @default(true)
+  autoModerateForums       Boolean @default(true)
+  requireModeratorApproval Boolean @default(false)
+
+  // Monitoring
+  enableActivityLogging    Boolean  @default(true)
+  alertOnViolation         Boolean  @default(true)
+  violationAlertRecipients String[] // User IDs to notify on violations
+
+  // Status
+  isActive    Boolean   @default(true)
+  effectiveAt DateTime  @default(now())
+  expiresAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  violations SafetyViolationLog[]
+
+  @@index([tenantId, ageGroup])
+  @@index([tenantId, isActive])
+}
+
+model SafetyViolationLog {
+  id       String @id @default(cuid())
+  tenantId String
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Violation details
+  policyId      String?
+  policy        ChildSafetyPolicy? @relation(fields: [policyId], references: [id])
+  violationType String // "profanity", "personal_info", "external_link", "harassment", "inappropriate_content"
+  severity      ModerationSeverity
+
+  // Context
+  contentType     String
+  contentId       String
+  contentText     String
+  contextMetadata Json?
+
+  // Action taken
+  actionTaken   String // "blocked", "flagged", "warning_sent", "account_restricted"
+  actionTakenBy String? // System or moderator ID
+  actionTakenAt DateTime @default(now())
+
+  // Parent notification (for minors)
+  parentNotified   Boolean   @default(false)
+  parentNotifiedAt DateTime?
+  parentId         String?
+
+  // Resolution
+  resolved        Boolean   @default(false)
+  resolvedAt      DateTime?
+  resolvedBy      String?
+  resolutionNotes String?
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, userId])
+  @@index([tenantId, violationType])
+  @@index([policyId])
   @@index([createdAt])
 }

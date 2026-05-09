@@ -8,6 +8,7 @@ import com.ghatana.digitalmarketing.application.optimization.AnomalyDetectionSer
 import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.api.observability.DmosTelemetry;
 import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
+import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.optimization.AnomalyDetectionResult;
 import com.ghatana.digitalmarketing.domain.optimization.AnomalySeverity;
@@ -279,7 +280,7 @@ public final class DmosAnomalyDetectionServlet {
     }
 
     private HttpResponse errorResponse(int code, String message) {
-        return jsonResponse(code, new ErrorBody(code, message));
+        return DmosApiErrorResponses.error(code, message, DmCorrelationId.generate().getValue());
     }
 
     record PublishRequest(String campaignId, String severity, String metricName, String anomalyType, double expectedValue, double actualValue, double deviationPercentage, String description, Map<String, Object> context, String rationale) {}
@@ -333,5 +334,6 @@ public final class DmosAnomalyDetectionServlet {
         }
     }
 
-    record ErrorBody(int status, String message) {}
 }
+
+

@@ -51,6 +51,9 @@ const mockUseStrategy = vi.fn();
 const mockUseGenerateStrategy = vi.fn();
 const mockUseSubmitStrategyApproval = vi.fn();
 const mockUseApproveStrategy = vi.fn();
+const mockUseIntakeProfile = vi.fn();
+const mockUseLatestWebsiteAudit = vi.fn();
+const mockUseLatestCompetitorResearch = vi.fn();
 
 vi.mock('@/hooks/useStrategy', () => ({
   useStrategy: (...args: unknown[]) => mockUseStrategy(...args),
@@ -59,18 +62,33 @@ vi.mock('@/hooks/useStrategy', () => ({
   useApproveStrategy: (...args: unknown[]) => mockUseApproveStrategy(...args),
 }));
 
+vi.mock('@/hooks/useIntakeProfile', () => ({
+  useIntakeProfile: (...args: unknown[]) => mockUseIntakeProfile(...args),
+}));
+
+vi.mock('@/hooks/useWebsiteAudit', () => ({
+  useLatestWebsiteAudit: (...args: unknown[]) => mockUseLatestWebsiteAudit(...args),
+}));
+
+vi.mock('@/hooks/useCompetitorResearch', () => ({
+  useLatestCompetitorResearch: (...args: unknown[]) => mockUseLatestCompetitorResearch(...args),
+}));
+
 function buildQueryClient(): QueryClient {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
 
-function renderPage(token: string | null = 'test-token'): void {
+function renderPage(
+  token: string | null = 'test-token',
+  roles: string[] = ['brand-manager'],
+): void {
   render(
     <QueryClientProvider client={buildQueryClient()}>
       <AuthProvider
         initialToken={token}
         initialWorkspaceId="ws-1"
         initialTenantId="tenant-1"
-        initialRoles={[]}
+        initialRoles={roles}
       >
         <MemoryRouter initialEntries={['/workspaces/ws-1/strategy']}>
           <Routes>
@@ -107,6 +125,38 @@ describe('StrategyPage', () => {
     mockUseApproveStrategy.mockReturnValue({
       approve: vi.fn(),
       isPending: false,
+      isError: false,
+      error: null,
+    });
+    mockUseIntakeProfile.mockReturnValue({
+      intake: null,
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+    mockUseLatestWebsiteAudit.mockReturnValue({
+      report: {
+        findings: [
+          {
+            severity: 'HIGH',
+            category: 'tracking',
+            evidence: 'No pixel detected',
+            rationale: 'Measurement gap',
+            recommendedAction: 'Add tag manager',
+            sourceUrl: 'https://example.test',
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+    mockUseLatestCompetitorResearch.mockReturnValue({
+      snapshot: {
+        competitorFindings: [{ competitorDomain: 'comp.example' }],
+        keywordFindings: [{ keyword: 'dental implants' }, { keyword: 'teeth whitening' }],
+      },
+      isLoading: false,
       isError: false,
       error: null,
     });
@@ -159,10 +209,40 @@ describe('StrategyPage', () => {
 
   it('renders generate form', () => {
     renderPage();
-    expect(screen.getByTestId('strategy-service-area-input')).toBeInTheDocument();
+    expect(screen.getByTestId('strategy-objective-input')).toBeInTheDocument();
     expect(screen.getByTestId('strategy-offer-input')).toBeInTheDocument();
     expect(screen.getByTestId('strategy-budget-input')).toBeInTheDocument();
+    expect(screen.getByTestId('strategy-audience-input')).toBeInTheDocument();
+    expect(screen.getByTestId('strategy-geography-input')).toBeInTheDocument();
+    expect(screen.getByTestId('strategy-constraints-input')).toBeInTheDocument();
     expect(screen.getByTestId('generate-strategy-btn')).toBeInTheDocument();
+  });
+
+  it('renders derived inputs from audit and research services', () => {
+    renderPage();
+    expect(screen.getByTestId('strategy-derived-inputs')).toBeInTheDocument();
+    expect(screen.getByTestId('strategy-derived-audit')).toHaveTextContent('1');
+    expect(screen.getByTestId('strategy-derived-keywords')).toHaveTextContent('2');
+    expect(screen.getByTestId('strategy-derived-competitors')).toHaveTextContent('1');
+  });
+
+  it('shows missing data warnings when audit/research are unavailable', () => {
+    mockUseLatestWebsiteAudit.mockReturnValue({
+      report: null,
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+    mockUseLatestCompetitorResearch.mockReturnValue({
+      snapshot: null,
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+    renderPage();
+
+    expect(screen.getByTestId('strategy-missing-audit')).toBeInTheDocument();
+    expect(screen.getByTestId('strategy-missing-research')).toBeInTheDocument();
   });
 
   it('shows submit button for draft strategy', () => {
@@ -179,5 +259,12 @@ describe('StrategyPage', () => {
     });
     renderPage();
     expect(screen.getByTestId('approve-strategy-btn')).toBeInTheDocument();
+  });
+
+  it('disables mutation actions for viewer role', () => {
+    renderPage('test-token', ['viewer']);
+    expect(screen.getByTestId('generate-strategy-btn')).toBeDisabled();
+    expect(screen.getByTestId('submit-strategy-btn')).toBeDisabled();
+    expect(screen.getByTestId('strategy-action-permission-banner')).toBeInTheDocument();
   });
 });

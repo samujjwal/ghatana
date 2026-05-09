@@ -14,7 +14,7 @@ import crypto from "crypto";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { getConfig } from "../config/config.js";
 import { authGatewayClient } from "../clients/auth-gateway.client.js";
-import { PrismaClient } from "@tutorputor/core/db";
+import { createPrismaClient, type PrismaClient } from "@tutorputor/core/db";
 import { promisify } from "util";
 
 const scrypt = promisify(crypto.scrypt);
@@ -49,7 +49,14 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
   return key === derivedKey.toString("hex");
 }
 
-const prisma = new PrismaClient();
+let prisma: PrismaClient | null = null;
+
+function getPrisma(): PrismaClient {
+  if (!prisma) {
+    prisma = createPrismaClient();
+  }
+  return prisma;
+}
 
 type AuthenticatedRequest = FastifyRequest & { authContext?: AuthContext };
 
@@ -128,7 +135,7 @@ const unsupportedLegacyAuthRepository: LegacyAuthUserRepository = {
  */
 class PrismaUserRepository implements LegacyAuthUserRepository {
   async findUserById(userId: string): Promise<User | null> {
-    const user = await prisma.user.findUnique({
+    const user = await getPrisma().user.findUnique({
       where: { id: userId },
     });
 
@@ -152,7 +159,7 @@ class PrismaUserRepository implements LegacyAuthUserRepository {
     password: string,
     tenantId: string,
   ): Promise<User | null> {
-    const user = await prisma.user.findFirst({
+    const user = await getPrisma().user.findFirst({
       where: {
         email,
         tenantId,
@@ -225,7 +232,7 @@ class PrismaUserRepository implements LegacyAuthUserRepository {
   }
 
   async updateUserLastLogin(userId: string): Promise<void> {
-    await prisma.user.update({
+    await getPrisma().user.update({
       where: { id: userId },
       data: { lastLoginAt: new Date() },
     });

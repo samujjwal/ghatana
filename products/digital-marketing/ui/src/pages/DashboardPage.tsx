@@ -17,6 +17,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useApprovalQueue } from '@/hooks/useApprovalQueue';
 import { useCampaigns } from '@/hooks/useCampaigns';
 import { useStrategy } from '@/hooks/useStrategy';
+import { useBudgetRecommendation } from '@/hooks/useBudget';
 import { ApprovalWidget } from '@/components/dashboard/ApprovalWidget';
 import { GrowthGoalWidget } from '@/components/dashboard/GrowthGoalWidget';
 import { RiskComplianceWidget } from '@/components/dashboard/RiskComplianceWidget';
@@ -27,6 +28,7 @@ import { CampaignStatusWidget } from '@/components/dashboard/CampaignStatusWidge
 import { BudgetTrackingWidget } from '@/components/dashboard/BudgetTrackingWidget';
 import { StrategyInsightsWidget } from '@/components/dashboard/StrategyInsightsWidget';
 import { ConnectorHealthWidget } from '@/components/dashboard/ConnectorHealthWidget';
+import { useConnectorHealth } from '@/hooks/useConnectorHealth';
 
 export function DashboardPage(): React.ReactElement {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -49,6 +51,12 @@ export function DashboardPage(): React.ReactElement {
   const { strategy: latestStrategy, isLoading: strategyLoading, isError: strategyError } = useStrategy(
     workspaceId ?? null
   );
+  const {
+    recommendation: latestBudgetRecommendation,
+    isLoading: budgetLoading,
+    isError: budgetError,
+  } = useBudgetRecommendation(workspaceId ?? null);
+  const connectorHealth = useConnectorHealth(workspaceId ?? null);
 
   // P0-5.3: Handle loading state separately from early return
   if (!isAuthenticated) {
@@ -67,6 +75,40 @@ export function DashboardPage(): React.ReactElement {
   const strategyCount = latestStrategy ? 1 : 0;
   const strategyStatus = latestStrategy?.status ?? 'NONE';
   const strategyBudgetCap = latestStrategy?.budgetCap ?? 0;
+  const budgetTotal = latestBudgetRecommendation?.totalMonthlyCap ?? null;
+  const isBudgetApproved = latestBudgetRecommendation?.status === 'APPROVED';
+  const committedCampaignSpend = campaigns
+    .filter((campaign) => campaign.status === 'LAUNCHED' || campaign.status === 'COMPLETED')
+    .reduce((sum, campaign) => sum + ((campaign.budgetCents ?? 0) / 100), 0);
+  const budgetSpent =
+    budgetTotal !== null && isBudgetApproved && !campaignsError
+      ? committedCampaignSpend
+      : null;
+  const budgetRemaining =
+    budgetTotal !== null && budgetSpent !== null
+      ? budgetTotal - budgetSpent
+      : null;
+  const budgetUtilization =
+    budgetTotal !== null && budgetSpent !== null && budgetTotal > 0
+      ? (budgetSpent / budgetTotal) * 100
+      : null;
+  const budgetGeneratedAt = latestBudgetRecommendation?.approvedAt ?? latestBudgetRecommendation?.generatedAt ?? null;
+  const budgetSource =
+    latestBudgetRecommendation === null
+      ? 'Budget Recommendation API'
+      : isBudgetApproved
+      ? 'Budget Recommendation API + Campaign Spend Model'
+      : 'Budget Recommendation API (draft recommendation)';
+  const budgetUnavailableReason =
+    latestBudgetRecommendation === null
+      ? 'No budget recommendation is available yet.'
+      : campaignsError
+      ? 'Campaign spend telemetry is temporarily unavailable.'
+      : !isBudgetApproved
+      ? 'Budget recommendation is not approved yet. Spend utilization is hidden until approval.'
+      : undefined;
+  const isBudgetPartial =
+    latestBudgetRecommendation !== null && (!isBudgetApproved || campaignsError);
 
   return (
     <section
@@ -136,12 +178,16 @@ export function DashboardPage(): React.ReactElement {
         />
         <BudgetTrackingWidget
           workspaceId={workspaceId ?? ''}
-          totalBudget={50000}
-          spent={12500}
-          remaining={37500}
-          utilizationPercent={25}
-          isLoading={false}
-          isError={false}
+          totalBudget={budgetTotal}
+          spent={budgetSpent}
+          remaining={budgetRemaining}
+          utilizationPercent={budgetUtilization}
+          isLoading={budgetLoading}
+          isError={budgetError}
+          isPartial={isBudgetPartial}
+          source={budgetSource}
+          lastUpdated={budgetGeneratedAt}
+          unavailableReason={budgetUnavailableReason}
         />
         <StrategyInsightsWidget
           workspaceId={workspaceId ?? ''}
@@ -153,12 +199,12 @@ export function DashboardPage(): React.ReactElement {
         />
         <ConnectorHealthWidget
           workspaceId={workspaceId ?? ''}
-          connectors={[
-            { name: 'Google Ads', status: 'healthy', lastSync: '2 min ago' },
-            { name: 'Meta Ads', status: 'healthy', lastSync: '5 min ago' },
-          ]}
-          isLoading={false}
-          isError={false}
+          connectors={connectorHealth.connectors}
+          isLoading={connectorHealth.isLoading}
+          isError={connectorHealth.isError}
+          source={connectorHealth.source}
+          lastUpdated={connectorHealth.lastUpdated}
+          unavailableReason={connectorHealth.unavailableReason}
         />
         <AiActionLogWidget
           workspaceId={workspaceId ?? ''}

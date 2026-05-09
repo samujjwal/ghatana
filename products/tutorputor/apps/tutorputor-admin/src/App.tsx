@@ -218,12 +218,6 @@ export const router = createBrowserRouter([
         element: withSuspense(MarketplaceAdminPage),
       },
 
-      // === LEGACY ROUTE REDIRECTS (for backwards compatibility) ===
-      {
-        path: "settings/marketplace",
-        element: withSuspense(MarketplaceAdminPage),
-      },
-
       // 5. PERSONA DASHBOARDS — role-specific views
       {
         path: "dashboard/teacher",

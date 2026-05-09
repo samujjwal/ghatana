@@ -8,6 +8,7 @@ import com.ghatana.digitalmarketing.application.optimization.ExperimentSuggestio
 import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.api.observability.DmosTelemetry;
 import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
+import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.optimization.ExperimentSuggestion;
 import com.ghatana.digitalmarketing.domain.optimization.ExperimentSuggestionStatus;
@@ -248,7 +249,7 @@ public final class DmosExperimentSuggestionServlet {
     }
 
     private HttpResponse errorResponse(int code, String message) {
-        return jsonResponse(code, new ErrorBody(code, message));
+        return DmosApiErrorResponses.error(code, message, DmCorrelationId.generate().getValue());
     }
 
     record PublishRequest(String campaignId, String experimentType, String title, String description, Map<String, Object> controlVariant, Map<String, Object> treatmentVariant, String hypothesis, String successMetric, double minimumDetectableEffect, String rationale, Instant expiresAt) {}
@@ -303,5 +304,6 @@ public final class DmosExperimentSuggestionServlet {
         }
     }
 
-    record ErrorBody(int status, String message) {}
 }
+
+

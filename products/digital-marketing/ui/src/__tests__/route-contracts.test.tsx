@@ -16,6 +16,7 @@ import path from 'node:path';
 import { AuthProvider } from '@/context/AuthContext';
 import { dmosRouteManifest, isRouteAllowedForRoles } from '@/routeManifest';
 import { CapabilityKeys } from '@/api/capabilities';
+import { ACTION_MINIMUM_ROLES } from '@/lib/action-permissions';
 
 vi.mock('@/lib/feature-flags', () => ({
   FEATURE_FLAGS: {
@@ -118,6 +119,15 @@ describe('Route contracts', () => {
 
     routeCapabilityKeys.forEach((key) => {
       expect(knownCapabilities.has(key)).toBe(true);
+    });
+  });
+
+  it('requires every route action to be defined in the canonical action permission map', () => {
+    const knownActions = new Set(Object.keys(ACTION_MINIMUM_ROLES));
+    const routeActions = dmosRouteManifest.flatMap((route) => route.actions ?? []);
+
+    routeActions.forEach((action) => {
+      expect(knownActions.has(action)).toBe(true);
     });
   });
 

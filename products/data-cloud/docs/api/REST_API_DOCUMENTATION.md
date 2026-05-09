@@ -1,6 +1,6 @@
 # Data Cloud REST API Documentation
 
-This document is the human-readable companion to the canonical contract in `products/data-cloud/contracts/openapi/data-cloud.yaml`. When there is any mismatch, the OpenAPI file wins.
+**DC-CON-001: OpenAPI is the single source of truth for API contracts.** This document provides human-readable explanations and usage patterns. For the complete, authoritative API specification including all endpoints, schemas, and examples, see the canonical OpenAPI contract at `products/data-cloud/contracts/openapi/data-cloud.yaml`.
 
 ## Request Model
 
@@ -66,172 +66,18 @@ POST /api/v1/context/tickets/rag
 
 ## Endpoint Inventory
 
-### Probes And Runtime Info
+**DC-CON-001: The complete endpoint inventory is maintained in the canonical OpenAPI contract at `products/data-cloud/contracts/openapi/data-cloud.yaml`.** Do not manually duplicate endpoint lists here—this creates drift risk. Use the OpenAPI spec or generated documentation for the authoritative endpoint reference.
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| GET | `/health` | Liveness summary |
-| GET | `/health/detail` | Detailed subsystem health |
-| GET | `/ready` | Readiness probe |
-| GET | `/live` | Liveness probe |
-| GET | `/info` | Runtime info |
-| GET | `/metrics` | Metrics export |
-
-### Entities And Search
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| POST | `/api/v1/entities/:collection` | Save or upsert an entity |
-| GET | `/api/v1/entities/:collection` | Query entities |
-| GET | `/api/v1/entities/:collection/:id` | Fetch one entity |
-| DELETE | `/api/v1/entities/:collection/:id` | Delete one entity |
-| POST | `/api/v1/entities/:collection/batch` | Batch upsert |
-| DELETE | `/api/v1/entities/:collection/batch` | Batch delete |
-| GET | `/api/v1/entities/:collection/:id/history` | Point-in-time entity snapshot |
-| GET | `/api/v1/entities/:collection/search` | Full-text search |
-| GET | `/api/v1/entities/:collection/similar` | Semantic similarity search |
-| GET | `/api/v1/entities/:collection/stream` | CDC stream for a collection |
-| GET | `/api/v1/entities/:collection/query/stream` | Streaming query SSE |
-| GET | `/api/v1/entities/:collection/export` | Bulk export |
-| POST | `/api/v1/entities/:collection/anomalies` | On-demand anomaly detection |
-| GET | `/api/v1/anomalies` | Query persisted anomaly results |
-| POST | `/api/v1/entities/:collection/validate` | Validate one payload |
-| POST | `/api/v1/entities/:collection/validate/batch` | Batch validation |
-| POST | `/api/v1/entities/:collection/suggest` | AI-assisted entity suggestions |
-
-### Events
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| POST | `/api/v1/events` | Append an event |
-| GET | `/api/v1/events` | Query events |
-| GET | `/api/v1/events/:offset` | Fetch one event by offset |
-
-### Pipelines And Checkpoints
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| GET | `/api/v1/pipelines` | List pipelines |
-| POST | `/api/v1/pipelines` | Save pipeline |
-| GET | `/api/v1/pipelines/:pipelineId` | Get pipeline |
-| PUT | `/api/v1/pipelines/:pipelineId` | Update pipeline |
-| DELETE | `/api/v1/pipelines/:pipelineId` | Delete pipeline |
-| GET | `/api/v1/checkpoints` | List checkpoints |
-| POST | `/api/v1/checkpoints` | Save checkpoint |
-| GET | `/api/v1/checkpoints/:checkpointId` | Get checkpoint |
-| DELETE | `/api/v1/checkpoints/:checkpointId` | Delete checkpoint |
-| POST | `/api/v1/pipelines/:pipelineId/optimise-hint` | AI optimisation hint |
-
-### Memory, Brain, Learning
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| GET | `/api/v1/memory` | List stored memory across agents |
-| POST | `/api/v1/memory/:agentId` | Store memory item |
-| GET | `/api/v1/memory/:agentId` | Read agent memory |
-| GET | `/api/v1/memory/:agentId/:tier` | Read tier-specific memory |
-| POST | `/api/v1/memory/:agentId/search` | Search memory |
-| DELETE | `/api/v1/memory/:agentId/:memoryId` | Delete memory item |
-| PUT | `/api/v1/memory/:agentId/:memoryId/retain` | Retain memory item |
-| GET | `/api/v1/brain/health` | Brain health |
-| GET | `/api/v1/brain/config` | Brain config |
-| GET | `/api/v1/brain/stats` | Brain stats |
-| GET | `/api/v1/brain/workspace` | Brain workspace snapshot |
-| GET | `/api/v1/brain/workspace/stream` | Brain workspace SSE |
-| POST | `/api/v1/brain/attention/elevate` | Attention override |
-| GET | `/api/v1/brain/attention/thresholds` | Read attention thresholds |
-| PUT | `/api/v1/brain/attention/thresholds` | Update attention thresholds |
-| GET | `/api/v1/brain/patterns` | List patterns |
-| POST | `/api/v1/brain/patterns/match` | Pattern matching |
-| GET | `/api/v1/brain/salience/:itemId` | Item salience lookup |
-| POST | `/api/v1/brain/explain` | AI explanation |
-| POST | `/api/v1/learning/trigger` | Trigger learning job |
-| GET | `/api/v1/learning/status` | Learning status |
-| GET | `/api/v1/learning/review` | Review queue |
-| POST | `/api/v1/learning/review/:reviewId/approve` | Approve review item |
-| POST | `/api/v1/learning/review/:reviewId/reject` | Reject review item |
-| DELETE | `/api/v1/learning/review/completed` | Purge completed reviews |
-| GET | `/api/v1/learning/stream` | Learning SSE |
-
-### Analytics, Reports, Models, Features
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| POST | `/api/v1/analytics/query` | Run analytics query |
-| GET | `/api/v1/analytics/query/:queryId` | Get query result |
-| GET | `/api/v1/analytics/query/:queryId/plan` | Get query plan |
-| POST | `/api/v1/analytics/aggregate` | Aggregate query |
-| POST | `/api/v1/analytics/explain` | Explain query without running it |
-| POST | `/api/v1/analytics/suggest` | AI analytics suggestions |
-| POST | `/api/v1/reports` | Create report |
-| GET | `/api/v1/reports` | List reports |
-| GET | `/api/v1/reports/:reportId` | Get report |
-| GET | `/api/v1/models` | List AI models |
-| POST | `/api/v1/models` | Register AI model |
-| GET | `/api/v1/models/:modelName` | Get model |
-| POST | `/api/v1/models/:modelName/promote` | Promote model |
-| POST | `/api/v1/features` | Ingest feature data |
-| GET | `/api/v1/features/:entityId` | Read feature data |
-
-### Governance, Lineage, Context, Data Products
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| POST | `/api/v1/governance/retention/classify` | Classify retention policy |
-| GET | `/api/v1/governance/retention/policy` | Get retention policy |
-| POST | `/api/v1/governance/retention/purge` | Purge data |
-| POST | `/api/v1/governance/privacy/redact` | Redact sensitive data |
-| GET | `/api/v1/governance/privacy/pii-fields` | List PII fields |
-| GET | `/api/v1/governance/compliance/summary` | Compliance summary |
-| GET | `/api/v1/lineage/:collection` | Collection lineage graph |
-| GET | `/api/v1/lineage/:collection/impact` | Impact analysis |
-| GET | `/api/v1/context` | Read runtime context |
-| PUT | `/api/v1/context` | Upsert runtime context |
-| DELETE | `/api/v1/context/keys/:key` | Delete one context key |
-| GET | `/api/v1/context/snapshot` | Read versioned context snapshot |
-| POST | `/api/v1/context/:collection/rag` | Grounded retrieval response |
-| GET | `/api/v1/data-products` | List published data products |
-| POST | `/api/v1/data-products` | Publish a data product descriptor |
-| POST | `/api/v1/data-products/:productId/subscribe` | Subscribe to a data product |
-
-### Capabilities, Plugins, Autonomy, Agent Catalog
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| GET | `/api/v1/surfaces` | Runtime Truth Registry target surface (DC-P1.12: compatibility endpoint /api/v1/capabilities removed) |
-| PUT | `/api/v1/autonomy/level` | Set global autonomy level |
-| GET | `/api/v1/autonomy/level` | Get global autonomy level |
-| GET | `/api/v1/autonomy/domains` | List autonomy domains |
-| GET | `/api/v1/autonomy/domains/:domain` | Get domain autonomy settings |
-| GET | `/api/v1/autonomy/logs` | Get autonomy audit logs |
-| GET | `/api/v1/agents/catalog` | List agent catalog entries |
-| GET | `/api/v1/agents/catalog/:id` | Get one agent catalog entry |
-| GET | `/api/v1/plugins` | List installed plugins |
-| GET | `/api/v1/plugins/:id` | Get plugin details |
-| POST | `/api/v1/plugins/:id/enable` | Enable plugin |
-| POST | `/api/v1/plugins/:id/disable` | Disable plugin |
-| POST | `/api/v1/plugins/:id/upgrade` | Record bundled-plugin upgrade intent |
-
-### Operations And Streaming
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| POST | `/api/v1/pipelines/:pipelineId/execute` | Execute a pipeline through the runtime workflow plugin |
-| GET | `/api/v1/pipelines/:pipelineId/executions` | List pipeline executions |
-| GET | `/api/v1/pipelines/:pipelineId/executions/:executionId` | Get workflow-scoped execution summary |
-| POST | `/api/v1/pipelines/:pipelineId/executions/:executionId/cancel` | Cancel a pipeline execution |
-| GET | `/api/v1/executions/:executionId` | Get execution detail |
-| GET | `/api/v1/executions/:executionId/logs` | Get execution logs |
-| POST | `/api/v1/executions/:executionId/cancel` | Cancel an execution by id |
-| GET | `/events/stream` | Global SSE stream |
-| GET | `/api/v1/voice/intents` | List supported voice intents |
-| POST | `/api/v1/voice/intent` | Resolve voice intent |
-| POST | `/api/v1/voice/intent/classify` | Classify voice input only |
-| GET | `/api/v1/queries/estimate` | Estimate storage cost for a query |
-| GET | `/api/v1/collections/:id/cost-report` | Collection cost report for operator review |
-| POST | `/api/v1/queries/federated` | Federated query execution |
-| POST | `/api/v1/collections/:id/migrate` | Manual tier migration |
-| WS | `/ws` | WebSocket change notifications |
+Key endpoint groups (see OpenAPI spec for complete list):
+- Probes and runtime info (`/health`, `/ready`, `/live`, `/metrics`)
+- Entities and search (`/api/v1/entities/*`)
+- Events (`/api/v1/events/*`)
+- Pipelines and checkpoints (`/api/v1/pipelines/*`, `/api/v1/checkpoints/*`)
+- Memory, Brain, Learning (`/api/v1/memory/*`, `/api/v1/brain/*`, `/api/v1/learning/*`)
+- Analytics, Reports, Models, Features (`/api/v1/analytics/*`, `/api/v1/reports/*`, `/api/v1/models/*`, `/api/v1/features/*`)
+- Governance, Lineage, Context, Data Products (`/api/v1/governance/*`, `/api/v1/lineage/*`, `/api/v1/context/*`, `/api/v1/data-products/*`)
+- Capabilities, Plugins, Autonomy, Agent Catalog (`/api/v1/surfaces`, `/api/v1/autonomy/*`, `/api/v1/plugins/*`, `/api/v1/agents/*`)
+- Operations and Streaming (`/api/v1/pipelines/*/execute`, `/api/v1/executions/*`, `/ws`)
 
 ## Common Response Patterns
 
@@ -248,9 +94,9 @@ The `/api/v1/surfaces` response includes the full plane/surface map as registere
 
 ## Notes On Accuracy
 
-- This file reflects the routes currently registered in the launcher.
+- **DC-CON-001: OpenAPI is the single source of truth.** This document provides explanatory context and usage patterns only.
 - Schema-level request and response details should be taken from `products/data-cloud/contracts/openapi/data-cloud.yaml` and generated SDKs.
-- If you add a route to `DataCloudHttpServer`, update both the OpenAPI contract and this document in the same change.
+- Do not manually duplicate endpoint lists or route documentation in this file—refer to the OpenAPI spec instead.
 ```
 X-RateLimit-Limit: 1000
 X-RateLimit-Remaining: 950

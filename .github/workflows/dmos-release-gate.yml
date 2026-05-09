@@ -231,6 +231,44 @@ jobs:
           path: products/digital-marketing/ui/playwright-report/
 
   # =============================================================================
+  # Job 4c: UI Static Quality Gates (P0)
+  # =============================================================================
+  ui-quality-gates:
+    name: UI Type/Lint/Route Contract Gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: products/digital-marketing/ui/pnpm-lock.yaml
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        working-directory: products/digital-marketing/ui
+        run: pnpm install --frozen-lockfile
+
+      - name: Run type-check
+        working-directory: products/digital-marketing/ui
+        run: pnpm run type-check
+
+      - name: Run lint
+        working-directory: products/digital-marketing/ui
+        run: pnpm run lint
+
+      - name: Run route contract tests
+        working-directory: products/digital-marketing/ui
+        run: pnpm run test:route-contract
+
+  # =============================================================================
   # Job 4b: Stable Route E2E (UI -> API -> Postgres, real backend)
   # =============================================================================
   stable-route-e2e-realbackend:
@@ -383,6 +421,13 @@ jobs:
           redocly lint docs/api-contract.yaml --format=github-actions
           echo "✅ OpenAPI contract validation passed"
 
+      - name: Run DMOS API Contract Tests
+        run: |
+          ./gradlew :products:digital-marketing:dm-api:test \
+            --tests "*ContractTest" \
+            --info
+          echo "✅ DMOS API contract tests passed"
+
       - name: Check Type Alignment
         working-directory: products/digital-marketing/ui
         run: |
@@ -462,6 +507,7 @@ jobs:
       - repository-integration-tests
       - api-integration-tests
       - e2e-browser-tests
+      - ui-quality-gates
       - production-bootstrap-validation
       - security-header-tests
       - contract-parity-tests
@@ -474,19 +520,38 @@ jobs:
           echo "P0 Release Gate Summary"
           echo "==================================="
 
-          # Check each job result
-          jobs=("unit-tests" "repository-integration-tests" "api-integration-tests" "e2e-browser-tests" "production-bootstrap-validation" "security-header-tests" "contract-parity-tests" "feature-flag-tests")
+          # Check each required job result explicitly
           all_passed=true
 
-          for job in "${jobs[@]}"; do
-            result="${{ needs.$job.result }}"
-            if [ "$result" == "success" ]; then
-              echo "✅ $job: PASSED"
-            else
-              echo "❌ $job: $result"
-              all_passed=false
-            fi
-          done
+          unit_tests="${{ needs.unit-tests.result }}"
+          repository_tests="${{ needs.repository-integration-tests.result }}"
+          api_tests="${{ needs.api-integration-tests.result }}"
+          e2e_tests="${{ needs.e2e-browser-tests.result }}"
+          ui_quality="${{ needs.ui-quality-gates.result }}"
+          bootstrap_tests="${{ needs.production-bootstrap-validation.result }}"
+          security_tests="${{ needs.security-header-tests.result }}"
+          contract_tests="${{ needs.contract-parity-tests.result }}"
+          flag_tests="${{ needs.feature-flag-tests.result }}"
+
+          echo "${unit_tests}" | grep -q "success" || all_passed=false
+          echo "${repository_tests}" | grep -q "success" || all_passed=false
+          echo "${api_tests}" | grep -q "success" || all_passed=false
+          echo "${e2e_tests}" | grep -q "success" || all_passed=false
+          echo "${ui_quality}" | grep -q "success" || all_passed=false
+          echo "${bootstrap_tests}" | grep -q "success" || all_passed=false
+          echo "${security_tests}" | grep -q "success" || all_passed=false
+          echo "${contract_tests}" | grep -q "success" || all_passed=false
+          echo "${flag_tests}" | grep -q "success" || all_passed=false
+
+          echo "✅ unit-tests: ${unit_tests}"
+          echo "✅ repository-integration-tests: ${repository_tests}"
+          echo "✅ api-integration-tests: ${api_tests}"
+          echo "✅ e2e-browser-tests: ${e2e_tests}"
+          echo "✅ ui-quality-gates: ${ui_quality}"
+          echo "✅ production-bootstrap-validation: ${bootstrap_tests}"
+          echo "✅ security-header-tests: ${security_tests}"
+          echo "✅ contract-parity-tests: ${contract_tests}"
+          echo "✅ feature-flag-tests: ${flag_tests}"
 
           echo "==================================="
 
@@ -516,6 +581,7 @@ jobs:
           | Repository Integration (P1-014) | ${{ needs.repository-integration-tests.result }} |
           | API Integration (P1-015) | ${{ needs.api-integration-tests.result }} |
           | E2E Browser Tests (P0-016) | ${{ needs.e2e-browser-tests.result }} |
+          | UI Type/Lint/Route Contract | ${{ needs.ui-quality-gates.result }} |
           | Production Bootstrap (P1-004/P0-016) | ${{ needs.production-bootstrap-validation.result }} |
           | Security Headers (P0-015) | ${{ needs.security-header-tests.result }} |
           | Contract Parity (P0-009/P0-010) | ${{ needs.contract-parity-tests.result }} |

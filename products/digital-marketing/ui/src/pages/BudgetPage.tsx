@@ -12,9 +12,11 @@ import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/Toast';
 import { ApprovalDialog } from '@/components/ApprovalDialog';
 import { AIProvenancePanel } from '@/components/AIProvenancePanel';
+import { PageStateNotice } from '@/components/PageStateNotice';
 import { ApiError } from '@/lib/http-client';
+import { canPerformAction } from '@/lib/action-permissions';
 import {
-  useBudget,
+  useBudgetRecommendation,
   useGenerateBudget,
   useSubmitBudgetApproval,
   useApproveBudget,
@@ -29,12 +31,16 @@ import {
   TableRow,
   TableCell,
 } from '@ghatana/design-system';
+import type { ChannelAllocation } from '@/types/budget';
 
 export function BudgetPage(): React.ReactElement {
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, roles } = useAuth();
   const { toasts, showSuccess, showError, dismissToast } = useToast();
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
+  const canGenerateBudget = canPerformAction(roles, 'generate-budget');
+  const canSubmitBudget = canPerformAction(roles, 'submit-budget');
+  const canApproveBudget = canPerformAction(roles, 'approve-budget');
   const [strategyId, setStrategyId] = useState('');
   const [totalMonthlyCap, setTotalMonthlyCap] = useState('');
   const [changeThreshold, setChangeThreshold] = useState('10');
@@ -145,7 +151,7 @@ export function BudgetPage(): React.ReactElement {
           <Button
             data-testid="generate-budget-btn"
             type="submit"
-            disabled={isGenerating}
+            disabled={isGenerating || !canGenerateBudget}
             loading={isGenerating}
             loadingText="Generating…"
             tone="primary"
@@ -156,19 +162,31 @@ export function BudgetPage(): React.ReactElement {
       </section>
 
       {isLoading && (
-        <p data-testid="budget-loading" className="text-sm text-gray-400">
-          Loading budget recommendation…
-        </p>
+        <PageStateNotice
+          testId="budget-loading"
+          tone="loading"
+          message="Loading budget recommendation…"
+        />
       )}
 
       {isError && (
-        <p data-testid="budget-error" role="alert" className="text-sm text-red-600">
-          {error instanceof ApiError ? error.getUserMessage() : 'Failed to load budget recommendation.'}
-        </p>
+        <PageStateNotice
+          testId="budget-error"
+          tone="error"
+          message={error instanceof ApiError ? error.getUserMessage() : 'Failed to load budget recommendation.'}
+        />
       )}
 
       {!isLoading && !isError && recommendation && (
         <div data-testid="budget-recommendation" className="border rounded p-4 bg-white">
+          {!canGenerateBudget && (
+            <p
+              data-testid="budget-action-permission-banner"
+              className="mb-4 text-sm text-yellow-700 bg-yellow-50 px-3 py-2 rounded"
+            >
+              You have view-only budget access. Mutation actions are restricted by role.
+            </p>
+          )}
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-lg font-semibold">Latest Recommendation</h2>
@@ -187,7 +205,7 @@ export function BudgetPage(): React.ReactElement {
                       showSuccess('Budget submitted for approval'),
                     );
                   }}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !canSubmitBudget}
                   loading={isSubmitting}
                   loadingText="Submitting…"
                 >
@@ -199,8 +217,8 @@ export function BudgetPage(): React.ReactElement {
                   data-testid="approve-budget-btn"
                   size="sm"
                   tone="success"
-                  onClick={() => setShowApprovalDialog(true)}
-                  disabled={isApproving}
+                  onClick={() => canApproveBudget && setShowApprovalDialog(true)}
+                  disabled={isApproving || !canApproveBudget}
                   loading={isApproving}
                   loadingText="Approving…"
                 >
@@ -235,7 +253,7 @@ export function BudgetPage(): React.ReactElement {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {recommendation.channelAllocations.map((a, idx) => (
+                    {recommendation.channelAllocations.map((a: ChannelAllocation, idx: number) => (
                       <TableRow key={idx} className="border-t">
                         <TableCell className="px-4 py-2">{a.channelType}</TableCell>
                         <TableCell className="px-4 py-2">${a.recommendedAmount.toLocaleString()}</TableCell>
@@ -275,9 +293,11 @@ export function BudgetPage(): React.ReactElement {
       )}
 
       {!isLoading && !isError && !recommendation && (
-        <p data-testid="budget-empty" className="text-sm text-gray-500">
-          No budget recommendation yet. Generate one above.
-        </p>
+        <PageStateNotice
+          testId="budget-empty"
+          tone="empty"
+          message="No budget recommendation yet. Generate one above."
+        />
       )}
 
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />

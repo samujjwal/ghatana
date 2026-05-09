@@ -6,6 +6,28 @@
 
 ---
 
+## DC-UI-004 Note
+
+DC-UI-004 requires ensuring UI services use generated/validated clients instead of ad hoc response types.
+Current implementation uses ad hoc response types defined in API service files.
+Required infrastructure:
+- openapi-typescript setup to generate TypeScript types from OpenAPI spec
+- Build integration to regenerate types on OpenAPI changes
+- Type/contract tests to verify UI cannot compile against stale API types
+This is a significant infrastructure task requiring coordination with DC-P1-006 (frontend API type generation).
+
+## DC-SHARED-003 Note
+
+DC-SHARED-003 requires moving Data Cloud-specific utilities out of generic shared libraries.
+Product-specific semantics should live under `products/data-cloud` to ensure shared libraries are reusable across unrelated products.
+Required:
+- Audit shared libraries for Data Cloud-specific semantics
+- Move product-specific utilities to products/data-cloud
+- Dependency/API audit tests to verify shared libraries remain generic
+This is a significant audit task requiring comprehensive code review.
+
+---
+
 ## 1. Module Overview
 
 The Data Cloud frontend is split into two co-located modules with a hard boundary:

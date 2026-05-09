@@ -11,6 +11,7 @@ import com.ghatana.digitalmarketing.application.idempotency.IdempotencyService;
 import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.api.observability.DmosTelemetry;
 import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
+import com.ghatana.digitalmarketing.application.capabilities.DmosCapabilityRegistry;
 import com.ghatana.digitalmarketing.application.idempotency.IdempotencyService.IdempotentResponse;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
@@ -261,7 +262,13 @@ public final class DmosApprovalServlet {
 
         try {
             // P1-001: Use shared fail-closed HTTP context factory
-            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+            DmOperationContext ctx = httpContextFactory.buildContext(
+                request,
+                workspaceId,
+                true,
+                DmosCapabilityRegistry.APPROVALS,
+                "approve"
+            );
             // P1-026: Create span for approval decision
             io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /approvals/:requestId/decide", ctx).startSpan();
             try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
@@ -320,6 +327,8 @@ public final class DmosApprovalServlet {
             }
         } catch (IllegalArgumentException e) {
             return Promise.of(badRequest(request, "Invalid request: " + e.getMessage()));
+        } catch (SecurityException e) {
+            return Promise.of(forbidden(request, "Access denied"));
         } catch (Exception e) {
             LOG.error("Error in handleDecide", e);
             return Promise.of(internalError(request, "Error processing request"));
@@ -496,45 +505,23 @@ public final class DmosApprovalServlet {
     // -------------------------------------------------------------------------
 
     private static HttpResponse locked(HttpRequest request, String message) {
-        return errorResponse(423, message, resolveCorrelationId(request));
+        return DmosApiErrorResponses.error(423, message, request);
     }
 
     private static HttpResponse badRequest(HttpRequest request, String message) {
-        return errorResponse(400, message, resolveCorrelationId(request));
+        return DmosApiErrorResponses.error(400, message, request);
     }
 
     private static HttpResponse forbidden(HttpRequest request, String message) {
-        return errorResponse(403, message, resolveCorrelationId(request));
+        return DmosApiErrorResponses.error(403, message, request);
     }
 
     private static HttpResponse notFound(HttpRequest request, String message) {
-        return errorResponse(404, message, resolveCorrelationId(request));
+        return DmosApiErrorResponses.error(404, message, request);
     }
 
     private static HttpResponse internalError(HttpRequest request, String message) {
-        return errorResponse(500, message, resolveCorrelationId(request));
-    }
-
-    private static HttpResponse errorResponse(int code, String message, String correlationId) {
-        try {
-            StandardErrorEnvelope envelope = StandardErrorEnvelope.of(code, message, correlationId);
-            String json = MAPPER.writeValueAsString(envelope);
-            return HttpResponse.ofCode(code)
-                .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_JSON)
-                .withHeader(HttpHeaders.of("X-Correlation-ID"), correlationId)
-                .withBody(json.getBytes(StandardCharsets.UTF_8))
-                .build();
-        } catch (Exception ex) {
-            return HttpResponse.ofCode(code).build();
-        }
-    }
-
-    private static String resolveCorrelationId(HttpRequest request) {
-        String incoming = request.getHeader(HttpHeaders.of("X-Correlation-ID"));
-        if (incoming != null && !incoming.isBlank()) {
-            return incoming;
-        }
-        return DmCorrelationId.generate().getValue();
+        return DmosApiErrorResponses.error(500, message, request);
     }
 
     private HttpResponse jsonResponse(int code, Object body) {

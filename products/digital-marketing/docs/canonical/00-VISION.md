@@ -238,6 +238,7 @@ Intake
 - One commercial loop first: proposal/SOW draft from approved templates.
 - One reporting loop first: basic funnel and campaign metrics.
 - One governance baseline first: consent, unsubscribe/suppression, approval gates, audit, claim validation.
+- No native voice command or speech-interaction control surface in MVP readiness claims; voice/video AI remains post-MVP only.
 
 ## Product Doctrine
 

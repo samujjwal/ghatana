@@ -306,4 +306,263 @@ test.describe("TutorPutor learner journey", () => {
       page.getByRole("heading", { name: /kinematics basics/i }),
     ).toBeVisible();
   });
+
+  test("complete learner onboarding and diagnostic journey", async ({ page }) => {
+    const accessToken = createJwt();
+
+    await page.addInitScript((token: string) => {
+      window.localStorage.setItem("auth_token", token);
+      window.localStorage.setItem("tenant_id", "tenant-school");
+    }, accessToken);
+
+    await page.route("**/api/v1/auth/me", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: "learner-123",
+          email: "learner@example.com",
+          displayName: "Jordan Learner",
+          role: "student",
+          tenantId: "tenant-school",
+          onboardingCompleted: false,
+        }),
+      });
+    });
+
+    await page.route("**/api/v1/onboarding/status", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          completed: false,
+          currentStep: "grade_band",
+          steps: ["grade_band", "interests", "learning_goals"],
+        }),
+      });
+    });
+
+    await page.route("**/api/v1/onboarding/complete", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ success: true }),
+      });
+    });
+
+    await page.route("**/api/v1/diagnostic/questions", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          questions: [
+            {
+              id: "q1",
+              text: "What is 2 + 2?",
+              options: ["3", "4", "5", "6"],
+              correctAnswer: "4",
+              domain: "MATHEMATICS",
+              difficulty: "beginner",
+            },
+            {
+              id: "q2",
+              text: "What is the formula for velocity?",
+              options: ["v = d/t", "v = a*t", "v = m*a", "v = f*d"],
+              correctAnswer: "v = d/t",
+              domain: "PHYSICS",
+              difficulty: "beginner",
+            },
+          ],
+        }),
+      });
+    });
+
+    await page.route("**/api/v1/diagnostic/submit", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          results: {
+            score: 0.5,
+            domainScores: {
+              MATHEMATICS: 1.0,
+              PHYSICS: 0.0,
+            },
+            recommendedLevel: "intermediate",
+            recommendedPathway: "physics-foundations",
+          },
+        }),
+      });
+    });
+
+    await expectNoPageErrors(page, async () => {
+      await page.goto(`${learnerBaseUrl}/onboarding`);
+      await page.waitForLoadState("domcontentloaded");
+    });
+
+    await expect(
+      page.getByRole("heading", { name: /welcome to tutorputor/i }),
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: /continue/i }).click();
+    await page.waitForTimeout(500);
+
+    await page.getByRole("button", { name: /skip onboarding/i }).click();
+    await page.waitForURL(/\/diagnostic$/);
+
+    await expect(
+      page.getByRole("heading", { name: /diagnostic assessment/i }),
+    ).toBeVisible();
+
+    await page.getByRole("radio", { name: "4" }).click();
+    await page.getByRole("button", { name: /next/i }).click();
+
+    await page.getByRole("radio", { name: "v = d/t" }).click();
+    await page.getByRole("button", { name: /submit/i }).click();
+
+    await expect(page).toHaveURL(/\/pathways\/physics-foundations$/);
+    await expect(
+      page.getByRole("heading", { name: /physics foundations/i }),
+    ).toBeVisible();
+  });
+
+  test("complete module learning flow with simulation and assessment", async ({ page }) => {
+    const accessToken = createJwt();
+
+    await page.addInitScript((token: string) => {
+      window.localStorage.setItem("auth_token", token);
+      window.localStorage.setItem("tenant_id", "tenant-school");
+    }, accessToken);
+
+    await page.route("**/api/v1/auth/me", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: "learner-123",
+          email: "learner@example.com",
+          displayName: "Jordan Learner",
+          role: "student",
+          tenantId: "tenant-school",
+        }),
+      });
+    });
+
+    await page.route("**/api/v1/modules/physics-basics", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          module: {
+            id: "physics-basics",
+            title: "Physics Basics",
+            slug: "physics-basics",
+            description: "Introduction to physics concepts",
+            difficulty: "beginner",
+            estimatedTimeMinutes: 45,
+            learningObjectives: [
+              "Understand basic physics principles",
+              "Apply formulas to solve problems",
+            ],
+            contentBlocks: [
+              {
+                id: "block-1",
+                type: "text",
+                content: "Physics is the study of matter and energy.",
+              },
+              {
+                id: "block-2",
+                type: "simulation",
+                simulationId: "sim-1",
+                title: "Velocity Simulation",
+              },
+            ],
+          },
+          userEnrollment: {
+            id: "enrollment-1",
+            status: "in_progress",
+            progressPercent: 0,
+          },
+        }),
+      });
+    });
+
+    await page.route("**/api/v1/simulations/sim-1", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          simulation: {
+            id: "sim-1",
+            title: "Velocity Simulation",
+            description: "Interactive velocity simulation",
+            config: {},
+          },
+        }),
+      });
+    });
+
+    await page.route("**/api/v1/assessments/module-assessment", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          assessment: {
+            id: "module-assessment",
+            title: "Physics Basics Assessment",
+            questions: [
+              {
+                id: "q1",
+                text: "What is velocity?",
+                options: ["Speed with direction", "Speed only", "Force", "Energy"],
+                correctAnswer: "Speed with direction",
+              },
+            ],
+          },
+        }),
+      });
+    });
+
+    await page.route("**/api/v1/assessments/module-assessment/submit", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          result: {
+            score: 1.0,
+            scorePercent: 100,
+            passed: true,
+            feedback: "Excellent work!",
+          },
+        }),
+      });
+    });
+
+    await expectNoPageErrors(page, async () => {
+      await page.goto(`${learnerBaseUrl}/modules/physics-basics`);
+      await page.waitForLoadState("domcontentloaded");
+    });
+
+    await expect(
+      page.getByRole("heading", { name: /physics basics/i }),
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: /start simulation/i }).click();
+    await page.waitForURL(/\/learn\/sim-1$/);
+    await expect(
+      page.getByRole("heading", { name: /velocity simulation/i }),
+    ).toBeVisible();
+
+    await page.goBack();
+    await page.waitForURL(/\/modules\/physics-basics$/);
+
+    await page.getByRole("button", { name: /take assessment/i }).click();
+    await page.waitForURL(/\/assessments\/module-assessment$/);
+
+    await page.getByRole("radio", { name: "Speed with direction" }).click();
+    await page.getByRole("button", { name: /submit/i }).click();
+
+    await expect(page.getByText("Excellent work!")).toBeVisible();
+    await expect(page.getByText("100%")).toBeVisible();
+  });
 });

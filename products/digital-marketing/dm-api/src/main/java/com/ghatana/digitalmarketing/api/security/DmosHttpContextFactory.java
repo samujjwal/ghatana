@@ -116,7 +116,7 @@ public final class DmosHttpContextFactory {
      * @throws IllegalArgumentException if mandatory headers are missing (fail-closed)
      */
     public DmOperationContext buildContext(HttpRequest request, String workspaceId, boolean isWriteOperation) {
-        return buildContext(request, workspaceId, isWriteOperation, resolveRequiredCapability(request));
+        return buildContext(request, workspaceId, isWriteOperation, resolveRequiredCapability(request), null);
     }
 
     /**
@@ -127,6 +127,19 @@ public final class DmosHttpContextFactory {
         String workspaceId,
         boolean isWriteOperation,
         String requiredCapability
+    ) {
+        return buildContext(request, workspaceId, isWriteOperation, requiredCapability, null);
+    }
+
+    /**
+     * Builds an operation context and enforces explicit capability/action authorization when provided.
+     */
+    public DmOperationContext buildContext(
+        HttpRequest request,
+        String workspaceId,
+        boolean isWriteOperation,
+        String requiredCapability,
+        String requiredAction
     ) {
         Objects.requireNonNull(request, "request must not be null");
         Objects.requireNonNull(workspaceId, "workspaceId must not be null");
@@ -206,6 +219,14 @@ public final class DmosHttpContextFactory {
             boolean shouldEnforceCapability = productionMode;
             if (shouldEnforceCapability && !hasCapability(identity.permissions(), requiredCapability)) {
                 throw new SecurityException("Capability not enabled for principal: " + requiredCapability);
+            }
+        }
+
+        if (requiredAction != null && !requiredAction.isBlank()) {
+            boolean shouldEnforceAction = productionMode
+                || (identity.roles() != null && !identity.roles().isEmpty());
+            if (shouldEnforceAction && !DmosActionPermissionRegistry.isActionAllowed(identity.roles(), requiredAction)) {
+                throw new SecurityException("Action not permitted for principal role set: " + requiredAction);
             }
         }
 

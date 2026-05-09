@@ -7,3 +7,9 @@ if git diff --cached --name-only | grep -E "build\.gradle\.kts|\.versions\.toml|
     echo "Checking Gradle build files..."
     ./scripts/validate-gradle-build.sh || exit 1
 fi
+
+# Check generated API types for data-cloud UI if OpenAPI specs or generated types are staged
+if git diff --cached --name-only | grep -E "products/data-cloud/contracts/openapi/|products/data-cloud/delivery/ui/src/contracts/generated/"; then
+    echo "Checking generated API types for data-cloud UI..."
+    cd products/data-cloud/delivery/ui && pnpm check:api-types || exit 1
+fi

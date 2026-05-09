@@ -96,34 +96,6 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
   });
 
   /**
-   * GET /leaderboard
-   * Full path: /api/v1/engagement/gamification/leaderboard
-   */
-  app.get("/leaderboard", async (request, reply) => {
-    const tenantId = getTenantId(request) as TenantId;
-    const queryResult = leaderboardQuerySchema.safeParse(request.query);
-    if (!queryResult.success) {
-      return reply.code(400).send({
-        error: "Invalid leaderboard query",
-        issues: queryResult.error.issues,
-      });
-    }
-    const { limit } = queryResult.data;
-
-    try {
-      const leaderboard = await service.getLeaderboard({
-        tenantId,
-        limit: limit ? Number(limit) : 10,
-        offset: 0,
-      });
-      return reply.send(leaderboard);
-    } catch (error) {
-      app.log.error(error);
-      return reply.code(500).send({ error: "Failed to get leaderboard" });
-    }
-  });
-
-  /**
    * GET /users/:userId/points
    * Get user's points balance
    */

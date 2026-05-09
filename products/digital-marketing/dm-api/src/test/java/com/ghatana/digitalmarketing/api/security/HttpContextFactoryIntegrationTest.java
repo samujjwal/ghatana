@@ -95,4 +95,27 @@ class HttpContextFactoryIntegrationTest {
 
         assertThrows(SecurityException.class, () -> factory.buildContext(request, "ws-1", false));
     }
+
+    @Test
+    @DisplayName("production ignores spoofed X-Roles and X-Permissions headers")
+    void productionIgnoresSpoofedClientRolesAndPermissions() {
+        DmosHttpContextFactory.IdentityProvider identityProvider = (token, tenantId) ->
+            new DmosHttpContextFactory.IdentityProvider.IdentityResult(
+                "user123",
+                "session456",
+                Set.of("viewer"),
+                Set.of("dmos.approvals"),
+                true
+            );
+
+        DmosHttpContextFactory factory = new DmosHttpContextFactory(true, identityProvider);
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/campaigns")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer valid-token")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-123")
+            .withHeader(HttpHeaders.of("X-Roles"), "admin,marketing-director")
+            .withHeader(HttpHeaders.of("X-Permissions"), "dmos.campaigns,dmos.strategy,dmos.budget,dmos.ai_optimization")
+            .build();
+
+        assertThrows(SecurityException.class, () -> factory.buildContext(request, "ws-1", false));
+    }
 }

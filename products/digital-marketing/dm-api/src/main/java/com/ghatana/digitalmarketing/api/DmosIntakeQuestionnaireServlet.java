@@ -96,12 +96,12 @@ public final class DmosIntakeQuestionnaireServlet {
 
                 return intakeService.saveDraft(ctx, command)
                     .map(saved -> jsonResponse(200, IntakeResponse.from(saved)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("save intake draft", e));
+                    .then(r -> Promise.of(r), e -> mapServiceError("save intake draft", e, request));
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to save intake draft", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -113,12 +113,12 @@ public final class DmosIntakeQuestionnaireServlet {
 
             return intakeService.getDraft(ctx)
                 .map(saved -> jsonResponse(200, IntakeResponse.from(saved)))
-                .then(r -> Promise.of(r), e -> mapServiceError("get intake draft", e));
+                .then(r -> Promise.of(r), e -> mapServiceError("get intake draft", e, request));
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to get intake draft", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
         }
     }
 
@@ -141,31 +141,31 @@ public final class DmosIntakeQuestionnaireServlet {
 
                 return intakeService.submitIntake(ctx, command)
                     .map(saved -> jsonResponse(200, IntakeResponse.from(saved)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("submit intake", e));
+                    .then(r -> Promise.of(r), e -> mapServiceError("submit intake", e, request));
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to submit intake", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
 
-    private Promise<HttpResponse> mapServiceError(String operation, Throwable error) {
+    private Promise<HttpResponse> mapServiceError(String operation, Throwable error, HttpRequest request) {
         if (error instanceof SecurityException) {
-            return Promise.of(errorResponse(403, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(403, error.getMessage(), request));
         }
         if (error instanceof NoSuchElementException) {
-            return Promise.of(errorResponse(404, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(404, error.getMessage(), request));
         }
         if (error instanceof IllegalArgumentException) {
-            return Promise.of(errorResponse(400, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, error.getMessage(), request));
         }
         if (error instanceof DmosFeatureDisabledException || error instanceof DmosConnectorDisabledException) {
-            return Promise.of(errorResponse(423, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(423, error.getMessage(), request));
         }
         LOG.error("[DMOS] Failed to {}", operation, error);
-        return Promise.of(errorResponse(500, "Internal error"));
+        return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
     }
 
     private DmOperationContext buildContext(HttpRequest request, String workspaceId, boolean requireIdempotencyKey) {
@@ -245,10 +245,6 @@ public final class DmosIntakeQuestionnaireServlet {
         }
     }
 
-    private HttpResponse errorResponse(int code, String message) {
-        return jsonResponse(code, new ErrorBody(code, message));
-    }
-
     record SaveDraftRequest(
         String businessName,
         String websiteUrl,
@@ -312,6 +308,4 @@ public final class DmosIntakeQuestionnaireServlet {
         }
     }
 
-    record ErrorBody(int status, String message) {
-    }
 }

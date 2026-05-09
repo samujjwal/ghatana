@@ -91,6 +91,8 @@ export const ENABLED_CAPABILITIES = {
  * Call this in beforeEach for tests that need authenticated state.
  */
 export async function mockDmosApi(page: Page): Promise<void> {
+  let approvalState = { ...APPROVAL_PENDING };
+
   // Workspace capabilities
   await page.route(
     `**/v1/workspaces/${TEST_WORKSPACE}/capabilities`,
@@ -100,18 +102,18 @@ export async function mockDmosApi(page: Page): Promise<void> {
   // Approval list
   await page.route(
     `**/v1/workspaces/${TEST_WORKSPACE}/approvals/pending/**`,
-    (route) => route.fulfill({ json: { items: [APPROVAL_PENDING, APPROVAL_APPROVED] } }),
+    (route) => route.fulfill({ json: { items: [approvalState, APPROVAL_APPROVED] } }),
   );
 
   await page.route(
     `**/v1/workspaces/${TEST_WORKSPACE}/approvals/pending`,
-    (route) => route.fulfill({ json: { items: [APPROVAL_PENDING, APPROVAL_APPROVED] } }),
+    (route) => route.fulfill({ json: { items: [approvalState, APPROVAL_APPROVED] } }),
   );
 
   // Approval status (single)
   await page.route(
     `**/v1/workspaces/${TEST_WORKSPACE}/approvals/req-e2e-1`,
-    (route) => route.fulfill({ json: APPROVAL_PENDING }),
+    (route) => route.fulfill({ json: approvalState }),
   );
 
   // Approval snapshot
@@ -123,10 +125,20 @@ export async function mockDmosApi(page: Page): Promise<void> {
   // Approve/reject decision
   await page.route(
     `**/v1/workspaces/${TEST_WORKSPACE}/approvals/req-e2e-1/decide`,
-    (route) =>
-      route.fulfill({
-        json: { ...APPROVAL_PENDING, status: 'APPROVED', decidedBy: TEST_PRINCIPAL, decidedAt: new Date().toISOString() },
-      }),
+    (route) => {
+      const bodyText = route.request().postData() ?? '{}';
+      const parsed = JSON.parse(bodyText) as { decision?: 'APPROVE' | 'REJECT'; notes?: string };
+      const status = parsed.decision === 'REJECT' ? 'REJECTED' : 'APPROVED';
+      approvalState = {
+        ...approvalState,
+        status,
+        decidedBy: TEST_PRINCIPAL,
+        decidedAt: new Date().toISOString(),
+        comment: parsed.notes ?? null,
+      };
+
+      return route.fulfill({ json: approvalState });
+    },
   );
 
   // AI action log

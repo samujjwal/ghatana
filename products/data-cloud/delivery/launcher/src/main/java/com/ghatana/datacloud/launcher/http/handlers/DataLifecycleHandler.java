@@ -10,14 +10,17 @@ import com.ghatana.datacloud.spi.BatchResult;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.datacloud.spi.WriteIdempotencyStore;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.security.annotation.RequiresRole;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,6 +78,11 @@ import java.util.stream.Collectors;
  *   <li>PII field mappings are tenant-scoped and encrypted at rest.</li>
  * </ul>
  *
+ * <p><b>DC-BE-004 Note:</b> Deletion lifecycle standardization requires defining hard delete vs soft delete
+ * vs archive vs retention purge. Current implementation uses hard delete (immediate removal) and retention purge.
+ * A comprehensive deletion policy is needed to standardize across all delete operations (entities, events, pipelines, governance).
+ * Delete lifecycle tests are required to verify deletes are deterministic and auditable.
+ *
  * @doc.type class
  * @doc.purpose Data lifecycle and governance HTTP handler (DC-E5)
  * @doc.layer product
@@ -123,6 +131,8 @@ public class DataLifecycleHandler {
     private final HttpHandlerSupport http;
     private final AuditService auditService; // nullable
     private TraceSpanSupport traceSupport = TraceSpanSupport.disabled();
+    /** DC-BE-002: Generic idempotency store for governance operations. */
+    private WriteIdempotencyStore idempotencyStore;
 
     /**
      * Creates a governance handler.
@@ -144,6 +154,17 @@ public class DataLifecycleHandler {
 
     public DataLifecycleHandler withTraceSupport(TraceSpanSupport traceSupport) {
         this.traceSupport = traceSupport != null ? traceSupport : TraceSpanSupport.disabled();
+        return this;
+    }
+
+    /**
+     * DC-BE-002: Attaches a generic idempotency store for governance operations.
+     *
+     * @param idempotencyStore the idempotency store
+     * @return {@code this} for method chaining
+     */
+    public DataLifecycleHandler withIdempotencyStore(WriteIdempotencyStore idempotencyStore) {
+        this.idempotencyStore = idempotencyStore;
         return this;
     }
 
@@ -172,6 +193,17 @@ public class DataLifecycleHandler {
         String tenantId = http.requireTenantIdOrFail(request);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
+        }
+
+        // DC-BE-002: Check idempotency for retention classification
+        String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
+        String operationScope = "governance:retention:classify";
+        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+            var cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
+            if (cached.isPresent()) {
+                log.info("[DC-BE-002] Returning cached retention classification response for key={}", idempotencyKey);
+                return Promise.of(http.jsonResponse(cached.get()));
+            }
         }
 
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
@@ -233,8 +265,18 @@ public class DataLifecycleHandler {
                               Map.of("tier", tier, "reason", reason, "piiFieldCount", piiFields.size()));
 
                         log.info("[DC-E5] retention classified collection={} tier={} tenant={}", collection, tier, tenantId);
-                        return http.envelopeResponse(
-                            ApiResponse.success(savedPolicy, tenantId, requestId), objectMapper);
+                        
+                        ApiResponse responseEnvelope = ApiResponse.success(savedPolicy, tenantId, requestId);
+                        // DC-BE-002: Store idempotency response
+                        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+                            Map<String, Object> cachedResponseBody = objectMapper.convertValue(
+                                responseEnvelope,
+                                new TypeReference<Map<String, Object>>() { }
+                            );
+                            idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
+                        }
+
+                        return http.envelopeResponse(responseEnvelope, objectMapper);
                     });
             }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
@@ -300,6 +342,18 @@ public class DataLifecycleHandler {
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
+
+        // DC-BE-002: Check idempotency for retention purge
+        String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
+        String operationScope = "governance:retention:purge";
+        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+            var cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
+            if (cached.isPresent()) {
+                log.info("[DC-BE-002] Returning cached retention purge response for key={}", idempotencyKey);
+                return Promise.of(http.jsonResponse(cached.get()));
+            }
+        }
+
         TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
                 request,
@@ -490,8 +544,18 @@ public class DataLifecycleHandler {
                                     .toList());
                                 result.put("completedAt", Instant.now().toString());
                                 result.put("requestId", requestId);
-                                return http.envelopeResponse(
-                                    ApiResponse.success(result, tenantId, requestId), objectMapper);
+                                
+                                ApiResponse responseEnvelope = ApiResponse.success(result, tenantId, requestId);
+                                // DC-BE-002: Store idempotency response
+                                if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+                                    Map<String, Object> cachedResponseBody = objectMapper.convertValue(
+                                        responseEnvelope,
+                                        new TypeReference<Map<String, Object>>() { }
+                                    );
+                                    idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
+                                }
+
+                                return http.envelopeResponse(responseEnvelope, objectMapper);
                             });
                     });
                 });
@@ -520,6 +584,18 @@ public class DataLifecycleHandler {
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
+
+        // DC-BE-002: Check idempotency for privacy redaction
+        String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
+        String operationScope = "governance:privacy:redact";
+        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+            var cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
+            if (cached.isPresent()) {
+                log.info("[DC-BE-002] Returning cached privacy redaction response for key={}", idempotencyKey);
+                return Promise.of(http.jsonResponse(cached.get()));
+            }
+        }
+
         TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
                 request,
@@ -696,8 +772,18 @@ public class DataLifecycleHandler {
                                 result.put("reason", reason);
                                 result.put("status", "REDACTED");
                                 result.put("redactedAt", Instant.now().toString());
-                                return http.envelopeResponse(
-                                    ApiResponse.success(result, tenantId, requestId), objectMapper);
+                                
+                                ApiResponse responseEnvelope = ApiResponse.success(result, tenantId, requestId);
+                                // DC-BE-002: Store idempotency response
+                                if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+                                    Map<String, Object> cachedResponseBody = objectMapper.convertValue(
+                                        responseEnvelope,
+                                        new TypeReference<Map<String, Object>>() { }
+                                    );
+                                    idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
+                                }
+
+                                return http.envelopeResponse(responseEnvelope, objectMapper);
                             });
                     });
                 });

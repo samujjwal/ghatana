@@ -14,7 +14,7 @@
 import React from 'react';
 import { Navigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { EmptyState } from '@ghatana/design-system';
+import { FeatureUnavailablePage } from '@/pages/FeatureUnavailablePage';
 
 export function MarketResearchPage(): React.ReactElement {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -25,19 +25,9 @@ export function MarketResearchPage(): React.ReactElement {
   }
 
   return (
-    <section data-testid="market-research-page" className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Market Research</h1>
-        <span className="text-sm text-gray-500">
-          Workspace: <code>{workspaceId}</code>
-        </span>
-      </div>
-
-      <EmptyState
-        title="Market Research Not Available"
-        description="Market research requires dedicated data models, external evidence sources, competitor intelligence, buyer personas, and audit trails. This feature is currently under development."
-        size="lg"
-      />
-    </section>
+    <FeatureUnavailablePage
+      featureName="Market Research"
+      reason={`is currently unavailable for workspace ${workspaceId ?? 'unknown'} (requires dedicated market intelligence APIs).`}
+    />
   );
 }

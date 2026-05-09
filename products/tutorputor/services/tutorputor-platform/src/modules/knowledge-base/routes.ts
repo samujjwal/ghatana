@@ -8,6 +8,10 @@
 import type { FastifyInstance } from "fastify";
 import type { KnowledgeBaseServiceImpl } from "./service";
 import { z } from "zod";
+import {
+  TenantContextResolver,
+  getTenantContext,
+} from "./TenantContextResolver.js";
 
 const verifyFactBodySchema = z.object({
   claim: z.string().min(1),
@@ -67,8 +71,13 @@ export function registerKnowledgeBaseRoutes(
   fastify: FastifyInstance,
   knowledgeBaseService: KnowledgeBaseServiceImpl,
 ): void {
+  // Add tenant context preHandler to all knowledge-base routes
+  const tenantPreHandler = TenantContextResolver.preHandler();
+
   // Verify a factual claim
-  fastify.post("/api/knowledge-base/verify-fact", async (request, reply) => {
+  fastify.post("/api/knowledge-base/verify-fact", {
+    preHandler: tenantPreHandler,
+  }, async (request, reply) => {
     const factRequestResult = verifyFactBodySchema.safeParse(request.body);
     if (!factRequestResult.success) {
       reply.code(400);
@@ -110,7 +119,9 @@ export function registerKnowledgeBaseRoutes(
   });
 
   // Search for concepts
-  fastify.get("/api/knowledge-base/concepts/search", async (request, reply) => {
+  fastify.get("/api/knowledge-base/concepts/search", {
+    preHandler: tenantPreHandler,
+  }, async (request, reply) => {
     const queryResult = conceptSearchQuerySchema.safeParse(request.query);
     if (!queryResult.success) {
       reply.code(400);
@@ -135,6 +146,9 @@ export function registerKnowledgeBaseRoutes(
   // Find examples for a concept
   fastify.get(
     "/api/knowledge-base/examples/:concept",
+    {
+      preHandler: tenantPreHandler,
+    },
     async (request, reply) => {
       const paramsResult = conceptParamsSchema.safeParse(request.params);
       if (!paramsResult.success) {
@@ -176,6 +190,9 @@ export function registerKnowledgeBaseRoutes(
   // Get curriculum alignment
   fastify.get(
     "/api/knowledge-base/curriculum/:concept",
+    {
+      preHandler: tenantPreHandler,
+    },
     async (request, reply) => {
       const paramsResult = conceptParamsSchema.safeParse(request.params);
       if (!paramsResult.success) {
@@ -214,7 +231,9 @@ export function registerKnowledgeBaseRoutes(
   );
 
   // Validate content
-  fastify.post("/api/knowledge-base/validate", async (request, reply) => {
+  fastify.post("/api/knowledge-base/validate", {
+    preHandler: tenantPreHandler,
+  }, async (request, reply) => {
     const validationRequestResult = validateBodySchema.safeParse(request.body);
     if (!validationRequestResult.success) {
       reply.code(400);
@@ -256,7 +275,9 @@ export function registerKnowledgeBaseRoutes(
   });
 
   // Batch fact verification
-  fastify.post("/api/knowledge-base/batch-verify", async (request, reply) => {
+  fastify.post("/api/knowledge-base/batch-verify", {
+    preHandler: tenantPreHandler,
+  }, async (request, reply) => {
     const claimsResult = batchVerifyBodySchema.safeParse(request.body);
     if (!claimsResult.success) {
       reply.code(400);
@@ -283,7 +304,9 @@ export function registerKnowledgeBaseRoutes(
   });
 
   // Get knowledge base statistics
-  fastify.get("/api/knowledge-base/stats", async (_request, reply) => {
+  fastify.get("/api/knowledge-base/stats", {
+    preHandler: tenantPreHandler,
+  }, async (_request, reply) => {
     try {
       const prisma = knowledgeBaseService.getStatsDatabase();
       
@@ -338,7 +361,7 @@ export function registerKnowledgeBaseRoutes(
     }
   });
 
-  // Health check
+  // Health check (no tenant required)
   fastify.get("/api/knowledge-base/health", async (_request, _reply) => {
     return {
       success: true,

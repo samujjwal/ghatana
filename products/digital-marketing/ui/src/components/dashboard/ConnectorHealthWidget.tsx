@@ -8,11 +8,14 @@
  * @doc.layer frontend
  */
 import React from 'react';
+import { DataFreshnessBadge } from '@/components/dashboard/DataFreshnessBadge';
+import { DashboardWidgetCard } from '@/components/dashboard/DashboardWidgetCard';
 
 interface ConnectorHealth {
   name: string;
   status: 'healthy' | 'degraded' | 'unhealthy' | 'not_configured';
   lastSync?: string;
+  detail?: string;
 }
 
 interface ConnectorHealthWidgetProps {
@@ -20,6 +23,9 @@ interface ConnectorHealthWidgetProps {
   connectors?: ConnectorHealth[];
   isLoading?: boolean;
   isError?: boolean;
+  unavailableReason?: string;
+  source?: string;
+  lastUpdated?: string | null;
 }
 
 export function ConnectorHealthWidget({
@@ -27,28 +33,41 @@ export function ConnectorHealthWidget({
   connectors = [],
   isLoading = false,
   isError = false,
+  unavailableReason,
+  source,
+  lastUpdated,
 }: ConnectorHealthWidgetProps): React.ReactElement {
   if (isLoading) {
     return (
-      <div
-        data-testid="connector-health-widget"
-        className="bg-white border border-gray-200 rounded-lg p-4"
-      >
-        <h2 className="text-sm font-semibold text-gray-900 mb-3">Connector Health</h2>
-        <div className="animate-pulse h-20 bg-gray-100 rounded" />
-      </div>
+      <DashboardWidgetCard
+        testId="connector-health-widget"
+        title="Connector Health"
+        state="loading"
+      />
     );
   }
 
   if (isError) {
     return (
-      <div
-        data-testid="connector-health-widget"
-        className="bg-white border border-gray-200 rounded-lg p-4"
-      >
-        <h2 className="text-sm font-semibold text-gray-900 mb-3">Connector Health</h2>
-        <div className="text-sm text-red-600">Failed to load connector status</div>
-      </div>
+      <DashboardWidgetCard
+        testId="connector-health-widget"
+        title="Connector Health"
+        state="error"
+        message="Failed to load connector status"
+      />
+    );
+  }
+
+  if (connectors.length === 0 && unavailableReason) {
+    return (
+      <DashboardWidgetCard
+        testId="connector-health-widget"
+        title="Connector Health"
+        state="unavailable"
+        message={unavailableReason}
+        stateMessageTestId="connector-health-unavailable"
+        footer={<DataFreshnessBadge source={source} lastUpdated={lastUpdated} isPartial={false} />}
+      />
     );
   }
 
@@ -83,22 +102,32 @@ export function ConnectorHealthWidget({
   };
 
   return (
-    <div
-      data-testid="connector-health-widget"
-      className="bg-white border border-gray-200 rounded-lg p-4"
+    <DashboardWidgetCard
+      testId="connector-health-widget"
+      title="Connector Health"
+      footer={<DataFreshnessBadge source={source} lastUpdated={lastUpdated} isPartial={false} />}
     >
-      <h2 className="text-sm font-semibold text-gray-900 mb-3">Connector Health</h2>
       <div className="space-y-2">
         {connectors.length === 0 ? (
           <p className="text-xs text-gray-700">No connectors configured</p>
         ) : (
           connectors.map((connector) => (
             <div key={connector.name} className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
+              <div className="flex items-start gap-2">
                 <div
-                  className={`w-2 h-2 rounded-full ${getStatusDot(connector.status)}`}
+                  className={`w-2 h-2 mt-1 rounded-full ${getStatusDot(connector.status)}`}
                 />
-                <span className="text-xs text-gray-900">{connector.name}</span>
+                <div>
+                  <span className="text-xs text-gray-900">{connector.name}</span>
+                  {connector.detail ? (
+                    <p className="text-[11px] text-gray-500">{connector.detail}</p>
+                  ) : null}
+                  {connector.lastSync ? (
+                    <p className="text-[11px] text-gray-500">
+                      Last sync: {new Date(connector.lastSync).toLocaleString()}
+                    </p>
+                  ) : null}
+                </div>
               </div>
               <span
                 className={`text-xs font-medium ${getStatusColor(connector.status)}`}
@@ -109,6 +138,6 @@ export function ConnectorHealthWidget({
           ))
         )}
       </div>
-    </div>
+    </DashboardWidgetCard>
   );
 }

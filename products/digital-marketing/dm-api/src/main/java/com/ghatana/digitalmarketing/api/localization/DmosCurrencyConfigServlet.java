@@ -1,6 +1,7 @@
 package com.ghatana.digitalmarketing.api.localization;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.digitalmarketing.api.DmosApiErrorResponses;
 import com.ghatana.digitalmarketing.application.localization.LocalizationConfigService;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.localization.CurrencyConfig;
@@ -63,7 +64,7 @@ public final class DmosCurrencyConfigServlet {
             })
             .then(r -> Promise.of(r), e -> {
                 LOG.error("[DMOS][API] Error getting currency config", e);
-                return Promise.of(HttpResponse.ofCode(500).withPlainText("Internal server error").build());
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal server error", req));
             });
     }
 
@@ -88,12 +89,12 @@ public final class DmosCurrencyConfigServlet {
                         });
                 } catch (Exception e) {
                     LOG.error("[DMOS][API] Error parsing currency config", e);
-                    return Promise.of(HttpResponse.ofCode(400).withPlainText("Invalid request").build());
+                    return Promise.of(DmosApiErrorResponses.error(400, "Invalid request", req));
                 }
             })
             .then(r -> Promise.of(r), e -> {
                 LOG.error("[DMOS][API] Error saving currency config", e);
-                return Promise.of(HttpResponse.ofCode(500).withPlainText("Internal server error").build());
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal server error", req));
             });
     }
 

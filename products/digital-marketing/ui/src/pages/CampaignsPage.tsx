@@ -16,11 +16,16 @@ import { useAuth } from '@/context/AuthContext';
 import { useCampaigns, useCreateCampaign, useLaunchCampaign, usePauseCampaign, useCompleteCampaign, useArchiveCampaign, useRollbackCampaign, useDuplicateCampaign } from '@/hooks/useCampaigns';
 import { useToast } from '@/hooks/useToast';
 import { ApiError } from '@/lib/http-client';
+import { canPerformAction } from '@/lib/action-permissions';
 import type { CampaignType, CampaignObjective } from '@/types/campaign';
 import {
   Button,
   TextField,
   Select,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   Table,
   TableHead,
   TableBody,
@@ -29,6 +34,7 @@ import {
   Badge,
 } from '@ghatana/design-system';
 import { ToastContainer } from '@/components/Toast';
+import { PageStateNotice } from '@/components/PageStateNotice';
 
 const CAMPAIGN_TYPES: CampaignType[] = ['EMAIL', 'SOCIAL', 'PAID_SEARCH', 'PUSH', 'SMS', 'OMNICHANNEL'];
 const CAMPAIGN_OBJECTIVES: CampaignObjective[] = ['AWARENESS', 'LEADS', 'CONVERSIONS', 'RETENTION', 'ENGAGEMENT', 'TRAFFIC'];
@@ -37,9 +43,9 @@ const PAGE_SIZE = 20;
 
 export function CampaignsPage(): React.ReactElement {
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, roles } = useAuth();
   const { toasts, showSuccess, showError, dismissToast } = useToast();
-  // TODO: Implement feature flags for rollback workflow
+  // Rollback remains feature-gated until the backend rollback workflow is enabled.
   const rollbackEnabled = false;
   const [name, setName] = useState('');
   const [type, setType] = useState<CampaignType>('EMAIL');
@@ -50,6 +56,18 @@ export function CampaignsPage(): React.ReactElement {
   const [audience, setAudience] = useState('');
   const [landingPageUrl, setLandingPageUrl] = useState('');
   const [page, setPage] = useState(0);
+  const [archiveTarget, setArchiveTarget] = useState<{ id: string; name: string } | null>(null);
+  const [rollbackTarget, setRollbackTarget] = useState<{ id: string; name: string } | null>(null);
+  const [duplicateTarget, setDuplicateTarget] = useState<{ id: string; name: string } | null>(null);
+  const [duplicateName, setDuplicateName] = useState('');
+  const [duplicateNameError, setDuplicateNameError] = useState<string | null>(null);
+  const canCreateCampaign = canPerformAction(roles, 'create-campaign');
+  const canLaunchCampaign = canPerformAction(roles, 'launch-campaign');
+  const canPauseCampaign = canPerformAction(roles, 'pause-campaign');
+  const canCompleteCampaign = canPerformAction(roles, 'complete-campaign');
+  const canArchiveCampaign = canPerformAction(roles, 'archive-campaign');
+  const canRollbackCampaign = canPerformAction(roles, 'rollback-campaign');
+  const canDuplicateCampaign = canPerformAction(roles, 'duplicate-campaign');
 
   const { campaigns, count, isLoading, isError, error } = useCampaigns(workspaceId ?? null, {
     limit: PAGE_SIZE,
@@ -117,30 +135,57 @@ export function CampaignsPage(): React.ReactElement {
     } catch { /* handled by handleCompleteError */ }
   }, [complete, showSuccess]);
 
-  const handleArchive = useCallback(async (campaignId: string, campaignName: string) => {
-    if (!window.confirm(`Archive campaign "${campaignName}"? This cannot be undone.`)) return;
+  const openArchiveDialog = useCallback((campaignId: string, campaignName: string) => {
+    if (!canArchiveCampaign) return;
+    setArchiveTarget({ id: campaignId, name: campaignName });
+  }, [canArchiveCampaign]);
+
+  const confirmArchive = useCallback(async () => {
+    if (!archiveTarget) return;
     try {
-      await archive(campaignId);
-      showSuccess(`Campaign "${campaignName}" archived`);
+      await archive(archiveTarget.id);
+      showSuccess(`Campaign "${archiveTarget.name}" archived`);
+      setArchiveTarget(null);
     } catch { /* handled by handleArchiveError */ }
-  }, [archive, showSuccess]);
+  }, [archive, archiveTarget, showSuccess]);
 
-  const handleRollback = useCallback(async (campaignId: string, campaignName: string) => {
-    if (!window.confirm(`Roll back campaign "${campaignName}" to DRAFT?`)) return;
+  const openRollbackDialog = useCallback((campaignId: string, campaignName: string) => {
+    if (!canRollbackCampaign) return;
+    setRollbackTarget({ id: campaignId, name: campaignName });
+  }, [canRollbackCampaign]);
+
+  const confirmRollback = useCallback(async () => {
+    if (!rollbackTarget) return;
     try {
-      await rollback(campaignId);
-      showSuccess(`Campaign "${campaignName}" rolled back to draft`);
+      await rollback(rollbackTarget.id);
+      showSuccess(`Campaign "${rollbackTarget.name}" rolled back to draft`);
+      setRollbackTarget(null);
     } catch { /* handled by handleRollbackError */ }
-  }, [rollback, showSuccess]);
+  }, [rollback, rollbackTarget, showSuccess]);
 
-  const handleDuplicate = useCallback(async (campaignId: string, campaignName: string) => {
-    const newName = window.prompt('Name for the duplicate campaign:', `${campaignName} (copy)`);
-    if (!newName?.trim()) return;
+  const openDuplicateDialog = useCallback((campaignId: string, campaignName: string) => {
+    if (!canDuplicateCampaign) return;
+    setDuplicateTarget({ id: campaignId, name: campaignName });
+    setDuplicateName(`${campaignName} (copy)`);
+    setDuplicateNameError(null);
+  }, [canDuplicateCampaign]);
+
+  const confirmDuplicate = useCallback(async () => {
+    if (!duplicateTarget) return;
+    if (!duplicateName.trim()) {
+      setDuplicateNameError('Duplicate campaign name is required.');
+      return;
+    }
+
     try {
-      await duplicate(campaignId, newName.trim());
-      showSuccess(`Campaign duplicated as "${newName.trim()}"`);
+      const resolvedName = duplicateName.trim();
+      await duplicate(duplicateTarget.id, resolvedName);
+      showSuccess(`Campaign duplicated as "${resolvedName}"`);
+      setDuplicateTarget(null);
+      setDuplicateName('');
+      setDuplicateNameError(null);
     } catch { /* handled by handleDuplicateError */ }
-  }, [duplicate, showSuccess]);
+  }, [duplicate, duplicateName, duplicateTarget, showSuccess]);
 
   const handleCreate = useCallback(
     async (e: React.FormEvent) => {
@@ -306,7 +351,7 @@ export function CampaignsPage(): React.ReactElement {
             <Button
               data-testid="create-campaign-btn"
               type="submit"
-              disabled={isCreating || !name.trim() || !audience.trim() || !budgetDollars || !startDate || !endDate}
+              disabled={isCreating || !canCreateCampaign || !name.trim() || !audience.trim() || !budgetDollars || !startDate || !endDate}
               loading={isCreating}
               loadingText="Creating…"
               tone="primary"
@@ -318,25 +363,39 @@ export function CampaignsPage(): React.ReactElement {
       </section>
 
       {isLoading && (
-        <p data-testid="campaigns-loading" className="text-sm text-gray-400">
-          Loading campaigns…
-        </p>
+        <PageStateNotice
+          testId="campaigns-loading"
+          tone="loading"
+          message="Loading campaigns…"
+        />
       )}
 
       {isError && (
-        <p data-testid="campaigns-error" role="alert" className="text-sm text-red-600">
-          {error instanceof ApiError ? error.getUserMessage() : 'Failed to load campaigns.'}
-        </p>
+        <PageStateNotice
+          testId="campaigns-error"
+          tone="error"
+          message={error instanceof ApiError ? error.getUserMessage() : 'Failed to load campaigns.'}
+        />
       )}
 
       {!isLoading && !isError && campaigns.length === 0 && (
-        <p data-testid="campaigns-empty" className="text-sm text-gray-500">
-          No campaigns yet. Create your first campaign above.
-        </p>
+        <PageStateNotice
+          testId="campaigns-empty"
+          tone="empty"
+          message="No campaigns yet. Create your first campaign above."
+        />
       )}
 
       {!isLoading && !isError && campaigns.length > 0 && (
         <>
+          {!canCreateCampaign && (
+            <p
+              data-testid="campaign-action-permission-banner"
+              className="mb-4 text-sm text-yellow-700 bg-yellow-50 px-3 py-2 rounded"
+            >
+              You have view-only campaign access. Mutation actions are restricted by role.
+            </p>
+          )}
           <div data-testid="campaigns-list" className="border rounded overflow-hidden">
             <Table>
               <TableHead>
@@ -373,7 +432,7 @@ export function CampaignsPage(): React.ReactElement {
                             size="sm"
                             tone="success"
                             onClick={() => handleLaunch(c.id, c.name)}
-                            disabled={isLaunchingFor(c.id)}
+                            disabled={isLaunchingFor(c.id) || !canLaunchCampaign}
                             loading={isLaunchingFor(c.id)}
                             loadingText="Launching…"
                           >
@@ -386,7 +445,7 @@ export function CampaignsPage(): React.ReactElement {
                             size="sm"
                             tone="warning"
                             onClick={() => handlePause(c.id, c.name)}
-                            disabled={isPausingFor(c.id)}
+                            disabled={isPausingFor(c.id) || !canPauseCampaign}
                             loading={isPausingFor(c.id)}
                             loadingText="Pausing…"
                           >
@@ -399,7 +458,7 @@ export function CampaignsPage(): React.ReactElement {
                             size="sm"
                             tone="primary"
                             onClick={() => handleComplete(c.id, c.name)}
-                            disabled={isCompletingFor(c.id)}
+                            disabled={isCompletingFor(c.id) || !canCompleteCampaign}
                             loading={isCompletingFor(c.id)}
                             loadingText="Completing…"
                           >
@@ -411,8 +470,8 @@ export function CampaignsPage(): React.ReactElement {
                             data-testid={`archive-campaign-${c.id}`}
                             size="sm"
                             tone="neutral"
-                            onClick={() => handleArchive(c.id, c.name)}
-                            disabled={isArchivingFor(c.id)}
+                            onClick={() => openArchiveDialog(c.id, c.name)}
+                            disabled={isArchivingFor(c.id) || !canArchiveCampaign}
                             loading={isArchivingFor(c.id)}
                             loadingText="Archiving…"
                           >
@@ -425,8 +484,8 @@ export function CampaignsPage(): React.ReactElement {
                             size="sm"
                             tone="warning"
                             variant="soft"
-                            onClick={() => handleRollback(c.id, c.name)}
-                            disabled={isRollingBackFor(c.id)}
+                            onClick={() => openRollbackDialog(c.id, c.name)}
+                            disabled={isRollingBackFor(c.id) || !canRollbackCampaign}
                             loading={isRollingBackFor(c.id)}
                             loadingText="Rolling back…"
                           >
@@ -438,8 +497,8 @@ export function CampaignsPage(): React.ReactElement {
                           size="sm"
                           variant="outline"
                           tone="neutral"
-                          onClick={() => handleDuplicate(c.id, c.name)}
-                          disabled={isDuplicatingFor(c.id)}
+                          onClick={() => openDuplicateDialog(c.id, c.name)}
+                          disabled={isDuplicatingFor(c.id) || !canDuplicateCampaign}
                           loading={isDuplicatingFor(c.id)}
                           loadingText="Duplicating…"
                         >
@@ -489,6 +548,137 @@ export function CampaignsPage(): React.ReactElement {
           </div>
         </>
       )}
+
+      <Dialog
+        open={archiveTarget !== null}
+        onClose={() => setArchiveTarget(null)}
+        size="sm"
+        aria-labelledby="archive-dialog-title"
+        data-testid="archive-dialog"
+      >
+        <DialogTitle id="archive-dialog-title">Archive Campaign</DialogTitle>
+        <DialogContent>
+          <p className="text-sm text-gray-700">
+            Archive campaign "{archiveTarget?.name}"? This action is destructive and cannot be undone.
+          </p>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            data-testid="archive-cancel-btn"
+            variant="outline"
+            tone="neutral"
+            onClick={() => setArchiveTarget(null)}
+            disabled={archiveTarget ? isArchivingFor(archiveTarget.id) : false}
+          >
+            Cancel
+          </Button>
+          <Button
+            data-testid="archive-confirm-btn"
+            tone="danger"
+            onClick={confirmArchive}
+            disabled={archiveTarget ? isArchivingFor(archiveTarget.id) || !canArchiveCampaign : true}
+            loading={archiveTarget ? isArchivingFor(archiveTarget.id) : false}
+            loadingText="Archiving…"
+          >
+            Archive Campaign
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={rollbackTarget !== null}
+        onClose={() => setRollbackTarget(null)}
+        size="sm"
+        aria-labelledby="rollback-dialog-title"
+        data-testid="rollback-dialog"
+      >
+        <DialogTitle id="rollback-dialog-title">Rollback Campaign</DialogTitle>
+        <DialogContent>
+          <p className="text-sm text-gray-700">
+            Roll back campaign "{rollbackTarget?.name}" to DRAFT?
+          </p>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            data-testid="rollback-cancel-btn"
+            variant="outline"
+            tone="neutral"
+            onClick={() => setRollbackTarget(null)}
+            disabled={rollbackTarget ? isRollingBackFor(rollbackTarget.id) : false}
+          >
+            Cancel
+          </Button>
+          <Button
+            data-testid="rollback-confirm-btn"
+            tone="warning"
+            onClick={confirmRollback}
+            disabled={rollbackTarget ? isRollingBackFor(rollbackTarget.id) || !canRollbackCampaign : true}
+            loading={rollbackTarget ? isRollingBackFor(rollbackTarget.id) : false}
+            loadingText="Rolling back…"
+          >
+            Confirm Rollback
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={duplicateTarget !== null}
+        onClose={() => {
+          setDuplicateTarget(null);
+          setDuplicateNameError(null);
+        }}
+        size="sm"
+        aria-labelledby="duplicate-dialog-title"
+        data-testid="duplicate-dialog"
+      >
+        <DialogTitle id="duplicate-dialog-title">Duplicate Campaign</DialogTitle>
+        <DialogContent>
+          <p className="text-sm text-gray-700 mb-3">
+            Enter a name for the duplicate of "{duplicateTarget?.name}".
+          </p>
+          <TextField
+            data-testid="duplicate-name-input"
+            label="Duplicate Name"
+            type="text"
+            value={duplicateName}
+            onChange={(e) => {
+              setDuplicateName(e.target.value);
+              if (duplicateNameError) setDuplicateNameError(null);
+            }}
+            required
+            fullWidth
+          />
+          {duplicateNameError && (
+            <p className="mt-2 text-sm text-red-600" data-testid="duplicate-name-error" role="alert">
+              {duplicateNameError}
+            </p>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            data-testid="duplicate-cancel-btn"
+            variant="outline"
+            tone="neutral"
+            onClick={() => {
+              setDuplicateTarget(null);
+              setDuplicateNameError(null);
+            }}
+            disabled={duplicateTarget ? isDuplicatingFor(duplicateTarget.id) : false}
+          >
+            Cancel
+          </Button>
+          <Button
+            data-testid="duplicate-confirm-btn"
+            tone="primary"
+            onClick={confirmDuplicate}
+            disabled={duplicateTarget ? isDuplicatingFor(duplicateTarget.id) || !canDuplicateCampaign : true}
+            loading={duplicateTarget ? isDuplicatingFor(duplicateTarget.id) : false}
+            loadingText="Duplicating…"
+          >
+            Duplicate Campaign
+          </Button>
+        </DialogActions>
+      </Dialog>
       </section>
     </>
   );

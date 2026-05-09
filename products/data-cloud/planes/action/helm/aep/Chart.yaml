@@ -1,15 +1,17 @@
 apiVersion: v2
-name: aep
+name: data-cloud-action-plane
 description: >
-  Ghatana Agentic Event Processor (AEP) — high-performance agent orchestration
+  Data Cloud Action Plane — high-performance agent orchestration
   and event processing platform built on ActiveJ, Kafka, Redis, and LangChain4j.
+  Internal runtime chart for Data Cloud Action Plane (formerly AEP).
 type: application
 version: 0.1.0
 appVersion: "1.0.0"
 
 keywords:
   - ghatana
-  - aep
+  - data-cloud
+  - action-plane
   - agentic
   - event-processing
   - agents

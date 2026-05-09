@@ -21,6 +21,9 @@ export interface AiActionLogEntry {
   status: AiActionStatus;
   actor: string;
   initiatedByAi: boolean;
+  provider: string | null;
+  modelVersion: string | null;
+  humanEdited: boolean;
   confidence: number | null;
   evidenceLinks: string[];
   policyChecks: string[];

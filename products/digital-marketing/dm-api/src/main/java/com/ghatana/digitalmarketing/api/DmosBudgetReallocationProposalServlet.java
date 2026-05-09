@@ -8,6 +8,7 @@ import com.ghatana.digitalmarketing.application.optimization.BudgetReallocationP
 import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.api.observability.DmosTelemetry;
 import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
+import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.optimization.BudgetReallocationProposal;
 import com.ghatana.digitalmarketing.domain.optimization.BudgetReallocationStatus;
@@ -271,7 +272,7 @@ public final class DmosBudgetReallocationProposalServlet {
     }
 
     private HttpResponse errorResponse(int code, String message) {
-        return jsonResponse(code, new ErrorBody(code, message));
+        return DmosApiErrorResponses.error(code, message, DmCorrelationId.generate().getValue());
     }
 
     record PublishRequest(String budgetRecommendationId, String title, String description, List<BudgetReallocationProposal.BudgetAdjustment> adjustments, double totalReallocatedAmount, String rationale, Instant expiresAt) {}
@@ -318,11 +319,24 @@ public final class DmosBudgetReallocationProposalServlet {
         }
     }
 
-    record BudgetAdjustmentDto(String campaignId, String channelType, double currentAmount, double proposedAmount, double adjustmentAmount, String reason) {
+    record BudgetAdjustmentDto(
+        String campaignId,
+        String channelType,
+        double currentAmount,
+        double proposedAmount,
+        double adjustmentAmount,
+        String reason
+    ) {
         static BudgetAdjustmentDto from(BudgetReallocationProposal.BudgetAdjustment adj) {
-            return new BudgetAdjustmentDto(adj.getCampaignId(), adj.getChannelType(), adj.getCurrentAmount(), adj.getProposedAmount(), adj.getAdjustmentAmount(), adj.getReason());
+            return new BudgetAdjustmentDto(
+                adj.getCampaignId(),
+                adj.getChannelType(),
+                adj.getCurrentAmount(),
+                adj.getProposedAmount(),
+                adj.getAdjustmentAmount(),
+                adj.getReason()
+            );
         }
     }
 
-    record ErrorBody(int status, String message) {}
 }

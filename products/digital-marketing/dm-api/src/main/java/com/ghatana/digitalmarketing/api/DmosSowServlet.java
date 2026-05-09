@@ -116,12 +116,12 @@ public final class DmosSowServlet {
                 );
                 return sowService.generateDraft(ctx, command)
                     .map(d -> jsonResponse(201, SowDraftResponse.from(d)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("generate SOW draft", e));
+                    .then(r -> Promise.of(r), e -> mapServiceError("generate SOW draft", e, request));
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to generate SOW draft", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -134,12 +134,12 @@ public final class DmosSowServlet {
                 DmOperationContext ctx = buildContext(request, workspaceId, true);
                 return sowService.submitForReview(ctx, sowId)
                     .map(d -> jsonResponse(200, SowDraftResponse.from(d)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("submit SOW for review", e));
+                    .then(r -> Promise.of(r), e -> mapServiceError("submit SOW for review", e, request));
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to submit SOW for review", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -152,12 +152,12 @@ public final class DmosSowServlet {
                 DmOperationContext ctx = buildContext(request, workspaceId, true);
                 return sowService.approveDraft(ctx, sowId)
                     .map(d -> jsonResponse(200, SowDraftResponse.from(d)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("approve SOW draft", e));
+                    .then(r -> Promise.of(r), e -> mapServiceError("approve SOW draft", e, request));
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to approve SOW draft", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -170,12 +170,12 @@ public final class DmosSowServlet {
                 DmOperationContext ctx = buildContext(request, workspaceId, true);
                 return sowService.exportDraft(ctx, sowId)
                     .map(d -> jsonResponse(200, SowDraftResponse.from(d)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("export SOW draft", e));
+                    .then(r -> Promise.of(r), e -> mapServiceError("export SOW draft", e, request));
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to export SOW draft", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -188,39 +188,39 @@ public final class DmosSowServlet {
             return sowService.getDraft(ctx)
                 .map(d -> {
                     if (!d.getSowId().equals(sowId)) {
-                        return errorResponse(404, "SOW draft not found: " + sowId);
+                        return DmosApiErrorResponses.error(404, "SOW draft not found: " + sowId, request);
                     }
                     return jsonResponse(200, SowDraftResponse.from(d));
                 })
-                .then(r -> Promise.of(r), e -> mapServiceError("get SOW draft", e));
+                .then(r -> Promise.of(r), e -> mapServiceError("get SOW draft", e, request));
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to get SOW draft", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
         }
     }
 
     // ---- error mapping ----
 
-    private Promise<HttpResponse> mapServiceError(String operation, Throwable error) {
+    private Promise<HttpResponse> mapServiceError(String operation, Throwable error, HttpRequest request) {
         if (error instanceof SecurityException) {
-            return Promise.of(errorResponse(403, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(403, error.getMessage(), request));
         }
         if (error instanceof NoSuchElementException) {
-            return Promise.of(errorResponse(404, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(404, error.getMessage(), request));
         }
         if (error instanceof IllegalArgumentException) {
-            return Promise.of(errorResponse(400, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, error.getMessage(), request));
         }
         if (error instanceof IllegalStateException) {
-            return Promise.of(errorResponse(409, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(409, error.getMessage(), request));
         }
         if (error instanceof DmosFeatureDisabledException || error instanceof DmosConnectorDisabledException) {
-            return Promise.of(errorResponse(423, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(423, error.getMessage(), request));
         }
         LOG.error("[DMOS] Failed to {}", operation, error);
-        return Promise.of(errorResponse(500, "Internal error"));
+        return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
     }
 
     // ---- context builder ----
@@ -298,17 +298,6 @@ public final class DmosSowServlet {
         }
     }
 
-    private HttpResponse errorResponse(int code, String message) {
-        try {
-            return HttpResponse.ofCode(code)
-                .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_JSON)
-                .withBody(MAPPER.writeValueAsBytes(new ErrorResponse(code, message)))
-                .build();
-        } catch (Exception e) {
-            return HttpResponse.ofCode(code).build();
-        }
-    }
-
     // ---- request / response DTOs ----
 
     private record GenerateSowRequest(
@@ -371,5 +360,4 @@ public final class DmosSowServlet {
         }
     }
 
-    private record ErrorResponse(int code, String message) {}
 }

@@ -107,15 +107,12 @@ public final class DmosAgencyApprovalSLAServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_approval_sla.create.error", Map.of());
                     LOG.error("Failed to create approval SLA", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_approval_sla.create.error", Map.of());
             LOG.error("Failed to parse create request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -137,15 +134,12 @@ public final class DmosAgencyApprovalSLAServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_approval_sla.activate.error", Map.of());
                     LOG.error("Failed to activate approval SLA", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_approval_sla.activate.error", Map.of());
             LOG.error("Failed to process activate request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -169,15 +163,12 @@ public final class DmosAgencyApprovalSLAServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_approval_sla.deactivate.error", Map.of());
                     LOG.error("Failed to deactivate approval SLA", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_approval_sla.deactivate.error", Map.of());
             LOG.error("Failed to parse deactivate request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -201,15 +192,12 @@ public final class DmosAgencyApprovalSLAServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_approval_sla.escalation.error", Map.of());
                     LOG.error("Failed to update escalation level", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_approval_sla.escalation.error", Map.of());
             LOG.error("Failed to parse escalation request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -223,10 +211,7 @@ public final class DmosAgencyApprovalSLAServlet {
             return agencyApprovalSLAService.findById(ctx, slaId)
                 .map(slaOpt -> {
                     if (slaOpt.isEmpty()) {
-                        return HttpResponse.ofCode(404)
-                            .withBody("{\"error\":\"Approval SLA not found\"}")
-                            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                            .build();
+                        return DmosApiErrorResponses.error(404, "Approval SLA not found", ctx.getCorrelationId().getValue());
                     }
                     return HttpResponse.ofCode(200)
                         .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -236,15 +221,12 @@ public final class DmosAgencyApprovalSLAServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_approval_sla.get.error", Map.of());
                     LOG.error("Failed to get approval SLA", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_approval_sla.get.error", Map.of());
             LOG.error("Failed to process get request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -265,29 +247,20 @@ public final class DmosAgencyApprovalSLAServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_approval_sla.list.error", Map.of());
                     LOG.error("Failed to list approval SLAs", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_approval_sla.list.error", Map.of());
             LOG.error("Failed to process list request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
-    private HttpResponse mapServiceError(Exception e) {
+    private HttpResponse mapServiceError(Exception e, DmOperationContext ctx) {
         if (e instanceof IllegalArgumentException) {
-            return HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"" + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build();
+            return DmosApiErrorResponses.error(400, e.getMessage(), ctx.getCorrelationId().getValue());
         }
-        return HttpResponse.ofCode(500)
-            .withBody("{\"error\":\"Internal server error\"}")
-            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-            .build();
+        return DmosApiErrorResponses.error(500, "Internal server error", ctx.getCorrelationId().getValue());
     }
 
     private SLADto toDto(AgencyApprovalSLA sla) {

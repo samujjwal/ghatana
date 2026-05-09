@@ -105,15 +105,12 @@ public final class DmosAgencyContractServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_contract.create.error", Map.of());
                     LOG.error("Failed to create agency contract", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_contract.create.error", Map.of());
             LOG.error("Failed to parse create request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -135,15 +132,12 @@ public final class DmosAgencyContractServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_contract.activate.error", Map.of());
                     LOG.error("Failed to activate agency contract", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_contract.activate.error", Map.of());
             LOG.error("Failed to process activate request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -167,15 +161,12 @@ public final class DmosAgencyContractServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_contract.terminate.error", Map.of());
                     LOG.error("Failed to terminate agency contract", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_contract.terminate.error", Map.of());
             LOG.error("Failed to parse terminate request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -199,15 +190,12 @@ public final class DmosAgencyContractServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_contract.renew.error", Map.of());
                     LOG.error("Failed to renew agency contract", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_contract.renew.error", Map.of());
             LOG.error("Failed to parse renew request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -221,10 +209,7 @@ public final class DmosAgencyContractServlet {
             return agencyContractService.findById(ctx, contractId)
                 .map(contractOpt -> {
                     if (contractOpt.isEmpty()) {
-                        return HttpResponse.ofCode(404)
-                            .withBody("{\"error\":\"Contract not found\"}")
-                            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                            .build();
+                        return DmosApiErrorResponses.error(404, "Contract not found", ctx.getCorrelationId().getValue());
                     }
                     return HttpResponse.ofCode(200)
                         .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -234,15 +219,12 @@ public final class DmosAgencyContractServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_contract.get.error", Map.of());
                     LOG.error("Failed to get agency contract", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_contract.get.error", Map.of());
             LOG.error("Failed to process get request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -263,29 +245,20 @@ public final class DmosAgencyContractServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_contract.list.error", Map.of());
                     LOG.error("Failed to list agency contracts", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_contract.list.error", Map.of());
             LOG.error("Failed to process list request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
-    private HttpResponse mapServiceError(Exception e) {
+    private HttpResponse mapServiceError(Exception e, DmOperationContext ctx) {
         if (e instanceof IllegalArgumentException) {
-            return HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"" + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build();
+            return DmosApiErrorResponses.error(400, e.getMessage(), ctx.getCorrelationId().getValue());
         }
-        return HttpResponse.ofCode(500)
-            .withBody("{\"error\":\"Internal server error\"}")
-            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-            .build();
+        return DmosApiErrorResponses.error(500, "Internal server error", ctx.getCorrelationId().getValue());
     }
 
     private ContractDto toDto(AgencyContract contract) {

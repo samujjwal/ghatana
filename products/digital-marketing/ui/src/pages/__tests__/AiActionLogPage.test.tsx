@@ -6,37 +6,48 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
 import { AiActionLogPage } from '@/pages/AiActionLogPage';
 
+const useAiActionLogMock = vi.fn();
+const useAiActionDetailMock = vi.fn();
+
 vi.mock('@/hooks/useAiActionLog', () => ({
-  useAiActionLog: () => ({
-    entries: [
-      {
-        actionId: 'act-1',
-        workspaceId: 'ws-1',
-        correlationId: 'corr-1',
-        actionType: 'DRAFT_GENERATED',
-        status: 'PROPOSED',
-        actor: 'agent',
-        initiatedByAi: true,
-        confidence: 0.8,
-        evidenceLinks: [],
-        policyChecks: [],
-        summary: 'Generated draft',
-        details: 'Used strategy',
-        relatedEntityId: 'content-1',
-        occurredAt: '2026-01-01T00:00:00Z',
-      },
-    ],
+  useAiActionLog: () => useAiActionLogMock(),
+  useAiActionDetail: () => useAiActionDetailMock(),
+}));
+
+const baseEntry = {
+  actionId: 'act-1',
+  workspaceId: 'ws-1',
+  correlationId: 'corr-1',
+  actionType: 'DRAFT_GENERATED',
+  status: 'PROPOSED',
+  actor: 'agent',
+  initiatedByAi: true,
+  provider: 'openai',
+  modelVersion: 'gpt-5.4',
+  humanEdited: false,
+  confidence: 0.8,
+  evidenceLinks: [],
+  policyChecks: [],
+  summary: 'Generated draft',
+  details: 'Used strategy',
+  relatedEntityId: 'content-1',
+  occurredAt: '2026-01-01T00:00:00Z',
+} as const;
+
+function setDefaultMocks(): void {
+  useAiActionLogMock.mockReturnValue({
+    entries: [baseEntry],
     isLoading: false,
     isError: false,
     error: null,
-  }),
-  useAiActionDetail: () => ({
+  });
+  useAiActionDetailMock.mockReturnValue({
     entry: null,
     isLoading: false,
     isError: false,
     error: null,
-  }),
-}));
+  });
+}
 
 function renderPage(path: string, token: string | null = 'test-token'): void {
   render(
@@ -60,14 +71,104 @@ function renderPage(path: string, token: string | null = 'test-token'): void {
 }
 
 describe('AiActionLogPage', () => {
-  it('redirects unauthenticated user to login', () => {
-    renderPage('/workspaces/ws-1/ai-actions', null);
-    expect(screen.getByTestId('login-page')).toBeInTheDocument();
-  });
-
   it('renders timeline entries', async () => {
+    setDefaultMocks();
     renderPage('/workspaces/ws-1/ai-actions');
+
     expect(await screen.findByTestId('ai-action-log-page')).toBeInTheDocument();
     expect(screen.getByTestId('ai-action-log-item-act-1')).toBeInTheDocument();
+    expect(screen.getByTestId('ai-action-log-detail-empty')).toHaveTextContent(
+      'Select an action from the timeline.',
+    );
+  });
+
+  it('renders detailed provenance and policy context for selected action', async () => {
+    useAiActionLogMock.mockReturnValue({
+      entries: [baseEntry],
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+    useAiActionDetailMock.mockReturnValue({
+      entry: {
+        ...baseEntry,
+        status: 'BLOCKED',
+        confidence: 0.2,
+        policyChecks: ['PII_REVIEW_REQUIRED', 'LEGAL_APPROVAL_REQUIRED'],
+        evidenceLinks: ['https://example.test/evidence/1'],
+      },
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+
+    renderPage('/workspaces/ws-1/ai-actions/act-1');
+
+    expect(await screen.findByTestId('ai-action-log-detail-fields')).toBeInTheDocument();
+    expect(screen.getByText('BLOCKED')).toBeInTheDocument();
+    expect(screen.getByText('20%')).toBeInTheDocument();
+    expect(screen.getByTestId('ai-action-risk-level')).toHaveTextContent('HIGH');
+    expect(screen.getByTestId('ai-action-policy-checks')).toHaveTextContent('PII_REVIEW_REQUIRED');
+    expect(screen.getByTestId('ai-action-evidence-links')).toHaveTextContent(
+      'https://example.test/evidence/1',
+    );
+  });
+
+  it('renders empty policy/evidence messages when missing from detail', async () => {
+    useAiActionLogMock.mockReturnValue({
+      entries: [baseEntry],
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+    useAiActionDetailMock.mockReturnValue({
+      entry: {
+        ...baseEntry,
+        confidence: null,
+      },
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+
+    renderPage('/workspaces/ws-1/ai-actions/act-1');
+
+    expect(await screen.findByTestId('ai-action-policy-checks-empty')).toHaveTextContent(
+      'No policy checks were attached to this action.',
+    );
+    expect(screen.getByTestId('ai-action-evidence-empty')).toHaveTextContent(
+      'No evidence links were attached to this action.',
+    );
+    expect(screen.getByText('Not provided')).toBeInTheDocument();
+    expect(screen.getByTestId('ai-action-provenance-completeness')).toHaveTextContent('PARTIAL');
+    expect(screen.getByTestId('ai-action-provenance-warning')).toBeInTheDocument();
+  });
+
+  it('shows redaction warning when details are redacted', async () => {
+    useAiActionLogMock.mockReturnValue({
+      entries: [baseEntry],
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+    useAiActionDetailMock.mockReturnValue({
+      entry: {
+        ...baseEntry,
+        details: 'REDACTED',
+      },
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+
+    renderPage('/workspaces/ws-1/ai-actions/act-1');
+
+    expect(await screen.findByTestId('ai-action-detail-redacted')).toBeInTheDocument();
+  });
+
+  it('redirects unauthenticated user to login', () => {
+    setDefaultMocks();
+    renderPage('/workspaces/ws-1/ai-actions', null);
+    expect(screen.getByTestId('login-page')).toBeInTheDocument();
   });
 });

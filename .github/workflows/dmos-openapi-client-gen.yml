@@ -75,16 +75,62 @@ jobs:
         run: |
           git diff --exit-code || (echo "::error::Generated client types are out of sync. Run 'pnpm generate-api-types' and commit the changes." && exit 1)
 
+  ui-quality-gates:
+    name: UI Quality Gates (Type/Lint/Route Contract)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@10.33.0 --activate
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run type-check
+        run: pnpm --filter @dmos/ui run type-check
+
+      - name: Run lint
+        run: pnpm --filter @dmos/ui run lint
+
+      - name: Run route contract tests
+        run: pnpm --filter @dmos/ui run test:route-contract
+
+  api-contract-tests:
+    name: API Contract Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Run DMOS API contract tests
+        run: ./gradlew :products:digital-marketing:dm-api:test --tests "*ContractTest" --no-daemon
+
   contract-drift-check:
     name: Contract Drift Check
     runs-on: ubuntu-latest
-    needs: [generate-openapi-spec, generate-client-types]
+    needs: [generate-openapi-spec, generate-client-types, ui-quality-gates, api-contract-tests]
     steps:
       - name: Check for failures
         run: |
-          if [ "${{ needs.generate-openapi-spec.result }}" == "failure" ] || [ "${{ needs.generate-client-types.result }}" == "failure" ]; then
-            echo "::error::OpenAPI/client generation failed. Please run the generation locally and commit the changes."
+          if [ "${{ needs.generate-openapi-spec.result }}" != "success" ] || \
+             [ "${{ needs.generate-client-types.result }}" != "success" ] || \
+             [ "${{ needs.ui-quality-gates.result }}" != "success" ] || \
+             [ "${{ needs.api-contract-tests.result }}" != "success" ]; then
+            echo "::error::DMOS OpenAPI/client gate failed. OpenAPI/client generation, UI quality gates, and API contract tests must all pass."
             exit 1
           else
-            echo "OpenAPI spec and client types are in sync."
+            echo "DMOS OpenAPI/client gate passed (spec sync + UI quality + API contract tests)."
           fi

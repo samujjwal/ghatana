@@ -2156,6 +2156,47 @@ components:
         service:
           type: string
 
+    # DC-P1-006: Additional type definitions for frontend type generation
+    EventTier:
+      type: string
+      enum: [HOT, WARM, COOL, COLD]
+      description: Storage tier for event data
+
+    AlertSeverity:
+      type: string
+      enum: [critical, warning, info]
+      description: Severity level for alerts
+
+    AlertStatus:
+      type: string
+      enum: [active, acknowledged, resolved]
+      description: Status of an alert
+
+    PluginStatus:
+      type: string
+      enum: [active, inactive, error, installing, uninstalling]
+      description: Status of a plugin
+
+    PluginCategory:
+      type: string
+      enum: [connector, transformer, quality, governance, visualization, integration, ai]
+      description: Category of a plugin
+
+    MemoryType:
+      type: string
+      enum: [EPISODIC, SEMANTIC, PROCEDURAL, PREFERENCE]
+      description: Type of memory in the memory plane
+
+    MigrationTargetTier:
+      type: string
+      enum: [WARM, COLD]
+      description: Target tier for data migration
+
+    RetentionTier:
+      type: string
+      enum: [transient, short-term, standard, compliance, permanent]
+      description: Retention tier for data lifecycle
+
   responses:
     NotFound:
       description: Resource not found.

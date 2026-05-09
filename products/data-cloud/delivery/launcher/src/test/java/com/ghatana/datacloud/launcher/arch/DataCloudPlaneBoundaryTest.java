@@ -68,6 +68,9 @@ class DataCloudPlaneBoundaryTest {
     /** Governance plane classes only. */
     private static JavaClasses GOVERNANCE_PLANE_CLASSES;
 
+    /** Context plane classes only. */
+    private static JavaClasses CONTEXT_PLANE_CLASSES;
+
     @BeforeAll
     static void importClasses() {
         DATA_CLOUD_CLASSES = new ClassFileImporter()
@@ -91,6 +94,10 @@ class DataCloudPlaneBoundaryTest {
         GOVERNANCE_PLANE_CLASSES = new ClassFileImporter()
                 .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
                 .importPackages("com.ghatana.datacloud.governance");
+
+        CONTEXT_PLANE_CLASSES = new ClassFileImporter()
+                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+                .importPackages("com.ghatana.datacloud.context");
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -98,14 +105,16 @@ class DataCloudPlaneBoundaryTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("No Data Cloud plane imports AEP server internals")
+    @DisplayName("No Data Cloud plane imports AEP server internals (DC-BND-001)")
     class NoActionPlaneInternals {
 
         @Test
         @DisplayName("Data plane must not import AEP server internals")
         void dataPlaneHasNoAepServerDependency() {
             ArchRule rule = noClasses()
-                    .that().resideInAPackage("com.ghatana.datacloud..")
+                    .that().resideInAnyPackage(
+                            "com.ghatana.datacloud.entity..",
+                            "com.ghatana.datacloud.record..")
                     .should().dependOnClassesThat()
                     .resideInAnyPackage(
                             "com.ghatana.aep.server..",
@@ -117,7 +126,60 @@ class DataCloudPlaneBoundaryTest {
                             + "Importing AEP server internals creates a hard coupling that "
                             + "prevents independent product boundaries. "
                             + "Use com.ghatana.aep.client.* or the Action Plane contract API instead.");
-            rule.check(DATA_CLOUD_CLASSES);
+            rule.check(DATA_PLANE_CLASSES);
+        }
+
+        @Test
+        @DisplayName("Event plane must not import AEP server internals")
+        void eventPlaneHasNoAepServerDependency() {
+            ArchRule rule = noClasses()
+                    .that().resideInAnyPackage(
+                            "com.ghatana.datacloud.event..",
+                            "com.ghatana.datacloud.platform.event..")
+                    .should().dependOnClassesThat()
+                    .resideInAnyPackage(
+                            "com.ghatana.aep.server..",
+                            "com.ghatana.aep.bootstrap..",
+                            "com.ghatana.aep.di..")
+                    .allowEmptyShould(true)
+                    .because(
+                            "The event plane must not couple directly to AEP server internals. "
+                            + "Event streaming integration must go through the shared SPI or public Action Plane API.");
+            rule.check(EVENT_PLANE_CLASSES);
+        }
+
+        @Test
+        @DisplayName("Context plane must not import AEP server internals")
+        void contextPlaneHasNoAepServerDependency() {
+            ArchRule rule = noClasses()
+                    .that().resideInAPackage("com.ghatana.datacloud.context..")
+                    .should().dependOnClassesThat()
+                    .resideInAnyPackage(
+                            "com.ghatana.aep.server..",
+                            "com.ghatana.aep.bootstrap..",
+                            "com.ghatana.aep.di..")
+                    .allowEmptyShould(true)
+                    .because(
+                            "The context plane must not couple directly to AEP server internals. "
+                            + "Context layer integration must go through the shared SPI or public Action Plane API.");
+            rule.check(CONTEXT_PLANE_CLASSES);
+        }
+
+        @Test
+        @DisplayName("Governance plane must not import AEP server internals")
+        void governancePlaneHasNoAepServerDependency() {
+            ArchRule rule = noClasses()
+                    .that().resideInAPackage("com.ghatana.datacloud.governance..")
+                    .should().dependOnClassesThat()
+                    .resideInAnyPackage(
+                            "com.ghatana.aep.server..",
+                            "com.ghatana.aep.bootstrap..",
+                            "com.ghatana.aep.di..")
+                    .allowEmptyShould(true)
+                    .because(
+                            "The governance plane must not couple directly to AEP server internals. "
+                            + "Governance integration must go through the shared SPI or public Action Plane API.");
+            rule.check(GOVERNANCE_PLANE_CLASSES);
         }
 
         @Test

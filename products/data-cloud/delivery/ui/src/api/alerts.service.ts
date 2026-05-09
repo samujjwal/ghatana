@@ -22,11 +22,13 @@ import {
   isAiAlertGroupingFallbackEnabled,
   isAlertsSurfaceEnabled,
 } from "@/lib/feature-gates";
+import type { components } from "../contracts/generated/data-cloud";
 
 export { ALERTS_UNSUPPORTED_MESSAGE } from "@/lib/runtime-boundaries";
 
-export type AlertSeverity = "critical" | "warning" | "info";
-export type AlertStatus = "active" | "acknowledged" | "resolved";
+// DC-P1-006: Migrated to use generated types from OpenAPI spec
+export type AlertSeverity = components['schemas']['AlertSeverity'];
+export type AlertStatus = components['schemas']['AlertStatus'];
 
 export interface Alert {
   id: string;

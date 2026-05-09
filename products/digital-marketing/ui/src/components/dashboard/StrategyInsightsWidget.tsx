@@ -9,6 +9,7 @@
  */
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { DashboardWidgetCard } from '@/components/dashboard/DashboardWidgetCard';
 
 interface StrategyInsightsWidgetProps {
   workspaceId: string;
@@ -29,34 +30,38 @@ export function StrategyInsightsWidget({
 }: StrategyInsightsWidgetProps): React.ReactElement {
   if (isLoading) {
     return (
-      <div
-        data-testid="strategy-insights-widget"
-        className="bg-white border border-gray-200 rounded-lg p-4"
-      >
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Strategy Insights</h2>
-        <div className="animate-pulse h-20 bg-gray-100 rounded" />
-      </div>
+      <DashboardWidgetCard
+        testId="strategy-insights-widget"
+        title="Strategy Insights"
+        state="loading"
+      />
     );
   }
 
   if (isError) {
     return (
-      <div
-        data-testid="strategy-insights-widget"
-        className="bg-white border border-gray-200 rounded-lg p-4"
-      >
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Strategy Insights</h2>
-        <div className="text-sm text-red-600">Failed to load strategy data</div>
-      </div>
+      <DashboardWidgetCard
+        testId="strategy-insights-widget"
+        title="Strategy Insights"
+        state="error"
+        message="Failed to load strategy data"
+      />
     );
   }
 
   return (
-    <div
-      data-testid="strategy-insights-widget"
-      className="bg-white border border-gray-200 rounded-lg p-4"
+    <DashboardWidgetCard
+      testId="strategy-insights-widget"
+      title="Strategy Insights"
+      footer={(
+        <Link
+          to={`/workspaces/${workspaceId}/strategy`}
+          className="mt-3 block text-xs text-blue-600 hover:underline"
+        >
+          View strategies →
+        </Link>
+      )}
     >
-      <h2 className="text-sm font-semibold text-gray-700 mb-3">Strategy Insights</h2>
       <div className="space-y-2">
         <div className="flex justify-between items-center">
           <span className="text-xs text-gray-600">Active Strategies</span>
@@ -73,12 +78,6 @@ export function StrategyInsightsWidget({
           <p className="text-xs text-gray-900 line-clamp-2">{recentRecommendation}</p>
         </div>
       </div>
-      <Link
-        to={`/workspaces/${workspaceId}/strategy`}
-        className="mt-3 block text-xs text-blue-600 hover:underline"
-      >
-        View strategies →
-      </Link>
-    </div>
+    </DashboardWidgetCard>
   );
 }

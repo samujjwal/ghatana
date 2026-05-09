@@ -15,60 +15,60 @@ class FeatureServiceTest {
     private FeatureService featureService;
 
     @BeforeEach
-    void setUp() { 
-        featureService = FeatureService.builder() 
-                .enableByDefault(Feature.AEP_ADVANCED_PATTERNS) 
-                .enableByDefault(Feature.YAPPC_SCAFFOLDING) 
-                .disableByDefault(Feature.AEP_MACHINE_LEARNING) 
-                .build(); 
+    void setUp() {
+        featureService = FeatureService.builder()
+                .enableByDefault(Feature.PLATFORM_ADVANCED_OBSERVABILITY)
+                .enableByDefault(Feature.SECURITY_GATEWAY_RBAC)
+                .disableByDefault(Feature.SECURITY_GATEWAY_ABAC)
+                .build();
     }
 
     @Test
     @DisplayName("should return true for enabled features")
-    void shouldReturnTrueForEnabledFeatures() { 
-        assertThat(featureService.isEnabled(Feature.AEP_ADVANCED_PATTERNS)).isTrue(); 
-        assertThat(featureService.isEnabled(Feature.YAPPC_SCAFFOLDING)).isTrue(); 
+    void shouldReturnTrueForEnabledFeatures() {
+        assertThat(featureService.isEnabled(Feature.PLATFORM_ADVANCED_OBSERVABILITY)).isTrue();
+        assertThat(featureService.isEnabled(Feature.SECURITY_GATEWAY_RBAC)).isTrue();
     }
 
     @Test
     @DisplayName("should return false for disabled features")
-    void shouldReturnFalseForDisabledFeatures() { 
-        assertThat(featureService.isEnabled(Feature.AEP_MACHINE_LEARNING)).isFalse(); 
-        assertThat(featureService.isDisabled(Feature.AEP_MACHINE_LEARNING)).isTrue(); 
+    void shouldReturnFalseForDisabledFeatures() {
+        assertThat(featureService.isEnabled(Feature.SECURITY_GATEWAY_ABAC)).isFalse();
+        assertThat(featureService.isDisabled(Feature.SECURITY_GATEWAY_ABAC)).isTrue();
     }
 
     @Test
     @DisplayName("should return false for features not configured")
-    void shouldReturnFalseForUnconfiguredFeatures() { 
-        assertThat(featureService.isEnabled(Feature.DATA_CLOUD_KNOWLEDGE_GRAPH)).isFalse(); 
+    void shouldReturnFalseForUnconfiguredFeatures() {
+        assertThat(featureService.isEnabled(Feature.SECURITY_GATEWAY_ZERO_TRUST)).isFalse();
     }
 
     @Test
     @DisplayName("should execute action when feature is enabled")
-    void shouldExecuteActionWhenFeatureEnabled() { 
-        AtomicBoolean executed = new AtomicBoolean(false); 
+    void shouldExecuteActionWhenFeatureEnabled() {
+        AtomicBoolean executed = new AtomicBoolean(false);
 
-        featureService.ifEnabled(Feature.AEP_ADVANCED_PATTERNS, () -> executed.set(true)); 
+        featureService.ifEnabled(Feature.PLATFORM_ADVANCED_OBSERVABILITY, () -> executed.set(true));
 
-        assertThat(executed.get()).isTrue(); 
+        assertThat(executed.get()).isTrue();
     }
 
     @Test
     @DisplayName("should not execute action when feature is disabled")
-    void shouldNotExecuteActionWhenFeatureDisabled() { 
-        AtomicBoolean executed = new AtomicBoolean(false); 
+    void shouldNotExecuteActionWhenFeatureDisabled() {
+        AtomicBoolean executed = new AtomicBoolean(false);
 
-        featureService.ifEnabled(Feature.AEP_MACHINE_LEARNING, () -> executed.set(true)); 
+        featureService.ifEnabled(Feature.SECURITY_GATEWAY_ABAC, () -> executed.set(true));
 
-        assertThat(executed.get()).isFalse(); 
+        assertThat(executed.get()).isFalse();
     }
 
     @Test
     @DisplayName("should get value when feature is enabled")
-    void shouldGetValueWhenFeatureEnabled() { 
-        String result = featureService.getIfEnabled( 
-                Feature.AEP_ADVANCED_PATTERNS,
-                () -> "enabled", 
+    void shouldGetValueWhenFeatureEnabled() {
+        String result = featureService.getIfEnabled(
+                Feature.PLATFORM_ADVANCED_OBSERVABILITY,
+                () -> "enabled",
                 "disabled"
         );
 
@@ -77,10 +77,10 @@ class FeatureServiceTest {
 
     @Test
     @DisplayName("should get default value when feature is disabled")
-    void shouldGetDefaultValueWhenFeatureDisabled() { 
-        String result = featureService.getIfEnabled( 
-                Feature.AEP_MACHINE_LEARNING,
-                () -> "enabled", 
+    void shouldGetDefaultValueWhenFeatureDisabled() {
+        String result = featureService.getIfEnabled(
+                Feature.SECURITY_GATEWAY_ABAC,
+                () -> "enabled",
                 "disabled"
         );
 
@@ -89,33 +89,33 @@ class FeatureServiceTest {
 
     @Test
     @DisplayName("should return all enabled features")
-    void shouldReturnAllEnabledFeatures() { 
-        Set<Feature> enabled = featureService.getEnabledFeatures(); 
+    void shouldReturnAllEnabledFeatures() {
+        Set<Feature> enabled = featureService.getEnabledFeatures();
 
-        assertThat(enabled).contains(Feature.AEP_ADVANCED_PATTERNS, Feature.YAPPC_SCAFFOLDING); 
-        assertThat(enabled).doesNotContain(Feature.AEP_MACHINE_LEARNING); 
+        assertThat(enabled).contains(Feature.PLATFORM_ADVANCED_OBSERVABILITY, Feature.SECURITY_GATEWAY_RBAC);
+        assertThat(enabled).doesNotContain(Feature.SECURITY_GATEWAY_ABAC);
     }
 
     @Test
     @DisplayName("should allow programmatic enable/disable")
-    void shouldAllowProgrammaticEnableDisable() { 
-        assertThat(featureService.isEnabled(Feature.AEP_MACHINE_LEARNING)).isFalse(); 
+    void shouldAllowProgrammaticEnableDisable() {
+        assertThat(featureService.isEnabled(Feature.SECURITY_GATEWAY_ABAC)).isFalse();
 
-        featureService.enable(Feature.AEP_MACHINE_LEARNING); 
-        assertThat(featureService.isEnabled(Feature.AEP_MACHINE_LEARNING)).isTrue(); 
+        featureService.enable(Feature.SECURITY_GATEWAY_ABAC);
+        assertThat(featureService.isEnabled(Feature.SECURITY_GATEWAY_ABAC)).isTrue();
 
-        featureService.disable(Feature.AEP_MACHINE_LEARNING); 
-        assertThat(featureService.isEnabled(Feature.AEP_MACHINE_LEARNING)).isFalse(); 
+        featureService.disable(Feature.SECURITY_GATEWAY_ABAC);
+        assertThat(featureService.isEnabled(Feature.SECURITY_GATEWAY_ABAC)).isFalse();
     }
 
     @Test
     @DisplayName("should reset feature to default state")
-    void shouldResetFeatureToDefaultState() { 
-        featureService.enable(Feature.AEP_MACHINE_LEARNING); 
-        assertThat(featureService.isEnabled(Feature.AEP_MACHINE_LEARNING)).isTrue(); 
+    void shouldResetFeatureToDefaultState() {
+        featureService.enable(Feature.SECURITY_GATEWAY_ABAC);
+        assertThat(featureService.isEnabled(Feature.SECURITY_GATEWAY_ABAC)).isTrue();
 
-        featureService.reset(Feature.AEP_MACHINE_LEARNING); 
-        assertThat(featureService.isEnabled(Feature.AEP_MACHINE_LEARNING)).isFalse(); 
+        featureService.reset(Feature.SECURITY_GATEWAY_ABAC);
+        assertThat(featureService.isEnabled(Feature.SECURITY_GATEWAY_ABAC)).isFalse();
     }
 
     @Test

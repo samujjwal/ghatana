@@ -104,7 +104,8 @@ function setupGracefulShutdown(app: ReturnType<typeof Fastify>) {
 bootstrap().catch((err) => {
   // Use structured logging instead of console.error
   const logger = pino({ level: "error" });
-  logger.error({ error: err }, "Failed to start server");
+  logger.error({ error: err, stack: err?.stack }, "Failed to start server");
+  console.error("Full error details:", err);
   process.exit(1);
 });
 

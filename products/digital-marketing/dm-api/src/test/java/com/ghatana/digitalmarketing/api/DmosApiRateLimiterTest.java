@@ -216,7 +216,7 @@ class DmosApiRateLimiterTest extends EventloopTestBase {
 
             String body = response.getBody().getString(StandardCharsets.UTF_8);
             assertThat(body).contains("\"error\"");
-            assertThat(body).contains("TOO_MANY_REQUESTS");
+            assertThat(body).contains("RATE_LIMITED");
             assertThat(body).contains("\"message\"");
             assertThat(body).contains("Rate limit exceeded");
         }

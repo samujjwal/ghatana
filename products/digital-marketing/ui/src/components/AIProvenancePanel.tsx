@@ -12,6 +12,8 @@
 import React, { useState } from 'react';
 
 export interface AIProvenancePanelProps {
+  /** Provider/service name for the model invocation. */
+  provider?: string | null;
   /** Identifier / tag of the model that produced the artefact. */
   modelVersion: string;
   /** ISO-8601 timestamp when the artefact was generated. */
@@ -35,6 +37,7 @@ export interface AIProvenancePanelProps {
  * artefact (strategy, budget recommendation, etc.).
  */
 export function AIProvenancePanel({
+  provider,
   modelVersion,
   generatedAt,
   generatedBy,
@@ -111,6 +114,12 @@ export function AIProvenancePanel({
         >
           {/* Metadata row */}
           <div className="pt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div>
+              <span className="text-gray-500">Provider</span>
+              <p className="font-medium mt-0.5" data-testid="ai-provider">
+                {provider && provider.trim().length > 0 ? provider : 'Not provided'}
+              </p>
+            </div>
             <div>
               <span className="text-gray-500">Model</span>
               <p className="font-mono font-medium mt-0.5" data-testid="ai-model-version">

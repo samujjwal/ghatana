@@ -126,6 +126,21 @@ class DmosStrategyServletTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("POST /strategy returns 403 when viewer role attempts generate-strategy action")
+    void shouldReturn403ForViewerGenerateStrategyAction() {
+        HttpRequest request = HttpRequest.post("http://localhost/v1/workspaces/ws-1/strategy")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "viewer")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-1")
+            .withBody(GENERATE_BODY.getBytes(StandardCharsets.UTF_8))
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(403);
+    }
+
+    @Test
     @DisplayName("POST /strategy returns 400 on IllegalArgumentException from service")
     void shouldReturn400OnIllegalArgumentGenerate() {
         strategyService.throwOnGenerate = new IllegalArgumentException("invalid field");
@@ -290,6 +305,51 @@ class DmosStrategyServletTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("POST /strategy/:id/approve returns 403 when brand-manager lacks approve-strategy action")
+    void shouldReturn403ForBrandManagerApproveStrategyAction() {
+        HttpRequest request = HttpRequest.post("http://localhost/v1/workspaces/ws-1/strategy/strat-1/approve")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "brand-manager")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-3")
+            .withBody(new byte[0])
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("POST /strategy/:id/approve returns 200 when marketing-director approves strategy")
+    void shouldAllowMarketingDirectorApproveStrategyAction() {
+        HttpRequest request = HttpRequest.post("http://localhost/v1/workspaces/ws-1/strategy/strat-1/approve")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "marketing-director")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-3")
+            .withBody(new byte[0])
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("POST /strategy/:id/approve returns 200 when admin approves strategy")
+    void shouldAllowAdminApproveStrategyAction() {
+        HttpRequest request = HttpRequest.post("http://localhost/v1/workspaces/ws-1/strategy/strat-1/approve")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "admin")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-3")
+            .withBody(new byte[0])
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+    }
+
+    @Test
     @DisplayName("POST /strategy/:id/approve returns 404 on NoSuchElementException")
     void shouldReturn404OnApproveNotFound() {
         strategyService.throwOnApprove = new NoSuchElementException("not found");
@@ -343,6 +403,19 @@ class DmosStrategyServletTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/strategy")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
             .withHeader(HttpHeaders.of("X-Principal-ID"), "owner-1")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("GET /strategy returns 200 for viewer read-only access")
+    void shouldAllowViewerReadOnlyGetStrategy() {
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/strategy")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "viewer")
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));

@@ -92,12 +92,12 @@ public final class DmosCompetitorResearchServlet {
 
                 return researchService.runResearch(ctx, command)
                     .map(snap -> jsonResponse(200, ResearchResponse.from(snap)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("run competitor research", e));
+                    .then(r -> Promise.of(r), e -> mapServiceError("run competitor research", e, request));
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to run competitor research", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -109,30 +109,30 @@ public final class DmosCompetitorResearchServlet {
 
             return researchService.getLatestResearch(ctx)
                 .map(snap -> jsonResponse(200, ResearchResponse.from(snap)))
-                .then(r -> Promise.of(r), e -> mapServiceError("get competitor research", e));
+                .then(r -> Promise.of(r), e -> mapServiceError("get competitor research", e, request));
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to get competitor research", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
         }
     }
 
-    private Promise<HttpResponse> mapServiceError(String operation, Throwable error) {
+    private Promise<HttpResponse> mapServiceError(String operation, Throwable error, HttpRequest request) {
         if (error instanceof SecurityException) {
-            return Promise.of(errorResponse(403, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(403, error.getMessage(), request));
         }
         if (error instanceof NoSuchElementException) {
-            return Promise.of(errorResponse(404, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(404, error.getMessage(), request));
         }
         if (error instanceof IllegalArgumentException) {
-            return Promise.of(errorResponse(400, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, error.getMessage(), request));
         }
         if (error instanceof DmosFeatureDisabledException || error instanceof DmosConnectorDisabledException) {
-            return Promise.of(errorResponse(423, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(423, error.getMessage(), request));
         }
         LOG.error("[DMOS] Failed to {}", operation, error);
-        return Promise.of(errorResponse(500, "Internal error"));
+        return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
     }
 
     private DmOperationContext buildContext(HttpRequest request, String workspaceId, boolean requireIdempotencyKey) {
@@ -212,10 +212,6 @@ public final class DmosCompetitorResearchServlet {
         }
     }
 
-    private HttpResponse errorResponse(int code, String message) {
-        return jsonResponse(code, new ErrorBody(code, message));
-    }
-
     record RunResearchRequest(
         List<String> competitorDomains,
         String serviceArea,
@@ -275,6 +271,4 @@ public final class DmosCompetitorResearchServlet {
         }
     }
 
-    record ErrorBody(int code, String message) {
-    }
 }

@@ -13,9 +13,11 @@ import { useParams, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApprovalQueue } from '@/hooks/useApprovalQueue';
 import { ApprovalQueueTable } from '@/components/approval/ApprovalQueueTable';
-import { hasApproverRole } from '@/lib/role-utils';
+import { PageStateNotice } from '@/components/PageStateNotice';
 import { ApiError } from '@/lib/http-client';
+import { canPerformAction } from '@/lib/action-permissions';
 import type { ApprovalTargetType } from '@/types/approval';
+import { Select } from '@ghatana/design-system';
 
 const TARGET_TYPES: Array<ApprovalTargetType | 'ALL'> = [
   'ALL',
@@ -57,7 +59,7 @@ export function ApprovalQueuePage(): React.ReactElement {
     return <Navigate to="/login" replace />;
   }
 
-  const userHasApproverRole = hasApproverRole(roles);
+  const canDecideApprovals = canPerformAction(roles, 'approve') || canPerformAction(roles, 'reject');
 
   return (
     <section
@@ -71,14 +73,13 @@ export function ApprovalQueuePage(): React.ReactElement {
         </span>
       </div>
 
-      {!userHasApproverRole && (
-        <div
-          data-testid="permission-denied-banner"
-          role="alert"
-          className="mb-4 p-3 bg-yellow-50 border border-yellow-300 rounded text-sm text-yellow-800"
-        >
-          You do not have an approver role. You can view but not act on these
-          requests.
+      {!canDecideApprovals && (
+        <div className="mb-4">
+          <PageStateNotice
+            testId="permission-denied-banner"
+            tone="warning"
+            message="You can review approval requests, but your role does not allow approve or reject actions."
+          />
         </div>
       )}
 
@@ -88,38 +89,33 @@ export function ApprovalQueuePage(): React.ReactElement {
       >
         <label className="flex items-center gap-1 text-sm">
           Type:
-          <select
+          <Select
             data-testid="filter-type"
             value={actionFilter}
             onChange={(e) =>
               setActionFilter(e.target.value as ApprovalTargetType | 'ALL')
             }
-            className="border rounded px-2 py-1 text-sm"
-          >
-            {TARGET_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
+            options={TARGET_TYPES.map((t) => ({ value: t, label: t }))}
+            size="sm"
+          />
         </label>
 
       </div>
 
       {isLoading && (
-        <p data-testid="approval-queue-loading" className="text-sm text-gray-400">
-          Loading approvals…
-        </p>
+        <PageStateNotice
+          testId="approval-queue-loading"
+          tone="loading"
+          message="Loading approvals…"
+        />
       )}
 
       {isError && (
-        <p
-          data-testid="approval-queue-error"
-          role="alert"
-          className="text-sm text-red-600"
-        >
-          {error instanceof ApiError ? error.getUserMessage() : 'Failed to load approvals.'}
-        </p>
+        <PageStateNotice
+          testId="approval-queue-error"
+          tone="error"
+          message={error instanceof ApiError ? error.getUserMessage() : 'Failed to load approvals.'}
+        />
       )}
 
       {!isLoading && !isError && workspaceId !== undefined && (

@@ -60,14 +60,17 @@ function buildQueryClient(): QueryClient {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
 
-function renderPage(token: string | null = 'test-token'): void {
+function renderPage(
+  token: string | null = 'test-token',
+  roles: string[] = ['marketing-director'],
+): void {
   render(
     <QueryClientProvider client={buildQueryClient()}>
       <AuthProvider
         initialToken={token}
         initialWorkspaceId="ws-1"
         initialTenantId="tenant-1"
-        initialRoles={[]}
+        initialRoles={roles}
       >
         <MemoryRouter initialEntries={['/workspaces/ws-1/budget']}>
           <Routes>
@@ -181,5 +184,12 @@ describe('BudgetPage', () => {
     });
     renderPage();
     expect(screen.getByTestId('approve-budget-btn')).toBeInTheDocument();
+  });
+
+  it('disables mutation actions for viewer role', () => {
+    renderPage('test-token', ['viewer']);
+    expect(screen.getByTestId('generate-budget-btn')).toBeDisabled();
+    expect(screen.getByTestId('submit-budget-btn')).toBeDisabled();
+    expect(screen.getByTestId('budget-action-permission-banner')).toBeInTheDocument();
   });
 });

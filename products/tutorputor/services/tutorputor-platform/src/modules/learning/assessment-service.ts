@@ -262,6 +262,74 @@ export function createAssessmentService(
       return mapAttempt(updated);
     },
 
+    async getAssessmentResults({ tenantId, assessmentId, userId }) {
+      const assessment = await tenantAccessValidator.validateEntityAccess(
+        "Assessment",
+        (args) =>
+          prisma.assessment.findFirst({
+            ...args,
+            include: { items: true, objectives: true },
+          }),
+        assessmentId,
+        { tenantId },
+      );
+
+      // Fetch all attempts for this assessment by this user
+      const attempts = await prisma.assessmentAttempt.findMany({
+        where: {
+          assessmentId,
+          userId,
+          tenantId,
+          status: "GRADED",
+        },
+        orderBy: { submittedAt: "desc" },
+        include: {
+          assessment: {
+            include: { items: true, objectives: true },
+          },
+        },
+      });
+
+      if (attempts.length === 0) {
+        return {
+          assessmentId,
+          assessmentTitle: assessment.title,
+          attempts: [],
+          summary: {
+            totalAttempts: 0,
+            averageScore: 0,
+            bestScore: 0,
+            latestScore: null,
+          },
+        };
+      }
+
+      const scores = attempts.map((a) => a.scorePercent ?? 0);
+      const averageScore = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+      const bestScore = Math.max(...scores);
+      const latestScore = attempts[0].scorePercent;
+
+      return {
+        assessmentId,
+        assessmentTitle: assessment.title,
+        attempts: attempts.map((attempt) => ({
+          attemptId: attempt.id,
+          scorePercent: attempt.scorePercent,
+          submittedAt: attempt.submittedAt,
+          gradedAt: attempt.gradedAt,
+          feedback: attempt.feedback,
+          averageConfidence: attempt.averageConfidence,
+          confidenceBreakdown: attempt.confidenceBreakdown,
+        })),
+        summary: {
+          totalAttempts: attempts.length,
+          averageScore,
+          bestScore,
+          latestScore,
+        },
+      };
+    },
+
     async checkHealth() {
       await prisma.$queryRaw`SELECT 1`;
       return true;

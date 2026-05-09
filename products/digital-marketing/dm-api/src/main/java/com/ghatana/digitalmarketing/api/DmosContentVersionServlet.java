@@ -115,7 +115,7 @@ public final class DmosContentVersionServlet {
                 try {
                     itemType = ContentItemType.valueOf(body.itemType());
                 } catch (IllegalArgumentException | NullPointerException ex) {
-                    return Promise.of(errorResponse(400, "Invalid or missing itemType: " + body.itemType()));
+                    return Promise.of(DmosApiErrorResponses.error(400, "Invalid or missing itemType: " + body.itemType(), request));
                 }
                 ContentItemService.CreateContentItemCommand command =
                     new ContentItemService.CreateContentItemCommand(
@@ -125,12 +125,12 @@ public final class DmosContentVersionServlet {
                     );
                 return contentItemService.createItem(ctx, command)
                     .map(item -> jsonResponse(201, ContentItemResponse.from(item)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("create content item", e));
+                    .then(r -> Promise.of(r), e -> mapServiceError("create content item", e, request));
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to create content item", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -157,12 +157,12 @@ public final class DmosContentVersionServlet {
                     );
                 return contentItemService.createVersion(ctx, command)
                     .map(version -> jsonResponse(201, ContentVersionResponse.from(version)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("create content version", e));
+                    .then(r -> Promise.of(r), e -> mapServiceError("create content version", e, request));
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to create content version", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -174,12 +174,12 @@ public final class DmosContentVersionServlet {
             DmOperationContext ctx = buildContext(request, workspaceId, false);
             return contentItemService.getLatestApproved(ctx, itemId)
                 .map(version -> jsonResponse(200, ContentVersionResponse.from(version)))
-                .then(r -> Promise.of(r), e -> mapServiceError("get latest approved version", e));
+                .then(r -> Promise.of(r), e -> mapServiceError("get latest approved version", e, request));
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to get latest approved version", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
         }
     }
 
@@ -191,12 +191,12 @@ public final class DmosContentVersionServlet {
                 DmOperationContext ctx = buildContext(request, workspaceId, true);
                 return contentItemService.approveVersion(ctx, versionId)
                     .map(version -> jsonResponse(200, ContentVersionResponse.from(version)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("approve content version", e));
+                    .then(r -> Promise.of(r), e -> mapServiceError("approve content version", e, request));
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to approve content version", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -210,35 +210,35 @@ public final class DmosContentVersionServlet {
                 .map(versions -> jsonResponse(200, versions.stream()
                     .map(ContentVersionResponse::from)
                     .collect(Collectors.toList())))
-                .then(r -> Promise.of(r), e -> mapServiceError("get version history", e));
+                .then(r -> Promise.of(r), e -> mapServiceError("get version history", e, request));
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to get version history", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
         }
     }
 
     // ---- error mapping ----
 
-    private Promise<HttpResponse> mapServiceError(String operation, Throwable error) {
+    private Promise<HttpResponse> mapServiceError(String operation, Throwable error, HttpRequest request) {
         if (error instanceof SecurityException) {
-            return Promise.of(errorResponse(403, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(403, error.getMessage(), request));
         }
         if (error instanceof NoSuchElementException) {
-            return Promise.of(errorResponse(404, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(404, error.getMessage(), request));
         }
         if (error instanceof IllegalArgumentException) {
-            return Promise.of(errorResponse(400, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, error.getMessage(), request));
         }
         if (error instanceof IllegalStateException) {
-            return Promise.of(errorResponse(409, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(409, error.getMessage(), request));
         }
         if (error instanceof DmosFeatureDisabledException || error instanceof DmosConnectorDisabledException) {
-            return Promise.of(errorResponse(423, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(423, error.getMessage(), request));
         }
         LOG.error("[DMOS] Failed to {}", operation, error);
-        return Promise.of(errorResponse(500, "Internal error"));
+        return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
     }
 
     // ---- context builder ----
@@ -316,17 +316,6 @@ public final class DmosContentVersionServlet {
         }
     }
 
-    private HttpResponse errorResponse(int code, String message) {
-        try {
-            return HttpResponse.ofCode(code)
-                .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_JSON)
-                .withBody(MAPPER.writeValueAsBytes(new ErrorResponse(code, message)))
-                .build();
-        } catch (Exception e) {
-            return HttpResponse.ofCode(code).build();
-        }
-    }
-
     // ---- request / response DTOs ----
 
     private record CreateContentItemRequest(
@@ -390,5 +379,4 @@ public final class DmosContentVersionServlet {
         }
     }
 
-    private record ErrorResponse(int code, String message) {}
 }

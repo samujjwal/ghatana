@@ -132,8 +132,6 @@ export function useLaunchCampaign(
     launch: mutation.mutateAsync,
     // P1-002: Only the specific row's ID is checked — do NOT include mutation.isPending
     // which would disable every row while any single mutation is in flight.
-    // P1-002: Only the specific row's ID is checked — do NOT include mutation.isPending
-    // which would disable every row while any single mutation is in flight.
     isPendingFor: useCallback((campaignId: string) => pendingIds.has(campaignId), [pendingIds]),
     isError: mutation.isError,
     error: mutation.error ?? null,

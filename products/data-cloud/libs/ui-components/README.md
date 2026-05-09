@@ -14,6 +14,12 @@ Separates reusable presentational components from the `@data-cloud/ui` applicati
 - Components can be reused across Data Cloud features without pulling in the full application
 - Boundaries between presentation layer and application layer are explicit
 
+## DC-UI-003 Note
+
+DC-UI-003 requires removing local duplicate buttons/cards/badges and using `@data-cloud/ui-components` consistently.
+A comprehensive audit of the UI codebase is required to identify and replace local implementations with shared components.
+Import/lint scan tests are required to enforce no duplicated presentational primitives.
+
 ## Contents
 
 ### `@data-cloud/ui-components/common`

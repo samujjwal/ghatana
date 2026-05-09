@@ -30,8 +30,12 @@ import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
 import com.ghatana.datacloud.launcher.settings.JdbcSettingsStore;
 import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
+import com.ghatana.datacloud.spi.TransactionManager;
+import com.ghatana.datacloud.spi.WriteIdempotencyStore;
 import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.storage.H2EntityWriteIdempotencyStore;
+import com.ghatana.datacloud.storage.H2WriteIdempotencyStore;
+import com.ghatana.datacloud.transaction.DataCloudTransactionManager;
 import com.ghatana.datacloud.client.autonomy.AutonomyController;
 import com.ghatana.datacloud.client.autonomy.DefaultAutonomyController;
 import com.ghatana.platform.observability.MetricsCollector;
@@ -193,8 +197,14 @@ public final class DataCloudHttpLauncherBootstrap {
                     httpServer.withSettingsStore(new JdbcSettingsStore(
                         databaseDataSource,
                         new ObjectMapper().findAndRegisterModules()));
+                    // DC-BE-002: Entity-specific idempotency store (for backward compatibility)
                     httpServer.withIdempotencyStore(
                         new H2EntityWriteIdempotencyStore(databaseDataSource, Duration.ofHours(24)));
+                    // DC-BE-002: Generic idempotency store for all mutating routes
+                    httpServer.withGenericIdempotencyStore(
+                        new H2WriteIdempotencyStore(databaseDataSource, Duration.ofHours(24)));
+                    // DC-BE-003: Transaction manager for atomic multi-step writes
+                    httpServer.withTransactionManager(new DataCloudTransactionManager());
                 }
 
                 if (eventLogStore != null) {

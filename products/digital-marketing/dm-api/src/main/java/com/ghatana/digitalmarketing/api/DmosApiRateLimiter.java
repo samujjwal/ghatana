@@ -8,7 +8,6 @@ import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -69,8 +68,7 @@ public final class DmosApiRateLimiter {
     /**
      * Wraps {@code delegate} with rate-limiting and request-duration telemetry.
      *
-     * <p>The 429 response body is a JSON error envelope consistent with other DMOS error
-     * responses: {@code {"error":"TOO_MANY_REQUESTS","message":"Rate limit exceeded. Retry after 60 seconds."}}.</p>
+    * <p>The 429 response body uses the canonical DMOS error envelope.</p>
      *
      * @param delegate  the inner servlet
      * @param metrics   business KPI collector — use {@link DmosMetricsCollector#noop()} in tests
@@ -163,13 +161,17 @@ public final class DmosApiRateLimiter {
         return request -> inner.serve(request).then((HttpResponse response) -> {
             if (response.getCode() == 429) {
                 long windowSeconds = getConfiguredWindowSeconds();
-                String body = "{\"error\":\"TOO_MANY_REQUESTS\",\"message\":"
-                    + "\"Rate limit exceeded. Retry after " + windowSeconds + " seconds.\"}";
+                HttpResponse error = DmosApiErrorResponses.error(
+                    429,
+                    "Rate limit exceeded. Retry after " + windowSeconds + " seconds.",
+                    request
+                );
                 return Promise.of(
                     HttpResponse.ofCode(429)
                         .withHeader(HttpHeaders.of("Content-Type"), "application/json")
                         .withHeader(HttpHeaders.of("Retry-After"), String.valueOf(windowSeconds))
-                        .withBody(body.getBytes(StandardCharsets.UTF_8))
+                        .withHeader(HttpHeaders.of("X-Correlation-ID"), error.getHeader(HttpHeaders.of("X-Correlation-ID")))
+                        .withBody(error.getBody())
                         .build()
                 );
             }

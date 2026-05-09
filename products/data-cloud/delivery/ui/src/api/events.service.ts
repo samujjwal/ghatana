@@ -16,12 +16,14 @@ import {
   type Event as BackendEventEntry,
   type EventQueryResponse as BackendEventQueryResponse,
 } from '../contracts/schemas';
+import type { components } from '../contracts/generated/data-cloud';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type EventTier = 'HOT' | 'WARM' | 'COOL' | 'COLD';
+// DC-P1-006: Migrated to use generated type from OpenAPI spec
+export type EventTier = components['schemas']['EventTier'];
 
 export interface EventEntry {
   id: string;

@@ -63,7 +63,7 @@ public final class DmosRouteEntitlementServlet {
                 card("workflow-health", "Workflow health", "/workspaces/:workspaceId/dashboard")
             )
         );
-        return jsonResponse(200, entitlement);
+        return jsonResponse(request, 200, entitlement);
     }
 
     private static List<Map<String, Object>> routesFor(String role) {
@@ -123,17 +123,14 @@ public final class DmosRouteEntitlementServlet {
         return value == null || value.isBlank() ? defaultValue : value.trim();
     }
 
-    private static Promise<HttpResponse> jsonResponse(int statusCode, Object body) {
+    private Promise<HttpResponse> jsonResponse(HttpRequest request, int statusCode, Object body) {
         try {
             return Promise.of(HttpResponse.ofCode(statusCode)
                 .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_JSON)
                 .withJson(MAPPER.writeValueAsString(body))
                 .build());
         } catch (Exception e) {
-            return Promise.of(HttpResponse.ofCode(500)
-                .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_JSON)
-                .withJson("{\"error\":\"SERIALIZATION_ERROR\"}")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(500, "Failed to serialize route entitlements", request));
         }
     }
 

@@ -26,9 +26,11 @@ import {
   PLUGIN_UNINSTALL_BOUNDARY_MESSAGE,
   PLUGIN_UPLOAD_BOUNDARY_MESSAGE,
 } from '../lib/runtime-boundaries';
+import type { components } from '../contracts/generated/data-cloud';
 
-export type PluginStatus = 'active' | 'inactive' | 'error' | 'installing' | 'uninstalling';
-export type PluginCategory = 'connector' | 'transformer' | 'quality' | 'governance' | 'visualization' | 'integration' | 'ai';
+// DC-P1-006: Migrated to use generated types from OpenAPI spec
+export type PluginStatus = components['schemas']['PluginStatus'];
+export type PluginCategory = components['schemas']['PluginCategory'];
 
 export interface PluginMetadata {
   id: string;

@@ -103,6 +103,20 @@ while IFS= read -r pkg; do
 done < <(find "$REPO_ROOT/products" "$REPO_ROOT/platform" -name "package.json" -not -path "*/node_modules/*" 2>/dev/null || true)
 
 echo ""
+
+# ---------------------------------------------------------------------------
+# Run PlatformDataCloudSemanticBoundaryTest (DC-BND-003)
+# ---------------------------------------------------------------------------
+echo "Running PlatformDataCloudSemanticBoundaryTest..."
+cd "$REPO_ROOT"
+if ./gradlew :platform:java:core:test --tests "*PlatformDataCloudSemanticBoundaryTest" 2>&1; then
+  echo "PASSED: PlatformDataCloudSemanticBoundaryTest"
+else
+  echo "FAILED: PlatformDataCloudSemanticBoundaryTest"
+  violations=$((violations + 1))
+fi
+
+echo ""
 if [ "$violations" -gt 0 ]; then
   echo "FAILED: $violations governance violation(s) found."
   echo "See docs/GOVERNANCE_FREEZE_RULES.md for details."

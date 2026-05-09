@@ -45,6 +45,12 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  *       JavaDoc reference to {@code DataCloudAgentRegistry} — doc-only violation,
  *       no compile-time dependency on product classes.
  *   </li>
+ *   <li>{@code platform/java/core/src/main/java/com/ghatana/platform/core/feature/Feature.java}:
+ *       contained {@code DATA_CLOUD_KNOWLEDGE_GRAPH}, {@code AEP_ADVANCED_PATTERNS},
+ *       {@code AEP_MACHINE_LEARNING}, and {@code YAPPC_SCAFFOLDING} enum constants.
+ *       These product-specific feature flags have been removed (DC-BND-003 remediation).
+ *       Product-specific features must be defined in the product layer.
+ *   </li>
  * </ul>
  *
  * <h2>Rules enforced</h2>
@@ -53,7 +59,13 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  *   <li>Platform observability classes must not depend on product metric constants.</li>
  *   <li>Platform agent-core classes must not depend on product agent registry classes.</li>
  *   <li>Platform cache classes must not depend on product cache service classes.</li>
+ *   <li>Platform feature flags must not contain product-specific constants.</li>
  * </ol>
+ *
+ * <h2>TypeScript Platform Modules</h2>
+ * <p>TypeScript platform modules are audited separately via ESLint rules
+ * in {@code @ghatana/eslint-plugin} (rule: {@code no-platform-to-product-imports}).
+ * Doc-only references in JSDoc examples are acceptable and documented.</p>
  *
  * @see ArchitectureGuardrailsTest broader platform guardrails
  * @doc.type class
@@ -214,6 +226,29 @@ class PlatformDataCloudSemanticBoundaryTest {
                             + "product-specific agent registry implementations. "
                             + "Products extend the platform registry via the SPI. See DC-P1-297.");
             rule.check(AGENT_CORE_CLASSES);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 4. Feature enum boundary (DC-BND-003)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("Feature enum boundary")
+    class FeatureEnumBoundary {
+
+        @Test
+        @DisplayName("Feature enum must not contain product-specific constants")
+        void featureEnumMustNotContainProductSpecificConstants() {
+            ArchRule rule = noClasses()
+                    .that().haveSimpleName("Feature")
+                    .and().resideInAPackage("com.ghatana.platform.core.feature")
+                    .should().haveNoFieldsThat()
+                    .match(".*(AEP|DATA_CLOUD|YAPPC|FLASHIT|TUTORPUTOR|VIRTUAL_ORG|SOFTWARE_ORG).*")
+                    .because("Feature enum in platform module must not contain product-specific constants. "
+                            + "Product-specific features must be defined in the product layer. "
+                            + "See DC-BND-003 remediation.");
+            rule.check(PLATFORM_CLASSES);
         }
     }
 }

@@ -6,7 +6,7 @@
  */
 
 import { Worker, Job, Queue } from "bullmq";
-import { PrismaClient } from "@tutorputor/core/db";
+import { createPrismaClient, type PrismaClient } from "@tutorputor/core/db";
 import Redis from "ioredis";
 import { Logger } from "pino";
 import { RealContentGenerationClient } from "./grpc/RealContentGenerationClient";
@@ -96,7 +96,7 @@ export class ContentWorkerService {
 
   constructor(config: ContentWorkerConfig) {
     this.logger = config.logger;
-    this.prisma = config.prisma || new PrismaClient();
+    this.prisma = config.prisma || createPrismaClient();
     const featureFlags = config.featureFlags || loadFeatureFlags();
 
     this.grpcClient = new RealContentGenerationClient({

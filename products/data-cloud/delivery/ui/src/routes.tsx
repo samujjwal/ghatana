@@ -14,7 +14,7 @@
 
 import React from 'react';
 import type { RouteObject } from 'react-router';
-import { Navigate, useNavigate } from 'react-router';
+import { Navigate, useNavigate, Outlet } from 'react-router';
 import { DefaultLayout } from './layouts/DefaultLayout';
 import { LoadingState } from './components/common/LoadingState';
 import { RouteErrorBoundary } from './components/common/RouteErrorBoundary';
@@ -446,12 +446,13 @@ export const routes: RouteObject[] = [
       },
 
       // Plugins — DC-P1-003: gated on runtime truth
+      // DC-P1-009: Fixed duplicate rendering by using Outlet pattern
       {
         path: 'plugins',
         element: (
           <RoleProtectedRoute routePath="/plugins">
             <RuntimeCapabilityRouteGate aliases={['plugin-management', 'plugins', 'extensions']} fallback={withSuspense(() => <DisabledSurfacePage surfaceName="Plugins" surfaceDescription="The Plugins surface provides extension and integration management for your Data Cloud tenant." />)}>
-              <React.Suspense fallback={<PageLoader />}><PluginsPage /></React.Suspense>
+              <React.Suspense fallback={<PageLoader />}><Outlet /></React.Suspense>
             </RuntimeCapabilityRouteGate>
           </RoleProtectedRoute>
         ),
@@ -485,6 +486,28 @@ export const routes: RouteObject[] = [
 
       // =========================================
       // COMPATIBILITY ROUTES (Deep-link Continuity)
+      // =========================================
+
+      // =========================================
+      // COMPATIBILITY ROUTES (DC-P1-008)
+      // Classification: redirect/remove/keep
+      //
+      // KEEP (Permanent redirects for backward compatibility):
+      // - dashboard, hub -> / (home)
+      // - collections/* -> /data/* (unified Data Explorer)
+      // - datasets -> /data (unified Data Explorer)
+      // - workflows/* -> /pipelines/* (unified Pipeline Center)
+      // - sql -> /query (canonical naming)
+      // - governance -> /trust (Trust Center rebrand)
+      // - brain, dashboards, cost -> /insights (unified Insights)
+      //
+      // REDIRECT (View-specific redirects within Data Explorer):
+      // - lineage -> /data?view=lineage (lineage view mode)
+      // - quality -> /data?view=quality (quality view mode)
+      //
+      // DECISION: All compatibility routes are kept as permanent redirects to support
+      // existing bookmarks, documentation, and user workflows. These should remain
+      // indefinitely as they provide zero-cost backward compatibility.
       // =========================================
 
       { path: 'dashboard', element: <RoleProtectedRoute routePath="/">{withSuspense(IntelligentHub)}</RoleProtectedRoute> },

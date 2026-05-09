@@ -105,15 +105,12 @@ public final class DmosAgencyDeliverableServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_deliverable.create.error", Map.of());
                     LOG.error("Failed to create agency deliverable", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_deliverable.create.error", Map.of());
             LOG.error("Failed to parse create request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -135,15 +132,12 @@ public final class DmosAgencyDeliverableServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_deliverable.start.error", Map.of());
                     LOG.error("Failed to start agency deliverable", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_deliverable.start.error", Map.of());
             LOG.error("Failed to process start request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -165,15 +159,12 @@ public final class DmosAgencyDeliverableServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_deliverable.submit.error", Map.of());
                     LOG.error("Failed to submit agency deliverable", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_deliverable.submit.error", Map.of());
             LOG.error("Failed to process submit request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -195,15 +186,12 @@ public final class DmosAgencyDeliverableServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_deliverable.complete.error", Map.of());
                     LOG.error("Failed to complete agency deliverable", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_deliverable.complete.error", Map.of());
             LOG.error("Failed to process complete request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -227,15 +215,12 @@ public final class DmosAgencyDeliverableServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_deliverable.reject.error", Map.of());
                     LOG.error("Failed to reject agency deliverable", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_deliverable.reject.error", Map.of());
             LOG.error("Failed to parse reject request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -249,10 +234,7 @@ public final class DmosAgencyDeliverableServlet {
             return agencyDeliverableService.findById(ctx, deliverableId)
                 .map(deliverableOpt -> {
                     if (deliverableOpt.isEmpty()) {
-                        return HttpResponse.ofCode(404)
-                            .withBody("{\"error\":\"Deliverable not found\"}")
-                            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                            .build();
+                        return DmosApiErrorResponses.error(404, "Deliverable not found", ctx.getCorrelationId().getValue());
                     }
                     return HttpResponse.ofCode(200)
                         .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -262,15 +244,12 @@ public final class DmosAgencyDeliverableServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_deliverable.get.error", Map.of());
                     LOG.error("Failed to get agency deliverable", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_deliverable.get.error", Map.of());
             LOG.error("Failed to process get request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -291,29 +270,20 @@ public final class DmosAgencyDeliverableServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_deliverable.list.error", Map.of());
                     LOG.error("Failed to list agency deliverables", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_deliverable.list.error", Map.of());
             LOG.error("Failed to process list request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
-    private HttpResponse mapServiceError(Exception e) {
+    private HttpResponse mapServiceError(Exception e, DmOperationContext ctx) {
         if (e instanceof IllegalArgumentException) {
-            return HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"" + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build();
+            return DmosApiErrorResponses.error(400, e.getMessage(), ctx.getCorrelationId().getValue());
         }
-        return HttpResponse.ofCode(500)
-            .withBody("{\"error\":\"Internal server error\"}")
-            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-            .build();
+        return DmosApiErrorResponses.error(500, "Internal server error", ctx.getCorrelationId().getValue());
     }
 
     private DeliverableDto toDto(AgencyDeliverable deliverable) {

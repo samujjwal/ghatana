@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
+import type { PrismaClient } from "@tutorputor/core/db";
 import { authModule } from "../modules/auth/index.js";
 import { userModule } from "../modules/user/index.js";
 import { learningModule } from "../modules/learning/index.js";
@@ -21,6 +22,7 @@ import { pluginMarketplaceModule } from "../modules/plugin-marketplace/index.js"
 interface BusinessModulesOptions {
   startLearnerProfileGrpcServer?: boolean;
   learnerProfileGrpcAddress?: string;
+  prisma?: PrismaClient;
 }
 
 /**
@@ -36,6 +38,11 @@ export const setupBusinessModules: FastifyPluginAsync<BusinessModulesOptions> = 
   app,
   options,
 ) => {
+  // If prisma is provided in options, decorate the app with it
+  if (options.prisma && !app.prisma) {
+    app.decorate('prisma', options.prisma);
+  }
+
   // Register auth module (SSO, token refresh, logout)
   await app.register(authModule, { prefix: "/api/v1/auth" });
 

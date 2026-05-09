@@ -24,12 +24,12 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 7.7.0
- * Query Engine version: 75cbdc1eb7150937890ad5465d861175c6624711
+ * Prisma Client JS version: 7.8.0
+ * Query Engine version: 3c6e192761c0362d496ed980de936e2f3cebcd3a
  */
 Prisma.prismaVersion = {
-  client: "7.7.0",
-  engine: "75cbdc1eb7150937890ad5465d861175c6624711"
+  client: "7.8.0",
+  engine: "3c6e192761c0362d496ed980de936e2f3cebcd3a"
 }
 
 Prisma.PrismaClientKnownRequestError = () => {
@@ -2443,6 +2443,18 @@ exports.Prisma.EmbeddingVectorScalarFieldEnum = {
   jobId: 'jobId'
 };
 
+exports.Prisma.EvidenceEmbeddingScalarFieldEnum = {
+  id: 'id',
+  evidenceId: 'evidenceId',
+  claimRef: 'claimRef',
+  text: 'text',
+  vector: 'vector',
+  model: 'model',
+  dimensions: 'dimensions',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.RecommendationEdgeScalarFieldEnum = {
   id: 'id',
   sourceAssetId: 'sourceAssetId',
@@ -2672,6 +2684,156 @@ exports.Prisma.PayoutNotificationScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.OfflineSyncQueueScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  deviceId: 'deviceId',
+  operationType: 'operationType',
+  operationStatus: 'operationStatus',
+  resourceType: 'resourceType',
+  resourceId: 'resourceId',
+  resourceVersion: 'resourceVersion',
+  payload: 'payload',
+  serverVersion: 'serverVersion',
+  clientVersion: 'clientVersion',
+  conflictDetected: 'conflictDetected',
+  conflictStrategy: 'conflictStrategy',
+  conflictReason: 'conflictReason',
+  resolvedAt: 'resolvedAt',
+  resolvedBy: 'resolvedBy',
+  attemptCount: 'attemptCount',
+  lastAttemptAt: 'lastAttemptAt',
+  nextAttemptAt: 'nextAttemptAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  completedAt: 'completedAt',
+  errorMessage: 'errorMessage'
+};
+
+exports.Prisma.SyncConflictLogScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  deviceId: 'deviceId',
+  syncQueueId: 'syncQueueId',
+  resourceType: 'resourceType',
+  resourceId: 'resourceId',
+  conflictType: 'conflictType',
+  conflictReason: 'conflictReason',
+  clientPayload: 'clientPayload',
+  serverPayload: 'serverPayload',
+  mergedPayload: 'mergedPayload',
+  resolutionStrategy: 'resolutionStrategy',
+  resolvedBy: 'resolvedBy',
+  resolvedAt: 'resolvedAt',
+  resolutionNotes: 'resolutionNotes',
+  dataLossRisk: 'dataLossRisk',
+  userNotified: 'userNotified',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.UserAgeVerificationScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  birthDate: 'birthDate',
+  ageGroup: 'ageGroup',
+  verifiedAt: 'verifiedAt',
+  verifiedMethod: 'verifiedMethod',
+  verifiedBy: 'verifiedBy',
+  parentalConsentGiven: 'parentalConsentGiven',
+  parentalConsentAt: 'parentalConsentAt',
+  parentalConsentExpiresAt: 'parentalConsentExpiresAt',
+  parentId: 'parentId',
+  restrictedFeatures: 'restrictedFeatures',
+  requiresSupervision: 'requiresSupervision',
+  dataRetentionLimited: 'dataRetentionLimited',
+  marketingOptOut: 'marketingOptOut',
+  metadata: 'metadata',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ContentModerationQueueScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  contentType: 'contentType',
+  contentId: 'contentId',
+  contentText: 'contentText',
+  contentMetadata: 'contentMetadata',
+  status: 'status',
+  severity: 'severity',
+  action: 'action',
+  confidenceScore: 'confidenceScore',
+  flaggedReasons: 'flaggedReasons',
+  detectedPatterns: 'detectedPatterns',
+  reviewedBy: 'reviewedBy',
+  reviewedAt: 'reviewedAt',
+  reviewNotes: 'reviewNotes',
+  overrideReason: 'overrideReason',
+  appealedBy: 'appealedBy',
+  appealedAt: 'appealedAt',
+  appealReason: 'appealReason',
+  appealStatus: 'appealStatus',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ChildSafetyPolicyScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  name: 'name',
+  description: 'description',
+  ageGroup: 'ageGroup',
+  appliesTo: 'appliesTo',
+  requireParentalConsent: 'requireParentalConsent',
+  requireAdultSupervision: 'requireAdultSupervision',
+  limitCommunicationHours: 'limitCommunicationHours',
+  allowedHoursStart: 'allowedHoursStart',
+  allowedHoursEnd: 'allowedHoursEnd',
+  blockProfanity: 'blockProfanity',
+  blockPersonalInfoSharing: 'blockPersonalInfoSharing',
+  blockExternalLinks: 'blockExternalLinks',
+  blockMediaSharing: 'blockMediaSharing',
+  autoModerateChat: 'autoModerateChat',
+  autoModerateForums: 'autoModerateForums',
+  requireModeratorApproval: 'requireModeratorApproval',
+  enableActivityLogging: 'enableActivityLogging',
+  alertOnViolation: 'alertOnViolation',
+  violationAlertRecipients: 'violationAlertRecipients',
+  isActive: 'isActive',
+  effectiveAt: 'effectiveAt',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.SafetyViolationLogScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  policyId: 'policyId',
+  violationType: 'violationType',
+  severity: 'severity',
+  contentType: 'contentType',
+  contentId: 'contentId',
+  contentText: 'contentText',
+  contextMetadata: 'contextMetadata',
+  actionTaken: 'actionTaken',
+  actionTakenBy: 'actionTakenBy',
+  actionTakenAt: 'actionTakenAt',
+  parentNotified: 'parentNotified',
+  parentNotifiedAt: 'parentNotifiedAt',
+  parentId: 'parentId',
+  resolved: 'resolved',
+  resolvedAt: 'resolvedAt',
+  resolvedBy: 'resolvedBy',
+  resolutionNotes: 'resolutionNotes',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -2749,6 +2911,7 @@ exports.AssessmentAttemptStatus = exports.$Enums.AssessmentAttemptStatus = {
   IN_PROGRESS: 'IN_PROGRESS',
   SUBMITTED: 'SUBMITTED',
   GRADED: 'GRADED',
+  PENDING_HUMAN_REVIEW: 'PENDING_HUMAN_REVIEW',
   EXPIRED: 'EXPIRED'
 };
 
@@ -3436,6 +3599,57 @@ exports.PayoutNotificationStatus = exports.$Enums.PayoutNotificationStatus = {
   FAILED: 'FAILED'
 };
 
+exports.SyncOperationType = exports.$Enums.SyncOperationType = {
+  CREATE: 'CREATE',
+  UPDATE: 'UPDATE',
+  DELETE: 'DELETE'
+};
+
+exports.SyncOperationStatus = exports.$Enums.SyncOperationStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  CONFLICT: 'CONFLICT'
+};
+
+exports.ConflictResolutionStrategy = exports.$Enums.ConflictResolutionStrategy = {
+  SERVER_WINS: 'SERVER_WINS',
+  CLIENT_WINS: 'CLIENT_WINS',
+  MANUAL: 'MANUAL',
+  MERGE: 'MERGE'
+};
+
+exports.AgeGroup = exports.$Enums.AgeGroup = {
+  UNDER_13: 'UNDER_13',
+  AGE_13_17: 'AGE_13_17',
+  AGE_18_PLUS: 'AGE_18_PLUS',
+  ADULT_ONLY: 'ADULT_ONLY'
+};
+
+exports.ContentModerationStatus = exports.$Enums.ContentModerationStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  FLAGGED: 'FLAGGED',
+  AUTO_REJECTED: 'AUTO_REJECTED'
+};
+
+exports.ModerationSeverity = exports.$Enums.ModerationSeverity = {
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH',
+  CRITICAL: 'CRITICAL'
+};
+
+exports.ModerationAction = exports.$Enums.ModerationAction = {
+  ALLOW: 'ALLOW',
+  BLOCK: 'BLOCK',
+  FLAG_FOR_REVIEW: 'FLAG_FOR_REVIEW',
+  AUTO_REJECT: 'AUTO_REJECT',
+  REQUIRE_PARENTAL_CONSENT: 'REQUIRE_PARENTAL_CONSENT'
+};
+
 exports.Prisma.ModelName = {
   Module: 'Module',
   ModuleTag: 'ModuleTag',
@@ -3598,6 +3812,7 @@ exports.Prisma.ModelName = {
   ArtifactManifest: 'ArtifactManifest',
   SemanticChunk: 'SemanticChunk',
   EmbeddingVector: 'EmbeddingVector',
+  EvidenceEmbedding: 'EvidenceEmbedding',
   RecommendationEdge: 'RecommendationEdge',
   GenerationRequest: 'GenerationRequest',
   ProvenanceNode: 'ProvenanceNode',
@@ -3609,7 +3824,13 @@ exports.Prisma.ModelName = {
   RegenerationCandidate: 'RegenerationCandidate',
   RemediationQueue: 'RemediationQueue',
   TaxTransaction: 'TaxTransaction',
-  PayoutNotification: 'PayoutNotification'
+  PayoutNotification: 'PayoutNotification',
+  OfflineSyncQueue: 'OfflineSyncQueue',
+  SyncConflictLog: 'SyncConflictLog',
+  UserAgeVerification: 'UserAgeVerification',
+  ContentModerationQueue: 'ContentModerationQueue',
+  ChildSafetyPolicy: 'ChildSafetyPolicy',
+  SafetyViolationLog: 'SafetyViolationLog'
 };
 
 /**

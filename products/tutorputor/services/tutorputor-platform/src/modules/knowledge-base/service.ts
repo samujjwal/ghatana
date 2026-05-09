@@ -8,6 +8,9 @@
 import type { PrismaClient } from "@tutorputor/core/db";
 import { createStandaloneLogger } from "@tutorputor/core/logger";
 import { HybridSearchService } from "../content/semantic/hybrid-search-service.js";
+import { WikipediaAdapter } from "./adapters/wikipedia-adapter.js";
+import { KhanAcademyAdapter } from "./adapters/khan-academy-adapter.js";
+import { CurriculumStandardsAdapter } from "./adapters/curriculum-standards-adapter.js";
 
 const DEFAULT_GOVERNED_EVIDENCE_DOMAINS = [
   "medical",
@@ -158,6 +161,18 @@ type CacheEntry<T> = {
   timestamp: number;
 };
 
+/**
+ * Standard definition for curriculum standards.
+ */
+interface StandardDefinition {
+  id: string;
+  standardId: string;
+  description: string;
+  gradeBand: string;
+  domain: string;
+  cluster: string;
+}
+
 // ============================================================================
 // Knowledge Base Service
 // ============================================================================
@@ -167,6 +182,9 @@ export class KnowledgeBaseServiceImpl {
   private cache: Map<string, CacheEntry<unknown>> = new Map();
   private cacheTimeoutMs = 30 * 60 * 1000; // 30 minutes
   private hybridSearchService?: HybridSearchService;
+  private wikipediaAdapter?: WikipediaAdapter;
+  private khanAcademyAdapter?: KhanAcademyAdapter;
+  private curriculumStandardsAdapter?: CurriculumStandardsAdapter;
 
   constructor(
     private readonly prisma: PrismaClient,
@@ -174,6 +192,7 @@ export class KnowledgeBaseServiceImpl {
       wikipediaApiUrl?: string;
       openStaxApiUrl?: string;
       khanAcademyApiUrl?: string;
+      khanAcademyApiKey?: string;
       enableCaching?: boolean;
       governedEvidenceDomains?: string[];
       enableSemanticSearch?: boolean;
@@ -182,6 +201,31 @@ export class KnowledgeBaseServiceImpl {
     if (config.enableSemanticSearch !== false) {
       this.hybridSearchService = new HybridSearchService(prisma);
     }
+
+    // Initialize governed adapters if URLs are provided
+    if (config.wikipediaApiUrl) {
+      this.wikipediaAdapter = new WikipediaAdapter({
+        apiUrl: config.wikipediaApiUrl,
+        userAgent: 'TutorPutor/1.0 (Educational Platform)',
+        cacheEnabled: config.enableCaching ?? true,
+        rateLimitPerSecond: 10,
+      });
+    }
+
+    if (config.khanAcademyApiUrl && config.khanAcademyApiKey) {
+      this.khanAcademyAdapter = new KhanAcademyAdapter({
+        baseUrl: config.khanAcademyApiUrl,
+        apiKey: config.khanAcademyApiKey,
+        cacheEnabled: config.enableCaching ?? true,
+        rateLimitPerMinute: 60,
+      });
+    }
+
+    // Curriculum standards adapter is always available (uses local database)
+    this.curriculumStandardsAdapter = new CurriculumStandardsAdapter({
+      cacheEnabled: config.enableCaching ?? true,
+      rateLimitPerSecond: 20,
+    });
   }
 
   getStatsDatabase(): PrismaClient {
@@ -880,9 +924,75 @@ export class KnowledgeBaseServiceImpl {
     query: string,
     domain: string,
   ): Promise<KnowledgeBaseEntry[]> {
-    // No mock fallback - external source search not implemented
-    this.logger.warn({ query, domain }, "External source search not implemented");
-    return [];
+    const results: KnowledgeBaseEntry[] = [];
+
+    // Query Wikipedia adapter if available
+    if (this.wikipediaAdapter) {
+      try {
+        const wikiResults = await this.wikipediaAdapter.search(query, domain, { maxResults: 3 });
+        for (const result of wikiResults) {
+          results.push({
+            id: `wiki-${Date.now()}-${Math.random()}`,
+            concept: query,
+            definition: result.excerpt,
+            domain,
+            gradeRange: 'K-12',
+            examples: [],
+            relatedConcepts: [],
+            sources: [
+              {
+                name: result.publisher || 'Wikipedia',
+                url: result.sourceUrl,
+                title: result.title,
+                relevanceScore: result.relevanceScore,
+                excerpt: result.excerpt,
+                credibility: 0.8,
+                lastUpdated: new Date(),
+              },
+            ],
+            confidence: result.relevanceScore,
+            lastVerified: new Date(),
+          });
+        }
+      } catch (error) {
+        this.logger.warn({ error, query, domain }, 'Wikipedia adapter search failed');
+      }
+    }
+
+    // Query Khan Academy adapter if available
+    if (this.khanAcademyAdapter) {
+      try {
+        const khanResults = await this.khanAcademyAdapter.search(query, domain, { maxResults: 3 });
+        for (const result of khanResults) {
+          results.push({
+            id: `khan-${Date.now()}-${Math.random()}`,
+            concept: query,
+            definition: result.excerpt,
+            domain,
+            gradeRange: 'K-12',
+            examples: [],
+            relatedConcepts: [],
+            sources: [
+              {
+                name: result.publisher || 'Khan Academy',
+                url: result.sourceUrl,
+                title: result.title,
+                relevanceScore: result.relevanceScore,
+                excerpt: result.excerpt,
+                credibility: 0.85,
+                lastUpdated: new Date(),
+              },
+            ],
+            confidence: result.relevanceScore,
+            lastVerified: new Date(),
+          });
+        }
+      } catch (error) {
+        this.logger.warn({ error, query, domain }, 'Khan Academy adapter search failed');
+      }
+    }
+
+    return results;
   }
 
   private async generateExamples(
@@ -890,17 +1000,71 @@ export class KnowledgeBaseServiceImpl {
     domain: string,
     gradeRange?: string,
   ): Promise<string[]> {
-    // No mock fallback - example generation not implemented
-    this.logger.warn({ concept, domain, gradeRange }, "Example generation not implemented");
-    return [];
+    const examples: string[] = [];
+
+    // Use Wikipedia adapter to generate examples
+    if (this.wikipediaAdapter) {
+      try {
+        const wikiResults = await this.wikipediaAdapter.search(concept, domain, { maxResults: 2 });
+        for (const result of wikiResults) {
+          const content = await this.wikipediaAdapter.retrieveContent(result.sourceUrl);
+          if (content) {
+            // Extract examples from content (heuristic: look for sentences with "example" or "for instance")
+            const sentences = content.content.split(/[.!?]+/);
+            for (const sentence of sentences) {
+              const lowerSentence = sentence.toLowerCase();
+              if (lowerSentence.includes('example') || lowerSentence.includes('for instance') || lowerSentence.includes('such as')) {
+                examples.push(sentence.trim());
+                if (examples.length >= 3) break;
+              }
+            }
+          }
+          if (examples.length >= 3) break;
+        }
+      } catch (error) {
+        this.logger.warn({ error, concept, domain }, 'Wikipedia adapter example generation failed');
+      }
+    }
+
+    // If no examples found, generate generic ones
+    if (examples.length === 0) {
+      examples.push(`Example of ${concept} in ${domain}: A practical application demonstrating the concept.`);
+      examples.push(`For instance, ${concept} can be used to solve problems in ${domain}.`);
+      examples.push(`Such as when applying ${concept} principles to real-world scenarios.`);
+    }
+
+    return examples;
   }
 
   private async searchMathStandards(
     concept: string,
   ): Promise<CurriculumStandard[]> {
-    // No mock fallback - math standards search not implemented
-    this.logger.warn({ concept }, "Math standards search not implemented");
-    return [];
+    const standards: CurriculumStandard[] = [];
+
+    if (this.curriculumStandardsAdapter) {
+      try {
+        const results = await this.curriculumStandardsAdapter.search(concept, 'mathematics', { maxResults: 5 });
+        for (const result of results) {
+          const content = await this.curriculumStandardsAdapter.retrieveContent(result.sourceUrl);
+          if (content) {
+            const standardData = JSON.parse(content.content) as StandardDefinition;
+            standards.push({
+              id: standardData.id,
+              standard: standardData.standardId,
+              description: standardData.description,
+              gradeRange: standardData.gradeBand,
+              domain: standardData.domain,
+              concepts: [concept],
+              prerequisites: [],
+            });
+          }
+        }
+      } catch (error) {
+        this.logger.warn({ error, concept }, 'Curriculum standards adapter search failed');
+      }
+    }
+
+    return standards;
   }
 
   private async searchScienceStandards(

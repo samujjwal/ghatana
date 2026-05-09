@@ -114,12 +114,12 @@ public final class DmosProposalServlet {
                     );
                 return proposalService.generateProposal(ctx, command)
                     .map(p -> jsonResponse(201, ProposalResponse.from(p)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("generate proposal", e));
+                    .then(r -> Promise.of(r), e -> mapServiceError("generate proposal", e, request));
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to generate proposal", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -132,12 +132,12 @@ public final class DmosProposalServlet {
                 DmOperationContext ctx = buildContext(request, workspaceId, true);
                 return proposalService.submitForReview(ctx, proposalId)
                     .map(p -> jsonResponse(200, ProposalResponse.from(p)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("submit proposal for review", e));
+                    .then(r -> Promise.of(r), e -> mapServiceError("submit proposal for review", e, request));
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to submit proposal for review", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -150,12 +150,12 @@ public final class DmosProposalServlet {
                 DmOperationContext ctx = buildContext(request, workspaceId, true);
                 return proposalService.approveProposal(ctx, proposalId)
                     .map(p -> jsonResponse(200, ProposalResponse.from(p)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("approve proposal", e));
+                    .then(r -> Promise.of(r), e -> mapServiceError("approve proposal", e, request));
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to approve proposal", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
             }
         });
     }
@@ -168,39 +168,39 @@ public final class DmosProposalServlet {
             return proposalService.getProposal(ctx)
                 .map(p -> {
                     if (!p.getProposalId().equals(proposalId)) {
-                        return errorResponse(404, "Proposal not found: " + proposalId);
+                        return DmosApiErrorResponses.error(404, "Proposal not found: " + proposalId, request);
                     }
                     return jsonResponse(200, ProposalResponse.from(p));
                 })
-                .then(r -> Promise.of(r), e -> mapServiceError("get proposal", e));
+                .then(r -> Promise.of(r), e -> mapServiceError("get proposal", e, request));
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), request));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to get proposal", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
         }
     }
 
     // ---- error mapping ----
 
-    private Promise<HttpResponse> mapServiceError(String operation, Throwable error) {
+    private Promise<HttpResponse> mapServiceError(String operation, Throwable error, HttpRequest request) {
         if (error instanceof SecurityException) {
-            return Promise.of(errorResponse(403, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(403, error.getMessage(), request));
         }
         if (error instanceof NoSuchElementException) {
-            return Promise.of(errorResponse(404, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(404, error.getMessage(), request));
         }
         if (error instanceof IllegalArgumentException) {
-            return Promise.of(errorResponse(400, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(400, error.getMessage(), request));
         }
         if (error instanceof IllegalStateException) {
-            return Promise.of(errorResponse(409, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(409, error.getMessage(), request));
         }
         if (error instanceof DmosFeatureDisabledException || error instanceof DmosConnectorDisabledException) {
-            return Promise.of(errorResponse(423, error.getMessage()));
+            return Promise.of(DmosApiErrorResponses.error(423, error.getMessage(), request));
         }
         LOG.error("[DMOS] Failed to {}", operation, error);
-        return Promise.of(errorResponse(500, "Internal error"));
+        return Promise.of(DmosApiErrorResponses.error(500, "Internal error", request));
     }
 
     // ---- context builder ----
@@ -284,10 +284,6 @@ public final class DmosProposalServlet {
         }
     }
 
-    private HttpResponse errorResponse(int code, String message) {
-        return jsonResponse(code, new ErrorBody(code, message));
-    }
-
     // ---- request / response records ----
 
     record GenerateProposalRequest(
@@ -355,6 +351,4 @@ public final class DmosProposalServlet {
         }
     }
 
-    record ErrorBody(int status, String message) {
-    }
 }

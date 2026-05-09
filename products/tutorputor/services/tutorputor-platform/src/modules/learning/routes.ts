@@ -906,6 +906,46 @@ async function learningRoutes(
     },
   );
 
+  fastify.get<{ Params: { id: string } }>(
+    "/assessments/:id/results",
+    {
+      schema: {
+        description: "Get assessment results with detailed scoring and feedback",
+        tags: ["Assessments"],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
+      const assessmentId = request.params.id as AssessmentId;
+
+      try {
+        const results = await assessmentService.getAssessmentResults({
+          tenantId,
+          assessmentId,
+          userId,
+        });
+        return reply.send(results);
+      } catch (e: unknown) {
+        if (e instanceof Error && e.message.includes("not found")) {
+          const error = createStandardErrorResponse(
+            "ASSESSMENT_NOT_FOUND",
+            e.message,
+            404,
+          );
+          return reply.status(404).send(error);
+        }
+        throw e;
+      }
+    },
+  );
+
   // ---------------------------------------------------------------------------
   // Analytics
   // ---------------------------------------------------------------------------

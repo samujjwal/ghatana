@@ -65,7 +65,7 @@ export const SimCaptureEventSchema = LearningEventBaseSchema.extend({
         stepsCompleted: z.number(),
         interactions: z.number(),
       }),
-      finalState: z.record(z.unknown()).optional(),
+      finalState: z.record(z.string(), z.unknown()).optional(),
     }),
   }),
 });
@@ -98,7 +98,7 @@ export const HintRequestEventSchema = LearningEventBaseSchema.extend({
     itemId: z.string(),
     hintType: z.string().refine((val) => ['text', 'visual', 'step_by_step'].includes(val)),
     hintLevel: z.number().min(1).max(5),
-    context: z.record(z.unknown()).optional(),
+    context: z.record(z.string(), z.unknown()).optional(),
   }),
 });
 
@@ -116,7 +116,7 @@ export const AiTutorMessageEventSchema = LearningEventBaseSchema.extend({
     assetId: z.string().optional(),
     trigger: z.string().optional(),
     reason: z.string().optional(),
-    recommendation: z.record(z.unknown()).optional(),
+    recommendation: z.record(z.string(), z.unknown()).optional(),
     eventType: z.string().optional(),
     variant: z.object({
       variantId: z.string(),
@@ -124,7 +124,7 @@ export const AiTutorMessageEventSchema = LearningEventBaseSchema.extend({
       key: z.string(),
       strategy: z.string(),
     }).optional(),
-    observedSignals: z.record(z.unknown()).optional(),
+    observedSignals: z.record(z.string(), z.unknown()).optional(),
     adapted: z.boolean(),
   }),
 });

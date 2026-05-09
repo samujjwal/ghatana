@@ -68,9 +68,10 @@ public record StandardErrorEnvelope(
             case 403 -> "FORBIDDEN";
             case 404 -> "NOT_FOUND";
             case 409 -> "CONFLICT";
+            case 422 -> "UNPROCESSABLE_ENTITY";
             case 423 -> "LOCKED";
-            case 429 -> "TOO_MANY_REQUESTS";
-            default -> status >= 500 ? "INTERNAL_SERVER_ERROR" : "UNKNOWN_ERROR";
+            case 429 -> "RATE_LIMITED";
+            default -> status >= 500 ? "INTERNAL_ERROR" : "UNKNOWN_ERROR";
         };
     }
 }

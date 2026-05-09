@@ -32,6 +32,14 @@ import static org.mockito.Mockito.when;
  * <p>Covers: POST append event, GET read stream, request validation,
  * idempotency semantics, and tenant isolation.
  *
+ * <p><b>DC-P1-014 Note:</b> This file is currently a stub with method signatures only.
+ * Full implementation required to prove:
+ * - Append-only behavior
+ * - Offset ordering guarantees
+ * - Replay correctness
+ * - Stream tenant scope isolation
+ * These require durable store integration tests against real event log storage.
+ *
  * <p><strong>Week 2 Status:</strong> STUB - method signatures only.
  * Test bodies will be implemented in Week 3.
  *

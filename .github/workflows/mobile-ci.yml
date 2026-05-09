@@ -1,0 +1,197 @@
+name: TutorPutor Mobile CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'products/tutorputor/apps/tutorputor-mobile/**'
+      - 'products/tutorputor/libs/tutorputor-core/**'
+      - '.github/workflows/mobile-ci.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'products/tutorputor/apps/tutorputor-mobile/**'
+      - 'products/tutorputor/libs/tutorputor-core/**'
+      - '.github/workflows/mobile-ci.yml'
+
+jobs:
+  mobile-type-check:
+    name: Mobile Type Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./products/tutorputor/apps/tutorputor-mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: products/tutorputor/pnpm-lock.yaml
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./products/tutorputor
+
+      - name: Type check
+        run: pnpm --filter @tutorputor/mobile type-check
+
+  mobile-lint:
+    name: Mobile Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./products/tutorputor/apps/tutorputor-mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: products/tutorputor/pnpm-lock.yaml
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./products/tutorputor
+
+      - name: Lint
+        run: pnpm --filter @tutorputor/mobile lint
+
+  mobile-test:
+    name: Mobile Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./products/tutorputor/apps/tutorputor-mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: products/tutorputor/pnpm-lock.yaml
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./products/tutorputor
+
+      - name: Run tests
+        run: pnpm --filter @tutorputor/mobile test
+
+  mobile-build-android:
+    name: Mobile Android Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./products/tutorputor/apps/tutorputor-mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: products/tutorputor/pnpm-lock.yaml
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./products/tutorputor
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build Android (Debug)
+        run: cd android && ./gradlew assembleDebug --no-daemon
+
+  mobile-build-ios:
+    name: Mobile iOS Build
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: ./products/tutorputor/apps/tutorputor-mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: products/tutorputor/pnpm-lock.yaml
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./products/tutorputor
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: ./products/tutorputor/apps/tutorputor-mobile/ios
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install
+        working-directory: ./products/tutorputor/apps/tutorputor-mobile
+
+      - name: Build iOS (Debug)
+        run: |
+          cd ios
+          xcodebuild -workspace TutorPutor.xcworkspace -scheme TutorPutor -configuration Debug -sdk iphonesimulator -derivedDataPath build | xcpretty
+        working-directory: ./products/tutorputor/apps/tutorputor-mobile

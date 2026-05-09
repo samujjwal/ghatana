@@ -88,6 +88,54 @@ class DmosCampaignServletTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("POST campaigns returns 403 when viewer role attempts create-campaign action")
+    void shouldReturn403ForViewerCreateCampaignAction() {
+        campaignService.createResult = Promise.of(buildCampaign(CampaignStatus.DRAFT));
+
+        HttpRequest request = HttpRequest.post("http://localhost/v1/workspaces/ws-1/campaigns")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "viewer")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-1")
+            .withBody("{\"name\":\"Denied\",\"type\":\"EMAIL\"}".getBytes())
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("POST campaigns returns 201 when brand-manager role creates campaign")
+    void shouldAllowBrandManagerCreateCampaignAction() {
+        campaignService.createResult = Promise.of(buildCampaign(CampaignStatus.DRAFT));
+
+        HttpRequest request = HttpRequest.post("http://localhost/v1/workspaces/ws-1/campaigns")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "brand-manager")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-1")
+            .withBody("{\"name\":\"Allowed\",\"type\":\"EMAIL\"}".getBytes())
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(201);
+    }
+
+    @Test
+    @DisplayName("POST campaigns returns 201 when admin role creates campaign")
+    void shouldAllowAdminCreateCampaignAction() {
+        campaignService.createResult = Promise.of(buildCampaign(CampaignStatus.DRAFT));
+
+        HttpRequest request = HttpRequest.post("http://localhost/v1/workspaces/ws-1/campaigns")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "admin")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-1")
+            .withBody("{\"name\":\"Admin Allowed\",\"type\":\"EMAIL\"}".getBytes())
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(201);
+    }
+
+    @Test
     @DisplayName("POST campaigns returns 500 on unexpected service failure")
     void shouldReturn500OnCreateUnexpectedFailure() {
         campaignService.createResult = Promise.ofException(new RuntimeException("create-failure"));
@@ -153,7 +201,7 @@ class DmosCampaignServletTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
             .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-1")
             .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
-            .withHeader(HttpHeaders.of("X-Roles"), "owner, , operator")
+            .withHeader(HttpHeaders.of("X-Roles"), "brand-manager, , operator")
             .withHeader(HttpHeaders.of("X-Permissions"), "campaign:write, ,campaign:read")
             .withBody("{\"name\":\"Q4 Acquisition\",\"type\":\"EMAIL\"}".getBytes())
             .build();
@@ -473,6 +521,21 @@ class DmosCampaignServletTest extends EventloopTestBase {
         assertThat(json).containsKey("offset");
         assertThat(json.get("count")).isEqualTo(2);
         assertThat(json.get("offset")).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("GET campaigns list returns 200 for viewer read-only access")
+    void shouldAllowViewerReadOnlyCampaignList() {
+        List<Campaign> items = List.of(buildCampaign(CampaignStatus.DRAFT));
+        campaignService.listResult = Promise.of(new CampaignService.CampaignListResult(items, items.size(), 20, 0));
+
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/campaigns")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "viewer")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(200);
     }
 
     @Test

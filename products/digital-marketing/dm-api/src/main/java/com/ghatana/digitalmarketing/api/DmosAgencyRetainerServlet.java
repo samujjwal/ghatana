@@ -105,15 +105,12 @@ public final class DmosAgencyRetainerServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_retainer.create.error", Map.of());
                     LOG.error("Failed to create agency retainer", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_retainer.create.error", Map.of());
             LOG.error("Failed to parse create request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -135,15 +132,12 @@ public final class DmosAgencyRetainerServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_retainer.activate.error", Map.of());
                     LOG.error("Failed to activate agency retainer", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_retainer.activate.error", Map.of());
             LOG.error("Failed to process activate request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -167,15 +161,12 @@ public final class DmosAgencyRetainerServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_retainer.suspend.error", Map.of());
                     LOG.error("Failed to suspend agency retainer", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_retainer.suspend.error", Map.of());
             LOG.error("Failed to parse suspend request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -199,15 +190,12 @@ public final class DmosAgencyRetainerServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_retainer.cancel.error", Map.of());
                     LOG.error("Failed to cancel agency retainer", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_retainer.cancel.error", Map.of());
             LOG.error("Failed to parse cancel request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -221,10 +209,7 @@ public final class DmosAgencyRetainerServlet {
             return agencyRetainerService.findById(ctx, retainerId)
                 .map(retainerOpt -> {
                     if (retainerOpt.isEmpty()) {
-                        return HttpResponse.ofCode(404)
-                            .withBody("{\"error\":\"Retainer not found\"}")
-                            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                            .build();
+                        return DmosApiErrorResponses.error(404, "Retainer not found", ctx.getCorrelationId().getValue());
                     }
                     return HttpResponse.ofCode(200)
                         .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -234,15 +219,12 @@ public final class DmosAgencyRetainerServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_retainer.get.error", Map.of());
                     LOG.error("Failed to get agency retainer", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_retainer.get.error", Map.of());
             LOG.error("Failed to process get request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
@@ -263,29 +245,20 @@ public final class DmosAgencyRetainerServlet {
                 .then(r -> Promise.of(r), e -> {
                     metrics.increment("agency_retainer.list.error", Map.of());
                     LOG.error("Failed to list agency retainers", e);
-                    return Promise.of(mapServiceError(e));
+                    return Promise.of(mapServiceError(e, ctx));
                 });
         } catch (Exception e) {
             metrics.increment("agency_retainer.list.error", Map.of());
             LOG.error("Failed to process list request", e);
-            return Promise.of(HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"Invalid request: " + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build());
+            return Promise.of(DmosApiErrorResponses.error(400, "Invalid request: " + e.getMessage(), request));
         }
     }
 
-    private HttpResponse mapServiceError(Exception e) {
+    private HttpResponse mapServiceError(Exception e, DmOperationContext ctx) {
         if (e instanceof IllegalArgumentException) {
-            return HttpResponse.ofCode(400)
-                .withBody("{\"error\":\"" + e.getMessage() + "\"}")
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build();
+            return DmosApiErrorResponses.error(400, e.getMessage(), ctx.getCorrelationId().getValue());
         }
-        return HttpResponse.ofCode(500)
-            .withBody("{\"error\":\"Internal server error\"}")
-            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-            .build();
+        return DmosApiErrorResponses.error(500, "Internal server error", ctx.getCorrelationId().getValue());
     }
 
     private RetainerDto toDto(AgencyRetainer retainer) {

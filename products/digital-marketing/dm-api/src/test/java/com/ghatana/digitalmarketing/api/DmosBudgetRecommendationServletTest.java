@@ -127,6 +127,38 @@ class DmosBudgetRecommendationServletTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("POST /budget-recommendation returns 403 when brand-manager lacks generate-budget action")
+    void shouldReturn403ForBrandManagerGenerateBudgetAction() {
+        HttpRequest request = HttpRequest.post(
+                "http://localhost/v1/workspaces/ws-1/budget-recommendation")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "brand-manager")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-1")
+            .withBody(GENERATE_BODY.getBytes(StandardCharsets.UTF_8))
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("POST /budget-recommendation returns 201 when marketing-director generates budget")
+    void shouldAllowMarketingDirectorGenerateBudgetAction() {
+        HttpRequest request = HttpRequest.post(
+                "http://localhost/v1/workspaces/ws-1/budget-recommendation")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "marketing-director")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-1")
+            .withBody(GENERATE_BODY.getBytes(StandardCharsets.UTF_8))
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(201);
+    }
+
+    @Test
     @DisplayName("POST /budget-recommendation returns 400 on IllegalArgumentException")
     void shouldReturn400OnIllegalArgument() {
         budgetService.throwOnRecommend = new IllegalArgumentException("invalid cap");
@@ -273,11 +305,73 @@ class DmosBudgetRecommendationServletTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("POST /budget-recommendation/:id/approve returns 403 when marketing-director lacks approve-budget action")
+    void shouldReturn403ForMarketingDirectorApproveBudgetAction() {
+        HttpRequest request = HttpRequest.post(
+                "http://localhost/v1/workspaces/ws-1/budget-recommendation/rec-1/approve")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "marketing-director")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-3")
+            .withBody(new byte[0])
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("POST /budget-recommendation/:id/approve returns 200 when exec-sponsor approves budget")
+    void shouldAllowExecSponsorApproveBudgetAction() {
+        HttpRequest request = HttpRequest.post(
+                "http://localhost/v1/workspaces/ws-1/budget-recommendation/rec-1/approve")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "exec-sponsor")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-3")
+            .withBody(new byte[0])
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("POST /budget-recommendation/:id/approve returns 200 when admin approves budget")
+    void shouldAllowAdminApproveBudgetAction() {
+        HttpRequest request = HttpRequest.post(
+                "http://localhost/v1/workspaces/ws-1/budget-recommendation/rec-1/approve")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "admin")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-3")
+            .withBody(new byte[0])
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+    }
+
+    @Test
     @DisplayName("GET /budget-recommendation returns 200 on success")
     void shouldGetLatestRecommendation() {
         HttpRequest request = HttpRequest.get(
                 "http://localhost/v1/workspaces/ws-1/budget-recommendation")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("GET /budget-recommendation returns 200 for viewer read-only access")
+    void shouldAllowViewerReadOnlyGetBudgetRecommendation() {
+        HttpRequest request = HttpRequest.get(
+                "http://localhost/v1/workspaces/ws-1/budget-recommendation")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "viewer")
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
