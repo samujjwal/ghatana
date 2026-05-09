@@ -11,6 +11,8 @@
  * @doc.security httpOnly cookies, no localStorage
  */
 
+import { yappcApi } from '@/lib/api/client';
+
 /**
  * Session metadata interface (non-sensitive data only)
  * Sensitive tokens are stored in httpOnly cookies only
@@ -48,9 +50,8 @@ export function hasSession(): boolean {
  */
 export async function clearSession(): Promise<void> {
   try {
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-      credentials: 'include',
+    await yappcApi.auth.logout({
+      refreshToken: getRefreshToken() ?? '',
     });
   } catch {
     // Silent fail - cookies will expire naturally

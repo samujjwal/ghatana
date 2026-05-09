@@ -1,11 +1,12 @@
 /**
- * Runtime capability gating hook (P0.7).
+ * Runtime surface gating hook (P0.7).
  *
- * Hides UI controls that are not backed by a live API capability.
- * Uses the runtime /api/v1/capabilities endpoint as the single source of truth.
+ * Hides UI controls that are not backed by a live runtime surface signal.
+ * Uses the runtime /api/v1/surfaces endpoint as the single source of truth,
+ * with compatibility fallback when needed.
  *
  * @doc.type hook
- * @doc.purpose Runtime capability-based UI gating
+ * @doc.purpose Runtime surface-based UI gating
  * @doc.layer frontend
  */
 
@@ -25,11 +26,11 @@ function isAllowed(status: CapabilitySignal['status'], mode: GateMode): boolean 
 }
 
 /**
- * Check whether a runtime capability is available according to the live registry.
+ * Check whether a runtime surface is available according to the live registry.
  *
- * @param aliases - One or more capability keys to check (first match wins)
+ * @param aliases - One or more runtime surface keys to check (first match wins)
  * @param mode - Gate strictness (default: 'active')
- * @returns boolean indicating whether the capability is available
+ * @returns boolean indicating whether the runtime surface is available
  */
 export function useCapabilityGate(aliases: string[], mode: GateMode = 'active'): boolean {
   const { data, isLoading } = useCapabilityRegistry();
@@ -48,7 +49,7 @@ export function useCapabilityGate(aliases: string[], mode: GateMode = 'active'):
 }
 
 /**
- * Get the live capability signal for display / diagnostics.
+ * Get the live runtime surface signal for display / diagnostics.
  */
 export function useCapabilitySignal(aliases: string[]): CapabilitySignal | undefined {
   const { data } = useCapabilityRegistry();

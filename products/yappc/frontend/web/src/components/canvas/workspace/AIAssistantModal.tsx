@@ -256,7 +256,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
                 {suggestions.length > 0 && (
                     <Box>
                         <Typography as="p" className="text-sm font-medium mb-4" gutterBottom>
-                            AI Suggestions
+                            Suggested Improvements
                         </Typography>
                         <Stack spacing={2}>
                             {suggestions.map((suggestion) => (

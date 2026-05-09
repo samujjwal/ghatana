@@ -2,7 +2,7 @@
  * DC-P1-006: Tests for CapabilityGated component.
  *
  * Verifies that the component correctly renders/suppresses its children based
- * on the live capability registry state, covering active, degraded, and
+ * on the live runtime surface registry state, covering active, degraded, and
  * unavailable paths as well as loading state.
  */
 
@@ -167,13 +167,13 @@ describe('CapabilityGated', () => {
       render(
         <CapabilityGated
           aliases={['test-cap']}
-          loadingFallback={<div>Checking capability...</div>}
+          loadingFallback={<div>Checking runtime surface...</div>}
         >
           <div>Protected Feature</div>
         </CapabilityGated>,
       );
 
-      expect(screen.getByText('Checking capability...')).toBeInTheDocument();
+      expect(screen.getByText('Checking runtime surface...')).toBeInTheDocument();
     });
 
     it('renders the default spinner when no loadingFallback is provided', () => {
@@ -186,8 +186,8 @@ describe('CapabilityGated', () => {
         </CapabilityGated>,
       );
 
-      // Default spinner renders text "Checking capability..."
-      expect(screen.getByText(/checking capability/i)).toBeInTheDocument();
+      // Default spinner renders text "Checking runtime surface..."
+      expect(screen.getByText(/checking runtime surface/i)).toBeInTheDocument();
     });
   });
 });

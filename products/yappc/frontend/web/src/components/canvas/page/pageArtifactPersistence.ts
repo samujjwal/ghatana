@@ -4,6 +4,7 @@ import type {
   PageArtifactGraphNode,
   PageArtifactGraphSnapshot,
 } from './pageArtifactDocument';
+import { ApiRequestError, yappcApi } from '@/lib/api/client';
 
 export interface PageArtifactDocumentPersistenceAdapter {
   save(document: PageArtifactDocument): Promise<void>;
@@ -99,6 +100,9 @@ interface ArtifactGraphIngestRequest {
   readonly nodes: readonly ArtifactGraphIngestNodeDto[];
   readonly edges: readonly ArtifactGraphIngestEdgeDto[];
 }
+
+const DEFAULT_PAGE_ARTIFACT_BASE_URL = '/api/v1/page-artifacts';
+const DEFAULT_PAGE_ARTIFACT_GRAPH_BASE_URL = '/api/v1/yappc/artifact/graph';
 
 export interface LocalDraftPolicy {
   readonly allowClassifications: ReadonlySet<string>;
@@ -196,6 +200,19 @@ function validateScope(scope: PageArtifactScope | null | undefined): PageArtifac
   }
 
   return scope;
+}
+
+function validateDocumentScopeConsistency(
+  document: PageArtifactDocument,
+  scope: PageArtifactScope,
+): void {
+  if (document.artifactGraph && document.artifactGraph.projectId !== scope.projectId) {
+    throw new PageArtifactPersistenceError(
+      'validation',
+      `Page artifact graph project scope mismatch: expected "${scope.projectId}" but received "${document.artifactGraph.projectId}".`,
+      422,
+    );
+  }
 }
 
 async function readErrorMessage(response: Response, fallback: string): Promise<string> {
@@ -354,11 +371,19 @@ export class HttpPageArtifactPersistenceAdapter
   private readonly scopeProvider?: () => PageArtifactScope | null;
 
   constructor(options: HttpPersistenceOptions = {}) {
-    this.baseUrl = options.baseUrl ?? '/api/v1/page-artifacts';
-    this.artifactGraphBaseUrl = options.artifactGraphBaseUrl ?? '/api/v1/yappc/artifact/graph';
+    this.baseUrl = options.baseUrl ?? DEFAULT_PAGE_ARTIFACT_BASE_URL;
+    this.artifactGraphBaseUrl = options.artifactGraphBaseUrl ?? DEFAULT_PAGE_ARTIFACT_GRAPH_BASE_URL;
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.scope = options.scope;
     this.scopeProvider = options.scopeProvider;
+  }
+
+  private shouldUseCanonicalClient(): boolean {
+    return (
+      this.fetchImpl === fetch &&
+      this.baseUrl === DEFAULT_PAGE_ARTIFACT_BASE_URL &&
+      this.artifactGraphBaseUrl === DEFAULT_PAGE_ARTIFACT_GRAPH_BASE_URL
+    );
   }
 
   private getScope(): PageArtifactScope {
@@ -392,19 +417,51 @@ export class HttpPageArtifactPersistenceAdapter
     throw new PageArtifactPersistenceError('http', message, response.status);
   }
 
+  private throwForApiRequestError(error: ApiRequestError, action: string): never {
+    if (error.status === 401) {
+      throw new PageArtifactPersistenceError('unauthenticated', 'Sign in again to sync this page artifact.', 401);
+    }
+    if (error.status === 403) {
+      throw new PageArtifactPersistenceError('forbidden', 'You do not have permission to sync this page artifact.', 403);
+    }
+    if (error.status === 422) {
+      throw new PageArtifactPersistenceError('validation', error.message, 422);
+    }
+
+    throw new PageArtifactPersistenceError(
+      action === 'ingest graph' ? 'artifact-graph' : 'http',
+      error.message,
+      error.status,
+    );
+  }
+
   private async ingestArtifactGraph(document: PageArtifactDocument): Promise<void> {
     if (!document.artifactGraph) {
       return;
     }
 
     const scope = this.getScope();
+    const request = buildArtifactGraphIngestRequest(document, document.artifactGraph, scope);
+
+    if (this.shouldUseCanonicalClient()) {
+      try {
+        await yappcApi.pageArtifacts.ingestGraph(request, scope);
+        return;
+      } catch (error) {
+        if (error instanceof ApiRequestError) {
+          this.throwForApiRequestError(error, 'ingest graph');
+        }
+        throw error;
+      }
+    }
+
     const response = await this.fetchImpl(`${this.artifactGraphBaseUrl}/ingest`, {
       method: 'POST',
       headers: this.buildHeaders({
         'Content-Type': 'application/json',
       }),
       credentials: 'include',
-      body: JSON.stringify(buildArtifactGraphIngestRequest(document, document.artifactGraph, scope)),
+      body: JSON.stringify(request),
     });
 
     if (!response.ok) {
@@ -417,6 +474,32 @@ export class HttpPageArtifactPersistenceAdapter
   }
 
   async save(document: PageArtifactDocument): Promise<void> {
+    const scope = this.getScope();
+    validateDocumentScopeConsistency(document, scope);
+
+    if (this.shouldUseCanonicalClient()) {
+      try {
+        const result = await yappcApi.pageArtifacts.saveDocument(
+          document.artifactId,
+          document.documentId,
+          document,
+          scope,
+        );
+
+        if (result.status === 'conflict') {
+          throw new PageArtifactConflictError(document.artifactId, result.remoteVersion ?? 'unknown');
+        }
+
+        await this.ingestArtifactGraph(document);
+        return;
+      } catch (error) {
+        if (error instanceof ApiRequestError) {
+          this.throwForApiRequestError(error, 'save');
+        }
+        throw error;
+      }
+    }
+
     const response = await this.fetchImpl(
       `${this.baseUrl}/${encodeURIComponent(document.artifactId)}/document`,
       {
@@ -446,6 +529,20 @@ export class HttpPageArtifactPersistenceAdapter
   }
 
   async load(artifactId: string): Promise<PageArtifactDocument | null> {
+    if (this.shouldUseCanonicalClient()) {
+      try {
+        return await yappcApi.pageArtifacts.loadDocument<PageArtifactDocument>(
+          artifactId,
+          this.getScope(),
+        );
+      } catch (error) {
+        if (error instanceof ApiRequestError) {
+          this.throwForApiRequestError(error, 'load');
+        }
+        throw error;
+      }
+    }
+
     const response = await this.fetchImpl(
       `${this.baseUrl}/${encodeURIComponent(artifactId)}/document`,
       {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { TestWrapper } from '../test-utils/wrapper';
 import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 import { SQL_OPTIONAL_DEPENDENCIES_UNAVAILABLE_TITLE } from '@/lib/runtime-boundaries';
@@ -266,7 +266,7 @@ describe('SqlWorkspacePage', () => {
     expect(screen.getByText('global')).toBeInTheDocument();
   });
 
-  it('disables federated queries when the capability registry marks Trino unavailable', async () => {
+  it('disables federated queries when the runtime surface registry marks Trino unavailable', async () => {
     render(<SqlWorkspacePage />, { wrapper: TestWrapper });
 
     expect(await screen.findByText('orders')).toBeInTheDocument();
@@ -484,8 +484,9 @@ describe('SqlWorkspacePage', () => {
       render(<SqlWorkspacePage />, { wrapper: TestWrapper });
 
       await waitFor(() => {
-        expect(screen.getByText(/Analytics Engine:/i)).toBeInTheDocument();
-        expect(screen.getByText(/DEGRADED/i)).toBeInTheDocument();
+        const warning = screen.getByTestId('sql-optional-dependencies-warning');
+        expect(within(warning).getByText(/Analytics Engine:/i)).toBeInTheDocument();
+        expect(within(warning).getByText('DEGRADED')).toBeInTheDocument();
       });
     });
 
@@ -505,8 +506,9 @@ describe('SqlWorkspacePage', () => {
       render(<SqlWorkspacePage />, { wrapper: TestWrapper });
 
       await waitFor(() => {
-        expect(screen.getByText(/Federated Query:/i)).toBeInTheDocument();
-        expect(screen.getByText(/UNAVAILABLE/i)).toBeInTheDocument();
+        const warning = screen.getByTestId('sql-optional-dependencies-warning');
+        expect(within(warning).getByText(/Federated Query:/i)).toBeInTheDocument();
+        expect(within(warning).getByText('UNAVAILABLE')).toBeInTheDocument();
       });
     });
 

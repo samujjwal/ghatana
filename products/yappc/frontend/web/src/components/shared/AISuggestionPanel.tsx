@@ -85,7 +85,7 @@ export const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
             >
                 <span className="flex items-center gap-2">
                     <Lightbulb className="w-5 h-5 text-warning-color" />
-                    <span className="text-sm font-medium text-text-primary">AI Suggestions</span>
+                    <span className="text-sm font-medium text-text-primary">Suggested Improvements</span>
                     {recommendedKinds.length > 0 && (
                         <span className="px-2 py-0.5 text-xs font-medium bg-warning-bg text-white rounded-full">
                             {recommendedKinds.length}

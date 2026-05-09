@@ -67,6 +67,14 @@ Use the repo’s real structure and dependency direction when making changes:
 - Return domain-safe messages to callers and keep internal detail in logs/telemetry.
 - Model retries, timeouts, circuit breaking, or fallback behavior explicitly where the surrounding system needs them.
 
+### Fix-First Discipline
+
+- When a defect, drift, or policy violation is found, correct it at the nearest concrete anchor before broader cleanup or refactoring.
+- Before the first code edit, identify one falsifiable local hypothesis and one cheap check that can disconfirm it.
+- Do not postpone a known issue while writing adjacent code; fix it in the same change when the local surface is already in hand.
+- If you discover a second issue while editing a touched file, either patch it immediately in the same slice or explicitly defer it with a tracker entry and rationale.
+- After the first substantive edit, run the cheapest focused validation for the touched slice before widening scope.
+
 ### Testing
 
 Choose the right mix for the touched surface:

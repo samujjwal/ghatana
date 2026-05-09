@@ -1,17 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  GOVERNANCE_POLICY_CREATE_BOUNDARY_MESSAGE,
-  GOVERNANCE_POLICY_DELETE_BOUNDARY_MESSAGE,
-  GOVERNANCE_POLICY_TOGGLE_BOUNDARY_MESSAGE,
-  GOVERNANCE_POLICY_UPDATE_BOUNDARY_MESSAGE,
-  GOVERNANCE_VIOLATION_RESOLUTION_BOUNDARY_MESSAGE,
-} from '@/lib/runtime-boundaries';
 import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 
 const { mockApiClient } = vi.hoisted(() => ({
   mockApiClient: {
     get: vi.fn(),
     post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
   },
 }));
 
@@ -25,6 +20,8 @@ describe('governanceService contract mapping', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockApiClient.post.mockReset();
+    mockApiClient.put.mockReset();
+    mockApiClient.delete.mockReset();
 
     mockApiClient.get.mockImplementation((path: string) => {
       if (path === '/governance/privacy/pii-fields') {
@@ -142,10 +139,10 @@ describe('governanceService contract mapping', () => {
       action: 'access-review',
     });
     expect(surfaces.find((surface) => surface.id === 'policy-lifecycle')?.evidence).toEqual(expect.arrayContaining([
-      GOVERNANCE_POLICY_CREATE_BOUNDARY_MESSAGE,
-      GOVERNANCE_POLICY_UPDATE_BOUNDARY_MESSAGE,
-      GOVERNANCE_POLICY_DELETE_BOUNDARY_MESSAGE,
-      GOVERNANCE_POLICY_TOGGLE_BOUNDARY_MESSAGE,
+      'POST /api/v1/governance/policies - create policy',
+      'PUT /api/v1/governance/policies/:id - update policy',
+      'DELETE /api/v1/governance/policies/:id - delete policy',
+      'POST /api/v1/governance/policies/:id/toggle - toggle policy',
     ]));
   });
 
@@ -353,12 +350,73 @@ describe('governanceService contract mapping', () => {
     });
   });
 
-  it('fails explicitly for unsupported governance mutations', async () => {
-    await expect(governanceService.createPolicy({ name: 'No export without review' })).rejects.toThrow(GOVERNANCE_POLICY_CREATE_BOUNDARY_MESSAGE);
-    await expect(governanceService.updatePolicy('policy-1', { enabled: false })).rejects.toThrow(GOVERNANCE_POLICY_UPDATE_BOUNDARY_MESSAGE);
-    await expect(governanceService.deletePolicy('policy-1')).rejects.toThrow(GOVERNANCE_POLICY_DELETE_BOUNDARY_MESSAGE);
-    await expect(governanceService.togglePolicy('policy-1', false)).rejects.toThrow(GOVERNANCE_POLICY_TOGGLE_BOUNDARY_MESSAGE);
-    await expect(governanceService.resolveViolation('violation-1', 'accepted risk')).rejects.toThrow(GOVERNANCE_VIOLATION_RESOLUTION_BOUNDARY_MESSAGE);
+  it('supports policy lifecycle mutations through canonical governance routes', async () => {
+    mockApiClient.post
+      .mockResolvedValueOnce({
+        data: {
+          id: 'policy-1',
+          name: 'No export without review',
+          type: 'PRIVACY',
+          enabled: true,
+          rules: [],
+          createdAt: '2026-04-15T08:05:00Z',
+          updatedAt: '2026-04-15T08:05:00Z',
+          metadata: {},
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          id: 'policy-1',
+          name: 'No export without review',
+          type: 'PRIVACY',
+          enabled: true,
+          rules: [],
+          createdAt: '2026-04-15T08:05:00Z',
+          updatedAt: '2026-04-15T08:05:00Z',
+          metadata: {},
+        },
+      });
+    mockApiClient.put.mockResolvedValue({
+      data: {
+        id: 'policy-1',
+        name: 'No export without review',
+        type: 'PRIVACY',
+        enabled: false,
+        rules: [],
+        createdAt: '2026-04-15T08:05:00Z',
+        updatedAt: '2026-04-15T09:00:00Z',
+        metadata: {},
+      },
+    });
+    mockApiClient.delete.mockResolvedValue({});
+
+    const created = await governanceService.createPolicy({
+      name: 'No export without review',
+      type: 'PRIVACY',
+      enabled: true,
+    });
+    const updated = await governanceService.updatePolicy('policy-1', { enabled: false });
+    const toggled = await governanceService.togglePolicy('policy-1', true);
+    await governanceService.deletePolicy('policy-1');
+
+    expect(mockApiClient.post).toHaveBeenNthCalledWith(1, '/governance/policies', {
+      name: 'No export without review',
+      type: 'PRIVACY',
+      enabled: true,
+    });
+    expect(mockApiClient.put).toHaveBeenCalledWith('/governance/policies/policy-1', { enabled: false });
+    expect(mockApiClient.post).toHaveBeenNthCalledWith(2, '/governance/policies/policy-1/toggle', { enabled: true });
+    expect(mockApiClient.delete).toHaveBeenCalledWith('/governance/policies/policy-1');
+
+    expect(created).toMatchObject({ id: 'policy-1', enabled: true });
+    expect(updated).toMatchObject({ id: 'policy-1', enabled: false });
+    expect(toggled).toMatchObject({ id: 'policy-1', enabled: true });
+  });
+
+  it('fails explicitly for unsupported governance violation resolution mutation', async () => {
+    await expect(governanceService.resolveViolation('violation-1', 'accepted risk')).rejects.toThrow(
+      'Violation resolution is not exposed by the current Data Cloud governance API.',
+    );
   });
 
   it('generates a compliance report handle from the canonical summary payload', async () => {

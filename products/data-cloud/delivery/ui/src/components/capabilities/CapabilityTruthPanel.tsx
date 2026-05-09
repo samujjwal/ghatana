@@ -56,7 +56,7 @@ export function CapabilityTruthPanel({
           <h2 className="text-sm font-medium text-gray-900 dark:text-white">{title}</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{description}</p>
         </div>
-        <span className="text-xs text-gray-400 whitespace-nowrap">{capabilities.length} capabilities</span>
+        <span className="text-xs text-gray-400 whitespace-nowrap">{capabilities.length} surfaces</span>
       </div>
 
       <div className={cn('grid gap-3', compact ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3')}>

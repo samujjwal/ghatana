@@ -157,11 +157,11 @@ export const AIQualityDashboard: React.FC<AIQualityDashboardProps> = ({ classNam
         <Box className="flex items-center justify-between">
           <Box className="flex items-center gap-2">
             <Activity className="w-5 h-5 text-info-color" />
-            <Typography className="font-semibold text-lg">AI Quality</Typography>
+            <Typography className="font-semibold text-lg">Quality Insights</Typography>
           </Box>
         </Box>
         <Typography className="text-sm text-fg-muted text-center py-8">
-          No AI quality data available yet. Metrics will appear after AI requests are made.
+          No quality insights data available yet. Metrics will appear after guidance requests are made.
         </Typography>
       </Box>
     );
@@ -175,7 +175,7 @@ export const AIQualityDashboard: React.FC<AIQualityDashboardProps> = ({ classNam
       <Box className="flex items-center justify-between">
         <Box className="flex items-center gap-2">
           <Activity className="w-5 h-5 text-info-color" />
-          <Typography className="font-semibold text-lg">AI Quality</Typography>
+          <Typography className="font-semibold text-lg">Quality Insights</Typography>
         </Box>
         <Button size="sm" variant="text" onClick={resetMetrics}>
           <RefreshCw className="w-4 h-4" />

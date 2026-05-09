@@ -164,9 +164,9 @@ export function InlineCodePanel({
               size="small"
               onClick={onAIFix}
               className="min-h-0 px-2 py-1 text-xs bg-info-bg hover:bg-info-bg text-white rounded"
-              title="AI Fix (⌘.)"
+              title="Guided Fix (⌘.)"
             >
-              ✨ AI Fix
+              ✨ Guided Fix
             </Button>
           )}
           <Button
@@ -253,7 +253,7 @@ export function useInlineCodePanel() {
   };
 
   const handleAIFix = () => {
-    console.log('AI fix code');
+    console.log('guided fix code');
   };
 
   const handleToggle = () => {

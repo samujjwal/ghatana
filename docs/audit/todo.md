@@ -1,6 +1,8 @@
 Fresh current-head review target: `main` at commit `1577a8559f3ae6a973452465a2cedf8d52c0a0ef` (`refactor 37`). 
 I treated the prior audit file as non-authoritative and reviewed the current vision/architecture/code state directly. Also, `main` is one commit ahead of `b26...`, but the diff contains no Data Cloud file changes, so the Data Cloud head state is the same Data Cloud code/doc state as `b26...`.
 
+Canonical unified remaining-items tracker: `docs/audit/unified-remaining-tracker.md`.
+
 Data Cloud’s intended product shape is clear: it is an AI-native operational data fabric organized by planes, with Runtime Truth as the live/degraded/unavailable state model, `/api/v1/surfaces` as the target Runtime Truth endpoint, `/api/v1/capabilities` only as compatibility, and strict dependency boundaries between planes.   Data Cloud also owns entity/event/analytics/reporting/governance/memory services, feature store/model metadata, plugin lifecycle, and public contracts, while broader AEP orchestration must remain outside the Data Cloud boundary. 
 
 # Single Detailed TODO List — Data Cloud Current Head
@@ -41,6 +43,10 @@ Data Cloud’s intended product shape is clear: it is an AI-native operational d
     - Runtime behavior now distinguishes production fail-closed vs local heuristic fallback for core AI assist flows.
     - Runtime Truth UI migration advanced: first-party delivery UI imports/mocks now resolve through canonical `surfaces.service` instead of `capabilities.service` paths.
     - Verified no direct `api/capabilities.service` imports remain under `products/data-cloud/delivery/ui/src/**`.
+    - Updated SQL workspace runtime-truth/degradation and AI-assist test expectations to match current fail-closed/degraded UX semantics and canonical capability snapshot shape.
+    - Re-validated targeted suites: `SqlWorkspacePage.test.tsx`, `InsightsPage.test.tsx`, runtime-route gate generator, and capability/surface service tests (29/29 passing).
+    - Aligned remaining workflow advisory copy with fail-closed semantics: workflow hints now describe advisory-only results, and AI operations service docs now describe advisory routes as fail-closed in the current launcher profile.
+    - Validation evidence for advisory-copy delta: `WorkflowsPage.test.tsx` (`5/5`).
     - Remaining work: align secondary AI advisory route messaging/semantics with the same production fail-closed policy language across docs and operator UX.
 
 - P1.18 (durability requirements in non-local profiles): PARTIAL
@@ -55,14 +61,45 @@ Data Cloud’s intended product shape is clear: it is an AI-native operational d
     - Updated runtime guidance strings in launcher handlers to point operators to canonical Runtime Truth endpoint `/api/v1/surfaces`.
     - Remaining work: complete end-to-end profile posture parity checks across docs/UI and migrate remaining first-party capability callers to canonical surface-first naming.
 
-- P1.12 (Runtime Truth migration and capability-first retirement): PARTIAL
+- P1.12 (Runtime Truth migration and compatibility retirement): PARTIAL
     - Canonical backend Runtime Truth endpoints now include both `/api/v1/surfaces` and `/api/v1/surfaces/schema`, with compatibility endpoints still served.
-    - Canonical frontend implementation is now centralized in `surfaces.service` (surface-first), with `capabilities.service` reduced to a compatibility shim that re-exports mapped capability-first APIs.
+    - Canonical frontend implementation is now centralized in `surfaces.service` (surface-first), with `capabilities.service` reduced to a compatibility shim that re-exports mapped legacy APIs.
     - First-party delivery UI source/tests/hooks/pages were migrated from `api/capabilities.service` imports to `api/surfaces.service` imports.
     - Added regression coverage for surfaces-schema handler path and capability-client fallback behavior.
     - Validated migration with `pnpm run type-check` in `products/data-cloud/delivery/ui` (passing).
-    - Focused vitest suites for runtime truth service/routes/pages largely pass; existing `SqlWorkspacePage` test failures remain and are not introduced by this import-path migration.
-    - Remaining work: complete SDK/OpenAPI compatibility retirement sequencing and clean up remaining capability-first naming debt in labels/text where required.
+    - Focused vitest suites for runtime truth service/routes/pages pass after expectation realignment (`capabilities.service`, runtime route gates, `InsightsPage`, `SqlWorkspacePage`).
+    - Additional API-layer regression sweep executed during remaining-task run: `src/__tests__/api/**` now passes (25 files, 233 tests), including updated governance lifecycle assertions aligned to live policy CRUD endpoints.
+    - Additional routing/navigation/adapter validation completed: `src/__tests__/routing/**`, `src/__tests__/accessibility/**`, and `src/__tests__/components|layouts|hooks|lib/**` are passing in current chunked sweep after route-alias inventory sync and route-gate capability alias alignment.
+    - Runtime route gates were aligned with canonical capability names for event and plugin surfaces (while preserving compatibility aliases), and corresponding route metadata regression fixtures were updated.
+    - Feature-gate regression expectations were aligned with current policy where Data Fabric is opt-in (explicit feature flag required even in non-strict profiles).
+    - Broad page-suite sweep completed across all `src/__tests__/pages/*.test.tsx` files via chunked execution; drift fixes applied for current boundary-mode UX (Data Fabric/WorkflowList redirect semantics), updated Entity Browser API-call mocking, and Trust Center access-review boundary copy.
+    - Current page-level validation status in this pass: all targeted batches passing (`57 + 129 + 51` tests across 29 page test files).
+    - Centralized MSW Runtime Truth coverage added in shared handlers for `/api/v1/surfaces` and `/api/v1/capabilities` using schema-compatible envelope shape to eliminate unhandled-request warning noise across page tests.
+    - Post-fix verification run passed for warning-heavy suites: `AlertsPage`, `GovernancePage`, `TrustCenter`, and `AnalyticsPage` (`29/29` tests passing) without Runtime Truth unhandled-request warnings.
+    - Runtime Truth dashboard copy was shifted to surface-first wording for user-facing status/loading/error messaging while keeping compatibility symbols intact in the service layer.
+    - Route inventory regression fixture updated for current RuntimeCapabilityRouteGate footprint (events/plugins aliases), and `src/__tests__/routes/routeInventory.test.ts` now passes (`95/95`).
+    - Schema loader retirement sequencing started in first-party utility path: `lib/capabilities.ts` now fetches canonical `/api/v1/surfaces/schema` first and falls back to `/api/v1/capabilities/schema` only when needed, with explicit compatibility warning when fallback is used.
+    - Added regression coverage for schema endpoint sequencing in `src/__tests__/lib/capabilities.schema-loader.test.ts` (canonical-first + compatibility-fallback paths).
+    - Runtime-truth compatibility route sequencing was centralized in mock adapters: deprecation mapping now explicitly tracks `/api/v1/capabilities -> /api/v1/surfaces` and `/api/v1/capabilities/schema -> /api/v1/surfaces/schema`, with compatibility warning headers emitted by MSW and Playwright mocks.
+    - Added mock-governance validation for runtime-truth mapping in `src/__tests__/mocks/deprecatedRoutes.test.ts` and `src/__tests__/mocks/openApiDrivenMocks.test.ts`.
+    - Continued surface-first naming cleanup in user-facing copy: Insights loading states and SQL Workspace runtime-truth helper text now reference runtime surfaces/surface registry language.
+    - Insights overview truth panel label/description now use surface-first terminology (`Runtime Surface Truth`) to keep operator copy aligned with canonical endpoint naming.
+    - Additional runtime wording cleanup completed in boundary/gating surfaces: runtime-boundary AI-assist detail strings, `RuntimeCapabilityErrorBoundary` status text, and `CapabilityGated` loading copy now use runtime surface terminology.
+    - Updated impacted test expectations/descriptions to match surface-first wording (`InsightsPage`, `CapabilityGated`, `useCapabilityGate`).
+    - Validation evidence for this delta: `CapabilityGated.test.tsx` + `useCapabilityGate.test.ts` + `InsightsPage.test.tsx` (`31/31`).
+    - Compatibility shim retirement advanced: removed `api/index.ts` re-export of `capabilities.service` and deleted `src/api/capabilities.service.ts` after confirming no first-party source imports remained.
+    - Kept compatibility behavior validated at canonical service layer (`surfaces.service`) via existing compatibility-focused API tests.
+    - Validation evidence for shim retirement delta: `capabilities.service.test.ts` + `runtimeTruth.test.ts` (`10/10`).
+    - Additional naming-debt cleanup completed for runtime-truth terminology: updated remaining runtime-boundary/component/hook wording and stale test labels from capability-registry phrasing to runtime-surface-registry phrasing.
+    - Validation evidence for naming cleanup delta: `CapabilityGated.test.tsx` + `SqlWorkspacePage.test.tsx` + `ContractBacked.test.tsx` (`75/75`).
+    - Continued surface-first terminology cleanup in the Data Cloud UI: `InsightsPage.tsx` now uses surface-boundary / surface-request operator copy, `RouteCapabilityRegistry.ts` comments now say Route Surface Registry, and the runtime-truth metadata/E2E test titles were updated to surface-first wording.
+    - Validation evidence for this delta: `InsightsPage.test.tsx` (`9/9`) and `routeCapabilityMetadata.test.ts` (`10/10`).
+    - Continued the same copy cleanup into shared runtime-truth UI components: `CapabilityTruthPanel.tsx` now counts surfaces, `RuntimeCapabilityRouteGate.tsx` docs say runtime surface gate, and `RuntimeCapabilityErrorBoundary.tsx` docs say runtime surface truth / runtime-surface-aware error boundary.
+    - SDK/OpenAPI compatibility retirement sequencing advanced: canonical Runtime Truth endpoints `/api/v1/surfaces` and `/api/v1/surfaces/schema` are now present in Data Cloud OpenAPI alongside compatibility `/api/v1/capabilities*` aliases (explicitly marked as compatibility aliases).
+    - Contract coverage was tightened to require both canonical and compatibility runtime-truth paths in OpenAPI-backed assertions (`ContractBacked.test.tsx` and `openApiDrivenMocks.test.ts`).
+    - Validation evidence for OpenAPI sequencing delta: `ContractBacked.test.tsx` + `openApiDrivenMocks.test.ts` (`57/57`).
+    - Validation evidence for this pass: `capabilities.schema-loader.test.ts` + `InsightsPage.test.tsx` (`11/11`), `SqlWorkspacePage.test.tsx` (`15/15`), `deprecatedRoutes.test.ts` (`3/3`), `openApiDrivenMocks.test.ts` (`4/4`).
+    - Remaining work: execute post-migration removal phase for `/api/v1/capabilities*` compatibility aliases (once consumers are fully cut over), and finish low-priority residual surface-first wording cleanup in non-critical labels/comments.
 
 - P1.21 (`Event.of(...)` bypass): COMPLETE
     - Marked `DataCloudClient.Event.of(...)` as deprecated and enforced non-local append validation.
@@ -214,10 +251,10 @@ Data Cloud’s intended product shape is clear: it is an AI-native operational d
     Acceptance criteria: No QuerySpec option is silently ignored.
     Tests required: Provider conformance tests for each QuerySpec field.
 
-12. **Complete Runtime Truth migration and retire capability-first naming.**
+12. **Complete Runtime Truth migration and retire compatibility naming.**
     Area: Runtime Truth Plane / Experience Plane / Contract Plane
     Evidence: README says `/api/v1/surfaces` is target and `/api/v1/capabilities` is compatibility only.  Architecture says to use Runtime Truth / surface state terminology and avoid capability-truth/registry language except temporarily.  Current server still has `CapabilityRegistryHandler` and compatibility naming. 
-    Required fix: Make `/surfaces` primary everywhere, keep `/capabilities` as a tested compatibility adapter only, and define a removal gate/date. Rename UI services/components/hooks away from capability-first names where they represent runtime truth.
+    Required fix: Make `/surfaces` primary everywhere, keep `/capabilities` as a tested compatibility adapter only, and define a removal gate/date. Rename UI services/components/hooks away from compatibility-era names where they represent runtime truth.
     Acceptance criteria: UI and docs primarily use Runtime Truth terminology; compatibility endpoint is clearly isolated.
     Tests required: Runtime Truth API tests, UI route-gate tests, compatibility endpoint parity tests.
 

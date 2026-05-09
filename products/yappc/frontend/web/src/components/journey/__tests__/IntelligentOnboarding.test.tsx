@@ -12,6 +12,7 @@ describe('IntelligentOnboarding', () => {
   it('renders Welcome step on load', () => {
     render(<IntelligentOnboarding onComplete={onComplete} />);
     expect(screen.getByText('Welcome to Yappc')).toBeInTheDocument();
+    expect(screen.getByText(/guided recommendations/i)).toBeInTheDocument();
   });
 
   it('renders all step labels', () => {

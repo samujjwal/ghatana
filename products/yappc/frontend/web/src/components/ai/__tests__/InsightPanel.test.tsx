@@ -31,7 +31,7 @@ describe('InsightPanel', () => {
     );
 
     expect(screen.getByTestId('insight-panel')).toBeInTheDocument();
-    expect(screen.getByText('Proactive AI insights')).toBeInTheDocument();
+    expect(screen.getByText('Proactive insights')).toBeInTheDocument();
     expect(screen.getByText('Boundary leak detected')).toBeInTheDocument();
     expect(screen.getByText(/88% confidence/i)).toBeInTheDocument();
     expect(screen.getByText(/Move mapping to an adapter boundary/i)).toBeInTheDocument();

@@ -57,47 +57,8 @@ export type CreateWorkspaceRequest = CreateWorkspaceRequestContract & {
 // API Functions
 // ============================================================================
 
-// All API requests go through a single gateway on port 7002
-// The gateway internally routes to appropriate backend services
-const API_BASE = import.meta.env.DEV
-  ? `${import.meta.env.VITE_API_ORIGIN ?? 'http://localhost:7002'}/api`
-  : '/api';
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-async function parseJsonResponse(res: Response): Promise<unknown> {
-  const contentType = res.headers.get('content-type') ?? '';
-  const rawBody = await res.text();
-
-  if (!res.ok) {
-    // Better error messages for different status codes
-    if (res.status === 503) {
-      throw new Error(
-        'Database service unavailable. Please ensure the backend services are running.'
-      );
-    }
-    if (res.status >= 500) {
-      const snippet = rawBody.slice(0, 300);
-      throw new Error(`Server error (${res.status}): ${snippet}`);
-    }
-    const snippet = rawBody.slice(0, 300);
-    throw new Error(`HTTP ${res.status} ${res.statusText}: ${snippet}`);
-  }
-
-  // If Vite proxy isn't applied, we can get HTML back (SPA fallback). Make that failure obvious.
-  if (!contentType.includes('application/json')) {
-    const snippet = rawBody.slice(0, 300);
-    throw new Error(`Expected JSON but got '${contentType}': ${snippet}`);
-  }
-
-  try {
-    return JSON.parse(rawBody) as unknown;
-  } catch {
-    const snippet = rawBody.slice(0, 300);
-    throw new Error(`Invalid JSON response: ${snippet}`);
-  }
 }
 
 function normalizeWorkspaceAccess(workspace: Workspace): Workspace {
@@ -175,23 +136,30 @@ export function normalizeProjectAccess(project: Project, isOwnedFallback: boolea
 }
 
 async function fetchWorkspaces(): Promise<Workspace[]> {
+  let data: unknown;
   try {
-    const res = await fetch(`${API_BASE}/workspaces`);
-
-    const data = await parseJsonResponse(res);
-
-    // Accept either the raw array or the wrapped form { workspaces: [...] }
-    if (Array.isArray(data)) return (data as Workspace[]).map(normalizeWorkspaceAccess);
-    if (isRecord(data) && Array.isArray(data.workspaces)) {
-      const response = data as WorkspaceListResponseContract;
-      return (response.workspaces as Workspace[]).map(normalizeWorkspaceAccess);
-    }
-
-    throw new Error('Unexpected response shape for workspaces');
+    data = (await yappcApi.workspaces.list()) as unknown;
   } catch (error) {
-    // Surface real backend failures to the UI; do not silently fall back.
+    if (error instanceof Error) {
+      if (error.message.includes('HTTP 503') || error.message.includes('Service unavailable')) {
+        throw new Error('Database service unavailable. Please ensure the backend services are running.');
+      }
+
+      if (error.message.includes('invalid JSON') || error.message.includes('Unexpected token')) {
+        throw new Error("Expected JSON but got 'text/html': backend returned non-JSON payload");
+      }
+    }
     throw error;
   }
+
+  // Accept either the raw array or the wrapped form { workspaces: [...] }
+  if (Array.isArray(data)) return (data as Workspace[]).map(normalizeWorkspaceAccess);
+  if (isRecord(data) && Array.isArray(data.workspaces)) {
+    const response = data as WorkspaceListResponseContract;
+    return (response.workspaces as Workspace[]).map(normalizeWorkspaceAccess);
+  }
+
+  throw new Error('Unexpected response shape for workspaces');
 }
 
 async function fetchWorkspace(
@@ -200,9 +168,7 @@ async function fetchWorkspace(
   Workspace & { ownedProjects: Project[]; includedProjects: Project[] }
 > {
   try {
-    const res = await fetch(`${API_BASE}/workspaces/${workspaceId}`);
-
-    const data = await parseJsonResponse(res);
+    const data = (await yappcApi.workspaces.get(workspaceId)) as unknown;
 
     // Accept either raw workspace or wrapped form { workspace: {...} }
     if (isRecord(data) && isRecord(data.workspace)) {
@@ -276,13 +242,7 @@ async function fetchDashboardActions(workspaceId: string): Promise<ProjectDashbo
 async function createWorkspaceApi(
   data: CreateWorkspaceRequest
 ): Promise<Workspace> {
-  const res = await fetch(`${API_BASE}/workspaces`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-
-  const payload = await parseJsonResponse(res);
+  const payload = (await yappcApi.workspaces.create(data)) as unknown;
   if (isRecord(payload) && isRecord(payload.workspace)) {
     const response = payload as WorkspaceResponseContract;
     return response.workspace as Workspace;
@@ -303,13 +263,7 @@ async function createProjectApi(data: {
     workspaceId: data.ownerWorkspaceId,
   };
 
-  const res = await fetch(`${API_BASE}/projects`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
-  });
-
-  const payload = await parseJsonResponse(res);
+  const payload = (await yappcApi.projects.create(request)) as unknown;
   if (isRecord(payload) && isRecord(payload.project)) {
     const response = payload as ProjectResponseContract;
     return response.project as Project;
@@ -321,17 +275,11 @@ async function includeProjectApi(data: {
   projectId: string;
   workspaceId: string;
 }): Promise<void> {
-  const res = await fetch(`${API_BASE}/projects/include`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Failed to include project');
+  await yappcApi.projects.include(data);
 }
 
 async function suggestWorkspaceName(): Promise<string> {
-  const res = await fetch(`${API_BASE}/workspaces/suggest-name`);
-  const data = await parseJsonResponse(res);
+  const data = (await yappcApi.workspaces.suggestName()) as unknown;
   if (isRecord(data) && typeof data.suggestion === 'string') {
     const response = data as NameSuggestionResponseContract;
     return response.suggestion;
@@ -344,10 +292,7 @@ async function suggestProjectName(
   workspaceId: string,
   projectType?: ProjectTypeContract
 ): Promise<string> {
-  const params = new URLSearchParams({ workspaceId });
-  if (projectType) params.append('type', projectType);
-  const res = await fetch(`${API_BASE}/projects/suggest-name?${params}`);
-  const data = await parseJsonResponse(res);
+  const data = (await yappcApi.projects.suggestName({ workspaceId, type: projectType })) as unknown;
   if (isRecord(data) && typeof data.suggestion === 'string') {
     const response = data as NameSuggestionResponseContract;
     return response.suggestion;
@@ -361,13 +306,7 @@ async function suggestProjectSetup(data: {
   description?: string;
   preferredType?: ProjectTypeContract;
 }): Promise<ProjectSetupSuggestion> {
-  const res = await fetch(`${API_BASE}/projects/setup-suggestion`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-
-  const payload = await parseJsonResponse(res);
+  const payload = await yappcApi.projects.setupSuggestion(data);
   if (
     isRecord(payload) &&
     typeof payload.suggestion === 'string' &&
@@ -386,11 +325,7 @@ async function suggestProjectSetup(data: {
 async function refreshWorkspaceAI(
   workspaceId: string
 ): Promise<{ aiSummary: string; aiTags: string[] }> {
-  const res = await fetch(`${API_BASE}/workspaces/${workspaceId}/refresh-ai`, {
-    method: 'POST',
-  });
-
-  const data = await parseJsonResponse(res);
+  const data = await yappcApi.workspaces.refreshAiDetails(workspaceId);
   if (isRecord(data) && isRecord(data.workspace)) {
     const workspace = data.workspace;
     return {
@@ -414,11 +349,7 @@ async function refreshWorkspaceAI(
 async function refreshProjectAI(
   projectId: string
 ): Promise<{ aiNextActions: string[]; aiHealthScore: number }> {
-  const res = await fetch(`${API_BASE}/projects/${projectId}/refresh-ai`, {
-    method: 'POST',
-  });
-
-  const data = await parseJsonResponse(res);
+  const data = await yappcApi.projects.refreshAiDetails(projectId);
   if (isRecord(data) && isRecord(data.project)) {
     const project = data.project;
     return {
@@ -445,18 +376,16 @@ async function refreshProjectAI(
 async function fetchAvailableForInclusion(
   workspaceId: string
 ): Promise<Project[]> {
-  try {
-    const res = await fetch(
-      `${API_BASE}/projects/available-for-inclusion?workspaceId=${workspaceId}`
-    );
-    const data = await parseJsonResponse(res);
-    if (Array.isArray(data)) return data as Project[];
-    if (isRecord(data) && Array.isArray(data.projects))
-      return data.projects as Project[];
-    throw new Error('Unexpected response shape for available projects');
-  } catch (error) {
-    throw error;
+  const data = await yappcApi.projects.availableForInclusion(workspaceId);
+  if (Array.isArray(data)) {
+    return data;
   }
+
+  if (isRecord(data) && Array.isArray(data.projects)) {
+    return data.projects as Project[];
+  }
+
+  throw new Error('Unexpected response shape for available projects');
 }
 
 // ============================================================================

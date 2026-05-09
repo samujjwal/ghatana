@@ -18,6 +18,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router';
+import { yappcApi } from '@/lib/api/client';
 
 import type { GateStatus, ItemSummary } from '@/shared/types/phase-gates';
 import { validatePhaseTransition } from '@/shared/types/phase-gates';
@@ -87,23 +88,27 @@ interface AiReadinessApiResponse {
   rationale: string;
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('AI readiness request timed out')), ms);
+    promise
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+}
+
 async function fetchAiReadiness(req: AiReadinessRequest): Promise<AiReadinessAssessment> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15_000);
-
   try {
-    const response = await fetch('/api/ai/phase-gate-readiness', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-      body: JSON.stringify(req),
-    });
-
-    if (!response.ok) {
-      throw new Error(`AI readiness API returned ${response.status}`);
-    }
-
-    const data: AiReadinessApiResponse = await (response.json() as Promise<AiReadinessApiResponse>);
+    const data = await withTimeout(
+      yappcApi.ai.phaseGateReadiness<AiReadinessApiResponse>(req),
+      15_000,
+    );
     return { ...data, source: 'MODEL' };
   } catch {
     // Graceful fallback — rule-based readiness score
@@ -122,8 +127,6 @@ async function fetchAiReadiness(req: AiReadinessRequest): Promise<AiReadinessAss
       rationale: 'LLM assessment unavailable — rule-based fallback applied.',
       source: 'RULE',
     };
-  } finally {
-    clearTimeout(timeout);
   }
 }
 

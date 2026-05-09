@@ -14,6 +14,7 @@ import { useParams, useNavigate, Link } from 'react-router';
 import { Spinner as LoadingSpinner } from '@ghatana/design-system';
 import { ErrorBoundary } from '@ghatana/design-system';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -408,7 +409,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
                             <NativeTextarea
                               value={commentText}
                               onChange={(e) => setCommentText(e.target.value)}
-                              placeholder="Leave a comment..."
+                              placeholder={t('codeReview.commentPlaceholder')}
                               className="comment-textarea"
                               rows={3}
                               autoFocus
@@ -617,7 +618,7 @@ export const CodeReviewDetailPage: React.FC = () => {
     return (
       <div className="code-review-detail-page code-review-detail-page--error">
         <div className="error-container">
-          <h2>Failed to load pull request</h2>
+          <h2>{t('codeReview.loadError')}</h2>
           <p>{error || 'Pull request not found'}</p>
           <NativeButton onClick={() => navigate(`/projects/${projectId}/reviews`)}>
             Back to Reviews
@@ -765,14 +766,14 @@ export const CodeReviewDetailPage: React.FC = () => {
             <div className="conversation-tab">
               {/* Description */}
               <div className="pr-description">
-                <h3>Description</h3>
+                <h3>{t('codeReview.description')}</h3>
                 <p>{pr.description || 'No description provided.'}</p>
               </div>
 
               {/* Linked Stories */}
               {pr.linkedStories.length > 0 && (
                 <div className="linked-stories">
-                  <h4>Linked Stories</h4>
+                  <h4>{t('codeReview.linkedStories')}</h4>
                   <ul>
                     {pr.linkedStories.map((story) => (
                       <li key={story.id}>
@@ -787,7 +788,7 @@ export const CodeReviewDetailPage: React.FC = () => {
 
               {/* Reviewers */}
               <div className="reviewers-section">
-                <h4>Reviewers</h4>
+                <h4>{t('codeReview.reviewers')}</h4>
                 <div className="reviewers-list">
                   {pr.reviewers.map((reviewer) => {
                     const review = pr.reviews.find((r) => r.author.id === reviewer.id);
@@ -824,7 +825,7 @@ export const CodeReviewDetailPage: React.FC = () => {
 
               {/* Reviews Timeline */}
               <div className="reviews-timeline">
-                <h4>Reviews</h4>
+                <h4>{t('codeReview.reviews')}</h4>
                 {pr.reviews.length === 0 ? (
                   <p className="empty-text">No reviews yet.</p>
                 ) : (
@@ -953,7 +954,7 @@ export const CodeReviewDetailPage: React.FC = () => {
               <NativeTextarea
                 value={reviewBody}
                 onChange={(e) => setReviewBody(e.target.value)}
-                placeholder="Leave a comment (optional for approve/request changes)..."
+                placeholder={t('codeReview.commentOptionalPlaceholder')}
                 className="review-textarea"
                 rows={5}
               />

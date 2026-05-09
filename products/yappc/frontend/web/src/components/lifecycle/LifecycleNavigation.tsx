@@ -63,7 +63,7 @@ const NAV_ITEMS: NavItem[] = [
         label: 'Insights',
         icon: <InsightsIcon />,
         path: '/journey/insights',
-        description: 'AI insights and recommendations',
+        description: 'Guided insights and recommendations',
     },
     {
         id: 'audit',

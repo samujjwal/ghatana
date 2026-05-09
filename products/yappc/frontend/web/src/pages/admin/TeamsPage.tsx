@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -56,6 +57,7 @@ async function fetchTeams(search: string): Promise<Team[]> {
 const TeamsPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const { t } = useI18n();
 
   const { data: teams, isLoading, error } = useQuery<Team[]>({
     queryKey: ['admin-teams', search],
@@ -71,7 +73,7 @@ const TeamsPage: React.FC = () => {
     return (
       <div className="p-8">
         <div className="bg-destructive-bg/20 border border-destructive-border rounded-lg p-4 text-destructive">
-          Failed to load teams: {error instanceof Error ? error.message : 'Unknown error'}
+          {t('teams.loadError', { message: error instanceof Error ? error.message : 'Unknown error' })}
         </div>
       </div>
     );
@@ -82,13 +84,13 @@ const TeamsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-fg-muted">Teams</h1>
+          <h1 className="text-2xl font-bold text-fg-muted">{t('teams.title')}</h1>
           <p className="text-sm text-fg-muted mt-1">
             {filtered?.length ?? 0} team{filtered?.length !== 1 ? 's' : ''}
           </p>
         </div>
         <Button className="px-4 py-2 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors">
-          Create Team
+          {t('teams.create')}
         </Button>
       </div>
 
@@ -96,7 +98,7 @@ const TeamsPage: React.FC = () => {
       <div className="flex flex-wrap gap-3">
         <Input
           type="text"
-          placeholder="Search teams..."
+          placeholder={t('teams.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="flex-1 min-w-[200px] max-w-sm px-3 py-2 bg-surface border border-border rounded-lg text-fg-muted text-sm placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-info-border"
@@ -138,7 +140,7 @@ const TeamsPage: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-fg-muted">{team.name}</h3>
-                    <p className="text-xs text-fg-muted">Led by {team.lead}</p>
+                    <p className="text-xs text-fg-muted">{t('teams.ledBy', { lead: team.lead })}</p>
                   </div>
                 </div>
                 <span
@@ -185,7 +187,7 @@ const TeamsPage: React.FC = () => {
 
           {filtered?.length === 0 && (
             <div className="col-span-full py-16 text-center text-fg-muted">
-              No teams found
+              {t('teams.noTeams')}
             </div>
           )}
         </div>

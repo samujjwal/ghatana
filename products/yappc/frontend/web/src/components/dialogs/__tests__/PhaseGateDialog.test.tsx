@@ -65,7 +65,7 @@ describe('PhaseGateDialog', () => {
     expect(screen.getByText(/All required artifacts are complete/i)).toBeInTheDocument();
   });
 
-  it('calls onRequestAiAssessment when the AI button is clicked', () => {
+  it('calls onRequestAiAssessment when the readiness button is clicked', () => {
     const onRequestAiAssessment = vi.fn();
     render(
       <PhaseGateDialog
@@ -79,6 +79,20 @@ describe('PhaseGateDialog', () => {
     );
     fireEvent.click(screen.getByTestId('phase-gate-ai-assess-btn'));
     expect(onRequestAiAssessment).toHaveBeenCalledOnce();
+  });
+
+  it('renders readiness button copy before assessment starts', () => {
+    render(
+      <PhaseGateDialog
+        targetPhase="shape"
+        missingArtifacts={['adr']}
+        aiAssessment={undefined}
+        isAiAssessing={false}
+        onRequestAiAssessment={vi.fn()}
+        onClose={vi.fn()}
+      />
+    );
+    expect(screen.getByText('Get readiness assessment')).toBeInTheDocument();
   });
 
   it('shows loading spinner while AI is assessing', () => {

@@ -429,7 +429,7 @@ export const ResearchPackEditor: React.FC<ResearchPackEditorProps> = ({
                         className="flex items-center gap-2 px-4 py-2 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50"
                     >
                         <AutoAwesome className="w-5 h-5" />
-                        {isAILoading ? 'Analyzing...' : 'AI Analysis'}
+                        {isAILoading ? 'Analyzing...' : 'Guided Analysis'}
                     </Button>
                 )}
                 <div className="flex gap-3 ml-auto">

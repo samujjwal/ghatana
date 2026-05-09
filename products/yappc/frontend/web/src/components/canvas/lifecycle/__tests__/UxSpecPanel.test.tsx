@@ -122,21 +122,21 @@ describe('UxSpecPanel', () => {
     });
   });
 
-  it('renders AI Critique button when onAIAssist provided', () => {
+  it('renders Guided Critique button when onAIAssist provided', () => {
     const onAIAssist = vi.fn().mockResolvedValue(null);
     render(<UxSpecPanel {...makeProps({ onAIAssist })} />);
-    expect(screen.getByText('AI Critique')).toBeDefined();
+    expect(screen.getByText('Guided Critique')).toBeDefined();
   });
 
-  it('does not render AI Critique button when onAIAssist absent', () => {
+  it('does not render Guided Critique button when onAIAssist absent', () => {
     render(<UxSpecPanel {...makeProps({ onAIAssist: undefined })} />);
-    expect(screen.queryByText('AI Critique')).toBeNull();
+    expect(screen.queryByText('Guided Critique')).toBeNull();
   });
 
-  it('calls onAIAssist when AI Critique clicked', async () => {
+  it('calls onAIAssist when Guided Critique clicked', async () => {
     const onAIAssist = vi.fn().mockResolvedValue(null);
     render(<UxSpecPanel {...makeProps({ onAIAssist })} />);
-    fireEvent.click(screen.getByText('AI Critique'));
+    fireEvent.click(screen.getByText('Guided Critique'));
     await waitFor(() => {
       expect(onAIAssist).toHaveBeenCalledOnce();
     });

@@ -106,7 +106,7 @@ const EmptyState: React.FC = () => (
       <Sparkles className="w-6 h-6 text-info-color" />
     </div>
     <div>
-      <p className="text-sm font-medium text-fg-muted">AI Assistant</p>
+      <p className="text-sm font-medium text-fg-muted">Guided Assistant</p>
       <p className="text-xs text-fg-muted mt-1">
         Ask me to help design, validate, or explain your project architecture.
       </p>

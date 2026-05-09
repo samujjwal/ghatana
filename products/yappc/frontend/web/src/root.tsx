@@ -14,6 +14,7 @@ import { ToastProvider } from './components/common';
 import { AuthProvider } from './providers/AuthProvider';
 import { FeatureFlagProvider } from './providers/FeatureFlagProvider';
 import { AppThemeProvider } from './theme';
+import { I18nProvider } from './i18n/I18nProvider';
 import './index.css';
 import '@xyflow/react/dist/style.css';
 
@@ -80,28 +81,30 @@ const queryClient = new QueryClient({
 
 export default function App() {
   return (
-    <AppThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <GraphQLProvider>
-          <WebSocketProvider
-            wsUrl={import.meta.env.VITE_WEBSOCKET_URL ?? 'ws://localhost:3001/ws'}
-            autoConnect={
-              typeof import.meta.env?.VITE_ENABLE_REAL_WS === 'string'
-                ? import.meta.env.VITE_ENABLE_REAL_WS === 'true'
-                : false
-            }
-          >
-            <ToastProvider>
-              <AuthProvider>
-                <FeatureFlagProvider>
-                  <Outlet />
-                </FeatureFlagProvider>
-              </AuthProvider>
-            </ToastProvider>
-          </WebSocketProvider>
-        </GraphQLProvider>
-      </QueryClientProvider>
-    </AppThemeProvider>
+    <I18nProvider>
+      <AppThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <GraphQLProvider>
+            <WebSocketProvider
+              wsUrl={import.meta.env.VITE_WEBSOCKET_URL ?? 'ws://localhost:3001/ws'}
+              autoConnect={
+                typeof import.meta.env?.VITE_ENABLE_REAL_WS === 'string'
+                  ? import.meta.env.VITE_ENABLE_REAL_WS === 'true'
+                  : false
+              }
+            >
+              <ToastProvider>
+                <AuthProvider>
+                  <FeatureFlagProvider>
+                    <Outlet />
+                  </FeatureFlagProvider>
+                </AuthProvider>
+              </ToastProvider>
+            </WebSocketProvider>
+          </GraphQLProvider>
+        </QueryClientProvider>
+      </AppThemeProvider>
+    </I18nProvider>
   );
 }
 

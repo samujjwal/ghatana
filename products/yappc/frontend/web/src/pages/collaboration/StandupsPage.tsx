@@ -13,9 +13,11 @@ import React from 'react';
 import { useParams } from 'react-router';
 import { MessageSquare, Plus, Users, Clock } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 const StandupsPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
+  const { t } = useI18n();
 
   return (
     <div className="min-h-screen bg-surface text-white p-8">
@@ -26,21 +28,20 @@ const StandupsPage: React.FC = () => {
               <MessageSquare className="w-6 h-6 text-sky-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Standups</h1>
-              <p className="text-fg-muted">Async daily standups for your team</p>
+              <h1 className="text-2xl font-bold">{t('standups.title')}</h1>
+              <p className="text-fg-muted">{t('standups.subtitle')}</p>
             </div>
           </div>
           <Button startIcon={<Plus className="w-4 h-4" />} className="rounded-lg bg-violet-600 hover:bg-violet-500">
-            Post Update
+            {t('standups.postUpdate')}
           </Button>
         </div>
 
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <MessageSquare className="w-12 h-12 text-fg-muted mb-4" />
-          <h3 className="text-lg font-semibold text-fg-muted mb-2">No standups today</h3>
+          <h3 className="text-lg font-semibold text-fg-muted mb-2">{t('standups.noStandups')}</h3>
           <p className="text-fg-muted max-w-md">
-            Post your daily standup to share what you worked on, what's next,
-            and any blockers with the team.
+            {t('standups.noStandupsDesc')}
           </p>
         </div>
       </div>

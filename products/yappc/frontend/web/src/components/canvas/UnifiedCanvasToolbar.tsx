@@ -41,6 +41,8 @@ import {
 
 import { cn } from '../../utils/cn';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
+import type { MessageKey } from '../../i18n/messages';
 
 // =============================================================================
 // Types
@@ -61,7 +63,7 @@ export type ToolType =
 
 export interface ToolConfig {
   id: ToolType;
-  label: string;
+  labelKey: MessageKey;
   icon: React.ComponentType<{ className?: string }>;
   shortcut?: string;
   category: 'primary' | 'shapes' | 'content' | 'advanced';
@@ -91,23 +93,23 @@ export interface UnifiedCanvasToolbarProps {
 // =============================================================================
 
 const PRIMARY_TOOLS: ToolConfig[] = [
-  { id: 'select', label: 'Select', icon: MousePointer2, shortcut: 'V', category: 'primary' },
-  { id: 'pan', label: 'Pan', icon: Hand, shortcut: 'H', category: 'primary' },
+  { id: 'select', labelKey: 'toolbar.tool.select', icon: MousePointer2, shortcut: 'V', category: 'primary' },
+  { id: 'pan', labelKey: 'toolbar.tool.pan', icon: Hand, shortcut: 'H', category: 'primary' },
 ];
 
 const SHAPE_TOOLS: ToolConfig[] = [
-  { id: 'rectangle', label: 'Rectangle', icon: Square, shortcut: 'R', category: 'shapes' },
-  { id: 'ellipse', label: 'Ellipse', icon: Circle, shortcut: 'O', category: 'shapes' },
-  { id: 'frame', label: 'Frame', icon: Frame, shortcut: 'F', category: 'shapes' },
-  { id: 'arrow', label: 'Arrow', icon: ArrowRight, shortcut: 'A', category: 'shapes' },
+  { id: 'rectangle', labelKey: 'toolbar.tool.rectangle', icon: Square, shortcut: 'R', category: 'shapes' },
+  { id: 'ellipse', labelKey: 'toolbar.tool.ellipse', icon: Circle, shortcut: 'O', category: 'shapes' },
+  { id: 'frame', labelKey: 'toolbar.tool.frame', icon: Frame, shortcut: 'F', category: 'shapes' },
+  { id: 'arrow', labelKey: 'toolbar.tool.arrow', icon: ArrowRight, shortcut: 'A', category: 'shapes' },
 ];
 
 const CONTENT_TOOLS: ToolConfig[] = [
-  { id: 'text', label: 'Text', icon: Type, shortcut: 'T', category: 'content' },
-  { id: 'sticky', label: 'Sticky Note', icon: StickyNote, shortcut: 'S', category: 'content' },
-  { id: 'draw', label: 'Draw', icon: Pencil, shortcut: 'P', category: 'content' },
-  { id: 'image', label: 'Image', icon: Image, shortcut: 'I', category: 'content' },
-  { id: 'link', label: 'Link', icon: Link2, shortcut: 'L', category: 'content' },
+  { id: 'text', labelKey: 'toolbar.tool.text', icon: Type, shortcut: 'T', category: 'content' },
+  { id: 'sticky', labelKey: 'toolbar.tool.stickyNote', icon: StickyNote, shortcut: 'S', category: 'content' },
+  { id: 'draw', labelKey: 'toolbar.tool.draw', icon: Pencil, shortcut: 'P', category: 'content' },
+  { id: 'image', labelKey: 'toolbar.tool.image', icon: Image, shortcut: 'I', category: 'content' },
+  { id: 'link', labelKey: 'toolbar.tool.link', icon: Link2, shortcut: 'L', category: 'content' },
 ];
 
 const ALL_TOOLS = [...PRIMARY_TOOLS, ...SHAPE_TOOLS, ...CONTENT_TOOLS];
@@ -124,6 +126,8 @@ interface ToolButtonProps {
 
 const ToolButton: React.FC<ToolButtonProps> = ({ tool, isActive, onClick }) => {
   const Icon = tool.icon;
+  const { t } = useI18n();
+  const label = t(tool.labelKey);
 
   return (
     <Button
@@ -136,13 +140,13 @@ const ToolButton: React.FC<ToolButtonProps> = ({ tool, isActive, onClick }) => {
           ? 'bg-info-bg text-info-color dark:bg-info-bg dark:text-info-color'
           : 'text-fg-muted hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface'
       )}
-      title={`${tool.label}${tool.shortcut ? ` (${tool.shortcut})` : ''}`}
+      title={`${label}${tool.shortcut ? ` (${tool.shortcut})` : ''}`}
     >
       <Icon className="h-4 w-4" />
 
       {/* Tooltip */}
       <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-surface px-2 py-1 text-xs text-white shadow-lg group-hover:block dark:bg-surface-muted">
-        {tool.label}
+        {label}
         {tool.shortcut && (
           <span className="ml-2 rounded bg-surface-muted px-1 font-mono dark:bg-surface-muted">
             {tool.shortcut}
@@ -157,16 +161,17 @@ interface ToolDropdownProps {
   tools: ToolConfig[];
   activeTool: ToolType;
   onToolChange: (tool: ToolType) => void;
-  label: string;
+  labelKey: MessageKey;
 }
 
 const ToolDropdown: React.FC<ToolDropdownProps> = ({
   tools,
   activeTool,
   onToolChange,
-  label,
+  labelKey,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useI18n();
   const activeToolConfig = tools.find((t) => t.id === activeTool);
   const ActiveIcon = activeToolConfig?.icon || tools[0].icon;
 
@@ -182,7 +187,7 @@ const ToolDropdown: React.FC<ToolDropdownProps> = ({
             ? 'bg-info-bg text-info-color dark:bg-info-bg dark:text-info-color'
             : 'text-fg-muted hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface'
         )}
-        title={label}
+        title={t(labelKey)}
       >
         <ActiveIcon className="h-4 w-4" />
         <ChevronDown className="h-3 w-3" />
@@ -221,7 +226,7 @@ const ToolDropdown: React.FC<ToolDropdownProps> = ({
                     )}
                   >
                     <Icon className="h-4 w-4" />
-                    <span>{tool.label}</span>
+                    <span>{t(tool.labelKey)}</span>
                     {tool.shortcut && (
                       <span className="ml-auto text-xs text-fg-muted">{tool.shortcut}</span>
                     )}
@@ -258,6 +263,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
   onToggleGrid,
   className,
 }) => {
+  const { t } = useI18n();
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Keyboard shortcuts
@@ -316,7 +322,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
         tools={SHAPE_TOOLS}
         activeTool={activeTool}
         onToolChange={onToolChange}
-        label="Shapes"
+        labelKey="toolbar.dropdown.shapes"
       />
 
       {/* Content Tools (Dropdown for Progressive Disclosure) */}
@@ -324,7 +330,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
         tools={CONTENT_TOOLS}
         activeTool={activeTool}
         onToolChange={onToolChange}
-        label="Content"
+        labelKey="toolbar.dropdown.content"
       />
 
       <div className="mx-1 h-6 w-px bg-surface-muted dark:bg-surface-muted" />
@@ -342,7 +348,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
               ? 'text-fg-muted hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface'
               : 'cursor-not-allowed text-fg-muted dark:text-fg-muted'
           )}
-          title="Undo (⌘Z)"
+          title={`${t('toolbar.action.undo')} (⌘Z)`}
         >
           <Undo2 className="h-4 w-4" />
         </Button>
@@ -357,7 +363,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
               ? 'text-fg-muted hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface'
               : 'cursor-not-allowed text-fg-muted dark:text-fg-muted'
           )}
-          title="Redo (⌘⇧Z)"
+          title={`${t('toolbar.action.redo')} (⌘⇧Z)`}
         >
           <Redo2 className="h-4 w-4" />
         </Button>
@@ -372,7 +378,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
           variant="ghost"
           size="sm"
           className="flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted transition-all hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface"
-          title="Zoom Out"
+          title={t('toolbar.action.zoomOut')}
         >
           <ZoomOut className="h-4 w-4" />
         </Button>
@@ -384,7 +390,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
           variant="ghost"
           size="sm"
           className="flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted transition-all hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface"
-          title="Zoom In"
+          title={t('toolbar.action.zoomIn')}
         >
           <ZoomIn className="h-4 w-4" />
         </Button>
@@ -393,7 +399,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
           variant="ghost"
           size="sm"
           className="flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted transition-all hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface"
-          title="Fit to Screen"
+          title={t('toolbar.action.fitToScreen')}
         >
           <Maximize2 className="h-4 w-4" />
         </Button>
@@ -401,17 +407,17 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
 
       <div className="mx-1 h-6 w-px bg-surface-muted dark:bg-surface-muted" />
 
-      {/* AI Assist Button */}
+      {/* Guided Assist Button */}
       {onAIAssist && (
         <Button
           onClick={onAIAssist}
           variant="solid"
           size="sm"
           className="flex h-9 items-center gap-1 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 px-3 text-sm font-medium text-white transition-all hover:from-purple-600 hover:to-blue-600"
-          title="AI Assist"
+          title={t('toolbar.action.guidedAssist')}
         >
           <Sparkles className="h-4 w-4" />
-          <span className="hidden sm:inline">AI</span>
+          <span className="hidden sm:inline">{t('toolbar.action.assist')}</span>
         </Button>
       )}
 
@@ -426,7 +432,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
             ? 'bg-surface-muted text-fg dark:bg-surface dark:text-fg-muted'
             : 'text-fg-muted hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface'
         )}
-        title="More Options"
+        title={t('toolbar.action.moreOptions')}
       >
         <MoreHorizontal className="h-4 w-4" />
       </Button>
@@ -454,7 +460,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
                     ? 'bg-info-bg text-info-color dark:bg-info-bg dark:text-info-color'
                     : 'text-fg-muted hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface'
                 )}
-                title="Toggle Grid"
+                title={t('toolbar.action.toggleGrid')}
               >
                 <Grid3X3 className="h-4 w-4" />
               </Button>
@@ -472,7 +478,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
                     ? 'bg-warning-bg text-warning-color dark:bg-warning-bg dark:text-warning-color'
                     : 'text-fg-muted hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface'
                 )}
-                title={isLocked ? 'Unlock Canvas' : 'Lock Canvas'}
+                title={isLocked ? t('toolbar.action.unlockCanvas') : t('toolbar.action.lockCanvas')}
               >
                 {isLocked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
               </Button>
@@ -483,7 +489,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
               variant="ghost"
               size="sm"
               className="flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted transition-all hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface"
-              title="Layers"
+              title={t('toolbar.action.layers')}
             >
               <Layers className="h-4 w-4" />
             </Button>

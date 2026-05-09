@@ -1,7 +1,7 @@
 /**
  * Capability-gated render wrapper (P0.7).
  *
- * Conditionally renders children only when the runtime capability registry
+ * Conditionally renders children only when the runtime surface registry
  * reports the required capability as active (or degraded, depending on mode).
  *
  * @doc.type component
@@ -43,7 +43,7 @@ export const CapabilityGated: React.FC<CapabilityGatedProps> = ({
     return (
       <span className="inline-flex items-center gap-2 text-sm text-gray-500">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Checking capability...
+        Checking runtime surface...
       </span>
     );
   }

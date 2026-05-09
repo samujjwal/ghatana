@@ -11,8 +11,10 @@ import { Home, ArrowLeft, Search, HelpCircle } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
 import { Button } from '../../components/ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 function NotFoundPage(): React.ReactElement {
+  const { t } = useI18n();
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center p-6">
       <motion.div
@@ -33,9 +35,9 @@ function NotFoundPage(): React.ReactElement {
         </div>
 
         {/* Message */}
-        <h1 className="text-2xl font-bold text-white mb-4">Page Not Found</h1>
+        <h1 className="text-2xl font-bold text-white mb-4">{t('notFound.title')}</h1>
         <p className="text-fg-muted mb-8">
-          The page you're looking for doesn't exist or has been moved. Let's get you back on track.
+          {t('notFound.message')}
         </p>
 
         {/* Actions */}
@@ -48,7 +50,7 @@ function NotFoundPage(): React.ReactElement {
             )}
           >
             <Home className="w-4 h-4" />
-            Go to Dashboard
+            {t('notFound.goToDashboard')}
           </NavLink>
           <Button
             onClick={() => window.history.back()}
@@ -59,7 +61,7 @@ function NotFoundPage(): React.ReactElement {
             )}
           >
             <ArrowLeft className="w-4 h-4" />
-            Go Back
+            {t('notFound.goBack')}
           </Button>
         </div>
 
@@ -70,7 +72,7 @@ function NotFoundPage(): React.ReactElement {
             className="inline-flex items-center gap-2 text-sm text-fg-muted hover:text-fg-muted transition-colors"
           >
             <HelpCircle className="w-4 h-4" />
-            Need help? Contact support
+            {t('notFound.helpLink')}
           </a>
         </div>
       </motion.div>

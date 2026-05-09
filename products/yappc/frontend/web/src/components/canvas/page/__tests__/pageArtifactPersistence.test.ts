@@ -28,6 +28,40 @@ afterEach(() => {
 });
 
 describe('pageArtifactPersistence', () => {
+  it('default HTTP adapter path uses canonical typed client transport', async () => {
+    const document = buildDocument();
+    const originalFetch = global.fetch;
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, status: 200 })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => document });
+
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    try {
+      const adapter = new HttpPageArtifactPersistenceAdapter({
+        scope,
+      });
+
+      await adapter.save(document);
+      const loaded = await adapter.load(document.artifactId);
+
+      expect(fetchMock).toHaveBeenNthCalledWith(
+        1,
+        '/api/v1/page-artifacts/artifact-1/document',
+        expect.objectContaining({ method: 'PUT' }),
+      );
+      expect(fetchMock).toHaveBeenNthCalledWith(
+        2,
+        '/api/v1/page-artifacts/artifact-1/document',
+        expect.objectContaining({ method: 'GET' }),
+      );
+      expect(loaded?.artifactId).toBe(document.artifactId);
+    } finally {
+      vi.stubGlobal('fetch', originalFetch);
+    }
+  });
+
   it('saves and loads with local storage adapter', async () => {
     const adapter = new LocalStoragePageArtifactPersistenceAdapter('test:page-artifact:');
     const document = buildDocument();
@@ -378,6 +412,40 @@ describe('pageArtifactPersistence — conflict detection', () => {
     await expect(adapter.save(document)).rejects.toMatchObject({
       kind: 'missing-scope',
       status: 422,
+    });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('HTTP adapter rejects scope mismatch between artifact graph and request headers', async () => {
+    const document = {
+      ...buildDocument(),
+      artifactGraph: {
+        graphId: 'artifact-1:graph',
+        projectId: 'project-outside-scope',
+        sourceType: 'semantic-model',
+        source: 'semantic-model',
+        importedAt: '2026-05-07T00:00:00.000Z',
+        nodes: [{ id: 'artifact-1:page', kind: 'page' as const, label: 'Landing' }],
+        edges: [],
+        provenance: {
+          createdBy: 'tester',
+          compiler: 'yappc-artifact-compiler' as const,
+          confidence: 0.8,
+          residualIslandIds: [],
+        },
+      },
+    };
+    const fetchImpl = vi.fn();
+
+    const adapter = new HttpPageArtifactPersistenceAdapter({
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      scope,
+    });
+
+    await expect(adapter.save(document)).rejects.toMatchObject({
+      kind: 'validation',
+      status: 422,
+      message: expect.stringContaining('project scope mismatch'),
     });
     expect(fetchImpl).not.toHaveBeenCalled();
   });

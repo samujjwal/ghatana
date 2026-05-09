@@ -485,8 +485,8 @@ describe('Contract-Backed Route Tests', () => {
     });
   });
 
-  describe('Capabilities and voice contracts', () => {
-    it('capability registry envelope passes contract validation', () => {
+  describe('Runtime truth and voice contracts', () => {
+    it('runtime surface registry envelope passes contract validation', () => {
       const envelope = CapabilityRegistryEnvelopeSchema.parse({
         data: {
           capabilities: {
@@ -1615,7 +1615,10 @@ describe('Contract-Backed Route Tests', () => {
         '/api/v1/voice/intent',
         '/api/v1/voice/intents',
         '/api/v1/voice/intent/classify',
+        '/api/v1/surfaces',
+        '/api/v1/surfaces/schema',
         '/api/v1/capabilities',
+        '/api/v1/capabilities/schema',
         '/api/v1/collections/{id}/cost-report',
         '/api/v1/collections/{id}/migrate',
         '/metrics',
@@ -1738,7 +1741,7 @@ describe('Contract-Backed Route Tests', () => {
       expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/AnomalyQueryResponse"');
     });
 
-    it('keeps the canonical reports, models, voice, and capabilities routes visible to contract coverage', () => {
+    it('keeps the canonical reports, models, voice, and runtime-truth routes visible to contract coverage', () => {
       expect(canonicalOpenApi).toContain('/api/v1/reports:');
       expect(canonicalOpenApi).toContain('/api/v1/reports/{reportId}:');
       expect(canonicalOpenApi).toContain('/api/v1/models:');
@@ -1748,7 +1751,10 @@ describe('Contract-Backed Route Tests', () => {
       expect(canonicalOpenApi).toContain('/api/v1/voice/intent:');
       expect(canonicalOpenApi).toContain('/api/v1/voice/intents:');
       expect(canonicalOpenApi).toContain('/api/v1/voice/intent/classify:');
+      expect(canonicalOpenApi).toContain('/api/v1/surfaces:');
+      expect(canonicalOpenApi).toContain('/api/v1/surfaces/schema:');
       expect(canonicalOpenApi).toContain('/api/v1/capabilities:');
+      expect(canonicalOpenApi).toContain('/api/v1/capabilities/schema:');
       expect(canonicalOpenApi).toContain('VoiceIntentRequest:');
       expect(canonicalOpenApi).toContain('VoiceIntentClassificationRequest:');
     });

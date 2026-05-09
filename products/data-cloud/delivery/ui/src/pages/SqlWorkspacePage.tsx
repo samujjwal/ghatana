@@ -898,7 +898,7 @@ export function SqlWorkspacePage(): React.ReactElement {
                 variant="outline"
                 leadingIcon={<Sparkles className="h-4 w-4" />}
                 onClick={() => setShowAIAssist(!showAIAssist)}
-                title={aiAssistCapability?.detail ?? 'AI assist status is derived from the capability registry and current deployment behavior.'}
+                title={aiAssistCapability?.detail ?? 'AI assist status is derived from the runtime surface registry and current deployment behavior.'}
                 data-testid="sql-ai-assist-toggle"
                 className={cn(showAIAssist && 'border-purple-400 dark:border-purple-600')}
               >
@@ -1034,7 +1034,7 @@ export function SqlWorkspacePage(): React.ReactElement {
           <div className="mb-6" data-testid="sql-capability-truth-panel">
             <CapabilityTruthPanel
               title="Query Runtime Truth"
-              description="This workspace reads the live capability registry before enabling optional query paths."
+              description="This workspace reads the live runtime surface registry before enabling optional query paths."
               capabilities={capabilitySubset}
               compact
             />

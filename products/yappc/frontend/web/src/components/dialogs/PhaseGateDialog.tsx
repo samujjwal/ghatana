@@ -31,6 +31,8 @@ import {
 
 import type { AiReadinessAssessment, IaPhase } from '@/hooks/usePhaseGate';
 import type { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
+import { useI18n } from '@/i18n/I18nProvider';
+import type { MessageKey } from '@/i18n/messages';
 import { Button } from '../ui/Button';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -56,15 +58,15 @@ export interface PhaseGateDialogProps {
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PHASE_LABEL: Record<IaPhase, string> = {
-  intent: 'Intent',
-  shape: 'Shape',
-  validate: 'Validate',
-  generate: 'Generate',
-  run: 'Run',
-  observe: 'Observe',
-  learn: 'Learn',
-  evolve: 'Evolve',
+const PHASE_LABEL: Record<IaPhase, MessageKey> = {
+  intent: 'phaseGate.phase.intent',
+  shape: 'phaseGate.phase.shape',
+  validate: 'phaseGate.phase.validate',
+  generate: 'phaseGate.phase.generate',
+  run: 'phaseGate.phase.run',
+  observe: 'phaseGate.phase.observe',
+  learn: 'phaseGate.phase.learn',
+  evolve: 'phaseGate.phase.evolve',
 };
 
 function ReadinessScore({ score }: { score: number }): React.ReactElement {
@@ -118,6 +120,9 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
   onRequestAiAssessment,
   onClose,
 }) => {
+  const { t } = useI18n();
+  const phaseLabel = t(PHASE_LABEL[targetPhase]);
+
   return (
     /* Backdrop */
     <Box
@@ -138,10 +143,10 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
                   id="phase-gate-title"
                   className="text-base font-semibold"
                 >
-                  Phase gate: {PHASE_LABEL[targetPhase]}
+                  {t('phaseGate.phaseGate', { phase: phaseLabel })}
                 </Typography>
                 <Typography className="text-xs text-text-secondary">
-                  Complete the required artifacts to unlock this phase.
+                  {t('phaseGate.completeArtifacts')}
                 </Typography>
               </Box>
             </Box>
@@ -151,7 +156,7 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
               variant="ghost"
               size="small"
               className="rounded p-1 text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors"
-              aria-label="Close"
+              aria-label={t('phaseGate.close')}
               data-testid="phase-gate-close"
             >
               <X className="h-4 w-4" aria-hidden="true" />
@@ -164,7 +169,7 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
               <Box className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
                 <CheckCircle className="h-4 w-4" aria-hidden="true" />
                 <Typography className="text-sm">
-                  All required artifacts are complete.
+                  {t('phaseGate.allRequiredComplete')}
                 </Typography>
               </Box>
             ) : (
@@ -172,8 +177,10 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
                 <Box className="flex items-center gap-1.5">
                   <AlertTriangle className="h-4 w-4 text-warning-color" aria-hidden="true" />
                   <Typography className="text-sm font-medium">
-                    {missingArtifacts.length} artifact
-                    {missingArtifacts.length !== 1 ? 's' : ''} required
+                    {t('phaseGate.artifactsRequired', {
+                      count: missingArtifacts.length,
+                      suffix: missingArtifacts.length !== 1 ? 's' : '',
+                    })}
                   </Typography>
                 </Box>
                 <Box
@@ -193,7 +200,7 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
                         {kind.replace(/_/g, ' ')}
                       </Typography>
                       <Chip
-                        label="Required"
+                        label={t('phaseGate.required')}
                         size="sm"
                         className="ml-auto bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color text-xs"
                       />
@@ -203,7 +210,7 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
               </>
             )}
 
-            {/* AI assessment section */}
+            {/* Readiness assessment section */}
             <Box className="border-t border-divider pt-3">
               {!aiAssessment && !isAiAssessing && (
                 <Button
@@ -215,14 +222,14 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
                   data-testid="phase-gate-ai-assess-btn"
                 >
                   <Brain className="h-4 w-4" aria-hidden="true" />
-                  Get AI readiness assessment
+                  {t('phaseGate.getReadinessAssessment')}
                 </Button>
               )}
 
               {isAiAssessing && (
                 <Box className="flex items-center gap-2 text-text-secondary">
                   <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  <Typography className="text-sm">Assessing readiness…</Typography>
+                  <Typography className="text-sm">{t('phaseGate.assessingReadiness')}</Typography>
                 </Box>
               )}
 
@@ -234,16 +241,16 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
                   <Box className="flex items-start justify-between gap-4">
                     <Box>
                       <Typography className="text-xs font-semibold text-text-secondary mb-1">
-                        AI Readiness Score
+                        {t('phaseGate.readinessScore')}
                       </Typography>
                       <ReadinessScore score={aiAssessment.score} />
                     </Box>
                     {aiAssessment.source === 'RULE' && (
                       <Chip
-                        label="Rule-based"
+                        label={t('phaseGate.ruleBased')}
                         size="sm"
                         className="bg-grey-200 text-grey-600 text-xs"
-                        title="LLM unavailable — rule-based fallback"
+                        title={t('phaseGate.ruleBasedTitle')}
                       />
                     )}
                   </Box>
@@ -257,7 +264,7 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
                   {aiAssessment.nextSteps.length > 0 && (
                     <Box>
                       <Typography className="text-xs font-semibold mb-1">
-                        Suggested next steps
+                        {t('phaseGate.suggestedNextSteps')}
                       </Typography>
                       <Box
                         className="space-y-1"
@@ -285,7 +292,7 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
               variant="ghost"
               className="rounded bg-grey-100 dark:bg-grey-800 px-4 py-2 text-sm font-medium text-text-primary hover:bg-grey-200 dark:hover:bg-grey-700 transition-colors"
             >
-              Go back
+              {t('phaseGate.goBack')}
             </Button>
           </Box>
         </CardContent>

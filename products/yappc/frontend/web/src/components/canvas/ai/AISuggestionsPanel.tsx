@@ -179,7 +179,7 @@ export const AISuggestionsPanel: React.FC<AISuggestionsPanelProps> = ({
                 <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
                     <Stack direction="row" alignItems="center" spacing={1}>
                         <AIIcon color="primary" />
-                        <Typography variant="h6">AI Suggestions</Typography>
+                        <Typography variant="h6">Suggested Improvements</Typography>
                         {suggestions.length > 0 && (
                             <Badge badgeContent={suggestions.length} color="primary" />
                         )}

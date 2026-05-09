@@ -90,7 +90,7 @@ describe('AINotificationToast', () => {
         autoDismiss={0}
       />
     );
-    expect(screen.getByText('AI Suggestion Ready!')).toBeDefined();
+    expect(screen.getByText('Suggestion Ready!')).toBeDefined();
     expect(screen.getByText('I found 1 way to improve your canvas')).toBeDefined();
   });
 
@@ -103,7 +103,7 @@ describe('AINotificationToast', () => {
         autoDismiss={0}
       />
     );
-    expect(screen.getByText('AI Suggestions Ready!')).toBeDefined();
+    expect(screen.getByText('Suggestions Ready!')).toBeDefined();
     expect(screen.getByText('I found 4 ways to improve your canvas')).toBeDefined();
   });
 
@@ -152,7 +152,7 @@ describe('AINotificationToast', () => {
         autoDismiss={3000}
       />
     );
-    expect(screen.getByText('AI Suggestions Ready!')).toBeDefined();
+    expect(screen.getByText('Suggestions Ready!')).toBeDefined();
     act(() => {
       vi.advanceTimersByTime(3001);
     });
@@ -313,7 +313,7 @@ describe('GhostNode', () => {
     expect(screen.getByText('Auth Service')).toBeDefined();
   });
 
-  it('renders "AI Suggestion" caption', () => {
+  it('renders "Suggested Improvement" caption', () => {
     const node = makeGhostNode();
     render(
       <GhostNode
@@ -322,7 +322,7 @@ describe('GhostNode', () => {
         onDismiss={vi.fn()}
       />
     );
-    expect(screen.getByText('AI Suggestion')).toBeDefined();
+    expect(screen.getByText('Suggested Improvement')).toBeDefined();
   });
 
   it('has correct aria-label', () => {
@@ -334,7 +334,7 @@ describe('GhostNode', () => {
         onDismiss={vi.fn()}
       />
     );
-    const el = screen.getByRole('button', { name: /AI Suggestion: Auth Service/i });
+    const el = screen.getByRole('button', { name: /Suggested improvement: Auth Service/i });
     expect(el).toBeDefined();
   });
 
@@ -348,7 +348,7 @@ describe('GhostNode', () => {
         onDismiss={vi.fn()}
       />
     );
-    const el = screen.getByRole('button', { name: /AI Suggestion/i });
+    const el = screen.getByRole('button', { name: /Suggested improvement/i });
     fireEvent.keyDown(el, { key: 'Enter' });
     expect(onAccept).toHaveBeenCalledWith('ghost-abc');
   });
@@ -363,7 +363,7 @@ describe('GhostNode', () => {
         onDismiss={onDismiss}
       />
     );
-    const el = screen.getByRole('button', { name: /AI Suggestion/i });
+    const el = screen.getByRole('button', { name: /Suggested improvement/i });
     fireEvent.keyDown(el, { key: 'Escape' });
     expect(onDismiss).toHaveBeenCalledWith('ghost-xyz');
   });
@@ -378,7 +378,7 @@ describe('GhostNode', () => {
       />
     );
     // Should show node type as label
-    expect(screen.getByRole('button', { name: /AI Suggestion: component/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Suggested improvement: component/i })).toBeDefined();
   });
 });
 

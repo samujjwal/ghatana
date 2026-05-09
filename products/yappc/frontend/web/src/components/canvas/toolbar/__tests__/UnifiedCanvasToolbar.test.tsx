@@ -241,7 +241,7 @@ describe('UnifiedCanvasToolbar', () => {
         it('shows loading state when analyzing', () => {
             render(<UnifiedCanvasToolbar {...defaultProps} isAnalyzing={true} />);
             
-            expect(screen.getByRole('button', { name: /ai suggestions/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /suggested improvements/i })).toBeInTheDocument();
         });
 
         it('calls onOpenAI when clicked', async () => {
@@ -250,7 +250,7 @@ describe('UnifiedCanvasToolbar', () => {
             render(<UnifiedCanvasToolbar {...defaultProps} onOpenAI={onOpenAI} />);
             
             // Click the AI badge (either count or sparkle)
-            const aiBadge = screen.getByRole('button', { name: /ai suggestions/i });
+            const aiBadge = screen.getByRole('button', { name: /suggested improvements/i });
             await user.click(aiBadge);
             
             expect(onOpenAI).toHaveBeenCalledTimes(1);

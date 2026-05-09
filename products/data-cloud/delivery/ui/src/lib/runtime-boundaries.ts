@@ -129,25 +129,25 @@ export const SMART_WORKFLOW_AI_ASSIST_UNAVAILABLE_TITLE =
   'AI assist unavailable';
 
 export const SMART_WORKFLOW_AI_ASSIST_UNAVAILABLE_DETAIL =
-  'Runtime capability truth reports AI assist as unavailable. You can still capture intent here and continue in the manual pipeline editor.';
+  'Runtime surface truth reports AI assist as unavailable. You can still capture intent here and continue in the manual pipeline editor.';
 
 export const SMART_WORKFLOW_AI_ASSIST_DEGRADED_TITLE =
   'AI assist degraded';
 
 export const SMART_WORKFLOW_AI_ASSIST_DEGRADED_DETAIL =
-  'Runtime capability truth reports AI assist as degraded. Suggestions should be treated as advisory only.';
+  'Runtime surface truth reports AI assist as degraded. Suggestions remain advisory only and should not be treated as guaranteed outcomes.';
 
 export const WORKFLOW_HINTS_UNAVAILABLE_TITLE =
   'AI optimisation hints unavailable';
 
 export const WORKFLOW_HINTS_UNAVAILABLE_DETAIL =
-  'Runtime capability truth reports AI assist as unavailable in this deployment. Pipeline monitoring remains available without generated hints.';
+  'Runtime surface truth reports AI assist as unavailable in this deployment. Pipeline monitoring remains available without generated hints.';
 
 export const WORKFLOW_HINTS_DEGRADED_TITLE =
   'AI optimisation hints degraded';
 
 export const WORKFLOW_HINTS_DEGRADED_DETAIL =
-  'AI assist is degraded. Any generated hints should be treated as advisory.';
+  'AI assist is degraded. Any generated hints remain advisory only and should not be treated as guaranteed outcomes.';
 
 export const SQL_FEDERATED_QUERY_UNAVAILABLE_DETAIL =
   'Federated query is unavailable until the Trino capability is active.';
@@ -210,10 +210,10 @@ export const EXECUTION_MONITOR_GUIDANCE_NOTE =
   'Use pipeline execution summaries and launcher-supported workflow pages instead of per-execution live monitoring.';
 
 export const INSIGHTS_CAPABILITY_SNAPSHOT_NOTE =
-  'Based on the current launcher capability registry snapshot.';
+  'Based on the current launcher runtime surface registry snapshot.';
 
 export const INSIGHTS_REGISTRY_REQUEST_NOTE =
-  'Correlate this ID with launcher logs when capability truth looks inconsistent.';
+  'Correlate this ID with launcher logs when runtime truth looks inconsistent.';
 
 export const COST_PREDICTIVE_ROUTING_BOUNDARY_WARNING =
   'Predictive query routing is not exposed by the current Data Cloud API.';
@@ -274,10 +274,10 @@ export const AI_OPERATIONS_APPLY_BOUNDARY_MESSAGE =
   'Applying AI-assisted operation suggestions is not exposed by the current Data Cloud launcher API.';
 
 export const AI_WORKFLOW_ADVISORY_BOUNDARY_MESSAGE =
-  'AI workflow advisories are not exposed by the current Data Cloud launcher. Workflow analysis requires the ML platform backend.';
+  'AI workflow advisories are fail-closed in the current Data Cloud launcher profile. Workflow analysis requires the ML platform backend.';
 
 export const AI_QUALITY_ADVISORY_BOUNDARY_MESSAGE =
-  'AI data quality advisories are not exposed by the current Data Cloud launcher. Quality scoring requires the ML platform backend.';
+  'AI data quality advisories are fail-closed in the current Data Cloud launcher profile. Quality scoring requires the ML platform backend.';
 
 export const AI_FABRIC_ADVISORY_BOUNDARY_MESSAGE =
   'AI fabric tier advisories are not exposed by the current Data Cloud launcher. Fabric placement scoring requires the ML platform backend.';

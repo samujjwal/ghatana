@@ -26,6 +26,7 @@ import {
 import { cn } from '../../utils/cn';
 import { currentUserAtom, projectsAtom } from '../../state/atoms';
 import { ROUTES } from '../../router/paths';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // =============================================================================
 // Types
@@ -57,37 +58,38 @@ interface QuickStat {
 const DashboardPage: React.FC = () => {
   const currentUser = useAtomValue(currentUserAtom);
   const projects = useAtomValue(projectsAtom);
+  const { t } = useI18n();
 
   // Get time-based greeting
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return t('dashboard.greetingMorning');
+    if (hour < 18) return t('dashboard.greetingAfternoon');
+    return t('dashboard.greetingEvening');
   };
 
   const quickStats: QuickStat[] = [
     {
-      label: 'Active Projects',
+      label: t('dashboard.stat.activeProjects'),
       value: projects.filter((p: Project) => p.status === 'active').length,
       icon: <FolderKanban className="w-5 h-5" />,
     },
     {
-      label: 'Open Tasks',
+      label: t('dashboard.stat.openTasks'),
       value: 24,
       icon: <CheckCircle2 className="w-5 h-5" />,
       trend: 'down',
       change: '-3 this week',
     },
     {
-      label: 'Open PRs',
+      label: t('dashboard.stat.openPRs'),
       value: 8,
       icon: <GitPullRequest className="w-5 h-5" />,
       trend: 'up',
       change: '+2 today',
     },
     {
-      label: 'Active Incidents',
+      label: t('dashboard.stat.activeIncidents'),
       value: 0,
       icon: <AlertTriangle className="w-5 h-5" />,
     },
@@ -132,7 +134,7 @@ const DashboardPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-white mb-2">
             {getGreeting()}, {currentUser?.name?.split(' ')[0] || 'there'}!
           </h1>
-          <p className="text-fg-muted">Here's what's happening across your projects</p>
+          <p className="text-fg-muted">{t('dashboard.subtitle')}</p>
         </div>
         <NavLink
           to={ROUTES.TEMPLATES}
@@ -142,7 +144,7 @@ const DashboardPage: React.FC = () => {
           )}
         >
           <Plus className="w-4 h-4" />
-          New Project
+            {t('dashboard.newProject')}
         </NavLink>
       </div>
 
@@ -181,12 +183,12 @@ const DashboardPage: React.FC = () => {
         <div className="lg:col-span-2">
           <div className="bg-surface border border-border rounded-xl">
             <div className="flex items-center justify-between p-6 border-b border-border">
-              <h2 className="text-lg font-semibold text-white">Your Projects</h2>
+              <h2 className="text-lg font-semibold text-white">{t('dashboard.yourProjects')}</h2>
               <NavLink
                 to={ROUTES.PROJECTS}
                 className="text-sm text-violet-400 hover:text-violet-300 flex items-center gap-1"
               >
-                View All
+                {t('dashboard.viewAll')}
                 <ArrowRight className="w-4 h-4" />
               </NavLink>
             </div>
@@ -232,7 +234,7 @@ const DashboardPage: React.FC = () => {
                     {/* Progress */}
                     <div className="w-24">
                       <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-fg-muted">Progress</span>
+                        <span className="text-fg-muted">{t('dashboard.progress')}</span>
                         <span className="text-white">{project.progress}%</span>
                       </div>
                       <div className="h-1.5 bg-surface rounded-full overflow-hidden">
@@ -265,9 +267,9 @@ const DashboardPage: React.FC = () => {
               {projects.length === 0 && (
                 <div className="p-12 text-center">
                   <Sparkles className="w-12 h-12 text-violet-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">No projects yet</h3>
+                  <h3 className="text-lg font-medium text-white mb-2">{t('dashboard.noProjectsTitle')}</h3>
                   <p className="text-fg-muted mb-6">
-                    Start your first project and let AI guide you through the process
+                    {t('dashboard.noProjectsDesc')}
                   </p>
                   <NavLink
                     to={ROUTES.TEMPLATES}
@@ -277,7 +279,7 @@ const DashboardPage: React.FC = () => {
                     )}
                   >
                     <Zap className="w-4 h-4" />
-                    Create Your First Project
+                    {t('dashboard.createFirstProject')}
                   </NavLink>
                 </div>
               )}
@@ -289,7 +291,7 @@ const DashboardPage: React.FC = () => {
         <div className="space-y-6">
           {/* Recent Activity */}
           <div className="bg-surface border border-border rounded-xl p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Recent Activity</h2>
+            <h2 className="text-lg font-semibold text-white mb-4">{t('dashboard.recentActivity')}</h2>
             <div className="space-y-4">
               {recentActivity.map((item) => (
                 <div key={item.id} className="flex items-start gap-3">
@@ -319,13 +321,13 @@ const DashboardPage: React.FC = () => {
 
           {/* Quick Actions */}
           <div className="bg-surface border border-border rounded-xl p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
+            <h2 className="text-lg font-semibold text-white mb-4">{t('dashboard.quickActions')}</h2>
             <div className="space-y-2">
               {[
-                { label: 'Start New Sprint', icon: <TrendingUp className="w-4 h-4" />, href: '#' },
-                { label: 'Review Pull Requests', icon: <GitPullRequest className="w-4 h-4" />, href: '#' },
-                { label: 'Check Deployments', icon: <Zap className="w-4 h-4" />, href: '#' },
-                { label: 'Team Calendar', icon: <Users className="w-4 h-4" />, href: '#' },
+                { label: t('dashboard.action.startSprint'), icon: <TrendingUp className="w-4 h-4" />, href: '#' },
+                { label: t('dashboard.action.reviewPRs'), icon: <GitPullRequest className="w-4 h-4" />, href: '#' },
+                { label: t('dashboard.action.checkDeployments'), icon: <Zap className="w-4 h-4" />, href: '#' },
+                { label: t('dashboard.action.teamCalendar'), icon: <Users className="w-4 h-4" />, href: '#' },
               ].map((action) => (
                 <NavLink
                   key={action.label}
@@ -351,10 +353,9 @@ const DashboardPage: React.FC = () => {
                 <Sparkles className="w-5 h-5 text-violet-400" />
               </div>
               <div>
-                <h3 className="font-medium text-white mb-1">AI Assistant Tip</h3>
+                <h3 className="font-medium text-white mb-1">{t('dashboard.aiTipTitle')}</h3>
                 <p className="text-sm text-fg-muted">
-                  Try describing your project idea in natural language. The AI will help
-                  you design the architecture and set up infrastructure automatically.
+                  {t('dashboard.aiTipText')}
                 </p>
               </div>
             </div>

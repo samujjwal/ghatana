@@ -12,13 +12,13 @@ describe('feature gates', () => {
     vi.unstubAllEnvs();
   });
 
-  it('defaults optional surfaces to enabled in non-strict profiles', async () => {
+  it('defaults optional surfaces to enabled in non-strict profiles except opt-in Data Fabric', async () => {
     vi.stubEnv('MODE', 'development');
 
     const gates = await loadModule();
 
     expect(gates.isAlertsSurfaceEnabled()).toBe(true);
-    expect(gates.isFabricSurfaceEnabled()).toBe(true);
+    expect(gates.isFabricSurfaceEnabled()).toBe(false);
     expect(gates.isAiOperationsEnabled()).toBe(true);
     expect(gates.isAiAlertGroupingFallbackEnabled()).toBe(true);
     expect(gates.isMemorySurfaceEnabled()).toBe(true);

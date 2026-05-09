@@ -95,7 +95,7 @@ export const ApprovalDetail: React.FC<ApprovalDetailProps> = ({
 
         {aiSummary && (
           <Box className="space-y-1">
-            <Typography className="text-sm font-medium">AI rationale</Typography>
+            <Typography className="text-sm font-medium">Suggested rationale</Typography>
             <Typography className="text-sm text-fg">{aiSummary}</Typography>
             {typeof confidence === 'number' && (
               <Typography className="text-xs text-fg-muted">Confidence: {Math.round(confidence * 100)}%</Typography>
@@ -106,10 +106,10 @@ export const ApprovalDetail: React.FC<ApprovalDetailProps> = ({
         {enrichmentSuggestion && (
           <Box
             className="space-y-3 rounded-md border border-info-border bg-info-bg p-4"
-            aria-label="AI enrichment suggestion"
+            aria-label="Enrichment suggestion"
             data-testid="enrichment-suggestion"
           >
-            <Typography className="text-sm font-semibold text-info-color">AI Enrichment Details</Typography>
+            <Typography className="text-sm font-semibold text-info-color">Enrichment Details</Typography>
 
             {enrichmentSuggestion.normalizedTitle && (
               <Box className="space-y-0.5">

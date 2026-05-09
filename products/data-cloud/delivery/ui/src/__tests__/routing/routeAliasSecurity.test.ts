@@ -2,7 +2,7 @@
  * Route Alias Security Regression Tests
  *
  * Validates that route aliases cannot bypass role or capability protections.
- * All 17 compatibility aliases must enforce the same security gates as their
+ * All compatibility aliases must enforce the same security gates as their
  * canonical routes.
  *
  * Acceptance criteria:
@@ -27,34 +27,37 @@ const compatibilityAliases = [
   // Primary route aliases
   { alias: 'dashboard', canonical: '/', label: 'Dashboard' },
   { alias: 'hub', canonical: '/', label: 'Hub' },
-  
+
   // Data area aliases
   { alias: 'collections', canonical: '/data', label: 'Collections' },
   { alias: 'collections/new', canonical: '/data/new', label: 'New Collection' },
   { alias: 'collections/:id', canonical: '/data/:id', label: 'Collection Detail' },
   { alias: 'collections/:id/edit', canonical: '/data/:id/edit', label: 'Edit Collection' },
-  { alias: 'collections/:id/:view', canonical: '/data/:id/:view', label: 'Collection View' },
-  
+
+  // Data continuity aliases
+  { alias: 'datasets', canonical: '/data', label: 'Datasets' },
+  { alias: 'lineage', canonical: '/data?view=lineage', label: 'Lineage' },
+  { alias: 'quality', canonical: '/data?view=quality', label: 'Quality' },
+
   // Workflow aliases
   { alias: 'workflows', canonical: '/pipelines', label: 'Workflows' },
   { alias: 'workflows/new', canonical: '/pipelines/new', label: 'New Workflow' },
   { alias: 'workflows/:id', canonical: '/pipelines/:id', label: 'Workflow Detail' },
-  { alias: 'workflows/:id/edit', canonical: '/pipelines/:id/edit', label: 'Edit Workflow' },
-  
-  // Analytics aliases
-  { alias: 'analytics', canonical: '/insights', label: 'Analytics' },
-  { alias: 'automation-insights', canonical: '/insights', label: 'Automation Insights' },
-  
-  // Compliance aliases
-  { alias: 'compliance', canonical: '/trust', label: 'Compliance' },
+
+  // Query alias
+  { alias: 'sql', canonical: '/query', label: 'SQL Workspace' },
+
+  // Governance alias
   { alias: 'governance', canonical: '/trust', label: 'Governance' },
-  
-  // Audit aliases
-  { alias: 'audit', canonical: '/trust', label: 'Audit Logs' },
+
+  // Insights aliases
+  { alias: 'brain', canonical: '/insights', label: 'Brain' },
+  { alias: 'dashboards', canonical: '/insights', label: 'Dashboards' },
+  { alias: 'cost', canonical: '/insights', label: 'Cost' },
 ];
 
 describe('Route Alias Security Regression Tests', () => {
-  it('documents all 17 compatibility aliases', () => {
+  it('documents all compatibility aliases', () => {
     expect(compatibilityAliases).toHaveLength(17);
   });
 

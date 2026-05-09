@@ -4,6 +4,7 @@ import path from 'node:path';
 import {
   COLLECTION_RUNTIME_OPENAPI_PATHS,
   DEPRECATED_COLLECTION_ROUTE_REDIRECTS,
+  DEPRECATED_RUNTIME_TRUTH_ROUTE_REDIRECTS,
 } from '../../mocks/deprecatedRoutes';
 
 const canonicalOpenApi = readFileSync(
@@ -36,6 +37,16 @@ describe('OpenAPI-driven collection mocks', () => {
       expect(mswHandlersSource).toContain(
         canonicalPath.replace('/api/v1', '${BASE}').replace('{id}', '${params.id}')
       );
+    });
+  });
+
+  it('keeps runtime-truth compatibility aliases mapped to canonical surface routes', () => {
+    DEPRECATED_RUNTIME_TRUTH_ROUTE_REDIRECTS.forEach(({ legacyPath, canonicalPath, openApiPath }) => {
+      expect(canonicalOpenApi).toContain(`${openApiPath}:`);
+      expect(mswHandlersSource).toContain(legacyPath.replace('/api/v1', '${BASE}'));
+      expect(mswHandlersSource).toContain(canonicalPath.replace('/api/v1', '${BASE}'));
+      expect(playwrightMocksSource).toContain(legacyPath.replace('/api/v1', '**/api/v1'));
+      expect(playwrightMocksSource).toContain(canonicalPath.replace('/api/v1', '**/api/v1'));
     });
   });
 

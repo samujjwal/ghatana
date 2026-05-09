@@ -63,7 +63,7 @@ export const GhostNode: React.FC<GhostNodeProps> = ({
             onMouseLeave={() => setIsHovered(false)}
             className="absolute w-[180px] min-h-[80px] bg-[rgba(255,_255,_255,_0.7)] backdrop-blur-[8px]" style={{ left: node.position.x, top: node.position.y, border: `2px dashed ${color}` }}
             role="button"
-            aria-label={`AI Suggestion: ${node.data.label || node.type}`}
+            aria-label={`Suggested improvement: ${node.data.label || node.type}`}
             tabIndex={0}
             onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -79,7 +79,7 @@ export const GhostNode: React.FC<GhostNodeProps> = ({
                     <Typography
                         variant="caption"
                         className="font-bold uppercase" >
-                        AI Suggestion
+                        Suggested Improvement
                     </Typography>
                     <Typography variant="subtitle2" fontWeight="bold">
                         {node.data.label || node.type}

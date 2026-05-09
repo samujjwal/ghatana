@@ -87,14 +87,14 @@ const AuthLayout: React.FC = () => {
               </span>
             </h1>
             <p className="text-lg text-fg-muted mb-8">
-              YAPPC is your AI-powered project partner. From ideation to deployment,
+              YAPPC is your guided project partner. From ideation to deployment,
               we guide you through the entire software development lifecycle.
             </p>
 
             {/* Feature List */}
             <div className="space-y-4">
               {[
-                'AI-assisted project scaffolding',
+                'Guided project scaffolding',
                 'Automated infrastructure setup',
                 'Intelligent sprint planning',
                 'Real-time monitoring & alerts',
@@ -127,7 +127,7 @@ const AuthLayout: React.FC = () => {
             <blockquote className="border-l-2 border-violet-500 pl-4">
               <p className="text-fg-muted italic mb-4">
                 "YAPPC helped us ship our MVP in 2 weeks instead of 2 months.
-                The AI assistance is incredibly intuitive."
+                The guidance workflow is incredibly intuitive."
               </p>
               <footer className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-400" />

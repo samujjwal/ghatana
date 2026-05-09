@@ -13,6 +13,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Box, Typography, Button, Surface as Paper, Alert } from '@ghatana/design-system';
 import { RefreshCw as RefreshIcon, Bug as BugReportIcon, Home as HomeIcon, ArrowLeft as ArrowBackIcon } from 'lucide-react';
+import { yappcApi } from '@/lib/api/client';
 
 // ============================================================================
 // Types
@@ -95,11 +96,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     // Send to error reporting service (Sentry, LogRocket, etc.)
     void (async () => {
       try {
-        await fetch('/api/errors', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(errorData),
-        });
+        await yappcApi.errorReporting.report<unknown>(errorData);
       } catch {
         // Fallback to console if service fails
         console.error('Failed to log error to service:', errorData);
@@ -434,15 +431,11 @@ export const useErrorBoundary = () => {
     if (process.env.NODE_ENV === 'production') {
       void (async () => {
         try {
-          await fetch('/api/errors', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              message: error.message,
-              stack: error.stack,
-              context,
-              timestamp: new Date().toISOString(),
-            }),
+          await yappcApi.errorReporting.report<unknown>({
+            message: error.message,
+            stack: error.stack,
+            context,
+            timestamp: new Date().toISOString(),
           });
         } catch {
           // Fallback to console

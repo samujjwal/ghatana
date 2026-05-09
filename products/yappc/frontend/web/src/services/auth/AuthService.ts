@@ -6,12 +6,12 @@
  */
 
 import { parseJsonResponse as sharedParseJsonResponse } from '@/lib/http';
+import { ApiRequestError, yappcApi } from '@/lib/api/client';
 import type { components } from '@/clients/generated/openapi';
 import { logger } from '../../utils/Logger';
 
 type ApiRole = components['schemas']['AuthRole'];
 type ApiAuthUser = components['schemas']['AuthUser'];
-type ApiAuthTokens = components['schemas']['RefreshTokenResponse'];
 type ApiAuthResponse = components['schemas']['LoginResponse'];
 type ApiLoginRequest = components['schemas']['LoginRequest'];
 type ApiRefreshTokenRequest = components['schemas']['RefreshTokenRequest'];
@@ -20,19 +20,6 @@ type ApiProfileUpdate = Partial<Pick<User, 'firstName' | 'lastName' | 'username'
 
 async function parseJsonResponse<T>(response: Response, context: string): Promise<T> {
     return sharedParseJsonResponse<T>(response, context);
-}
-
-async function readErrorResponse(response: Response): Promise<{ message?: string }> {
-    const raw = await response.text();
-    if (!raw) {
-        return {};
-    }
-
-    try {
-        return JSON.parse(raw) as { message?: string };
-    } catch {
-        return { message: raw.trim() || undefined };
-    }
 }
 
 function parseStoredSession(storedSession: string): AuthSession {
@@ -146,42 +133,10 @@ export class AuthService {
                 return { success: false, error: 'Email and password are required' };
             }
 
-            // Call authentication API
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
+            const authData = await yappcApi.auth.loginSession({
                     email: credentials.email,
                     password: credentials.password,
-                } satisfies ApiLoginRequest),
-            });
-
-            if (!response.ok) {
-                if (response.status === 401) {
-                    logger.warn('Authentication failed - invalid credentials', 'auth', { 
-                        email: credentials.email,
-                        timestamp: new Date().toISOString(),
-                    });
-                    return { success: false, error: 'Invalid email or password' };
-                }
-
-                if (response.status === 423) {
-                    logger.warn('Authentication failed - account locked', 'auth', { 
-                        email: credentials.email,
-                        timestamp: new Date().toISOString(),
-                    });
-                    return { success: false, error: 'Account temporarily locked' };
-                }
-
-                throw new Error(`Authentication failed: ${response.statusText}`);
-            }
-
-            const authData = await parseJsonResponse<ApiAuthResponse>(
-                response,
-                'auth login'
-            );
+                } satisfies ApiLoginRequest);
             const session = this.createSessionFromApiResponse(authData);
 
             this.currentSession = session;
@@ -204,6 +159,22 @@ export class AuthService {
             };
 
         } catch (error) {
+            if (error instanceof ApiRequestError && error.status === 401) {
+                logger.warn('Authentication failed - invalid credentials', 'auth', {
+                    email: credentials.email,
+                    timestamp: new Date().toISOString(),
+                });
+                return { success: false, error: 'Invalid email or password' };
+            }
+
+            if (error instanceof ApiRequestError && error.status === 423) {
+                logger.warn('Authentication failed - account locked', 'auth', {
+                    email: credentials.email,
+                    timestamp: new Date().toISOString(),
+                });
+                return { success: false, error: 'Account temporarily locked' };
+            }
+
             logger.error('Login error', 'auth', {
                 error: error instanceof Error ? error.message : String(error),
                 email: credentials.email
@@ -289,14 +260,8 @@ export class AuthService {
                 logger.info('Logout attempt', 'auth', { userId: this.currentSession.user.id });
 
                 // Call logout API
-                await fetch('/api/auth/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        refreshToken: this.currentSession.refreshToken,
-                    }),
+                await yappcApi.auth.logout({
+                    refreshToken: this.currentSession.refreshToken,
                 });
             }
         } catch (error) {
@@ -414,24 +379,9 @@ export class AuthService {
                 return false;
             }
 
-            const response = await fetch('/api/auth/refresh', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    refreshToken: this.currentSession.refreshToken,
-                } satisfies ApiRefreshTokenRequest),
-            });
-
-            if (!response.ok) {
-                throw new Error('Token refresh failed');
-            }
-
-            const authData = await parseJsonResponse<ApiAuthTokens>(
-                response,
-                'auth token refresh'
-            );
+            const authData = await yappcApi.auth.refresh({
+                refreshToken: this.currentSession.refreshToken,
+            } satisfies ApiRefreshTokenRequest);
 
             // Update session with new token pair
             this.currentSession.token = authData.accessToken;
@@ -651,23 +601,7 @@ export class AuthService {
                 return { success: false, error: 'Not authenticated' };
             }
 
-            const response = await fetch('/api/auth/profile', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.currentSession.token}`,
-                },
-                body: JSON.stringify(updates),
-            });
-
-            if (!response.ok) {
-                throw new Error(`Profile update failed: ${response.statusText}`);
-            }
-
-            const updatedUser = await parseJsonResponse<ApiProfileUpdate>(
-                response,
-                'auth profile update'
-            );
+            const updatedUser = await yappcApi.auth.updateProfile(updates);
 
             // Update session with new user data
             this.currentSession.user = { ...this.currentSession.user, ...updatedUser };

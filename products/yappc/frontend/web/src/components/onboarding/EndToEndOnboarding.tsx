@@ -1,7 +1,7 @@
 /**
  * End-to-End Onboarding Journey Component
  *
- * Complete onboarding flow: account → workspace → project → first intent → AI assist → approval → deploy preview.
+ * Complete onboarding flow: account → workspace → project → first intent → guided suggestions → approval → deploy preview.
  *
  * @doc.type component
  * @doc.purpose End-to-end onboarding journey
@@ -75,8 +75,8 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
     },
     {
       id: 'ai-assist',
-      title: 'AI Assistance',
-      description: 'Let AI help shape your requirements',
+      title: 'Guided Suggestions',
+      description: 'Use guided recommendations to shape your requirements',
       icon: AIIcon,
       status: 'pending',
     },
@@ -231,7 +231,7 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
             )}
             {currentStepData.id === 'ai-assist' && (
               <div className="space-y-3">
-                <p>AI is analyzing your intent and generating requirements...</p>
+                <p>YAPPC is analyzing your intent and generating requirements...</p>
                 <div className="flex items-center gap-2 text-info-color">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-info-border" />
                   <span>Processing</span>

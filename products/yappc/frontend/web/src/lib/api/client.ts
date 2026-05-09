@@ -20,6 +20,7 @@
  */
 
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { authService } from '@/services/auth/AuthService';
 import type { ResourceCapabilities, WorkspaceRole } from '@/services/workspace/accessControl';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -86,6 +87,16 @@ async function getWithHeaders<T>(
   });
   if (!response.ok) return handleError(response, context);
   return parseJsonResponse<T>(response, context);
+}
+
+async function getResponse(path: string, context: string): Promise<Response> {
+  const response = await fetch(path, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+    credentials: 'same-origin',
+  });
+  if (!response.ok) return handleError(response, context);
+  return response;
 }
 
 async function post<TBody, TResult>(path: string, body: TBody, context: string): Promise<TResult> {
@@ -155,6 +166,35 @@ async function patch<TBody, TResult>(path: string, body: TBody, context: string)
   return parseJsonResponse<TResult>(response, context);
 }
 
+async function patchWithHeaders<TBody, TResult>(
+  path: string,
+  body: TBody,
+  context: string,
+  headers: Readonly<Record<string, string>>,
+): Promise<TResult> {
+  const response = await fetch(path, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...headers },
+    credentials: 'same-origin',
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) return handleError(response, context);
+  if (response.status === 204) return undefined as unknown as TResult;
+  return parseJsonResponse<TResult>(response, context);
+}
+
+async function put<TBody, TResult>(path: string, body: TBody, context: string): Promise<TResult> {
+  const response = await fetch(path, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) return handleError(response, context);
+  if (response.status === 204) return undefined as unknown as TResult;
+  return parseJsonResponse<TResult>(response, context);
+}
+
 async function del<TResult>(path: string, context: string): Promise<TResult> {
   const response = await fetch(path, {
     method: 'DELETE',
@@ -179,6 +219,29 @@ export interface AuthTokenResponse {
   refreshToken: string;
   expiresIn: number;
 }
+export interface LoginSessionResponse {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    firstName?: string;
+    lastName?: string;
+    avatar?: string;
+    avatarUrl?: string;
+    tenantId?: string;
+    workspaceIds?: string[];
+    roles?: string[];
+    role: 'VIEWER' | 'EDITOR' | 'ADMIN' | 'OWNER';
+  };
+  tokens: AuthTokenResponse;
+}
+export interface AuthProfileUpdateRequest {
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  email?: string;
+  avatar?: string;
+}
 export interface UserProfile {
   id: string;
   email: string;
@@ -189,11 +252,142 @@ export interface UserProfile {
 
 export const auth = {
   login: (body: LoginRequest) => post<LoginRequest, AuthTokenResponse>('/api/auth/login', body, 'auth.login'),
+  loginSession: (body: LoginRequest) =>
+    post<LoginRequest, LoginSessionResponse>('/api/auth/login', body, 'auth.loginSession'),
   refresh: (body: { refreshToken: string }) =>
     post<{ refreshToken: string }, AuthTokenResponse>('/api/auth/refresh', body, 'auth.refresh'),
-  logout: () => post<Record<string, never>, void>('/api/auth/logout', {}, 'auth.logout'),
+  logout: (body: { refreshToken: string }) => post<{ refreshToken: string }, void>('/api/auth/logout', body, 'auth.logout'),
+  updateProfile: (body: AuthProfileUpdateRequest) =>
+    put<AuthProfileUpdateRequest, AuthProfileUpdateRequest>('/api/auth/profile', body, 'auth.updateProfile'),
+  ssoCallback: (body: { code: string; state?: string | null }) =>
+    post<{ code: string; state?: string | null }, { token: string }>(
+      '/api/auth/sso/callback',
+      body,
+      'auth.ssoCallback',
+    ),
   validate: () => get<{ valid: boolean }>('/api/auth/validate', 'auth.validate'),
   me: () => get<UserProfile>('/api/auth/me', 'auth.me'),
+} as const;
+
+export interface AccountProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar?: string;
+  avatarUrl?: string;
+  bio?: string;
+  timezone?: string;
+  theme?: 'dark' | 'light' | 'system';
+  notifications?: {
+    email?: boolean;
+    push?: boolean;
+    slack?: boolean;
+    weeklyDigest?: boolean;
+  };
+  createdAt?: string;
+}
+
+export const userProfile = {
+  get: () => get<AccountProfile>('/api/user/profile', 'userProfile.get'),
+  update: (body: Partial<AccountProfile>) =>
+    patch<Partial<AccountProfile>, AccountProfile>('/api/user/profile', body, 'userProfile.update'),
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Billing / Operations (page-level read models)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const billing = {
+  getSummary: <T>() => get<T>('/api/billing', 'billing.getSummary'),
+} as const;
+
+export const operations = {
+  getOnCallSchedule: <T>() => get<T>('/api/oncall', 'operations.getOnCallSchedule'),
+  getServiceTopology: <T>() =>
+    get<T>('/api/services/topology', 'operations.getServiceTopology'),
+} as const;
+
+export const collaboration = {
+  getActivityFeed: <T>() => get<T>('/api/activity', 'collaboration.getActivityFeed'),
+  getTeamHub: <T>() => get<T>('/api/teams/hub', 'collaboration.getTeamHub'),
+  getMessageChannels: <T>() =>
+    get<T>('/api/messages/channels', 'collaboration.getMessageChannels'),
+  getChannelMessages: <T>(channelId: string) =>
+    get<T>(
+      `/api/messages/channels/${encodeURIComponent(channelId)}`,
+      'collaboration.getChannelMessages',
+    ),
+  getCalendarEvents: <T>() =>
+    get<T>('/api/calendar/events', 'collaboration.getCalendarEvents'),
+} as const;
+
+export const settings = {
+  getWorkspaceSettings: <T>() => get<T>('/api/settings', 'settings.getWorkspaceSettings'),
+} as const;
+
+export const anomalies = {
+  query: <T>(body: {
+    tenantId: string;
+    startDate: Date;
+    endDate: Date;
+    severity?: string;
+    status?: string;
+  }) => post<typeof body, T>('/api/anomalies', body, 'anomalies.query'),
+  byUser: <T>(userId: string, tenantId: string) =>
+    getWithHeaders<T>(
+      `/api/anomalies/user/${encodeURIComponent(userId)}`,
+      'anomalies.byUser',
+      { 'X-Tenant-Id': tenantId },
+    ),
+  updateStatus: <T>(anomalyId: string, tenantId: string, body: { status: string; notes?: string }) =>
+    patchWithHeaders<typeof body, T>(
+      `/api/anomalies/${encodeURIComponent(anomalyId)}/status`,
+      body,
+      'anomalies.updateStatus',
+      { 'X-Tenant-Id': tenantId },
+    ),
+  createInvestigation: <T>(
+    anomalyId: string,
+    tenantId: string,
+    body: { assignedTo: string },
+  ) =>
+    postWithHeaders<typeof body, T>(
+      `/api/anomalies/${encodeURIComponent(anomalyId)}/investigation`,
+      body,
+      'anomalies.createInvestigation',
+      { 'X-Tenant-Id': tenantId },
+    ),
+  baselines: <T>(tenantId: string) =>
+    getWithHeaders<T>('/api/anomaly-baselines', 'anomalies.baselines', { 'X-Tenant-Id': tenantId }),
+  threatIntelligence: <T>(tenantId: string) =>
+    getWithHeaders<T>('/api/threat-intelligence', 'anomalies.threatIntelligence', {
+      'X-Tenant-Id': tenantId,
+    }),
+  riskScores: <T>(tenantId: string) =>
+    getWithHeaders<T>('/api/risk-scores', 'anomalies.riskScores', { 'X-Tenant-Id': tenantId }),
+  detail: <T>(anomalyId: string, tenantId: string) =>
+    getWithHeaders<T>(`/api/anomalies/${encodeURIComponent(anomalyId)}`, 'anomalies.detail', {
+      'X-Tenant-Id': tenantId,
+    }),
+} as const;
+
+export const canvas = {
+  save: <T>(body: { projectId: string; canvasId: string; data: unknown }) =>
+    post<typeof body, T>('/api/canvas', body, 'canvas.save'),
+} as const;
+
+export const errorReporting = {
+  report: <T>(body: {
+    message: string;
+    stack?: string;
+    componentStack?: string;
+    errorId?: string;
+    context?: string;
+    timestamp: string;
+    userAgent?: string;
+    url?: string;
+  }) => post<typeof body, T>('/api/errors', body, 'errorReporting.report'),
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -227,6 +421,12 @@ export const workspaces = {
   suggestName: () => get<{ name: string }>('/api/workspaces/suggest-name', 'workspaces.suggestName'),
   refreshAi: (workspaceId: string) =>
     post<Record<string, never>, void>(`/api/workspaces/${encodeURIComponent(workspaceId)}/refresh-ai`, {}, 'workspaces.refreshAi'),
+  refreshAiDetails: (workspaceId: string) =>
+    post<Record<string, never>, unknown>(
+      `/api/workspaces/${encodeURIComponent(workspaceId)}/refresh-ai`,
+      {},
+      'workspaces.refreshAiDetails',
+    ),
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -284,6 +484,34 @@ export interface ProjectActivityResponse {
   readonly projectId: string;
   readonly activity: ProjectActivityEvent[];
 }
+export interface ProjectArtifactsResponse {
+  readonly artifacts: unknown[];
+}
+export interface ProjectSprintCurrentResponse {
+  readonly sprint: unknown | null;
+}
+export interface ProjectBacklogResponse {
+  readonly items: unknown[];
+}
+export interface ProjectRunsResponse {
+  readonly runs: unknown[];
+}
+export interface ProjectIncludeRequest {
+  readonly projectId: string;
+  readonly workspaceId: string;
+}
+export interface WorkspaceNameSuggestionResponse {
+  readonly name?: string;
+  readonly suggestion?: string;
+}
+export interface ProjectNameSuggestionRequest {
+  readonly workspaceId: string;
+  readonly type?: string;
+}
+export interface ProjectNameSuggestionResponse {
+  readonly name?: string;
+  readonly suggestion?: string;
+}
 export type ProjectDashboardActionKind = 'blocker' | 'review' | 'safe-to-continue';
 export type ProjectDashboardActionSeverity = 'critical' | 'warning' | 'info';
 export interface ProjectDashboardAction {
@@ -336,6 +564,22 @@ export interface PhaseTransitionPreviewResponse {
   readonly checkedAt: string;
 }
 
+export interface PreviewSessionContext {
+  readonly projectId: string;
+  readonly artifactId: string;
+}
+
+export interface PreviewSessionIssueResponse {
+  readonly sessionId: string;
+  readonly sessionToken: string;
+  readonly expiresAt: string;
+}
+
+export interface PreviewSessionValidateResponse {
+  readonly valid: boolean;
+  readonly reason?: string;
+}
+
 function encodeQuery(params: Readonly<Record<string, string | undefined>>): string {
   const query = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -345,6 +589,11 @@ function encodeQuery(params: Readonly<Record<string, string | undefined>>): stri
   });
   const encoded = query.toString();
   return encoded ? `?${encoded}` : '';
+}
+
+function buildAuthHeaders(): Readonly<Record<string, string>> {
+  const token = authService.getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 function unwrapProjectResource(response: Project | ProjectResourceResponse): Project {
@@ -374,17 +623,59 @@ export const projects = {
         'projects.get',
       ),
     ),
+  getScoped: async (projectId: string, workspaceId: string) =>
+    unwrapProjectResource(
+      await get<Project | ProjectResourceResponse>(
+        `/api/projects/${encodeURIComponent(projectId)}${encodeQuery({ workspaceId })}`,
+        'projects.getScoped',
+      ),
+    ),
   create: (body: CreateProjectRequest) => post<CreateProjectRequest, Project>('/api/projects', body, 'projects.create'),
   update: (projectId: string, body: UpdateProjectRequest) =>
     patch<UpdateProjectRequest, Project>(`/api/projects/${encodeURIComponent(projectId)}`, body, 'projects.update'),
+  updateScoped: async (projectId: string, workspaceId: string, body: UpdateProjectRequest) => {
+    const response = await fetch(
+      `/api/projects/${encodeURIComponent(projectId)}${encodeQuery({ workspaceId })}`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      },
+    );
+    if (!response.ok) {
+      return handleError(response, 'projects.updateScoped');
+    }
+    return unwrapProjectResource(
+      await parseJsonResponse<Project | ProjectResourceResponse>(response, 'projects.updateScoped'),
+    );
+  },
   delete: (projectId: string) => del<void>(`/api/projects/${encodeURIComponent(projectId)}`, 'projects.delete'),
-  suggestName: () => get<{ name: string }>('/api/projects/suggest-name', 'projects.suggestName'),
-  setupSuggestion: (body: { intent?: string; workspaceId?: string }) =>
-    post<typeof body, { name: string; description: string }>('/api/projects/setup-suggestion', body, 'projects.setupSuggestion'),
+  suggestName: (params?: ProjectNameSuggestionRequest) =>
+    get<ProjectNameSuggestionResponse>(
+      `/api/projects/suggest-name${encodeQuery({ workspaceId: params?.workspaceId, type: params?.type })}`,
+      'projects.suggestName',
+    ),
+  setupSuggestion: (body: { workspaceId?: string; description?: string; preferredType?: string }) =>
+    post<typeof body, unknown>('/api/projects/setup-suggestion', body, 'projects.setupSuggestion'),
   current: (projectId: string) =>
     get<Project>(`/api/projects/${encodeURIComponent(projectId)}/current`, 'projects.current'),
   activity: (projectId: string) =>
     get<ProjectActivityResponse>(`/api/projects/${encodeURIComponent(projectId)}/activity`, 'projects.activity'),
+  artifacts: (projectId: string) =>
+    get<ProjectArtifactsResponse>(`/api/projects/${encodeURIComponent(projectId)}/artifacts`, 'projects.artifacts'),
+  sprintCurrent: (projectId: string) =>
+    get<ProjectSprintCurrentResponse>(`/api/projects/${encodeURIComponent(projectId)}/sprints/current`, 'projects.sprintCurrent'),
+  backlog: (projectId: string, limit: number = 20) =>
+    get<ProjectBacklogResponse>(`/api/projects/${encodeURIComponent(projectId)}/backlog${encodeQuery({ limit: String(limit) })}`, 'projects.backlog'),
+  recentRuns: (projectId: string, limit: number = 10) =>
+    get<ProjectRunsResponse>(`/api/projects/${encodeURIComponent(projectId)}/runs${encodeQuery({ limit: String(limit) })}`, 'projects.recentRuns'),
+  availableForInclusion: (workspaceId: string) =>
+    get<Project[]>(
+      `/api/projects/available-for-inclusion${encodeQuery({ workspaceId })}`,
+      'projects.availableForInclusion',
+    ),
+  include: (body: ProjectIncludeRequest) =>
+    post<ProjectIncludeRequest, void>('/api/projects/include', body, 'projects.include'),
   dashboardActions: (workspaceId: string) =>
     get<ProjectDashboardActionsResponse>(
       `/api/projects/dashboard-actions${encodeQuery({ workspaceId })}`,
@@ -402,6 +693,14 @@ export const projects = {
     get<unknown>(`/api/projects/${encodeURIComponent(projectId)}/capabilities`, 'projects.capabilities'),
   refreshAi: (projectId: string) =>
     post<Record<string, never>, void>(`/api/projects/${encodeURIComponent(projectId)}/refresh-ai`, {}, 'projects.refreshAi'),
+  refreshAiDetails: (projectId: string) =>
+    post<Record<string, never>, unknown>(
+      `/api/projects/${encodeURIComponent(projectId)}/refresh-ai`,
+      {},
+      'projects.refreshAiDetails',
+    ),
+  export: (projectId: string) =>
+    getResponse(`/api/projects/${encodeURIComponent(projectId)}/export`, 'projects.export'),
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -546,6 +845,24 @@ export const generate = {
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
+// AI helpers  (/api/ai/*)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const ai = {
+  assist: (body: { kind: string; projectId: string }) =>
+    post<typeof body, Record<string, unknown>>('/api/ai/assist', body, 'ai.assist'),
+  phaseGateReadiness: <T>(body: {
+    projectId: string;
+    targetPhase: string;
+    artifacts: unknown[];
+  }) => post<typeof body, T>('/api/ai/phase-gate-readiness', body, 'ai.phaseGateReadiness'),
+  suggestArtifacts: <T>(body: {
+    prompt: string;
+    context: Record<string, unknown>;
+  }) => post<typeof body, T>('/api/ai/suggest-artifacts', body, 'ai.suggestArtifacts'),
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Workflows  (/api/v1/workflows/*)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -638,6 +955,98 @@ export const artifacts = {
     get<Artifact>(`/api/artifacts/${encodeURIComponent(artifactId)}`, 'artifacts.get'),
   create: (body: { projectId: string; kind: string; content: unknown }) =>
     post<typeof body, Artifact>('/api/artifacts', body, 'artifacts.create'),
+} as const;
+
+export interface PageArtifactScopeHeaders {
+  readonly tenantId: string;
+  readonly workspaceId: string;
+  readonly projectId: string;
+}
+
+export type PageArtifactSaveResult =
+  | { readonly status: 'saved' }
+  | { readonly status: 'conflict'; readonly remoteVersion: string | null };
+
+export const pageArtifacts = {
+  saveDocument: async (
+    artifactId: string,
+    documentId: string,
+    document: unknown,
+    scope: PageArtifactScopeHeaders,
+  ): Promise<PageArtifactSaveResult> => {
+    const response = await fetch(
+      `/api/v1/page-artifacts/${encodeURIComponent(artifactId)}/document`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'If-Match': documentId,
+          'X-Tenant-ID': scope.tenantId,
+          'X-Workspace-ID': scope.workspaceId,
+          'X-Project-ID': scope.projectId,
+        },
+        credentials: 'include',
+        body: JSON.stringify(document),
+      },
+    );
+
+    if (response.status === 409) {
+      return {
+        status: 'conflict',
+        remoteVersion: response.headers.get('X-Current-Version'),
+      };
+    }
+
+    if (!response.ok) {
+      return handleError(response, 'pageArtifacts.saveDocument');
+    }
+
+    return { status: 'saved' };
+  },
+  loadDocument: async <T>(artifactId: string, scope: PageArtifactScopeHeaders): Promise<T | null> => {
+    const response = await fetch(
+      `/api/v1/page-artifacts/${encodeURIComponent(artifactId)}/document`,
+      {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'X-Tenant-ID': scope.tenantId,
+          'X-Workspace-ID': scope.workspaceId,
+          'X-Project-ID': scope.projectId,
+        },
+        credentials: 'include',
+      },
+    );
+
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      return handleError(response, 'pageArtifacts.loadDocument');
+    }
+
+    return parseJsonResponse<T>(response, 'pageArtifacts.loadDocument');
+  },
+  ingestGraph: async (request: unknown, scope: PageArtifactScopeHeaders): Promise<void> => {
+    const response = await fetch('/api/v1/yappc/artifact/graph/ingest', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'X-Tenant-ID': scope.tenantId,
+        'X-Workspace-ID': scope.workspaceId,
+        'X-Project-ID': scope.projectId,
+      },
+      credentials: 'include',
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      return handleError(response, 'pageArtifacts.ingestGraph');
+    }
+  },
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -938,6 +1347,93 @@ export const phases = {
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Preview sessions  (/api/v1/yappc/preview/sessions)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const previewSessions = {
+  issue: (body: PreviewSessionContext) =>
+    postWithHeaders<PreviewSessionContext, PreviewSessionIssueResponse>(
+      '/api/v1/yappc/preview/sessions',
+      body,
+      'previewSessions.issue',
+      buildAuthHeaders(),
+    ),
+  validate: (sessionToken: string) =>
+    postWithHeaders<{ sessionToken: string }, PreviewSessionValidateResponse>(
+      '/api/v1/yappc/preview/sessions/validate',
+      { sessionToken },
+      'previewSessions.validate',
+      buildAuthHeaders(),
+    ),
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rate limit  (/api/rate-limit/*)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface RateLimitStatusResponse {
+  identifier: string;
+  tier: string;
+  used: number;
+  limit: number;
+  remaining: number;
+  percentage: number;
+  resetTime: string;
+  isLimited: boolean;
+  lastRequestAt?: string;
+  statusColor: string;
+  statusLabel: string;
+}
+
+export interface RateLimitTierResponse {
+  name: string;
+  description: string;
+  requestsPerHour: number;
+  requestsPerDay: number;
+  burstSize: number;
+  monthlyCost: number;
+  features: string[];
+}
+
+export interface RateLimitUpgradeRequestResponse {
+  id: string;
+  userId: string;
+  requestedTier: string;
+  currentTier: string;
+  status: string;
+  createdAt: string;
+  processedAt?: string;
+}
+
+export const rateLimit = {
+  status: (identifier: string = 'me') =>
+    get<RateLimitStatusResponse>(
+      `/api/rate-limit/status/${encodeURIComponent(identifier)}`,
+      'rateLimit.status',
+    ),
+  tiers: () => get<RateLimitTierResponse[]>('/api/rate-limit/tiers', 'rateLimit.tiers'),
+  upgradeRequests: () =>
+    get<RateLimitUpgradeRequestResponse[]>(
+      '/api/rate-limit/upgrade-requests',
+      'rateLimit.upgradeRequests',
+    ),
+  upgrade: (body: { requestedTier: string }) =>
+    post<{ requestedTier: string }, unknown>(
+      '/api/rate-limit/upgrade',
+      body,
+      'rateLimit.upgrade',
+    ),
+  reset: (body: { userId?: string }) =>
+    post<{ userId?: string }, unknown>('/api/rate-limit/reset', body, 'rateLimit.reset'),
+  downgrade: () =>
+    post<Record<string, never>, unknown>(
+      '/api/rate-limit/downgrade',
+      {},
+      'rateLimit.downgrade',
+    ),
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
 // User data (GDPR / CCPA)  (/api/users/me/*)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1002,16 +1498,26 @@ export const results = {
  */
 export const yappcApi = {
   auth,
+  userProfile,
+  billing,
+  operations,
+  collaboration,
+  settings,
+  anomalies,
+  canvas,
+  errorReporting,
   workspaces,
   projects,
   lifecycle,
   intent,
   shape,
   generate,
+  ai,
   workflows,
   run,
   validate,
   artifacts,
+  pageArtifacts,
   sourceImports,
   codeAssociations,
   gates,
@@ -1019,6 +1525,8 @@ export const yappcApi = {
   audit,
   personas,
   phases,
+  previewSessions,
+  rateLimit,
   userData,
   results,
 } as const;

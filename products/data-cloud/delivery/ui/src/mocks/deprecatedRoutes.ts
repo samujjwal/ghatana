@@ -27,6 +27,19 @@ export const DEPRECATED_COLLECTION_ROUTE_REDIRECTS = [
   },
 ] as const;
 
+export const DEPRECATED_RUNTIME_TRUTH_ROUTE_REDIRECTS = [
+  {
+    legacyPath: '/api/v1/capabilities',
+    canonicalPath: '/api/v1/surfaces',
+    openApiPath: '/api/v1/surfaces',
+  },
+  {
+    legacyPath: '/api/v1/capabilities/schema',
+    canonicalPath: '/api/v1/surfaces/schema',
+    openApiPath: '/api/v1/surfaces/schema',
+  },
+] as const;
+
 export function formatDeprecatedRouteWarning(legacyPath: string, canonicalPath: string): string {
   return `[DEPRECATED API ROUTE] ${legacyPath} is deprecated; use ${canonicalPath}`;
 }

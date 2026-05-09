@@ -144,7 +144,7 @@ export function ContextualSuggestions({
         <div className="flex items-center gap-2">
           <AIIcon className="w-4 h-4 text-info-color dark:text-info-color" />
           <Typography className="font-medium text-sm text-info-color dark:text-info-color">
-            AI Suggestions
+            Suggested Improvements
           </Typography>
           <Chip
             size="sm"

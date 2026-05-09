@@ -261,6 +261,38 @@ const standardRules = {
 // ============================================================================
 
 const governanceOverrides = [
+  // Enforce typed API boundary usage in web app source.
+  // Direct fetch('/api...') is only allowed in canonical transport-boundary files.
+  {
+    files: ['web/src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.name='fetch'] > Literal:first-child[value=/^\\/api/ ]",
+          message:
+            'Use yappcApi typed clients instead of direct fetch(/api...). If this is a transport boundary, add a scoped ESLint allowlist override with rationale.',
+        },
+        {
+          selector:
+            "CallExpression[callee.name='fetch'] > TemplateLiteral:first-child[quasis.0.value.raw=/^\\/api/]",
+          message:
+            'Use yappcApi typed clients instead of direct fetch(/api...). If this is a transport boundary, add a scoped ESLint allowlist override with rationale.',
+        },
+      ],
+    },
+  },
+  {
+    files: [
+      'web/src/lib/api/client.ts',
+      'web/src/services/canvas/api/CanvasAPIClient.ts',
+    ],
+    rules: {
+      'no-restricted-syntax': 'off',
+    },
+  },
+
   // YAPPC web app consolidation gate: flag legacy @yappc/* imports in product web src.
   // Keep this in warning mode until migration is fully complete, then switch to error.
   {

@@ -12,12 +12,14 @@ import { useState } from 'react';
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
 import { Button } from '../../components/ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 function ErrorPage(): React.ReactElement {
   const rawError = useRouteError();
   const error = rawError instanceof Error ? rawError : null;
   const [showDetails, setShowDetails] = useState(false);
   const [copied, setCopied] = useState(false);
+  const { t } = useI18n();
 
   const handleCopyError = async () => {
     if (error) {
@@ -44,9 +46,9 @@ function ErrorPage(): React.ReactElement {
         </div>
 
         {/* Message */}
-        <h1 className="text-2xl font-bold text-white mb-4">Something Went Wrong</h1>
+        <h1 className="text-2xl font-bold text-white mb-4">{t('error.somethingWentWrong')}</h1>
         <p className="text-fg-muted mb-8">
-          An unexpected error occurred. Our team has been notified and is working on a fix.
+          {t('error.unexpectedError')}
         </p>
 
         {/* Error Details (collapsible) */}
@@ -63,7 +65,7 @@ function ErrorPage(): React.ReactElement {
               ) : (
                 <ChevronDown className="w-4 h-4" />
               )}
-              {showDetails ? 'Hide' : 'Show'} Error Details
+              {showDetails ? t('error.hideErrorDetails') : t('error.showErrorDetails')}
             </Button>
 
             {showDetails && (
@@ -75,7 +77,7 @@ function ErrorPage(): React.ReactElement {
               >
                 <div className="flex items-start justify-between mb-2">
                   <span className="text-xs text-fg-muted uppercase tracking-wider">
-                    Error Message
+                    {t('error.errorMessage')}
                   </span>
                   <Button
                     onClick={handleCopyError}
@@ -84,7 +86,7 @@ function ErrorPage(): React.ReactElement {
                     className="text-xs text-violet-400 hover:text-violet-300 flex items-center gap-1"
                   >
                     <Copy className="w-3 h-3" />
-                    {copied ? 'Copied!' : 'Copy'}
+                    {copied ? t('error.copied') : t('error.copy')}
                   </Button>
                 </div>
                 <p className="text-sm text-destructive font-mono mb-4">{error.message}</p>
@@ -92,7 +94,7 @@ function ErrorPage(): React.ReactElement {
                 {error.stack && (
                   <>
                     <span className="text-xs text-fg-muted uppercase tracking-wider">
-                      Stack Trace
+                      {t('error.stackTrace')}
                     </span>
                     <pre className="mt-2 text-xs text-fg-muted overflow-x-auto max-h-40 overflow-y-auto font-mono whitespace-pre-wrap">
                       {error.stack}
@@ -115,7 +117,7 @@ function ErrorPage(): React.ReactElement {
             )}
           >
             <RefreshCw className="w-4 h-4" />
-            Refresh Page
+            {t('error.refreshPage')}
           </Button>
           <NavLink
             to={ROUTES.DASHBOARD}
@@ -125,16 +127,16 @@ function ErrorPage(): React.ReactElement {
             )}
           >
             <Home className="w-4 h-4" />
-            Go to Dashboard
+            {t('error.goToDashboard')}
           </NavLink>
         </div>
 
         {/* Support */}
         <div className="mt-8 text-sm text-fg-muted">
           <p>
-            If this problem persists, please{' '}
+            {t('error.persistsMessage')}{' '}
             <a href="/support" className="text-violet-400 hover:underline">
-              contact support
+              {t('error.contactSupport')}
             </a>
           </p>
         </div>

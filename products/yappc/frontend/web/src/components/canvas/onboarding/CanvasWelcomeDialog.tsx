@@ -64,12 +64,12 @@ const DEFAULT_STEPS: OnboardingStep[] = [
     {
         id: 'welcome',
         title: 'Welcome to YAPPC App Creator',
-        description: 'Create full-stack applications visually with AI assistance.',
+        description: 'Create full-stack applications visually with guided recommendations.',
         icon: LightbulbOutlined,
         tips: [
             'Design your application architecture on a visual canvas',
             'Generate reviewable code artifacts with guided checks',
-            'Get AI-powered suggestions and validations',
+            'Get contextual suggestions and validations',
             'Deploy directly to your cloud provider',
         ],
         visual: <LightbulbOutlined className="text-[40px]" />,
@@ -102,11 +102,11 @@ const DEFAULT_STEPS: OnboardingStep[] = [
     },
     {
         id: 'ai-assistant',
-        title: 'AI-Powered Features',
-        description: 'Let AI help you build better applications faster.',
+        title: 'Guided Intelligence Features',
+        description: 'Use guided recommendations to build better applications faster.',
         icon: SmartToyOutlined,
         tips: [
-            'Ask the AI assistant for architecture recommendations',
+            'Review architecture recommendations directly in context',
             'Get real-time validation feedback on your design',
             'Generate code with a single click',
             'Suggested improvements based on best practices',

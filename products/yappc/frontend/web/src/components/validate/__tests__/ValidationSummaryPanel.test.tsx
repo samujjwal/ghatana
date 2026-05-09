@@ -81,19 +81,19 @@ describe('ValidationSummaryPanel', () => {
             await waitFor(() => expect(onRunValidation).toHaveBeenCalledOnce());
         });
 
-        it('does not render Assist button when onAIAssist is absent', () => {
+        it('does not render Guided Assist button when onAIAssist is absent', () => {
             render(<ValidationSummaryPanel {...defaultProps()} />);
-            expect(screen.queryByRole('button', { name: /^assist$/i })).not.toBeInTheDocument();
+            expect(screen.queryByRole('button', { name: /guided assist/i })).not.toBeInTheDocument();
         });
 
-        it('renders Assist button when onAIAssist is provided', () => {
+        it('renders Guided Assist button when onAIAssist is provided', () => {
             render(
                 <ValidationSummaryPanel
                     {...defaultProps()}
                     onAIAssist={vi.fn().mockResolvedValue(null)}
                 />
             );
-            expect(screen.getByRole('button', { name: /^assist$/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /guided assist/i })).toBeInTheDocument();
         });
     });
 
@@ -272,11 +272,11 @@ describe('ValidationSummaryPanel', () => {
         });
     });
 
-    describe('AI assist', () => {
+    describe('Guided assist', () => {
         it('calls onAIAssist with current checks when clicked', async () => {
             const onAIAssist = vi.fn().mockResolvedValue(null);
             render(<ValidationSummaryPanel {...defaultProps({ onAIAssist })} />);
-            fireEvent.click(screen.getByRole('button', { name: /^assist$/i }));
+            fireEvent.click(screen.getByRole('button', { name: /guided assist/i }));
             await waitFor(() => {
                 expect(onAIAssist).toHaveBeenCalledWith(sampleChecks);
             });
@@ -288,7 +288,7 @@ describe('ValidationSummaryPanel', () => {
                 prioritizedFixes: ['Fix SQL injection first'],
             });
             render(<ValidationSummaryPanel {...defaultProps({ onAIAssist })} />);
-            fireEvent.click(screen.getByRole('button', { name: /^assist$/i }));
+            fireEvent.click(screen.getByRole('button', { name: /guided assist/i }));
             await waitFor(() => {
                 expect(screen.getByText('Consider caching')).toBeInTheDocument();
                 expect(screen.getByText('Fix SQL injection first')).toBeInTheDocument();
@@ -301,7 +301,7 @@ describe('ValidationSummaryPanel', () => {
                 prioritizedFixes: [],
             });
             render(<ValidationSummaryPanel {...defaultProps({ onAIAssist })} />);
-            fireEvent.click(screen.getByRole('button', { name: /^assist$/i }));
+            fireEvent.click(screen.getByRole('button', { name: /guided assist/i }));
             await waitFor(() => {
                 expect(screen.getByText('Analysis')).toBeInTheDocument();
             });
@@ -313,7 +313,7 @@ describe('ValidationSummaryPanel', () => {
                 prioritizedFixes: [],
             });
             render(<ValidationSummaryPanel {...defaultProps({ onAIAssist })} />);
-            fireEvent.click(screen.getByRole('button', { name: /^assist$/i }));
+            fireEvent.click(screen.getByRole('button', { name: /guided assist/i }));
             await waitFor(() => {
                 expect(screen.getByText('Consider caching')).toBeInTheDocument();
             });
@@ -321,7 +321,7 @@ describe('ValidationSummaryPanel', () => {
             expect(screen.queryByText('Consider caching')).not.toBeInTheDocument();
         });
 
-        it('shows Analyzing... while AI assist is loading', async () => {
+        it('shows Analyzing... while guided assist is loading', async () => {
             let resolveAI!: () => void;
             const onAIAssist = vi.fn().mockReturnValue(
                 new Promise<null>((resolve) => {
@@ -329,7 +329,7 @@ describe('ValidationSummaryPanel', () => {
                 })
             );
             render(<ValidationSummaryPanel {...defaultProps({ onAIAssist })} />);
-            fireEvent.click(screen.getByRole('button', { name: /^assist$/i }));
+            fireEvent.click(screen.getByRole('button', { name: /guided assist/i }));
             await waitFor(() => {
                 expect(screen.getByRole('button', { name: /analyzing/i })).toBeInTheDocument();
             });

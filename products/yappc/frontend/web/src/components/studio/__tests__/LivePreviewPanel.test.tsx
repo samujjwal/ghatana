@@ -65,8 +65,14 @@ const baseDocument = {
   },
 };
 
+const securePreviewContext = {
+  projectId: 'proj-1',
+  artifactId: 'artifact-1',
+};
+
 describe('LivePreviewPanel - Platform Preview Protocol', () => {
   beforeEach(() => {
+    vi.stubEnv('VITE_FEATURE_PREVIEW_DEV_MODE', 'false');
     mountDocumentMock.mockReset();
     updateDocumentMock.mockReset();
     sendMock.mockReset();
@@ -106,7 +112,7 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
       render(
         <LivePreviewPanel
           document={baseDocument}
-          previewContext={{ projectId: 'proj-1', artifactId: 'artifact-1' }}
+          previewContext={securePreviewContext}
         />,
       );
 
@@ -126,7 +132,7 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
   });
 
   describe('Fallback Behavior', () => {
-    it('surfaces blocked preview state and avoids mounting the document', () => {
+    it('surfaces blocked preview state and avoids mounting the document', async () => {
       resolvePreviewExecutionPolicyMock.mockReturnValue({
         profile: {
           id: 'yappc-preview',
@@ -148,17 +154,22 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
         },
       });
 
-      render(<LivePreviewPanel document={baseDocument} />);
+      render(
+        <LivePreviewPanel
+          document={baseDocument}
+          previewUrl="/preview/builder?session=test-session"
+        />,
+      );
 
-      expect(screen.getByLabelText('Preview unavailable')).toBeInTheDocument();
-      expect(screen.getByText('Preview requires trusted workspace review.')).toBeInTheDocument();
+      expect(await screen.findByLabelText('Preview unavailable')).toBeInTheDocument();
+      expect(await screen.findByText('Preview requires trusted workspace review.')).toBeInTheDocument();
       expect(mountDocumentMock).not.toHaveBeenCalled();
     });
   });
 
   describe('Viewport Controls', () => {
     it('updates the selected viewport through the control', () => {
-      render(<LivePreviewPanel document={baseDocument} />);
+      render(<LivePreviewPanel document={baseDocument} previewContext={securePreviewContext} />);
 
       fireEvent.change(screen.getByDisplayValue('Desktop (1440px)'), {
         target: { value: 'mobile' },
@@ -173,7 +184,14 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
     });
 
     it('sends viewport, theme, and locale updates to the preview runtime', async () => {
-      render(<LivePreviewPanel document={baseDocument} />);
+      render(
+        <LivePreviewPanel
+          document={baseDocument}
+          previewUrl="/preview/builder?session=test-session"
+        />,
+      );
+
+      await screen.findByTitle('Live Preview');
 
       await waitFor(() => {
         expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({ type: 'SET_VIEWPORT' }));
@@ -213,7 +231,7 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
     });
 
     it('offers token theme packs and RTL locale fixtures in the preview controls', () => {
-      render(<LivePreviewPanel document={baseDocument} />);
+      render(<LivePreviewPanel document={baseDocument} previewContext={securePreviewContext} />);
 
       expect(screen.getByText('Editorial warmth')).toBeInTheDocument();
       expect(screen.getByText('ar-SA · Arabic (Saudi Arabia)')).toBeInTheDocument();
@@ -221,7 +239,7 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
     });
 
     it('renders localized fixture content for the selected preview locale', () => {
-      render(<LivePreviewPanel document={baseDocument} />);
+      render(<LivePreviewPanel document={baseDocument} previewContext={securePreviewContext} />);
 
       fireEvent.change(screen.getByDisplayValue('en-US · English (US)'), {
         target: { value: 'he-IL' },
@@ -236,11 +254,21 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
   });
 
   describe('Default preview URL', () => {
-    it('uses /preview/builder as the iframe src when previewUrl is not provided', () => {
+    it('fails closed when previewContext is missing and dev preview mode is disabled', async () => {
+      render(<LivePreviewPanel document={baseDocument} />);
+      expect(
+        await screen.findByText('Secure preview session is required. Provide previewContext or enable explicit dev preview mode.'),
+      ).toBeInTheDocument();
+      expect(screen.queryByTitle('Live Preview')).not.toBeInTheDocument();
+    });
+
+    it('uses explicit dev-mode preview route when enabled and previewContext is absent', () => {
+      vi.stubEnv('VITE_FEATURE_PREVIEW_DEV_MODE', 'true');
+
       render(<LivePreviewPanel document={baseDocument} />);
       const iframe = screen.queryByTitle('Live Preview');
       if (iframe) {
-        expect(iframe).toHaveAttribute('src', '/preview/builder');
+        expect(iframe).toHaveAttribute('src', '/preview/builder?mode=dev');
       }
     });
 

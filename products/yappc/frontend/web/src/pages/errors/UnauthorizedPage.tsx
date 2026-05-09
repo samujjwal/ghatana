@@ -11,8 +11,10 @@ import { ShieldOff, Home, ArrowLeft, Lock, Mail } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
 import { Button } from '../../components/ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 function UnauthorizedPage(): React.ReactElement {
+  const { t } = useI18n();
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center p-6">
       <motion.div
@@ -28,10 +30,9 @@ function UnauthorizedPage(): React.ReactElement {
         </div>
 
         {/* Message */}
-        <h1 className="text-2xl font-bold text-white mb-4">Access Denied</h1>
+        <h1 className="text-2xl font-bold text-white mb-4">{t('unauthorized.title')}</h1>
         <p className="text-fg-muted mb-8">
-          You don't have permission to access this page. If you believe this is a mistake, please
-          contact your administrator.
+          {t('unauthorized.message')}
         </p>
 
         {/* Info Box */}
@@ -39,11 +40,11 @@ function UnauthorizedPage(): React.ReactElement {
           <div className="flex items-start gap-3">
             <Lock className="w-5 h-5 text-fg-muted mt-0.5" />
             <div>
-              <div className="text-sm font-medium text-white">Why am I seeing this?</div>
+              <div className="text-sm font-medium text-white">{t('unauthorized.whyTitle')}</div>
               <ul className="mt-2 text-sm text-fg-muted space-y-1">
-                <li>• Your role may not have access to this feature</li>
-                <li>• The resource may require elevated permissions</li>
-                <li>• Your session may have expired</li>
+                <li>• {t('unauthorized.reason1')}</li>
+                <li>• {t('unauthorized.reason2')}</li>
+                <li>• {t('unauthorized.reason3')}</li>
               </ul>
             </div>
           </div>
@@ -59,7 +60,7 @@ function UnauthorizedPage(): React.ReactElement {
             )}
           >
             <Home className="w-4 h-4" />
-            Go to Dashboard
+            {t('unauthorized.goToDashboard')}
           </NavLink>
           <Button
             onClick={() => window.history.back()}
@@ -70,7 +71,7 @@ function UnauthorizedPage(): React.ReactElement {
             )}
           >
             <ArrowLeft className="w-4 h-4" />
-            Go Back
+            {t('unauthorized.goBack')}
           </Button>
         </div>
 
@@ -81,7 +82,7 @@ function UnauthorizedPage(): React.ReactElement {
             className="inline-flex items-center gap-2 text-sm text-fg-muted hover:text-fg-muted transition-colors"
           >
             <Mail className="w-4 h-4" />
-            Contact Administrator
+            {t('unauthorized.contactAdmin')}
           </a>
         </div>
       </motion.div>

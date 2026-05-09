@@ -160,7 +160,7 @@ const PHASE_ROUTES: Record<LifecyclePhase, string> = {
 const PHASE_GUIDANCE: Record<LifecyclePhase, Omit<GuidanceStep, 'completed' | 'current'>[]> = {
     [LifecyclePhase.INTENT]: [
         { id: 'intent-1', title: 'Describe your idea', description: 'Use natural language to describe what you want to build', action: 'Type in the command input' },
-        { id: 'intent-2', title: 'Review AI suggestions', description: 'AI will suggest a project structure based on your description' },
+        { id: 'intent-2', title: 'Review suggested structure', description: 'YAPPC suggests a project structure based on your description' },
         { id: 'intent-3', title: 'Confirm or customize', description: 'Accept the suggestion or modify it to match your vision' },
     ],
     [LifecyclePhase.CONTEXT]: [
@@ -170,7 +170,7 @@ const PHASE_GUIDANCE: Record<LifecyclePhase, Omit<GuidanceStep, 'completed' | 'c
         { id: 'shape-4', title: 'Use assistance', description: 'Get help to add features or modify your design' },
     ],
     [LifecyclePhase.PLAN]: [
-        { id: 'validate-1', title: 'Run validation', description: 'AI will check your design for issues and gaps' },
+        { id: 'validate-1', title: 'Run validation', description: 'Validation checks your design for issues and gaps' },
         { id: 'validate-2', title: 'Review findings', description: 'Address errors, warnings, and suggestions' },
         { id: 'validate-3', title: 'Fix issues', description: 'Click on issues to navigate to the problem area' },
     ],
@@ -190,7 +190,7 @@ const PHASE_GUIDANCE: Record<LifecyclePhase, Omit<GuidanceStep, 'completed' | 'c
         { id: 'observe-3', title: 'Set alerts', description: 'Configure notifications for important events' },
     ],
     [LifecyclePhase.LEARN]: [
-        { id: 'improve-1', title: 'Review insights', description: 'AI analyzes usage and suggests improvements' },
+        { id: 'improve-1', title: 'Review insights', description: 'Insights analyze usage and suggest improvements' },
         { id: 'improve-2', title: 'Apply changes', description: 'Make improvements based on observations' },
         { id: 'improve-3', title: 'Iterate', description: 'Continue the cycle to enhance your app' },
     ],
@@ -218,7 +218,7 @@ const PHASE_TIPS: Record<LifecyclePhase, string[]> = {
     [LifecyclePhase.PLAN]: [
         '💡 Fix errors before generating code',
         '💡 Warnings can be addressed later',
-        '💡 AI can auto-fix some issues',
+        '💡 Suggested fixes can auto-resolve some issues',
     ],
     [LifecyclePhase.EXECUTE]: [
         '💡 Generated code is fully editable',

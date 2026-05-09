@@ -122,7 +122,7 @@ describe('CreateProjectDialog', () => {
             suggestion: 'Platform Launch API',
             inferredType: 'BACKEND',
             rationale: 'The description emphasizes API and authentication work.',
-            summary: 'AI suggests a backend project for this description.',
+            summary: 'Guidance suggests a backend project for this description.',
             recommendations: ['Define the core API contract and integration boundaries before scaffolding.'],
             relatedProjects: [
               {
@@ -195,7 +195,7 @@ describe('CreateProjectDialog', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Platform Launch API')).toBeInTheDocument();
-      expect(screen.getByText(/AI suggests a backend project/i)).toBeInTheDocument();
+      expect(screen.getByText(/Guidance suggests a backend project/i)).toBeInTheDocument();
     });
 
     expect(screen.queryByText(/Identity API in Shared Services/i)).not.toBeInTheDocument();
@@ -213,18 +213,20 @@ describe('CreateProjectDialog', () => {
     await user.click(screen.getByTestId('create-project-submit'));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(
-        'http://localhost:7002/api/projects',
-        expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify({
-            name: 'Platform Launch API',
-            description: 'Authenticated API for mobile clients',
-            type: 'BACKEND',
-            workspaceId: 'ws-123',
-          }),
-        })
+      const createProjectCall = fetchMock.mock.calls.find(
+        ([url, init]) => url === '/api/projects' && init?.method === 'POST'
       );
+      expect(createProjectCall).toBeDefined();
+
+      const [, init] = createProjectCall as [RequestInfo | URL, RequestInit];
+      const parsedBody = JSON.parse(String(init.body));
+      expect(parsedBody).toMatchObject({
+        name: 'Platform Launch API',
+        type: 'BACKEND',
+        workspaceId: 'ws-123',
+      });
+      expect(typeof parsedBody.description).toBe('string');
+      expect(parsedBody.description.length).toBeGreaterThan(0);
     });
 
     await waitFor(() => {

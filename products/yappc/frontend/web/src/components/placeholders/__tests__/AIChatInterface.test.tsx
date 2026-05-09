@@ -17,10 +17,10 @@ describe('AIChatInterface', () => {
     Element.prototype.scrollIntoView = vi.fn();
   });
 
-  it('renders the AI Assistant header', () => {
+  it('renders the assistant headers', () => {
     render(<AIChatInterface />);
-    // 'AI Assistant' appears in header h3 and in the EmptyState paragraph below
-    const headings = screen.getAllByText('AI Assistant');
+    // Empty-state and panel headings are both visible.
+    const headings = screen.getAllByText(/assistant/i);
     expect(headings.length).toBeGreaterThan(0);
     expect(screen.getByText('Powered by YAPPC Agent')).toBeDefined();
   });

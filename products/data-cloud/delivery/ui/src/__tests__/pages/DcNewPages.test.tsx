@@ -414,54 +414,63 @@ describe('EntityBrowserPage', () => {
   });
 
   it('renders namespaces and entities from canonical collections and entity routes', async () => {
-    mockedApiClientGet
-      .mockResolvedValueOnce({
-        entities: [
-          {
-            id: 'products',
-            collection: 'dc_collections',
-            data: {
-              name: 'Products',
-              description: 'Product catalog',
-              schemaType: 'entity',
-              status: 'active',
-              entityCount: 2,
-              schema: { fields: [] },
-              tags: [],
-              createdBy: 'tester',
+    mockedApiClientGet.mockImplementation((url: string) => {
+      if (url === '/surfaces' || url === '/capabilities') {
+        return Promise.resolve({
+          data: { generatedAt: '2026-05-08T00:00:00Z', capabilities: {} },
+          meta: { requestId: 'req-surfaces', tenantId: 'tenant-a' },
+        });
+      }
+      if (url === '/entities/dc_collections') {
+        return Promise.resolve({
+          entities: [
+            {
+              id: 'products',
+              collection: 'dc_collections',
+              data: {
+                name: 'Products',
+                description: 'Product catalog',
+                schemaType: 'entity',
+                status: 'active',
+                entityCount: 2,
+                schema: { fields: [] },
+                tags: [],
+                createdBy: 'tester',
+              },
+              createdAt: '2024-01-01T00:00:00Z',
+              updatedAt: '2024-01-01T00:00:00Z',
             },
-            createdAt: '2024-01-01T00:00:00Z',
-            updatedAt: '2024-01-01T00:00:00Z',
-          },
-        ],
-        count: 1,
-      })
-      .mockResolvedValueOnce({
-        entities: [
-          {
-            id: 'ent-001',
-            tenantId: 'tenant-a',
-            collectionName: 'products',
-            data: { name: 'Widget Pro', price: 49.99 },
-            version: 2,
-            createdAt: '2024-01-01T00:00:00Z',
-            updatedAt: '2024-01-02T00:00:00Z',
-          },
-        ],
-        total: 1,
-        limit: 20,
-        offset: 0,
-      })
-      .mockResolvedValueOnce({
-        data: {
-          suggestions: [],
-        },
-        ai: {
-          confidence: 0.2,
-          model: 'fallback',
-          fallback: true,
-        },
-      });
+          ],
+          count: 1,
+        });
+      }
+      if (url === '/entities/products') {
+        return Promise.resolve({
+          entities: [
+            {
+              id: 'ent-001',
+              tenantId: 'tenant-a',
+              collectionName: 'products',
+              data: { name: 'Widget Pro', price: 49.99 },
+              version: 2,
+              createdAt: '2024-01-01T00:00:00Z',
+              updatedAt: '2024-01-02T00:00:00Z',
+            },
+          ],
+          total: 1,
+          limit: 20,
+          offset: 0,
+        });
+      }
+      if (url === '/entities/products/suggest') {
+        return Promise.resolve({
+          data: { suggestions: [] },
+          ai: { confidence: 0.2, model: 'fallback', fallback: true },
+        });
+      }
+
+      return Promise.resolve([]);
+    });
 
     render(<EntityBrowserPage />, { wrapper: TestWrapper });
 
@@ -470,13 +479,11 @@ describe('EntityBrowserPage', () => {
       expect(screen.getByText(/name: Widget Pro/i)).toBeDefined();
     });
 
-    expect(mockedApiClientGet).toHaveBeenNthCalledWith(
-      1,
+    expect(mockedApiClientGet).toHaveBeenCalledWith(
       '/entities/dc_collections',
       { params: { limit: 100, offset: 0 } },
     );
-    expect(mockedApiClientGet).toHaveBeenNthCalledWith(
-      2,
+    expect(mockedApiClientGet).toHaveBeenCalledWith(
       '/entities/products',
       { params: { limit: 20 } },
     );
@@ -555,18 +562,17 @@ describe('DataFabricPage', () => {
     expect(screen.getByText(dataFabricMetricsBoundary.summary)).toBeDefined();
   });
 
-  it('renders the flow canvas placeholder', () => {
+  it('renders unavailable boundary state when fabric metrics capability is not active', () => {
     render(<DataFabricPage />, { wrapper: TestWrapper });
-    expect(screen.getByTestId('flow-canvas')).toBeDefined();
+    expect(screen.getByTestId('data-fabric-page-unavailable')).toBeDefined();
+    expect(screen.getByText(dataFabricMetricsBoundary.summary)).toBeDefined();
   });
 
-  it('shows tier legend', () => {
+  it('shows boundary guidance bullets', () => {
     render(<DataFabricPage />, { wrapper: TestWrapper });
-    expect(screen.getByText('Tier Legend')).toBeDefined();
-    expect(screen.getByText(/HOT.*Redis/i)).toBeDefined();
-    expect(screen.getByText(/WARM.*PostgreSQL/i)).toBeDefined();
-    expect(screen.getByText(/COOL.*Iceberg/i)).toBeDefined();
-    expect(screen.getByText(/COLD.*S3/i)).toBeDefined();
+    expect(screen.getByText('Current boundary')).toBeDefined();
+    expect(screen.getByText(/Topology layout is available for orientation and design review/i)).toBeDefined();
+    expect(screen.getByText(/Live throughput, latency, and queue depth are preview values/i)).toBeDefined();
   });
 
   it('renders the data-fabric shell with preview metrics summary and migration action', async () => {
@@ -574,14 +580,13 @@ describe('DataFabricPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText(dataFabricMetricsBoundary.summary)).toBeDefined();
-      expect(screen.getByRole('button', { name: /Migrate Tier/i })).toBeDefined();
-      expect(screen.getByText(/Total throughput:/i)).toBeDefined();
-      expect(screen.getByText(/Total storage:/i)).toBeDefined();
+      expect(screen.queryByRole('button', { name: /Migrate Tier/i })).toBeNull();
+      expect(screen.getByText('Current boundary')).toBeDefined();
     });
   });
 
-  it('shows flow controls', () => {
+  it('does not render flow controls in unavailable boundary mode', () => {
     render(<DataFabricPage />, { wrapper: TestWrapper });
-    expect(screen.getByTestId('flow-controls')).toBeDefined();
+    expect(screen.queryByTestId('flow-controls')).toBeNull();
   });
 });

@@ -9,6 +9,7 @@
 
 import { useEffect, useCallback } from 'react';
 import type { Tool } from '../state/atoms/unifiedCanvasAtom';
+import { translate } from '@/i18n/messages';
 
 export interface ShortcutDefinition {
   key: string;
@@ -89,52 +90,52 @@ export function useKeyboardShortcuts(props: UseKeyboardShortcutsProps = {}) {
       // Tools
       {
         key: 'v',
-        description: 'Select tool',
+        description: translate('shortcut.selectTool'),
         action: () => props.onToolChange?.('select'),
       },
       {
         key: 'h',
-        description: 'Pan tool',
+        description: translate('shortcut.panTool'),
         action: () => props.onToolChange?.('pan'),
       },
       {
         key: 'p',
-        description: 'Draw tool',
+        description: translate('shortcut.drawTool'),
         action: () => props.onToolChange?.('draw'),
       },
       {
         key: 't',
-        description: 'Text tool',
+        description: translate('shortcut.textTool'),
         action: () => props.onToolChange?.('text'),
       },
       {
         key: 'c',
-        description: 'Code tool',
+        description: translate('shortcut.codeTool'),
         action: () => props.onToolChange?.('code'),
       },
       {
         key: 'n',
-        description: 'Sticky note',
+        description: translate('shortcut.stickyNote'),
         action: () => props.onToolChange?.('sticky'),
       },
       {
         key: 'r',
-        description: 'Rectangle tool',
+        description: translate('shortcut.rectangleTool'),
         action: () => props.onToolChange?.('rectangle'),
       },
       {
         key: 'o',
-        description: 'Ellipse tool',
+        description: translate('shortcut.ellipseTool'),
         action: () => props.onToolChange?.('ellipse'),
       },
       {
         key: 'l',
-        description: 'Line tool',
+        description: translate('shortcut.lineTool'),
         action: () => props.onToolChange?.('line'),
       },
       {
         key: 'a',
-        description: 'Arrow tool',
+        description: translate('shortcut.arrowTool'),
         action: () => props.onToolChange?.('arrow'),
       },
 
@@ -142,7 +143,7 @@ export function useKeyboardShortcuts(props: UseKeyboardShortcutsProps = {}) {
       {
         key: 'z',
         [modKey]: true,
-        description: 'Undo',
+        description: translate('shortcut.undo'),
         action: () => props.onUndo?.(),
         preventDefault: true,
       },
@@ -150,45 +151,45 @@ export function useKeyboardShortcuts(props: UseKeyboardShortcutsProps = {}) {
         key: 'z',
         [modKey]: true,
         shift: true,
-        description: 'Redo',
+        description: translate('shortcut.redo'),
         action: () => props.onRedo?.(),
         preventDefault: true,
       },
       {
         key: 'c',
         [modKey]: true,
-        description: 'Copy',
+        description: translate('shortcut.copy'),
         action: () => props.onCopy?.(),
         preventDefault: true,
       },
       {
         key: 'v',
         [modKey]: true,
-        description: 'Paste',
+        description: translate('shortcut.paste'),
         action: () => props.onPaste?.(),
         preventDefault: true,
       },
       {
         key: 'd',
         [modKey]: true,
-        description: 'Duplicate',
+        description: translate('shortcut.duplicate'),
         action: () => props.onDuplicate?.(),
         preventDefault: true,
       },
       {
         key: 'Delete',
-        description: 'Delete',
+        description: translate('shortcut.delete'),
         action: () => props.onDelete?.(),
       },
       {
         key: 'Backspace',
-        description: 'Delete',
+        description: translate('shortcut.delete'),
         action: () => props.onDelete?.(),
       },
       {
         key: 'a',
         [modKey]: true,
-        description: 'Select all',
+        description: translate('shortcut.selectAll'),
         action: () => props.onSelectAll?.(),
         preventDefault: true,
       },
@@ -197,35 +198,35 @@ export function useKeyboardShortcuts(props: UseKeyboardShortcutsProps = {}) {
       {
         key: '+',
         [modKey]: true,
-        description: 'Zoom in',
+        description: translate('shortcut.zoomIn'),
         action: () => props.onZoomIn?.(),
         preventDefault: true,
       },
       {
         key: '=',
         [modKey]: true,
-        description: 'Zoom in',
+        description: translate('shortcut.zoomIn'),
         action: () => props.onZoomIn?.(),
         preventDefault: true,
       },
       {
         key: '-',
         [modKey]: true,
-        description: 'Zoom out',
+        description: translate('shortcut.zoomOut'),
         action: () => props.onZoomOut?.(),
         preventDefault: true,
       },
       {
         key: '0',
         [modKey]: true,
-        description: 'Zoom to fit',
+        description: translate('shortcut.zoomToFit'),
         action: () => props.onZoomToFit?.(),
         preventDefault: true,
       },
       {
         key: '1',
         [modKey]: true,
-        description: 'Reset zoom',
+        description: translate('shortcut.resetZoom'),
         action: () => props.onResetZoom?.(),
         preventDefault: true,
       },
@@ -233,25 +234,25 @@ export function useKeyboardShortcuts(props: UseKeyboardShortcutsProps = {}) {
       // Layer
       {
         key: ']',
-        description: 'Bring forward',
+        description: translate('shortcut.bringForward'),
         action: () => props.onBringForward?.(),
       },
       {
         key: '[',
-        description: 'Send backward',
+        description: translate('shortcut.sendBackward'),
         action: () => props.onSendBackward?.(),
       },
       {
         key: ']',
         [modKey]: true,
-        description: 'Bring to front',
+        description: translate('shortcut.bringToFront'),
         action: () => props.onBringToFront?.(),
         preventDefault: true,
       },
       {
         key: '[',
         [modKey]: true,
-        description: 'Send to back',
+        description: translate('shortcut.sendToBack'),
         action: () => props.onSendToBack?.(),
         preventDefault: true,
       },
@@ -260,7 +261,7 @@ export function useKeyboardShortcuts(props: UseKeyboardShortcutsProps = {}) {
       {
         key: 'g',
         [modKey]: true,
-        description: 'Group',
+        description: translate('shortcut.group'),
         action: () => props.onGroup?.(),
         preventDefault: true,
       },
@@ -268,7 +269,7 @@ export function useKeyboardShortcuts(props: UseKeyboardShortcutsProps = {}) {
         key: 'g',
         [modKey]: true,
         shift: true,
-        description: 'Ungroup',
+        description: translate('shortcut.ungroup'),
         action: () => props.onUngroup?.(),
         preventDefault: true,
       },
@@ -277,23 +278,23 @@ export function useKeyboardShortcuts(props: UseKeyboardShortcutsProps = {}) {
       {
         key: 'ArrowDown',
         [modKey]: true,
-        description: 'Zoom into node',
+        description: translate('shortcut.zoomIntoNode'),
         action: () => props.onZoomIntoNode?.(),
         preventDefault: true,
       },
       {
         key: 'ArrowUp',
         [modKey]: true,
-        description: 'Zoom out to parent',
+        description: translate('shortcut.zoomOutToParent'),
         action: () => props.onZoomOutToParent?.(),
         preventDefault: true,
       },
 
-      // AI
+      // Guided Assistant
       {
         key: 'k',
         [modKey]: true,
-        description: 'Open AI',
+        description: translate('shortcut.openGuidedAssistant'),
         action: () => props.onOpenAI?.(),
         preventDefault: true,
       },
@@ -302,7 +303,7 @@ export function useKeyboardShortcuts(props: UseKeyboardShortcutsProps = {}) {
       {
         key: 's',
         [modKey]: true,
-        description: 'Save',
+        description: translate('shortcut.save'),
         action: () => props.onSave?.(),
         preventDefault: true,
       },
@@ -311,7 +312,7 @@ export function useKeyboardShortcuts(props: UseKeyboardShortcutsProps = {}) {
       {
         key: 'f',
         [modKey]: true,
-        description: 'Search',
+        description: translate('shortcut.search'),
         action: () => props.onSearch?.(),
         preventDefault: true,
       },

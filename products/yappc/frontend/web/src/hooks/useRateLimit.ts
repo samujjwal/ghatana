@@ -24,7 +24,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback, useEffect } from 'react';
-import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { yappcApi } from '@/lib/api/client';
 
 /**
  * Rate limit status interface
@@ -106,12 +106,12 @@ export const useRateLimit = (options: UseRateLimitOptions = {}) => {
   } = useQuery<RateLimitStatus>({
     queryKey: ['rateLimitStatus', userId || 'me'],
     queryFn: async () => {
-      const url = userId
-        ? `/api/rate-limit/status/${userId}`
-        : '/api/rate-limit/status/me';
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to fetch rate limit status'));
-      return parseJsonResponse<RateLimitStatus>(response, 'fetch rate limit status');
+      const apiStatus = await yappcApi.rateLimit.status(userId || 'me');
+      return {
+        ...apiStatus,
+        resetTime: new Date(apiStatus.resetTime),
+        lastRequestAt: apiStatus.lastRequestAt ? new Date(apiStatus.lastRequestAt) : undefined,
+      };
     },
     refetchInterval: autoRefresh ? refreshInterval : false,
   });
@@ -121,11 +121,7 @@ export const useRateLimit = (options: UseRateLimitOptions = {}) => {
    */
   const { data: tiers, isLoading: tiersLoading } = useQuery<RateLimitTier[]>({
     queryKey: ['rateLimitTiers'],
-    queryFn: async () => {
-      const response = await fetch('/api/rate-limit/tiers');
-      if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to fetch tiers'));
-      return parseJsonResponse<RateLimitTier[]>(response, 'fetch rate limit tiers');
-    },
+    queryFn: () => yappcApi.rateLimit.tiers(),
   });
 
   /**
@@ -136,9 +132,12 @@ export const useRateLimit = (options: UseRateLimitOptions = {}) => {
   >({
     queryKey: ['upgradeRequests', userId],
     queryFn: async () => {
-      const response = await fetch('/api/rate-limit/upgrade-requests');
-      if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to fetch upgrade requests'));
-      return parseJsonResponse<UpgradeRequest[]>(response, 'fetch upgrade requests');
+      const apiRequests = await yappcApi.rateLimit.upgradeRequests();
+      return apiRequests.map((request) => ({
+        ...request,
+        createdAt: new Date(request.createdAt),
+        processedAt: request.processedAt ? new Date(request.processedAt) : undefined,
+      }));
     },
     enabled: !!userId,
   });
@@ -147,15 +146,8 @@ export const useRateLimit = (options: UseRateLimitOptions = {}) => {
    * Request tier upgrade mutation
    */
   const requestUpgrade = useMutation({
-    mutationFn: async (requestedTier: string) => {
-      const response = await fetch('/api/rate-limit/upgrade', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestedTier }),
-      });
-      if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to request upgrade'));
-      return parseJsonResponse<unknown>(response, 'request rate limit upgrade');
-    },
+    mutationFn: (requestedTier: string) =>
+      yappcApi.rateLimit.upgrade({ requestedTier }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['upgradeRequests'] });
       queryClient.invalidateQueries({ queryKey: ['rateLimitStatus'] });
@@ -166,15 +158,8 @@ export const useRateLimit = (options: UseRateLimitOptions = {}) => {
    * Reset rate limit mutation (admin only)
    */
   const resetLimit = useMutation({
-    mutationFn: async (targetUserId?: string) => {
-      const response = await fetch('/api/rate-limit/reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: targetUserId }),
-      });
-      if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to reset limit'));
-      return parseJsonResponse<unknown>(response, 'reset rate limit');
-    },
+    mutationFn: (targetUserId?: string) =>
+      yappcApi.rateLimit.reset({ userId: targetUserId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rateLimitStatus'] });
     },
@@ -184,13 +169,7 @@ export const useRateLimit = (options: UseRateLimitOptions = {}) => {
    * Downgrade to free tier mutation
    */
   const downgradeToFree = useMutation({
-    mutationFn: async () => {
-      const response = await fetch('/api/rate-limit/downgrade', {
-        method: 'POST',
-      });
-      if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to downgrade'));
-      return parseJsonResponse<unknown>(response, 'downgrade rate limit tier');
-    },
+    mutationFn: () => yappcApi.rateLimit.downgrade(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rateLimitStatus'] });
     },

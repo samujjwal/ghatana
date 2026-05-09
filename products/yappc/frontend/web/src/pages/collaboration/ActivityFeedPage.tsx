@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { yappcApi } from '@/lib/api/client';
 import { Button } from '../../components/ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -81,13 +82,7 @@ function formatRelativeTime(dateStr: string): string {
 // ============================================================================
 
 async function fetchActivities(): Promise<ActivityFeedResponse> {
-  const res = await fetch('/api/activity', {
-    headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
-  });
-  if (!res.ok) {
-    throw new Error(await readErrorResponse(res, 'Failed to load activities'));
-  }
-  return parseJsonResponse<ActivityFeedResponse>(res, 'activity feed');
+  return yappcApi.collaboration.getActivityFeed<ActivityFeedResponse>();
 }
 
 // ============================================================================
@@ -103,6 +98,7 @@ async function fetchActivities(): Promise<ActivityFeedResponse> {
  */
 const ActivityFeedPage: React.FC = () => {
   const [filter, setFilter] = useState<ActivityType | 'all'>('all');
+  const { t } = useI18n();
 
   const { data, isLoading, error } = useQuery<ActivityFeedResponse>({
     queryKey: ['activityfeedpage'],
@@ -119,8 +115,8 @@ const ActivityFeedPage: React.FC = () => {
     <div className="mx-auto max-w-4xl px-6 py-8 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-fg-muted">Activity Feed</h1>
-        <p className="mt-1 text-sm text-fg-muted">Recent team activity across the workspace</p>
+        <h1 className="text-2xl font-bold text-fg-muted">{t('activityFeed.title')}</h1>
+        <p className="mt-1 text-sm text-fg-muted">{t('activityFeed.subtitle')}</p>
       </div>
 
       {/* Filter Bar */}
@@ -136,7 +132,7 @@ const ActivityFeedPage: React.FC = () => {
               : 'bg-surface text-fg-muted hover:text-fg-muted'
           }`}
         >
-          All
+          {t('activityFeed.filterAll')}
         </Button>
         {(Object.keys(ACTIVITY_CONFIG) as ActivityType[]).map((type) => (
           <Button
@@ -164,7 +160,7 @@ const ActivityFeedPage: React.FC = () => {
         </div>
       ) : error ? (
         <div className="rounded-lg border border-destructive-border bg-destructive-bg/20 p-4">
-          <p className="text-sm text-destructive">Failed to load activity feed. Please try again later.</p>
+          <p className="text-sm text-destructive">{t('activityFeed.loadError')}</p>
         </div>
       ) : activities.length === 0 ? (
         <div className="bg-surface border border-border rounded-lg p-12 text-center">

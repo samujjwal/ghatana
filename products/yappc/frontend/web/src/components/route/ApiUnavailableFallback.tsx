@@ -12,6 +12,7 @@
 
 import { CloudOff, RefreshCw as Refresh, AlertTriangle as WarningAmber } from 'lucide-react';
 import { Box, Container, Typography, Stack, Button, Surface as Paper, Alert } from '@ghatana/design-system';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface ApiUnavailableFallbackProps {
     /** Error message to display */
@@ -33,6 +34,7 @@ export function ApiUnavailableFallback({
   onRetry,
   isRetrying = false,
 }: ApiUnavailableFallbackProps): React.JSX.Element {
+  const { t } = useI18n();
   return (
     <Box
       className="flex min-h-screen items-center justify-center p-4"
@@ -47,13 +49,12 @@ export function ApiUnavailableFallback({
 
           {/* Title */}
           <Typography variant="h4" className="mb-4 font-semibold text-[#1f2937]">
-            Service Unavailable
+            {t('apiUnavailable.title')}
           </Typography>
 
           {/* Subtitle */}
           <Typography className="mb-6 leading-relaxed text-[#6b7280]">
-            We're having trouble connecting to our services. This could mean the
-            backend server or database is not running.
+            {t('apiUnavailable.subtitle')}
           </Typography>
 
           {/* Error Alert */}
@@ -72,13 +73,13 @@ export function ApiUnavailableFallback({
           {/* Troubleshooting Steps */}
           <Box className="mb-6 rounded bg-[#f3f4f6] p-4 text-left">
             <Typography className="mb-3 font-semibold text-[#1f2937]">
-              Troubleshooting Steps:
+              {t('apiUnavailable.troubleshootingTitle')}
             </Typography>
             <ol className="space-y-1 pl-4">
-              <li className="text-sm text-[#4b5563]">Ensure the backend API server is running (port 7003)</li>
-              <li className="text-sm text-[#4b5563]">Verify the database service is running</li>
-              <li className="text-sm text-[#4b5563]">Check your network connection</li>
-              <li className="text-sm text-[#4b5563]">Try reloading the page</li>
+              <li className="text-sm text-[#4b5563]">{t('apiUnavailable.step1')}</li>
+              <li className="text-sm text-[#4b5563]">{t('apiUnavailable.step2')}</li>
+              <li className="text-sm text-[#4b5563]">{t('apiUnavailable.step3')}</li>
+              <li className="text-sm text-[#4b5563]">{t('apiUnavailable.step4')}</li>
             </ol>
           </Box>
 
@@ -94,7 +95,7 @@ export function ApiUnavailableFallback({
               fullWidth
               className="bg-[#3b82f6] hover:bg-[#2563eb]"
             >
-              {isRetrying ? 'Retrying...' : 'Retry'}
+              {isRetrying ? t('apiUnavailable.retrying') : t('apiUnavailable.retry')}
             </Button>
             <Button
               variant="outlined"
@@ -102,14 +103,13 @@ export function ApiUnavailableFallback({
               onClick={() => window.location.reload()}
               fullWidth
             >
-              Reload Page
+              {t('apiUnavailable.reloadPage')}
             </Button>
           </Box>
 
           {/* Help Text */}
           <Typography className="mt-6 block text-xs text-[#9ca3af]">
-            If the problem persists, please contact support or check the
-            documentation.
+            {t('apiUnavailable.helpText')}
           </Typography>
         </Paper>
       </Container>

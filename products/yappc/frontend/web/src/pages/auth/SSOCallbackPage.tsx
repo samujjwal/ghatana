@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { yappcApi } from '@/lib/api/client';
+import { useI18n } from '../../i18n/I18nProvider';
 
 /**
  * SSOCallbackPage — SSO/OAuth callback handler.
@@ -12,6 +13,7 @@ import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 const SSOCallbackPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { t } = useI18n();
 
   useEffect(() => {
     const code = searchParams.get('code');
@@ -26,17 +28,7 @@ const SSOCallbackPage: React.FC = () => {
     if (code) {
       void (async () => {
         try {
-          const res = await fetch('/api/auth/sso/callback', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code, state }),
-          });
-
-          if (!res.ok) {
-            throw new Error(await readErrorResponse(res, 'SSO authentication failed'));
-          }
-
-          const { token } = await parseJsonResponse<{ token: string }>(res, 'sso callback');
+          const { token } = await yappcApi.auth.ssoCallback({ code, state });
           localStorage.setItem('auth_token', token);
           navigate(state ?? '/', { replace: true });
         } catch {
@@ -50,7 +42,7 @@ const SSOCallbackPage: React.FC = () => {
     <div className="flex min-h-screen items-center justify-center bg-surface">
       <div className="text-center space-y-4">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-info-border mx-auto" />
-        <p className="text-fg-muted">Completing Sign-In</p>
+        <p className="text-fg-muted">{t('auth.completingSignIn')}</p>
       </div>
     </div>
   );

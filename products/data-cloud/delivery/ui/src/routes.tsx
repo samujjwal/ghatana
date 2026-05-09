@@ -371,7 +371,7 @@ export const routes: RouteObject[] = [
         path: 'events',
         element: (
           <RoleProtectedRoute routePath="/events">
-            <RuntimeCapabilityRouteGate aliases={['event-explorer', 'events']} fallback={withSuspense(() => <DisabledSurfacePage surfaceName="Event Explorer" surfaceDescription="The Event Explorer surface provides real-time AEP event stream inspection and replay." />)}>
+            <RuntimeCapabilityRouteGate aliases={['event-stream', 'aep', 'event-explorer', 'events']} fallback={withSuspense(() => <DisabledSurfacePage surfaceName="Event Explorer" surfaceDescription="The Event Explorer surface provides real-time AEP event stream inspection and replay." />)}>
               {withSuspense(EventExplorerPage)}
             </RuntimeCapabilityRouteGate>
           </RoleProtectedRoute>
@@ -450,7 +450,7 @@ export const routes: RouteObject[] = [
         path: 'plugins',
         element: (
           <RoleProtectedRoute routePath="/plugins">
-            <RuntimeCapabilityRouteGate aliases={['plugins', 'extensions']} fallback={withSuspense(() => <DisabledSurfacePage surfaceName="Plugins" surfaceDescription="The Plugins surface provides extension and integration management for your Data Cloud tenant." />)}>
+            <RuntimeCapabilityRouteGate aliases={['plugin-management', 'plugins', 'extensions']} fallback={withSuspense(() => <DisabledSurfacePage surfaceName="Plugins" surfaceDescription="The Plugins surface provides extension and integration management for your Data Cloud tenant." />)}>
               <React.Suspense fallback={<PageLoader />}><PluginsPage /></React.Suspense>
             </RuntimeCapabilityRouteGate>
           </RoleProtectedRoute>

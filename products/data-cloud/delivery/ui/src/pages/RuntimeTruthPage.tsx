@@ -2,7 +2,7 @@
  * Runtime Truth Dashboard (DC-P3-002)
  *
  * Visual dashboard showing Data Cloud plane health with surface/dependency drilldown.
- * Groups capabilities by plane: Data Plane, Action Plane, Operations Plane.
+ * Groups runtime surfaces by plane: Data Plane, Action Plane, Operations Plane.
  *
  * @doc.type page
  * @doc.purpose Plane/surface/dependency drilldown for Data Cloud runtime truth
@@ -22,7 +22,7 @@ interface Plane {
   id: string;
   label: string;
   description: string;
-  /** Capability key prefixes that belong to this plane. */
+  /** Surface key prefixes that belong to this plane. */
   keyPrefixes: string[];
 }
 
@@ -169,7 +169,7 @@ function PlaneRow({ plane, signals }: PlaneRowProps): ReactElement {
 
       {open && signals.length === 0 && (
         <div className="border-t border-gray-100 dark:border-gray-700 px-4 py-3 text-xs text-gray-400 italic">
-          No capability signals registered for this plane.
+          No surface signals registered for this plane.
         </div>
       )}
     </div>
@@ -235,14 +235,14 @@ export function RuntimeTruthPage(): ReactElement {
         {/* Loading */}
         {isLoading && (
           <div className="text-center py-16 text-gray-400 text-sm" role="status" aria-live="polite">
-            Loading capability registry…
+            Loading runtime surface registry…
           </div>
         )}
 
         {/* Error */}
         {isError && (
           <div className="rounded-xl border border-rose-200 bg-rose-50 dark:bg-rose-900/20 dark:border-rose-800 px-4 py-3" role="alert">
-            <p className="text-sm font-medium text-rose-800 dark:text-rose-300">Failed to load runtime capabilities</p>
+            <p className="text-sm font-medium text-rose-800 dark:text-rose-300">Failed to load runtime surfaces</p>
             <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">
               {error instanceof Error ? error.message : 'Unknown error — check server connectivity.'}
             </p>

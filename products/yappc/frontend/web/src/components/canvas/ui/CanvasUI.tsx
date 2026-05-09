@@ -278,7 +278,7 @@ export const EmptyCanvasState: React.FC<EmptyCanvasStateProps> = ({
                         </Typography>
                     </Box>
 
-                    {/* AI Assistant Card */}
+                    {/* Guided Assistant Card */}
                     <Box
                         onClick={onAskAI}
                         className="flex-1 p-6 border-[2px_solid] border-border dark:border-border rounded-lg cursor-pointer transition-all duration-200 bg-white dark:bg-surface hover:shadow-md"
@@ -288,10 +288,10 @@ export const EmptyCanvasState: React.FC<EmptyCanvasStateProps> = ({
                             <AutoAwesome size={32} />
                         </Box>
                         <Typography variant="h6" gutterBottom>
-                            AI Assistant
+                            Guided Assistant
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                            Describe your app and let AI design it
+                            Describe your app and get guided design recommendations
                         </Typography>
                     </Box>
                 </Stack>

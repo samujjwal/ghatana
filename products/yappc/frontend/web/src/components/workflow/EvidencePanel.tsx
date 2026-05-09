@@ -1,10 +1,10 @@
 /**
- * EvidencePanel - Right panel for audit trail and AI suggestions
+ * EvidencePanel - Right panel for audit trail and suggested improvements
  *
- * Displays workflow audit history and AI assistance.
+ * Displays workflow audit history and guided assistance.
  *
  * @doc.type component
- * @doc.purpose Evidence and AI panel
+ * @doc.purpose Evidence and suggestions panel
  * @doc.layer product
  * @doc.pattern Panel Component
  */
@@ -65,8 +65,8 @@ const ACTION_LABELS: Record<AuditAction, string> = {
     STEP_COMPLETED: 'Step Completed',
     STEP_REVISITED: 'Step Revisited',
     DATA_UPDATED: 'Data Updated',
-    AI_SUGGESTION_ACCEPTED: 'AI Suggestion Accepted',
-    AI_SUGGESTION_REJECTED: 'AI Suggestion Rejected',
+    AI_SUGGESTION_ACCEPTED: 'Suggestion Accepted',
+    AI_SUGGESTION_REJECTED: 'Suggestion Rejected',
     STATUS_CHANGED: 'Status Changed',
     OWNER_CHANGED: 'Owner Changed',
 };
@@ -129,7 +129,7 @@ export function EvidencePanel() {
                 variant="underline"
                 className="border-border dark:border-border border-b" >
                 <Tab value="audit" label="Audit" />
-                <Tab value="ai" label="AI" />
+                <Tab value="ai" label="Suggestions" />
             </Tabs>
 
             {/* Audit Trail Tab */}
@@ -192,7 +192,7 @@ export function EvidencePanel() {
                         <Box className="py-8 text-center">
                             <AIIcon className="mb-2 text-5xl text-fg-muted dark:text-fg-muted" />
                             <Typography color="text.secondary">
-                                AI suggestions are disabled
+                                Suggestions are disabled
                             </Typography>
                         </Box>
                     ) : aiSuggestion ? (
@@ -201,7 +201,7 @@ export function EvidencePanel() {
                                 <Box className="mb-2 flex items-center gap-2">
                                     <SuggestionIcon className="text-info-color" size={16} />
                                     <Typography className="text-sm font-medium text-info-color">
-                                        AI Suggestion
+                                        Suggested Improvement
                                     </Typography>
                                     <Chip
                                         label={`${Math.round(aiSuggestion.confidence * 100)}% confidence`}
@@ -242,14 +242,14 @@ export function EvidencePanel() {
                                 No suggestions right now
                             </Typography>
                             <Typography className="text-xs text-fg-muted" color="text.disabled">
-                                AI will provide suggestions as you work through the workflow
+                                Suggestions will appear as you progress through the workflow
                             </Typography>
                         </Box>
                     )}
 
                     <Box className="mt-6">
                         <Typography className="text-sm font-medium" gutterBottom>
-                            AI Capabilities
+                            Suggestion Capabilities
                         </Typography>
                         <List className="p-0">
                             {[

@@ -17,7 +17,11 @@ const ALERT_LIST_ROUTE = '**/api/v1/alerts*';
 const ALERT_GROUPS_ROUTE = '**/api/v1/alerts/groups*';
 const ALERT_SUGGESTIONS_ROUTE = '**/api/v1/alerts/suggestions*';
 const ALERT_RULES_ROUTE = '**/api/v1/alerts/rules*';
+const SURFACES_ROUTES = ['**/surfaces', '**/api/v1/surfaces'] as const;
 const CAPABILITIES_ROUTES = ['**/capabilities', '**/api/v1/capabilities'] as const;
+const RUNTIME_TRUTH_ROUTES = [...SURFACES_ROUTES, ...CAPABILITIES_ROUTES] as const;
+const SURFACES_SCHEMA_ROUTES = ['**/surfaces/schema', '**/api/v1/surfaces/schema'] as const;
+const CAPABILITIES_SCHEMA_ROUTES = ['**/capabilities/schema', '**/api/v1/capabilities/schema'] as const;
 const USER_ACTIVITY_ROUTE = '**/api/v1/user-activity/recent';
 const ANALYTICS_SUGGEST_ROUTE = '**/api/v1/analytics/suggest';
 const ANALYTICS_QUERY_ROUTE = '**/api/v1/analytics/query';
@@ -427,11 +431,19 @@ export async function mockAlertsAPI(page: Page) {
  * Mock SQL workspace runtime endpoints.
  */
 export async function mockQueryWorkspaceAPI(page: Page) {
-  for (const routePattern of CAPABILITIES_ROUTES) {
+  for (const routePattern of RUNTIME_TRUTH_ROUTES) {
     await page.route(routePattern, async (route) => {
+      const isCompatibilityRoute = routePattern.includes('capabilities');
+      if (isCompatibilityRoute) {
+        warnDeprecatedRoute('/api/v1/capabilities', '/api/v1/surfaces');
+      }
+
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
+        headers: isCompatibilityRoute
+          ? buildDeprecatedRouteHeaders('/api/v1/capabilities', '/api/v1/surfaces', '/api/v1/surfaces')
+          : undefined,
         body: JSON.stringify({
           data: {
             generatedAt: '2026-04-18T00:00:00.000Z',
@@ -444,6 +456,66 @@ export async function mockQueryWorkspaceAPI(page: Page) {
           meta: {
             requestId: 'req-query-e2e',
             tenantId: 'test-tenant',
+          },
+        }),
+      });
+    });
+  }
+
+  for (const routePattern of SURFACES_SCHEMA_ROUTES) {
+    await page.route(routePattern, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: {
+            version: '1.0.0',
+            metadata: {
+              description: 'Runtime capability schema for E2E tests',
+              last_updated: '2026-05-08',
+              generators: ['playwright-api-mocks'],
+            },
+            kernel_capabilities: [],
+            data_cloud_capabilities: [],
+            aep_capabilities: [],
+            ui_feature_gates: [],
+            status_definitions: {
+              stable: { description: 'stable', ui_indicator: 'green', allowed_in_production: true },
+              preview: { description: 'preview', ui_indicator: 'amber', allowed_in_production: false },
+              deprecated: { description: 'deprecated', ui_indicator: 'red', allowed_in_production: false },
+              experimental: { description: 'experimental', ui_indicator: 'purple', allowed_in_production: false },
+            },
+          },
+        }),
+      });
+    });
+  }
+
+  for (const routePattern of CAPABILITIES_SCHEMA_ROUTES) {
+    await page.route(routePattern, async (route) => {
+      warnDeprecatedRoute('/api/v1/capabilities/schema', '/api/v1/surfaces/schema');
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: buildDeprecatedRouteHeaders('/api/v1/capabilities/schema', '/api/v1/surfaces/schema', '/api/v1/surfaces/schema'),
+        body: JSON.stringify({
+          data: {
+            version: '1.0.0',
+            metadata: {
+              description: 'Runtime capability schema for E2E tests',
+              last_updated: '2026-05-08',
+              generators: ['playwright-api-mocks'],
+            },
+            kernel_capabilities: [],
+            data_cloud_capabilities: [],
+            aep_capabilities: [],
+            ui_feature_gates: [],
+            status_definitions: {
+              stable: { description: 'stable', ui_indicator: 'green', allowed_in_production: true },
+              preview: { description: 'preview', ui_indicator: 'amber', allowed_in_production: false },
+              deprecated: { description: 'deprecated', ui_indicator: 'red', allowed_in_production: false },
+              experimental: { description: 'experimental', ui_indicator: 'purple', allowed_in_production: false },
+            },
           },
         }),
       });
@@ -557,11 +629,19 @@ export async function mockInsightsAPI(page: Page) {
   await mockCollectionsAPI(page);
   await mockWorkflowsAPI(page);
 
-  for (const routePattern of CAPABILITIES_ROUTES) {
+  for (const routePattern of RUNTIME_TRUTH_ROUTES) {
     await page.route(routePattern, async (route) => {
+      const isCompatibilityRoute = routePattern.includes('capabilities');
+      if (isCompatibilityRoute) {
+        warnDeprecatedRoute('/api/v1/capabilities', '/api/v1/surfaces');
+      }
+
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
+        headers: isCompatibilityRoute
+          ? buildDeprecatedRouteHeaders('/api/v1/capabilities', '/api/v1/surfaces', '/api/v1/surfaces')
+          : undefined,
         body: JSON.stringify({
           data: {
             generatedAt: '2026-04-18T12:40:00Z',

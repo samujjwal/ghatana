@@ -93,16 +93,16 @@ describe('CanvasEmptyState', () => {
         expect(screen.getByText('Design a database')).toBeTruthy();
     });
 
-    it('renders "AI Suggestions" header when suggestions present', () => {
+    it('renders "Suggested Improvements" header when suggestions present', () => {
         render(
             <CanvasEmptyState message="Empty" aiSuggestions={['Do something']} />,
         );
-        expect(screen.getByText('AI Suggestions')).toBeTruthy();
+        expect(screen.getByText('Suggested Improvements')).toBeTruthy();
     });
 
     it('does not render AI suggestions section when array is empty', () => {
         render(<CanvasEmptyState message="Empty" aiSuggestions={[]} />);
-        expect(screen.queryByText('AI Suggestions')).toBeNull();
+        expect(screen.queryByText('Suggested Improvements')).toBeNull();
     });
 
     it('renders custom icon when provided', () => {

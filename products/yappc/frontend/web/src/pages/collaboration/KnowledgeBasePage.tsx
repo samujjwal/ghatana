@@ -14,10 +14,12 @@ import { useParams, NavLink } from 'react-router';
 import { BookOpen, Plus, Search, Tag } from 'lucide-react';
 import { Input } from '../../components/ui/Input';
 import { ROUTES } from '../../router/paths';
+import { useI18n } from '../../i18n/I18nProvider';
 
 const KnowledgeBasePage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [search, setSearch] = useState('');
+  const { t } = useI18n();
 
   return (
     <div className="min-h-screen bg-surface text-white p-8">
@@ -28,8 +30,8 @@ const KnowledgeBasePage: React.FC = () => {
               <BookOpen className="w-6 h-6 text-info-color" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Knowledge Base</h1>
-              <p className="text-fg-muted">Team documentation and shared knowledge</p>
+              <h1 className="text-2xl font-bold">{t('kb.title')}</h1>
+              <p className="text-fg-muted">{t('kb.subtitle')}</p>
             </div>
           </div>
           {projectId && (
@@ -37,7 +39,7 @@ const KnowledgeBasePage: React.FC = () => {
               to={ROUTES.team.articleNew(projectId)}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 transition-colors text-sm font-medium"
             >
-              <Plus className="w-4 h-4" /> New Article
+              <Plus className="w-4 h-4" /> {t('kb.newArticle')}
             </NavLink>
           )}
         </div>
@@ -46,7 +48,7 @@ const KnowledgeBasePage: React.FC = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
           <Input
             type="text"
-            placeholder="Search articles..."
+            placeholder={t('kb.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             fullWidth
@@ -57,10 +59,9 @@ const KnowledgeBasePage: React.FC = () => {
 
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <BookOpen className="w-12 h-12 text-fg-muted mb-4" />
-          <h3 className="text-lg font-semibold text-fg-muted mb-2">No articles yet</h3>
+          <h3 className="text-lg font-semibold text-fg-muted mb-2">{t('kb.noArticles')}</h3>
           <p className="text-fg-muted max-w-md">
-            Start building your team's knowledge base by creating articles for
-            onboarding, architecture decisions, and runbooks.
+            {t('kb.noArticlesDesc')}
           </p>
         </div>
       </div>

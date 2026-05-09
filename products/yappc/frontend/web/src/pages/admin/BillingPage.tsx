@@ -1,7 +1,8 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { yappcApi } from '@/lib/api/client';
 import { Button } from '../../components/ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -62,13 +63,7 @@ const STATUS_BADGE: Record<PaymentStatus, string> = {
 // ============================================================================
 
 async function fetchBilling(): Promise<BillingResponse> {
-  const res = await fetch('/api/billing', {
-    headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
-  });
-  if (!res.ok) {
-    throw new Error(await readErrorResponse(res, 'Failed to load billing'));
-  }
-  return parseJsonResponse<BillingResponse>(res, 'billing page');
+  return yappcApi.billing.getSummary<BillingResponse>();
 }
 
 // ============================================================================
@@ -101,6 +96,7 @@ const BillingPage: React.FC = () => {
     queryKey: ['billing'],
     queryFn: fetchBilling,
   });
+  const { t } = useI18n();
 
   const plan = data?.plan;
   const usage = data?.usage ?? [];
@@ -109,8 +105,8 @@ const BillingPage: React.FC = () => {
   return (
     <div className="mx-auto max-w-5xl px-6 py-8 space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-fg-muted">Billing &amp; Plans</h1>
-        <p className="mt-1 text-sm text-fg-muted">Manage your subscription, usage, and payment history</p>
+        <h1 className="text-2xl font-bold text-fg-muted">{t('billing.title')}</h1>
+        <p className="mt-1 text-sm text-fg-muted">{t('billing.subtitle')}</p>
       </div>
 
       {isLoading ? (
@@ -119,7 +115,7 @@ const BillingPage: React.FC = () => {
         </div>
       ) : error ? (
         <div className="rounded-lg border border-destructive-border bg-destructive-bg/20 p-4">
-          <p className="text-sm text-destructive">Failed to load billing information.</p>
+          <p className="text-sm text-destructive">{t('billing.loadError')}</p>
         </div>
       ) : (
         <>
@@ -138,7 +134,7 @@ const BillingPage: React.FC = () => {
                   </div>
                   <p className="text-sm text-fg-muted">
                     {plan.price === 0
-                      ? 'Free'
+                      ? t('billing.free')
                       : `$${plan.price}/${plan.billingCycle === 'monthly' ? 'mo' : 'yr'}`}
                     {' \u00B7 '}
                     {plan.seats.used} of {plan.seats.total} seats used
@@ -148,10 +144,10 @@ const BillingPage: React.FC = () => {
                 </div>
                 <div className="flex gap-2">
                   <Button className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-fg-muted hover:bg-surface transition-colors">
-                    Manage Seats
+                    {t('billing.manageSeats')}
                   </Button>
                   <Button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg transition-colors">
-                    Upgrade Plan
+                    {t('billing.upgradePlan')}
                   </Button>
                 </div>
               </div>
@@ -161,7 +157,7 @@ const BillingPage: React.FC = () => {
           {/* Usage Metrics */}
           {usage.length > 0 && (
             <div>
-              <h2 className="text-lg font-semibold text-fg-muted mb-4">Usage</h2>
+              <h2 className="text-lg font-semibold text-fg-muted mb-4">{t('billing.usage')}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {usage.map((metric) => {
                   const pct = metric.limit > 0 ? Math.min((metric.used / metric.limit) * 100, 100) : 0;
@@ -192,10 +188,10 @@ const BillingPage: React.FC = () => {
 
           {/* Payment History */}
           <div>
-            <h2 className="text-lg font-semibold text-fg-muted mb-4">Payment History</h2>
+            <h2 className="text-lg font-semibold text-fg-muted mb-4">{t('billing.paymentHistory')}</h2>
             {payments.length === 0 ? (
               <div className="bg-surface border border-border rounded-lg p-8 text-center">
-                <p className="text-sm text-fg-muted">No payment history.</p>
+                <p className="text-sm text-fg-muted">{t('billing.noPayments')}</p>
               </div>
             ) : (
               <div className="bg-surface border border-border rounded-lg overflow-hidden">
@@ -203,19 +199,19 @@ const BillingPage: React.FC = () => {
                   <thead>
                     <tr className="border-b border-border">
                       <th className="px-4 py-3 text-left text-xs font-medium text-fg-muted uppercase tracking-wider">
-                        Date
+                        {t('billing.col.date')}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-fg-muted uppercase tracking-wider">
-                        Description
+                        {t('billing.col.description')}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-fg-muted uppercase tracking-wider">
-                        Amount
+                        {t('billing.col.amount')}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-fg-muted uppercase tracking-wider">
-                        Status
+                        {t('billing.col.status')}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-fg-muted uppercase tracking-wider">
-                        Invoice
+                        {t('billing.col.invoice')}
                       </th>
                     </tr>
                   </thead>
@@ -238,7 +234,7 @@ const BillingPage: React.FC = () => {
                         </td>
                         <td className="px-4 py-3">
                           <Button variant="link" size="small" className="text-xs text-info-color hover:text-info-color transition-colors">
-                            Download
+                            {t('billing.download')}
                           </Button>
                         </td>
                       </tr>

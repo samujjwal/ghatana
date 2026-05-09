@@ -13,7 +13,7 @@
 
 import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
 import type { LifecyclePhase } from '@/types/lifecycle';
-import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { yappcApi } from '@/lib/api/client';
 
 export interface ArtifactSuggestion {
     id: string;
@@ -44,20 +44,8 @@ export async function generateArtifactSuggestions(
     // Build context for AI
     const prompt = buildSuggestionPrompt(context, targetKinds);
 
-    // Call AI service (reusing existing AI integration)
-    const response = await fetch('/api/ai/suggest-artifacts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, context }),
-    });
-
-    if (!response.ok) {
-        throw new Error(await readErrorResponse(response, 'Failed to generate suggestions'));
-    }
-
-    const data = await parseJsonResponse<{ suggestions: ArtifactSuggestion[] }>(
-        response,
-        'generate artifact suggestions'
+    const data = await yappcApi.ai.suggestArtifacts<{ suggestions: ArtifactSuggestion[] }>(
+        { prompt, context },
     );
     return data.suggestions;
 }

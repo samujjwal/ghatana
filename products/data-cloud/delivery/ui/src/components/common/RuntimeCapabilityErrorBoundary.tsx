@@ -1,12 +1,12 @@
 /**
- * Page-level error boundary that uses runtime capability truth (P0.7).
+ * Page-level error boundary that uses runtime surface truth (P0.7).
  *
- * Unlike static fallback text, this boundary fetches the live capability registry
+ * Unlike static fallback text, this boundary fetches the live runtime surface registry
  * and displays which subsystems are down or degraded, giving users actionable
  * context about why a page failed to load.
  *
  * @doc.type component
- * @doc.purpose Runtime-capability-aware error boundary
+ * @doc.purpose Runtime-surface-aware error boundary
  * @doc.layer frontend
  */
 
@@ -59,7 +59,7 @@ export class RuntimeCapabilityErrorBoundary extends React.Component<Props, State
             {this.state.error?.message ?? 'An unexpected error occurred while loading the page.'}
           </p>
 
-          {/* Live capability status panel */}
+          {/* Live runtime surface status panel */}
           <CapabilityStatusPanel requiredCapabilities={this.props.requiredCapabilities} />
 
           <button
@@ -77,7 +77,7 @@ export class RuntimeCapabilityErrorBoundary extends React.Component<Props, State
 }
 
 /**
- * Subcomponent that reads the live capability registry and shows subsystem status.
+ * Subcomponent that reads the live runtime surface registry and shows subsystem status.
  */
 function CapabilityStatusPanel({ requiredCapabilities }: { requiredCapabilities?: string[] }): React.ReactElement {
   const { data: registry, isLoading } = useCapabilityRegistry();
@@ -85,7 +85,7 @@ function CapabilityStatusPanel({ requiredCapabilities }: { requiredCapabilities?
   if (isLoading || !registry) {
     return (
       <div className="mb-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
-        <p className="text-xs text-gray-500 dark:text-gray-400">Loading runtime capability status...</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">Loading runtime surface status...</p>
       </div>
     );
   }
@@ -98,7 +98,7 @@ function CapabilityStatusPanel({ requiredCapabilities }: { requiredCapabilities?
     return (
       <div className="mb-4 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50">
         <p className="text-xs text-emerald-700 dark:text-emerald-300">
-          All required capabilities are reported active. The error may be transient.
+          All required runtime surfaces are reported active. The error may be transient.
         </p>
       </div>
     );
@@ -107,7 +107,7 @@ function CapabilityStatusPanel({ requiredCapabilities }: { requiredCapabilities?
   return (
     <div className="mb-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 text-left">
       <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">
-        Runtime capability status
+        Runtime surface status
       </p>
       <ul className="space-y-1">
         {relevant.map((cap) => (

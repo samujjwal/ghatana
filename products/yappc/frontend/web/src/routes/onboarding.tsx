@@ -1,7 +1,7 @@
 /**
  * Onboarding Route
  *
- * First-time user setup flow with AI-powered workspace and project creation.
+ * First-time user setup flow with guided workspace and project creation.
  *
  * @doc.type route
  * @doc.purpose User onboarding

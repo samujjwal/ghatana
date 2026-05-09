@@ -200,7 +200,7 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
                             className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-text-secondary border border-transparent hover:border-divider hover:text-text-primary hover:bg-surface-muted dark:hover:bg-surface-muted rounded-lg transition-colors disabled:opacity-50"
                         >
                             <AutoAwesome className="w-4 h-4" />
-                            {isAILoading ? 'Analyzing...' : 'AI Critique'}
+                            {isAILoading ? 'Analyzing...' : 'Guided Critique'}
                         </Button>
                     )}
                     <Button

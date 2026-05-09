@@ -8,7 +8,7 @@
  * @doc.layer frontend
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { TestWrapper } from '../test-utils/wrapper';
 import React from 'react';
 import { dataFabricMetricsBoundary } from '@/components/common/unsupportedSurfaceRegistry';
@@ -116,41 +116,27 @@ describe('PipelinePage — DataFabricPage', () => {
         mockApiClient.delete.mockResolvedValue(undefined);
     });
 
-    it('renders the data-fabric shell with preview messaging and migration controls', () => {
+    it('renders the data-fabric shell with boundary messaging when fabric metrics are unavailable', () => {
         render(<DataFabricPage />, { wrapper: TestWrapper });
         expect(screen.getByRole('heading', { name: /Data Fabric/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /Migrate Tier/i })).toBeInTheDocument();
         expect(screen.getByText(dataFabricMetricsBoundary.summary)).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Migrate Tier/i })).toBeNull();
     });
 
-    it('surfaces the preview boundary and static topology labels', async () => {
+    it('surfaces the preview boundary and current-boundary guidance', () => {
         render(<DataFabricPage />, { wrapper: TestWrapper });
 
         expect(screen.getByText(dataFabricMetricsBoundary.summary)).toBeInTheDocument();
-        expect(screen.getByText(/HOT \(Redis\)/i)).toBeInTheDocument();
-        expect(screen.getByText(/WARM \(PostgreSQL\)/i)).toBeInTheDocument();
-        expect(screen.getByText(/COOL \(Iceberg\)/i)).toBeInTheDocument();
-        expect(screen.getByText(/COLD \(S3\/Archive\)/i)).toBeInTheDocument();
-
-        expect(await screen.findByText(/50205\.0/i)).toBeInTheDocument();
-        expect(screen.getByText(/events\/sec/i)).toBeInTheDocument();
-        expect(screen.getByText(/11093\.0/i)).toBeInTheDocument();
-        expect(screen.getByText(/GB/i)).toBeInTheDocument();
+        expect(screen.getByText('Current boundary')).toBeInTheDocument();
+        expect(screen.getByText(/Topology layout is available for orientation and design review/i)).toBeInTheDocument();
+        expect(screen.getByText(/Live throughput, latency, and queue depth are preview values/i)).toBeInTheDocument();
     });
 
-    it('keeps governed migration execution disabled until required inputs are provided', async () => {
+    it('does not expose migration controls while boundary mode is active', () => {
         render(<DataFabricPage />, { wrapper: TestWrapper });
 
-        const openPanelButton = screen.getByRole('button', { name: /migrate tier/i });
-        expect(openPanelButton).toBeEnabled();
-
-        fireEvent.click(openPanelButton);
-
-        const startMigrationButton = await screen.findByRole('button', { name: /start migration/i });
-
-        expect(screen.getByPlaceholderText(/collection \/ stream name/i)).toBeInTheDocument();
-        expect(screen.getByPlaceholderText(/reason for migration/i)).toBeInTheDocument();
-        expect(startMigrationButton).toBeDisabled();
+        expect(screen.queryByRole('button', { name: /migrate tier/i })).toBeNull();
+        expect(screen.queryByRole('button', { name: /start migration/i })).toBeNull();
         expect(mockApiClient.post).not.toHaveBeenCalled();
     });
 });

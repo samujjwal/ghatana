@@ -13,7 +13,7 @@ vi.mock('../../lib/api/client', () => ({
 
 import { fetchCapabilityRegistry, getCapabilitySignal } from '../../api/surfaces.service';
 
-describe('capabilities.service', () => {
+describe('surfaces.service compatibility behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

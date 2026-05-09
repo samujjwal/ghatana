@@ -845,7 +845,110 @@ const connectorHandlers = [
 // Brain, learning, user activity, and lightweight observability handlers
 // ---------------------------------------------------------------------------
 
+const runtimeCapabilitySchema = {
+  version: '1.0.0',
+  metadata: {
+    description: 'Runtime capability schema for Data Cloud UI gating and compatibility checks',
+    last_updated: '2026-05-08',
+    generators: ['msw-runtime-capability-schema'],
+  },
+  kernel_capabilities: [] as Array<Record<string, unknown>>,
+  data_cloud_capabilities: [] as Array<Record<string, unknown>>,
+  aep_capabilities: [] as Array<Record<string, unknown>>,
+  ui_feature_gates: [] as Array<Record<string, unknown>>,
+  status_definitions: {
+    stable: {
+      description: 'Production-ready with full support',
+      ui_indicator: 'green',
+      allowed_in_production: true,
+    },
+    preview: {
+      description: 'Preview/demo-only, not production-ready',
+      ui_indicator: 'amber',
+      allowed_in_production: false,
+    },
+    deprecated: {
+      description: 'Deprecated and scheduled for removal',
+      ui_indicator: 'red',
+      allowed_in_production: false,
+    },
+    experimental: {
+      description: 'Experimental capability behavior',
+      ui_indicator: 'purple',
+      allowed_in_production: false,
+    },
+  },
+};
+
 const supportHandlers = [
+  http.get(`${BASE}/surfaces`, async () => {
+    await delay(SIMULATED_DELAY_MS);
+    return HttpResponse.json({
+      data: {
+        capabilities: {},
+        generatedAt: new Date().toISOString(),
+      },
+      meta: {
+        requestId: 'req-surfaces-msw',
+        tenantId: MOCK_TENANT_ID,
+        timestamp: new Date().toISOString(),
+        apiVersion: 'v1',
+      },
+    });
+  }),
+
+  http.get(`${BASE}/capabilities`, async () => {
+    await delay(SIMULATED_DELAY_MS);
+    const legacyPath = `${BASE}/capabilities`;
+    const canonicalPath = `${BASE}/surfaces`;
+    warnDeprecatedRoute(legacyPath, canonicalPath);
+    return HttpResponse.json({
+      data: {
+        capabilities: {},
+        generatedAt: new Date().toISOString(),
+      },
+      meta: {
+        requestId: 'req-capabilities-msw',
+        tenantId: MOCK_TENANT_ID,
+        timestamp: new Date().toISOString(),
+        apiVersion: 'v1',
+      },
+    }, {
+      headers: buildDeprecatedRouteHeaders(legacyPath, canonicalPath, canonicalPath),
+    });
+  }),
+
+  http.get(`${BASE}/surfaces/schema`, async () => {
+    await delay(SIMULATED_DELAY_MS);
+    return HttpResponse.json({
+      data: runtimeCapabilitySchema,
+      meta: {
+        requestId: 'req-surfaces-schema-msw',
+        tenantId: MOCK_TENANT_ID,
+        timestamp: new Date().toISOString(),
+        apiVersion: 'v1',
+      },
+    });
+  }),
+
+  http.get(`${BASE}/capabilities/schema`, async () => {
+    await delay(SIMULATED_DELAY_MS);
+    const legacyPath = `${BASE}/capabilities/schema`;
+    const canonicalPath = `${BASE}/surfaces/schema`;
+    warnDeprecatedRoute(legacyPath, canonicalPath);
+    return HttpResponse.json({
+      data: runtimeCapabilitySchema,
+      meta: {
+        requestId: 'req-capabilities-schema-msw',
+        tenantId: MOCK_TENANT_ID,
+        timestamp: new Date().toISOString(),
+        apiVersion: 'v1',
+      },
+    }, {
+      headers: buildDeprecatedRouteHeaders(legacyPath, canonicalPath, canonicalPath),
+    });
+  }),
+
   http.post(`${BASE}/analytics/query`, async () => {
     await delay(SIMULATED_DELAY_MS);
     return HttpResponse.json({

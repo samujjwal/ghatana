@@ -205,7 +205,7 @@ export function isSurfaceAvailable(signal: SurfaceSignal | undefined): boolean {
 }
 
 // =============================================================================
-// COMPATIBILITY LAYER (capability-first naming)
+// COMPATIBILITY LAYER (surface-first API shim)
 // =============================================================================
 
 export type CapabilityStatus = 'active' | 'degraded' | 'unavailable' | 'unknown';

@@ -41,7 +41,7 @@ export function InsightPanel({
     <aside
       className="fixed right-0 top-14 z-40 flex h-[calc(100vh-3.5rem)] w-full max-w-md flex-col border-l border-divider bg-bg-paper shadow-2xl"
       role="complementary"
-      aria-label="AI insights panel"
+      aria-label="Insights panel"
       data-testid="insight-panel"
     >
       <div className="flex items-center justify-between border-b border-divider px-5 py-4">
@@ -50,7 +50,7 @@ export function InsightPanel({
             <Bell className="h-4 w-4" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-text-primary">Proactive AI insights</h2>
+            <h2 className="text-sm font-semibold text-text-primary">Proactive insights</h2>
             <p className="text-xs text-text-secondary">{unreadCount} unread suggestions</p>
           </div>
         </div>

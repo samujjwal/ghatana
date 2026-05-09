@@ -119,6 +119,36 @@ describe('BuilderPreviewRoute security', () => {
     );
   });
 
+  it('allows mode=dev only when explicit dev preview mode is enabled', async () => {
+    vi.stubEnv('VITE_FEATURE_PREVIEW_DEV_MODE', 'true');
+    window.history.replaceState({}, '', '/preview/builder?mode=dev');
+    const postMessageSpy = vi.spyOn(window, 'postMessage');
+
+    render(<BuilderPreviewRoute />);
+
+    await waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'READY' }),
+        window.location.origin,
+      );
+    });
+    expect(validatePreviewSessionToken).not.toHaveBeenCalled();
+  });
+
+  it('denies mode=dev when explicit dev preview mode is disabled', async () => {
+    vi.stubEnv('VITE_FEATURE_PREVIEW_DEV_MODE', 'false');
+    window.history.replaceState({}, '', '/preview/builder?mode=dev');
+    const postMessageSpy = vi.spyOn(window, 'postMessage');
+
+    render(<BuilderPreviewRoute />);
+
+    expect(await screen.findByText('Preview access denied')).toBeInTheDocument();
+    expect(postMessageSpy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'READY' }),
+      expect.any(String),
+    );
+  });
+
   it('rejects malformed mount documents with a runtime error message', async () => {
     const postMessageSpy = vi.spyOn(window, 'postMessage');
 

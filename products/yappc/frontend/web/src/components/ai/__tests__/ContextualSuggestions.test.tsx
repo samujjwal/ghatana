@@ -54,9 +54,9 @@ describe('ContextualSuggestions', () => {
     });
 
     describe('rendering', () => {
-        it('renders the AI Suggestions header', () => {
+        it('renders the suggested improvements header', () => {
             render(<ContextualSuggestions suggestions={[makeSuggestion()]} />);
-            expect(screen.getByText('AI Suggestions')).toBeTruthy();
+            expect(screen.getByText('Suggested Improvements')).toBeTruthy();
         });
 
         it('renders suggestion title', () => {

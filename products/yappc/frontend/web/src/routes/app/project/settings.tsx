@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Save } from 'lucide-react';
-import { parseJsonResourceResponse, readErrorResponse } from '@/lib/http';
 import { yappcApi } from '@/lib/api';
+import { useAtomValue } from 'jotai';
+import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
 import type {
     ProjectContract,
     ProjectTypeContract,
@@ -34,18 +35,21 @@ const projectTypeOptions: Array<{ value: ProjectTypeContract; label: string; des
 
 export default function Component() {
     const { projectId } = useParams<{ projectId: string }>();
+    const currentWorkspaceId = useAtomValue(currentWorkspaceIdAtom);
     const queryClient = useQueryClient();
     const [showAdvancedMetadata, setShowAdvancedMetadata] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [saveStatus, setSaveStatus] = useState<SaveSyncStatusContract | null>(null);
 
     const { data: project, isLoading } = useQuery<ProjectContract>({
-        queryKey: ['project', projectId],
+        queryKey: ['project', projectId, currentWorkspaceId],
         queryFn: async () => {
             if (!projectId) {
                 throw new Error('Project id is required to load project settings');
             }
-
+            if (currentWorkspaceId) {
+                return yappcApi.projects.getScoped(projectId, currentWorkspaceId) as unknown as Promise<ProjectContract>;
+            }
             return yappcApi.projects.get(projectId) as unknown as Promise<ProjectContract>;
         },
         enabled: Boolean(projectId),
@@ -75,7 +79,9 @@ export default function Component() {
 
     const saveSettingsMutation = useMutation({
         mutationFn: async (settings: ProjectSettingsFormState) => {
-            if (!projectId || !project?.ownerWorkspaceId) {
+            const workspaceScopeId = currentWorkspaceId || project?.ownerWorkspaceId;
+
+            if (!projectId || !workspaceScopeId) {
                 throw new Error('Project workspace context is missing');
             }
 
@@ -85,17 +91,7 @@ export default function Component() {
                 type: settings.type,
             };
 
-            const res = await fetch(`/api/projects/${projectId}?workspaceId=${project.ownerWorkspaceId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(request),
-            });
-
-            if (!res.ok) {
-                throw new Error(await readErrorResponse(res, 'Failed to save project settings'));
-            }
-
-            return parseJsonResourceResponse<ProjectContract>(res, 'project settings save', 'project');
+            return yappcApi.projects.updateScoped(projectId, workspaceScopeId, request) as unknown as ProjectContract;
         },
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: ['project', projectId] });

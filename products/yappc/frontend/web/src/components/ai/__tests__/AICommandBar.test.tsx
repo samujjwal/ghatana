@@ -11,9 +11,9 @@ describe('AICommandBar', () => {
     vi.clearAllMocks();
   });
 
-  it('renders the AI prompt input', () => {
+  it('renders the prompt input', () => {
     render(<AICommandBar {...defaultProps} />);
-    expect(screen.getByRole('textbox', { name: /AI prompt input/i })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /prompt input/i })).toBeInTheDocument();
   });
 
   it('renders submit button', () => {
@@ -28,14 +28,14 @@ describe('AICommandBar', () => {
 
   it('enables submit when text is entered', () => {
     render(<AICommandBar {...defaultProps} />);
-    const input = screen.getByRole('textbox', { name: /AI prompt input/i });
+    const input = screen.getByRole('textbox', { name: /prompt input/i });
     fireEvent.change(input, { target: { value: 'Generate a login form' } });
     expect(screen.getByRole('button', { name: /Submit/i })).not.toBeDisabled();
   });
 
   it('calls onSubmit with the prompt when submit clicked', async () => {
     render(<AICommandBar {...defaultProps} />);
-    const input = screen.getByRole('textbox', { name: /AI prompt input/i });
+    const input = screen.getByRole('textbox', { name: /prompt input/i });
     fireEvent.change(input, { target: { value: 'Generate a form' } });
     fireEvent.click(screen.getByRole('button', { name: /Submit/i }));
     await waitFor(() => {
@@ -45,7 +45,7 @@ describe('AICommandBar', () => {
 
   it('calls onSubmit when Enter key pressed in input', async () => {
     render(<AICommandBar {...defaultProps} />);
-    const input = screen.getByRole('textbox', { name: /AI prompt input/i });
+    const input = screen.getByRole('textbox', { name: /prompt input/i });
     fireEvent.change(input, { target: { value: 'Explain this' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     await waitFor(() => {
@@ -55,7 +55,7 @@ describe('AICommandBar', () => {
 
   it('disables input when isProcessing=true', () => {
     render(<AICommandBar {...defaultProps} isProcessing={true} />);
-    expect(screen.getByRole('textbox', { name: /AI prompt input/i })).toBeDisabled();
+    expect(screen.getByRole('textbox', { name: /prompt input/i })).toBeDisabled();
   });
 
   it('disables submit when isProcessing=true', () => {
@@ -100,21 +100,21 @@ describe('AICommandBar', () => {
 
   it('does not show quick actions when input has text', () => {
     render(<AICommandBar {...defaultProps} currentMode="brainstorm" />);
-    const input = screen.getByRole('textbox', { name: /AI prompt input/i });
+    const input = screen.getByRole('textbox', { name: /prompt input/i });
     fireEvent.change(input, { target: { value: 'some text' } });
     expect(screen.queryByText('Expand idea')).not.toBeInTheDocument();
   });
 
   it('renders clear button when input has value', () => {
     render(<AICommandBar {...defaultProps} />);
-    const input = screen.getByRole('textbox', { name: /AI prompt input/i });
+    const input = screen.getByRole('textbox', { name: /prompt input/i });
     fireEvent.change(input, { target: { value: 'abc' } });
     expect(screen.getByRole('button', { name: /Clear/i })).toBeInTheDocument();
   });
 
   it('clears input when clear button clicked', () => {
     render(<AICommandBar {...defaultProps} />);
-    const input = screen.getByRole('textbox', { name: /AI prompt input/i });
+    const input = screen.getByRole('textbox', { name: /prompt input/i });
     fireEvent.change(input, { target: { value: 'abc' } });
     fireEvent.click(screen.getByRole('button', { name: /Clear/i }));
     expect(input).toHaveValue('');

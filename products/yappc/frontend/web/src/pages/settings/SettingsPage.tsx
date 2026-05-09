@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { yappcApi } from '@/lib/api/client';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Textarea } from '../../components/ui/Textarea';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -84,13 +85,7 @@ const TAB_ICONS: Record<SettingsTab, React.ReactNode> = {
 // ============================================================================
 
 async function fetchSettings(): Promise<WorkspaceSettings> {
-  const res = await fetch('/api/settings', {
-    headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
-  });
-  if (!res.ok) {
-    throw new Error(await readErrorResponse(res, 'Failed to load settings'));
-  }
-  return parseJsonResponse<WorkspaceSettings>(res, 'settings page');
+  return yappcApi.settings.getWorkspaceSettings<WorkspaceSettings>();
 }
 
 // ============================================================================
@@ -139,11 +134,12 @@ function GeneralPanel({ settings }: { settings: WorkspaceSettings }) {
   const [description, setDescription] = useState(settings.general.description);
   const [timezone, setTimezone] = useState(settings.general.timezone);
   const [language, setLanguage] = useState(settings.general.language);
+  const { t } = useI18n();
 
   return (
     <div className="space-y-6">
       <div>
-        <label className="block text-sm font-medium text-fg-muted mb-1.5">Workspace Name</label>
+        <label className="block text-sm font-medium text-fg-muted mb-1.5">{t('settings.general.workspaceName')}</label>
         <Input
           type="text"
           value={name}
@@ -154,7 +150,7 @@ function GeneralPanel({ settings }: { settings: WorkspaceSettings }) {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-fg-muted mb-1.5">Description</label>
+        <label className="block text-sm font-medium text-fg-muted mb-1.5">{t('settings.general.description')}</label>
         <Textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -165,7 +161,7 @@ function GeneralPanel({ settings }: { settings: WorkspaceSettings }) {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-fg-muted mb-1.5">Timezone</label>
+        <label className="block text-sm font-medium text-fg-muted mb-1.5">{t('settings.general.timezone')}</label>
         <Input
           type="text"
           value={timezone}
@@ -176,23 +172,23 @@ function GeneralPanel({ settings }: { settings: WorkspaceSettings }) {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-fg-muted mb-1.5">Language</label>
+        <label className="block text-sm font-medium text-fg-muted mb-1.5">{t('settings.general.language')}</label>
         <Select
           value={language}
           onChange={(e) => setLanguage(e.target.value)}
           fullWidth
           className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-muted focus:border-info-border focus:ring-blue-500"
         >
-          <option value="en">English</option>
-          <option value="es">Spanish</option>
-          <option value="fr">French</option>
-          <option value="de">German</option>
-          <option value="ja">Japanese</option>
+          <option value="en">{t('settings.general.lang.en')}</option>
+          <option value="es">{t('settings.general.lang.es')}</option>
+          <option value="fr">{t('settings.general.lang.fr')}</option>
+          <option value="de">{t('settings.general.lang.de')}</option>
+          <option value="ja">{t('settings.general.lang.ja')}</option>
         </Select>
       </div>
       <div className="flex justify-end">
         <Button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg">
-          Save Changes
+          {t('settings.general.saveChanges')}
         </Button>
       </div>
     </div>
@@ -202,48 +198,49 @@ function GeneralPanel({ settings }: { settings: WorkspaceSettings }) {
 function NotificationsPanel({ settings }: { settings: WorkspaceSettings }) {
   const [prefs, setPrefs] = useState(settings.notifications);
   const toggle = (key: keyof typeof prefs) => setPrefs((p) => ({ ...p, [key]: !p[key] }));
+  const { t } = useI18n();
 
   return (
     <div className="divide-y divide-zinc-800">
       <ToggleSwitch
-        label="Email Notifications"
-        description="Receive email for important updates"
+        label={t('settings.notif.email')}
+        description={t('settings.notif.emailDesc')}
         checked={prefs.email}
         onChange={() => toggle('email')}
       />
       <ToggleSwitch
-        label="Push Notifications"
-        description="Browser push notifications"
+        label={t('settings.notif.push')}
+        description={t('settings.notif.pushDesc')}
         checked={prefs.push}
         onChange={() => toggle('push')}
       />
       <ToggleSwitch
-        label="Weekly Digest"
-        description="Receive a weekly summary email"
+        label={t('settings.notif.weeklyDigest')}
+        description={t('settings.notif.weeklyDigestDesc')}
         checked={prefs.weeklyDigest}
         onChange={() => toggle('weeklyDigest')}
       />
       <ToggleSwitch
-        label="Mentions Only"
-        description="Only notify when you are @mentioned"
+        label={t('settings.notif.mentionsOnly')}
+        description={t('settings.notif.mentionsOnlyDesc')}
         checked={prefs.mentionsOnly}
         onChange={() => toggle('mentionsOnly')}
       />
       <ToggleSwitch
-        label="Deploy Alerts"
-        description="Get notified on deployment events"
+        label={t('settings.notif.deployAlerts')}
+        description={t('settings.notif.deployAlertsDesc')}
         checked={prefs.deployAlerts}
         onChange={() => toggle('deployAlerts')}
       />
       <ToggleSwitch
-        label="PR Reviews"
-        description="Notify when you are requested for review"
+        label={t('settings.notif.prReviews')}
+        description={t('settings.notif.prReviewsDesc')}
         checked={prefs.prReviews}
         onChange={() => toggle('prReviews')}
       />
       <div className="pt-4 flex justify-end">
         <Button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg">
-          Save Preferences
+          {t('settings.notif.savePreferences')}
         </Button>
       </div>
     </div>
@@ -252,66 +249,67 @@ function NotificationsPanel({ settings }: { settings: WorkspaceSettings }) {
 
 function SecurityPanel({ settings }: { settings: WorkspaceSettings }) {
   const sec = settings.security;
+  const { t } = useI18n();
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="bg-surface/50 rounded-lg p-4">
           <div className="flex items-center justify-between mb-1">
-            <p className="text-sm font-medium text-fg-muted">Two-Factor Auth</p>
+            <p className="text-sm font-medium text-fg-muted">{t('settings.security.twoFactor')}</p>
             <span
               className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                 sec.twoFactorEnabled ? 'bg-success-bg/20 text-success-color' : 'bg-surface-muted text-fg-muted'
               }`}
             >
-              {sec.twoFactorEnabled ? 'Enabled' : 'Disabled'}
+              {sec.twoFactorEnabled ? t('settings.security.enabled') : t('settings.security.disabled')}
             </span>
           </div>
-          <p className="text-xs text-fg-muted">Add an extra layer of security to your account</p>
+          <p className="text-xs text-fg-muted">{t('settings.security.twoFactorDesc')}</p>
           <Button variant="link" size="sm" className="mt-3 min-h-0 px-0 py-0 text-xs text-info-color hover:text-info-color">
-            {sec.twoFactorEnabled ? 'Manage 2FA' : 'Enable 2FA'}
+            {sec.twoFactorEnabled ? t('settings.security.manage2fa') : t('settings.security.enable2fa')}
           </Button>
         </div>
 
         <div className="bg-surface/50 rounded-lg p-4">
           <div className="flex items-center justify-between mb-1">
-            <p className="text-sm font-medium text-fg-muted">SSO</p>
+            <p className="text-sm font-medium text-fg-muted">{t('settings.security.sso')}</p>
             <span
               className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                 sec.ssoEnabled ? 'bg-success-bg/20 text-success-color' : 'bg-surface-muted text-fg-muted'
               }`}
             >
-              {sec.ssoEnabled ? 'Enabled' : 'Disabled'}
+              {sec.ssoEnabled ? t('settings.security.enabled') : t('settings.security.disabled')}
             </span>
           </div>
-          <p className="text-xs text-fg-muted">Single sign-on for enterprise authentication</p>
+          <p className="text-xs text-fg-muted">{t('settings.security.ssoDesc')}</p>
           <Button variant="link" size="sm" className="mt-3 min-h-0 px-0 py-0 text-xs text-info-color hover:text-info-color">
-            Configure SSO
+            {t('settings.security.configureSso')}
           </Button>
         </div>
       </div>
 
       <div>
-        <p className="text-sm font-medium text-fg-muted mb-1">Session Timeout</p>
-        <p className="text-xs text-fg-muted mb-2">Auto-logout after inactivity</p>
-        <span className="text-sm text-fg-muted">{sec.sessionTimeout} minutes</span>
+        <p className="text-sm font-medium text-fg-muted mb-1">{t('settings.security.sessionTimeout')}</p>
+        <p className="text-xs text-fg-muted mb-2">{t('settings.security.sessionTimeoutDesc')}</p>
+        <span className="text-sm text-fg-muted">{t('settings.security.sessionTimeoutValue', { minutes: String(sec.sessionTimeout) })}</span>
       </div>
 
       <div>
-        <p className="text-sm font-medium text-fg-muted mb-1">Last Password Change</p>
+        <p className="text-sm font-medium text-fg-muted mb-1">{t('settings.security.lastPasswordChange')}</p>
         <p className="text-sm text-fg-muted">
-          {sec.lastPasswordChange ? new Date(sec.lastPasswordChange).toLocaleDateString() : 'Never'}
+          {sec.lastPasswordChange ? new Date(sec.lastPasswordChange).toLocaleDateString() : t('settings.security.never')}
         </p>
         <Button variant="link" size="sm" className="mt-2 min-h-0 px-0 py-0 text-xs text-info-color hover:text-info-color">
-          Change Password
+          {t('settings.security.changePassword')}
         </Button>
       </div>
 
       <div>
-        <p className="text-sm font-medium text-fg-muted mb-1">IP Allowlist</p>
-        <p className="text-xs text-fg-muted mb-2">Restrict access to specific IP addresses</p>
+        <p className="text-sm font-medium text-fg-muted mb-1">{t('settings.security.ipAllowlist')}</p>
+        <p className="text-xs text-fg-muted mb-2">{t('settings.security.ipAllowlistDesc')}</p>
         {sec.ipAllowlist.length === 0 ? (
-          <p className="text-sm text-fg-muted">No IP restrictions configured.</p>
+          <p className="text-sm text-fg-muted">{t('settings.security.noIpRestrictions')}</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {sec.ipAllowlist.map((ip) => (
@@ -327,10 +325,11 @@ function SecurityPanel({ settings }: { settings: WorkspaceSettings }) {
 }
 
 function IntegrationsPanel({ settings }: { settings: WorkspaceSettings }) {
+  const { t } = useI18n();
   return (
     <div className="grid gap-3">
       {settings.integrations.length === 0 ? (
-        <p className="text-sm text-fg-muted py-4">No integrations available.</p>
+        <p className="text-sm text-fg-muted py-4">{t('settings.integrations.noIntegrations')}</p>
       ) : (
         settings.integrations.map((integration) => (
           <div
@@ -344,7 +343,7 @@ function IntegrationsPanel({ settings }: { settings: WorkspaceSettings }) {
                 <p className="text-xs text-fg-muted">{integration.description}</p>
                 {integration.lastSync && (
                   <p className="text-xs text-fg-muted mt-0.5">
-                    Last synced: {new Date(integration.lastSync).toLocaleDateString()}
+                    {t('settings.integrations.lastSynced', { date: new Date(integration.lastSync).toLocaleDateString() })}
                   </p>
                 )}
               </div>
@@ -358,7 +357,7 @@ function IntegrationsPanel({ settings }: { settings: WorkspaceSettings }) {
                   : 'bg-primary text-white hover:bg-info-bg'
               }`}
             >
-              {integration.connected ? 'Disconnect' : 'Connect'}
+              {integration.connected ? t('settings.integrations.disconnect') : t('settings.integrations.connect')}
             </Button>
           </div>
         ))
@@ -369,30 +368,31 @@ function IntegrationsPanel({ settings }: { settings: WorkspaceSettings }) {
 
 function DangerZonePanel() {
   const [confirmText, setConfirmText] = useState('');
+  const { t } = useI18n();
 
   return (
     <div className="space-y-6">
       <div className="rounded-lg border border-destructive-border/50 p-4">
-        <h3 className="text-sm font-semibold text-destructive mb-1">Transfer Workspace</h3>
+        <h3 className="text-sm font-semibold text-destructive mb-1">{t('settings.danger.transferTitle')}</h3>
         <p className="text-xs text-fg-muted mb-3">
-          Transfer ownership of this workspace to another user.
+          {t('settings.danger.transferDesc')}
         </p>
         <Button variant="outline" tone="danger" size="sm" className="rounded-lg border border-destructive-border px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive-bg/20">
-          Transfer Ownership
+          {t('settings.danger.transferAction')}
         </Button>
       </div>
 
       <div className="rounded-lg border border-destructive-border/50 p-4">
-        <h3 className="text-sm font-semibold text-destructive mb-1">Delete Workspace</h3>
+        <h3 className="text-sm font-semibold text-destructive mb-1">{t('settings.danger.deleteTitle')}</h3>
         <p className="text-xs text-fg-muted mb-3">
-          Permanently delete this workspace and all its data. This action cannot be undone.
+          {t('settings.danger.deleteDesc')}
         </p>
         <div className="flex items-center gap-3">
           <Input
             type="text"
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
-            placeholder='Type "DELETE" to confirm'
+            placeholder={t('settings.danger.deleteConfirmPlaceholder')}
             size="sm"
             className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-fg-muted placeholder-zinc-500 focus:border-destructive-border focus:ring-red-500"
           />
@@ -402,7 +402,7 @@ function DangerZonePanel() {
             disabled={confirmText !== 'DELETE'}
             className="rounded-lg bg-destructive-bg px-3 py-1.5 text-xs font-medium text-white hover:bg-destructive-bg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Delete Workspace
+            {t('settings.danger.deleteAction')}
           </Button>
         </div>
       </div>
@@ -423,6 +423,7 @@ function DangerZonePanel() {
  */
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('General');
+  const { t } = useI18n();
 
   const { data, isLoading, error } = useQuery<WorkspaceSettings>({
     queryKey: ['workspace-settings'],
@@ -432,8 +433,8 @@ const SettingsPage: React.FC = () => {
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-fg-muted">Workspace Settings</h1>
-        <p className="mt-1 text-sm text-fg-muted">Manage your workspace configuration and preferences</p>
+        <h1 className="text-2xl font-bold text-fg-muted">{t('settings.title')}</h1>
+        <p className="mt-1 text-sm text-fg-muted">{t('settings.subtitle')}</p>
       </div>
 
       <div className="flex gap-8">
@@ -470,7 +471,7 @@ const SettingsPage: React.FC = () => {
             </div>
           ) : error || !data ? (
             <div className="rounded-lg border border-destructive-border bg-destructive-bg/20 p-4">
-              <p className="text-sm text-destructive">Failed to load settings.</p>
+              <p className="text-sm text-destructive">{t('settings.loadError')}</p>
             </div>
           ) : (
             <>

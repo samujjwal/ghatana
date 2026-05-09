@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface ArticleAuthor {
   id: string;
@@ -54,6 +55,7 @@ const authHeaders = (): Record<string, string> => ({
  */
 const ArticlePage: React.FC = () => {
   const { articleId } = useParams<{ articleId: string }>();
+  const { t } = useI18n();
 
   const { data: article, isLoading, error } = useQuery<ArticleData>({
     queryKey: ['article', articleId],
@@ -79,7 +81,7 @@ const ArticlePage: React.FC = () => {
     return (
       <div className="p-8">
         <div className="bg-destructive-bg/20 border border-destructive-border rounded-lg p-4 text-destructive">
-          {error instanceof Error ? error.message : 'Failed to load article'}
+          {error instanceof Error ? error.message : t('articlePage.loadError')}
         </div>
       </div>
     );
@@ -92,7 +94,7 @@ const ArticlePage: React.FC = () => {
     <div className="p-6">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-fg-muted mb-6">
-        <Link to="/collaboration/articles" className="hover:text-fg-muted transition-colors">Knowledge Base</Link>
+        <Link to="/collaboration/articles" className="hover:text-fg-muted transition-colors">{t('kb.title')}</Link>
         <span>/</span>
         <span className="text-fg-muted truncate max-w-xs">{article?.title ?? 'Article'}</span>
       </nav>
@@ -101,7 +103,7 @@ const ArticlePage: React.FC = () => {
         {/* TOC sidebar */}
         <aside className="hidden lg:block w-56 shrink-0">
           <div className="sticky top-6">
-            <h3 className="text-xs font-semibold text-fg-muted uppercase tracking-wider mb-3">On This Page</h3>
+            <h3 className="text-xs font-semibold text-fg-muted uppercase tracking-wider mb-3">{t('articlePage.onThisPage')}</h3>
             <nav className="space-y-1">
               {(article?.headings ?? []).map((h) => (
                 <a
@@ -118,7 +120,7 @@ const ArticlePage: React.FC = () => {
             {/* Related articles in sidebar */}
             {(article?.relatedArticles ?? []).length > 0 && (
               <div className="mt-8">
-                <h3 className="text-xs font-semibold text-fg-muted uppercase tracking-wider mb-3">Related</h3>
+                <h3 className="text-xs font-semibold text-fg-muted uppercase tracking-wider mb-3">{t('articlePage.related')}</h3>
                 <div className="space-y-2">
                   {article?.relatedArticles.map((ra) => (
                     <Link
@@ -151,11 +153,11 @@ const ArticlePage: React.FC = () => {
                 <span>{article?.author.name}</span>
               </div>
               <span className="text-fg-muted">·</span>
-              <span>Published {article?.createdAt ? formatDate(article.createdAt) : '—'}</span>
+              <span>{t('articlePage.published', { date: article?.createdAt ? formatDate(article.createdAt) : '—' })}</span>
               {article?.updatedAt && article.updatedAt !== article.createdAt && (
                 <>
                   <span className="text-fg-muted">·</span>
-                  <span>Updated {formatDate(article.updatedAt)}</span>
+                  <span>{t('articlePage.updated', { date: formatDate(article.updatedAt) })}</span>
                 </>
               )}
             </div>
@@ -202,7 +204,7 @@ const ArticlePage: React.FC = () => {
           {/* Related articles (mobile) */}
           {(article?.relatedArticles ?? []).length > 0 && (
             <div className="lg:hidden mt-12 pt-8 border-t border-border">
-              <h3 className="text-sm font-semibold text-fg-muted mb-4">Related Articles</h3>
+              <h3 className="text-sm font-semibold text-fg-muted mb-4">{t('articlePage.relatedArticles')}</h3>
               <div className="grid gap-3 sm:grid-cols-2">
                 {article?.relatedArticles.map((ra) => (
                   <Link

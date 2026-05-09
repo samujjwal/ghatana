@@ -21,6 +21,8 @@ import { useProgressiveDisclosure } from '../../hooks/useProgressiveDisclosure';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
+import { useI18n } from '@/i18n/I18nProvider';
+import type { MessageKey } from '@/i18n/messages';
 
 interface CreateProjectDialogProps {
     isOpen: boolean;
@@ -44,12 +46,12 @@ interface AiProjectSuggestion {
     }>;
 }
 
-const PROJECT_TYPES: { value: ProjectType; label: string; icon: string; description: string }[] = [
-    { value: 'FULL_STACK', label: 'Full Stack', icon: 'FS', description: 'Complete web application' },
-    { value: 'UI', label: 'UI Only', icon: 'UI', description: 'Frontend / Design System' },
-    { value: 'BACKEND', label: 'Backend', icon: 'BE', description: 'API / Server' },
-    { value: 'MOBILE', label: 'Mobile', icon: 'MB', description: 'iOS / Android app' },
-    { value: 'DESKTOP', label: 'Desktop', icon: 'DS', description: 'Desktop application' },
+const PROJECT_TYPES: { value: ProjectType; label: MessageKey; icon: string; description: MessageKey }[] = [
+    { value: 'FULL_STACK', label: 'createProject.type.fullStack.label', icon: 'FS', description: 'createProject.type.fullStack.desc' },
+    { value: 'UI', label: 'createProject.type.ui.label', icon: 'UI', description: 'createProject.type.ui.desc' },
+    { value: 'BACKEND', label: 'createProject.type.backend.label', icon: 'BE', description: 'createProject.type.backend.desc' },
+    { value: 'MOBILE', label: 'createProject.type.mobile.label', icon: 'MB', description: 'createProject.type.mobile.desc' },
+    { value: 'DESKTOP', label: 'createProject.type.desktop.label', icon: 'DS', description: 'createProject.type.desktop.desc' },
 ];
 
 export function CreateProjectDialog({
@@ -57,6 +59,7 @@ export function CreateProjectDialog({
     onClose,
     onCreated
 }: CreateProjectDialogProps) {
+    const { t } = useI18n();
     const [state] = useAtom(workspaceAtom);
     const createProject = useCreateProject();
     const { suggestProject, suggestProjectSetup } = useNameSuggestions();
@@ -172,7 +175,7 @@ export function CreateProjectDialog({
             onClose();
         } catch (error: unknown) {
             setSubmitError(
-                error instanceof Error ? error.message : 'Failed to create project'
+                error instanceof Error ? error.message : t('createProject.submit')
             );
         }
     };
@@ -205,10 +208,10 @@ export function CreateProjectDialog({
                 <div className="flex items-center justify-between px-6 py-4 border-b border-grey-200 dark:border-grey-800">
                     <div>
                         <h2 id="create-project-title" className="text-lg font-semibold text-grey-900 dark:text-grey-100">
-                            New Project
+                            {t('createProject.title')}
                         </h2>
                         <p className="text-sm text-grey-500 dark:text-grey-400 mt-0.5">
-                            in {state.currentWorkspace?.name}
+                            {t('createProject.inWorkspace', { workspaceName: state.currentWorkspace?.name ?? '' })}
                         </p>
                     </div>
                     <Button
@@ -217,7 +220,7 @@ export function CreateProjectDialog({
                         variant="ghost"
                         size="small"
                         className="p-1 text-grey-400 hover:text-grey-600 dark:hover:text-grey-300 transition-colors"
-                        aria-label="Close"
+                        aria-label={t('createProject.close')}
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -236,16 +239,18 @@ export function CreateProjectDialog({
                         </div>
                     )}
 
-                    {/* AI Suggestion Banner */}
+                    {/* Suggested Project Banner */}
                     {aiSuggestion && (
                         <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-primary-50 to-violet-50 dark:from-primary-900/20 dark:to-violet-900/20 rounded-lg">
                             <span className="text-xl">✨</span>
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-grey-800 dark:text-grey-200">
-                                    {isSuggestionLoading ? 'Finding a strong project name...' : aiSuggestion.name}
+                                    {isSuggestionLoading ? t('createProject.findingName') : aiSuggestion.name}
                                 </p>
                                 <p className="text-xs text-grey-500 dark:text-grey-400">
-                                    Suggested as {PROJECT_TYPES.find(t => t.value === aiSuggestion.type)?.label}
+                                    {t('createProject.suggestedAs', {
+                                        typeLabel: t(PROJECT_TYPES.find((projectType) => projectType.value === aiSuggestion.type)?.label ?? 'createProject.type.fullStack.label'),
+                                    })}
                                 </p>
                                 <p className="mt-1 text-xs text-grey-600 dark:text-grey-300">
                                     {aiSuggestion.summary}
@@ -259,7 +264,7 @@ export function CreateProjectDialog({
                                         className="mt-2 text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-300 dark:hover:text-primary-200"
                                         data-testid="show-advanced-ai-context"
                                     >
-                                        Show AI context
+                                        {t('createProject.showRecommendationContext')}
                                     </Button>
                                 )}
                                 {isAdvancedAiContextVisible && (
@@ -281,7 +286,7 @@ export function CreateProjectDialog({
                                         )}
                                         {aiSuggestion.relatedProjects.length > 0 && (
                                             <div className="mt-3 rounded-md bg-white/70 px-3 py-2 text-xs text-grey-600 shadow-sm dark:bg-grey-900/40 dark:text-grey-300">
-                                                <p className="font-medium text-grey-700 dark:text-grey-200">Related projects in other workspaces</p>
+                                                <p className="font-medium text-grey-700 dark:text-grey-200">{t('createProject.relatedProjects')}</p>
                                                 <ul className="mt-1 space-y-1">
                                                     {aiSuggestion.relatedProjects.map((project) => (
                                                         <li key={project.id}>
@@ -303,7 +308,7 @@ export function CreateProjectDialog({
                   bg-white dark:bg-grey-800 rounded-md shadow-sm
                   hover:bg-grey-50 dark:hover:bg-grey-750 transition-colors"
                             >
-                                Use This
+                                {t('createProject.useThis')}
                             </Button>
                         </div>
                     )}
@@ -314,7 +319,7 @@ export function CreateProjectDialog({
                             htmlFor="project-name"
                             className="block text-sm font-medium text-grey-700 dark:text-grey-300 mb-1.5"
                         >
-                            Project Name
+                            {t('createProject.projectName')}
                         </label>
                         <Input
                             ref={inputRef}
@@ -322,7 +327,7 @@ export function CreateProjectDialog({
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="e.g., E-commerce Platform"
+                            placeholder={t('createProject.projectNamePlaceholder')}
                             data-testid="project-name-input"
                             className="
                 w-full px-4 py-2.5
@@ -338,7 +343,7 @@ export function CreateProjectDialog({
                         />
                         {duplicateProject && (
                             <p className="mt-1.5 text-xs text-warning-color dark:text-warning-color">
-                                A project named {duplicateProject.name} already exists in this workspace.
+                                {t('createProject.duplicateProject', { projectName: duplicateProject.name })}
                             </p>
                         )}
                     </div>
@@ -346,7 +351,7 @@ export function CreateProjectDialog({
                     {/* Project Type */}
                     <div>
                         <label className="block text-sm font-medium text-grey-700 dark:text-grey-300 mb-2">
-                            Project Type
+                            {t('createProject.projectType')}
                         </label>
                         <div className="grid grid-cols-5 gap-2">
                             {PROJECT_TYPES.map((pt) => (
@@ -369,13 +374,13 @@ export function CreateProjectDialog({
                                             ? 'text-primary-700 dark:text-primary-300'
                                             : 'text-grey-600 dark:text-grey-400'
                                         }`}>
-                                        {pt.label}
+                                        {t(pt.label)}
                                     </span>
                                 </Button>
                             ))}
                         </div>
                         <p className="mt-2 text-xs text-grey-500 dark:text-grey-400">
-                            {PROJECT_TYPES.find(t => t.value === type)?.description}
+                            {t(PROJECT_TYPES.find((projectType) => projectType.value === type)?.description ?? 'createProject.type.fullStack.desc')}
                         </p>
                     </div>
 
@@ -385,13 +390,13 @@ export function CreateProjectDialog({
                             htmlFor="project-description"
                             className="block text-sm font-medium text-grey-700 dark:text-grey-300 mb-1.5"
                         >
-                            Description <span className="text-grey-400">(optional)</span>
+                            {t('createProject.descriptionLabel')} <span className="text-grey-400">{t('createProject.optional')}</span>
                         </label>
                         <Textarea
                             id="project-description"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Brief description of this project..."
+                            placeholder={t('createProject.descriptionPlaceholder')}
                             rows={2}
                             data-testid="project-description-input"
                             className="
@@ -421,7 +426,7 @@ export function CreateProjectDialog({
               rounded-lg transition-colors
             "
                     >
-                        Cancel
+                        {t('createProject.cancel')}
                     </Button>
                     <Button
                         type="submit"
@@ -443,10 +448,10 @@ export function CreateProjectDialog({
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                 </svg>
-                                Creating...
+                                {t('createProject.creating')}
                             </span>
                         ) : (
-                            'Create Project'
+                            t('createProject.submit')
                         )}
                     </Button>
                 </div>

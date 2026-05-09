@@ -1,6 +1,8 @@
 import type {
+  PhaseFeatureFlag,
   PhaseProjectSnapshot,
   PhaseTransitionPreviewSnapshot,
+  TenantTier,
 } from './types';
 import type { Project } from '@/lib/api/client';
 import { yappcApi } from '@/lib/api/client';
@@ -21,6 +23,39 @@ interface RawPhaseProjectSnapshot extends Omit<PhaseProjectSnapshot, 'healthScor
   nextActionHints?: string[];
   aiHealthScore?: number | null;
   aiNextActions?: string[];
+  tier?: TenantTier;
+  subscriptionTier?: TenantTier;
+  featureFlags?: string[];
+  enabledFlags?: string[];
+}
+
+const KNOWN_TENANT_TIERS: readonly TenantTier[] = ['free', 'starter', 'pro', 'enterprise'];
+const KNOWN_PHASE_FLAGS: readonly PhaseFeatureFlag[] = [
+  'phase.generate.enabled',
+  'phase.run.preview.enabled',
+  'phase.run.production.enabled',
+  'phase.observe.enabled',
+  'phase.learn.patterns.enabled',
+  'phase.evolve.enabled',
+];
+
+function normalizeTenantTier(value: unknown): TenantTier | undefined {
+  return typeof value === 'string' && KNOWN_TENANT_TIERS.includes(value as TenantTier)
+    ? (value as TenantTier)
+    : undefined;
+}
+
+function normalizePhaseFlags(value: unknown): PhaseFeatureFlag[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const flags = value.filter(
+    (flag): flag is PhaseFeatureFlag =>
+      typeof flag === 'string' && KNOWN_PHASE_FLAGS.includes(flag as PhaseFeatureFlag),
+  );
+
+  return flags.length > 0 ? flags : undefined;
 }
 
 const LIFECYCLE_PHASES: readonly LifecyclePhase[] = [
@@ -103,6 +138,14 @@ export async function parseProjectResponse(
     ...rawProject,
     healthScore: rawProject.aiHealthScore ?? null,
     nextActionHints: rawProject.aiNextActions ?? [],
+    tenantTier:
+      normalizeTenantTier(rawProject.tenantTier) ??
+      normalizeTenantTier(rawProject.tier) ??
+      normalizeTenantTier(rawProject.subscriptionTier),
+    enabledPhaseFlags:
+      normalizePhaseFlags(rawProject.enabledPhaseFlags) ??
+      normalizePhaseFlags(rawProject.featureFlags) ??
+      normalizePhaseFlags(rawProject.enabledFlags),
   };
 }
 
@@ -121,11 +164,24 @@ export function normalizeProjectSnapshot(
     lifecyclePhase: rawProject.lifecyclePhase ?? rawProject.currentPhase,
     healthScore: rawProject.aiHealthScore ?? rawProject.healthScore ?? null,
     nextActionHints: rawProject.aiNextActions ?? rawProject.nextActionHints ?? [],
+    tenantTier:
+      normalizeTenantTier(rawProject.tenantTier) ??
+      normalizeTenantTier(rawProject.tier) ??
+      normalizeTenantTier(rawProject.subscriptionTier),
+    enabledPhaseFlags:
+      normalizePhaseFlags(rawProject.enabledPhaseFlags) ??
+      normalizePhaseFlags(rawProject.featureFlags) ??
+      normalizePhaseFlags(rawProject.enabledFlags),
   };
 }
 
-export async function fetchProjectSnapshot(projectId: string): Promise<PhaseProjectSnapshot> {
-  const project = await yappcApi.projects.get(projectId);
+export async function fetchProjectSnapshot(
+  projectId: string,
+  workspaceId?: string,
+): Promise<PhaseProjectSnapshot> {
+  const project = workspaceId
+    ? await yappcApi.projects.getScoped(projectId, workspaceId)
+    : await yappcApi.projects.get(projectId);
   return normalizeProjectSnapshot(project);
 }
 

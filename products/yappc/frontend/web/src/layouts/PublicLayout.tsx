@@ -280,7 +280,7 @@ const Footer: React.FC = () => {
               <span className="text-lg font-bold text-white">YAPPC</span>
             </NavLink>
             <p className="text-sm text-fg-muted mb-4">
-              AI-powered project lifecycle management for modern teams.
+              Guided project lifecycle management for modern teams.
             </p>
             <div className="flex items-center gap-3">
               <a

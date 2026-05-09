@@ -276,7 +276,7 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                             className="flex items-center gap-1 px-3 py-1.5 text-sm text-info-color hover:bg-info-bg dark:hover:bg-info-bg/20 rounded-lg transition-colors disabled:opacity-50"
                         >
                             <AutoAwesome className="w-4 h-4" />
-                            {isAILoading ? 'Analyzing...' : 'AI Assist'}
+                            {isAILoading ? 'Analyzing...' : 'Guided Assist'}
                         </Button>
                     )}
                     <Button

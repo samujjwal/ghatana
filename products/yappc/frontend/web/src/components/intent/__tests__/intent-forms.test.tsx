@@ -27,6 +27,11 @@ describe('IdeaBriefForm', () => {
         expect(screen.getByRole('button', { name: /cancel/i })).toBeTruthy();
     });
 
+    it('renders Suggested Improvements action when assist is enabled', () => {
+        render(<IdeaBriefForm onSubmit={mockSubmit} onAIAssist={vi.fn().mockResolvedValue(null)} />);
+        expect(screen.getByRole('button', { name: /suggested improvements/i })).toBeTruthy();
+    });
+
     it('calls onCancel when Cancel is clicked', () => {
         const onCancel = vi.fn();
         render(<IdeaBriefForm onSubmit={mockSubmit} onCancel={onCancel} />);
@@ -108,5 +113,10 @@ describe('ResearchPackEditor', () => {
         render(<ResearchPackEditor onSubmit={mockSubmit} onCancel={onCancel} />);
         fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
         expect(onCancel).toHaveBeenCalled();
+    });
+
+    it('renders Guided Analysis action when assist is enabled', () => {
+        render(<ResearchPackEditor onSubmit={mockSubmit} onAIAssist={vi.fn().mockResolvedValue(null)} />);
+        expect(screen.getByRole('button', { name: /guided analysis/i })).toBeTruthy();
     });
 });
