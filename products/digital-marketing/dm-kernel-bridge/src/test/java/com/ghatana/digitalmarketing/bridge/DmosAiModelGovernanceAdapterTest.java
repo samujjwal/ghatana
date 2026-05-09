@@ -1,7 +1,9 @@
 package com.ghatana.digitalmarketing.bridge;
 
 import com.ghatana.aiplatform.registry.ABTestingService;
+import com.ghatana.aiplatform.registry.DefaultExperimentalTrafficAllocationAdapter;
 import com.ghatana.aiplatform.registry.DeploymentStatus;
+import com.ghatana.aiplatform.registry.ExperimentalTrafficAllocationPort;
 import com.ghatana.aiplatform.registry.ModelMetadata;
 import com.ghatana.aiplatform.registry.ModelRegistryPort;
 import com.ghatana.digitalmarketing.bridge.governance.AiExperimentConfig;
@@ -30,7 +32,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("DmosAiModelGovernanceAdapter")
 class DmosAiModelGovernanceAdapterTest extends EventloopTestBase {
 
-    private TestModelRegistryService modelRegistry;    private ABTestingService abTesting;
+    private TestModelRegistryService modelRegistry;
+    private ABTestingService abTesting;
+    private ExperimentalTrafficAllocationPort trafficAllocation;
     private DmosAiModelGovernanceAdapter adapter;
     private DmTenantId tenantId;
 
@@ -38,7 +42,8 @@ class DmosAiModelGovernanceAdapterTest extends EventloopTestBase {
     void setUp() {
         modelRegistry = new TestModelRegistryService();
         abTesting = new ABTestingService(MetricsCollector.create());
-        adapter = new DmosAiModelGovernanceAdapter(modelRegistry, abTesting);
+        trafficAllocation = new DefaultExperimentalTrafficAllocationAdapter(abTesting);
+        adapter = new DmosAiModelGovernanceAdapter(modelRegistry, trafficAllocation);
         tenantId = DmTenantId.of("tenant-1");
     }
 
@@ -46,16 +51,16 @@ class DmosAiModelGovernanceAdapterTest extends EventloopTestBase {
     @DisplayName("rejects null modelRegistry at construction time")
     void rejectsNullModelRegistry() {
         assertThatNullPointerException()
-                .isThrownBy(() -> new DmosAiModelGovernanceAdapter(null, abTesting))
+                .isThrownBy(() -> new DmosAiModelGovernanceAdapter(null, trafficAllocation))
                 .withMessageContaining("modelRegistry");
     }
 
     @Test
-    @DisplayName("rejects null abTesting at construction time")
-    void rejectsNullAbTesting() {
+    @DisplayName("rejects null trafficAllocation at construction time")
+    void rejectsNullTrafficAllocation() {
         assertThatNullPointerException()
                 .isThrownBy(() -> new DmosAiModelGovernanceAdapter(modelRegistry, null))
-                .withMessageContaining("abTesting");
+                .withMessageContaining("trafficAllocation");
     }
 
     @Test

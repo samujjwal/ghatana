@@ -1,9 +1,8 @@
 /**
  * AI Optimization Page — AI-driven campaign optimization management.
  *
- * <p>P3-004: Capability-gated via {@code dmos.ai-optimization}. Surfaces AI-generated
- * next-best-action recommendations, anomaly detection results, experiment suggestions,
- * and budget reallocation proposals. Uses shared platform components for consistent UX.</p>
+ * <p>P3-1: Capability-gated via {@code dmos.ai_optimization}. Surfaces AI-generated
+ * recommendations and anomaly detection for campaign optimization.</p>
  *
  * @doc.type page
  * @doc.purpose AI optimization and recommendation management view

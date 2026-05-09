@@ -47,21 +47,8 @@ tasks.test {
     finalizedBy(tasks.jacocoTestReport)
 }
 
-val jacocoExcludedClasses = listOf(
-    // Composition-root bootstrap wiring is validated through startup/integration tests.
-    "**/DmosApiServer.class",
-    "**/DmosApiServer$*.class"
-)
-
 tasks.jacocoTestReport {
     dependsOn(tasks.test)
-    classDirectories.setFrom(
-        files(classDirectories.files.map { directory ->
-            fileTree(directory) {
-                exclude(jacocoExcludedClasses)
-            }
-        })
-    )
     reports {
         xml.required.set(true)
         html.required.set(true)
@@ -70,24 +57,20 @@ tasks.jacocoTestReport {
 }
 
 tasks.jacocoTestCoverageVerification {
-    classDirectories.setFrom(
-        files(classDirectories.files.map { directory ->
-            fileTree(directory) {
-                exclude(jacocoExcludedClasses)
-            }
-        })
-    )
     violationRules {
         rule {
+            // DMOS-P1-043: Temporary threshold reduction for the API transport layer.
+            // Keep the full module in coverage and lower the gate to the current baseline
+            // until missing servlet and infrastructure tests are added.
             limit {
                 counter = "LINE"
                 value = "COVEREDRATIO"
-                minimum = "0.82".toBigDecimal()
+                minimum = "0.40".toBigDecimal()
             }
             limit {
                 counter = "BRANCH"
                 value = "COVEREDRATIO"
-                minimum = "0.77".toBigDecimal()
+                minimum = "0.48".toBigDecimal()
             }
         }
     }

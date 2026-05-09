@@ -84,8 +84,8 @@ class DmosLargeDataIT extends EventloopTestBase {
             conn.setAutoCommit(false);
             var stmt = conn.prepareStatement(
                     "INSERT INTO dmos_campaigns " +
-                    "(id, workspace_id, name, status, type, created_at, updated_at, created_by) " +
-                    "VALUES (?, ?, ?, 'DRAFT', 'EMAIL', NOW(), NOW(), 'perf-user')"
+                    "(id, workspace_id, tenant_id, name, status, type, created_at, updated_at, created_by) " +
+                    "VALUES (?, ?, 'perf-tenant', ?, 'DRAFT', 'EMAIL', NOW(), NOW(), 'perf-user')"
             );
             for (int i = 0; i < TOTAL_ROWS; i++) {
                 stmt.setString(1, "perf-camp-" + i);

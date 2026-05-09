@@ -147,6 +147,17 @@ private val PLACEHOLDER_EXPRESSIONS = setOf(
     "TODO", "FIXME", "PLACEHOLDER", "STUB", "TBD", "NOT_IMPLEMENTED", "REPLACE_ME"
 )
 
+private val COMPLIANCE_RULE_ID_REGEX = Regex(
+    """new\s+(?:[A-Za-z_]\w*\.)*ComplianceRule\(\s*"([^"]+)""""
+)
+
+internal fun extractComplianceRuleIds(text: String): List<String> {
+    return COMPLIANCE_RULE_ID_REGEX
+        .findAll(text)
+        .map { it.groupValues[1] }
+        .toList()
+}
+
 /**
  * Validates a single Java source file containing ComplianceRule declarations.
  *
@@ -160,10 +171,7 @@ private val PLACEHOLDER_EXPRESSIONS = setOf(
 private fun validateComplianceSourceFile(sourceFile: File, prefix: String) {
     val text = sourceFile.readText()
 
-    val ruleIds = Regex("""new\s+ComplianceRule\(\s*"([^"]+)"""")
-        .findAll(text)
-        .map { it.groupValues[1] }
-        .toList()
+    val ruleIds = extractComplianceRuleIds(text)
 
     require(ruleIds.isNotEmpty()) {
         "No ComplianceRule IDs found in ${sourceFile.name}"

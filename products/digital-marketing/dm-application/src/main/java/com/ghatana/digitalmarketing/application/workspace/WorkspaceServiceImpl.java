@@ -244,8 +244,25 @@ public final class WorkspaceServiceImpl implements WorkspaceService {
             });
     }
 
+    /**
+     * P1-1: Returns whether a capability is enabled by default for an active workspace.
+     * AI Optimization is explicitly disabled until real APIs exist.
+     */
     private static boolean isCapabilityEnabledByDefault(String capabilityKey, boolean activeWorkspace) {
         if (!activeWorkspace) {
+            return false;
+        }
+        // P1-1: AI Optimization is disabled until real APIs exist
+        if (capabilityKey.equals(DmosCapabilityRegistry.AI_OPTIMIZATION)) {
+            return false;
+        }
+        // Additional route manifest capabilities are disabled by default
+        if (capabilityKey.equals(DmosCapabilityRegistry.REPORTING)
+            || capabilityKey.equals(DmosCapabilityRegistry.SELF_MARKETING)
+            || capabilityKey.equals(DmosCapabilityRegistry.MARKET_RESEARCH)
+            || capabilityKey.equals(DmosCapabilityRegistry.ADVANCED_CHANNELS)
+            || capabilityKey.equals(DmosCapabilityRegistry.LOCALIZATION)
+            || capabilityKey.equals(DmosCapabilityRegistry.AGENCY)) {
             return false;
         }
         return capabilityKey.equals(DmosCapabilityRegistry.CAMPAIGNS)
@@ -257,5 +274,28 @@ public final class WorkspaceServiceImpl implements WorkspaceService {
             || capabilityKey.equals(DmosCapabilityRegistry.LANDING_PAGE_GENERATION)
             || capabilityKey.equals(DmosCapabilityRegistry.EMAIL_DRAFT_GENERATION)
             || capabilityKey.equals(DmosCapabilityRegistry.SOW_GENERATION);
+    }
+
+    @Override
+    public Promise<Boolean> isCapabilityEnabled(DmOperationContext ctx, String capabilityKey) {
+        Objects.requireNonNull(ctx, "ctx must not be null");
+        Objects.requireNonNull(capabilityKey, "capabilityKey must not be null");
+
+        // Validate the capability key exists in the registry
+        if (!DmosCapabilityRegistry.isDefined(capabilityKey)) {
+            return Promise.ofException(
+                new IllegalArgumentException("Unknown capability key: " + capabilityKey));
+        }
+
+        return repository.findById(ctx.getTenantId(), ctx.getWorkspaceId())
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.ofException(
+                        new NoSuchElementException("Workspace not found: " + ctx.getWorkspaceId().getValue()));
+                }
+                boolean activeWorkspace = opt.get().getStatus() == WorkspaceStatus.ACTIVE;
+                boolean enabled = isCapabilityEnabledByDefault(capabilityKey, activeWorkspace);
+                return Promise.of(enabled);
+            });
     }
 }

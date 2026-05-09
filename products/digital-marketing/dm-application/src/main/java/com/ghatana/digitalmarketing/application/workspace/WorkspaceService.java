@@ -86,6 +86,15 @@ public interface WorkspaceService {
     Promise<List<WorkspaceCapability>> getWorkspaceCapabilities(DmOperationContext ctx, String workspaceId);
 
     /**
+     * P0-6: Checks if a specific capability is enabled for the workspace.
+     *
+     * @param ctx           operation context
+     * @param capabilityKey the capability key to check
+     * @return promise resolving to true if the capability is enabled, false otherwise
+     */
+    Promise<Boolean> isCapabilityEnabled(DmOperationContext ctx, String capabilityKey);
+
+    /**
      * API-facing capability entry for workspace capability responses.
      */
     record WorkspaceCapability(

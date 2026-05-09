@@ -87,7 +87,44 @@ export async function isCapabilityEnabled(
 }
 
 /**
- * Checks if a route action is permitted based on backend capabilities.
+ * P1-4: Explicit action-to-capability mapping for route action permissions.
+ * Replaces naive string matching with backend-defined grants.
+ */
+const ACTION_CAPABILITY_GRANTS: Record<string, CapabilityKey[]> = {
+  // Campaign actions
+  'create': [CapabilityKeys.CAMPAIGNS],
+  'launch': [CapabilityKeys.CAMPAIGNS],
+  'pause': [CapabilityKeys.CAMPAIGNS],
+  'complete': [CapabilityKeys.CAMPAIGNS],
+  'archive': [CapabilityKeys.CAMPAIGNS],
+  'rollback': [CapabilityKeys.CAMPAIGNS],
+  'duplicate': [CapabilityKeys.CAMPAIGNS],
+  'list': [CapabilityKeys.CAMPAIGNS],
+  'get': [CapabilityKeys.CAMPAIGNS],
+
+  // Strategy actions
+  'generate': [CapabilityKeys.STRATEGY],
+  'submit': [CapabilityKeys.STRATEGY],
+  'approve': [CapabilityKeys.STRATEGY, CapabilityKeys.APPROVALS],
+
+  // Budget actions
+  'recommend': [CapabilityKeys.BUDGET],
+  'approve-budget': [CapabilityKeys.BUDGET, CapabilityKeys.APPROVALS],
+
+  // AI actions
+  'optimize': [CapabilityKeys.AI_OPTIMIZATION],
+  'log': [CapabilityKeys.AI_ACTIONS],
+
+  // Content generation actions
+  'generate-ad-copy': [CapabilityKeys.AD_COPY_GENERATION],
+  'generate-landing-page': [CapabilityKeys.LANDING_PAGE_GENERATION],
+  'generate-email-draft': [CapabilityKeys.EMAIL_DRAFT_GENERATION],
+  'generate-sow': [CapabilityKeys.SOW_GENERATION],
+};
+
+/**
+ * P1-4: Checks if a route action is permitted based on backend capability grants.
+ * Uses explicit action-to-capability mapping instead of naive string matching.
  */
 export async function isRouteActionPermitted(
   workspaceId: string,
@@ -95,10 +132,18 @@ export async function isRouteActionPermitted(
 ): Promise<boolean> {
   try {
     const capabilities = await getWorkspaceCapabilities(workspaceId);
-    // Check if any capability grants this action
-    return capabilities.capabilities.some(
-      (c) => c.enabled && c.key.includes(action.toLowerCase()),
-    );
+    const requiredCapabilities = ACTION_CAPABILITY_GRANTS[action.toLowerCase()];
+    
+    if (!requiredCapabilities || requiredCapabilities.length === 0) {
+      // Unknown action - fail closed
+      return false;
+    }
+
+    // Check if any of the required capabilities are enabled
+    return requiredCapabilities.some(capKey => {
+      const capability = capabilities.capabilities.find((c) => c.key === capKey);
+      return capability?.enabled ?? false;
+    });
   } catch (error) {
     console.error(`Failed to check action permission ${action}:`, error);
     return false;

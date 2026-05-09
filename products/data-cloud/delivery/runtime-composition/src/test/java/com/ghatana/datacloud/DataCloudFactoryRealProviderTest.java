@@ -113,6 +113,7 @@ class DataCloudFactoryRealProviderTest extends EventloopTestBase {
                 DataCloudClient.Event.builder()
                     .type(eventType)
                     .payload(Map.of("entityId", entityId, "tenantId", tenantId))
+                    .source("data-cloud-factory-real-provider-test")
                     .build()
             ));
         } finally {
@@ -154,10 +155,18 @@ class DataCloudFactoryRealProviderTest extends EventloopTestBase {
             runPromise(() -> firstClient.save(tenantB, "workflows", Map.of("id", entityB, "name", "Tenant B workflow"))); 
             runPromise(() -> firstClient.appendEvent(
                 tenantA,
-                DataCloudClient.Event.builder().type(eventType).payload(Map.of("entityId", entityA)).build()));
+                DataCloudClient.Event.builder()
+                    .type(eventType)
+                    .payload(Map.of("entityId", entityA))
+                    .source("data-cloud-factory-real-provider-test")
+                    .build()));
             runPromise(() -> firstClient.appendEvent(
                 tenantB,
-                DataCloudClient.Event.builder().type(eventType).payload(Map.of("entityId", entityB)).build()));
+                DataCloudClient.Event.builder()
+                    .type(eventType)
+                    .payload(Map.of("entityId", entityB))
+                    .source("data-cloud-factory-real-provider-test")
+                    .build()));
         } finally {
             firstClient.close(); 
         }

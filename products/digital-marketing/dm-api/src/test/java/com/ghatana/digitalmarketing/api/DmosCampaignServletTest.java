@@ -451,10 +451,11 @@ class DmosCampaignServletTest extends EventloopTestBase {
     @Test
     @DisplayName("GET campaigns list returns 200 with paginated results")
     void shouldReturn200OnListCampaigns() throws Exception {
-        campaignService.listResult = Promise.of(List.of(
+        List<Campaign> items = List.of(
             buildCampaign(CampaignStatus.DRAFT),
             buildCampaign(CampaignStatus.LAUNCHED)
-        ));
+        );
+        campaignService.listResult = Promise.of(new CampaignService.CampaignListResult(items, items.size(), 10, 0));
 
         HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/campaigns?limit=10&offset=0")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
@@ -477,7 +478,7 @@ class DmosCampaignServletTest extends EventloopTestBase {
     @Test
     @DisplayName("GET campaigns list uses default pagination when params missing")
     void shouldUseDefaultPaginationOnList() {
-        campaignService.listResult = Promise.of(List.of());
+        campaignService.listResult = Promise.of(new CampaignService.CampaignListResult(List.of(), 0, 20, 0));
 
         HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/campaigns")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
@@ -492,7 +493,7 @@ class DmosCampaignServletTest extends EventloopTestBase {
     @Test
     @DisplayName("GET campaigns list enforces max limit of 100")
     void shouldEnforceMaxLimitOnList() {
-        campaignService.listResult = Promise.of(List.of());
+        campaignService.listResult = Promise.of(new CampaignService.CampaignListResult(List.of(), 0, 100, 0));
 
         HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/campaigns?limit=500")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
@@ -661,8 +662,9 @@ class DmosCampaignServletTest extends EventloopTestBase {
         private Promise<Campaign> completeResult = Promise.of(buildCampaign(CampaignStatus.COMPLETED));
         private Promise<Campaign> archiveResult = Promise.of(buildCampaign(CampaignStatus.ARCHIVED));
         private Promise<Campaign> rollbackResult = Promise.of(buildCampaign(CampaignStatus.DRAFT));
+        private Promise<Campaign> duplicateResult = Promise.of(buildCampaign(CampaignStatus.DRAFT));
         private Promise<Campaign> getResult = Promise.of(buildCampaign(CampaignStatus.DRAFT));
-        private Promise<java.util.List<Campaign>> listResult = Promise.of(List.of());
+        private Promise<CampaignListResult> listResult = Promise.of(new CampaignListResult(List.of(), 0, 20, 0));
 
         private DmOperationContext lastContext;
         private CreateCampaignCommand lastCommand;
@@ -707,13 +709,19 @@ class DmosCampaignServletTest extends EventloopTestBase {
         }
 
         @Override
+        public Promise<Campaign> duplicateCampaign(DmOperationContext ctx, String campaignId, String newName) {
+            this.lastContext = ctx;
+            return duplicateResult;
+        }
+
+        @Override
         public Promise<Campaign> getCampaign(DmOperationContext ctx, String campaignId) {
             this.lastContext = ctx;
             return getResult;
         }
 
         @Override
-        public Promise<java.util.List<Campaign>> listCampaigns(DmOperationContext ctx, int limit, int offset) {
+        public Promise<CampaignListResult> listCampaigns(DmOperationContext ctx, int limit, int offset) {
             this.lastContext = ctx;
             this.lastLimit = limit;
             this.lastOffset = offset;

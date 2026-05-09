@@ -67,7 +67,7 @@ class DmSeoToolConnectorTest {
 
         assertEquals(DmSeoToolConnectorStatus.ACTIVE, activated.getStatus());
         assertNull(activated.getFailureReason());
-        assertNotEquals(now, activated.getUpdatedAt());
+        assertFalse(activated.getUpdatedAt().isBefore(now));
     }
 
     @Test

@@ -71,7 +71,7 @@ class EndToEndWorkflowTest extends EventloopTestBase {
         Optional<DataCloudClient.Entity> persistedLogs = runPromise(() -> client.findById( 
             TENANT_A,
             "dc_workflow_execution_logs",
-            snapshot.id())); 
+            snapshot.id() + ":logs")); 
 
         assertThat(snapshot.status()).isEqualTo("COMPLETED");
         assertThat(snapshot.nodeStatuses()).hasSize(3); 

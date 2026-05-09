@@ -5,6 +5,7 @@
 package com.ghatana.finance.kernel.policy;
 
 import com.ghatana.plugin.compliance.CompliancePlugin;
+import com.ghatana.plugin.compliance.CompliancePlugin.ComplianceRule;
 
 import java.util.List;
 
@@ -61,27 +62,27 @@ public final class FinanceComplianceRulePack {
      *
      * @return immutable list of transaction integrity rules
      */
-    public static List<CompliancePlugin.ComplianceRule> transactionIntegrityRules() {
+    public static List<ComplianceRule> transactionIntegrityRules() {
         return List.of(
-                new CompliancePlugin.ComplianceRule(
+                new ComplianceRule(
                         "FIN-TI-001",
                         "AUTHORIZATION_CONTROL",
                         "Transactions must be authorized before settlement",
-                        CompliancePlugin.ComplianceRule.Severity.CRITICAL,
+                        ComplianceRule.Severity.CRITICAL,
                         "authorization_granted == true"
                 ),
-                new CompliancePlugin.ComplianceRule(
+                new ComplianceRule(
                         "FIN-TI-002",
                         "AUTHORIZATION_CONTROL",
                         "High-value transactions require dual authorization",
-                        CompliancePlugin.ComplianceRule.Severity.CRITICAL,
+                        ComplianceRule.Severity.CRITICAL,
                         "transaction_value < high_value_threshold OR dual_authorization == true"
                 ),
-                new CompliancePlugin.ComplianceRule(
+                new ComplianceRule(
                         "FIN-TI-003",
                         "DATA_INTEGRITY",
                         "Transaction reversals must carry an approved justification",
-                        CompliancePlugin.ComplianceRule.Severity.HIGH,
+                        ComplianceRule.Severity.HIGH,
                         "reversal_justification_approved == true"
                 )
         );
@@ -100,27 +101,27 @@ public final class FinanceComplianceRulePack {
      *
      * @return immutable list of audit record-keeping rules
      */
-    public static List<CompliancePlugin.ComplianceRule> auditRecordKeepingRules() {
+    public static List<ComplianceRule> auditRecordKeepingRules() {
         return List.of(
-                new CompliancePlugin.ComplianceRule(
+                new ComplianceRule(
                         "FIN-AR-001",
                         "AUDIT_CONTROL",
                         "All transaction events must be audited",
-                        CompliancePlugin.ComplianceRule.Severity.HIGH,
+                        ComplianceRule.Severity.HIGH,
                         "transaction_event_audited == true"
                 ),
-                new CompliancePlugin.ComplianceRule(
+                new ComplianceRule(
                         "FIN-AR-002",
                         "AUDIT_CONTROL",
                         "Audit records must be retained for the minimum required period",
-                        CompliancePlugin.ComplianceRule.Severity.HIGH,
+                        ComplianceRule.Severity.HIGH,
                         "audit_retention_years >= 7"
                 ),
-                new CompliancePlugin.ComplianceRule(
+                new ComplianceRule(
                         "FIN-AR-003",
                         "AUDIT_CONTROL",
                         "Audit records must be tamper-evident (hash-chained)",
-                        CompliancePlugin.ComplianceRule.Severity.HIGH,
+                        ComplianceRule.Severity.HIGH,
                         "audit_tamper_evident == true"
                 )
         );
@@ -139,27 +140,27 @@ public final class FinanceComplianceRulePack {
      *
      * @return immutable list of trade surveillance rules
      */
-    public static List<CompliancePlugin.ComplianceRule> tradeSurveillanceRules() {
+    public static List<ComplianceRule> tradeSurveillanceRules() {
         return List.of(
-                new CompliancePlugin.ComplianceRule(
+                new ComplianceRule(
                         "FIN-TS-001",
                         "TRADE_SURVEILLANCE",
                         "Trades must be screened for market-manipulation patterns",
-                        CompliancePlugin.ComplianceRule.Severity.CRITICAL,
+                        ComplianceRule.Severity.CRITICAL,
                         "manipulation_screening_passed == true"
                 ),
-                new CompliancePlugin.ComplianceRule(
+                new ComplianceRule(
                         "FIN-TS-002",
                         "POSITION_CONTROL",
                         "Position limits must be checked before order execution",
-                        CompliancePlugin.ComplianceRule.Severity.HIGH,
+                        ComplianceRule.Severity.HIGH,
                         "position_within_limit == true"
                 ),
-                new CompliancePlugin.ComplianceRule(
+                new ComplianceRule(
                         "FIN-TS-003",
                         "TRADE_SURVEILLANCE",
                         "Wash-trade detection must be active for all accounts",
-                        CompliancePlugin.ComplianceRule.Severity.HIGH,
+                        ComplianceRule.Severity.HIGH,
                         "wash_trade_detection_active == true"
                 )
         );

@@ -7,6 +7,8 @@ package com.ghatana.tutorputor.contentgeneration.domain;
  * @doc.pattern Component
  */
 public enum Domain {
+    GENERAL,
+    PHYSICS,
     MATH, SCIENCE, TECH, ENGINEERING, MEDICINE, HEALTH,
     BUSINESS, MANAGEMENT, ECONOMICS, COMPUTER_SCIENCE, INTERDISCIPLINARY
 }

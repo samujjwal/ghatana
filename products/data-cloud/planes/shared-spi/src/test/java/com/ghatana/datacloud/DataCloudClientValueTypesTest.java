@@ -12,6 +12,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import com.ghatana.datacloud.entity.storage.FilterCriteria;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -92,38 +94,38 @@ class DataCloudClientValueTypesTest {
         void eqFilter() { 
             DataCloudClient.Filter f = DataCloudClient.Filter.eq("age", 30); 
             assertThat(f.field()).isEqualTo("age");
-            assertThat(f.operator()).isEqualTo("eq");
+            assertThat(f.operator()).isEqualTo(FilterCriteria.Operator.EQ);
             assertThat(f.value()).isEqualTo(30); 
         }
 
         @Test
         void neFilter() { 
-            assertThat(DataCloudClient.Filter.ne("x", "a").operator()).isEqualTo("ne");
+            assertThat(DataCloudClient.Filter.ne("x", "a").operator()).isEqualTo(FilterCriteria.Operator.NE);
         }
 
         @Test
         void gtFilter() { 
-            assertThat(DataCloudClient.Filter.gt("score", 5).operator()).isEqualTo("gt");
+            assertThat(DataCloudClient.Filter.gt("score", 5).operator()).isEqualTo(FilterCriteria.Operator.GT);
         }
 
         @Test
         void gteFilter() { 
-            assertThat(DataCloudClient.Filter.gte("score", 5).operator()).isEqualTo("gte");
+            assertThat(DataCloudClient.Filter.gte("score", 5).operator()).isEqualTo(FilterCriteria.Operator.GTE);
         }
 
         @Test
         void ltFilter() { 
-            assertThat(DataCloudClient.Filter.lt("score", 10).operator()).isEqualTo("lt");
+            assertThat(DataCloudClient.Filter.lt("score", 10).operator()).isEqualTo(FilterCriteria.Operator.LT);
         }
 
         @Test
         void lteFilter() { 
-            assertThat(DataCloudClient.Filter.lte("score", 10).operator()).isEqualTo("lte");
+            assertThat(DataCloudClient.Filter.lte("score", 10).operator()).isEqualTo(FilterCriteria.Operator.LTE);
         }
 
         @Test
         void likeFilter() { 
-            assertThat(DataCloudClient.Filter.like("name", "%smith%").operator()).isEqualTo("like");
+            assertThat(DataCloudClient.Filter.like("name", "%smith%").operator()).isEqualTo(FilterCriteria.Operator.LIKE);
         }
     }
 

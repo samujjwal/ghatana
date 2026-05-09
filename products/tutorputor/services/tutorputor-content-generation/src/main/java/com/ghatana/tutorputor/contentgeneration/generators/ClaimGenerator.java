@@ -32,7 +32,7 @@ public class ClaimGenerator {
     public Promise<List<LearningClaim>> generateClaims(ContentGenerationRequest request) {
         String topic = request.getTopic();
         Domain domain = request.getDomain();
-        int gradeLevel = request.getGradeLevel();
+                String gradeLevel = request.getGradeLevel();
         String domainLabel = domain.name().toLowerCase().replace('_', ' ');
 
         List<LearningClaim> claims = new ArrayList<>();

@@ -111,12 +111,12 @@ public final class DmosAiActionLogServlet {
                 );
                 return service.recordAction(ctx, command)
                     .map(entry -> jsonResponse(201, EntryResponse.from(entry)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("record action", e));
+                    .then(r -> Promise.of(r), e -> mapServiceError("record action", e, ctx));
             } catch (IllegalArgumentException e) {
-                return Promise.of(errorResponse(400, e.getMessage()));
+                return Promise.of(errorResponse(400, e.getMessage(), DmCorrelationId.generate().getValue()));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to record action", e);
-                return Promise.of(errorResponse(500, "Internal error"));
+                return Promise.of(errorResponse(500, "Internal error", DmCorrelationId.generate().getValue()));
             }
         });
     }
@@ -136,12 +136,12 @@ public final class DmosAiActionLogServlet {
                 ))
                 .map(entries -> new ListResponse(entries.stream().map(EntryResponse::from).toList()))
                 .map(res -> jsonResponse(200, res))
-                .then(r -> Promise.of(r), e -> mapServiceError("list actions", e));
+                .then(r -> Promise.of(r), e -> mapServiceError("list actions", e, ctx));
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(errorResponse(400, e.getMessage(), DmCorrelationId.generate().getValue()));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to list actions", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(errorResponse(500, "Internal error", DmCorrelationId.generate().getValue()));
         }
     }
 
@@ -153,12 +153,12 @@ public final class DmosAiActionLogServlet {
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
             return service.getAction(ctx, actionId)
                 .map(entry -> jsonResponse(200, EntryResponse.from(entry)))
-                .then(r -> Promise.of(r), e -> mapServiceError("get action", e));
+                .then(r -> Promise.of(r), e -> mapServiceError("get action", e, ctx));
         } catch (IllegalArgumentException e) {
-            return Promise.of(errorResponse(400, e.getMessage()));
+            return Promise.of(errorResponse(400, e.getMessage(), DmCorrelationId.generate().getValue()));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to get action", e);
-            return Promise.of(errorResponse(500, "Internal error"));
+            return Promise.of(errorResponse(500, "Internal error", DmCorrelationId.generate().getValue()));
         }
     }
 
@@ -173,21 +173,21 @@ public final class DmosAiActionLogServlet {
         }
     }
 
-    private Promise<HttpResponse> mapServiceError(String operation, Throwable error) {
+    private Promise<HttpResponse> mapServiceError(String operation, Throwable error, DmOperationContext ctx) {
         if (error instanceof SecurityException) {
-            return Promise.of(errorResponse(403, error.getMessage()));
+            return Promise.of(errorResponse(403, error.getMessage(), ctx.getCorrelationId().getValue()));
         }
         if (error instanceof NoSuchElementException) {
-            return Promise.of(errorResponse(404, error.getMessage()));
+            return Promise.of(errorResponse(404, error.getMessage(), ctx.getCorrelationId().getValue()));
         }
         if (error instanceof IllegalArgumentException) {
-            return Promise.of(errorResponse(400, error.getMessage()));
+            return Promise.of(errorResponse(400, error.getMessage(), ctx.getCorrelationId().getValue()));
         }
         if (error instanceof DmosFeatureDisabledException || error instanceof DmosConnectorDisabledException) {
-            return Promise.of(errorResponse(423, error.getMessage()));
+            return Promise.of(errorResponse(423, error.getMessage(), ctx.getCorrelationId().getValue()));
         }
         LOG.error("[DMOS] Failed to {}", operation, error);
-        return Promise.of(errorResponse(500, "Internal error"));
+        return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
     }
 
     // P1-001: Local buildContext method removed - using shared DmosHttpContextFactory
@@ -206,8 +206,8 @@ public final class DmosAiActionLogServlet {
         }
     }
 
-    private HttpResponse errorResponse(int code, String message) {
-        return jsonResponse(code, new ErrorBody(code, message));
+    private HttpResponse errorResponse(int code, String message, String correlationId) {
+        return jsonResponse(code, StandardErrorEnvelope.of(code, message, correlationId));
     }
 
     record RecordRequest(
@@ -260,8 +260,5 @@ public final class DmosAiActionLogServlet {
     }
 
     record ListResponse(List<EntryResponse> entries) {
-    }
-
-    record ErrorBody(int code, String message) {
     }
 }

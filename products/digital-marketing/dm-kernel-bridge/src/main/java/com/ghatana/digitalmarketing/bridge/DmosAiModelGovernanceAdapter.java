@@ -1,7 +1,7 @@
 package com.ghatana.digitalmarketing.bridge;
 
-import com.ghatana.aiplatform.registry.ABTestingService;
 import com.ghatana.aiplatform.registry.DeploymentStatus;
+import com.ghatana.aiplatform.registry.ExperimentalTrafficAllocationPort;
 import com.ghatana.aiplatform.registry.ModelMetadata;
 import com.ghatana.aiplatform.registry.ModelRegistryPort;
 import com.ghatana.digitalmarketing.bridge.governance.AiExperimentConfig;
@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * KERNEL-P2-3: AI model governance adapter for DMOS.
  *
- * <p>Bridges the platform {@link ModelRegistryPort} and {@link ABTestingService}
+ * <p>Bridges the platform {@link ModelRegistryPort} and {@link ExperimentalTrafficAllocationPort}
  * into the DMOS kernel bridge, providing:
  * <ul>
  *   <li><b>Versioned model registry</b> — register, promote, and deprecate AI models
@@ -35,8 +35,14 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p><b>Usage</b>
  * <pre>{@code
+ * // Platform layer (ai-integration): Create the adapter
+ * ExperimentalTrafficAllocationPort trafficAllocation = 
+ *     new DefaultExperimentalTrafficAllocationAdapter(abTestingService);
+ * 
+ * // Product layer (dm-kernel-bridge): Inject into governance adapter
  * DmosAiModelGovernanceAdapter governance = new DmosAiModelGovernanceAdapter(
- *     modelRegistryService, abTestingService);
+ *     modelRegistryService, trafficAllocation);
+ *     modelRegistryService, trafficAllocation);
  *
  * // Register a candidate model for DMOS ad-copy generation
  * governance.registerCandidateModel(tenantId, "dmos-adcopy", "v2.0.0");
@@ -63,7 +69,7 @@ public final class DmosAiModelGovernanceAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(DmosAiModelGovernanceAdapter.class);
 
     private final ModelRegistryPort modelRegistry;
-    private final ABTestingService abTesting;
+    private final ExperimentalTrafficAllocationPort trafficAllocation;
     
     // P0-011: In-memory store for experiment configurations with approval state
     private final Map<String, AiExperimentConfig> experimentConfigs = new ConcurrentHashMap<>();
@@ -72,23 +78,23 @@ public final class DmosAiModelGovernanceAdapter {
     private final ModelGovernanceAuditRecorder auditRecorder;
 
     /**
-     * @param modelRegistry platform model registry service
-     * @param abTesting     platform A/B testing service
+     * @param modelRegistry       platform model registry service
+     * @param trafficAllocation   platform traffic allocation port (A/B testing)
      */
     public DmosAiModelGovernanceAdapter(
             ModelRegistryPort modelRegistry,
-            ABTestingService abTesting) {
+            ExperimentalTrafficAllocationPort trafficAllocation) {
         this.modelRegistry = Objects.requireNonNull(modelRegistry, "modelRegistry required");
-        this.abTesting = Objects.requireNonNull(abTesting, "abTesting required");
+        this.trafficAllocation = Objects.requireNonNull(trafficAllocation, "trafficAllocation required");
         this.auditRecorder = new ModelGovernanceAuditRecorder();
     }
 
     public DmosAiModelGovernanceAdapter(
             ModelRegistryPort modelRegistry,
-            ABTestingService abTesting,
+            ExperimentalTrafficAllocationPort trafficAllocation,
             ModelGovernanceAuditRecorder auditRecorder) {
         this.modelRegistry = Objects.requireNonNull(modelRegistry, "modelRegistry required");
-        this.abTesting = Objects.requireNonNull(abTesting, "abTesting required");
+        this.trafficAllocation = Objects.requireNonNull(trafficAllocation, "trafficAllocation required");
         this.auditRecorder = Objects.requireNonNull(auditRecorder, "auditRecorder required");
     }
 
@@ -321,15 +327,14 @@ public final class DmosAiModelGovernanceAdapter {
                 String configKey = tenantId.getValue() + ":" + experimentId;
                 experimentConfigs.put(configKey, config);
                 
-                // Register with platform AB testing service
-                ABTestingService.Experiment experiment = new ABTestingService.Experiment(
-                        experimentId,
-                        experimentId,
+                // Register with platform traffic allocation service
+                trafficAllocation.registerExperiment(
+                        tenantId.getValue(), 
+                        experimentId, 
+                        experimentId, 
                         validatedSplit.toString(),
                         baselineModelRef,
-                        variantModelRef
-                );
-                abTesting.registerExperiment(tenantId.getValue(), experiment);
+                        variantModelRef);
                 
                 // P0-011: Record audit event
                 auditRecorder.recordExperimentDefined(tenantId.getValue(), experimentId, 
@@ -452,7 +457,7 @@ public final class DmosAiModelGovernanceAdapter {
 
         return Promise.ofCallback(cb -> {
             try {
-                String assigned = abTesting.assignVariant(tenantId.getValue(), experimentId, entityId);
+                String assigned = trafficAllocation.assignVariant(tenantId.getValue(), experimentId, entityId);
                 LOG.debug("[DMOS][AI-Gov] Model assigned for A/B: tenantId={} experiment={} entity={} model={}",
                         tenantId.getValue(), experimentId, entityId, assigned);
                 cb.set(assigned);
@@ -473,7 +478,7 @@ public final class DmosAiModelGovernanceAdapter {
 
         return Promise.ofCallback(cb -> {
             try {
-                abTesting.endExperiment(tenantId.getValue(), experimentId);
+                trafficAllocation.endExperiment(tenantId.getValue(), experimentId);
                 LOG.info("[DMOS][AI-Gov] A/B experiment ended: tenantId={} experimentId={}",
                         tenantId.getValue(), experimentId);
                 cb.set(null);

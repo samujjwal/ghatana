@@ -39,9 +39,10 @@ public class AnimationGenerator {
 
     private static AnimationConfig buildConfig(LearningClaim claim, ContentGenerationRequest request) {
         Domain domain = request.getDomain();
-        int gradeLevel = request.getGradeLevel();
-        List<String> keyframes = keyframesFor(domain, claim.getText(), gradeLevel);
-        int durationMs = durationMsFor(domain, gradeLevel);
+                String gradeLevel = request.getGradeLevel();
+                int gradeLevelNumber = gradeLevelNumber(gradeLevel);
+                List<String> keyframes = keyframesFor(domain, claim.getText(), gradeLevel);
+                int durationMs = durationMsFor(domain, gradeLevelNumber);
 
         return AnimationConfig.builder()
                 .id(UUID.randomUUID().toString())
@@ -51,7 +52,7 @@ public class AnimationGenerator {
                 .build();
     }
 
-    private static List<String> keyframesFor(Domain domain, String claimText, int gradeLevel) {
+        private static List<String> keyframesFor(Domain domain, String claimText, String gradeLevel) {
         return switch (domain) {
             case MATH -> List.of(
                     "Display problem statement: " + claimText,
@@ -109,4 +110,19 @@ public class AnimationGenerator {
         // Add 500 ms per grade level (higher grades → more nuance → longer animations)
         return base + (gradeLevel * 500);
     }
+
+        private static int gradeLevelNumber(String gradeLevel) {
+                if (gradeLevel == null || gradeLevel.isBlank()) {
+                        return 8;
+                }
+                String digits = gradeLevel.replaceAll("\\D", "");
+                if (digits.isEmpty()) {
+                        return 8;
+                }
+                try {
+                        return Integer.parseInt(digits);
+                } catch (NumberFormatException exception) {
+                        return 8;
+                }
+        }
 }

@@ -242,7 +242,7 @@ class AgencyDeliverableTest {
     @Test
     @DisplayName("Should return false for non-overdue deliverable")
     void shouldReturnFalseForNonOverdueDeliverable() {
-        LocalDate futureDate = LocalDate.of(2025, 12, 31);
+        LocalDate futureDate = LocalDate.now().plusDays(30);
         AgencyDeliverable deliverable = AgencyDeliverable.builder()
             .id("deliverable-123")
             .contractId("contract-456")

@@ -9,6 +9,7 @@ package com.ghatana.datacloud.integration;
 
 import com.ghatana.datacloud.RecordQuery;
 import com.ghatana.datacloud.RecordQuery.*;
+import com.ghatana.datacloud.entity.storage.FilterCriteria;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -140,9 +141,9 @@ class QueryBuilderBenchmarkTest {
             .collectionName(COLLECTION)
             .tenantId(TENANT)
             .build()
-            .where("status", Operator.EQUALS, "ACTIVE")
-            .where("age", Operator.GREATER_THAN, 18)
-            .where("region", Operator.IN, null); // value ignored for IN (uses values list)
+            .where("status", FilterCriteria.Operator.EQ, "ACTIVE")
+            .where("age", FilterCriteria.Operator.GT, 18)
+            .where("region", FilterCriteria.Operator.IN, null); // value ignored for IN (uses values list)
 
         assertThat(q.getFilters()).hasSize(3);
         assertThat(q.getFilters().get(0).getField()).isEqualTo("status");
@@ -160,7 +161,7 @@ class QueryBuilderBenchmarkTest {
             .whereIn("entityId", ids);
 
         assertThat(q.getFilters()).hasSize(1);
-        assertThat(q.getFilters().getFirst().getOperator()).isEqualTo(Operator.IN);
+        assertThat(q.getFilters().getFirst().getOperator()).isEqualTo(FilterCriteria.Operator.IN);
         assertThat(q.getFilters().getFirst().getValues()).containsExactlyElementsOf(ids);
     }
 
@@ -174,7 +175,7 @@ class QueryBuilderBenchmarkTest {
             .build()
             .whereNotIn("status", excluded);
 
-        assertThat(q.getFilters().getFirst().getOperator()).isEqualTo(Operator.NOT_IN);
+        assertThat(q.getFilters().getFirst().getOperator()).isEqualTo(FilterCriteria.Operator.NOT_IN);
         assertThat(q.getFilters().getFirst().getValues()).containsExactlyElementsOf(excluded);
     }
 
@@ -187,8 +188,8 @@ class QueryBuilderBenchmarkTest {
                 .collectionName(COLLECTION)
                 .tenantId(TENANT)
                 .build()
-                .where("status", Operator.EQUALS, "ACTIVE")
-                .where("score", Operator.GREATER_THAN_OR_EQUALS, i)
+                .where("status", FilterCriteria.Operator.EQ, "ACTIVE")
+                .where("score", FilterCriteria.Operator.GTE, i)
                 .orderByDesc("createdAt")
                 .limit(50)
                 .offset(i * 50);
@@ -361,7 +362,7 @@ class QueryBuilderBenchmarkTest {
             .tenantId(TENANT)
             .build()
             .inTimeRange(windowStart, windowEnd)
-            .where("severity", Operator.GREATER_THAN_OR_EQUALS, "MEDIUM")
+            .where("severity", FilterCriteria.Operator.GTE, "MEDIUM")
             .groupBy("entity_type", "source")
             .aggregate(AggregationType.COUNT, "id", "signal_count")
             .aggregate(AggregationType.PERCENTILE, "score", "p99_score")
@@ -471,7 +472,7 @@ class QueryBuilderBenchmarkTest {
             .build();
 
         for (int i = 0; i < 50; i++) {
-            q.where("field_" + i, Operator.EQUALS, "value_" + i);
+            q.where("field_" + i, FilterCriteria.Operator.EQ, "value_" + i);
         }
 
         q.validate();
@@ -487,8 +488,8 @@ class QueryBuilderBenchmarkTest {
                 .collectionName(COLLECTION)
                 .tenantId(TENANT)
                 .build()
-                .where("status", Operator.EQUALS, "ACTIVE")
-                .where("score", Operator.GREATER_THAN, i % 100)
+                .where("status", FilterCriteria.Operator.EQ, "ACTIVE")
+                .where("score", FilterCriteria.Operator.GT, i % 100)
                 .orderByDesc("createdAt")
                 .groupBy("category")
                 .aggregate(AggregationType.COUNT, "id")

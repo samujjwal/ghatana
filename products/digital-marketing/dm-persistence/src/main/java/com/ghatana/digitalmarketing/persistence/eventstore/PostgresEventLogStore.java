@@ -245,7 +245,7 @@ public final class PostgresEventLogStore implements EventLogStore {
 
     @Override
     public Promise<Subscription> tail(TenantContext tenant, Offset from, Consumer<EventEntry> handler) {
-        return Promise.ofException(new UnsupportedOperationException(
+        return Promise.ofException(new IllegalStateException(
             "PostgresEventLogStore does not support tail subscriptions; use polling read()"
         ));
     }

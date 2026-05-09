@@ -8,10 +8,12 @@
  * @doc.purpose Reviewer detail — inspect and decide on a single approval request
  * @doc.layer frontend
  */
-import React, { useState } from 'react';
-import { useParams, Navigate, Link } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
+import { useParams, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApprovalDetail } from '@/hooks/useApprovalDetail';
+import { hasApproverRole } from '@/lib/role-utils';
+import { ApiError } from '@/lib/http-client';
 import { ApprovalSnapshotPanel } from '@/components/approval/ApprovalSnapshotPanel';
 import { DecideDialog } from '@/components/approval/DecideDialog';
 import { canApprove } from '@/lib/role-utils';
@@ -82,7 +84,7 @@ export function ApprovalDetailPage(): React.ReactElement {
           role="alert"
           className="text-sm text-red-600"
         >
-          {error instanceof Error ? error.message : 'Failed to load approval.'}
+          {error instanceof ApiError ? error.getUserMessage() : 'Failed to load approval.'}
         </p>
       )}
 

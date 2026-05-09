@@ -414,7 +414,13 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
 
                 io.activej.promise.Promise<DataCloudClient.Offset> appendPromise = dataCloudClient.appendEvent( 
                     tenantId,
-                    new DataCloudClient.Event(eventType, eventPayload, headers, timestamp) 
+                    DataCloudClient.Event.builder()
+                        .type(eventType)
+                        .payload(eventPayload)
+                        .headers(headers)
+                        .timestamp(timestamp)
+                        .source("aep-test-adapter")
+                        .build()
                 );
                 if (appendPromise.getException() != null) { 
                     throw appendPromise.getException(); 

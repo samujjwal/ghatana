@@ -38,9 +38,19 @@ public interface CampaignService {
      * @param ctx    the operation context
      * @param limit  maximum number of results (max 100)
      * @param offset pagination offset
-     * @return promise resolving to a paginated list of campaigns
+     * @return promise resolving to a paginated list of campaigns with total count
      */
-    Promise<List<Campaign>> listCampaigns(DmOperationContext ctx, int limit, int offset);
+    Promise<CampaignListResult> listCampaigns(DmOperationContext ctx, int limit, int offset);
+
+    /**
+     * Paginated result for campaign listing.
+     *
+     * @param items     the campaigns for the current page
+     * @param totalCount total number of campaigns across all pages
+     * @param limit     the page size limit used
+     * @param offset    the pagination offset used
+     */
+    record CampaignListResult(List<Campaign> items, long totalCount, int limit, int offset) { }
 
     /**
      * Launches a campaign that is in DRAFT or PAUSED status.
@@ -105,6 +115,20 @@ public interface CampaignService {
     Promise<Campaign> rollbackCampaign(DmOperationContext ctx, String campaignId);
 
     /**
+     * Duplicates a campaign as a new DRAFT with a different name.
+     *
+     * <p>P0-3: Implements duplicate campaign functionality to eliminate contract drift.
+     * The duplicate includes all campaign details (objective, budget, dates, audience, landing page)
+     * but with a new name and ID, and status reset to DRAFT.</p>
+     *
+     * @param ctx        the operation context; must have an idempotency key for write
+     * @param campaignId the ID of the campaign to duplicate
+     * @param newName    the name for the duplicated campaign
+     * @return promise resolving to the new duplicated campaign
+     */
+    Promise<Campaign> duplicateCampaign(DmOperationContext ctx, String campaignId, String newName);
+
+    /**
      * Retrieves a campaign by ID within the workspace in the operation context.
      *
      * @param ctx        the operation context
@@ -118,8 +142,23 @@ public interface CampaignService {
      *
      * @param name the campaign name; must not be blank
      * @param type the campaign channel type
+     * @param objective the campaign objective (optional)
+     * @param budgetCents the budget in cents (optional)
+     * @param startDate the campaign start date in ISO 8601 format (optional)
+     * @param endDate the campaign end date in ISO 8601 format (optional)
+     * @param audience the target audience (optional)
+     * @param landingPageUrl the landing page URL (optional)
      */
-    record CreateCampaignCommand(String name, CampaignType type) {
+    record CreateCampaignCommand(
+        String name,
+        CampaignType type,
+        String objective,
+        Long budgetCents,
+        String startDate,
+        String endDate,
+        String audience,
+        String landingPageUrl
+    ) {
         public CreateCampaignCommand {
             java.util.Objects.requireNonNull(name, "name must not be null");
             java.util.Objects.requireNonNull(type, "type must not be null");

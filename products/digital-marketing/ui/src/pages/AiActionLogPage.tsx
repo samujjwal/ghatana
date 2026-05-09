@@ -1,7 +1,8 @@
-import React from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
+import { Link, useParams, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useAiActionDetail, useAiActionLog } from '@/hooks/useAiActionLog';
+import { useAiActionLog } from '@/hooks/useAiActionLog';
+import { ApiError } from '@/lib/http-client';
 
 export function AiActionLogPage(): React.ReactElement {
   const { workspaceId, actionId } = useParams<{ workspaceId: string; actionId?: string }>();
@@ -29,7 +30,7 @@ export function AiActionLogPage(): React.ReactElement {
       {isLoading && <p data-testid="ai-action-log-page-loading" className="text-sm text-gray-400">Loading…</p>}
       {isError && (
         <p data-testid="ai-action-log-page-error" role="alert" className="text-sm text-red-600">
-          {error instanceof Error ? error.message : 'Failed to load action log'}
+          {error instanceof ApiError ? error.getUserMessage() : 'Failed to load action log'}
         </p>
       )}
 

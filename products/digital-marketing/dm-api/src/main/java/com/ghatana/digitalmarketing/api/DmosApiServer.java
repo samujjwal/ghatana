@@ -850,7 +850,7 @@ public final class DmosApiServer extends Launcher {
         register(DmosRouteEntitlementServlet.class, new DmosRouteEntitlementServlet(eventloop));
 
         CampaignService campaignService = get(CampaignService.class);
-        register(DmosCampaignServlet.class, new DmosCampaignServlet(campaignService, eventloop, metrics, telemetry, httpContextFactory));
+        register(DmosCampaignServlet.class, new DmosCampaignServlet(campaignService, workspaceService, eventloop, metrics, telemetry, httpContextFactory));
 
         ApprovalWorkflowService approvalService = get(ApprovalWorkflowService.class);
         register(DmosApprovalServlet.class, new DmosApprovalServlet(approvalService, eventloop, metrics, telemetry, httpContextFactory));

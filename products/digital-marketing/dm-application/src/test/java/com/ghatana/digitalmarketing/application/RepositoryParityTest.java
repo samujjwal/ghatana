@@ -240,18 +240,27 @@ class RepositoryParityTest {
             "ContentItemRepository",        // DMOS-TODO: add PostgresContentItemRepository
             "CompetitorResearchRepository", // DMOS-TODO: add PostgresCompetitorResearchRepository
             // Infrastructure repos with Postgres only — InMemory test doubles not required
+            "AgencyApprovalSLARepository",
             "AgencyClientRepository",
+            "AgencyContractRepository",
+            "AgencyDeliverableRepository",
+            "AgencyRetainerRepository",
             "AttributionModelRepository",
+            "BudgetReallocationProposalRepository",
             "BudgetRecommendationRepository",
             "ContactRepository",
             "DataSubjectRequestRepository",
+            "DemoWorkspaceRepository",
             "DmApiKeyRepository",
             "DmCommandRepository",
+            "DmConnectorRepository",
+            "DmGoogleAdsCampaignLinkRepository",
             "DmGoogleAdsCredentialRepository",
             "DmKillSwitchService",
             "IdempotencyTokenRepository",
             "MarketingStrategyRepository",
             "MarketplaceListingRepository",
+            "TrialOnboardingRepository",
             "WebsiteAuditReportRepository"
         );
 

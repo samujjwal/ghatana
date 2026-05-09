@@ -14,9 +14,7 @@ import React, { useState, useCallback } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useCampaigns, useCreateCampaign, useLaunchCampaign, usePauseCampaign, useCompleteCampaign, useArchiveCampaign, useRollbackCampaign, useDuplicateCampaign } from '@/hooks/useCampaigns';
-import { FEATURE_FLAGS, isFeatureEnabled } from '@/lib/feature-flags';
 import { useToast } from '@/hooks/useToast';
-import { ToastContainer } from '@/components/Toast';
 import { ApiError } from '@/lib/http-client';
 import type { CampaignType, CampaignObjective } from '@/types/campaign';
 import {
@@ -30,6 +28,7 @@ import {
   TableCell,
   Badge,
 } from '@ghatana/design-system';
+import { ToastContainer } from '@/components/Toast';
 
 const CAMPAIGN_TYPES: CampaignType[] = ['EMAIL', 'SOCIAL', 'PAID_SEARCH', 'PUSH', 'SMS', 'OMNICHANNEL'];
 const CAMPAIGN_OBJECTIVES: CampaignObjective[] = ['AWARENESS', 'LEADS', 'CONVERSIONS', 'RETENTION', 'ENGAGEMENT', 'TRAFFIC'];
@@ -40,7 +39,8 @@ export function CampaignsPage(): React.ReactElement {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { isAuthenticated } = useAuth();
   const { toasts, showSuccess, showError, dismissToast } = useToast();
-  const rollbackEnabled = isFeatureEnabled(FEATURE_FLAGS.ROLLBACK_WORKFLOW_ENABLED);
+  // TODO: Implement feature flags for rollback workflow
+  const rollbackEnabled = false;
   const [name, setName] = useState('');
   const [type, setType] = useState<CampaignType>('EMAIL');
   const [objective, setObjective] = useState<CampaignObjective>('AWARENESS');
@@ -325,7 +325,7 @@ export function CampaignsPage(): React.ReactElement {
 
       {isError && (
         <p data-testid="campaigns-error" role="alert" className="text-sm text-red-600">
-          {error instanceof Error ? error.message : 'Failed to load campaigns.'}
+          {error instanceof ApiError ? error.getUserMessage() : 'Failed to load campaigns.'}
         </p>
       )}
 

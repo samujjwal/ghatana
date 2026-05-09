@@ -14,7 +14,7 @@ import { ApprovalDialog } from '@/components/ApprovalDialog';
 import { AIProvenancePanel } from '@/components/AIProvenancePanel';
 import { ApiError } from '@/lib/http-client';
 import {
-  useBudgetRecommendation,
+  useBudget,
   useGenerateBudget,
   useSubmitBudgetApproval,
   useApproveBudget,
@@ -163,7 +163,7 @@ export function BudgetPage(): React.ReactElement {
 
       {isError && (
         <p data-testid="budget-error" role="alert" className="text-sm text-red-600">
-          {error instanceof Error ? error.message : 'Failed to load budget recommendation.'}
+          {error instanceof ApiError ? error.getUserMessage() : 'Failed to load budget recommendation.'}
         </p>
       )}
 

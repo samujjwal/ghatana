@@ -32,7 +32,7 @@ public class EvidenceGenerator {
 
         List<LearningEvidence> evidence = new ArrayList<>();
         Domain domain = request.getDomain();
-        int gradeLevel = request.getGradeLevel();
+        String gradeLevel = request.getGradeLevel();
 
         for (LearningClaim claim : claims) {
             evidence.add(buildPrimaryReference(claim, domain, gradeLevel));
@@ -46,7 +46,7 @@ public class EvidenceGenerator {
     // -------------------------------------------------------------------------
 
     private static LearningEvidence buildPrimaryReference(
-            LearningClaim claim, Domain domain, int gradeLevel) {
+            LearningClaim claim, Domain domain, String gradeLevel) {
 
         String sourceLabel = primarySourceLabel(domain, gradeLevel);
         return LearningEvidence.builder()
@@ -60,7 +60,7 @@ public class EvidenceGenerator {
     }
 
     private static LearningEvidence buildWorkedExample(
-            LearningClaim claim, Domain domain, int gradeLevel) {
+            LearningClaim claim, Domain domain, String gradeLevel) {
 
         String exampleLabel = workedExampleLabel(domain, gradeLevel);
         return LearningEvidence.builder()
@@ -73,7 +73,7 @@ public class EvidenceGenerator {
                 .build();
     }
 
-    private static String primarySourceLabel(Domain domain, int gradeLevel) {
+    private static String primarySourceLabel(Domain domain, String gradeLevel) {
         return switch (domain) {
             case MATH -> "Curriculum-aligned mathematics textbook (grade " + gradeLevel + ")";
             case SCIENCE -> "Peer-reviewed science curriculum standard (grade " + gradeLevel + ")";
@@ -85,7 +85,7 @@ public class EvidenceGenerator {
         };
     }
 
-    private static String workedExampleLabel(Domain domain, int gradeLevel) {
+    private static String workedExampleLabel(Domain domain, String gradeLevel) {
         return switch (domain) {
             case MATH -> "Annotated problem-solution pair";
             case SCIENCE -> "Lab report walkthrough";

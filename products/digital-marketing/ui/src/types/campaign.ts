@@ -30,17 +30,17 @@ export interface Campaign {
   status: CampaignStatus;
   type: CampaignType;
   /** Objective / goal of the campaign (e.g. AWARENESS, LEADS, CONVERSIONS) */
-  objective?: string;
+  objective?: string | null;
   /** Target monthly or total budget in minor currency units (e.g. cents) */
-  budgetCents?: number;
+  budgetCents?: number | null;
   /** ISO 8601 date string for campaign start */
-  startDate?: string;
+  startDate?: string | null;
   /** ISO 8601 date string for campaign end */
-  endDate?: string;
+  endDate?: string | null;
   /** Audience segment identifier or free-form description */
-  audience?: string;
+  audience?: string | null;
   /** Landing page URL for the campaign */
-  landingPageUrl?: string;
+  landingPageUrl?: string | null;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -75,6 +75,7 @@ export interface CreateCampaignRequest {
 /** P0-001: Paginated campaign list response */
 export interface CampaignListResponse {
   items: Campaign[];
+  /** Total count of campaigns across all pages (not just current page) */
   count: number;
   offset: number;
 }

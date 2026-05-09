@@ -253,7 +253,7 @@ export function StrategyPage(): React.ReactElement {
 
       {isError && (
         <p data-testid="strategy-error" role="alert" className="text-sm text-red-600">
-          {error instanceof Error ? error.message : 'Failed to load strategy.'}
+          {error instanceof ApiError ? error.getUserMessage() : 'Failed to load strategy.'}
         </p>
       )}
 

@@ -32,7 +32,7 @@ class FlywayMigrationValidationTest {
         .withUsername("test")
         .withPassword("test");
 
-    private static final int EXPECTED_MIGRATION_COUNT = 33; // V1 through V33
+    private static final int EXPECTED_MIGRATION_COUNT = 34; // V1 through V34
 
     @Test
     @DisplayName("P1-006: Fresh migration from empty database succeeds")

@@ -14,6 +14,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useApprovalQueue } from '@/hooks/useApprovalQueue';
 import { ApprovalQueueTable } from '@/components/approval/ApprovalQueueTable';
 import { hasApproverRole } from '@/lib/role-utils';
+import { ApiError } from '@/lib/http-client';
 import type { ApprovalTargetType } from '@/types/approval';
 
 const TARGET_TYPES: Array<ApprovalTargetType | 'ALL'> = [
@@ -117,7 +118,7 @@ export function ApprovalQueuePage(): React.ReactElement {
           role="alert"
           className="text-sm text-red-600"
         >
-          {error instanceof Error ? error.message : 'Failed to load approvals.'}
+          {error instanceof ApiError ? error.getUserMessage() : 'Failed to load approvals.'}
         </p>
       )}
 

@@ -8,6 +8,7 @@
 import React, { useCallback, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { decideApproval } from '@/api/approvals';
+import { ApiError } from '@/lib/http-client';
 import type { ApprovalDecision } from '@/types/approval';
 
 interface DecideDialogProps {
@@ -126,8 +127,8 @@ export const DecideDialog: React.FC<DecideDialogProps> = ({
               role="alert"
               className="text-red-600 text-sm"
             >
-              {mutation.error instanceof Error
-                ? mutation.error.message
+              {mutation.error instanceof ApiError
+                ? mutation.error.getUserMessage()
                 : 'Failed to submit decision.'}
             </p>
           )}

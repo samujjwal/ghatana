@@ -68,13 +68,40 @@ class ApplicationCommandValidationTest {
     @DisplayName("campaign command validates null and blank values")
     void shouldValidateCampaignCommand() {
         assertThatExceptionOfType(NullPointerException.class)
-            .isThrownBy(() -> new CampaignService.CreateCampaignCommand(null, CampaignType.EMAIL));
+            .isThrownBy(() -> new CampaignService.CreateCampaignCommand(
+                null,
+                CampaignType.EMAIL,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+            ));
 
         assertThatExceptionOfType(NullPointerException.class)
-            .isThrownBy(() -> new CampaignService.CreateCampaignCommand("Launch", null));
+            .isThrownBy(() -> new CampaignService.CreateCampaignCommand(
+                "Launch",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+            ));
 
         assertThatExceptionOfType(IllegalArgumentException.class)
-            .isThrownBy(() -> new CampaignService.CreateCampaignCommand(" ", CampaignType.EMAIL));
+            .isThrownBy(() -> new CampaignService.CreateCampaignCommand(
+                " ",
+                CampaignType.EMAIL,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+            ));
     }
 
     @Test

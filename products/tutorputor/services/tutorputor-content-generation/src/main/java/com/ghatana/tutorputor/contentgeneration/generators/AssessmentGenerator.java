@@ -47,7 +47,7 @@ public class AssessmentGenerator {
 
     private List<AssessmentItem> buildItemsForClaim(LearningClaim claim, ContentGenerationRequest request) {
         String domain = normaliseDomain(request.getDomain());
-        int gradeLevel = request.getGradeLevel();
+        String gradeLevel = request.getGradeLevel();
         String claimText = claim.getText();
         String claimId = claim.getId();
 
@@ -59,7 +59,7 @@ public class AssessmentGenerator {
     }
 
     private AssessmentItem buildRecallItem(
-            String claimId, String claimText, String domain, int gradeLevel) {
+            String claimId, String claimText, String domain, String gradeLevel) {
 
         List<String> distractors = recallDistractors(domain, gradeLevel);
         return AssessmentItem.builder()
@@ -74,7 +74,7 @@ public class AssessmentGenerator {
     }
 
     private AssessmentItem buildApplicationItem(
-            String claimId, String claimText, String domain, int gradeLevel) {
+            String claimId, String claimText, String domain, String gradeLevel) {
 
         List<String> distractors = applicationDistractors(domain, gradeLevel);
         return AssessmentItem.builder()
@@ -89,7 +89,7 @@ public class AssessmentGenerator {
     }
 
     private AssessmentItem buildAnalysisItem(
-            String claimId, String claimText, String domain, int gradeLevel) {
+            String claimId, String claimText, String domain, String gradeLevel) {
 
         List<String> distractors = analysisDistractors(domain, gradeLevel);
         return AssessmentItem.builder()
@@ -110,7 +110,7 @@ public class AssessmentGenerator {
         return List.copyOf(options);
     }
 
-    private static List<String> recallDistractors(String domain, int gradeLevel) {
+    private static List<String> recallDistractors(String domain, String gradeLevel) {
         return switch (domain) {
             case "MATH", "COMPUTER_SCIENCE" ->
                     List.of("The concept applies only to advanced " + domain + " topics above grade " + gradeLevel,
@@ -131,7 +131,7 @@ public class AssessmentGenerator {
         };
     }
 
-    private static List<String> applicationDistractors(String domain, int gradeLevel) {
+    private static List<String> applicationDistractors(String domain, String gradeLevel) {
         return List.of(
                 "By applying a general rule from a different domain without adapting it",
                 "By ignoring contextual constraints specific to " + domain,
@@ -139,7 +139,7 @@ public class AssessmentGenerator {
         );
     }
 
-    private static List<String> analysisDistractors(String domain, int gradeLevel) {
+    private static List<String> analysisDistractors(String domain, String gradeLevel) {
         return List.of(
                 "That terminology is consistent across all sub-disciplines of " + domain,
                 "That the result is independent of the grade-" + gradeLevel + " learner context",

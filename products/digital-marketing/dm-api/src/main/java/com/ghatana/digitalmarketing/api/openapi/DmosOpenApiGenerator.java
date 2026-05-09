@@ -179,12 +179,15 @@ public final class DmosOpenApiGenerator {
     }
 
     private static void addBudgetPaths(Map<String, Object> paths) {
-        addPath(paths, "/v1/workspaces/{workspaceId}/budgets", "GET", 
-            "List budgets", "List budget recommendations for a workspace");
-        addPath(paths, "/v1/workspaces/{workspaceId}/budgets", "POST", 
-            "Generate budget", "Generate AI-powered budget recommendations");
-        addPath(paths, "/v1/workspaces/{workspaceId}/budgets/{id}/submit", "POST", 
+        // P1-5: Standardize on /budget-recommendation to match servlet and UI implementation
+        addPath(paths, "/v1/workspaces/{workspaceId}/budget-recommendation", "GET",
+            "List budget recommendations", "List budget recommendations for a workspace");
+        addPath(paths, "/v1/workspaces/{workspaceId}/budget-recommendation", "POST",
+            "Generate budget recommendation", "Generate AI-powered budget recommendations");
+        addPath(paths, "/v1/workspaces/{workspaceId}/budget-recommendation/{id}/submit", "POST",
             "Submit budget for approval", "Submit a budget for approval");
+        addPath(paths, "/v1/workspaces/{workspaceId}/budget-recommendation/{id}/approve", "POST",
+            "Approve budget", "Approve a budget recommendation");
     }
 
     private static void addApprovalPaths(Map<String, Object> paths) {

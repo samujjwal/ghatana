@@ -266,14 +266,14 @@ class AgencyContractTest {
     @Test
     @DisplayName("Should return false for non-expired contract")
     void shouldReturnFalseForNonExpiredContract() {
-        LocalDate futureDate = LocalDate.of(2025, 12, 31);
+        LocalDate futureDate = LocalDate.now().plusDays(30);
         AgencyContract contract = AgencyContract.builder()
             .id("contract-123")
             .agencyTenantId("agency-456")
             .clientId("client-789")
             .contractNumber("CTR-2024-001")
             .contractType("Retainer")
-            .startDate(LocalDate.of(2024, 1, 1))
+            .startDate(LocalDate.now().minusDays(30))
             .endDate(futureDate)
             .monthlyRetainer(new BigDecimal("5000.00"))
             .currency("USD")

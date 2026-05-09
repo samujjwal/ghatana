@@ -40,7 +40,9 @@ class H2SovereignEntityStoreTest extends EventloopTestBase {
                     .collection("documents")
                     .data(Map.of("title", "One")) 
                     .build())); 
-            runPromise(() -> store.delete(tenant, EntityStore.EntityId.of("entity-1")));
+            runPromise(() -> store.deleteByRef(
+                tenant,
+                EntityStore.EntityRef.of("documents", "entity-1")));
 
             Map<String, Long> tombstones = runPromise(store::countTombstones); 
             int removed = runPromise(() -> store.compactTenant("tenant-a"));
@@ -48,7 +50,8 @@ class H2SovereignEntityStoreTest extends EventloopTestBase {
             assertThat(tombstones).containsEntry("tenant-a", 1L); 
             assertThat(removed).isEqualTo(1); 
             assertThat(runPromise(store::countTombstones)).doesNotContainKey("tenant-a");
-            assertThat(runPromise(() -> store.findById(tenant, EntityStore.EntityId.of("entity-1")))).isEmpty();
+            assertThat(runPromise(() -> store.findByRef(tenant, EntityStore.EntityRef.of("documents", "entity-1"))))
+                .isEmpty();
         } finally {
             store.close(); 
         }
@@ -68,11 +71,13 @@ class H2SovereignEntityStoreTest extends EventloopTestBase {
                     .data(Map.of("index", index)) 
                     .build()) 
                 .toList(); 
-            List<EntityStore.EntityId> ids = entities.stream().map(EntityStore.Entity::id).toList(); 
+            List<EntityStore.EntityRef> refs = entities.stream()
+                .map(entity -> EntityStore.EntityRef.of("documents", entity.id().value()))
+                .toList();
 
             runPromise(() -> store.saveBatch(tenant, entities)); 
 
-            var result = runPromise(() -> store.deleteBatch(tenant, ids)); 
+            var result = runPromise(() -> store.deleteByRefs(tenant, refs)); 
 
             assertThat(result.totalCount()).isEqualTo(10); 
             assertThat(result.successCount()).isEqualTo(10); 

@@ -40,9 +40,10 @@ public class SimulationGenerator {
 
     private static SimulationManifest buildManifest(LearningClaim claim, ContentGenerationRequest request) {
         Domain domain = request.getDomain();
-        int gradeLevel = request.getGradeLevel();
-        Map<String, Object> bounds = parameterBoundsFor(domain, gradeLevel);
-        Map<String, Object> expectedOutputs = expectedOutputsFor(domain, gradeLevel);
+                String gradeLevel = request.getGradeLevel();
+                int gradeLevelNumber = gradeLevelNumber(gradeLevel);
+                Map<String, Object> bounds = parameterBoundsFor(domain, gradeLevelNumber);
+                Map<String, Object> expectedOutputs = expectedOutputsFor(domain, gradeLevelNumber);
         // Reproducible seed derived from the claim ID — avoids hardcoded 42.
         int seed = Math.abs(claim.getId().hashCode()) % 100_000;
 
@@ -60,6 +61,21 @@ public class SimulationGenerator {
                 ))
                 .build();
     }
+
+        private static int gradeLevelNumber(String gradeLevel) {
+                if (gradeLevel == null || gradeLevel.isBlank()) {
+                        return 8;
+                }
+                String digits = gradeLevel.replaceAll("\\D", "");
+                if (digits.isEmpty()) {
+                        return 8;
+                }
+                try {
+                        return Integer.parseInt(digits);
+                } catch (NumberFormatException exception) {
+                        return 8;
+                }
+        }
 
     /** Returns domain-and-grade-specific parameter bounds. */
     private static Map<String, Object> parameterBoundsFor(Domain domain, int gradeLevel) {

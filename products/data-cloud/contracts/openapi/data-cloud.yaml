@@ -5901,6 +5901,20 @@ paths:
                 additionalProperties:
                   type: string
 
+  /api/v1/surfaces:
+    get:
+      summary: Get the canonical runtime surface registry snapshot
+      operationId: apiV1SurfacesGet
+      tags: [capabilities]
+      responses:
+        "200":
+          description: Canonical runtime surface registry snapshot.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
   /api/v1/capabilities/schema:
     get:
       summary: Get the runtime capability registry schema
@@ -5909,6 +5923,19 @@ paths:
       responses:
         "200":
           description: Capability registry schema.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/surfaces/schema:
+    get:
+      summary: Get the canonical runtime surface registry schema
+      operationId: apiV1SurfacesSchemaGet
+      tags: [capabilities]
+      responses:
+        "200":
+          description: Canonical runtime surface registry schema.
           content:
             application/json:
               schema:

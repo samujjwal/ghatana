@@ -28,19 +28,31 @@ public final class Campaign {
     private final String name;
     private final CampaignStatus status;
     private final CampaignType type;
+    private final String objective;
+    private final Long budgetCents;
+    private final String startDate;
+    private final String endDate;
+    private final String audience;
+    private final String landingPageUrl;
     private final Instant createdAt;
     private final Instant updatedAt;
     private final String createdBy;
 
     private Campaign(Builder builder) {
-        this.id          = Objects.requireNonNull(builder.id, "id must not be null");
-        this.workspaceId = Objects.requireNonNull(builder.workspaceId, "workspaceId must not be null");
-        this.name        = Objects.requireNonNull(builder.name, "name must not be null");
-        this.status      = Objects.requireNonNull(builder.status, "status must not be null");
-        this.type        = Objects.requireNonNull(builder.type, "type must not be null");
-        this.createdAt   = Objects.requireNonNull(builder.createdAt, "createdAt must not be null");
-        this.updatedAt   = Objects.requireNonNull(builder.updatedAt, "updatedAt must not be null");
-        this.createdBy   = Objects.requireNonNull(builder.createdBy, "createdBy must not be null");
+        this.id             = Objects.requireNonNull(builder.id, "id must not be null");
+        this.workspaceId    = Objects.requireNonNull(builder.workspaceId, "workspaceId must not be null");
+        this.name           = Objects.requireNonNull(builder.name, "name must not be null");
+        this.status         = Objects.requireNonNull(builder.status, "status must not be null");
+        this.type           = Objects.requireNonNull(builder.type, "type must not be null");
+        this.objective      = builder.objective;
+        this.budgetCents    = builder.budgetCents;
+        this.startDate      = builder.startDate;
+        this.endDate        = builder.endDate;
+        this.audience       = builder.audience;
+        this.landingPageUrl = builder.landingPageUrl;
+        this.createdAt      = Objects.requireNonNull(builder.createdAt, "createdAt must not be null");
+        this.updatedAt      = Objects.requireNonNull(builder.updatedAt, "updatedAt must not be null");
+        this.createdBy      = Objects.requireNonNull(builder.createdBy, "createdBy must not be null");
         if (this.id.isBlank())   throw new IllegalArgumentException("id must not be blank");
         if (this.name.isBlank()) throw new IllegalArgumentException("name must not be blank");
     }
@@ -50,6 +62,12 @@ public final class Campaign {
     public String getName()            { return name; }
     public CampaignStatus getStatus()  { return status; }
     public CampaignType getType()      { return type; }
+    public String getObjective()       { return objective; }
+    public Long getBudgetCents()       { return budgetCents; }
+    public String getStartDate()       { return startDate; }
+    public String getEndDate()         { return endDate; }
+    public String getAudience()        { return audience; }
+    public String getLandingPageUrl()  { return landingPageUrl; }
     public Instant getCreatedAt()      { return createdAt; }
     public Instant getUpdatedAt()      { return updatedAt; }
     public String getCreatedBy()       { return createdBy; }
@@ -132,6 +150,12 @@ public final class Campaign {
             .name(name)
             .status(status)
             .type(type)
+            .objective(objective)
+            .budgetCents(budgetCents)
+            .startDate(startDate)
+            .endDate(endDate)
+            .audience(audience)
+            .landingPageUrl(landingPageUrl)
             .createdAt(createdAt)
             .updatedAt(updatedAt)
             .createdBy(createdBy);
@@ -163,6 +187,12 @@ public final class Campaign {
         private String name;
         private CampaignStatus status = CampaignStatus.DRAFT;
         private CampaignType type;
+        private String objective;
+        private Long budgetCents;
+        private String startDate;
+        private String endDate;
+        private String audience;
+        private String landingPageUrl;
         private Instant createdAt;
         private Instant updatedAt;
         private String createdBy;
@@ -174,6 +204,12 @@ public final class Campaign {
         public Builder name(String name)                   { this.name = name; return this; }
         public Builder status(CampaignStatus status)       { this.status = status; return this; }
         public Builder type(CampaignType type)             { this.type = type; return this; }
+        public Builder objective(String objective)          { this.objective = objective; return this; }
+        public Builder budgetCents(Long budgetCents)       { this.budgetCents = budgetCents; return this; }
+        public Builder startDate(String startDate)         { this.startDate = startDate; return this; }
+        public Builder endDate(String endDate)             { this.endDate = endDate; return this; }
+        public Builder audience(String audience)          { this.audience = audience; return this; }
+        public Builder landingPageUrl(String landingPageUrl) { this.landingPageUrl = landingPageUrl; return this; }
         public Builder createdAt(Instant createdAt)        { this.createdAt = createdAt; return this; }
         public Builder updatedAt(Instant updatedAt)        { this.updatedAt = updatedAt; return this; }
         public Builder createdBy(String createdBy)         { this.createdBy = createdBy; return this; }

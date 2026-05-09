@@ -6,7 +6,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.campaign.CampaignComplianceViolationException;
 import com.ghatana.digitalmarketing.application.campaign.CampaignService;
+import com.ghatana.digitalmarketing.application.capabilities.DmosCapabilityRegistry;
 import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
+import com.ghatana.digitalmarketing.application.workspace.WorkspaceService;
 import com.ghatana.digitalmarketing.api.observability.DmosTelemetry;
 import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
@@ -51,6 +53,7 @@ import java.util.Set;
  *   POST   /v1/workspaces/:workspaceId/campaigns/:id/complete — Complete a campaign
  *   POST   /v1/workspaces/:workspaceId/campaigns/:id/archive — Archive a campaign
  *   POST   /v1/workspaces/:workspaceId/campaigns/:id/rollback — Rollback a campaign
+ *   POST   /v1/workspaces/:workspaceId/campaigns/:id/duplicate — Duplicate a campaign
  * </pre>
  *
  * <p>Tenant isolation is enforced through the {@code X-Tenant-ID} header.
@@ -76,31 +79,39 @@ public final class DmosCampaignServlet {
         .setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
     private final CampaignService campaignService;
+    private final WorkspaceService workspaceService;
     private final Eventloop eventloop;
-    private final DmosMetricsCollector metrics;
-    private final DmosTelemetry telemetry;
     private final DmosHttpContextFactory httpContextFactory;
+    private final DmosTelemetry telemetry;
+    private final DmosMetricsCollector metrics;
 
     /**
      * Creates the DMOS campaign servlet.
      *
      * @param campaignService   the campaign application service; must not be null
+     * @param workspaceService  the workspace service for capability checks; must not be null
      * @param eventloop          the ActiveJ eventloop; must not be null
      * @param metrics            the metrics collector for request telemetry; must not be null
      * @param telemetry          the OpenTelemetry instrumentation; must not be null
      * @param httpContextFactory the shared HTTP context factory for fail-closed security; must not be null
      */
-    public DmosCampaignServlet(CampaignService campaignService, Eventloop eventloop, DmosMetricsCollector metrics, DmosTelemetry telemetry, DmosHttpContextFactory httpContextFactory) {
+    public DmosCampaignServlet(CampaignService campaignService, WorkspaceService workspaceService, Eventloop eventloop, DmosMetricsCollector metrics, DmosTelemetry telemetry, DmosHttpContextFactory httpContextFactory) {
         this.campaignService   = Objects.requireNonNull(campaignService,   "campaignService must not be null");
+        this.workspaceService  = workspaceService;
         this.eventloop          = Objects.requireNonNull(eventloop,          "eventloop must not be null");
         this.metrics            = Objects.requireNonNull(metrics,            "metrics must not be null");
         this.telemetry          = Objects.requireNonNull(telemetry,          "telemetry must not be null");
         this.httpContextFactory = Objects.requireNonNull(httpContextFactory, "httpContextFactory must not be null");
     }
 
+    public DmosCampaignServlet(CampaignService campaignService, Eventloop eventloop, DmosMetricsCollector metrics, DmosTelemetry telemetry, DmosHttpContextFactory httpContextFactory) {
+        this(campaignService, null, eventloop, metrics, telemetry, httpContextFactory);
+    }
+
     public DmosCampaignServlet(CampaignService campaignService, Eventloop eventloop) {
         this(
             campaignService,
+            null,
             eventloop,
             DmosMetricsCollector.noop(),
             new DmosTelemetry(io.opentelemetry.api.OpenTelemetry.noop()),
@@ -132,6 +143,8 @@ public final class DmosCampaignServlet {
                     this::handleArchiveCampaign)
                 .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns/:id/rollback",
                     this::handleRollbackCampaign)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns/:id/duplicate",
+                    this::handleDuplicateCampaign)
                 .build(),
             metrics,
             "campaign"
@@ -148,22 +161,30 @@ public final class DmosCampaignServlet {
             // P1-001: Use shared fail-closed HTTP context factory
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
 
-            // Parse pagination parameters with defaults
-            int limit = parseIntParam(request, "limit", 20, 1, 100);
-            int offset = parseIntParam(request, "offset", 0, 0, Integer.MAX_VALUE);
-
-            return campaignService.listCampaigns(ctx, limit, offset)
-                .map(campaigns -> jsonResponse(200, new CampaignListResponse(
-                    campaigns.stream().map(CampaignResponse::from).toList(),
-                    campaigns.size(),
-                    offset
-                )))
-                .then(r -> Promise.of(r), e -> {
-                    if (e instanceof SecurityException) {
-                        return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
+            // P0-6: Check campaigns capability
+            return checkCapability(ctx, DmosCapabilityRegistry.CAMPAIGNS)
+                .then(errorResponse -> {
+                    if (errorResponse != null) {
+                        return Promise.of(errorResponse);
                     }
-                    LOG.error("[DMOS] Failed to list campaigns", e);
-                    return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+
+                    // Parse pagination parameters with defaults
+                    int limit = parseIntParam(request, "limit", 20, 1, 100);
+                    int offset = parseIntParam(request, "offset", 0, 0, Integer.MAX_VALUE);
+
+                    return campaignService.listCampaigns(ctx, limit, offset)
+                        .map(result -> jsonResponse(200, new CampaignListResponse(
+                            result.items().stream().map(CampaignResponse::from).toList(),
+                            result.totalCount(),
+                            result.offset()
+                        )))
+                        .then(r -> Promise.of(r), e -> {
+                            if (e instanceof SecurityException) {
+                                return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
+                            }
+                            LOG.error("[DMOS] Failed to list campaigns", e);
+                            return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+                        });
                 });
         } catch (IllegalArgumentException e) {
             String correlationId = DmCorrelationId.generate().getValue();
@@ -184,31 +205,60 @@ public final class DmosCampaignServlet {
                 String workspaceId = request.getPathParameter("workspaceId");
                 // P1-001: Use shared fail-closed HTTP context factory
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
-                CreateCampaignRequest body = MAPPER.readValue(
-                    request.getBody().getString(StandardCharsets.UTF_8),
-                    CreateCampaignRequest.class);
 
-                // P1-026: Create span for campaign creation
-                io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns", ctx).startSpan();
-                try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
-                    return campaignService.createCampaign(ctx,
-                        new CampaignService.CreateCampaignCommand(body.name(), body.type()))
-                        .map(campaign -> {
-                            telemetry.setCampaignId(campaign.getId());
-                            span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
-                            span.end();
-                            return jsonResponse(201, CampaignResponse.from(campaign));
-                        })
-                        .then(r -> Promise.of(r), e -> {
-                            telemetry.recordException(span, e);
-                            span.end();
-                            if (e instanceof SecurityException) {
-                                return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
-                            }
-                            LOG.error("[DMOS] Failed to create campaign", e);
-                            return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
-                        });
-                }
+                // P0-6: Check campaigns capability
+                return checkCapability(ctx, DmosCapabilityRegistry.CAMPAIGNS)
+                    .then(errorResponse -> {
+                        if (errorResponse != null) {
+                            return Promise.of(errorResponse);
+                        }
+
+                        CreateCampaignRequest body = MAPPER.readValue(
+                            request.getBody().getString(StandardCharsets.UTF_8),
+                            CreateCampaignRequest.class);
+
+                        // P1-026: Create span for campaign creation
+                        io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns", ctx).startSpan();
+                        try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                            return campaignService.createCampaign(ctx,
+                                new CampaignService.CreateCampaignCommand(
+                                    body.name(),
+                                    body.type(),
+                                    body.objective(),
+                                    body.budgetCents(),
+                                    body.startDate(),
+                                    body.endDate(),
+                                    body.audience(),
+                                    body.landingPageUrl()
+                                ))
+                                .map(campaign -> {
+                                    telemetry.setCampaignId(campaign.getId());
+                                    span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                                    span.end();
+                                    return jsonResponse(201, CampaignResponse.from(campaign));
+                                })
+                                .then(r -> Promise.of(r), e -> {
+                                    telemetry.recordException(span, e);
+                                    span.end();
+                                    if (e instanceof SecurityException) {
+                                        return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
+                                    }
+                                    LOG.error("[DMOS] Failed to create campaign", e);
+                                    return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+                                });
+                        }
+                    })
+                    .then(r -> Promise.of(r), e -> {
+                        String correlationId = ctx.getCorrelationId().getValue();
+                        if (e instanceof IllegalArgumentException) {
+                            return Promise.of(errorResponse(400, e.getMessage(), correlationId));
+                        }
+                        if (e instanceof SecurityException) {
+                            return Promise.of(errorResponse(403, "Access denied", correlationId));
+                        }
+                        LOG.error("[DMOS] Failed to create campaign", e);
+                        return Promise.of(errorResponse(500, "Internal error", correlationId));
+                    });
             } catch (IllegalArgumentException e) {
                 String correlationId = DmCorrelationId.generate().getValue();
                 return Promise.of(errorResponse(400, e.getMessage(), correlationId));
@@ -230,17 +280,25 @@ public final class DmosCampaignServlet {
             // P1-001: Use shared fail-closed HTTP context factory
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
 
-            return campaignService.getCampaign(ctx, campaignId)
-                .map(campaign -> jsonResponse(200, CampaignResponse.from(campaign)))
-                .then(r -> Promise.of(r), e -> {
-                    if (e instanceof SecurityException) {
-                        return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
+            // P0-6: Check campaigns capability
+            return checkCapability(ctx, DmosCapabilityRegistry.CAMPAIGNS)
+                .then(errorResponse -> {
+                    if (errorResponse != null) {
+                        return Promise.of(errorResponse);
                     }
-                    if (e instanceof java.util.NoSuchElementException) {
-                        return Promise.of(errorResponse(404, "Campaign not found: " + campaignId, ctx.getCorrelationId().getValue()));
-                    }
-                    LOG.error("[DMOS] Failed to get campaign", e);
-                    return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+
+                    return campaignService.getCampaign(ctx, campaignId)
+                        .map(campaign -> jsonResponse(200, CampaignResponse.from(campaign)))
+                        .then(r -> Promise.of(r), e -> {
+                            if (e instanceof SecurityException) {
+                                return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
+                            }
+                            if (e instanceof java.util.NoSuchElementException) {
+                                return Promise.of(errorResponse(404, "Campaign not found: " + campaignId, ctx.getCorrelationId().getValue()));
+                            }
+                            LOG.error("[DMOS] Failed to get campaign", e);
+                            return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+                        });
                 });
         } catch (IllegalArgumentException e) {
             String correlationId = DmCorrelationId.generate().getValue();
@@ -262,35 +320,43 @@ public final class DmosCampaignServlet {
             // P1-001: Use shared fail-closed HTTP context factory
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
 
-            // P1-026: Create span for campaign launch
-            io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/launch", ctx).startSpan();
-            try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
-                telemetry.setCampaignId(campaignId);
-                return campaignService.launchCampaign(ctx, campaignId)
-                    .map(campaign -> {
-                        span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
-                        span.end();
-                        return jsonResponse(200, CampaignResponse.from(campaign));
-                    })
-                    .then(r -> Promise.of(r), e -> {
-                        telemetry.recordException(span, e);
-                        span.end();
-                        if (e instanceof SecurityException) {
-                            return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
-                        }
-                        if (e instanceof java.util.NoSuchElementException) {
-                            return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
-                        }
-                        if (e instanceof IllegalStateException) {
-                            return Promise.of(errorResponse(409, e.getMessage(), ctx.getCorrelationId().getValue()));
-                        }
-                        if (e instanceof CampaignComplianceViolationException) {
-                            return Promise.of(errorResponse(422, e.getMessage(), ctx.getCorrelationId().getValue()));
-                        }
-                        LOG.error("[DMOS] Failed to launch campaign", e);
-                        return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
-                    });
-            }
+            // P0-6: Check campaigns capability
+            return checkCapability(ctx, DmosCapabilityRegistry.CAMPAIGNS)
+                .then(errorResponse -> {
+                    if (errorResponse != null) {
+                        return Promise.of(errorResponse);
+                    }
+
+                    // P1-026: Create span for campaign launch
+                    io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/launch", ctx).startSpan();
+                    try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                        telemetry.setCampaignId(campaignId);
+                        return campaignService.launchCampaign(ctx, campaignId)
+                            .map(campaign -> {
+                                span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                                span.end();
+                                return jsonResponse(200, CampaignResponse.from(campaign));
+                            })
+                            .then(r -> Promise.of(r), e -> {
+                                telemetry.recordException(span, e);
+                                span.end();
+                                if (e instanceof SecurityException) {
+                                    return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
+                                }
+                                if (e instanceof java.util.NoSuchElementException) {
+                                    return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
+                                }
+                                if (e instanceof IllegalStateException) {
+                                    return Promise.of(errorResponse(409, e.getMessage(), ctx.getCorrelationId().getValue()));
+                                }
+                                if (e instanceof CampaignComplianceViolationException) {
+                                    return Promise.of(errorResponse(422, e.getMessage(), ctx.getCorrelationId().getValue()));
+                                }
+                                LOG.error("[DMOS] Failed to launch campaign", e);
+                                return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+                            });
+                    }
+                });
         } catch (IllegalArgumentException e) {
             String correlationId = DmCorrelationId.generate().getValue();
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
@@ -311,32 +377,40 @@ public final class DmosCampaignServlet {
             // P1-001: Use shared fail-closed HTTP context factory
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
 
-            // P1-026: Create span for campaign pause
-            io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/pause", ctx).startSpan();
-            try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
-                telemetry.setCampaignId(campaignId);
-                return campaignService.pauseCampaign(ctx, campaignId)
-                    .map(campaign -> {
-                        span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
-                        span.end();
-                        return jsonResponse(200, CampaignResponse.from(campaign));
-                    })
-                .then(r -> Promise.of(r), e -> {
-                    telemetry.recordException(span, e);
-                    span.end();
-                    if (e instanceof SecurityException) {
-                        return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
+            // P0-6: Check campaigns capability
+            return checkCapability(ctx, DmosCapabilityRegistry.CAMPAIGNS)
+                .then(errorResponse -> {
+                    if (errorResponse != null) {
+                        return Promise.of(errorResponse);
                     }
-                    if (e instanceof java.util.NoSuchElementException) {
-                        return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
+
+                    // P1-026: Create span for campaign pause
+                    io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/pause", ctx).startSpan();
+                    try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                        telemetry.setCampaignId(campaignId);
+                        return campaignService.pauseCampaign(ctx, campaignId)
+                            .map(campaign -> {
+                                span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                                span.end();
+                                return jsonResponse(200, CampaignResponse.from(campaign));
+                            })
+                        .then(r -> Promise.of(r), e -> {
+                            telemetry.recordException(span, e);
+                            span.end();
+                            if (e instanceof SecurityException) {
+                                return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
+                            }
+                            if (e instanceof java.util.NoSuchElementException) {
+                                return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
+                            }
+                            if (e instanceof IllegalStateException) {
+                                return Promise.of(errorResponse(409, e.getMessage(), ctx.getCorrelationId().getValue()));
+                            }
+                            LOG.error("[DMOS] Failed to pause campaign", e);
+                            return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+                        });
                     }
-                    if (e instanceof IllegalStateException) {
-                        return Promise.of(errorResponse(409, e.getMessage(), ctx.getCorrelationId().getValue()));
-                    }
-                    LOG.error("[DMOS] Failed to pause campaign", e);
-                    return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
                 });
-            }
         } catch (IllegalArgumentException e) {
             String correlationId = DmCorrelationId.generate().getValue();
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
@@ -356,31 +430,39 @@ public final class DmosCampaignServlet {
             String campaignId  = request.getPathParameter("id");
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
 
-            io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/complete", ctx).startSpan();
-            try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
-                telemetry.setCampaignId(campaignId);
-                return campaignService.completeCampaign(ctx, campaignId)
-                    .map(campaign -> {
-                        span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
-                        span.end();
-                        return jsonResponse(200, CampaignResponse.from(campaign));
-                    })
-                .then(r -> Promise.of(r), e -> {
-                    telemetry.recordException(span, e);
-                    span.end();
-                    if (e instanceof SecurityException) {
-                        return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
+            // P0-6: Check campaigns capability
+            return checkCapability(ctx, DmosCapabilityRegistry.CAMPAIGNS)
+                .then(errorResponse -> {
+                    if (errorResponse != null) {
+                        return Promise.of(errorResponse);
                     }
-                    if (e instanceof java.util.NoSuchElementException) {
-                        return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
+
+                    io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/complete", ctx).startSpan();
+                    try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                        telemetry.setCampaignId(campaignId);
+                        return campaignService.completeCampaign(ctx, campaignId)
+                            .map(campaign -> {
+                                span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                                span.end();
+                                return jsonResponse(200, CampaignResponse.from(campaign));
+                            })
+                        .then(r -> Promise.of(r), e -> {
+                            telemetry.recordException(span, e);
+                            span.end();
+                            if (e instanceof SecurityException) {
+                                return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
+                            }
+                            if (e instanceof java.util.NoSuchElementException) {
+                                return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
+                            }
+                            if (e instanceof IllegalStateException) {
+                                return Promise.of(errorResponse(409, e.getMessage(), ctx.getCorrelationId().getValue()));
+                            }
+                            LOG.error("[DMOS] Failed to complete campaign", e);
+                            return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+                        });
                     }
-                    if (e instanceof IllegalStateException) {
-                        return Promise.of(errorResponse(409, e.getMessage(), ctx.getCorrelationId().getValue()));
-                    }
-                    LOG.error("[DMOS] Failed to complete campaign", e);
-                    return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
                 });
-            }
         } catch (IllegalArgumentException e) {
             String correlationId = DmCorrelationId.generate().getValue();
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
@@ -400,31 +482,39 @@ public final class DmosCampaignServlet {
             String campaignId  = request.getPathParameter("id");
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
 
-            io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/archive", ctx).startSpan();
-            try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
-                telemetry.setCampaignId(campaignId);
-                return campaignService.archiveCampaign(ctx, campaignId)
-                    .map(campaign -> {
-                        span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
-                        span.end();
-                        return jsonResponse(200, CampaignResponse.from(campaign));
-                    })
-                .then(r -> Promise.of(r), e -> {
-                    telemetry.recordException(span, e);
-                    span.end();
-                    if (e instanceof SecurityException) {
-                        return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
+            // P0-6: Check campaigns capability
+            return checkCapability(ctx, DmosCapabilityRegistry.CAMPAIGNS)
+                .then(errorResponse -> {
+                    if (errorResponse != null) {
+                        return Promise.of(errorResponse);
                     }
-                    if (e instanceof java.util.NoSuchElementException) {
-                        return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
+
+                    io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/archive", ctx).startSpan();
+                    try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                        telemetry.setCampaignId(campaignId);
+                        return campaignService.archiveCampaign(ctx, campaignId)
+                            .map(campaign -> {
+                                span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                                span.end();
+                                return jsonResponse(200, CampaignResponse.from(campaign));
+                            })
+                        .then(r -> Promise.of(r), e -> {
+                            telemetry.recordException(span, e);
+                            span.end();
+                            if (e instanceof SecurityException) {
+                                return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
+                            }
+                            if (e instanceof java.util.NoSuchElementException) {
+                                return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
+                            }
+                            if (e instanceof IllegalStateException) {
+                                return Promise.of(errorResponse(409, e.getMessage(), ctx.getCorrelationId().getValue()));
+                            }
+                            LOG.error("[DMOS] Failed to archive campaign", e);
+                            return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+                        });
                     }
-                    if (e instanceof IllegalStateException) {
-                        return Promise.of(errorResponse(409, e.getMessage(), ctx.getCorrelationId().getValue()));
-                    }
-                    LOG.error("[DMOS] Failed to archive campaign", e);
-                    return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
                 });
-            }
         } catch (IllegalArgumentException e) {
             String correlationId = DmCorrelationId.generate().getValue();
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
@@ -444,31 +534,39 @@ public final class DmosCampaignServlet {
             String campaignId  = request.getPathParameter("id");
             DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
 
-            io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/rollback", ctx).startSpan();
-            try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
-                telemetry.setCampaignId(campaignId);
-                return campaignService.rollbackCampaign(ctx, campaignId)
-                    .map(campaign -> {
-                        span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
-                        span.end();
-                        return jsonResponse(200, CampaignResponse.from(campaign));
-                    })
-                .then(r -> Promise.of(r), e -> {
-                    telemetry.recordException(span, e);
-                    span.end();
-                    if (e instanceof SecurityException) {
-                        return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
+            // P0-6: Check campaigns capability
+            return checkCapability(ctx, DmosCapabilityRegistry.CAMPAIGNS)
+                .then(errorResponse -> {
+                    if (errorResponse != null) {
+                        return Promise.of(errorResponse);
                     }
-                    if (e instanceof java.util.NoSuchElementException) {
-                        return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
+
+                    io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/rollback", ctx).startSpan();
+                    try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                        telemetry.setCampaignId(campaignId);
+                        return campaignService.rollbackCampaign(ctx, campaignId)
+                            .map(campaign -> {
+                                span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                                span.end();
+                                return jsonResponse(200, CampaignResponse.from(campaign));
+                            })
+                        .then(r -> Promise.of(r), e -> {
+                            telemetry.recordException(span, e);
+                            span.end();
+                            if (e instanceof SecurityException) {
+                                return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
+                            }
+                            if (e instanceof java.util.NoSuchElementException) {
+                                return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
+                            }
+                            if (e instanceof IllegalStateException) {
+                                return Promise.of(errorResponse(409, e.getMessage(), ctx.getCorrelationId().getValue()));
+                            }
+                            LOG.error("[DMOS] Failed to rollback campaign", e);
+                            return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+                        });
                     }
-                    if (e instanceof IllegalStateException) {
-                        return Promise.of(errorResponse(409, e.getMessage(), ctx.getCorrelationId().getValue()));
-                    }
-                    LOG.error("[DMOS] Failed to rollback campaign", e);
-                    return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
                 });
-            }
         } catch (IllegalArgumentException e) {
             String correlationId = DmCorrelationId.generate().getValue();
             return Promise.of(errorResponse(400, e.getMessage(), correlationId));
@@ -480,6 +578,63 @@ public final class DmosCampaignServlet {
             LOG.error("[DMOS] Failed to rollback campaign", e);
             return Promise.of(errorResponse(500, "Internal error", correlationId));
         }
+    }
+
+    private Promise<HttpResponse> handleDuplicateCampaign(HttpRequest request) {
+        return request.loadBody().then(__ -> {
+            try {
+                String workspaceId = request.getPathParameter("workspaceId");
+                String campaignId  = request.getPathParameter("id");
+                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+                DuplicateCampaignRequest body = MAPPER.readValue(
+                    request.getBody().getString(StandardCharsets.UTF_8),
+                    DuplicateCampaignRequest.class);
+
+                // P0-6: Check campaigns capability
+                return checkCapability(ctx, DmosCapabilityRegistry.CAMPAIGNS)
+                    .then(errorResponse -> {
+                        if (errorResponse != null) {
+                            return Promise.of(errorResponse);
+                        }
+
+                        io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/duplicate", ctx).startSpan();
+                        try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                            telemetry.setCampaignId(campaignId);
+                            return campaignService.duplicateCampaign(ctx, campaignId, body.name())
+                                .map(campaign -> {
+                                    span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                                    span.end();
+                                    return jsonResponse(201, CampaignResponse.from(campaign));
+                                })
+                                .then(r -> Promise.of(r), e -> {
+                                    telemetry.recordException(span, e);
+                                    span.end();
+                                    if (e instanceof SecurityException) {
+                                        return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
+                                    }
+                                    if (e instanceof java.util.NoSuchElementException) {
+                                        return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
+                                    }
+                                    if (e instanceof IllegalArgumentException) {
+                                        return Promise.of(errorResponse(400, e.getMessage(), ctx.getCorrelationId().getValue()));
+                                    }
+                                    LOG.error("[DMOS] Failed to duplicate campaign", e);
+                                    return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+                                });
+                        }
+                    });
+            } catch (IllegalArgumentException e) {
+                String correlationId = DmCorrelationId.generate().getValue();
+                return Promise.of(errorResponse(400, e.getMessage(), correlationId));
+            } catch (SecurityException e) {
+                String correlationId = DmCorrelationId.generate().getValue();
+                return Promise.of(errorResponse(403, "Access denied", correlationId));
+            } catch (Exception e) {
+                String correlationId = DmCorrelationId.generate().getValue();
+                LOG.error("[DMOS] Failed to duplicate campaign", e);
+                return Promise.of(errorResponse(500, "Internal error", correlationId));
+            }
+        });
     }
 
     // -------------------------------------------------------------------------
@@ -508,6 +663,34 @@ public final class DmosCampaignServlet {
         } catch (NumberFormatException e) {
             return defaultValue;
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Response helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * P0-6: Checks if a capability is enabled for the workspace.
+     * Returns a 403 error response if the capability is not enabled.
+     *
+     * @param ctx           the operation context
+     * @param capabilityKey the capability key to check
+     * @return promise resolving to an error response if capability is disabled, or empty if enabled
+     */
+    private Promise<HttpResponse> checkCapability(DmOperationContext ctx, String capabilityKey) {
+        if (workspaceService == null) {
+            // Capability checks disabled in test mode
+            return Promise.of(null);
+        }
+        return workspaceService.isCapabilityEnabled(ctx, capabilityKey)
+            .then(enabled -> {
+                if (!enabled) {
+                    return Promise.of(errorResponse(403,
+                        "Capability '" + capabilityKey + "' is not enabled for this workspace",
+                        ctx.getCorrelationId().getValue()));
+                }
+                return Promise.of(null);
+            });
     }
 
     // -------------------------------------------------------------------------
@@ -563,7 +746,19 @@ public final class DmosCampaignServlet {
     // -------------------------------------------------------------------------
 
     /** Request body for campaign creation. */
-    record CreateCampaignRequest(String name, CampaignType type) { }
+    record CreateCampaignRequest(
+        String name,
+        CampaignType type,
+        String objective,
+        Long budgetCents,
+        String startDate,
+        String endDate,
+        String audience,
+        String landingPageUrl
+    ) { }
+
+    /** Request body for campaign duplication. */
+    record DuplicateCampaignRequest(String name) { }
 
     /** API response representation of a campaign. */
     record CampaignResponse(
@@ -572,6 +767,12 @@ public final class DmosCampaignServlet {
         String name,
         String status,
         String type,
+        String objective,
+        Long budgetCents,
+        String startDate,
+        String endDate,
+        String audience,
+        String landingPageUrl,
         String createdBy,
         String createdAt,
         String updatedAt
@@ -583,6 +784,12 @@ public final class DmosCampaignServlet {
                 c.getName(),
                 c.getStatus().name(),
                 c.getType().name(),
+                c.getObjective(),
+                c.getBudgetCents(),
+                c.getStartDate(),
+                c.getEndDate(),
+                c.getAudience(),
+                c.getLandingPageUrl(),
                 c.getCreatedBy(),
                 c.getCreatedAt().toString(),
                 c.getUpdatedAt().toString()
@@ -593,7 +800,7 @@ public final class DmosCampaignServlet {
     /** API response for paginated campaign list. */
     record CampaignListResponse(
         List<CampaignResponse> items,
-        int count,
+        long count,
         int offset
     ) { }
 

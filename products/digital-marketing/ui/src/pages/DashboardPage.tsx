@@ -15,6 +15,8 @@ import React from 'react';
 import { useParams, Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApprovalQueue } from '@/hooks/useApprovalQueue';
+import { useCampaigns } from '@/hooks/useCampaigns';
+import { useStrategy } from '@/hooks/useStrategy';
 import { ApprovalWidget } from '@/components/dashboard/ApprovalWidget';
 import { GrowthGoalWidget } from '@/components/dashboard/GrowthGoalWidget';
 import { RiskComplianceWidget } from '@/components/dashboard/RiskComplianceWidget';
@@ -36,6 +38,17 @@ export function DashboardPage(): React.ReactElement {
     tenantId ?? 'unknown',
   );
   const aiActions = useAiActionLog(workspaceId ?? null);
+  
+  // P0-1: Fetch real campaign data for dashboard metrics
+  const { campaigns, isLoading: campaignsLoading, isError: campaignsError } = useCampaigns(
+    workspaceId ?? null,
+    { limit: 100 } // Fetch all campaigns to calculate accurate metrics
+  );
+  
+  // P0-1: Fetch real strategy data for dashboard metrics
+  const { strategy: latestStrategy, isLoading: strategyLoading, isError: strategyError } = useStrategy(
+    workspaceId ?? null
+  );
 
   // P0-5.3: Handle loading state separately from early return
   if (!isAuthenticated) {
@@ -44,6 +57,16 @@ export function DashboardPage(): React.ReactElement {
 
   const pendingCount = approvals.filter((a) => a.status === 'PENDING').length;
   const setupComplete = approvals.length > 0 || !isLoading;
+
+  // P0-1: Calculate real campaign status metrics from API data
+  const activeCount = campaigns.filter((c) => c.status === 'LAUNCHED').length;
+  const pausedCount = campaigns.filter((c) => c.status === 'PAUSED').length;
+  const pendingCampaignCount = campaigns.filter((c) => c.status === 'DRAFT').length;
+  
+  // P0-1: Calculate real strategy metrics from API data
+  const strategyCount = latestStrategy ? 1 : 0;
+  const strategyStatus = latestStrategy?.status ?? 'NONE';
+  const strategyBudgetCap = latestStrategy?.budgetCap ?? 0;
 
   return (
     <section
@@ -105,11 +128,11 @@ export function DashboardPage(): React.ReactElement {
         />
         <CampaignStatusWidget
           workspaceId={workspaceId ?? ''}
-          activeCount={3}
-          pausedCount={2}
-          pendingCount={1}
-          isLoading={false}
-          isError={false}
+          activeCount={activeCount}
+          pausedCount={pausedCount}
+          pendingCount={pendingCampaignCount}
+          isLoading={campaignsLoading}
+          isError={campaignsError}
         />
         <BudgetTrackingWidget
           workspaceId={workspaceId ?? ''}
@@ -122,11 +145,11 @@ export function DashboardPage(): React.ReactElement {
         />
         <StrategyInsightsWidget
           workspaceId={workspaceId ?? ''}
-          strategyCount={2}
-          recentRecommendation="Increase budget for high-performing campaigns"
-          confidenceScore={0.85}
-          isLoading={false}
-          isError={false}
+          strategyCount={strategyCount}
+          recentRecommendation={strategyStatus}
+          confidenceScore={strategyBudgetCap > 0 ? 0.85 : 0}
+          isLoading={strategyLoading}
+          isError={strategyError}
         />
         <ConnectorHealthWidget
           workspaceId={workspaceId ?? ''}

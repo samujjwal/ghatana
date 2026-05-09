@@ -448,6 +448,7 @@ class DmosWorkspaceServletTest extends EventloopTestBase {
         private Promise<Workspace> suspendResult = Promise.of(workspace("ws-1", WorkspaceStatus.SUSPENDED));
         private Promise<Workspace> reactivateResult = Promise.of(workspace("ws-1", WorkspaceStatus.ACTIVE));
         private Promise<List<WorkspaceService.WorkspaceCapability>> capabilitiesResult = Promise.of(List.of());
+        private Promise<Boolean> capabilityEnabledResult = Promise.of(true);
 
         private DmOperationContext lastContext;
         private CreateWorkspaceCommand lastCreateCommand;
@@ -487,6 +488,12 @@ class DmosWorkspaceServletTest extends EventloopTestBase {
         public Promise<List<WorkspaceService.WorkspaceCapability>> getWorkspaceCapabilities(DmOperationContext ctx, String workspaceId) {
             this.lastContext = ctx;
             return capabilitiesResult;
+        }
+
+        @Override
+        public Promise<Boolean> isCapabilityEnabled(DmOperationContext ctx, String capabilityKey) {
+            this.lastContext = ctx;
+            return capabilityEnabledResult;
         }
     }
 }

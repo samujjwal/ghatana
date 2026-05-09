@@ -294,7 +294,7 @@ class TrialOnboardingTest {
             .demoWorkspaceId("demo-202")
             .status(TrialOnboardingStatus.IN_PROGRESS)
             .currentStep(0)
-            .totalSteps(0)
+            .totalSteps(5)
             .createdAt(Instant.now())
             .build();
 

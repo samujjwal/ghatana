@@ -123,6 +123,12 @@ public final class CampaignServiceImpl implements CampaignService {
                     .workspaceId(ctx.getWorkspaceId())
                     .name(command.name())
                     .type(command.type())
+                    .objective(command.objective())
+                    .budgetCents(command.budgetCents())
+                    .startDate(command.startDate())
+                    .endDate(command.endDate())
+                    .audience(command.audience())
+                    .landingPageUrl(command.landingPageUrl())
                     .status(CampaignStatus.DRAFT)
                     .createdAt(now)
                     .updatedAt(now)
@@ -380,6 +386,77 @@ public final class CampaignServiceImpl implements CampaignService {
     }
 
     // -----------------------------------------------------------------------
+    // Duplicate
+    // -----------------------------------------------------------------------
+
+    @Override
+    public Promise<Campaign> duplicateCampaign(DmOperationContext ctx, String campaignId, String newName) {
+        Objects.requireNonNull(ctx, "ctx must not be null");
+        Objects.requireNonNull(campaignId, "campaignId must not be null");
+        Objects.requireNonNull(newName, "newName must not be null");
+        if (newName.isBlank()) {
+            throw new IllegalArgumentException("newName must not be blank");
+        }
+
+        return kernelAdapter.isAuthorized(ctx, "campaigns/" + campaignId, "read")
+            .then(allowed -> {
+                if (!allowed) {
+                    return Promise.ofException(new SecurityException(
+                        "Not authorized to read campaign " + campaignId
+                    ));
+                }
+                return repository.findById(ctx.getWorkspaceId(), campaignId);
+            })
+            .then(optCampaign -> Promise.of(optCampaign.orElseThrow(
+                () -> new NoSuchElementException("Campaign not found: " + campaignId)
+            )))
+            .then(original -> {
+                Instant now = Instant.now();
+                Campaign duplicate = Campaign.builder()
+                    .id(UUID.randomUUID().toString())
+                    .workspaceId(ctx.getWorkspaceId())
+                    .name(newName)
+                    .type(original.getType())
+                    .objective(original.getObjective())
+                    .budgetCents(original.getBudgetCents())
+                    .startDate(original.getStartDate())
+                    .endDate(original.getEndDate())
+                    .audience(original.getAudience())
+                    .landingPageUrl(original.getLandingPageUrl())
+                    .status(CampaignStatus.DRAFT)
+                    .createdAt(now)
+                    .updatedAt(now)
+                    .createdBy(ctx.getActor().getPrincipalId())
+                    .build();
+
+                return repository.save(duplicate)
+                    .then(saved -> eventSourcingAdapter.publishCreated(ctx, saved)
+                        .then(offset -> kernelAdapter.recordAudit(
+                            ctx.withIdempotencyKey(DmIdempotencyKey.forCommand("DuplicateCampaign", saved.getId())),
+                            saved.getId(),
+                            "duplicate",
+                            Map.of(
+                                "originalCampaignId", campaignId,
+                                "originalCampaignName", original.getName(),
+                                "campaignName", saved.getName(),
+                                "type", saved.getType().name()
+                            )
+                        ))
+                    .map(auditId -> {
+                        metrics.increment(DmosMetricsCollector.CAMPAIGN_CREATED, Map.of(
+                            "tenantId", ctx.getTenantId().getValue(),
+                            "workspaceId", ctx.getWorkspaceId().getValue(),
+                            "campaignType", saved.getType().name(),
+                            "source", "duplicate"
+                        ));
+                        LOG.info("[DMOS] Campaign duplicated: originalId={}, newId={}, newName={}, tenant={}",
+                            campaignId, saved.getId(), newName, ctx.getTenantId().getValue());
+                        return saved;
+                    }));
+            });
+    }
+
+    // -----------------------------------------------------------------------
     // Read
     // -----------------------------------------------------------------------
 
@@ -403,7 +480,7 @@ public final class CampaignServiceImpl implements CampaignService {
     }
 
     @Override
-    public Promise<List<Campaign>> listCampaigns(DmOperationContext ctx, int limit, int offset) {
+    public Promise<CampaignListResult> listCampaigns(DmOperationContext ctx, int limit, int offset) {
         Objects.requireNonNull(ctx, "ctx must not be null");
 
         return kernelAdapter.isAuthorized(ctx, "campaigns/*", "read")
@@ -413,12 +490,14 @@ public final class CampaignServiceImpl implements CampaignService {
                         "Not authorized to list campaigns in workspace " + ctx.getWorkspaceId().getValue()
                     ));
                 }
-                return repository.listByWorkspace(ctx.getWorkspaceId(), limit, offset);
+                return repository.listByWorkspace(ctx.getWorkspaceId(), limit, offset)
+                    .then(campaigns -> repository.countByWorkspace(ctx.getWorkspaceId())
+                        .map(totalCount -> new CampaignListResult(campaigns, totalCount, limit, offset)));
             })
-            .map(campaigns -> {
-                LOG.info("[DMOS] Listed {} campaigns for tenant={}, workspace={}",
-                    campaigns.size(), ctx.getTenantId().getValue(), ctx.getWorkspaceId().getValue());
-                return campaigns;
+            .map(result -> {
+                LOG.info("[DMOS] Listed {} campaigns (total={}) for tenant={}, workspace={}",
+                    result.items().size(), result.totalCount(), ctx.getTenantId().getValue(), ctx.getWorkspaceId().getValue());
+                return result;
             });
     }
 
@@ -536,13 +615,26 @@ public final class CampaignServiceImpl implements CampaignService {
                     campaign.getId());
 
                 try {
-                    // Build command payload
+                    // P1-2: Build command payload with real campaign data
+                    // Use campaign budget, objective, and audience instead of hardcoded defaults
+                    String dailyBudget = campaign.getBudgetCents() != null
+                        ? String.format("%.2f", campaign.getBudgetCents() / 100.0)
+                        : "50.00"; // Fallback to default if not set
+
+                    // Default to US until targeting config provides explicit service area.
+                    String serviceArea = "US";
+
+                    // Derive keyword theme from objective or audience
+                    String keywordTheme = campaign.getObjective() != null
+                        ? campaign.getObjective().toLowerCase()
+                        : (campaign.getAudience() != null ? campaign.getAudience() : "general");
+
                     Map<String, Object> payload = Map.of(
                         "internalCampaignId", campaign.getId(),
                         "campaignName", campaign.getName(),
-                        "dailyBudget", "50.00", // Default budget, should come from campaign config
-                        "serviceArea", "US", // Default, should come from targeting config
-                        "keywordTheme", "general" // Default, should come from strategy
+                        "dailyBudget", dailyBudget,
+                        "serviceArea", serviceArea,
+                        "keywordTheme", keywordTheme
                     );
                     String serializedPayload = objectMapper.writeValueAsString(payload);
 

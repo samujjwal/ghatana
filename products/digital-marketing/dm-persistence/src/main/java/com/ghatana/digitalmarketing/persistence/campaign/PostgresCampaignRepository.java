@@ -40,20 +40,22 @@ public final class PostgresCampaignRepository implements CampaignRepository {
     private static final int MAX_PAGE_SIZE = 100;
 
     private static final String UPSERT_SQL =
-        "INSERT INTO dmos_campaigns (id, workspace_id, tenant_id, name, status, type, created_at, updated_at, created_by) " +
-        "SELECT ?, ?, ws.tenant_id, ?, ?, ?, ?, ?, ? " +
+        "INSERT INTO dmos_campaigns (id, workspace_id, tenant_id, name, status, type, objective, budget_cents, start_date, end_date, audience, landing_page_url, created_at, updated_at, created_by) " +
+        "SELECT ?, ?, ws.tenant_id, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? " +
         "FROM dmos_workspaces ws WHERE ws.id = ? " +
         "ON CONFLICT (id, workspace_id) DO UPDATE SET " +
         "  tenant_id = EXCLUDED.tenant_id, name = EXCLUDED.name, status = EXCLUDED.status, type = EXCLUDED.type, " +
+        "  objective = EXCLUDED.objective, budget_cents = EXCLUDED.budget_cents, start_date = EXCLUDED.start_date, " +
+        "  end_date = EXCLUDED.end_date, audience = EXCLUDED.audience, landing_page_url = EXCLUDED.landing_page_url, " +
         "  updated_at = EXCLUDED.updated_at";
 
     private static final String SELECT_BY_ID_SQL =
-        "SELECT id, workspace_id, name, status, type, created_at, updated_at, created_by " +
+        "SELECT id, workspace_id, name, status, type, objective, budget_cents, start_date, end_date, audience, landing_page_url, created_at, updated_at, created_by " +
         "FROM dmos_campaigns WHERE id = ? AND workspace_id = ? " +
         "AND tenant_id = (SELECT tenant_id FROM dmos_workspaces WHERE id = ?)";
 
     private static final String LIST_BY_WORKSPACE_SQL =
-        "SELECT id, workspace_id, name, status, type, created_at, updated_at, created_by " +
+        "SELECT id, workspace_id, name, status, type, objective, budget_cents, start_date, end_date, audience, landing_page_url, created_at, updated_at, created_by " +
         "FROM dmos_campaigns WHERE workspace_id = ? " +
         "AND tenant_id = (SELECT tenant_id FROM dmos_workspaces WHERE id = ?) " +
         "ORDER BY created_at DESC, id DESC " +
@@ -82,10 +84,16 @@ public final class PostgresCampaignRepository implements CampaignRepository {
                 stmt.setString(3, campaign.getName());
                 stmt.setString(4, campaign.getStatus().name());
                 stmt.setString(5, campaign.getType().name());
-                stmt.setTimestamp(6, Timestamp.from(campaign.getCreatedAt()));
-                stmt.setTimestamp(7, Timestamp.from(campaign.getUpdatedAt()));
-                stmt.setString(8, campaign.getCreatedBy());
-                stmt.setString(9, campaign.getWorkspaceId().getValue());
+                stmt.setString(6, campaign.getObjective());
+                stmt.setObject(7, campaign.getBudgetCents());
+                stmt.setString(8, campaign.getStartDate());
+                stmt.setString(9, campaign.getEndDate());
+                stmt.setString(10, campaign.getAudience());
+                stmt.setString(11, campaign.getLandingPageUrl());
+                stmt.setTimestamp(12, Timestamp.from(campaign.getCreatedAt()));
+                stmt.setTimestamp(13, Timestamp.from(campaign.getUpdatedAt()));
+                stmt.setString(14, campaign.getCreatedBy());
+                stmt.setString(15, campaign.getWorkspaceId().getValue());
                 int rowsUpdated = stmt.executeUpdate();
                 if (rowsUpdated == 0) {
                     throw new DmPersistenceException(
@@ -187,6 +195,12 @@ public final class PostgresCampaignRepository implements CampaignRepository {
             .name(rs.getString("name"))
             .status(CampaignStatus.valueOf(rs.getString("status")))
             .type(CampaignType.valueOf(rs.getString("type")))
+            .objective(rs.getString("objective"))
+            .budgetCents(rs.getLong("budget_cents") > 0 ? rs.getLong("budget_cents") : null)
+            .startDate(rs.getString("start_date"))
+            .endDate(rs.getString("end_date"))
+            .audience(rs.getString("audience"))
+            .landingPageUrl(rs.getString("landing_page_url"))
             .createdAt(createdAt)
             .updatedAt(updatedAt)
             .createdBy(rs.getString("created_by"))

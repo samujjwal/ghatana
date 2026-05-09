@@ -118,7 +118,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
     void shouldCreateCampaignInDraft() {
         Campaign created = runPromise(() -> service.createCampaign(
             ctx,
-            new CampaignService.CreateCampaignCommand("Q4 Acquisition", CampaignType.EMAIL)
+            createCampaignCommand("Q4 Acquisition", CampaignType.EMAIL)
         ));
 
         assertThat(created.getStatus()).isEqualTo(CampaignStatus.DRAFT);
@@ -134,7 +134,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
         assertThatExceptionOfType(SecurityException.class)
             .isThrownBy(() -> runPromise(() -> service.createCampaign(
                 ctx,
-                new CampaignService.CreateCampaignCommand("Denied", CampaignType.EMAIL)
+                createCampaignCommand("Denied", CampaignType.EMAIL)
             )));
     }
 
@@ -143,7 +143,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
     void shouldLaunchDraftCampaign() {
         Campaign created = runPromise(() -> service.createCampaign(
             ctx,
-            new CampaignService.CreateCampaignCommand("Launchable", CampaignType.EMAIL)
+            createCampaignCommand("Launchable", CampaignType.EMAIL)
         ));
 
         Campaign launched = runPromise(() -> service.launchCampaign(ctx, created.getId()));
@@ -157,7 +157,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
     void shouldThrowOnComplianceFailure() {
         Campaign created = runPromise(() -> service.createCampaign(
             ctx,
-            new CampaignService.CreateCampaignCommand("Blocked", CampaignType.EMAIL)
+            createCampaignCommand("Blocked", CampaignType.EMAIL)
         ));
         compliancePlugin.setCompliant(false);
 
@@ -170,7 +170,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
     void shouldPauseLaunchedCampaign() {
         Campaign created = runPromise(() -> service.createCampaign(
             ctx,
-            new CampaignService.CreateCampaignCommand("Pausable", CampaignType.EMAIL)
+            createCampaignCommand("Pausable", CampaignType.EMAIL)
         ));
         runPromise(() -> service.launchCampaign(ctx, created.getId()));
 
@@ -185,7 +185,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
     void shouldReadCampaign() {
         Campaign created = runPromise(() -> service.createCampaign(
             ctx,
-            new CampaignService.CreateCampaignCommand("Readable", CampaignType.SOCIAL)
+            createCampaignCommand("Readable", CampaignType.SOCIAL)
         ));
 
         Campaign found = runPromise(() -> service.getCampaign(ctx, created.getId()));
@@ -208,7 +208,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
     void shouldDenyLaunchWhenNotAuthorized() {
         Campaign created = runPromise(() -> service.createCampaign(
             ctx,
-            new CampaignService.CreateCampaignCommand("AuthDenied", CampaignType.EMAIL)
+            createCampaignCommand("AuthDenied", CampaignType.EMAIL)
         ));
 
         kernelAdapter.setAuthorization("campaigns/" + created.getId(), "launch", false);
@@ -222,7 +222,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
     void shouldDenyPauseWhenNotAuthorized() {
         Campaign created = runPromise(() -> service.createCampaign(
             ctx,
-            new CampaignService.CreateCampaignCommand("PauseAuthDenied", CampaignType.EMAIL)
+            createCampaignCommand("PauseAuthDenied", CampaignType.EMAIL)
         ));
         runPromise(() -> service.launchCampaign(ctx, created.getId()));
 
@@ -244,7 +244,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
     void shouldIssueGoogleAdsCommandForPaidSearchCampaign() {
         Campaign created = runPromise(() -> service.createCampaign(
             ctx,
-            new CampaignService.CreateCampaignCommand("PaidSearchCampaign", CampaignType.PAID_SEARCH)
+            createCampaignCommand("PaidSearchCampaign", CampaignType.PAID_SEARCH)
         ));
 
         Campaign launched = runPromise(() -> service.launchCampaign(ctx, created.getId()));
@@ -271,7 +271,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
     void shouldNotIssueGoogleAdsCommandForEmailCampaign() {
         Campaign created = runPromise(() -> service.createCampaign(
             ctx,
-            new CampaignService.CreateCampaignCommand("EmailCampaign", CampaignType.EMAIL)
+            createCampaignCommand("EmailCampaign", CampaignType.EMAIL)
         ));
 
         Campaign launched = runPromise(() -> service.launchCampaign(ctx, created.getId()));
@@ -295,7 +295,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
 
         Campaign created = runPromise(() -> service.createCampaign(
             ctx,
-            new CampaignService.CreateCampaignCommand("BlockedCampaign", CampaignType.PAID_SEARCH)
+            createCampaignCommand("BlockedCampaign", CampaignType.PAID_SEARCH)
         ));
 
         Campaign launched = runPromise(() -> service.launchCampaign(ctx, created.getId()));
@@ -307,6 +307,10 @@ class CampaignServiceImplTest extends EventloopTestBase {
         Long pendingCount = runPromise(() -> commandService.countByStatus(
             ctx, com.ghatana.digitalmarketing.domain.command.DmCommandStatus.PENDING));
         assertThat(pendingCount).isEqualTo(0L);
+    }
+
+    private static CampaignService.CreateCampaignCommand createCampaignCommand(String name, CampaignType type) {
+        return new CampaignService.CreateCampaignCommand(name, type, null, null, null, null, null, null);
     }
 
     private static final class InMemoryCampaignRepository implements CampaignRepository {

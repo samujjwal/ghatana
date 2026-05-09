@@ -434,8 +434,6 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
                 tenantId,
                 EXECUTIONS_COLLECTION,
                 DataCloudClient.Query.builder()
-                    .filters(List.of(DataCloudClient.Filter.eq("workflowId", workflowId)))
-                    .sorts(List.of(DataCloudClient.Sort.desc("startedAt")))
                     .limit(200)
                     .build()
             ).map(entities -> entities.stream()

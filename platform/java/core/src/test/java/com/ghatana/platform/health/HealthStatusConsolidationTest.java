@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.*;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
+import com.tngtech.archunit.core.importer.ImportOption;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -35,10 +36,18 @@ class HealthStatusConsolidationTest {
     private static final String PLATFORM_PACKAGES = "com.ghatana.platform";
     private static final String AGENT_PACKAGES = "com.ghatana.agent";
 
+    private static JavaClasses importProjectPackages(String... packages) {
+        return new ClassFileImporter()
+            .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_JARS)
+            .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_ARCHIVES)
+            .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+            .importPackages(packages);
+    }
+
     @Test
     @DisplayName("Only one HealthStatus definition should exist in platform")
     void shouldHaveOnlyOneCanonicalHealthStatusDefinition() { 
-        JavaClasses classes = new ClassFileImporter().importPackages(PLATFORM_PACKAGES); 
+        JavaClasses classes = importProjectPackages(PLATFORM_PACKAGES); 
 
         long healthStatusCount = classes.stream() 
             .filter(c -> c.getSimpleName().equals("HealthStatus") && !c.isInnerClass())
@@ -52,7 +61,7 @@ class HealthStatusConsolidationTest {
     @Test
     @DisplayName("Canonical HealthStatus must be in platform.health package")
     void shouldHaveHealthStatusInCanonicalLocation() { 
-        JavaClasses classes = new ClassFileImporter().importPackages(PLATFORM_PACKAGES); 
+        JavaClasses classes = importProjectPackages(PLATFORM_PACKAGES); 
 
         boolean found = classes.stream() 
             .filter(c -> c.getSimpleName().equals("HealthStatus"))
@@ -73,8 +82,7 @@ class HealthStatusConsolidationTest {
     @Test
     @DisplayName("Agent-core should not have its own HealthStatus - use canonical platform HealthStatus")
     void agentHealthStatusShouldNotExist() { 
-        JavaClasses classes = new ClassFileImporter() 
-            .importPackages(AGENT_PACKAGES); 
+        JavaClasses classes = importProjectPackages(AGENT_PACKAGES); 
 
         // Agent-core HealthStatus enum was removed - all code should use platform HealthStatus
         boolean agentHealthStatusExists = classes.stream() 
@@ -97,8 +105,7 @@ class HealthStatusConsolidationTest {
     @Test
     @DisplayName("Database health should use canonical HealthStatus, not local HealthStatus")
     void databaseShouldNotHaveOwnHealthStatus() { 
-        JavaClasses classes = new ClassFileImporter() 
-            .importPackages("com.ghatana.platform.database", "com.ghatana.core.database"); 
+        JavaClasses classes = importProjectPackages("com.ghatana.platform.database", "com.ghatana.core.database"); 
 
         // Allow deprecated HealthStatus classes that have converter methods
         // Exclude the deprecated database HealthStatus and all its inner classes
@@ -124,8 +131,7 @@ class HealthStatusConsolidationTest {
     @Test
     @DisplayName("No domain packages should define HealthStatus")
     void noDomainPackagesShouldDefineHealthStatus() { 
-        JavaClasses classes = new ClassFileImporter() 
-            .importPackages("com.ghatana.platform.domain");
+        JavaClasses classes = importProjectPackages("com.ghatana.platform.domain");
 
         long domainHealthStatus = classes.stream() 
             .filter(c -> c.getSimpleName().equals("HealthStatus"))
@@ -139,8 +145,7 @@ class HealthStatusConsolidationTest {
     @Test
     @DisplayName("No product packages should define HealthStatus")
     void noProductPackagesShouldDefineHealthStatus() { 
-        JavaClasses classes = new ClassFileImporter() 
-            .importPackages("com.ghatana.products");
+        JavaClasses classes = importProjectPackages("com.ghatana.products");
 
         long productHealthStatus = classes.stream() 
             .filter(c -> c.getSimpleName().equals("HealthStatus"))
@@ -162,13 +167,11 @@ class HealthStatusConsolidationTest {
     @Test
     @DisplayName("Health status representations should be immutable")
     void canonicalHealthStatusShouldBeImmutable() { 
-        JavaClasses classes = new ClassFileImporter().importPackages(CANONICAL_PACKAGE); 
-
-        var healthStatus = classes.stream() 
-            .filter(c -> c.getFullName().equals(CANONICAL_CLASS)) 
-            .filter(c -> !c.isInnerClass()) // Ensure we get the main class, not inner classes 
-            .findFirst() 
-            .orElseThrow(() -> new AssertionError("Canonical HealthStatus not found"));
+        JavaClasses classes = importProjectPackages(CANONICAL_PACKAGE); 
+        assertThat(classes.stream()
+            .anyMatch(c -> c.getFullName().equals(CANONICAL_CLASS) && !c.isInnerClass()))
+            .as("Canonical HealthStatus should be importable")
+            .isTrue();
 
         // Check if the class is final by examining the source code
         // Since ArchUnit's modifier detection has issues, we'll verify through reflection
