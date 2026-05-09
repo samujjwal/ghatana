@@ -26,8 +26,8 @@ describe('Capability Gate Coverage', () => {
     const content = readFileSync(workflowsPagePath, 'utf-8');
 
     // Verify AI-related features use capability checks
-    expect(content).toContain('getCapabilitySignal');
-    expect(content).toContain('useCapabilityRegistry');
+    expect(content).toContain('getSurfaceSignal');
+    expect(content).toContain('useSurfaceRegistry');
     expect(content).toContain('ai-operations.service');
   });
 
@@ -36,8 +36,8 @@ describe('Capability Gate Coverage', () => {
     const content = readFileSync(alertsPagePath, 'utf-8');
 
     // Verify alert features use capability checks
-    expect(content).toContain('getCapabilitySignal');
-    expect(content).toContain('useCapabilityRegistry');
+    expect(content).toContain('getSurfaceSignal');
+    expect(content).toContain('useSurfaceRegistry');
   });
 
   it('CapabilityGated component exists and is exported', () => {

@@ -13,6 +13,9 @@
  *  - Existing hand-coded fetches are migration candidates; migrate them when
  *    touching the surrounding code.
  *
+ * P1-9: Lint rule required to forbid raw fetch outside API infrastructure.
+ * All HTTP calls must go through typed helpers (get, post, patch, put, del).
+ *
  * @doc.type module
  * @doc.purpose Typed REST API client (SIMP-Y19)
  * @doc.layer product
@@ -634,20 +637,14 @@ export const projects = {
   update: (projectId: string, body: UpdateProjectRequest) =>
     patch<UpdateProjectRequest, Project>(`/api/projects/${encodeURIComponent(projectId)}`, body, 'projects.update'),
   updateScoped: async (projectId: string, workspaceId: string, body: UpdateProjectRequest) => {
-    const response = await fetch(
+    // P1-9: Replace raw fetch with typed helper to maintain type safety
+    const response = await patchWithHeaders<UpdateProjectRequest, Project | ProjectResourceResponse>(
       `/api/projects/${encodeURIComponent(projectId)}${encodeQuery({ workspaceId })}`,
-      {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      },
+      body,
+      'projects.updateScoped',
+      { 'X-Workspace-Id': workspaceId },
     );
-    if (!response.ok) {
-      return handleError(response, 'projects.updateScoped');
-    }
-    return unwrapProjectResource(
-      await parseJsonResponse<Project | ProjectResourceResponse>(response, 'projects.updateScoped'),
-    );
+    return unwrapProjectResource(response);
   },
   delete: (projectId: string) => del<void>(`/api/projects/${encodeURIComponent(projectId)}`, 'projects.delete'),
   suggestName: (params?: ProjectNameSuggestionRequest) =>
@@ -689,8 +686,7 @@ export const projects = {
     ),
   aiCost: (projectId: string) =>
     get<{ totalCostUsd: number; breakdown: unknown[] }>(`/api/projects/${encodeURIComponent(projectId)}/ai-cost`, 'projects.aiCost'),
-  capabilities: (projectId: string) =>
-    get<unknown>(`/api/projects/${encodeURIComponent(projectId)}/capabilities`, 'projects.capabilities'),
+  // P1-9: Removed stale 'capabilities' endpoint - use ResourceCapabilities from access control instead
   refreshAi: (projectId: string) =>
     post<Record<string, never>, void>(`/api/projects/${encodeURIComponent(projectId)}/refresh-ai`, {}, 'projects.refreshAi'),
   refreshAiDetails: (projectId: string) =>

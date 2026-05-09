@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import { useCapabilityRegistry } from '../../api/surfaces.service';
+import { useSurfaceRegistry } from '../../api/surfaces.service';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Props {
@@ -80,7 +80,7 @@ export class RuntimeCapabilityErrorBoundary extends React.Component<Props, State
  * Subcomponent that reads the live runtime surface registry and shows subsystem status.
  */
 function CapabilityStatusPanel({ requiredCapabilities }: { requiredCapabilities?: string[] }): React.ReactElement {
-  const { data: registry, isLoading } = useCapabilityRegistry();
+  const { data: registry, isLoading } = useSurfaceRegistry();
 
   if (isLoading || !registry) {
     return (
@@ -91,8 +91,8 @@ function CapabilityStatusPanel({ requiredCapabilities }: { requiredCapabilities?
   }
 
   const relevant = requiredCapabilities && requiredCapabilities.length > 0
-    ? registry.capabilities.filter((c) => requiredCapabilities.some((alias) => alias.toLowerCase() === c.key.toLowerCase()))
-    : registry.capabilities.filter((c) => c.status !== 'active');
+    ? registry.surfaces.filter((c) => requiredCapabilities.some((alias) => alias.toLowerCase() === c.key.toLowerCase()))
+    : registry.surfaces.filter((c) => c.status !== 'LIVE');
 
   if (relevant.length === 0) {
     return (
@@ -115,9 +115,9 @@ function CapabilityStatusPanel({ requiredCapabilities }: { requiredCapabilities?
             <span className="text-gray-600 dark:text-gray-400">{cap.label}</span>
             <span
               className={
-                cap.status === 'active'
+                cap.status === 'LIVE'
                   ? 'text-emerald-600 dark:text-emerald-400 font-medium'
-                  : cap.status === 'degraded'
+                  : cap.status === 'DEGRADED' || cap.status === 'PREVIEW'
                   ? 'text-amber-600 dark:text-amber-400 font-medium'
                   : 'text-rose-600 dark:text-rose-400 font-medium'
               }

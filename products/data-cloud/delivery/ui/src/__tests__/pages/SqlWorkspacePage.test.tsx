@@ -16,7 +16,7 @@ const { mockCollectionsApi, mockAnalytics, mockCapabilities, mockUserActivity, m
     evaluateQueryPolicy: vi.fn(),
   },
   mockCapabilities: {
-    useCapabilityRegistry: vi.fn(),
+    useSurfaceRegistry: vi.fn(),
   },
   mockUserActivity: {
     getRecentActivity: vi.fn(),
@@ -43,9 +43,9 @@ vi.mock('../../api/ai-operations.service', () => ({
 }));
 
 vi.mock('../../api/surfaces.service', () => ({
-  useCapabilityRegistry: mockCapabilities.useCapabilityRegistry,
-  getCapabilitySignal: (capabilities: Array<{ key: string }> | undefined, aliases: string[]) =>
-    capabilities?.find((capability) => aliases.includes(capability.key)),
+  useSurfaceRegistry: mockCapabilities.useSurfaceRegistry,
+  getSurfaceSignal: (surfaces: Array<{ key: string }> | undefined, aliases: string[]) =>
+    surfaces?.find((surface) => aliases.includes(surface.key)),
 }));
 
 vi.mock('../../lib/api/user-activity', () => ({
@@ -152,16 +152,16 @@ describe('SqlWorkspacePage', () => {
         },
       ],
     });
-    mockCapabilities.useCapabilityRegistry.mockReturnValue({
+    mockCapabilities.useSurfaceRegistry.mockReturnValue({
       data: {
         generatedAt: '2026-04-17T12:00:00Z',
         requestId: 'req-query',
         tenantId: TEST_TENANT_ID,
-        capabilities: [
+        surfaces: [
           {
             key: 'analytics',
             label: 'Analytics',
-            status: 'active',
+            status: 'LIVE',
             summary: 'ACTIVE',
             detail: undefined,
             rawValue: 'ACTIVE',
@@ -169,7 +169,7 @@ describe('SqlWorkspacePage', () => {
           {
             key: 'trino',
             label: 'Trino',
-            status: 'unavailable',
+            status: 'UNAVAILABLE',
             summary: 'NOT_CONFIGURED',
             detail: 'Trino is not configured for this environment.',
             rawValue: 'NOT_CONFIGURED',
@@ -177,7 +177,7 @@ describe('SqlWorkspacePage', () => {
           {
             key: 'ai_assist',
             label: 'Ai Assist',
-            status: 'degraded',
+            status: 'DEGRADED',
             summary: 'DEGRADED',
             detail: 'AI assist is deployed without a backing LLM service.',
             rawValue: 'DEGRADED',
@@ -224,16 +224,16 @@ describe('SqlWorkspacePage', () => {
   });
 
   it('routes query execution through the federated path when the toggle is enabled', async () => {
-    mockCapabilities.useCapabilityRegistry.mockReturnValue({
+    mockCapabilities.useSurfaceRegistry.mockReturnValue({
       data: {
         generatedAt: '2026-04-17T12:00:00Z',
         requestId: 'req-query-fed',
         tenantId: TEST_TENANT_ID,
-        capabilities: [
+        surfaces: [
           {
             key: 'analytics',
             label: 'Analytics',
-            status: 'active',
+            status: 'LIVE',
             summary: 'ACTIVE',
             detail: undefined,
             rawValue: 'ACTIVE',
@@ -241,7 +241,7 @@ describe('SqlWorkspacePage', () => {
           {
             key: 'trino',
             label: 'Trino',
-            status: 'active',
+            status: 'LIVE',
             summary: 'ACTIVE',
             detail: undefined,
             rawValue: 'ACTIVE',
@@ -470,13 +470,13 @@ describe('SqlWorkspacePage', () => {
   // TEST-2: Degradation UI tests
   describe('Degradation Indicators', () => {
     it('displays Analytics degradation indicator when Analytics is degraded', async () => {
-      mockCapabilities.useCapabilityRegistry.mockReturnValue({
+      mockCapabilities.useSurfaceRegistry.mockReturnValue({
         data: {
           generatedAt: '2026-04-17T12:00:00Z',
           requestId: 'req-degraded-analytics',
           tenantId: TEST_TENANT_ID,
-          capabilities: [
-            { key: 'analytics', label: 'Analytics', status: 'degraded' as const, summary: 'DEGRADED', detail: 'Analytics engine overloaded' },
+          surfaces: [
+            { key: 'analytics', label: 'Analytics', status: 'DEGRADED' as const, summary: 'DEGRADED', detail: 'Analytics engine overloaded', rawValue: 'DEGRADED' },
           ],
         },
       });
@@ -491,14 +491,14 @@ describe('SqlWorkspacePage', () => {
     });
 
     it('displays Federated Query degradation indicator when Federated Query is unavailable', async () => {
-      mockCapabilities.useCapabilityRegistry.mockReturnValue({
+      mockCapabilities.useSurfaceRegistry.mockReturnValue({
         data: {
           generatedAt: '2026-04-17T12:00:00Z',
           requestId: 'req-degraded-federated',
           tenantId: TEST_TENANT_ID,
-          capabilities: [
-            { key: 'analytics', label: 'Analytics', status: 'active' as const, summary: 'ACTIVE', detail: undefined },
-            { key: 'trino', label: 'Trino', status: 'unavailable' as const, summary: 'UNAVAILABLE', detail: 'Federated query not configured' },
+          surfaces: [
+            { key: 'analytics', label: 'Analytics', status: 'LIVE' as const, summary: 'ACTIVE', detail: undefined, rawValue: 'ACTIVE' },
+            { key: 'trino', label: 'Trino', status: 'UNAVAILABLE' as const, summary: 'UNAVAILABLE', detail: 'Federated query not configured', rawValue: 'UNAVAILABLE' },
           ],
         },
       });
@@ -513,14 +513,14 @@ describe('SqlWorkspacePage', () => {
     });
 
     it('does not display degradation indicators when all services are healthy', async () => {
-      mockCapabilities.useCapabilityRegistry.mockReturnValue({
+      mockCapabilities.useSurfaceRegistry.mockReturnValue({
         data: {
           generatedAt: '2026-04-17T12:00:00Z',
           requestId: 'req-healthy',
           tenantId: TEST_TENANT_ID,
-          capabilities: [
-            { key: 'analytics', label: 'Analytics', status: 'active' as const, summary: 'ACTIVE', detail: '' },
-            { key: 'trino', label: 'Trino', status: 'active' as const, summary: 'ACTIVE', detail: '' },
+          surfaces: [
+            { key: 'analytics', label: 'Analytics', status: 'LIVE' as const, summary: 'ACTIVE', detail: '', rawValue: 'ACTIVE' },
+            { key: 'trino', label: 'Trino', status: 'LIVE' as const, summary: 'ACTIVE', detail: '', rawValue: 'ACTIVE' },
           ],
         },
       });

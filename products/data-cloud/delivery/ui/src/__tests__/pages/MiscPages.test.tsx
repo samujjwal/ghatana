@@ -19,16 +19,16 @@ vi.mock('../../api/surfaces.service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../api/surfaces.service')>();
   return {
     ...actual,
-    useCapabilityRegistry: () => ({
+    useSurfaceRegistry: () => ({
       data: {
         generatedAt: '2026-04-17T12:00:00Z',
         requestId: 'req-misc-pages',
         tenantId: TEST_TENANT_ID,
-        capabilities: [
+        surfaces: [
           {
             key: 'ai_assist',
             label: 'AI Assist',
-            status: 'unavailable',
+            status: 'UNAVAILABLE',
             summary: 'UNAVAILABLE',
             detail: smartWorkflowGenerationBoundary.details[1],
             rawValue: 'UNAVAILABLE',

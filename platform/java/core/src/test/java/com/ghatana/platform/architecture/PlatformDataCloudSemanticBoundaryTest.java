@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * ArchUnit fitness functions enforcing that platform shared modules contain no
@@ -239,16 +240,22 @@ class PlatformDataCloudSemanticBoundaryTest {
 
         @Test
         @DisplayName("Feature enum must not contain product-specific constants")
-        void featureEnumMustNotContainProductSpecificConstants() {
-            ArchRule rule = noClasses()
-                    .that().haveSimpleName("Feature")
-                    .and().resideInAPackage("com.ghatana.platform.core.feature")
-                    .should().haveNoFieldsThat()
-                    .match(".*(AEP|DATA_CLOUD|YAPPC|FLASHIT|TUTORPUTOR|VIRTUAL_ORG|SOFTWARE_ORG).*")
-                    .because("Feature enum in platform module must not contain product-specific constants. "
-                            + "Product-specific features must be defined in the product layer. "
-                            + "See DC-BND-003 remediation.");
-            rule.check(PLATFORM_CLASSES);
+        void featureEnumMustNotContainProductSpecificConstants() throws ClassNotFoundException {
+            Class<?> featureEnumClass = Class.forName("com.ghatana.platform.core.feature.Feature");
+            Object[] constants = featureEnumClass.getEnumConstants();
+            if (constants == null) {
+                return;
+            }
+
+            for (Object constant : constants) {
+                String name = ((Enum<?>) constant).name();
+                assertFalse(
+                    name.matches(".*(AEP|DATA_CLOUD|YAPPC|FLASHIT|TUTORPUTOR|VIRTUAL_ORG|SOFTWARE_ORG).*"),
+                    "Feature enum in platform module must not contain product-specific constants. "
+                        + "Product-specific features must be defined in the product layer. "
+                        + "See DC-BND-003 remediation. Found: " + name
+                );
+            }
         }
     }
 }

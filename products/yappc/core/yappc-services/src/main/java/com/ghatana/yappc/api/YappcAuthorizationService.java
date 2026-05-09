@@ -14,6 +14,9 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Canonical authorization service for YAPPC with resource-level permission checks.
  *
@@ -237,13 +240,36 @@ public final class YappcAuthorizationService {
     }
 
     /**
+     * Checks whether a principal has a specific permission.
+     *
+     * @param principal the authenticated principal
+     * @param permission the required permission
+     * @return true when the principal has the permission
+     */
+    public boolean hasPermission(@NotNull Principal principal, @NotNull String permission) {
+        return authorizationService.hasPermission(toUser(principal), permission);
+    }
+
+    /**
+     * Checks whether a user has a specific permission.
+     *
+     * @param user the user
+     * @param permission the required permission
+     * @return true when the user has the permission
+     */
+    public boolean hasPermission(@Nullable com.ghatana.platform.security.model.User user, @NotNull String permission) {
+        return authorizationService.hasPermission(user, permission);
+    }
+
+    /**
      * Converts platform Principal to platform User for authorization service.
      */
     private com.ghatana.platform.security.model.User toUser(@NotNull Principal principal) {
+        Set<String> roles = new HashSet<>(principal.getRoles());
         return new com.ghatana.platform.security.model.User(
             principal.getName(),
-            principal.getRoles(),
-            principal.getTenantId()
+            principal.getName(),
+            roles
         );
     }
 }

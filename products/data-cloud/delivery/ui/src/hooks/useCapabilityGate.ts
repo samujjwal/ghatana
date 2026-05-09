@@ -10,18 +10,18 @@
  * @doc.layer frontend
  */
 
-import { useCapabilityRegistry, getCapabilitySignal, type CapabilitySignal } from '../api/surfaces.service';
+import { useSurfaceRegistry, getSurfaceSignal, type SurfaceSignal } from '../api/surfaces.service';
 
 export type GateMode = 'active' | 'activeOrDegraded' | 'notUnavailable';
 
-function isAllowed(status: CapabilitySignal['status'], mode: GateMode): boolean {
+function isAllowed(status: SurfaceSignal['status'], mode: GateMode): boolean {
   switch (mode) {
     case 'active':
-      return status === 'active';
+      return status === 'LIVE';
     case 'activeOrDegraded':
-      return status === 'active' || status === 'degraded';
+      return status === 'LIVE' || status === 'DEGRADED' || status === 'PREVIEW';
     case 'notUnavailable':
-      return status !== 'unavailable';
+      return status !== 'UNAVAILABLE' && status !== 'DISABLED' && status !== 'MISCONFIGURED';
   }
 }
 
@@ -33,14 +33,14 @@ function isAllowed(status: CapabilitySignal['status'], mode: GateMode): boolean 
  * @returns boolean indicating whether the runtime surface is available
  */
 export function useCapabilityGate(aliases: string[], mode: GateMode = 'active'): boolean {
-  const { data, isLoading } = useCapabilityRegistry();
+  const { data, isLoading } = useSurfaceRegistry();
 
   if (isLoading || !data) {
     // While loading, default to open to avoid flicker; strict pages can check isLoading separately
     return true;
   }
 
-  const signal = getCapabilitySignal(data.capabilities, aliases);
+  const signal = getSurfaceSignal(data.surfaces, aliases);
   if (!signal) {
     return false;
   }
@@ -51,8 +51,8 @@ export function useCapabilityGate(aliases: string[], mode: GateMode = 'active'):
 /**
  * Get the live runtime surface signal for display / diagnostics.
  */
-export function useCapabilitySignal(aliases: string[]): CapabilitySignal | undefined {
-  const { data } = useCapabilityRegistry();
+export function useCapabilitySignal(aliases: string[]): SurfaceSignal | undefined {
+  const { data } = useSurfaceRegistry();
   if (!data) return undefined;
-  return getCapabilitySignal(data.capabilities, aliases);
+  return getSurfaceSignal(data.surfaces, aliases);
 }

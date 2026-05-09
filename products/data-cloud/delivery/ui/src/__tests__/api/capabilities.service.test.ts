@@ -21,7 +21,7 @@ describe('surfaces.service compatibility behavior', () => {
   it('normalizes capability registry statuses and reasons', async () => {
     apiClientGet.mockResolvedValue({
       data: {
-        capabilities: {
+        surfaces: {
           analytics: 'ACTIVE',
           trino: 'NOT_CONFIGURED',
           ai_assist: {

@@ -4,6 +4,7 @@
  */
 package com.ghatana.yappc.api;
 
+import com.ghatana.yappc.domain.intent.IntentInput;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

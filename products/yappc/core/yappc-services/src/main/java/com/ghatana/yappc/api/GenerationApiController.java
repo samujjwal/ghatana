@@ -47,10 +47,7 @@ public class GenerationApiController {
     private final RateLimiter generationRateLimiter;
     private final AuditLogger auditLogger;
 
-    public GenerationApiController(GenerationService generationService, YappcArtifactRepository artifactRepository) {
-        this(generationService, artifactRepository, AuditLogger.noop());
-    }
-
+    // P1-10: Removed no-op default - controller now requires real AuditLogger from DI
     public GenerationApiController(
             GenerationService generationService,
             YappcArtifactRepository artifactRepository,
@@ -322,6 +319,22 @@ public class GenerationApiController {
             );
         }
 
+        // Require authenticated principal
+        Principal principal = request.getAttachment(Principal.class);
+        if (principal == null) {
+            return auditThenRespond(
+                request,
+                "generation.review.request",
+                "rejected",
+                null,
+                runIdFromPath(request),
+                Map.of("route", "generate-review", "action", action.wireValue(), "reason", "unauthenticated"),
+                HttpResponse.ofCode(401)
+                    .withJson("{\"error\":\"Unauthenticated\"}")
+                    .build()
+            );
+        }
+
         String runId = runIdFromPath(request);
         if (runId == null || runId.isBlank()) {
             return auditThenRespond(
@@ -342,14 +355,15 @@ public class GenerationApiController {
                     if (decisionBody.projectId() == null || decisionBody.projectId().isBlank()) {
                         throw new IllegalArgumentException("projectId is required");
                     }
-                    if (decisionBody.actorId() == null || decisionBody.actorId().isBlank()) {
-                        throw new IllegalArgumentException("actorId is required");
-                    }
+
+                    // P1-7: Use authenticated principal as actor, not body-provided actorId
+                    // This prevents actor spoofing in review decisions
+                    String actorId = principal.getName();
 
                     GenerationReviewRequest reviewRequest = new GenerationReviewRequest(
                         runId,
                         decisionBody.projectId(),
-                        decisionBody.actorId(),
+                        actorId,
                         decisionBody.reason(),
                         action
                     );
@@ -368,7 +382,8 @@ public class GenerationApiController {
                                         "route", "generate-review",
                                         "action", action.wireValue(),
                                         "status", result.status(),
-                                        "reasonProvided", decisionBody.reason() != null && !decisionBody.reason().isBlank()
+                                        "reasonProvided", decisionBody.reason() != null && !decisionBody.reason().isBlank(),
+                                        "actorId", actorId
                                     ),
                                     response
                                 );
@@ -464,7 +479,7 @@ public class GenerationApiController {
 
     private ReviewDecisionBody parseReviewDecisionBody(String json) throws JsonProcessingException {
         if (json == null || json.isBlank()) {
-            return new ReviewDecisionBody(null, null, null);
+            return new ReviewDecisionBody(null, null);
         }
         return JsonMapper.fromJson(json, ReviewDecisionBody.class);
     }
@@ -508,6 +523,6 @@ public class GenerationApiController {
     private record RegenerateDiffRequest(ValidatedSpec validatedSpec, GeneratedArtifacts existingArtifacts) {
     }
 
-    private record ReviewDecisionBody(String projectId, String actorId, String reason) {
+    private record ReviewDecisionBody(String projectId, String reason) {
     }
 }

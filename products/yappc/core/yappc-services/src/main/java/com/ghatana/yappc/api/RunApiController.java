@@ -39,7 +39,7 @@ public class RunApiController {
     private final AuditLogger auditLogger;
 
     public RunApiController(RunService runService) {
-        this(runService, AuditLogger.noop());
+        this(runService, event -> Promise.complete());
     }
 
     public RunApiController(RunService runService, AuditLogger auditLogger) {

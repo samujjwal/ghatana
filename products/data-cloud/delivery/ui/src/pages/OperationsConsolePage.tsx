@@ -42,7 +42,7 @@ import {
 } from '../lib/theme';
 import { RBACGuard } from '../components/security/RBACGuard';
 import { useAlertsSummary } from '../api/alerts.service';
-import { useCapabilityRegistry, type CapabilitySignal } from '../api/surfaces.service';
+import { useSurfaceRegistry, type SurfaceSignal } from '../api/surfaces.service';
 
 interface HealthStatus {
   component: string;
@@ -51,10 +51,10 @@ interface HealthStatus {
   uptime: string;
 }
 
-function mapCapabilitiesToHealth(capabilities: CapabilitySignal[]): HealthStatus[] {
-  return capabilities.map((cap) => {
+function mapCapabilitiesToHealth(surfaces: SurfaceSignal[]): HealthStatus[] {
+  return surfaces.map((cap) => {
     const status: HealthStatus['status'] =
-      cap.status === 'active' ? 'healthy' : cap.status === 'degraded' ? 'degraded' : 'unhealthy';
+      cap.status === 'LIVE' ? 'healthy' : cap.status === 'DEGRADED' || cap.status === 'PREVIEW' ? 'degraded' : 'unhealthy';
     return {
       component: cap.label || cap.key,
       status,
@@ -68,9 +68,9 @@ export const OperationsConsolePage: React.FC = () => {
   const queryClient = useQueryClient();
 
   const {
-    data: capabilityRegistry,
+    data: surfaceRegistry,
     isLoading: capabilitiesLoading,
-  } = useCapabilityRegistry();
+  } = useSurfaceRegistry();
 
   const {
     data: alertSummary,
@@ -78,8 +78,8 @@ export const OperationsConsolePage: React.FC = () => {
   } = useAlertsSummary();
 
   const healthStatuses = React.useMemo(
-    () => (capabilityRegistry ? mapCapabilitiesToHealth(capabilityRegistry.capabilities) : []),
-    [capabilityRegistry]
+    () => (surfaceRegistry ? mapCapabilitiesToHealth(surfaceRegistry.surfaces) : []),
+    [surfaceRegistry]
   );
 
   const isLoading = capabilitiesLoading || alertsLoading;

@@ -239,3 +239,79 @@ tasks.named("check") {
         dependsOn("checkYappcOpenApiParity")
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Forbidden import check for cross-stack boundaries
+//
+// Enforces that Java code does not import @prisma/client or call GraphQL API directly,
+// and that Node code does not call yappc-domain-impl JDBC tables directly.
+// ─────────────────────────────────────────────────────────────────────────────
+tasks.register("checkYappcForbiddenImports") {
+    group = "verification"
+    description = "Ensures no forbidden cross-stack imports exist in Java code"
+
+    val configurationCacheRequested = gradle.startParameter.isConfigurationCacheRequested
+
+    if (configurationCacheRequested) {
+        doLast {
+            logger.lifecycle("Skipping checkYappcForbiddenImports because configuration cache is enabled")
+        }
+        return@register
+    }
+
+    outputs.upToDateWhen { false }
+
+    doLast {
+        val violations = mutableListOf<String>()
+
+        // Scan Java source files for forbidden imports
+        val javaSourceDirs = listOf(
+            "core/yappc-services/src/main/java",
+            "core/yappc-domain-impl/src/main/java",
+            "core/yappc-shared/src/main/java"
+        )
+
+        javaSourceDirs.forEach { dirPath ->
+            val dir = File(projectDir, dirPath)
+            if (dir.exists()) {
+                dir.walk()
+                    .filter { it.isFile && it.name.endsWith(".java") }
+                    .forEach { file ->
+                        try {
+                            file.readLines().forEachIndexed { idx, line ->
+                                val forbiddenPatterns = listOf(
+                                    Regex("""import\s+@prisma\.client"""),
+                                    Regex("""import\s+com\.prisma\.client"""),
+                                    Regex("""import\s+.*\.graphql\.client""")
+                                )
+
+                                forbiddenPatterns.forEach { pattern ->
+                                    if (pattern.containsMatchIn(line) && !line.trimStart().startsWith("//")) {
+                                        violations.add("${file.absolutePath}:${idx + 1} - ${line.trim()}")
+                                    }
+                                }
+                            }
+                        } catch (e: Exception) {
+                            logger.debug("Could not read file ${file.name}: ${e.message}")
+                        }
+                    }
+            }
+        }
+
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                "Forbidden cross-stack imports detected:\n${violations.joinToString("\n")}\n\n" +
+                "Java code must not import @prisma/client or GraphQL client directly. " +
+                "Use the appropriate HTTP API or event-based integration instead."
+            )
+        }
+
+        logger.lifecycle("Forbidden import check passed - no cross-stack violations found")
+    }
+}
+
+tasks.named("check") {
+    if (!gradle.startParameter.isConfigurationCacheRequested) {
+        dependsOn("checkYappcForbiddenImports")
+    }
+}

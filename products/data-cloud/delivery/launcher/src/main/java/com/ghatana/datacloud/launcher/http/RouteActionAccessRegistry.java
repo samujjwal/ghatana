@@ -28,6 +28,11 @@ final class RouteActionAccessRegistry {
         Map.entry("POST /api/v1/settings/security", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("POST /api/v1/settings/keys", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("GET /api/v1/settings/keys/{id}", DataCloudSecurityFilter.AccessLevel.ADMIN),
+        Map.entry("POST /api/v1/settings/keys/{id}/rotate", DataCloudSecurityFilter.AccessLevel.ADMIN),
+        Map.entry("DELETE /api/v1/settings/keys/{id}/revoke", DataCloudSecurityFilter.AccessLevel.ADMIN),
+        Map.entry("POST /api/v1/settings/approval-request", DataCloudSecurityFilter.AccessLevel.ADMIN),
+        Map.entry("POST /api/v1/settings/approvals/{id}/approve", DataCloudSecurityFilter.AccessLevel.ADMIN),
+        Map.entry("POST /api/v1/settings/approvals/{id}/reject", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("POST /api/v1/plugins/{id}/enable", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("POST /api/v1/plugins/{id}/disable", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("POST /api/v1/governance/retention/purge", DataCloudSecurityFilter.AccessLevel.ADMIN),
@@ -60,7 +65,10 @@ final class RouteActionAccessRegistry {
         Map.entry("POST /api/v1/alerts/{id}/remediate", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("POST /api/v1/alerts/{id}/auto-remediate", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("POST /api/v1/alerts/{id}/escalate", DataCloudSecurityFilter.AccessLevel.OPERATOR),
+        Map.entry("POST /api/v1/alerts/{id}/acknowledge", DataCloudSecurityFilter.AccessLevel.OPERATOR),
+        Map.entry("POST /api/v1/alerts/{id}/resolve", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("POST /api/v1/alerts/groups/{id}/resolve", DataCloudSecurityFilter.AccessLevel.OPERATOR),
+        Map.entry("POST /api/v1/alerts/suggestions/{id}/apply", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("POST /api/v1/alerts/rules", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("PUT /api/v1/alerts/rules/{id}", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("DELETE /api/v1/alerts/rules/{id}", DataCloudSecurityFilter.AccessLevel.OPERATOR),
@@ -79,9 +87,13 @@ final class RouteActionAccessRegistry {
 
     private static String normalizePath(String path) {
         String normalized = path.replaceAll("/[0-9a-fA-F-]{8,}", "/{id}");
+        normalized = normalized.replaceFirst("^/api/v1/action/", "/api/v1/");
         normalized = normalized.replaceAll("/learning/review/[^/]+/(approve|reject)$", "/learning/review/{id}/$1");
         normalized = normalized.replaceAll("/connectors/[^/]+", "/connectors/{id}");
+        normalized = normalized.replaceAll("/settings/keys/[^/]+/rotate$", "/settings/keys/{id}/rotate");
+        normalized = normalized.replaceAll("/settings/keys/[^/]+/revoke$", "/settings/keys/{id}/revoke");
         normalized = normalized.replaceAll("/settings/keys/[^/]+$", "/settings/keys/{id}");
+        normalized = normalized.replaceAll("/settings/approvals/[^/]+/(approve|reject)$", "/settings/approvals/{id}/$1");
         normalized = normalized.replaceAll("/plugins/[^/]+", "/plugins/{id}");
         normalized = normalized.replaceAll("/governance/policies/[^/]+/toggle$", "/governance/policies/{id}/toggle");
         normalized = normalized.replaceAll("/governance/policies/[^/]+$", "/governance/policies/{id}");
@@ -93,8 +105,9 @@ final class RouteActionAccessRegistry {
         normalized = normalized.replaceAll("/pipelines/[^/]+", "/pipelines/{id}");
         normalized = normalized.replaceAll("/executions/[^/]+/(cancel|retry|rollback|restore)$", "/executions/{id}/$1");
         normalized = normalized.replaceAll("/alerts/groups/[^/]+/resolve$", "/alerts/groups/{id}/resolve");
+        normalized = normalized.replaceAll("/alerts/suggestions/[^/]+/apply$", "/alerts/suggestions/{id}/apply");
         normalized = normalized.replaceAll("/alerts/rules/[^/]+$", "/alerts/rules/{id}");
-        normalized = normalized.replaceAll("/alerts/[^/]+/(remediate|auto-remediate|escalate)$", "/alerts/{id}/$1");
+        normalized = normalized.replaceAll("/alerts/[^/]+/(remediate|auto-remediate|escalate|acknowledge|resolve)$", "/alerts/{id}/$1");
         normalized = normalized.replaceAll("/models/[^/]+", "/models/{id}");
         normalized = normalized.replaceAll("/entities/[^/]+/[^/]+", "/entities/{collection}/{id}");
         normalized = normalized.replaceAll("/entities/[^/]+$", "/entities/{collection}");

@@ -28,8 +28,8 @@ const { mockAi, mockCapabilities } = vi.hoisted(() => ({
         },
     },
     mockCapabilities: {
-        useCapabilityRegistry: vi.fn(),
-        getCapabilitySignal: vi.fn(),
+        useSurfaceRegistry: vi.fn(),
+        getSurfaceSignal: vi.fn(),
     },
 }));
 
@@ -43,8 +43,8 @@ vi.mock('../../lib/api/ai', () => ({
 }));
 
 vi.mock('../../api/surfaces.service', () => ({
-    useCapabilityRegistry: mockCapabilities.useCapabilityRegistry,
-    getCapabilitySignal: mockCapabilities.getCapabilitySignal,
+    useSurfaceRegistry: mockCapabilities.useSurfaceRegistry,
+    getSurfaceSignal: mockCapabilities.getSurfaceSignal,
 }));
 
 import { WorkflowsPage } from '../../pages/WorkflowsPage';
@@ -90,15 +90,15 @@ describe('WorkflowPage — WorkflowsPage', () => {
                 generatedAt: '2026-04-14T10:35:00Z',
             },
         });
-        mockCapabilities.useCapabilityRegistry.mockReturnValue({
+        mockCapabilities.useSurfaceRegistry.mockReturnValue({
             data: {
-                capabilities: [{ key: 'ai.assist', status: 'active', label: 'AI Assist', summary: 'ACTIVE', rawValue: true }],
+                surfaces: [{ key: 'ai.assist', status: 'LIVE', label: 'AI Assist', summary: 'ACTIVE', rawValue: true }],
             },
         });
-        mockCapabilities.getCapabilitySignal.mockReturnValue({
+        mockCapabilities.getSurfaceSignal.mockReturnValue({
             key: 'ai.assist',
             label: 'AI Assist',
-            status: 'active',
+            status: 'LIVE',
             summary: 'ACTIVE',
             rawValue: true,
         });

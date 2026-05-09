@@ -266,6 +266,27 @@ class ApiResponseTest {
         }
 
         @Test
+        @DisplayName("action namespace pipeline POST alias → SENSITIVE")
+        void actionNamespacePipelinePost_isSensitive() {
+            assertThat(EndpointSensitivity.classify("POST", "/api/v1/action/pipelines"))
+                .isEqualTo(EndpointSensitivity.SENSITIVE);
+        }
+
+        @Test
+        @DisplayName("settings key rotation route → CRITICAL")
+        void settingsKeyRotate_isCritical() {
+            assertThat(EndpointSensitivity.classify("POST", "/api/v1/settings/keys/key-123/rotate"))
+                .isEqualTo(EndpointSensitivity.CRITICAL);
+        }
+
+        @Test
+        @DisplayName("alert suggestion apply route → SENSITIVE")
+        void alertSuggestionApply_isSensitive() {
+            assertThat(EndpointSensitivity.classify("POST", "/api/v1/alerts/suggestions/sugg-1/apply"))
+                .isEqualTo(EndpointSensitivity.SENSITIVE);
+        }
+
+        @Test
         @DisplayName("entity list → INTERNAL")
         void entityListPath_isInternal() { 
             assertThat(EndpointSensitivity.classify("GET", "/api/v1/entities/users")) 

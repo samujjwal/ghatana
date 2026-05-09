@@ -29,7 +29,7 @@ import {
 import { apiClient } from '../lib/api/client';
 import { migrateCollection as migrateCollectionApi, type MigrationTargetTier } from '../api/cost.service';
 import { aiOperationsService, type AiFabricAdvisory } from '../api/ai-operations.service';
-import { getCapabilitySignal, useCapabilityRegistry } from '../api/surfaces.service';
+import { getSurfaceSignal, useSurfaceRegistry } from '../api/surfaces.service';
 import { UnsupportedRuntimeBoundaryError } from '../lib/runtime-boundaries';
 import { UnsupportedSurfaceBoundary } from '../components/common/UnsupportedSurfaceBoundary';
 import { dataFabricMetricsBoundary } from '../components/common/unsupportedSurfaceRegistry';
@@ -285,21 +285,24 @@ function TierLegend(): React.ReactElement {
  * @doc.pattern Page
  */
 export function DataFabricPage(): React.ReactElement {
-  const { data: capabilityRegistry } = useCapabilityRegistry();
-  const dataFabricMetricsCapability = getCapabilitySignal(capabilityRegistry?.capabilities, [
+  const { data: surfaceRegistry } = useSurfaceRegistry();
+  const dataFabricMetricsCapability = getSurfaceSignal(surfaceRegistry?.surfaces, [
     'data_fabric_metrics',
     'dataFabricMetrics',
     'data.fabric.metrics',
   ]);
   const isFabricMetricsAvailable =
-    dataFabricMetricsCapability?.status === 'active' || dataFabricMetricsCapability?.status === 'degraded';
-  const aiFabricAdvisoryCapability = getCapabilitySignal(capabilityRegistry?.capabilities, [
+    dataFabricMetricsCapability?.status === 'LIVE' || dataFabricMetricsCapability?.status === 'DEGRADED' || dataFabricMetricsCapability?.status === 'PREVIEW';
+  const aiFabricAdvisoryCapability = getSurfaceSignal(surfaceRegistry?.surfaces, [
     'ai_fabric_advisory',
     'ai.fabric.advisory',
     'ai_assist',
     'ai.assist',
   ]);
-  const isAiFabricAdvisoryAvailable = aiFabricAdvisoryCapability?.status !== 'unavailable';
+  const isAiFabricAdvisoryAvailable =
+    aiFabricAdvisoryCapability?.status !== 'UNAVAILABLE'
+    && aiFabricAdvisoryCapability?.status !== 'DISABLED'
+    && aiFabricAdvisoryCapability?.status !== 'MISCONFIGURED';
 
   // Fabric metrics from DC API.
   const { data: fabricMetrics } = useQuery<FabricMetricsResponse>({

@@ -16,7 +16,7 @@ const analyticsMocks = vi.hoisted(() => ({
   useAnalyticsQuery: vi.fn(),
   useCollectionEntityCounts: vi.fn(),
   useAnalyticsAiSuggestions: vi.fn(),
-  useCapabilityRegistry: vi.fn(),
+  useSurfaceRegistry: vi.fn(),
   useAiQualitySummary: vi.fn(),
 }));
 
@@ -54,9 +54,9 @@ vi.mock('../../lib/api/workflows', () => ({
 vi.mock('../../api/analytics.service', () => analyticsMocks);
 
 vi.mock('../../api/surfaces.service', () => ({
-  useCapabilityRegistry: analyticsMocks.useCapabilityRegistry,
-  getCapabilitySignal: (capabilities: Array<{ key: string }> | undefined, aliases: string[]) =>
-    capabilities?.find((capability) => aliases.includes(capability.key)),
+  useSurfaceRegistry: analyticsMocks.useSurfaceRegistry,
+  getSurfaceSignal: (surfaces: Array<{ key: string }> | undefined, aliases: string[]) =>
+    surfaces?.find((surface) => aliases.includes(surface.key)),
 }));
 
 vi.mock('../../api/ai-observability.service', () => ({
@@ -149,16 +149,16 @@ describe('InsightsPage', () => {
       ],
       isLoading: false,
     });
-    analyticsMocks.useCapabilityRegistry.mockReturnValue({
+    analyticsMocks.useSurfaceRegistry.mockReturnValue({
       data: {
         generatedAt: '2026-04-17T12:00:00Z',
         requestId: 'req-runtime',
         tenantId: 'tenant-alpha',
-        capabilities: [
+        surfaces: [
           {
             key: 'analytics',
             label: 'Analytics',
-            status: 'active',
+            status: 'LIVE',
             summary: 'ACTIVE',
             detail: undefined,
             rawValue: 'ACTIVE',
@@ -166,7 +166,7 @@ describe('InsightsPage', () => {
           {
             key: 'voice',
             label: 'Voice',
-            status: 'degraded',
+            status: 'DEGRADED',
             summary: 'DEGRADED',
             detail: 'Voice dependencies are optional in this launcher profile.',
             rawValue: 'DEGRADED',
@@ -279,16 +279,16 @@ describe('InsightsPage', () => {
   });
 
   it('shows an honest unavailable state when analytics capability is disabled', async () => {
-    analyticsMocks.useCapabilityRegistry.mockReturnValue({
+    analyticsMocks.useSurfaceRegistry.mockReturnValue({
       data: {
         generatedAt: '2026-04-17T12:00:00Z',
         requestId: 'req-runtime',
         tenantId: 'tenant-alpha',
-        capabilities: [
+        surfaces: [
           {
             key: 'analytics',
             label: 'Analytics',
-            status: 'unavailable',
+            status: 'UNAVAILABLE',
             summary: 'NOT_CONFIGURED',
             detail: 'Analytics connectors are not configured for this launcher profile.',
             rawValue: 'NOT_CONFIGURED',
@@ -306,7 +306,7 @@ describe('InsightsPage', () => {
   });
 
   it('shows a runtime surface loading state before runtime truth is available', async () => {
-    analyticsMocks.useCapabilityRegistry.mockReturnValue({
+    analyticsMocks.useSurfaceRegistry.mockReturnValue({
       data: undefined,
       isLoading: true,
     });

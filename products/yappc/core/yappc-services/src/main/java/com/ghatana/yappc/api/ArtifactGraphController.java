@@ -1,6 +1,7 @@
 package com.ghatana.yappc.api;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.yappc.common.JsonMapper;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphAnalysisRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphIngestRequest;
@@ -19,6 +20,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static com.ghatana.yappc.api.HttpResponses.*;
 
 /**
+ * HTTP API controller for artifact graph compiler operations.
+ *
+ * <p>P1-8: Artifact graph APIs now resolve tenant/workspace/project from authenticated
+ * principal and resource registry, not request body. This prevents cross-tenant/cross-project
+ * access through payload manipulation.
+ *
  * @doc.type class
  * @doc.purpose HTTP API controller for artifact graph compiler operations
  * @doc.layer api
@@ -121,9 +128,25 @@ public class ArtifactGraphController {
     /**
      * POST /api/v1/yappc/artifact/graph/query
      * Query the artifact graph (orphaned, dependencies, dependents, stats).
+     *
+     * <p>P1-8: Resolves tenant from authenticated principal, not request body.
+     * This prevents cross-tenant access through payload manipulation.
      */
     public Promise<HttpResponse> query(HttpRequest request) {
         log.info("Artifact graph query request");
+
+        // P1-8: Require authenticated principal for scope resolution
+        Principal principal = request.getAttachment(Principal.class);
+        if (principal == null) {
+            log.warn("Query request without authenticated principal");
+            return Promise.of(HttpResponse.ofCode(401)
+                .withJson("{\"error\":\"Unauthenticated\"}")
+                .build());
+        }
+
+        // P1-8: Extract tenant from principal, not request body
+        String tenantId = principal.getTenantId();
+
         return request.loadBody()
                 .then(body -> {
                     String json = body.asString(UTF_8);
@@ -131,13 +154,22 @@ public class ArtifactGraphController {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> payload = JsonMapper.fromJson(json, Map.class);
                         String productId = (String) payload.get("productId");
-                        String tenantId = (String) payload.get("tenantId");
                         String queryType = (String) payload.get("queryType");
                         @SuppressWarnings("unchecked")
                         List<String> seedIds = (List<String>) payload.getOrDefault("seedIds", List.of());
 
-                        if (productId == null || tenantId == null || queryType == null) {
-                            return Promise.of(badRequest400("Missing required fields: productId, tenantId, queryType"));
+                        if (productId == null || queryType == null) {
+                            return Promise.of(badRequest400("Missing required fields: productId, queryType"));
+                        }
+
+                        // P1-8: Validate tenant scope - reject if request body contains tenantId that doesn't match principal
+                        String requestTenantId = (String) payload.get("tenantId");
+                        if (requestTenantId != null && !requestTenantId.equals(tenantId)) {
+                            log.warn("Tenant scope mismatch in query: principalTenant={}, requestTenant={}",
+                                tenantId, requestTenantId);
+                            return Promise.of(HttpResponse.ofCode(403)
+                                .withJson("{\"error\":\"Forbidden: tenant scope mismatch\"}")
+                                .build());
                         }
 
                         return artifactGraphService.queryGraph(productId, tenantId, queryType, seedIds)
@@ -160,9 +192,25 @@ public class ArtifactGraphController {
     /**
      * POST /api/v1/yappc/artifact/residual/analyze
      * Analyze residual islands flagged by the TypeScript scanner.
+     *
+     * <p>P1-8: Resolves tenant from authenticated principal, not request body.
+     * This prevents cross-tenant access through payload manipulation.
      */
     public Promise<HttpResponse> analyzeResidual(HttpRequest request) {
         log.info("Artifact residual analyze request");
+
+        // P1-8: Require authenticated principal for scope resolution
+        Principal principal = request.getAttachment(Principal.class);
+        if (principal == null) {
+            log.warn("Analyze residual request without authenticated principal");
+            return Promise.of(HttpResponse.ofCode(401)
+                .withJson("{\"error\":\"Unauthenticated\"}")
+                .build());
+        }
+
+        // P1-8: Extract tenant from principal, not request body
+        String tenantId = principal.getTenantId();
+
         return request.loadBody()
                 .then(body -> {
                     String json = body.asString(UTF_8);
@@ -170,12 +218,21 @@ public class ArtifactGraphController {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> payload = JsonMapper.fromJson(json, Map.class);
                         String productId = (String) payload.get("productId");
-                        String tenantId = (String) payload.get("tenantId");
                         @SuppressWarnings("unchecked")
                         List<Map<String, Object>> islands = (List<Map<String, Object>>) payload.getOrDefault("residualIslands", List.of());
 
-                        if (productId == null || tenantId == null) {
-                            return Promise.of(badRequest400("Missing productId or tenantId"));
+                        if (productId == null) {
+                            return Promise.of(badRequest400("Missing productId"));
+                        }
+
+                        // P1-8: Validate tenant scope - reject if request body contains tenantId that doesn't match principal
+                        String requestTenantId = (String) payload.get("tenantId");
+                        if (requestTenantId != null && !requestTenantId.equals(tenantId)) {
+                            log.warn("Tenant scope mismatch in analyzeResidual: principalTenant={}, requestTenant={}",
+                                tenantId, requestTenantId);
+                            return Promise.of(HttpResponse.ofCode(403)
+                                .withJson("{\"error\":\"Forbidden: tenant scope mismatch\"}")
+                                .build());
                         }
 
                         return artifactGraphService.analyzeResidual(productId, tenantId, islands)

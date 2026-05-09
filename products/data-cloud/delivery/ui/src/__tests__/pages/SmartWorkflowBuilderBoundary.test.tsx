@@ -7,16 +7,16 @@ import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 import { smartWorkflowGenerationBoundary } from '@/components/common/unsupportedSurfaceRegistry';
 
 vi.mock('../../api/surfaces.service', () => ({
-  useCapabilityRegistry: () => ({
+  useSurfaceRegistry: () => ({
     data: {
       generatedAt: '2026-04-17T12:00:00Z',
       requestId: 'req-smart-workflow',
       tenantId: TEST_TENANT_ID,
-      capabilities: [
+      surfaces: [
         {
           key: 'ai_assist',
           label: 'AI Assist',
-          status: 'unavailable',
+          status: 'UNAVAILABLE',
           summary: 'UNAVAILABLE',
           detail: smartWorkflowGenerationBoundary.details[1],
           rawValue: 'UNAVAILABLE',
@@ -24,8 +24,8 @@ vi.mock('../../api/surfaces.service', () => ({
       ],
     },
   }),
-  getCapabilitySignal: (capabilities: Array<{ key: string }> | undefined, aliases: string[]) =>
-    capabilities?.find((capability) => aliases.includes(capability.key)),
+  getSurfaceSignal: (surfaces: Array<{ key: string }> | undefined, aliases: string[]) =>
+    surfaces?.find((surface) => aliases.includes(surface.key)),
 }));
 
 describe('SmartWorkflowBuilder boundary', () => {

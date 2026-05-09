@@ -8,15 +8,15 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import type { CapabilityRegistrySnapshot, CapabilitySignal } from '../../../api/surfaces.service';
+import type { SurfaceRegistrySnapshot, SurfaceSignal } from '../../../api/surfaces.service';
 
 // ---------------------------------------------------------------------------
 // Hoist mocks before module resolution
 // ---------------------------------------------------------------------------
 
-const { mockUseCapabilityGate, mockUseCapabilityRegistry } = vi.hoisted(() => ({
+const { mockUseCapabilityGate, mockUseSurfaceRegistry } = vi.hoisted(() => ({
   mockUseCapabilityGate: vi.fn<(capabilities: string[], mode?: import('../../../hooks/useCapabilityGate').GateMode) => boolean>(),
-  mockUseCapabilityRegistry: vi.fn<() => { data: CapabilityRegistrySnapshot | undefined; isLoading: boolean }>(),
+  mockUseSurfaceRegistry: vi.fn<() => { data: SurfaceRegistrySnapshot | undefined; isLoading: boolean }>(),
 }));
 
 vi.mock('../../../hooks/useCapabilityGate', () => ({
@@ -24,7 +24,7 @@ vi.mock('../../../hooks/useCapabilityGate', () => ({
 }));
 
 vi.mock('../../../api/surfaces.service', () => ({
-  useCapabilityRegistry: mockUseCapabilityRegistry,
+  useSurfaceRegistry: mockUseSurfaceRegistry,
 }));
 
 import React from 'react';
@@ -34,15 +34,15 @@ import { CapabilityGated } from '../CapabilityGated';
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeRegistry(status: CapabilitySignal['status']): CapabilityRegistrySnapshot {
+function makeRegistry(status: SurfaceSignal['status']): SurfaceRegistrySnapshot {
   return {
-    capabilities: [
+    surfaces: [
       {
         key: 'test-cap',
         label: 'Test Capability',
         status,
-        summary: status.toUpperCase(),
-        rawValue: status.toUpperCase(),
+        summary: status,
+        rawValue: status,
       },
     ],
     generatedAt: '2026-01-01T00:00:00Z',
@@ -60,8 +60,8 @@ describe('CapabilityGated', () => {
 
   describe('when the capability is active', () => {
     it('renders children', () => {
-      mockUseCapabilityRegistry.mockReturnValue({
-        data: makeRegistry('active'),
+      mockUseSurfaceRegistry.mockReturnValue({
+        data: makeRegistry('LIVE'),
         isLoading: false,
       });
       mockUseCapabilityGate.mockReturnValue(true);
@@ -78,8 +78,8 @@ describe('CapabilityGated', () => {
 
   describe('when the capability is unavailable', () => {
     it('renders null when no fallback is provided', () => {
-      mockUseCapabilityRegistry.mockReturnValue({
-        data: makeRegistry('unavailable'),
+      mockUseSurfaceRegistry.mockReturnValue({
+        data: makeRegistry('UNAVAILABLE'),
         isLoading: false,
       });
       mockUseCapabilityGate.mockReturnValue(false);
@@ -95,8 +95,8 @@ describe('CapabilityGated', () => {
     });
 
     it('renders the fallback when provided', () => {
-      mockUseCapabilityRegistry.mockReturnValue({
-        data: makeRegistry('unavailable'),
+      mockUseSurfaceRegistry.mockReturnValue({
+        data: makeRegistry('UNAVAILABLE'),
         isLoading: false,
       });
       mockUseCapabilityGate.mockReturnValue(false);
@@ -117,8 +117,8 @@ describe('CapabilityGated', () => {
 
   describe('when the capability is degraded with mode=active', () => {
     it('renders fallback because active mode rejects degraded', () => {
-      mockUseCapabilityRegistry.mockReturnValue({
-        data: makeRegistry('degraded'),
+      mockUseSurfaceRegistry.mockReturnValue({
+        data: makeRegistry('DEGRADED'),
         isLoading: false,
       });
       mockUseCapabilityGate.mockReturnValue(false);
@@ -140,8 +140,8 @@ describe('CapabilityGated', () => {
 
   describe('when the capability is degraded with mode=activeOrDegraded', () => {
     it('renders children because degraded is permitted', () => {
-      mockUseCapabilityRegistry.mockReturnValue({
-        data: makeRegistry('degraded'),
+      mockUseSurfaceRegistry.mockReturnValue({
+        data: makeRegistry('DEGRADED'),
         isLoading: false,
       });
       mockUseCapabilityGate.mockReturnValue(true);
@@ -161,7 +161,7 @@ describe('CapabilityGated', () => {
 
   describe('while the registry is loading', () => {
     it('renders the loadingFallback when provided', () => {
-      mockUseCapabilityRegistry.mockReturnValue({ data: undefined, isLoading: true });
+      mockUseSurfaceRegistry.mockReturnValue({ data: undefined, isLoading: true });
       mockUseCapabilityGate.mockReturnValue(true);
 
       render(
@@ -177,7 +177,7 @@ describe('CapabilityGated', () => {
     });
 
     it('renders the default spinner when no loadingFallback is provided', () => {
-      mockUseCapabilityRegistry.mockReturnValue({ data: undefined, isLoading: true });
+      mockUseSurfaceRegistry.mockReturnValue({ data: undefined, isLoading: true });
       mockUseCapabilityGate.mockReturnValue(true);
 
       render(

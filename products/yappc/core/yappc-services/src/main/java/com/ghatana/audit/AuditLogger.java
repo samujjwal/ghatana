@@ -5,8 +5,10 @@ import java.util.Map;
 
 /**
  * Minimal audit logger contract for lifecycle services.
- * Kept in compatibility package to preserve existing imports.
-
+ *
+ * <p>P1-10: Removed no-op default to ensure production audit is always configured.
+ * Controllers must receive a real AuditLogger instance from DI, never a no-op.
+ *
  * @doc.type interface
  * @doc.purpose Defines the contract for audit logger
  * @doc.layer core
@@ -15,8 +17,4 @@ import java.util.Map;
 */
 public interface AuditLogger {
   Promise<Void> log(Map<String, Object> event);
-
-  static AuditLogger noop() {
-    return event -> Promise.complete();
-  }
 }

@@ -46,7 +46,7 @@ import { ALERTS_UNSUPPORTED_MESSAGE, alertsService } from '../api/alerts.service
 import type { Alert, AlertGroup, ResolutionSuggestion, AlertSeverity, AlertStatus } from '../api/alerts.service';
 import { aiOperationsService } from '../api/ai-operations.service';
 import type { AiCrossCorrelation } from '../api/ai-operations.service';
-import { getCapabilitySignal, useCapabilityRegistry } from '../api/surfaces.service';
+import { getSurfaceSignal, useSurfaceRegistry } from '../api/surfaces.service';
 import { UnsupportedRuntimeBoundaryError } from '../lib/runtime-boundaries';
 
 function isAlertsUnsupportedError(error: unknown): boolean {
@@ -429,15 +429,18 @@ export function AlertsPage(): React.ReactElement {
     });
 
     // AI cross-surface correlations — capability-gated; boundary-aware.
-    const { data: capabilityRegistry } = useCapabilityRegistry();
-    const aiAssistCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['ai_assist', 'ai.assist', 'assist']);
+    const { data: surfaceRegistry } = useSurfaceRegistry();
+    const aiAssistCapability = getSurfaceSignal(surfaceRegistry?.surfaces, ['ai_assist', 'ai.assist', 'assist']);
     const correlationsQuery = useQuery({
         queryKey: ['ai', 'correlations', 'alerts'],
         queryFn: () => aiOperationsService.getCrossCorrelations({ primarySurface: 'alerts', limit: 10 }),
         staleTime: 5 * 60_000,
         retry: false,
         refetchOnWindowFocus: false,
-        enabled: aiAssistCapability?.status !== 'unavailable',
+        enabled:
+            aiAssistCapability?.status !== 'UNAVAILABLE'
+            && aiAssistCapability?.status !== 'DISABLED'
+            && aiAssistCapability?.status !== 'MISCONFIGURED',
     });
     const aiCorrelations = correlationsQuery.data ?? [];
     const aiCorrelationsBoundary = correlationsQuery.error instanceof UnsupportedRuntimeBoundaryError;
@@ -598,7 +601,10 @@ export function AlertsPage(): React.ReactElement {
             />
 
             {/* AI cross-surface correlations — shown when ai_assist capability is active */}
-            {aiAssistCapability?.status !== 'unavailable' && (aiCorrelations.length > 0 || aiCorrelationsBoundary) && (
+            {aiAssistCapability?.status !== 'UNAVAILABLE'
+                && aiAssistCapability?.status !== 'DISABLED'
+                && aiAssistCapability?.status !== 'MISCONFIGURED'
+                && (aiCorrelations.length > 0 || aiCorrelationsBoundary) && (
                 <div className="mb-6">
                     <AiCorrelationsPanel
                         correlations={aiCorrelations}

@@ -1,6 +1,7 @@
 package com.ghatana.yappc.api;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.yappc.common.JsonMapper;
 import com.ghatana.yappc.domain.evolve.EvolutionPlan;
 import com.ghatana.yappc.domain.generate.GeneratedArtifacts;
@@ -32,6 +33,7 @@ import io.activej.http.HttpClient;
 import io.activej.http.HttpHeaders;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,6 +70,7 @@ public class LifecycleApiController {
     private final Eventloop eventloop;
     private final HttpClient httpClient;
     private final PhaseActionContract phaseActionContract;
+    private final LifecycleExecutionRepository executionRepository;
     private static final List<String> PIPELINE_DAG_ORDER = List.of(
         "INTENT", "SHAPE", "VALIDATE", "GENERATE", "RUN", "OBSERVE", "LEARN", "EVOLVE"
     );
@@ -82,7 +85,8 @@ public class LifecycleApiController {
         LearningService learningService,
         EvolutionService evolutionService,
         Eventloop eventloop,
-        HttpClient httpClient
+        HttpClient httpClient,
+        LifecycleExecutionRepository executionRepository
     ) {
         this(
             intentService,
@@ -95,6 +99,7 @@ public class LifecycleApiController {
             evolutionService,
             eventloop,
             httpClient,
+            executionRepository,
             PhaseActionContract.defaults()
         );
     }
@@ -110,6 +115,7 @@ public class LifecycleApiController {
         EvolutionService evolutionService,
         Eventloop eventloop,
         HttpClient httpClient,
+        LifecycleExecutionRepository executionRepository,
         PhaseActionContract phaseActionContract
     ) {
         this.intentService = intentService;
@@ -123,6 +129,7 @@ public class LifecycleApiController {
         this.eventloop = eventloop;
         this.httpClient = httpClient;
         this.phaseActionContract = phaseActionContract;
+        this.executionRepository = executionRepository;
     }
 
     public Promise<HttpResponse> executeFullLifecycle(HttpRequest request) {
@@ -135,12 +142,49 @@ public class LifecycleApiController {
                         return Promise.of(badRequest400("intentInput.rawText is required"));
                     }
 
-                    return executeLifecyclePipeline(payload)
+                    // Validate required traceability fields
+                    if (payload.projectId() == null || payload.projectId().isBlank()) {
+                        return Promise.of(badRequest400("projectId is required"));
+                    }
+                    if (payload.workspaceId() == null || payload.workspaceId().isBlank()) {
+                        return Promise.of(badRequest400("workspaceId is required"));
+                    }
+
+                    // Extract actor and correlation ID from authenticated principal
+                    Principal principal = request.getAttachment(Principal.class);
+                    if (principal == null) {
+                        return Promise.of(HttpResponse.ofCode(401)
+                            .withJson("{\"error\":\"Unauthenticated\"}")
+                            .build());
+                    }
+
+                    String actorId = principal.getName();
+                    String tenantId = principal.getTenantId();
+                    String correlationId = extractCorrelationId(request);
+
+                    // Validate tenant scope - principal's tenant must match request tenant
+                    if (payload.tenantId() != null && !payload.tenantId().equals(tenantId)) {
+                        log.warn("Tenant scope mismatch: principalTenant={}, requestTenant={}",
+                            tenantId, payload.tenantId());
+                        return Promise.of(HttpResponse.ofCode(403)
+                            .withJson("{\"error\":\"Forbidden: tenant scope mismatch\"}")
+                            .build());
+                    }
+
+                    LifecycleExecutionContext context = new LifecycleExecutionContext(
+                        tenantId,
+                        payload.workspaceId(),
+                        payload.projectId(),
+                        actorId,
+                        correlationId
+                    );
+
+                    return executeLifecyclePipeline(payload, context)
                         .map(this::toJsonResponse)
                         .then((response, error) -> {
                             if (error != null) {
                                 log.error("Lifecycle DAG execution failed", error);
-                                return Promise.of(toJsonResponse(buildPipelineFailureResult(error)));
+                                return Promise.of(toJsonResponse(buildPipelineFailureResult(error, context)));
                             }
                             return Promise.of(response);
                         });
@@ -152,10 +196,11 @@ public class LifecycleApiController {
             .whenException(e -> log.error("Full lifecycle execution failed", e));
     }
 
-    private Promise<LifecycleExecutionResult> executeLifecyclePipeline(LifecycleExecuteRequest payload) {
+    private Promise<LifecycleExecutionResult> executeLifecyclePipeline(LifecycleExecuteRequest payload, LifecycleExecutionContext context) {
         Map<String, Long> phaseDurationsMs = new LinkedHashMap<>();
         List<String> executedPhases = new ArrayList<>();
         List<String> executionPlan = resolveDagExecutionPlan();
+        String executionId = UUID.randomUUID().toString();
 
         long pipelineStartMs = System.currentTimeMillis();
         return intentService.capture(payload.intentInput())
@@ -203,7 +248,7 @@ public class LifecycleApiController {
                                                         recordPhaseTiming("OBSERVE", observeStart, phaseDurationsMs, executedPhases);
 
                                                         long learnEvolveStart = System.currentTimeMillis();
-                                                        return analyzeAndEvolve(payload, intentSpec, shapeSpec,
+                                                        return analyzeAndEvolve(payload, context, executionId, intentSpec, shapeSpec,
                                                             validationResult, artifacts, runResult, observation,
                                                             phaseDurationsMs, executedPhases, pipelineStartMs)
                                                             .map(result -> {
@@ -226,6 +271,8 @@ public class LifecycleApiController {
 
     private Promise<LifecycleExecutionResult> analyzeAndEvolve(
         LifecycleExecuteRequest payload,
+        LifecycleExecutionContext context,
+        String executionId,
         IntentSpec intentSpec,
         ShapeSpec shapeSpec,
         LifecycleValidationResult validationResult,
@@ -259,7 +306,7 @@ public class LifecycleApiController {
                 );
 
                 long totalDurationMs = System.currentTimeMillis() - pipelineStartMs;
-                persistExecutionResult(payload, result, phaseDurationsMs, executedPhases, totalDurationMs);
+                persistExecutionResult(executionId, context, result, phaseDurationsMs, executedPhases, totalDurationMs);
 
                 return result;
             });
@@ -267,96 +314,83 @@ public class LifecycleApiController {
     }
 
     private void persistExecutionResult(
-        LifecycleExecuteRequest payload,
+        String executionId,
+        LifecycleExecutionContext context,
         LifecycleExecutionResult result,
         Map<String, Long> phaseDurationsMs,
         List<String> executedPhases,
         long totalDurationMs
     ) {
         try {
-            // Prepare execution result for persistence
-            Map<String, Object> executionData = new LinkedHashMap<>();
-            executionData.put("projectId", payload.intentInput().tenantId() != null ? payload.intentInput().tenantId() : "default-project");
-            executionData.put("executionId", UUID.randomUUID().toString());
-            executionData.put("status", result.metadata().getOrDefault("status", "SUCCESS"));
-            executionData.put("startedAt", Instant.now().minusMillis(totalDurationMs).toString());
-            executionData.put("completedAt", Instant.now().toString());
-            executionData.put("totalDurationMs", totalDurationMs);
-            executionData.put("executedPhases", executedPhases);
-            executionData.put("phaseDurationsMs", phaseDurationsMs);
-            executionData.put("intentResult", result.intent() != null ? Map.of(
-                "id", result.intent().id(),
-                "title", result.intent().productName(),
-                "description", result.intent().description(),
-                "rawText", payload.intentInput().rawText()
-            ) : null);
-            executionData.put("shapeResult", result.shape() != null ? Map.of(
-                "architecture", result.shape().architecture(),
-                "domainModel", result.shape().domainModel(),
-                "workflows", result.shape().workflows(),
-                "integrations", result.shape().integrations()
-            ) : null);
-            executionData.put("validationResult", result.validation() != null ? Map.of(
-                "passed", result.validation().passed(),
-                "hasBlockingIssues", result.validation().hasBlockingIssues(),
-                "issues", result.validation().issues()
-            ) : null);
-            executionData.put("generationResult", result.artifacts() != null ? Map.of(
-                "id", result.artifacts().id(),
-                "specRef", result.artifacts().specRef(),
-                "generatorVersion", result.artifacts().generatorVersion(),
-                "artifacts", result.artifacts().artifacts()
-            ) : null);
-            executionData.put("runResult", result.run() != null ? Map.of(
-                "status", result.run().status().toString(),
-                "taskResults", result.run().taskResults()
-            ) : null);
-            executionData.put("observationResult", result.observation() != null ? Map.of(
-                "metrics", result.observation().metrics(),
-                "logs", result.observation().logs(),
-                "traces", result.observation().traces()
-            ) : null);
-            executionData.put("learningResult", result.insights() != null ? Map.of(
-                "patterns", result.insights().patterns(),
-                "anomalies", result.insights().anomalies(),
-                "recommendations", result.insights().recommendations()
-            ) : null);
-            executionData.put("evolutionResult", result.evolution() != null ? Map.of(
-                "tasks", result.evolution().tasks(),
-                "newIntentRef", result.evolution().newIntentRef(),
-                "metadata", result.evolution().metadata()
-            ) : null);
-            executionData.put("success", "SUCCESS".equals(result.metadata().get("status")));
-            executionData.put("errorMessage", null);
-            executionData.put("errorPhase", null);
+            Instant startedAt = Instant.now().minusMillis(totalDurationMs);
+            Instant completedAt = Instant.now();
+            String idempotencyKey = executionId + ":" + context.correlationId();
 
-            // Send to Node.js API for persistence
-            String nodeApiUrl = System.getenv().getOrDefault("NODE_API_URL", "http://localhost:7002");
-            String persistUrl = nodeApiUrl + "/api/v1/lifecycle-execution/results";
-            
-            HttpRequest persistRequest = HttpRequest.builder(HttpMethod.POST, persistUrl)
-                .withBody(ByteBuf.wrapForReading(JsonMapper.toJson(executionData).getBytes(UTF_8)))
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .withHeader(HttpHeaders.of("X-API-Key"), System.getenv().getOrDefault("YAPPC_API_KEY", ""))
-                .build();
+            LifecycleExecutionRepository.LifecycleExecution execution = new LifecycleExecutionRepository.LifecycleExecution(
+                executionId,
+                context.tenantId(),
+                context.workspaceId(),
+                context.projectId(),
+                context.actorId(),
+                context.correlationId(),
+                idempotencyKey,
+                startedAt,
+                completedAt,
+                totalDurationMs,
+                executedPhases,
+                phaseDurationsMs,
+                result.metadata().getOrDefault("status", "SUCCESS"),
+                result.intent() != null ? Map.of(
+                    "id", result.intent().id(),
+                    "title", result.intent().productName(),
+                    "description", result.intent().description()
+                ) : null,
+                result.shape() != null ? Map.of(
+                    "architecture", result.shape().architecture(),
+                    "domainModel", result.shape().domainModel(),
+                    "workflows", result.shape().workflows(),
+                    "integrations", result.shape().integrations()
+                ) : null,
+                result.validation() != null ? Map.of(
+                    "passed", result.validation().passed(),
+                    "hasBlockingIssues", result.validation().hasBlockingIssues(),
+                    "issues", result.validation().issues()
+                ) : null,
+                result.artifacts() != null ? Map.of(
+                    "id", result.artifacts().id(),
+                    "specRef", result.artifacts().specRef(),
+                    "generatorVersion", result.artifacts().generatorVersion(),
+                    "artifacts", result.artifacts().artifacts()
+                ) : null,
+                result.run() != null ? Map.of(
+                    "status", result.run().status().toString(),
+                    "taskResults", result.run().taskResults()
+                ) : null,
+                result.observation() != null ? Map.of(
+                    "metrics", result.observation().metrics(),
+                    "logs", result.observation().logs(),
+                    "traces", result.observation().traces()
+                ) : null,
+                result.insights() != null ? Map.of(
+                    "patterns", result.insights().patterns(),
+                    "anomalies", result.insights().anomalies(),
+                    "recommendations", result.insights().recommendations()
+                ) : null,
+                result.evolution() != null ? Map.of(
+                    "tasks", result.evolution().tasks(),
+                    "newIntentRef", result.evolution().newIntentRef(),
+                    "metadata", result.evolution().metadata()
+                ) : null,
+                result.metadata()
+            );
 
-            // Fire and forget - don't block the response
-            eventloop.submit(() -> {
-                try {
-                    httpClient.request(persistRequest)
-                        .whenResult(response -> {
-                            if (response.getCode() >= 400) {
-                                log.warn("Failed to persist lifecycle execution result: HTTP {}", response.getCode());
-                            } else {
-                                log.info("Successfully persisted lifecycle execution result");
-                            }
-                        })
-                        .whenException(ex -> log.error("Error persisting lifecycle execution result", ex));
-                } catch (Exception ex) {
-                    log.error("Failed to send lifecycle execution result for persistence", ex);
-                }
-            });
-            
+            // Persist using durable repository
+            executionRepository.persist(execution)
+                .whenResult(ignored -> log.info("Successfully persisted lifecycle execution: executionId={}, tenantId={}, projectId={}",
+                    executionId, context.tenantId(), context.projectId()))
+                .whenException(ex -> log.error("Failed to persist lifecycle execution: executionId={}, tenantId={}, projectId={}",
+                    executionId, context.tenantId(), context.projectId(), ex));
+
         } catch (Exception ex) {
             log.error("Error preparing lifecycle execution result for persistence", ex);
         }
@@ -393,8 +427,10 @@ public class LifecycleApiController {
         );
     }
 
-    private LifecycleExecutionResult buildPipelineFailureResult(Throwable error) {
-        return new LifecycleExecutionResult(
+    private LifecycleExecutionResult buildPipelineFailureResult(Throwable error, LifecycleExecutionContext context) {
+        // Even failed executions should be persisted for traceability
+        String executionId = UUID.randomUUID().toString();
+        LifecycleExecutionResult result = new LifecycleExecutionResult(
             null,
             null,
             null,
@@ -406,9 +442,50 @@ public class LifecycleApiController {
             Map.of(
                 "status", "FAILED",
                 "pipelineMode", "DAG",
-                "error", error.getClass().getSimpleName()
+                "error", error.getClass().getSimpleName(),
+                "errorMessage", error.getMessage()
             )
         );
+
+        // Persist failure for traceability
+        try {
+            Instant startedAt = Instant.now();
+            Instant completedAt = Instant.now();
+            String idempotencyKey = executionId + ":" + context.correlationId();
+
+            LifecycleExecutionRepository.LifecycleExecution execution = new LifecycleExecutionRepository.LifecycleExecution(
+                executionId,
+                context.tenantId(),
+                context.workspaceId(),
+                context.projectId(),
+                context.actorId(),
+                context.correlationId(),
+                idempotencyKey,
+                startedAt,
+                completedAt,
+                0,
+                List.of(),
+                Map.of(),
+                "FAILED",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                result.metadata()
+            );
+
+            executionRepository.persist(execution)
+                .whenResult(ignored -> log.info("Persisted failed lifecycle execution: executionId={}", executionId))
+                .whenException(ex -> log.error("Failed to persist failed lifecycle execution: executionId={}", executionId, ex));
+        } catch (Exception ex) {
+            log.error("Error preparing failed lifecycle execution for persistence", ex);
+        }
+
+        return result;
     }
 
     private LifecycleExecutionResult buildFailedLifecycleResult(
@@ -460,12 +537,35 @@ public class LifecycleApiController {
         return value == null || value.isBlank();
     }
 
+    private String extractCorrelationId(HttpRequest request) {
+        String correlationId = request.getHeader(HttpHeaders.of("X-Correlation-ID"));
+        if (correlationId == null || correlationId.isBlank()) {
+            correlationId = request.getHeader(HttpHeaders.of("X-Correlation-Id"));
+        }
+        if (correlationId == null || correlationId.isBlank()) {
+            correlationId = UUID.randomUUID().toString();
+        }
+        return correlationId;
+    }
+
     private record LifecycleExecuteRequest(
         IntentInput intentInput,
+        String tenantId,
+        String projectId,
+        String workspaceId,
         String environment,
         RunSpec runSpec,
         HistoricalContext historicalContext,
         ConstraintSpec constraints
+    ) {
+    }
+
+    private record LifecycleExecutionContext(
+        String tenantId,
+        String workspaceId,
+        String projectId,
+        String actorId,
+        String correlationId
     ) {
     }
 

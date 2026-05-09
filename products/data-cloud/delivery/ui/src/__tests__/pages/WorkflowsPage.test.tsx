@@ -19,7 +19,7 @@ const { mockWorkflowsApi, mockAi, mockCapabilities } = vi.hoisted(() => ({
     },
   },
   mockCapabilities: {
-    useCapabilityRegistry: vi.fn(),
+    useSurfaceRegistry: vi.fn(),
   },
 }));
 
@@ -33,9 +33,9 @@ vi.mock('../../lib/api/ai', () => ({
 }));
 
 vi.mock('../../api/surfaces.service', () => ({
-  useCapabilityRegistry: mockCapabilities.useCapabilityRegistry,
-  getCapabilitySignal: (capabilities: Array<{ key: string }> | undefined, aliases: string[]) =>
-    capabilities?.find((capability) => aliases.includes(capability.key)),
+  useSurfaceRegistry: mockCapabilities.useSurfaceRegistry,
+  getSurfaceSignal: (surfaces: Array<{ key: string }> | undefined, aliases: string[]) =>
+    surfaces?.find((surface) => aliases.includes(surface.key)),
 }));
 
 import { WorkflowsPage } from '../../pages/WorkflowsPage';
@@ -67,16 +67,16 @@ describe('WorkflowsPage', () => {
       hasMore: false,
     });
     mockAi.getPipelineOptimisationHints.mockResolvedValue({ data: { hints: [] } });
-    mockCapabilities.useCapabilityRegistry.mockReturnValue({
+    mockCapabilities.useSurfaceRegistry.mockReturnValue({
       data: {
         generatedAt: '2026-04-17T12:00:00Z',
         requestId: 'req-workflows',
         tenantId: 'tenant-alpha',
-        capabilities: [
+        surfaces: [
           {
             key: 'ai.assist',
             label: 'AI Assist',
-            status: 'active',
+            status: 'LIVE',
             summary: 'ACTIVE',
             detail: undefined,
             rawValue: 'ACTIVE',
@@ -87,16 +87,16 @@ describe('WorkflowsPage', () => {
   });
 
   it('shows an explicit unavailable state for AI hints when ai assist is not configured', async () => {
-    mockCapabilities.useCapabilityRegistry.mockReturnValue({
+    mockCapabilities.useSurfaceRegistry.mockReturnValue({
       data: {
         generatedAt: '2026-04-17T12:00:00Z',
         requestId: 'req-workflows',
         tenantId: 'tenant-alpha',
-        capabilities: [
+        surfaces: [
           {
             key: 'ai.assist',
             label: 'AI Assist',
-            status: 'unavailable',
+            status: 'UNAVAILABLE',
             summary: 'NOT_CONFIGURED',
             detail: WORKFLOW_HINTS_UNAVAILABLE_DETAIL,
             rawValue: 'NOT_CONFIGURED',
@@ -140,16 +140,16 @@ describe('WorkflowsPage', () => {
   }, 15000);
 
   it('shows a degraded warning for AI hints when ai assist is degraded', async () => {
-    mockCapabilities.useCapabilityRegistry.mockReturnValue({
+    mockCapabilities.useSurfaceRegistry.mockReturnValue({
       data: {
         generatedAt: '2026-04-17T12:00:00Z',
         requestId: 'req-workflows',
         tenantId: 'tenant-alpha',
-        capabilities: [
+        surfaces: [
           {
             key: 'ai.assist',
             label: 'AI Assist',
-            status: 'degraded',
+            status: 'DEGRADED',
             summary: 'DEGRADED',
             detail: WORKFLOW_HINTS_DEGRADED_DETAIL,
             rawValue: 'DEGRADED',

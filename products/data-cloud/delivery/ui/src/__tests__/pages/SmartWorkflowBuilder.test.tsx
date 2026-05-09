@@ -12,7 +12,7 @@ import {
 
 const { mockCapabilities } = vi.hoisted(() => ({
   mockCapabilities: {
-    useCapabilityRegistry: vi.fn(),
+    useSurfaceRegistry: vi.fn(),
   },
 }));
 
@@ -27,9 +27,9 @@ const { mockAi, mockWorkflows, mockNavigate } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../api/surfaces.service', () => ({
-  useCapabilityRegistry: mockCapabilities.useCapabilityRegistry,
-  getCapabilitySignal: (capabilities: Array<{ key: string }> | undefined, aliases: string[]) =>
-    capabilities?.find((capability) => aliases.includes(capability.key)),
+  useSurfaceRegistry: mockCapabilities.useSurfaceRegistry,
+  getSurfaceSignal: (surfaces: Array<{ key: string }> | undefined, aliases: string[]) =>
+    surfaces?.find((surface) => aliases.includes(surface.key)),
 }));
 
 vi.mock('../../lib/api/ai', () => ({
@@ -58,16 +58,16 @@ describe('SmartWorkflowBuilder', () => {
   });
 
   it('shows an unavailable state when ai assist is not configured', () => {
-    mockCapabilities.useCapabilityRegistry.mockReturnValue({
+    mockCapabilities.useSurfaceRegistry.mockReturnValue({
       data: {
         generatedAt: '2026-04-17T12:00:00Z',
         requestId: 'req-builder',
         tenantId: TEST_TENANT_ID,
-        capabilities: [
+        surfaces: [
           {
             key: 'ai.assist',
             label: 'AI Assist',
-            status: 'unavailable',
+            status: 'UNAVAILABLE',
             summary: 'NOT_CONFIGURED',
             detail: SMART_WORKFLOW_AI_ASSIST_UNAVAILABLE_DETAIL,
             rawValue: 'NOT_CONFIGURED',
@@ -83,16 +83,16 @@ describe('SmartWorkflowBuilder', () => {
   });
 
   it('shows a degraded warning when ai assist is partially available', () => {
-    mockCapabilities.useCapabilityRegistry.mockReturnValue({
+    mockCapabilities.useSurfaceRegistry.mockReturnValue({
       data: {
         generatedAt: '2026-04-17T12:00:00Z',
         requestId: 'req-builder',
         tenantId: TEST_TENANT_ID,
-        capabilities: [
+        surfaces: [
           {
             key: 'ai.assist',
             label: 'AI Assist',
-            status: 'degraded',
+            status: 'DEGRADED',
             summary: 'DEGRADED',
             detail: SMART_WORKFLOW_AI_ASSIST_DEGRADED_DETAIL,
             rawValue: 'DEGRADED',
@@ -110,16 +110,16 @@ describe('SmartWorkflowBuilder', () => {
   it('generates a runtime-backed workflow draft and persists it on deploy', async () => {
     const user = userEvent.setup();
 
-    mockCapabilities.useCapabilityRegistry.mockReturnValue({
+    mockCapabilities.useSurfaceRegistry.mockReturnValue({
       data: {
         generatedAt: '2026-04-17T12:00:00Z',
         requestId: 'req-builder',
         tenantId: TEST_TENANT_ID,
-        capabilities: [
+        surfaces: [
           {
             key: 'ai.assist',
             label: 'AI Assist',
-            status: 'available',
+            status: 'LIVE',
             summary: 'AVAILABLE',
             detail: 'Ready',
             rawValue: 'AVAILABLE',

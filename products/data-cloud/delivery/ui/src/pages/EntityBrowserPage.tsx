@@ -18,7 +18,7 @@ import { collectionsApi } from '../lib/api/collections';
 import { useSelection } from '../hooks/useSelection';
 import { logActivity } from '../lib/api/user-activity';
 import { RBACGuard } from '../components/security/RBACGuard';
-import { getCapabilitySignal, useCapabilityRegistry } from '../api/surfaces.service';
+import { getSurfaceSignal, useSurfaceRegistry } from '../api/surfaces.service';
 import { Check, Mic, Trash2 } from 'lucide-react';
 
 // =============================================================================
@@ -463,9 +463,9 @@ export function EntityBrowserPage(): React.ReactElement {
   const [searchQuery, setSearchQuery] = useState('');
   const [aiDismissed, setAiDismissed] = useState(false);
 
-  const { data: capabilityRegistry } = useCapabilityRegistry();
-  const aiAssistCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['ai_assist', 'ai.assist', 'assist']);
-  const isAiAssistAvailable = aiAssistCapability?.status !== 'unavailable';
+  const { data: surfaceRegistry } = useSurfaceRegistry();
+  const aiAssistCapability = getSurfaceSignal(surfaceRegistry?.surfaces, ['ai_assist', 'ai.assist', 'assist']);
+  const isAiAssistAvailable = aiAssistCapability?.status !== 'UNAVAILABLE' && aiAssistCapability?.status !== 'DISABLED' && aiAssistCapability?.status !== 'MISCONFIGURED';
 
   const { data: namespaces = [], isLoading: nsLoading } = useQuery({
     queryKey: ['dc', 'entities', 'namespaces'],

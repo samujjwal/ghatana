@@ -20,9 +20,9 @@ import {
   INSIGHTS_REGISTRY_REQUEST_NOTE,
 } from '../lib/runtime-boundaries';
 import {
-  getCapabilitySignal,
-  useCapabilityRegistry,
-  type CapabilitySignal,
+  getSurfaceSignal,
+  useSurfaceRegistry,
+  type SurfaceSignal,
 } from '../api/surfaces.service';
 import { brainService, type BrainStats } from '../api/brain.service';
 import { costService, type CostBreakdown } from '../api/cost.service';
@@ -168,11 +168,11 @@ function OperatorDiagnosticsPanel({
   capabilityRegistry?: {
     requestId: string;
     generatedAt: string;
-    capabilities: CapabilitySignal[];
+    surfaces: SurfaceSignal[];
   };
 }) {
-  const degradedCount = capabilityRegistry?.capabilities.filter((capability) => capability.status === 'degraded').length ?? 0;
-  const unavailableCount = capabilityRegistry?.capabilities.filter((capability) => capability.status === 'unavailable').length ?? 0;
+  const degradedCount = capabilityRegistry?.surfaces.filter((surface) => surface.status === 'DEGRADED' || surface.status === 'PREVIEW').length ?? 0;
+  const unavailableCount = capabilityRegistry?.surfaces.filter((surface) => surface.status === 'UNAVAILABLE' || surface.status === 'DISABLED' || surface.status === 'MISCONFIGURED').length ?? 0;
   const generatedAt = formatInsightTimestamp(capabilityRegistry?.generatedAt);
 
   return (
@@ -345,13 +345,13 @@ function OverviewTab({
   monthlyCost?: number;
   costBreakdown?: Partial<CostBreakdown>;
   aiSuggestions: AnalyticsAiSuggestion[];
-  capabilities: CapabilitySignal[];
+  capabilities: SurfaceSignal[];
   insightTimestamp: string | null;
   sessionSnapshot: SessionSnapshot;
   capabilityRegistry?: {
     requestId: string;
     generatedAt: string;
-    capabilities: CapabilitySignal[];
+    surfaces: SurfaceSignal[];
   };
   aiQualitySummary?: AiQualitySummaryResult;
 }) {
@@ -1152,18 +1152,22 @@ export function InsightsPage() {
   const collectionNames = normalizeCollectionsResponse(collectionsData)
     .map((collection) => collection.name ?? collection.id)
     .filter((name) => name.length > 0);
-  const { data: capabilityRegistry, isLoading: capabilitiesLoading } = useCapabilityRegistry();
+  const { data: capabilityRegistry, isLoading: capabilitiesLoading } = useSurfaceRegistry();
   const { data: aiQualitySummary } = useAiQualitySummary();
-  const analyticsCapability = getCapabilitySignal(
-    capabilityRegistry?.capabilities,
+  const analyticsCapability = getSurfaceSignal(
+    capabilityRegistry?.surfaces,
     ['analytics', 'trino', 'federated_query', 'federatedQuery'],
   );
-  const aiAssistCapability = getCapabilitySignal(
-    capabilityRegistry?.capabilities,
+  const aiAssistCapability = getSurfaceSignal(
+    capabilityRegistry?.surfaces,
     ['ai_assist', 'aiAssist', 'assist', 'brain'],
   );
-  const analyticsUnavailable = analyticsCapability?.status === 'unavailable';
-  const aiUnavailable = aiAssistCapability?.status === 'unavailable';
+  const analyticsUnavailable = analyticsCapability?.status === 'UNAVAILABLE'
+    || analyticsCapability?.status === 'DISABLED'
+    || analyticsCapability?.status === 'MISCONFIGURED';
+  const aiUnavailable = aiAssistCapability?.status === 'UNAVAILABLE'
+    || aiAssistCapability?.status === 'DISABLED'
+    || aiAssistCapability?.status === 'MISCONFIGURED';
   const insightTimestamp = formatInsightTimestamp(brainStats?.timestamp ?? capabilityRegistry?.generatedAt);
 
   // AI sidebar: fetch real suggestions from POST /api/v1/analytics/suggest
@@ -1266,14 +1270,14 @@ export function InsightsPage() {
               monthlyCost={costData?.total}
               costBreakdown={costData}
               aiSuggestions={aiSuggestions ?? []}
-              capabilities={capabilityRegistry?.capabilities ?? []}
+              capabilities={capabilityRegistry?.surfaces ?? []}
               insightTimestamp={insightTimestamp}
               sessionSnapshot={sessionSnapshot}
               aiQualitySummary={aiQualitySummary}
               capabilityRegistry={capabilityRegistry ? {
                 requestId: capabilityRegistry.requestId,
                 generatedAt: capabilityRegistry.generatedAt,
-                capabilities: capabilityRegistry.capabilities,
+                surfaces: capabilityRegistry.surfaces,
               } : undefined}
             />
           )}

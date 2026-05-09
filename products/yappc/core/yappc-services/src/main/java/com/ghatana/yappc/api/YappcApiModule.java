@@ -1,9 +1,13 @@
 package com.ghatana.yappc.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.security.rbac.InMemoryRolePermissionRegistry;
+import com.ghatana.platform.security.rbac.RolePermissionRegistry;
+import com.ghatana.platform.security.rbac.SyncAuthorizationService;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
 import com.ghatana.yappc.services.generate.GenerationService;
@@ -12,8 +16,11 @@ import com.ghatana.yappc.services.intent.IntentService;
 import com.ghatana.yappc.services.intent.IntentServiceImpl;
 import com.ghatana.yappc.services.learn.LearningService;
 import com.ghatana.yappc.services.learn.LearningServiceImpl;
+import com.ghatana.yappc.services.lifecycle.JdbcAuditLogger;
 import com.ghatana.yappc.services.observe.ObserveService;
 import com.ghatana.yappc.services.observe.ObserveServiceImpl;
+import com.ghatana.yappc.services.phase.PhasePacketService;
+import com.ghatana.yappc.services.phase.PhasePacketServiceImpl;
 import com.ghatana.yappc.services.run.CiCdPort;
 import com.ghatana.yappc.services.run.GitHubActionsCiCdAdapter;
 import com.ghatana.yappc.services.run.RunService;
@@ -26,6 +33,10 @@ import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpClient;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
+import org.jetbrains.annotations.NotNull;
+
+import javax.sql.DataSource;
+import java.util.Set;
 
 /**
  * @doc.type class
@@ -134,7 +145,8 @@ public class YappcApiModule extends AbstractModule {
             LearningService learningService,
             EvolutionService evolutionService,
             Eventloop eventloop,
-            HttpClient httpClient) {
+            HttpClient httpClient,
+            LifecycleExecutionRepository executionRepository) {
         return new LifecycleApiController(
             intentService,
             shapeService,
@@ -145,7 +157,127 @@ public class YappcApiModule extends AbstractModule {
             learningService,
             evolutionService,
             eventloop,
-            httpClient
+            httpClient,
+            executionRepository
         );
+    }
+
+    @Provides
+    RolePermissionRegistry rolePermissionRegistry() {
+        InMemoryRolePermissionRegistry registry = new InMemoryRolePermissionRegistry();
+        
+        // YAPPC-specific role permissions
+        // OWNER: Full access to all resources within tenant
+        registry.registerRole("OWNER", Set.of(
+            "workspace:*",
+            "project:*",
+            "artifact:*",
+            "lifecycle:*",
+            "preview:*",
+            "generation:*",
+            "admin:system"
+        ));
+        
+        // ADMIN: Administrative access within tenant
+        registry.registerRole("ADMIN", Set.of(
+            "workspace:read",
+            "workspace:write",
+            "project:read",
+            "project:write",
+            "artifact:read",
+            "artifact:write",
+            "lifecycle:execute",
+            "preview:create",
+            "generation:execute",
+            "generation:review"
+        ));
+        
+        // DEVELOPER: Standard development access
+        registry.registerRole("DEVELOPER", Set.of(
+            "workspace:read",
+            "project:read",
+            "project:write",
+            "artifact:read",
+            "artifact:write",
+            "lifecycle:execute",
+            "preview:create",
+            "generation:execute"
+        ));
+        
+        // VIEWER: Read-only access
+        registry.registerRole("VIEWER", Set.of(
+            "workspace:read",
+            "project:read",
+            "artifact:read",
+            "lifecycle:read",
+            "preview:read"
+        ));
+        
+        return registry;
+    }
+
+    @Provides
+    SyncAuthorizationService syncAuthorizationService(RolePermissionRegistry rolePermissionRegistry) {
+        return new SyncAuthorizationService(rolePermissionRegistry);
+    }
+
+    @Provides
+    YappcAuthorizationService yappcAuthorizationService(SyncAuthorizationService syncAuthorizationService) {
+        return new YappcAuthorizationService(syncAuthorizationService);
+    }
+
+    @Provides
+    PreviewSessionApiController previewSessionApiController(
+            ObjectMapper objectMapper,
+            AuditLogger auditLogger,
+            YappcAuthorizationService yappcAuthorizationService,
+            PreviewSecurityPolicy previewSecurityPolicy) {
+        String signingSecret = System.getenv("YAPPC_PREVIEW_SESSION_SECRET");
+        boolean isProduction = Boolean.parseBoolean(System.getenv().getOrDefault("YAPPC_PRODUCTION", "false"));
+        return PreviewSessionApiController.createProductionSafe(
+            objectMapper,
+            signingSecret,
+            auditLogger,
+            yappcAuthorizationService,
+            previewSecurityPolicy,
+            isProduction
+        );
+    }
+
+    @Provides
+    RouteAuthorizationRegistry routeAuthorizationRegistry(YappcAuthorizationService yappcAuthorizationService) {
+        return new RouteAuthorizationRegistry(yappcAuthorizationService);
+    }
+
+    @Provides
+    PreviewSecurityPolicy previewSecurityPolicy() {
+        boolean isProduction = Boolean.parseBoolean(System.getenv().getOrDefault("YAPPC_PRODUCTION", "false"));
+        if (isProduction) {
+            return PreviewSecurityPolicy.productionDefaults();
+        } else {
+            return PreviewSecurityPolicy.developmentDefaults();
+        }
+    }
+
+    @Provides
+    LifecycleExecutionRepository lifecycleExecutionRepository(DataSource dataSource, ObjectMapper objectMapper) {
+        return new JdbcLifecycleExecutionRepository(dataSource, objectMapper);
+    }
+
+    @Provides
+    AuditLogger auditLogger(DataSource dataSource, ObjectMapper objectMapper) {
+        // P1-10: Provide real JdbcAuditLogger instead of no-op
+        // Production startup guard in YappcHttpServer ensures DATABASE_URL is configured
+        return new JdbcAuditLogger(dataSource, objectMapper);
+    }
+
+    @Provides
+    PhasePacketService phasePacketService() {
+        return new PhasePacketServiceImpl();
+    }
+
+    @Provides
+    PhasePacketController phasePacketController(ObjectMapper objectMapper, PhasePacketService phasePacketService) {
+        return new PhasePacketController(objectMapper, phasePacketService);
     }
 }

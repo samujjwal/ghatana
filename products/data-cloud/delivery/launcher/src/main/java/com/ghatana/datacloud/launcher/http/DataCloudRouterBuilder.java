@@ -168,6 +168,13 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId", pipelineCheckpointHandler::handleGetPipeline)
             .with(HttpMethod.PUT, "/api/v1/pipelines/:pipelineId", pipelineCheckpointHandler::handleUpdatePipeline)
             .with(HttpMethod.DELETE, "/api/v1/pipelines/:pipelineId", pipelineCheckpointHandler::handleDeletePipeline);
+
+        builder
+            .with(HttpMethod.GET, "/api/v1/action/pipelines", pipelineCheckpointHandler::handleListPipelines)
+            .with(HttpMethod.POST, "/api/v1/action/pipelines", pipelineCheckpointHandler::handleSavePipeline)
+            .with(HttpMethod.GET, "/api/v1/action/pipelines/:pipelineId", pipelineCheckpointHandler::handleGetPipeline)
+            .with(HttpMethod.PUT, "/api/v1/action/pipelines/:pipelineId", pipelineCheckpointHandler::handleUpdatePipeline)
+            .with(HttpMethod.DELETE, "/api/v1/action/pipelines/:pipelineId", pipelineCheckpointHandler::handleDeletePipeline);
         
         // Pipeline execution - only register if workflowExecutionHandler is available
         if (workflowExecutionHandler != null) {
@@ -177,6 +184,13 @@ public class DataCloudRouterBuilder {
                 .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions/:executionId", workflowExecutionHandler::handleGetPipelineExecution)
                 .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions/:executionId/logs", workflowExecutionHandler::handleGetPipelineExecutionLogs)
                 .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/executions/:executionId/cancel", workflowExecutionHandler::handleCancelPipelineExecution);
+
+            builder
+                .with(HttpMethod.POST, "/api/v1/action/pipelines/:pipelineId/execute", workflowExecutionHandler::handleExecutePipeline)
+                .with(HttpMethod.GET, "/api/v1/action/pipelines/:pipelineId/executions", workflowExecutionHandler::handleListPipelineExecutions)
+                .with(HttpMethod.GET, "/api/v1/action/pipelines/:pipelineId/executions/:executionId", workflowExecutionHandler::handleGetPipelineExecution)
+                .with(HttpMethod.GET, "/api/v1/action/pipelines/:pipelineId/executions/:executionId/logs", workflowExecutionHandler::handleGetPipelineExecutionLogs)
+                .with(HttpMethod.POST, "/api/v1/action/pipelines/:pipelineId/executions/:executionId/cancel", workflowExecutionHandler::handleCancelPipelineExecution);
         }
         
         return this;
@@ -231,6 +245,15 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.POST, "/api/v1/memory/:agentId/search", memoryHandler::handleSearchAgentMemory)
             .with(HttpMethod.DELETE, "/api/v1/memory/:agentId/:memoryId", memoryHandler::handleDeleteMemory)
             .with(HttpMethod.PUT, "/api/v1/memory/:agentId/:memoryId/retain", memoryHandler::handleRetainMemory);
+
+        builder
+            .with(HttpMethod.GET, "/api/v1/action/memory", memoryHandler::handleListMemory)
+            .with(HttpMethod.POST, "/api/v1/action/memory/:agentId", memoryHandler::handleStoreMemory)
+            .with(HttpMethod.GET, "/api/v1/action/memory/:agentId", memoryHandler::handleGetAgentMemory)
+            .with(HttpMethod.GET, "/api/v1/action/memory/:agentId/:tier", memoryHandler::handleGetAgentMemoryByTier)
+            .with(HttpMethod.POST, "/api/v1/action/memory/:agentId/search", memoryHandler::handleSearchAgentMemory)
+            .with(HttpMethod.DELETE, "/api/v1/action/memory/:agentId/:memoryId", memoryHandler::handleDeleteMemory)
+            .with(HttpMethod.PUT, "/api/v1/action/memory/:agentId/:memoryId/retain", memoryHandler::handleRetainMemory);
         return this;
     }
 
@@ -263,6 +286,13 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.GET, "/api/v1/learning/review", learningHandler::handleLearningReviewQueue)
             .with(HttpMethod.POST, "/api/v1/learning/review/:reviewId/approve", learningHandler::handleLearningReviewApprove)
             .with(HttpMethod.POST, "/api/v1/learning/review/:reviewId/reject", learningHandler::handleLearningReviewReject);
+
+        builder
+            .with(HttpMethod.POST, "/api/v1/action/learning/trigger", learningHandler::handleLearningTrigger)
+            .with(HttpMethod.GET, "/api/v1/action/learning/status", learningHandler::handleLearningStatus)
+            .with(HttpMethod.GET, "/api/v1/action/learning/review", learningHandler::handleLearningReviewQueue)
+            .with(HttpMethod.POST, "/api/v1/action/learning/review/:reviewId/approve", learningHandler::handleLearningReviewApprove)
+            .with(HttpMethod.POST, "/api/v1/action/learning/review/:reviewId/reject", learningHandler::handleLearningReviewReject);
         return this;
     }
 
@@ -310,6 +340,16 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.GET, "/api/v1/executions/:executionId/checkpoints", workflowExecutionHandler::handleListExecutionCheckpoints)
             .with(HttpMethod.POST, "/api/v1/executions/:executionId/restore", workflowExecutionHandler::handleRestoreExecution)
             .with(HttpMethod.POST, "/api/v1/queries/explain", workflowExecutionHandler::handleExplainQuery);
+
+        builder
+            .with(HttpMethod.GET, "/api/v1/action/executions/:executionId", workflowExecutionHandler::handleGetExecution)
+            .with(HttpMethod.GET, "/api/v1/action/executions/:executionId/logs", workflowExecutionHandler::handleGetExecutionLogs)
+            .with(HttpMethod.POST, "/api/v1/action/executions/:executionId/cancel", workflowExecutionHandler::handleCancelExecution)
+            .with(HttpMethod.POST, "/api/v1/action/executions/:executionId/retry", workflowExecutionHandler::handleRetryExecution)
+            .with(HttpMethod.POST, "/api/v1/action/executions/:executionId/rollback", workflowExecutionHandler::handleRollbackExecution)
+            .with(HttpMethod.POST, "/api/v1/action/executions/:executionId/checkpoint", workflowExecutionHandler::handleCheckpointExecution)
+            .with(HttpMethod.GET, "/api/v1/action/executions/:executionId/checkpoints", workflowExecutionHandler::handleListExecutionCheckpoints)
+            .with(HttpMethod.POST, "/api/v1/action/executions/:executionId/restore", workflowExecutionHandler::handleRestoreExecution);
         return this;
     }
 
@@ -537,6 +577,15 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.GET, "/api/v1/autonomy/plan/:actionType", autonomyHandler::handleGetAutonomyPlan)
             // P2.6: Update autonomy policies from operator feedback patterns
             .with(HttpMethod.POST, "/api/v1/autonomy/feedback-policy", autonomyHandler::handleUpdatePolicyFromFeedback);
+
+        builder
+            .with(HttpMethod.PUT, "/api/v1/action/autonomy/level", autonomyHandler::handleSetGlobalLevel)
+            .with(HttpMethod.GET, "/api/v1/action/autonomy/level", autonomyHandler::handleGetGlobalLevel)
+            .with(HttpMethod.GET, "/api/v1/action/autonomy/domains", autonomyHandler::handleListDomains)
+            .with(HttpMethod.GET, "/api/v1/action/autonomy/domains/:domain", autonomyHandler::handleGetDomain)
+            .with(HttpMethod.GET, "/api/v1/action/autonomy/logs", autonomyHandler::handleGetLogs)
+            .with(HttpMethod.GET, "/api/v1/action/autonomy/plan/:actionType", autonomyHandler::handleGetAutonomyPlan)
+            .with(HttpMethod.POST, "/api/v1/action/autonomy/feedback-policy", autonomyHandler::handleUpdatePolicyFromFeedback);
         return this;
     }
 
@@ -565,6 +614,17 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.GET, "/api/v1/plugins/:id/sandbox", pluginInstallHandler::handlePluginSandboxStatus)
             .with(HttpMethod.POST, "/api/v1/plugins/:id/validate", pluginInstallHandler::handleValidatePluginSchema)
             .with(HttpMethod.POST, "/api/v1/plugins/:id/conformance", pluginInstallHandler::handlePluginConformanceTest);
+
+        builder
+            .with(HttpMethod.GET, "/api/v1/action/plugins", pluginInstallHandler::handleListPlugins)
+            .with(HttpMethod.GET, "/api/v1/action/plugins/:id", pluginInstallHandler::handleGetPlugin)
+            .with(HttpMethod.POST, "/api/v1/action/plugins/:id/enable", pluginInstallHandler::handleEnablePlugin)
+            .with(HttpMethod.POST, "/api/v1/action/plugins/:id/disable", pluginInstallHandler::handleDisablePlugin)
+            .with(HttpMethod.POST, "/api/v1/action/plugins/:id/upgrade", pluginInstallHandler::handleUpgradePlugin)
+            .with(HttpMethod.GET, "/api/v1/action/plugins/marketplace", pluginInstallHandler::handleMarketplaceCatalog)
+            .with(HttpMethod.GET, "/api/v1/action/plugins/:id/sandbox", pluginInstallHandler::handlePluginSandboxStatus)
+            .with(HttpMethod.POST, "/api/v1/action/plugins/:id/validate", pluginInstallHandler::handleValidatePluginSchema)
+            .with(HttpMethod.POST, "/api/v1/action/plugins/:id/conformance", pluginInstallHandler::handlePluginConformanceTest);
         return this;
     }
 

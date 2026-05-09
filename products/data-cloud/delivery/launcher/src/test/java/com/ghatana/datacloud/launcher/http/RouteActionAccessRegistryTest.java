@@ -56,4 +56,22 @@ class RouteActionAccessRegistryTest {
         assertThat(RouteActionAccessRegistry.requiredAccess("POST", "/api/v1/governance/policies/policy-42/toggle"))
             .isEqualTo(DataCloudSecurityFilter.AccessLevel.ADMIN);
     }
+
+    @Test
+    void shouldClassifyActionNamespaceLearningReviewApproveAsAdmin() {
+        assertThat(RouteActionAccessRegistry.requiredAccess("POST", "/api/v1/action/learning/review/123/approve"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.ADMIN);
+    }
+
+    @Test
+    void shouldClassifySettingsKeyRotateAsAdmin() {
+        assertThat(RouteActionAccessRegistry.requiredAccess("POST", "/api/v1/settings/keys/key-123/rotate"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.ADMIN);
+    }
+
+    @Test
+    void shouldClassifyAlertSuggestionApplyAsOperator() {
+        assertThat(RouteActionAccessRegistry.requiredAccess("POST", "/api/v1/alerts/suggestions/sugg-1/apply"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.OPERATOR);
+    }
 }

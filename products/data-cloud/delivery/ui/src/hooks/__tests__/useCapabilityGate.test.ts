@@ -7,21 +7,21 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import type { CapabilityRegistrySnapshot, CapabilitySignal } from '../../api/surfaces.service';
+import type { SurfaceRegistrySnapshot, SurfaceSignal } from '../../api/surfaces.service';
 
 // ---------------------------------------------------------------------------
 // Hoist mocks before imports
 // ---------------------------------------------------------------------------
 
-const { mockUseCapabilityRegistry } = vi.hoisted(() => ({
-  mockUseCapabilityRegistry: vi.fn<() => { data: CapabilityRegistrySnapshot | undefined; isLoading: boolean }>(),
+const { mockUseSurfaceRegistry } = vi.hoisted(() => ({
+  mockUseSurfaceRegistry: vi.fn<() => { data: SurfaceRegistrySnapshot | undefined; isLoading: boolean }>(),
 }));
 
 vi.mock('../../api/surfaces.service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../api/surfaces.service')>();
   return {
     ...actual,
-    useCapabilityRegistry: mockUseCapabilityRegistry,
+    useSurfaceRegistry: mockUseSurfaceRegistry,
   };
 });
 
@@ -32,15 +32,15 @@ import { useCapabilityGate, useCapabilitySignal } from '../useCapabilityGate';
 // ---------------------------------------------------------------------------
 
 function makeSnapshot(
-  entries: Array<{ key: string; status: CapabilitySignal['status'] }>,
-): CapabilityRegistrySnapshot {
+  entries: Array<{ key: string; status: SurfaceSignal['status'] }>,
+): SurfaceRegistrySnapshot {
   return {
-    capabilities: entries.map(({ key, status }) => ({
+    surfaces: entries.map(({ key, status }) => ({
       key,
       label: key,
       status,
-      summary: status.toUpperCase(),
-      rawValue: status.toUpperCase(),
+      summary: status,
+      rawValue: status,
     })),
     generatedAt: '2026-01-01T00:00:00Z',
     requestId: 'test-req',
@@ -56,8 +56,8 @@ describe('useCapabilityGate — mode: active', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('returns true when the capability is active', () => {
-    mockUseCapabilityRegistry.mockReturnValue({
-      data: makeSnapshot([{ key: 'analytics', status: 'active' }]),
+    mockUseSurfaceRegistry.mockReturnValue({
+      data: makeSnapshot([{ key: 'analytics', status: 'LIVE' }]),
       isLoading: false,
     });
 
@@ -66,8 +66,8 @@ describe('useCapabilityGate — mode: active', () => {
   });
 
   it('returns false when the capability is degraded (strict active mode)', () => {
-    mockUseCapabilityRegistry.mockReturnValue({
-      data: makeSnapshot([{ key: 'analytics', status: 'degraded' }]),
+    mockUseSurfaceRegistry.mockReturnValue({
+      data: makeSnapshot([{ key: 'analytics', status: 'DEGRADED' }]),
       isLoading: false,
     });
 
@@ -76,8 +76,8 @@ describe('useCapabilityGate — mode: active', () => {
   });
 
   it('returns false when the capability is unavailable', () => {
-    mockUseCapabilityRegistry.mockReturnValue({
-      data: makeSnapshot([{ key: 'analytics', status: 'unavailable' }]),
+    mockUseSurfaceRegistry.mockReturnValue({
+      data: makeSnapshot([{ key: 'analytics', status: 'UNAVAILABLE' }]),
       isLoading: false,
     });
 
@@ -86,7 +86,7 @@ describe('useCapabilityGate — mode: active', () => {
   });
 
   it('returns false when the capability key is not in the registry', () => {
-    mockUseCapabilityRegistry.mockReturnValue({
+    mockUseSurfaceRegistry.mockReturnValue({
       data: makeSnapshot([]),
       isLoading: false,
     });
@@ -96,7 +96,7 @@ describe('useCapabilityGate — mode: active', () => {
   });
 
   it('returns true while registry is still loading (open-while-loading default)', () => {
-    mockUseCapabilityRegistry.mockReturnValue({ data: undefined, isLoading: true });
+    mockUseSurfaceRegistry.mockReturnValue({ data: undefined, isLoading: true });
 
     const { result } = renderHook(() => useCapabilityGate(['analytics'], 'active'));
     expect(result.current).toBe(true);
@@ -111,8 +111,8 @@ describe('useCapabilityGate — mode: activeOrDegraded', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('returns true when the capability is active', () => {
-    mockUseCapabilityRegistry.mockReturnValue({
-      data: makeSnapshot([{ key: 'ai.assist', status: 'active' }]),
+    mockUseSurfaceRegistry.mockReturnValue({
+      data: makeSnapshot([{ key: 'ai.assist', status: 'LIVE' }]),
       isLoading: false,
     });
 
@@ -121,8 +121,8 @@ describe('useCapabilityGate — mode: activeOrDegraded', () => {
   });
 
   it('returns true when the capability is degraded', () => {
-    mockUseCapabilityRegistry.mockReturnValue({
-      data: makeSnapshot([{ key: 'ai.assist', status: 'degraded' }]),
+    mockUseSurfaceRegistry.mockReturnValue({
+      data: makeSnapshot([{ key: 'ai.assist', status: 'DEGRADED' }]),
       isLoading: false,
     });
 
@@ -131,8 +131,8 @@ describe('useCapabilityGate — mode: activeOrDegraded', () => {
   });
 
   it('returns false when the capability is unavailable', () => {
-    mockUseCapabilityRegistry.mockReturnValue({
-      data: makeSnapshot([{ key: 'ai.assist', status: 'unavailable' }]),
+    mockUseSurfaceRegistry.mockReturnValue({
+      data: makeSnapshot([{ key: 'ai.assist', status: 'UNAVAILABLE' }]),
       isLoading: false,
     });
 
@@ -149,8 +149,8 @@ describe('useCapabilityGate — mode: notUnavailable', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('returns true when the capability is active', () => {
-    mockUseCapabilityRegistry.mockReturnValue({
-      data: makeSnapshot([{ key: 'data-fabric', status: 'active' }]),
+    mockUseSurfaceRegistry.mockReturnValue({
+      data: makeSnapshot([{ key: 'data-fabric', status: 'LIVE' }]),
       isLoading: false,
     });
 
@@ -159,8 +159,8 @@ describe('useCapabilityGate — mode: notUnavailable', () => {
   });
 
   it('returns true when the capability is degraded', () => {
-    mockUseCapabilityRegistry.mockReturnValue({
-      data: makeSnapshot([{ key: 'data-fabric', status: 'degraded' }]),
+    mockUseSurfaceRegistry.mockReturnValue({
+      data: makeSnapshot([{ key: 'data-fabric', status: 'DEGRADED' }]),
       isLoading: false,
     });
 
@@ -169,8 +169,8 @@ describe('useCapabilityGate — mode: notUnavailable', () => {
   });
 
   it('returns false when the capability is unavailable', () => {
-    mockUseCapabilityRegistry.mockReturnValue({
-      data: makeSnapshot([{ key: 'data-fabric', status: 'unavailable' }]),
+    mockUseSurfaceRegistry.mockReturnValue({
+      data: makeSnapshot([{ key: 'data-fabric', status: 'UNAVAILABLE' }]),
       isLoading: false,
     });
 
@@ -187,8 +187,8 @@ describe('useCapabilityGate — alias fallback', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('matches on the second alias when the first is absent', () => {
-    mockUseCapabilityRegistry.mockReturnValue({
-      data: makeSnapshot([{ key: 'ai_assist', status: 'active' }]),
+    mockUseSurfaceRegistry.mockReturnValue({
+      data: makeSnapshot([{ key: 'ai_assist', status: 'LIVE' }]),
       isLoading: false,
     });
 
@@ -207,26 +207,26 @@ describe('useCapabilitySignal', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('returns the capability signal for a known key', () => {
-    mockUseCapabilityRegistry.mockReturnValue({
-      data: makeSnapshot([{ key: 'analytics', status: 'degraded' }]),
+    mockUseSurfaceRegistry.mockReturnValue({
+      data: makeSnapshot([{ key: 'analytics', status: 'DEGRADED' }]),
       isLoading: false,
     });
 
     const { result } = renderHook(() => useCapabilitySignal(['analytics']));
     expect(result.current?.key).toBe('analytics');
-    expect(result.current?.status).toBe('degraded');
+    expect(result.current?.status).toBe('DEGRADED');
   });
 
   it('returns undefined when registry is not yet loaded', () => {
-    mockUseCapabilityRegistry.mockReturnValue({ data: undefined, isLoading: true });
+    mockUseSurfaceRegistry.mockReturnValue({ data: undefined, isLoading: true });
 
     const { result } = renderHook(() => useCapabilitySignal(['analytics']));
     expect(result.current).toBeUndefined();
   });
 
   it('returns undefined for unknown capability key', () => {
-    mockUseCapabilityRegistry.mockReturnValue({
-      data: makeSnapshot([{ key: 'analytics', status: 'active' }]),
+    mockUseSurfaceRegistry.mockReturnValue({
+      data: makeSnapshot([{ key: 'analytics', status: 'LIVE' }]),
       isLoading: false,
     });
 
