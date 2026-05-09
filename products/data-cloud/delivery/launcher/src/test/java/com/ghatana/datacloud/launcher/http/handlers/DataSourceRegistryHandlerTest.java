@@ -9,6 +9,7 @@ import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.feature.DataCloudFeature;
 import com.ghatana.datacloud.feature.DataCloudFeatureFlags;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.activej.bytebuf.ByteBufStrings;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -27,9 +29,12 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 /**
  * Production-grade tests for DataSourceRegistryHandler.
@@ -274,6 +279,73 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
         assertThat(body.get("degraded")).isEqualTo(true);
         assertThat(body.get("error")).isNotNull();
         assertThat(body.get("tiers")).isEqualTo(List.of());
+    }
+
+    @Test
+    @DisplayName("Register connector strips raw credentials and stores only secretRef metadata")
+    void registerConnectorSanitizesCredentials() {
+        HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/connectors")
+            .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .withHeader(HttpHeaders.of("Content-Type"), "application/json")
+            .withBody(ByteBufStrings.wrapUtf8("""
+                {
+                  "name":"orders-source",
+                  "type":"POSTGRESQL",
+                  "credentials":{"username":"svc","password":"secret"},
+                  "secretRef":{"provider":"vault","path":"kv/datacloud/orders"}
+                }
+                """))
+            .build();
+
+        lenient().when(client.save(anyString(), anyString(), anyMap()))
+            .thenAnswer(invocation -> {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> payload = invocation.getArgument(2);
+                return io.activej.promise.Promise.of(mockEntity(String.valueOf(payload.get("id")), payload));
+            });
+
+        HttpResponse response = runPromise(() -> handler.handleRegisterConnection(request));
+
+        assertThat(response.getCode()).isEqualTo(201);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(client).save(anyString(), anyString(), payloadCaptor.capture());
+        Map<String, Object> savedPayload = payloadCaptor.getValue();
+        assertThat(savedPayload).containsKey("secretRef");
+        assertThat(savedPayload).containsEntry("credentialStatus", "referenced");
+        assertThat(savedPayload).doesNotContainKey("credentials");
+    }
+
+    @Test
+    @DisplayName("Rotate credentials rejects raw credential payload")
+    void rotateCredentialsRejectsRawCredentials() {
+        HttpRequest request = mock(HttpRequest.class);
+        lenient().when(request.getPathParameter("connectionId")).thenReturn("conn-1");
+        lenient().when(request.getHeader(HttpHeaders.of("X-Tenant-Id"))).thenReturn("test-tenant");
+        lenient().when(request.loadBody()).thenReturn(io.activej.promise.Promise.of(
+            ByteBufStrings.wrapUtf8("""
+                { "credentials": { "password": "rotated" } }
+                """)));
+
+        HttpResponse response = runPromise(() -> handler.handleRotateCredentials(request));
+
+        assertThat(response.getCode()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("Sync without fabric returns pending and does not mutate connection state")
+    void syncWithoutFabricDoesNotMutateState() {
+        HttpRequest request = mock(HttpRequest.class);
+        lenient().when(request.getPathParameter("connectionId")).thenReturn("conn-1");
+        lenient().when(request.getHeader(HttpHeaders.of("X-Tenant-Id"))).thenReturn("test-tenant");
+
+        HttpResponse response = runPromise(() -> handler.handleTriggerSync(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(body.get("syncStatus")).isEqualTo("pending");
+        verify(client, never()).save(anyString(), anyString(), anyMap());
+        verify(client, never()).findById(anyString(), anyString(), anyString());
     }
 
     // Helper methods

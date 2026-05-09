@@ -137,8 +137,17 @@ class EndpointSensitivityTest {
             // Pipeline mutations (non-DELETE) 
             "POST, /api/v1/pipelines",
             "PUT,  /api/v1/pipelines/pipe-123",
+            "POST, /api/v1/pipelines/pipe-123/executions/ex-1/cancel",
             // Checkpoint mutations (non-DELETE) 
             "POST, /api/v1/checkpoints",
+            // Connectors and context mutations
+            "POST, /api/v1/connectors/conn-1/sync",
+            "POST, /api/v1/connectors/conn-1/test",
+            "PUT,  /api/v1/context",
+            "POST, /api/v1/context/users/rag-policy-check",
+            // Alerts operations
+            "POST, /api/v1/alerts/alert-1/remediate",
+            "POST, /api/v1/alerts/rules",
             // Memory — GET is SENSITIVE (personal data) 
             "GET,  /api/v1/memory",
             "GET,  /api/v1/memory/agent-001",
@@ -203,8 +212,17 @@ class EndpointSensitivityTest {
             "GET,    /api/v1/governance/retention/policy",
             "POST,   /api/v1/governance/retention/purge",
             "POST,   /api/v1/governance/privacy/redact",
+            "POST,   /api/v1/governance/policies",
+            "PUT,    /api/v1/governance/policies/policy-1",
+            "DELETE, /api/v1/governance/policies/policy-1",
             "GET,    /api/v1/governance/privacy/pii-fields",
             "GET,    /api/v1/governance/compliance/summary",
+            // Settings, plugins, and connector administration
+            "POST,   /api/v1/settings/security",
+            "POST,   /api/v1/plugins/plugin-1/enable",
+            "POST,   /api/v1/connectors/conn-1/rotate-credentials",
+            // Autonomy administration
+            "PUT,    /api/v1/autonomy/level",
             // Voice transcript management
             "GET,    /api/v1/voice/transcripts",
             "DELETE, /api/v1/voice/transcripts/tr-001"

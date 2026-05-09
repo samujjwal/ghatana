@@ -60,6 +60,8 @@ public final class DataSourceRegistryHandler {
 
     private static final Logger log = LoggerFactory.getLogger(DataSourceRegistryHandler.class);
     private static final String DC_CONNECTIONS = "dc_connections";
+    private static final String CREDENTIALS_KEY = "credentials";
+    private static final String SECRET_REFERENCE_KEY = "secretRef";
     private static final Set<String> VALID_TYPES = Set.of(
         "POSTGRESQL", "MYSQL", "MONGODB", "S3", "REST_API", "KAFKA", "SNOWFLAKE", "BIGQUERY", "CUSTOM"
     );
@@ -128,6 +130,7 @@ public final class DataSourceRegistryHandler {
 
                 String id = payload.containsKey("id") ? (String) payload.get("id") : java.util.UUID.randomUUID().toString();
                 Map<String, Object> data = new LinkedHashMap<>(payload);
+                applyCredentialStoragePolicy(data, payload);
                 data.put("tenantId", tenantId);
                 data.put("id", id);
                 data.put("createdAt", Instant.now().toString());
@@ -314,6 +317,10 @@ public final class DataSourceRegistryHandler {
                 Map<String, Object> payload = buf == null || buf.readRemaining() == 0
                     ? Map.of()
                     : http.objectMapper().readValue(buf.getString(StandardCharsets.UTF_8), Map.class);
+                if (payload.containsKey(CREDENTIALS_KEY)) {
+                    return Promise.of(http.errorResponse(400,
+                        "Raw credentials payload is not accepted. Provide secretRef metadata instead."));
+                }
                 return client.findById(tenantId, DC_CONNECTIONS, connectionId)
                     .then(opt -> {
                         if (opt.isEmpty()) {
@@ -323,8 +330,10 @@ public final class DataSourceRegistryHandler {
                         Map<String, Object> data = new LinkedHashMap<>(existing.data());
                         data.put("updatedAt", Instant.now().toString());
                         data.put("lastCredentialRotation", Instant.now().toString());
-                        if (payload.containsKey("credentials")) {
-                            data.put("credentials", payload.get("credentials"));
+                        data.remove(CREDENTIALS_KEY);
+                        if (payload.containsKey(SECRET_REFERENCE_KEY)) {
+                            data.put(SECRET_REFERENCE_KEY, payload.get(SECRET_REFERENCE_KEY));
+                            data.put("credentialStatus", "rotated");
                         }
                         return client.save(tenantId, DC_CONNECTIONS, data)
                             .map(saved -> {
@@ -444,14 +453,13 @@ public final class DataSourceRegistryHandler {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
         }
         if (fabric == null) {
-            return updateConnectionState(tenantId, connectionId, "SYNCING", "sync_pending")
-                .map(e -> http.jsonResponse(Map.of(
-                    "tenantId", tenantId,
-                    "connectionId", connectionId,
-                    "syncStatus", "pending",
-                    "message", "Data fabric connector not available; sync queued",
-                    "timestamp", Instant.now().toString()
-                )));
+            return Promise.of(http.jsonResponse(Map.of(
+                "tenantId", tenantId,
+                "connectionId", connectionId,
+                "syncStatus", "pending",
+                "message", "Data fabric connector not available; sync queued",
+                "timestamp", Instant.now().toString()
+            )));
         }
         return request.loadBody().then(buf -> {
             try {
@@ -585,7 +593,25 @@ public final class DataSourceRegistryHandler {
         if (data.containsKey("lastCredentialRotation")) {
             view.put("lastCredentialRotation", data.get("lastCredentialRotation"));
         }
+        if (data.containsKey(SECRET_REFERENCE_KEY)) {
+            view.put(SECRET_REFERENCE_KEY, data.get(SECRET_REFERENCE_KEY));
+        }
+        if (data.containsKey("credentialStatus")) {
+            view.put("credentialStatus", data.get("credentialStatus"));
+        }
         return view;
+    }
+
+    private static void applyCredentialStoragePolicy(Map<String, Object> data, Map<String, Object> payload) {
+        data.remove(CREDENTIALS_KEY);
+        if (payload.containsKey(SECRET_REFERENCE_KEY)) {
+            data.put(SECRET_REFERENCE_KEY, payload.get(SECRET_REFERENCE_KEY));
+            data.put("credentialStatus", "referenced");
+            return;
+        }
+        if (payload.containsKey(CREDENTIALS_KEY)) {
+            data.put("credentialStatus", "external_reference_required");
+        }
     }
 
     private Promise<DataCloudClient.Entity> updateConnectionState(String tenantId, String connectionId, String state, String healthStatus) {

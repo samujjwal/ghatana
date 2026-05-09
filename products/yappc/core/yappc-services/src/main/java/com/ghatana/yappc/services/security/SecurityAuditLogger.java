@@ -156,7 +156,7 @@ public final class SecurityAuditLogger {
 
     private void emit(EventType type, Outcome outcome, String principal, String tenantId,
                       String resource, Map<String, String> extra) {
-        String principalSafe = principal != null ? principal : "anonymous";
+        String principalSafe = principal != null ? principal : "unknown";
         String tenantSafe    = tenantId  != null ? tenantId  : "unknown";
 
         // Structured log line that log-aggregation can parse

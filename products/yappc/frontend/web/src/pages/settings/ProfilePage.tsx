@@ -309,6 +309,7 @@ const ProfilePage: React.FC = () => {
               className="px-4 py-2 text-sm font-medium text-fg-muted hover:text-fg-muted transition-colors"
             >
               {t('profileSettings.reset')}
+            </NativeButton>
             <NativeButton
               type="submit"
               disabled={mutation.isPending || Object.keys(formData).length === 0}

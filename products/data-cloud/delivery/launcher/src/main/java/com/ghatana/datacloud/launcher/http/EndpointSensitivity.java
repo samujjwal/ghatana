@@ -116,6 +116,11 @@ public enum EndpointSensitivity {
         "/api/v1/pipelines",
         "/api/v1/checkpoints",
         "/api/v1/analytics/",
+        "/api/v1/connectors",
+        "/api/v1/settings",
+        "/api/v1/plugins",
+        "/api/v1/autonomy",
+        "/api/v1/context",
         "/api/v1/data-products",
         "/api/v1/reports",            // POST (create report) and list operations
         "/api/v1/brain/",
@@ -169,6 +174,17 @@ public enum EndpointSensitivity {
     public static EndpointSensitivity classify(String method, String path) {
         if (PUBLIC_PATHS.contains(path)) {
             return PUBLIC;
+        }
+
+        DataCloudSecurityFilter.AccessLevel accessLevel = RouteActionAccessRegistry.requiredAccess(method, path);
+        if (accessLevel == DataCloudSecurityFilter.AccessLevel.ADMIN) {
+            return CRITICAL;
+        }
+        if (accessLevel == DataCloudSecurityFilter.AccessLevel.AUDITOR) {
+            return CRITICAL;
+        }
+        if (accessLevel == DataCloudSecurityFilter.AccessLevel.OPERATOR) {
+            return SENSITIVE;
         }
 
         String actionKey = method.toUpperCase() + " " + normalizePath(path);

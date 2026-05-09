@@ -19,7 +19,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
-import { getCapabilitySignal, useCapabilityRegistry } from '../api/surfaces.service';
+import { getSurfaceSignal, useSurfaceRegistry } from '../api/surfaces.service';
 import { UnsupportedSurfaceBoundary } from '../components/common/UnsupportedSurfaceBoundary';
 import { smartWorkflowGenerationBoundary } from '../components/common/unsupportedSurfaceRegistry';
 import SessionBootstrap from '../lib/auth/session';
@@ -461,8 +461,8 @@ function StepCard({
  */
 export function SmartWorkflowBuilder() {
   const navigate = useNavigate();
-  const { data: capabilityRegistry } = useCapabilityRegistry();
-  const aiAssistCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['ai.assist', 'ai_assist', 'assist']);
+  const { data: surfaceRegistry } = useSurfaceRegistry();
+  const aiAssistCapability = getSurfaceSignal(surfaceRegistry?.surfaces, ['ai.assist', 'ai_assist', 'assist']);
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showGenerationBoundary, setShowGenerationBoundary] = useState(false);
@@ -476,7 +476,7 @@ export function SmartWorkflowBuilder() {
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) return;
 
-    if (aiAssistCapability?.status === 'unavailable') {
+    if (aiAssistCapability?.status === 'UNAVAILABLE') {
       setWorkflow(null);
       setShowGenerationBoundary(true);
       return;
@@ -727,7 +727,7 @@ export function SmartWorkflowBuilder() {
               </div>
             )}
 
-            {aiAssistCapability?.status === 'unavailable' && (
+            {aiAssistCapability?.status === 'UNAVAILABLE' && (
               <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                 <p className="font-medium">{SMART_WORKFLOW_AI_ASSIST_UNAVAILABLE_TITLE}</p>
                 <p className="mt-1">
@@ -736,7 +736,7 @@ export function SmartWorkflowBuilder() {
               </div>
             )}
 
-            {aiAssistCapability?.status === 'degraded' && (
+            {aiAssistCapability?.status === 'DEGRADED' && (
               <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                 <p className="font-medium">{SMART_WORKFLOW_AI_ASSIST_DEGRADED_TITLE}</p>
                 <p className="mt-1">

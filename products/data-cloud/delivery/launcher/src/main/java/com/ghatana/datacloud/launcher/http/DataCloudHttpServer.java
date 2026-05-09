@@ -1665,6 +1665,7 @@ public class DataCloudHttpServer {
                 .jwtTenantClaim(jwtTenantClaim)
                 .policyEngine(policyEngine)
                 .auditService(auditService)
+                .strictTenantResolution(strictTenantResolution)
                 .build();
             rootServlet = securityFilter.apply(filteredRouter);
             log.info("[DC-E1] security filter active (apiKey: {}, jwt: {}, policy engine: {})",

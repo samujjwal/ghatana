@@ -55,6 +55,7 @@ function ValidationIssueItem({
   issue: ValidationIssue;
   onClick?: (issue: ValidationIssue) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div
       className={cn(
@@ -100,6 +101,8 @@ export function ValidationPanel({
   onFixAll,
   className,
 }: ValidationPanelProps) {
+  const { t } = useI18n();
+
   const stats = React.useMemo(() => {
     return {
       errors: issues.filter((i) => i.severity === 'error').length,
@@ -128,7 +131,6 @@ export function ValidationPanel({
         'flex flex-col h-full bg-white dark:bg-surface',
         className
       )}
-        const { t } = useI18n();
     >
       {/* Header */}
       <div className="h-10 border-b border-border dark:border-border flex items-center justify-between px-3">

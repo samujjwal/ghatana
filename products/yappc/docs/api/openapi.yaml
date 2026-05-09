@@ -48,7 +48,9 @@ tags:
   - name: health
     description: Liveness and readiness probes
   - name: run
-    description: RUN phase — execute runs, rollback, and promote
+    description: RUN phase — execution and deployment
+  - name: preview
+    description: Preview session management for secure artifact previews, rollback, and promote
   - name: observe
     description: OBSERVE phase — collect observations from runs
   - name: learn
@@ -5980,6 +5982,76 @@ components:
           type: object
           additionalProperties: true
 
+    # ── Preview Session ───────────────────────────────────────────────────────────
+
+    CreatePreviewSessionRequest:
+      type: object
+      required: [projectId, artifactId]
+      properties:
+        projectId:
+          type: string
+          description: ID of the project containing the artifact
+        artifactId:
+          type: string
+          description: ID of the artifact to preview
+        duration:
+          type: integer
+          description: Session duration in seconds (max 86400)
+          default: 3600
+        scope:
+          type: object
+          description: Additional scope constraints for the preview session
+          additionalProperties: true
+
+    CreatePreviewSessionResponse:
+      type: object
+      required: [sessionId, sessionToken, expiresAt, scope]
+      properties:
+        sessionId:
+          type: string
+          description: Unique session identifier
+        sessionToken:
+          type: string
+          description: Signed token for the preview session
+        expiresAt:
+          type: string
+          format: date-time
+          description: Session expiration timestamp
+        scope:
+          type: object
+          description: Session scope (projectId, artifactId, etc.)
+          additionalProperties: true
+
+    ValidatePreviewSessionRequest:
+      type: object
+      required: [sessionToken]
+      properties:
+        sessionToken:
+          type: string
+          description: Signed preview session token to validate
+
+    ValidatePreviewSessionResponse:
+      type: object
+      required: [valid, sessionId]
+      properties:
+        valid:
+          type: boolean
+          description: Whether the session token is valid
+        sessionId:
+          type: string
+          description: Session identifier if valid
+        expiresAt:
+          type: string
+          format: date-time
+          description: Session expiration timestamp if valid
+        scope:
+          type: object
+          description: Session scope if valid
+          additionalProperties: true
+        error:
+          type: string
+          description: Error message if validation failed
+
     # ── Vector ────────────────────────────────────────────────────────────────
 
     VectorSearchRequest:
@@ -6091,6 +6163,58 @@ components:
           type: string
         projectName:
           type: string
+        variables:
+          type: object
+          additionalProperties: true
+
+    AddFeatureRequest:
+      type: object
+      required: [featureName]
+      properties:
+        featureName:
+          type: string
+        variables:
+          type: object
+          additionalProperties: true
+
+    TemplateRenderRequest:
+      type: object
+      required: [templateId, variables]
+      properties:
+        templateId:
+          type: string
+        variables:
+          type: object
+          additionalProperties: true
+
+    # ── Refactorer ────────────────────────────────────────────────────────────
+
+    RefactorerJobRequest:
+      type: object
+      required: [repositoryPath]
+      properties:
+        repositoryPath:
+          type: string
+        rules:
+          type: array
+          items:
+            type: string
+        config:
+          type: object
+          additionalProperties: true
+
+    ErrorResponse:
+      type: object
+      description: Legacy error response; new code should use ProblemDetail (RFC-7807)
+      properties:
+        error:
+          type: string
+        correlationId:
+          type: string
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []
         variables:
           type: object
           additionalProperties: true

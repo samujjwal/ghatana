@@ -23,9 +23,9 @@ import {
 } from 'lucide-react';
 import { governanceService } from '@/api/governance.service';
 import {
-  getCapabilitySignal,
-  useCapabilityRegistry,
-  type CapabilitySignal,
+  getSurfaceSignal,
+  useSurfaceRegistry,
+  type SurfaceSignal,
 } from '@/api/surfaces.service';
 import {
   generateRouteActionGates,
@@ -52,8 +52,8 @@ function SignalBadge({ status }: SignalBadgeProps): ReactElement {
   );
 }
 
-function readDeploymentMode(capabilities: CapabilitySignal[] | undefined): string {
-  const meta = getCapabilitySignal(capabilities, ['_meta']);
+function readDeploymentMode(surfaces: SurfaceSignal[] | undefined): string {
+  const meta = getSurfaceSignal(surfaces, ['_meta']);
   if (!meta || typeof meta.rawValue !== 'object' || meta.rawValue == null) {
     return 'unknown';
   }
@@ -63,14 +63,14 @@ function readDeploymentMode(capabilities: CapabilitySignal[] | undefined): strin
   return typeof deploymentMode === 'string' ? deploymentMode : 'unknown';
 }
 
-function toDurableProviderStatus(capabilities: CapabilitySignal[] | undefined): GeneratedGateStatus {
-  const eventStore = getCapabilitySignal(capabilities, ['health.eventStore']);
-  const database = getCapabilitySignal(capabilities, ['health.database']);
+function toDurableProviderStatus(surfaces: SurfaceSignal[] | undefined): GeneratedGateStatus {
+  const eventStore = getSurfaceSignal(surfaces, ['health.eventStore']);
+  const database = getSurfaceSignal(surfaces, ['health.database']);
 
-  if (eventStore?.status === 'active' && database?.status === 'active') {
+  if (eventStore?.status === 'LIVE' && database?.status === 'LIVE') {
     return 'active';
   }
-  if (eventStore?.status === 'degraded' || database?.status === 'degraded') {
+  if (eventStore?.status === 'DEGRADED' || database?.status === 'DEGRADED' || eventStore?.status === 'PREVIEW' || database?.status === 'PREVIEW') {
     return 'degraded';
   }
   if (!eventStore && !database) {
@@ -80,7 +80,7 @@ function toDurableProviderStatus(capabilities: CapabilitySignal[] | undefined): 
 }
 
 export function ReleaseTruthDashboardPage(): ReactElement {
-  const capabilityRegistry = useCapabilityRegistry();
+  const capabilityRegistry = useSurfaceRegistry();
 
   const complianceReportQuery = useQuery({
     queryKey: ['release-truth', 'compliance-report'],
@@ -94,11 +94,11 @@ export function ReleaseTruthDashboardPage(): ReactElement {
     staleTime: 60_000,
   });
 
-  const deploymentMode = readDeploymentMode(capabilityRegistry.data?.capabilities);
-  const durableProviderStatus = toDurableProviderStatus(capabilityRegistry.data?.capabilities);
+  const deploymentMode = readDeploymentMode(capabilityRegistry.data?.surfaces);
+  const durableProviderStatus = toDurableProviderStatus(capabilityRegistry.data?.surfaces);
   const generatedRouteGates = useMemo(
-    () => generateRouteActionGates(capabilityRegistry.data?.capabilities ?? []),
-    [capabilityRegistry.data?.capabilities],
+    () => generateRouteActionGates(capabilityRegistry.data?.surfaces ?? []),
+    [capabilityRegistry.data?.surfaces],
   );
 
   const testGateStatus: Array<{ name: string; status: GeneratedGateStatus; evidence: string }> = [

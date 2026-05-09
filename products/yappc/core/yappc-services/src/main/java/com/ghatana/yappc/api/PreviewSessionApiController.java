@@ -4,8 +4,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.platform.governance.security.Principal;
+import com.ghatana.platform.security.rbac.Permission;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
+import io.activej.http.HttpHeaders;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,6 +24,10 @@ import java.util.UUID;
 /**
  * Issues and validates signed preview sessions for the standalone builder preview runtime.
  *
+ * <p>This controller enforces backend authorization for preview session operations,
+ * ensuring that only authenticated principals with appropriate project permissions
+ * can issue preview sessions for specific artifacts.
+ *
  * @doc.type class
  * @doc.purpose Issues and validates signed preview sessions for the standalone builder preview runtime
  * @doc.layer api
@@ -35,15 +41,26 @@ public final class PreviewSessionApiController {
     private final ObjectMapper objectMapper;
     private final String signingSecret;
     private final AuditLogger auditLogger;
+    private final YappcAuthorizationService authorizationService;
 
     public PreviewSessionApiController(@NotNull ObjectMapper objectMapper, String signingSecret) {
-        this(objectMapper, signingSecret, AuditLogger.noop());
+        this(objectMapper, signingSecret, AuditLogger.noop(), null);
     }
 
     public PreviewSessionApiController(@NotNull ObjectMapper objectMapper, String signingSecret, @NotNull AuditLogger auditLogger) {
+        this(objectMapper, signingSecret, auditLogger, null);
+    }
+
+    public PreviewSessionApiController(
+            @NotNull ObjectMapper objectMapper,
+            String signingSecret,
+            @NotNull AuditLogger auditLogger,
+            YappcAuthorizationService authorizationService
+    ) {
         this.objectMapper = objectMapper;
         this.signingSecret = signingSecret;
         this.auditLogger = auditLogger;
+        this.authorizationService = authorizationService;
     }
 
     public Promise<HttpResponse> createSession(HttpRequest request) {
@@ -68,6 +85,34 @@ public final class PreviewSessionApiController {
                 }
                 if (payload.artifactId() == null || payload.artifactId().isBlank()) {
                     return Promise.of(HttpResponse.ofCode(400).withJson("{\"error\":\"artifactId is required\"}").build());
+                }
+
+                // Enforce backend authorization if authorization service is available
+                if (authorizationService != null) {
+                    String tenantId = principal.getTenantId();
+                    String workspaceId = firstNonBlank(
+                        request.getHeader(HttpHeaders.of("X-Workspace-Id")),
+                        request.getHeader(HttpHeaders.of("X-Workspace-ID"))
+                    );
+                    if (workspaceId == null || workspaceId.isBlank()) {
+                        return Promise.of(HttpResponse.ofCode(400)
+                                .withJson("{\"error\":\"workspaceId is required\"}")
+                                .build());
+                    }
+                    try {
+                        authorizationService.authorizeArtifactAccess(
+                            principal,
+                            tenantId,
+                            workspaceId,
+                            payload.projectId(),
+                            payload.artifactId(),
+                            Permission.PROJECT_READ
+                        );
+                    } catch (Exception e) {
+                        return Promise.of(HttpResponse.ofCode(403)
+                                .withJson("{\"error\":\"Forbidden: insufficient permissions\"}")
+                                .build());
+                    }
                 }
 
                 int requestedDuration = payload.duration() != null ? payload.duration() : DEFAULT_SESSION_DURATION_SECONDS;
@@ -227,7 +272,16 @@ public final class PreviewSessionApiController {
 
     private Map<String, Object> decodeSessionToken(String sessionToken) throws Exception {
         byte[] decoded = Base64.getUrlDecoder().decode(sessionToken);
-        return objectMapper.readValue(decoded, new TypeReference<>() {
+     rivate static String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    p   return objectMapper.readValue(decoded, new TypeReference<>() {
         });
     }
 
@@ -246,8 +300,8 @@ public final class PreviewSessionApiController {
         Map<String, Object> event = new LinkedHashMap<>();
         event.put("type", eventType);
         event.put("outcome", outcome);
-        event.put("actor", principal != null ? principal.getName() : "anonymous");
-        event.put("tenantId", principal != null ? principal.getTenantId() : "unknown");
+        event.put("actor", principal.getName());
+        event.put("tenantId", principal.getTenantId());
         event.put("projectId", projectId);
         event.put("artifactId", artifactId);
         event.put("timestamp", Instant.now().toString());

@@ -1,18 +1,21 @@
 #!/usr/bin/env node
 /**
- * YAPPC release-readiness evidence gate.
+ * YAPPC release-readiness execution gate.
  *
- * This is intentionally fast: it verifies the release-critical cockpit,
- * builder, preview, persistence, security, OpenAPI, dashboard, visual
- * regression, and accessibility gates are present and wired into package
- * scripts before CI runs the heavier suites.
+ * Upgraded from evidence-presence to execution/results validation.
+ * Verifies that critical gates actually execute and pass, not just that files exist.
+ *
+ * Usage:
+ *   node scripts/verify-release-readiness.mjs              # Evidence-presence mode (fast)
+ *   node scripts/verify-release-readiness.mjs --execute   # Execution mode (production)
  *
  * @doc.type script
- * @doc.purpose Fail release readiness when critical YAPPC gate evidence is missing
+ * @doc.purpose Fail release readiness when critical YAPPC gates do not execute successfully
  * @doc.layer product
  */
 
 import { existsSync, readFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -29,6 +32,8 @@ const requiredEvidence = [
       'products/yappc/frontend/web/src/components/phase/__tests__/PhaseCockpitLayout.test.tsx',
       'products/yappc/frontend/web/src/services/phase/__tests__/PhaseBuilders.test.ts',
     ],
+    // Execute unit tests for cockpit area
+    execute: 'pnpm --filter @ghatana/yappc-web-app test -- src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx src/components/phase/__tests__/PhaseCockpitLayout.test.tsx src/services/phase/__tests__/PhaseBuilders.test.ts',
   },
   {
     area: 'builder',
@@ -37,6 +42,7 @@ const requiredEvidence = [
       'products/yappc/frontend/web/src/components/canvas/page/__tests__/builder-document-adapter.test.ts',
       'products/yappc/frontend/web/src/components/canvas/page/__tests__/contractVersioning.test.ts',
     ],
+    execute: 'pnpm --filter @ghatana/yappc-web-app test -- src/components/canvas/page/__tests__/PageDesigner.test.tsx src/components/canvas/page/__tests__/builder-document-adapter.test.ts src/components/canvas/page/__tests__/contractVersioning.test.ts',
   },
   {
     area: 'preview',
@@ -45,6 +51,7 @@ const requiredEvidence = [
       'products/yappc/frontend/web/src/routes/app/project/__tests__/PhaseStatusPanels.test.tsx',
       'products/yappc/frontend/web/src/services/compiler/__tests__/ArtifactCompilerRuntimeHealth.test.ts',
     ],
+    execute: 'pnpm --filter @ghatana/yappc-web-app test -- src/components/studio/__tests__/LivePreviewPanel.test.tsx src/routes/app/project/__tests__/PhaseStatusPanels.test.tsx src/services/compiler/__tests__/ArtifactCompilerRuntimeHealth.test.ts',
   },
   {
     area: 'preview-edge-security',
@@ -52,6 +59,7 @@ const requiredEvidence = [
       'products/yappc/frontend/web/src/routes/preview-builder.tsx',
       'products/yappc/frontend/web/src/routes/__tests__/preview-builder-security.test.tsx',
     ],
+    execute: 'pnpm --filter @ghatana/yappc-web-app test -- src/routes/__tests__/preview-builder-security.test.tsx',
   },
   {
     area: 'persistence',
@@ -60,6 +68,7 @@ const requiredEvidence = [
       'products/yappc/frontend/web/src/components/canvas/page/pageArtifactPersistence.ts',
       'products/yappc/frontend/web/src/components/canvas/__tests__/canvasAccessPolicy.test.ts',
     ],
+    execute: 'pnpm --filter @ghatana/yappc-web-app test -- src/components/canvas/page/__tests__/pageArtifactPersistence.test.ts src/components/canvas/__tests__/canvasAccessPolicy.test.ts',
   },
   {
     area: 'security',
@@ -68,6 +77,7 @@ const requiredEvidence = [
       'products/yappc/frontend/web/src/routes/app/admin/__tests__/billing-teams-gate.test.tsx',
       'products/yappc/frontend/web/src/components/canvas/__tests__/canvasAccessPolicy.test.ts',
     ],
+    execute: 'pnpm --filter @ghatana/yappc-web-app test -- src/lib/api/__tests__/client.telemetry.test.ts src/routes/app/admin/__tests__/billing-teams-gate.test.tsx src/components/canvas/__tests__/canvasAccessPolicy.test.ts',
   },
   {
     area: 'api-contract',
@@ -76,6 +86,7 @@ const requiredEvidence = [
       'products/yappc/frontend/apps/api/src/__tests__/openapi-contract.test.ts',
       'products/yappc/frontend/web/src/lib/api/client.ts',
     ],
+    execute: 'pnpm --filter @ghatana/yappc-web-app test -- src/lib/api/__tests__/client.telemetry.test.ts',
   },
   {
     area: 'dashboard',
@@ -83,6 +94,7 @@ const requiredEvidence = [
       'products/yappc/frontend/web/src/routes/__tests__/dashboard.test.tsx',
       'products/yappc/frontend/web/src/routes/dashboard.tsx',
     ],
+    execute: 'pnpm --filter @ghatana/yappc-web-app test -- src/routes/__tests__/dashboard.test.tsx',
   },
   {
     area: 'visual-regression',
@@ -98,6 +110,8 @@ const requiredEvidence = [
       'products/yappc/frontend/web/e2e/visual-regression.spec.ts-snapshots/offline-chromium-darwin.png',
       'products/yappc/frontend/web/e2e/visual-regression.spec.ts-snapshots/import-chromium-darwin.png',
     ],
+    // Visual regression tests are expensive - only check file presence in fast mode
+    execute: null,
   },
   {
     area: 'accessibility',
@@ -107,6 +121,8 @@ const requiredEvidence = [
       'products/yappc/frontend/web/src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx',
       'products/yappc/frontend/web/src/components/canvas/page/__tests__/PageDesigner.test.tsx',
     ],
+    // E2E accessibility tests are expensive - only check file presence in fast mode
+    execute: null,
   },
   {
     area: 'performance-memory',
@@ -114,6 +130,7 @@ const requiredEvidence = [
       'products/yappc/frontend/web/e2e/performance-memory.spec.ts',
       'products/yappc/frontend/web/src/services/performance/__tests__/canvasPerformanceBudgets.test.ts',
     ],
+    execute: 'pnpm --filter @ghatana/yappc-web-app test -- src/services/performance/__tests__/canvasPerformanceBudgets.test.ts',
   },
 ];
 
@@ -140,12 +157,25 @@ function checkFile(relativePath) {
 const failures = [];
 const passes = [];
 
+// Check if running in execution mode (default to evidence-presence for backward compatibility)
+const executionMode = process.argv.includes('--execute');
+
 for (const gate of requiredEvidence) {
   const missing = gate.files.filter((file) => !checkFile(file));
   if (missing.length > 0) {
     failures.push(`${gate.area}: missing ${missing.join(', ')}`);
   } else {
     passes.push(`${gate.area}: ${gate.files.length} evidence file(s) present`);
+  }
+
+  // If execution mode is enabled and gate has execute command, run it
+  if (executionMode && gate.execute) {
+    try {
+      execSync(gate.execute, { cwd: repoRoot, stdio: 'pipe' });
+      passes.push(`${gate.area}: execution passed`);
+    } catch (error) {
+      failures.push(`${gate.area}: execution failed - ${gate.execute}`);
+    }
   }
 }
 
@@ -217,7 +247,10 @@ if (failures.length > 0) {
     console.error(`FAIL ${message}`);
   }
   console.error(`Release readiness gate failed with ${failures.length} issue(s).`);
+  console.error(`Run with --execute flag to validate execution results in addition to evidence presence.`);
   process.exit(1);
 }
 
-console.log(`Release readiness gate passed with ${passes.length} checks.`);
+const mode = executionMode ? 'execution' : 'evidence-presence';
+console.log(`Release readiness gate passed with ${passes.length} checks (${mode} mode).`);
+console.warn(`⚠️  Production releases should use --execute flag for full validation.`);

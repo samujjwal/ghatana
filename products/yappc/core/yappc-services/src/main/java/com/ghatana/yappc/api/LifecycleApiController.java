@@ -67,6 +67,7 @@ public class LifecycleApiController {
     private final EvolutionService evolutionService;
     private final Eventloop eventloop;
     private final HttpClient httpClient;
+    private final PhaseActionContract phaseActionContract;
     private static final List<String> PIPELINE_DAG_ORDER = List.of(
         "INTENT", "SHAPE", "VALIDATE", "GENERATE", "RUN", "OBSERVE", "LEARN", "EVOLVE"
     );
@@ -83,6 +84,34 @@ public class LifecycleApiController {
         Eventloop eventloop,
         HttpClient httpClient
     ) {
+        this(
+            intentService,
+            shapeService,
+            validationService,
+            generationService,
+            runService,
+            observeService,
+            learningService,
+            evolutionService,
+            eventloop,
+            httpClient,
+            PhaseActionContract.defaults()
+        );
+    }
+
+    public LifecycleApiController(
+        IntentService intentService,
+        ShapeService shapeService,
+        ValidationService validationService,
+        GenerationService generationService,
+        RunService runService,
+        ObserveService observeService,
+        LearningService learningService,
+        EvolutionService evolutionService,
+        Eventloop eventloop,
+        HttpClient httpClient,
+        PhaseActionContract phaseActionContract
+    ) {
         this.intentService = intentService;
         this.shapeService = shapeService;
         this.validationService = validationService;
@@ -93,6 +122,7 @@ public class LifecycleApiController {
         this.evolutionService = evolutionService;
         this.eventloop = eventloop;
         this.httpClient = httpClient;
+        this.phaseActionContract = phaseActionContract;
     }
 
     public Promise<HttpResponse> executeFullLifecycle(HttpRequest request) {
@@ -402,7 +432,7 @@ public class LifecycleApiController {
 
     private RunSpec defaultRunSpec(GeneratedArtifacts artifacts, String requestedEnvironment) {
         String environment = (requestedEnvironment == null || requestedEnvironment.isBlank())
-            ? "staging"
+            ? phaseActionContract.defaultRunEnvironment()
             : requestedEnvironment;
         return RunSpec.builder()
             .id("run-" + artifacts.id())

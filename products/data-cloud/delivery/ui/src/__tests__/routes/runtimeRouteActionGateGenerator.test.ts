@@ -1,28 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import { generateRouteActionGates } from '@/lib/routing/RuntimeRouteActionGateGenerator';
-import type { CapabilitySignal } from '@/api/surfaces.service';
+import type { SurfaceSignal } from '@/api/surfaces.service';
 
 describe('generateRouteActionGates', () => {
   it('generates route/action gates from runtime capability signals', () => {
-    const capabilities: CapabilitySignal[] = [
+    const capabilities: SurfaceSignal[] = [
       {
         key: 'alert-triage',
         label: 'Alert Triage',
-        status: 'active',
+        status: 'LIVE',
         summary: 'ACTIVE',
         rawValue: { status: 'ACTIVE' },
       },
       {
         key: 'event-stream',
         label: 'Event Stream',
-        status: 'degraded',
+        status: 'DEGRADED',
         summary: 'DEGRADED',
         rawValue: { status: 'DEGRADED' },
       },
       {
         key: 'agentCatalog',
         label: 'Agent Catalog',
-        status: 'unavailable',
+        status: 'UNAVAILABLE',
         summary: 'UNAVAILABLE',
         rawValue: { status: 'UNAVAILABLE' },
       },

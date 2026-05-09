@@ -28,7 +28,6 @@ public final class YappcApiAuthFilter {
     private static final String API_KEYS_ENV = "YAPPC_API_KEYS";
     private static final String API_KEY_ROLE_MAP_ENV = "YAPPC_API_KEY_ROLE_MAP";
     private static final String API_KEY_TENANT_MAP_ENV = "YAPPC_API_KEY_TENANT_MAP";
-    private static final String API_DEFAULT_ROLES_ENV = "YAPPC_API_DEFAULT_ROLES";
 
     private final ApiKeyResolver resolver;
 
@@ -98,13 +97,18 @@ public final class YappcApiAuthFilter {
         Set<String> allowedKeys = parseCsvSet(keysEnv);
         Map<String, List<String>> roleMap = parseRoleMap(System.getenv(API_KEY_ROLE_MAP_ENV));
         Map<String, String> tenantMap = parseSimpleMap(tenantMapEnv);
-        List<String> defaultRoles = parseCsvList(System.getenv().getOrDefault(API_DEFAULT_ROLES_ENV, "admin"));
 
         return apiKey -> {
             if (!allowedKeys.contains(apiKey)) {
                 return Optional.empty();
             }
-            List<String> roles = roleMap.getOrDefault(apiKey, defaultRoles);
+            List<String> roles = roleMap.get(apiKey);
+            if (roles == null || roles.isEmpty()) {
+                throw new IllegalStateException(
+                    "No role mapping found for API key. " +
+                    "Set YAPPC_API_KEY_ROLE_MAP with format: key1=role1|role2;key2=role3"
+                );
+            }
             String tenantId = tenantMap.get(apiKey);
             if (tenantId == null || tenantId.isBlank()) {
                 throw new IllegalStateException(

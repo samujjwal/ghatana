@@ -286,6 +286,7 @@ export function RefactorSuggestionPanel({
   open,
   onClose,
 }: RefactorSuggestionPanelProps) {
+  const { t } = useI18n();
   const [activeSimResult, setActiveSimResult] = useState<SimulateResult | null>(null);
 
   const handleSimulateSuccess = useCallback((result: SimulateResult) => {
@@ -341,7 +342,8 @@ export function RefactorSuggestionPanel({
 
       {/* Simulate diff preview (sticky) */}
       {activeSimResult && (
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2">
+          <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-semibold text-text-primary">Simulated diff preview</p>
             <Button
               type="button"
@@ -355,6 +357,7 @@ export function RefactorSuggestionPanel({
             </Button>
           </div>
           <DiffViewer result={activeSimResult} />
+        </div>
       )}
 
       {/* Suggestions list */}

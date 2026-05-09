@@ -32,4 +32,28 @@ class RouteActionAccessRegistryTest {
     void shouldReturnNullForUnmappedRouteAction() {
         assertThat(RouteActionAccessRegistry.requiredAccess("GET", "/api/v1/learning/review")).isNull();
     }
+
+    @Test
+    void shouldClassifyConnectorCredentialRotationAsAdmin() {
+        assertThat(RouteActionAccessRegistry.requiredAccess("POST", "/api/v1/connectors/conn-1/rotate-credentials"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.ADMIN);
+    }
+
+    @Test
+    void shouldClassifyConnectorSyncAsOperator() {
+        assertThat(RouteActionAccessRegistry.requiredAccess("POST", "/api/v1/connectors/conn-1/sync"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.OPERATOR);
+    }
+
+    @Test
+    void shouldClassifySettingsUpdateAsAdmin() {
+        assertThat(RouteActionAccessRegistry.requiredAccess("POST", "/api/v1/settings/security"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.ADMIN);
+    }
+
+    @Test
+    void shouldClassifyGovernancePolicyToggleAsAdmin() {
+        assertThat(RouteActionAccessRegistry.requiredAccess("POST", "/api/v1/governance/policies/policy-42/toggle"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.ADMIN);
+    }
 }

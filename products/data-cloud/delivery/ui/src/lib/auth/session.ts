@@ -21,7 +21,6 @@ const SESSION_TENANT_KEY = 'dc:session:tenantId';
 const SESSION_API_BASE_URL_KEY = 'dc:session:apiBaseUrl';
 const SESSION_SHELL_ROLE_KEY = 'dc:session:shellRole';
 const SESSION_PRODUCT_VIEW_MODE_KEY = 'dc:session:productViewMode';
-const LEGACY_TENANT_KEY = 'tenantId';
 
 const RESERVED_TENANT_IDS = new Set(['default', 'default-tenant']);
 
@@ -169,15 +168,6 @@ function removeStorageItem(storage: Storage, key: string): void {
   }
 }
 
-function syncLegacyTenantKey(tenantId: string | null): void {
-  if (tenantId) {
-    writeStorageItem(localStorage, LEGACY_TENANT_KEY, tenantId);
-    return;
-  }
-
-  removeStorageItem(localStorage, LEGACY_TENANT_KEY);
-}
-
 export interface SessionSnapshot {
   tenantId: string | null;
   apiBaseUrl: string | null;
@@ -208,19 +198,10 @@ export const SessionBootstrap = {
   getTenantId(): string | null {
     const sessionTenantId = normalizeTenantId(readStorageItem(sessionStorage, SESSION_TENANT_KEY));
     if (sessionTenantId) {
-      syncLegacyTenantKey(sessionTenantId);
       return sessionTenantId;
     }
 
-    const legacyTenantId = normalizeTenantId(readStorageItem(localStorage, LEGACY_TENANT_KEY));
-    if (legacyTenantId) {
-      writeStorageItem(sessionStorage, SESSION_TENANT_KEY, legacyTenantId);
-      syncLegacyTenantKey(legacyTenantId);
-      return legacyTenantId;
-    }
-
     removeStorageItem(sessionStorage, SESSION_TENANT_KEY);
-    syncLegacyTenantKey(null);
     return null;
   },
 
@@ -239,13 +220,11 @@ export const SessionBootstrap = {
     }
 
     writeStorageItem(sessionStorage, SESSION_TENANT_KEY, normalized);
-    syncLegacyTenantKey(normalized);
     return normalized;
   },
 
   clearTenantId(): void {
     removeStorageItem(sessionStorage, SESSION_TENANT_KEY);
-    syncLegacyTenantKey(null);
   },
 
   hasTenantContext(): boolean {

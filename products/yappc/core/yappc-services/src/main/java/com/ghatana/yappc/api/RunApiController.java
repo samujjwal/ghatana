@@ -288,12 +288,8 @@ public class RunApiController {
         Map<String, Object> event = new LinkedHashMap<>();
         event.put("type", eventType);
         event.put("outcome", outcome);
-        event.put("actor", principal != null ? principal.getName() : firstNonBlank(request.getHeader(HttpHeaders.of("X-Actor-Id")), "anonymous"));
-        event.put("tenantId", principal != null ? principal.getTenantId() : firstNonBlank(
-            request.getHeader(HttpHeaders.of("X-Tenant-Id")),
-            request.getHeader(HttpHeaders.of("X-Tenant-ID")),
-            "unknown"
-        ));
+        event.put("actor", principal.getName());
+        event.put("tenantId", principal.getTenantId());
         event.put("workspaceId", firstNonBlank(
             request.getHeader(HttpHeaders.of("X-Workspace-Id")),
             request.getHeader(HttpHeaders.of("X-Workspace-ID")),

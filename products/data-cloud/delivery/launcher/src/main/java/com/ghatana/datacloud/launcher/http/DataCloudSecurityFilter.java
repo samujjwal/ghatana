@@ -93,6 +93,7 @@ public final class DataCloudSecurityFilter {
     private final PolicyEngine policyEngine;
     private final AuditService auditService;
     private final boolean enforcing;
+    private final boolean strictTenantResolution;
     private final Set<String> breakGlassTenants;
 
     private DataCloudSecurityFilter(Builder b) {
@@ -107,6 +108,7 @@ public final class DataCloudSecurityFilter {
         this.policyEngine           = b.policyEngine;        // nullable — CRITICAL routes fail-closed when null and enforcing=true
         this.auditService           = b.auditService;        // nullable — audit skipped when null
         this.enforcing              = b.enforcing;
+        this.strictTenantResolution = b.strictTenantResolution;
         this.breakGlassTenants  = b.breakGlassTenants != null
             ? Set.copyOf(b.breakGlassTenants) : Set.of();
     }
@@ -149,7 +151,7 @@ public final class DataCloudSecurityFilter {
             return authenticate(request, tenantWrapped, sensitivity)
                 .then(response -> {
                     Principal authenticatedPrincipal = request.getAttachment(Principal.class);
-                    String tenantId = extractTenantId(request, authenticatedPrincipal);
+                    String tenantId = extractTenantId(request, authenticatedPrincipal, strictTenantResolution);
                     String principalName = resolvePrincipalName(authenticatedPrincipal);
                     int code = response.getCode();
                     // In audit-only mode (enforcing=false), authentication/authorization failures
@@ -495,7 +497,8 @@ public final class DataCloudSecurityFilter {
 
     private static String extractTenantId(
             io.activej.http.HttpRequest request,
-            Principal authenticatedPrincipal) {
+            Principal authenticatedPrincipal,
+            boolean strictTenantResolution) {
         if (authenticatedPrincipal != null && authenticatedPrincipal.getTenantId() != null) {
             return authenticatedPrincipal.getTenantId();
         }
@@ -508,6 +511,10 @@ public final class DataCloudSecurityFilter {
         String contextTenant = TenantContext.getCurrentTenantId();
         if (contextTenant != null) {
             return contextTenant;
+        }
+
+        if (strictTenantResolution) {
+            return null;
         }
 
         // DC-AUD-014: Non-strict mode falls back to default tenant
@@ -713,6 +720,7 @@ public final class DataCloudSecurityFilter {
         private PolicyEngine policyEngine;
         private AuditService auditService;
         private boolean enforcing = true;
+        private boolean strictTenantResolution;
         private Set<String> breakGlassTenants;
 
         /**
@@ -765,6 +773,15 @@ public final class DataCloudSecurityFilter {
          */
         public Builder enforcing(boolean enforcing) {
             this.enforcing = enforcing;
+            return this;
+        }
+
+        /**
+         * When {@code true}, tenant fallback is disabled and requests must resolve
+         * a concrete tenant from principal, header, or tenant context.
+         */
+        public Builder strictTenantResolution(boolean strictTenantResolution) {
+            this.strictTenantResolution = strictTenantResolution;
             return this;
         }
 

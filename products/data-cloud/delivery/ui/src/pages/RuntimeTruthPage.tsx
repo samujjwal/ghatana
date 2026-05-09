@@ -13,7 +13,7 @@
 import type { ReactElement } from 'react';
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, CheckCircle2, AlertTriangle, MinusCircle, HelpCircle } from 'lucide-react';
-import { useCapabilityRegistry, type CapabilitySignal, type CapabilityStatus } from '@/api/surfaces.service';
+import { useSurfaceRegistry, type SurfaceSignal, type SurfaceStatus } from '@/api/surfaces.service';
 import { cn } from '@/lib/theme';
 
 // ── Plane taxonomy ────────────────────────────────────────────────────────────
@@ -55,21 +55,24 @@ interface StatusConfig {
   row: string;
 }
 
-function statusConfig(status: CapabilityStatus): StatusConfig {
+function statusConfig(status: SurfaceStatus): StatusConfig {
   switch (status) {
-    case 'active':
+    case 'LIVE':
       return {
         icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" />,
         badge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
         row: 'hover:bg-emerald-50 dark:hover:bg-emerald-900/10',
       };
-    case 'degraded':
+    case 'DEGRADED':
+    case 'PREVIEW':
       return {
         icon: <AlertTriangle className="h-4 w-4 text-amber-500" />,
         badge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
         row: 'hover:bg-amber-50 dark:hover:bg-amber-900/10',
       };
-    case 'unavailable':
+    case 'UNAVAILABLE':
+    case 'DISABLED':
+    case 'MISCONFIGURED':
       return {
         icon: <MinusCircle className="h-4 w-4 text-rose-500" />,
         badge: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
@@ -84,18 +87,18 @@ function statusConfig(status: CapabilityStatus): StatusConfig {
   }
 }
 
-function aggregatePlaneStatus(signals: CapabilitySignal[]): CapabilityStatus {
-  if (signals.some((s) => s.status === 'unavailable')) return 'unavailable';
-  if (signals.some((s) => s.status === 'degraded')) return 'degraded';
-  if (signals.every((s) => s.status === 'active')) return 'active';
-  return 'unknown';
+function aggregatePlaneStatus(signals: SurfaceSignal[]): SurfaceStatus {
+  if (signals.some((s) => s.status === 'UNAVAILABLE' || s.status === 'DISABLED' || s.status === 'MISCONFIGURED')) return 'UNAVAILABLE';
+  if (signals.some((s) => s.status === 'DEGRADED' || s.status === 'PREVIEW')) return 'DEGRADED';
+  if (signals.every((s) => s.status === 'LIVE')) return 'LIVE';
+  return 'UNAVAILABLE';
 }
 
 // ── Plane row ─────────────────────────────────────────────────────────────────
 
 interface PlaneRowProps {
   plane: Plane;
-  signals: CapabilitySignal[];
+  signals: SurfaceSignal[];
 }
 
 function PlaneRow({ plane, signals }: PlaneRowProps): ReactElement {
@@ -179,9 +182,9 @@ function PlaneRow({ plane, signals }: PlaneRowProps): ReactElement {
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export function RuntimeTruthPage(): ReactElement {
-  const { data, isLoading, isError, error } = useCapabilityRegistry();
+  const { data, isLoading, isError, error } = useSurfaceRegistry();
 
-  const allSignals = data?.capabilities ?? [];
+  const allSignals = data?.surfaces ?? [];
 
   // Partition signals into planes; unmatched go to 'operations' (catch-all)
   const planeSignals = PLANES.map((plane) => {

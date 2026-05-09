@@ -13,7 +13,7 @@ import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button, IconButton } from '@ghatana/design-system';
-import { getCapabilitySignal, useCapabilityRegistry } from '../api/surfaces.service';
+import { getSurfaceSignal, useSurfaceRegistry } from '../api/surfaces.service';
 import {
     Play,
     Pause,
@@ -175,15 +175,15 @@ function HintTypeIcon({ type }: { type: PipelineOptimisationHint['type'] }) {
  * DC-E5-S1 — AI Journey #4.
  */
 function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
-    const { data: capabilityRegistry } = useCapabilityRegistry();
-    const aiAssistCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['ai.assist', 'ai_assist', 'assist']);
+    const { data: surfaceRegistry } = useSurfaceRegistry();
+    const aiAssistCapability = getSurfaceSignal(surfaceRegistry?.surfaces, ['ai.assist', 'ai_assist', 'assist']);
     const { data, isLoading, isError } = useQuery({
         queryKey: aiQueryKeys.pipelineHints(pipelineId),
         queryFn: () => getPipelineOptimisationHints(pipelineId),
         staleTime: 5 * 60 * 1_000,
         retry: false,
         refetchOnWindowFocus: false,
-        enabled: aiAssistCapability?.status !== 'unavailable',
+        enabled: aiAssistCapability?.status !== 'UNAVAILABLE',
     });
 
     // AI operations workflow advisories — backend-first, boundary-aware.
@@ -193,13 +193,13 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
         staleTime: 5 * 60 * 1_000,
         retry: false,
         refetchOnWindowFocus: false,
-        enabled: aiAssistCapability?.status !== 'unavailable',
+        enabled: aiAssistCapability?.status !== 'UNAVAILABLE',
     });
     const advisories = advisoryData?.advisories ?? [];
 
     const hints = data?.data?.hints ?? [];
 
-    if (aiAssistCapability?.status === 'unavailable') {
+    if (aiAssistCapability?.status === 'UNAVAILABLE') {
         return (
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                 <div className="flex items-center gap-2 font-medium">
@@ -213,7 +213,7 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
         );
     }
 
-    if (aiAssistCapability?.status === 'degraded') {
+    if (aiAssistCapability?.status === 'DEGRADED') {
         return (
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                 <div className="flex items-center gap-2 font-medium">

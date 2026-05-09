@@ -20,6 +20,7 @@ import {
 } from '../../state/atoms/workspaceAtom';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface ImportProjectDialogProps {
     isOpen: boolean;
@@ -43,6 +44,7 @@ export function ImportProjectDialog({
     onClose,
     onImported
 }: ImportProjectDialogProps) {
+    const { t } = useI18n();
     const [state] = useAtom(workspaceAtom);
     const addIncludedProject = useSetAtom(addIncludedProjectAtom);
 
@@ -191,30 +193,27 @@ export function ImportProjectDialog({
                         <p className="text-sm text-grey-500 dark:text-grey-400 mt-0.5">
                             Add external projects as read-only references
                         </p>
-                        import { useI18n } from '../../i18n/I18nProvider';
                     </div>
                     <Button
                         type="button"
                         onClick={onClose}
                         variant="ghost"
                         size="small"
-                            const { t } = useI18n();
                         className="p-1 text-grey-400 hover:text-grey-600 dark:hover:text-grey-300 transition-colors"
-                        aria-label={t('workspace.import.close')}
+                        aria-label="Close"
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </Button>
                 </div>
-                                                aria-label={t('workspace.import.close')}
+
                 {/* Search */}
                 <div className="px-6 py-3 border-b border-grey-100 dark:border-grey-800">
                     <div className="relative">
                         <svg
                             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-grey-400"
                             fill="none"
-                                                    placeholder={t('workspace.import.searchPlaceholder')}
                             stroke="currentColor"
                         >
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -225,7 +224,7 @@ export function ImportProjectDialog({
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder={t('workspace.import.searchPlaceholder')}
+                            placeholder="Search projects"
                             className="
                 w-full pl-10 pr-4 py-2
                 bg-grey-50 dark:bg-grey-800

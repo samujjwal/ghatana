@@ -10,7 +10,7 @@
  * @doc.pattern Generator
  */
 
-import type { CapabilitySignal } from '@/api/surfaces.service';
+import type { SurfaceSignal } from '@/api/surfaces.service';
 import {
   canonicalRouteSurfaceRegistry,
   type RouteCapability,
@@ -35,17 +35,23 @@ export interface GeneratedRouteGate {
   actions: GeneratedActionGate[];
 }
 
-function normalizeStatus(status: CapabilitySignal['status']): GeneratedGateStatus {
-  if (status === 'active' || status === 'degraded' || status === 'unavailable') {
-    return status;
+function normalizeStatus(status: SurfaceSignal['status']): GeneratedGateStatus {
+  if (status === 'LIVE') {
+    return 'active';
+  }
+  if (status === 'DEGRADED' || status === 'PREVIEW') {
+    return 'degraded';
+  }
+  if (status === 'UNAVAILABLE' || status === 'DISABLED' || status === 'MISCONFIGURED') {
+    return 'unavailable';
   }
   return 'unknown';
 }
 
-function toLookup(capabilities: CapabilitySignal[]): Map<string, CapabilitySignal> {
-  const lookup = new Map<string, CapabilitySignal>();
-  for (const capability of capabilities) {
-    lookup.set(capability.key.toLowerCase(), capability);
+function toLookup(surfaces: SurfaceSignal[]): Map<string, SurfaceSignal> {
+  const lookup = new Map<string, SurfaceSignal>();
+  for (const surface of surfaces) {
+    lookup.set(surface.key.toLowerCase(), surface);
   }
   return lookup;
 }
@@ -56,8 +62,8 @@ function canonicalToken(value: string): string {
 
 function resolveCapabilitySignal(
   alias: string,
-  lookup: Map<string, CapabilitySignal>,
-): CapabilitySignal | undefined {
+  lookup: Map<string, SurfaceSignal>,
+): SurfaceSignal | undefined {
   const normalizedAlias = alias.toLowerCase();
   const aliasToken = canonicalToken(alias);
   const exact = lookup.get(normalizedAlias);
@@ -90,8 +96,8 @@ function reduceRouteStatus(actions: GeneratedActionGate[]): GeneratedGateStatus 
   return 'unknown';
 }
 
-export function generateRouteActionGates(capabilities: CapabilitySignal[]): GeneratedRouteGate[] {
-  const lookup = toLookup(capabilities);
+export function generateRouteActionGates(surfaces: SurfaceSignal[]): GeneratedRouteGate[] {
+  const lookup = toLookup(surfaces);
 
   return Object.values(canonicalRouteSurfaceRegistry)
     .map((route) => {

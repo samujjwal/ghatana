@@ -224,6 +224,7 @@ const DirectMessagePage: React.FC = () => {
             className="px-3 py-1.5 rounded-md"
           >
             {t('dm.send')}
+          </Button>
         </div>
       </div>
     </div>

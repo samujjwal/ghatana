@@ -171,7 +171,9 @@ public final class AutoRollbackTrigger {
       errorRate = Math.max(0.0, Math.min(1.0, errorRate));
       latencyP99Millis = Math.max(0L, latencyP99Millis);
       availability = Math.max(0.0, Math.min(1.0, availability));
-      rollbackVersion = Objects.requireNonNullElse(rollbackVersion, "previous-stable");
+      String defaultVersion = System.getenv("YAPPC_DEFAULT_ROLLBACK_VERSION");
+      rollbackVersion = Objects.requireNonNullElse(rollbackVersion,
+          (defaultVersion != null && !defaultVersion.isBlank()) ? defaultVersion : "previous-stable");
     }
   }
 

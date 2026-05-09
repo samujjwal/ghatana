@@ -205,7 +205,9 @@ public final class CanaryAnalyzer {
       minimumSuccessRate = Math.max(0.0, Math.min(1.0, minimumSuccessRate));
       minimumSampleSize = Math.max(1, minimumSampleSize);
       targetEnvironment = Objects.requireNonNullElse(targetEnvironment, "production");
-      rollbackVersion = Objects.requireNonNullElse(rollbackVersion, "previous-stable");
+      String defaultVersion = System.getenv("YAPPC_DEFAULT_ROLLBACK_VERSION");
+      rollbackVersion = Objects.requireNonNullElse(rollbackVersion,
+          (defaultVersion != null && !defaultVersion.isBlank()) ? defaultVersion : "previous-stable");
     }
 
     String summary() {

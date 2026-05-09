@@ -469,14 +469,6 @@ public class DataCloudRouterBuilder {
     }
 
     /**
-     * @deprecated Use withSurfaceRoutes(SurfaceRegistryHandler).
-     */
-    @Deprecated(forRemoval = false)
-    public DataCloudRouterBuilder withCapabilityRoutes(SurfaceRegistryHandler surfaceRegistryHandler) {
-        return withSurfaceRoutes(surfaceRegistryHandler);
-    }
-
-    /**
      * Adds entity lineage graph endpoints.
      */
     public DataCloudRouterBuilder withLineageRoutes(LineageHandler lineageHandler) {

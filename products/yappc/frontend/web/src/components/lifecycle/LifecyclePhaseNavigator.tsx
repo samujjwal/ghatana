@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-    const { t } = useI18n();
+import { useI18n } from '../../i18n/I18nProvider';
 import { Button } from '@ghatana/design-system';
 import {
     LifecyclePhase,
@@ -23,7 +23,7 @@ import { useLifecyclePhase } from '../../hooks/useLifecyclePhase';
 /**
  * Props for LifecyclePhaseNavigator component
  */
-            aria-label={t('lifecycle.phaseNavigation')}
+export interface LifecyclePhaseNavigatorProps {
     /** Visual layout orientation */
     orientation?: 'horizontal' | 'vertical';
     /** Show only phase names, or include descriptions */
@@ -63,6 +63,7 @@ export const LifecyclePhaseNavigator: React.FC<LifecyclePhaseNavigatorProps> = (
     variant = 'compact',
     className = '',
 }) => {
+    const { t } = useI18n();
     const {
         currentPhase,
         projectPhase,
@@ -147,6 +148,7 @@ const PhaseButton: React.FC<PhaseButtonProps> = ({
     onClick,
     disabled,
 }) => {
+    const { t } = useI18n();
     const label = PHASE_LABELS[phase];
     const description = PHASE_DESCRIPTIONS[phase];
 

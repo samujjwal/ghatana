@@ -309,7 +309,7 @@ export function CreateWorkspaceDialog({
                                 Creating...
                             </span>
                         ) : (
-                            {t('workspace.create.submit')}
+                            <span>Create Workspace</span>
                         )}
                     </Button>
                 </div>

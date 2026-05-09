@@ -120,12 +120,12 @@ const EmptyState: React.FC = () => (
 // =============================================================================
 
 export const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
-    const { t } = useI18n();
   messages = [],
   onSendMessage,
   isLoading = false,
   className = '',
 }) => {
+  const { t } = useI18n();
   const [input, setInput] = React.useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);

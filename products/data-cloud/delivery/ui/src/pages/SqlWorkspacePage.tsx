@@ -65,7 +65,7 @@ import {
   type QueryPolicyEvaluation,
   type QueryResultData,
 } from '../api/analytics.service';
-import { getCapabilitySignal, useCapabilityRegistry } from '../api/surfaces.service';
+import { getSurfaceSignal, useSurfaceRegistry } from '../api/surfaces.service';
 import { CapabilityTruthPanel } from '../components/capabilities/CapabilityTruthPanel';
 import { aiOperationsService } from '../api/ai-operations.service';
 import { UnsupportedRuntimeBoundaryError } from '../lib/runtime-boundaries';
@@ -739,7 +739,7 @@ export function SqlWorkspacePage(): React.ReactElement {
   const [isFederated, setIsFederated] = useState(false); // B13: Federated Trino query toggle
   const [schemas, setSchemas] = useState<SchemaItem[]>([]);
   const [queryHistory, setQueryHistory] = useState<QueryHistoryItem[]>([]);
-  const { data: capabilityRegistry } = useCapabilityRegistry();
+  const { data: surfaceRegistry } = useSurfaceRegistry();
   const { data: activityData } = useQuery({
     queryKey: ['user-activity', 'sql-workspace'],
     queryFn: () => getRecentActivity(),
@@ -747,15 +747,15 @@ export function SqlWorkspacePage(): React.ReactElement {
     retry: false,
   });
 
-  const analyticsCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['analytics']);
-  const federatedCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['trino', 'federated_query', 'federatedQuery']);
+  const analyticsCapability = getSurfaceSignal(surfaceRegistry?.surfaces, ['analytics']);
+  const federatedCapability = getSurfaceSignal(surfaceRegistry?.surfaces, ['trino', 'federated_query', 'federatedQuery']);
   // DC-UX-021: canonical capability key is 'query_assist'; legacy aliases 'ai_assist'/'aiAssist'/'assist' kept for backward compat
-  const aiAssistCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['query_assist', 'ai_assist', 'aiAssist', 'assist']);
-  const capabilitySubset = capabilityRegistry?.capabilities.filter((capability) =>
+  const aiAssistCapability = getSurfaceSignal(surfaceRegistry?.surfaces, ['query_assist', 'ai_assist', 'aiAssist', 'assist']);
+  const capabilitySubset = surfaceRegistry?.surfaces.filter((capability) =>
     // DC-UX-021: canonical key 'query_assist'; legacy aliases included for backward compat
     ['analytics', 'trino', 'federated_query', 'federatedQuery', 'query_assist', 'ai_assist', 'aiAssist', 'assist', 'voice'].includes(capability.key),
   ) ?? [];
-  const federatedUnavailable = federatedCapability?.status !== 'active';
+  const federatedUnavailable = federatedCapability?.status !== 'LIVE';
   const executionRecommendation = useMemo(
     () => recommendAnalyticsExecution(query, !federatedUnavailable),
     [query, federatedUnavailable],
@@ -792,7 +792,7 @@ export function SqlWorkspacePage(): React.ReactElement {
     staleTime: 5 * 60_000,
     retry: false,
     refetchOnWindowFocus: false,
-    enabled: aiAssistCapability?.status !== 'unavailable' && qualityAdvisoryCollectionId !== null,
+    enabled: aiAssistCapability?.status !== 'UNAVAILABLE' && qualityAdvisoryCollectionId !== null,
   });
   const qualityAdvisories = qualityAdvisoryQuery.data?.advisories ?? [];
   const qualityAdvisoryBoundary = qualityAdvisoryQuery.error instanceof UnsupportedRuntimeBoundaryError;
@@ -1041,7 +1041,7 @@ export function SqlWorkspacePage(): React.ReactElement {
           </div>
         )}
 
-        {(analyticsCapability?.status === 'degraded' || analyticsCapability?.status === 'unavailable' || federatedCapability?.status === 'degraded' || federatedCapability?.status === 'unavailable') && (
+        {(analyticsCapability?.status === 'DEGRADED' || analyticsCapability?.status === 'UNAVAILABLE' || federatedCapability?.status === 'DEGRADED' || federatedCapability?.status === 'UNAVAILABLE') && (
           <div className={cn(cardStyles.base, cardStyles.padded, 'mb-6 border-amber-300 bg-amber-50 text-amber-900')} data-testid="sql-optional-dependencies-warning">
             <div className="flex items-start gap-3">
               <AlertTriangle className="mt-0.5 h-5 w-5" />
@@ -1049,11 +1049,11 @@ export function SqlWorkspacePage(): React.ReactElement {
                 <h2 className={textStyles.h3}>{SQL_OPTIONAL_DEPENDENCIES_UNAVAILABLE_TITLE}</h2>
                 <div className="space-y-2">
                   {/* P0-3: Explicit degradation indicator for Analytics */}
-                  {(analyticsCapability?.status === 'degraded' || analyticsCapability?.status === 'unavailable') && (
+                  {(analyticsCapability?.status === 'DEGRADED' || analyticsCapability?.status === 'UNAVAILABLE') && (
                     <div className="text-sm">
                       <span className="font-semibold">Analytics Engine:</span>{' '}
-                      <span className={cn(analyticsCapability?.status === 'degraded' ? 'text-amber-700' : 'text-red-700')}>
-                        {analyticsCapability?.status === 'degraded' ? 'DEGRADED' : 'UNAVAILABLE'}
+                      <span className={cn(analyticsCapability?.status === 'DEGRADED' ? 'text-amber-700' : 'text-red-700')}>
+                        {analyticsCapability?.status === 'DEGRADED' ? 'DEGRADED' : 'UNAVAILABLE'}
                       </span>
                       {analyticsCapability?.detail && (
                         <span className="block text-xs text-amber-800 mt-1">{analyticsCapability.detail}</span>
@@ -1061,11 +1061,11 @@ export function SqlWorkspacePage(): React.ReactElement {
                     </div>
                   )}
                   {/* P0-3: Explicit degradation indicator for Federated Query */}
-                  {(federatedCapability?.status === 'degraded' || federatedCapability?.status === 'unavailable') && (
+                  {(federatedCapability?.status === 'DEGRADED' || federatedCapability?.status === 'UNAVAILABLE') && (
                     <div className="text-sm">
                       <span className="font-semibold">Federated Query:</span>{' '}
-                      <span className={cn(federatedCapability?.status === 'degraded' ? 'text-amber-700' : 'text-red-700')}>
-                        {federatedCapability?.status === 'degraded' ? 'DEGRADED' : 'UNAVAILABLE'}
+                      <span className={cn(federatedCapability?.status === 'DEGRADED' ? 'text-amber-700' : 'text-red-700')}>
+                        {federatedCapability?.status === 'DEGRADED' ? 'DEGRADED' : 'UNAVAILABLE'}
                       </span>
                       {federatedCapability?.detail && (
                         <span className="block text-xs text-amber-800 mt-1">{federatedCapability.detail}</span>

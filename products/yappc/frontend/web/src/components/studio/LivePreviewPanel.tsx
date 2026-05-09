@@ -13,8 +13,8 @@ import type { BuilderDocument } from '@ghatana/ui-builder';
 import { getPreviewSync } from '@/services/canvas/preview/BidirectionalPreviewSync';
 import {
   issuePreviewSession,
-  type PreviewSessionContext,
 } from '@/services/preview/PreviewSessionApi';
+import { type PreviewSessionContext } from '@/lib/api/client';
 import { getPreviewLocaleFixture, getPreviewLocaleFixtures } from '@/services/preview/PreviewLocaleFixtures';
 import { useI18n } from '../../i18n/I18nProvider';
 
@@ -472,5 +472,4 @@ export function LivePreviewPanel({
       </div>
     </div>
   );
-}
 }

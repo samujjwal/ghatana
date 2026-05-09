@@ -120,9 +120,22 @@ const DataConnectorsPage = React.lazy(() =>
 // Wrapper component to provide required props to DataConnectorsPage
 const DataConnectorsPageWrapper: React.FC = () => {
   const navigate = useNavigate();
+  const resolveConnectorId = (connector: unknown): string | null => {
+    if (typeof connector !== 'object' || connector === null) {
+      return null;
+    }
+    const maybeId = (connector as { id?: unknown }).id;
+    return typeof maybeId === 'string' && maybeId.trim().length > 0 ? maybeId : null;
+  };
+
   return React.createElement(DataConnectorsPage, {
-    onCreateClick: () => navigate('/connectors/new'),
-    onEditClick: (connector: any) => navigate(`/connectors/${connector.id}/edit`),
+    onCreateClick: () => navigate('/connectors?mode=create'),
+    onEditClick: (connector: unknown) => {
+      const connectorId = resolveConnectorId(connector);
+      if (connectorId) {
+        navigate(`/connectors?mode=edit&id=${encodeURIComponent(connectorId)}`);
+      }
+    },
   });
 };
 
