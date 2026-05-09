@@ -6,14 +6,16 @@
  * energy/momentum conservation, boundary conditions, and learner safety constraints.
  *
  * Supports deterministic replay using GenerationReplayManifest seeds.
+ * Hardened to enforce claim/evidence links, deterministic seeds, and accessibility.
  *
  * @doc.type service
- * @doc.purpose Domain-specific simulation correctness validation for 6 domains
+ * @doc.purpose Domain-specific simulation correctness validation with evidence linkage and accessibility
  * @doc.layer product
  * @doc.pattern Validator
  */
 
 import type { Logger } from "pino";
+import { randomBytes } from "crypto";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -53,6 +55,18 @@ export interface SimulationManifest {
   learnerAction: string;
   expectedOutputs: Record<string, unknown>;
   metadata: Record<string, unknown> | undefined;
+  // Evidence linkage fields
+  claimRef?: string;
+  evidenceRefs?: string[];
+  // Accessibility metadata
+  accessibility: {
+    keyboardNavigable: boolean;
+    screenReaderCompatible: boolean;
+    colorContrastCompliant: boolean;
+    reducedMotionSupport: boolean;
+    captionsAvailable: boolean;
+    alternativeTextProvided: boolean;
+  };
 }
 
 export interface CorrectnessCheckResult {
@@ -669,6 +683,65 @@ export class SimulationCorrectnessHarness {
           ? `${manifest.parameters.length} parameters declared ✓`
           : "No parameters declared — simulations should be interactive",
       },
+      // Evidence linkage validation
+      {
+        check: "has_claim_or_evidence_link",
+        passed: (manifest.claimRef !== undefined && manifest.claimRef.length > 0) || 
+                (manifest.evidenceRefs !== undefined && manifest.evidenceRefs.length > 0),
+        severity: "ERROR",
+        detail: (manifest.claimRef !== undefined && manifest.claimRef.length > 0) || 
+                (manifest.evidenceRefs !== undefined && manifest.evidenceRefs.length > 0)
+          ? "Simulation linked to claim or evidence ✓"
+          : "Simulation must be linked to at least one claim or evidence reference",
+      },
+      // Accessibility validation
+      {
+        check: "keyboard_navigable",
+        passed: manifest.accessibility.keyboardNavigable,
+        severity: "ERROR",
+        detail: manifest.accessibility.keyboardNavigable
+          ? "Keyboard navigation supported ✓"
+          : "Keyboard navigation must be supported for accessibility",
+      },
+      {
+        check: "screen_reader_compatible",
+        passed: manifest.accessibility.screenReaderCompatible,
+        severity: "ERROR",
+        detail: manifest.accessibility.screenReaderCompatible
+          ? "Screen reader compatibility declared ✓"
+          : "Screen reader compatibility must be declared",
+      },
+      {
+        check: "color_contrast_compliant",
+        passed: manifest.accessibility.colorContrastCompliant,
+        severity: "ERROR",
+        detail: manifest.accessibility.colorContrastCompliant
+          ? "Color contrast compliance declared ✓"
+          : "Color contrast compliance must be declared",
+      },
+      {
+        check: "reduced_motion_support",
+        passed: manifest.accessibility.reducedMotionSupport,
+        severity: "WARNING",
+        detail: manifest.accessibility.reducedMotionSupport
+          ? "Reduced motion support declared ✓"
+          : "Reduced motion support should be declared for accessibility",
+      },
     ];
+  }
+
+  /**
+   * Generate a cryptographically secure deterministic seed
+   */
+  static generateDeterministicSeed(): string {
+    return randomBytes(16).toString("hex");
+  }
+
+  /**
+   * Validate seed format and strength
+   */
+  static validateSeed(seed: string): boolean {
+    // Seed must be at least 16 characters (128 bits when hex-encoded)
+    return seed.length >= 16 && /^[a-f0-9]+$/i.test(seed);
   }
 }

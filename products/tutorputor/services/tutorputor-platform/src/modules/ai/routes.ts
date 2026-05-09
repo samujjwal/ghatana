@@ -150,7 +150,17 @@ async function enforceAiTenantRateLimit(
     }
   ).redis;
   if (!redis) {
-    return true;
+    // Fail-closed: if Redis is unavailable, reject the request
+    app.log.error(
+      { routeKey },
+      "AI tenant rate-limit guard failed: Redis unavailable - rejecting request (fail-closed)",
+    );
+    reply.code(503).send({
+      error: "Service Unavailable",
+      code: "AI_RATE_LIMIT_SERVICE_UNAVAILABLE",
+      message: "AI service rate limiter is unavailable. Please try again later.",
+    });
+    return false;
   }
 
   const tenantId = String(getTenantId(req));
@@ -197,11 +207,17 @@ async function enforceAiTenantRateLimit(
 
     return true;
   } catch (error) {
-    app.log.warn(
+    // Fail-closed: if Redis operation fails, reject the request
+    app.log.error(
       { err: error, routeKey, tenantId },
-      "AI tenant rate-limit guard failed open",
+      "AI tenant rate-limit guard failed: Redis error - rejecting request (fail-closed)",
     );
-    return true;
+    reply.code(503).send({
+      error: "Service Unavailable",
+      code: "AI_RATE_LIMIT_ERROR",
+      message: "AI service rate limiter encountered an error. Please try again later.",
+    });
+    return false;
   }
 }
 

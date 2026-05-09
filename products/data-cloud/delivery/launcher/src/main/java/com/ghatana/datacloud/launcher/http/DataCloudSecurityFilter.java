@@ -83,6 +83,7 @@ public final class DataCloudSecurityFilter {
     static final String HEADER_REQUEST_ID = "X-Request-ID";
     static final String HEADER_API_KEY = "X-API-Key";
     static final String HEADER_AUTHORIZATION = "Authorization";
+    static final String HEADER_BREAK_GLASS_REASON = "X-Break-Glass-Reason";
     static final String AUTH_TOKEN_COOKIE = "auth_token";
     static final String DEFAULT_TENANT_CLAIM = "tenant_id";
 
@@ -92,7 +93,7 @@ public final class DataCloudSecurityFilter {
     private final PolicyEngine policyEngine;
     private final AuditService auditService;
     private final boolean enforcing;
-    private final Set<String> policyExcludedTenants;
+    private final Set<String> breakGlassTenants;
 
     private DataCloudSecurityFilter(Builder b) {
         if (b.apiKeyResolver == null && b.jwtProvider == null) {
@@ -106,8 +107,8 @@ public final class DataCloudSecurityFilter {
         this.policyEngine           = b.policyEngine;        // nullable — CRITICAL routes fail-closed when null and enforcing=true
         this.auditService           = b.auditService;        // nullable — audit skipped when null
         this.enforcing              = b.enforcing;
-        this.policyExcludedTenants  = b.policyExcludedTenants != null
-                ? Set.copyOf(b.policyExcludedTenants) : Set.of();
+        this.breakGlassTenants  = b.breakGlassTenants != null
+            ? Set.copyOf(b.breakGlassTenants) : Set.of();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -375,7 +376,14 @@ public final class DataCloudSecurityFilter {
         String method = request.getMethod().name();
         String tenantId = principal.getTenantId();
 
-        if (sensitivity != EndpointSensitivity.CRITICAL || policyExcludedTenants.contains(tenantId)) {
+        if (sensitivity != EndpointSensitivity.CRITICAL) {
+            return serveDelegate(tenantWrapped, request);
+        }
+
+        if (breakGlassTenants.contains(tenantId)) {
+            if (!isBreakGlassAllowed(request, principal, tenantId, requestId)) {
+                return Promise.of(policyDenyResponse(requestId));
+            }
             return serveDelegate(tenantWrapped, request);
         }
 
@@ -606,7 +614,42 @@ public final class DataCloudSecurityFilter {
         return "HTTP_REQUEST";
     }
 
+    private boolean isBreakGlassAllowed(io.activej.http.HttpRequest request,
+                                        Principal principal,
+                                        String tenantId,
+                                        String requestId) {
+        String reason = request.getHeader(HttpHeaders.of(HEADER_BREAK_GLASS_REASON));
+        if (reason == null || reason.isBlank()) {
+            log.warn("[DC-SEC] Break-glass denied: missing {} header tenant={} requestId={}",
+                    HEADER_BREAK_GLASS_REASON,
+                    tenantId,
+                    requestId);
+            return false;
+        }
+        Set<String> normalizedRoles = principal.getRoles().stream()
+            .map(role -> role == null ? "" : role.trim().toUpperCase(Locale.ROOT).replace('-', '_'))
+            .collect(java.util.stream.Collectors.toSet());
+        boolean allowedRole = normalizedRoles.contains("ADMIN");
+        if (!allowedRole) {
+            log.warn("[DC-SEC] Break-glass denied: principal lacks ADMIN role principal={} tenant={} requestId={}",
+                    principal.getName(),
+                    tenantId,
+                    requestId);
+            return false;
+        }
+        log.warn("[DC-SEC] Break-glass override enabled tenant={} principal={} requestId={} reason={}",
+                tenantId,
+                principal.getName(),
+                requestId,
+                reason);
+        return true;
+    }
+
     private AccessLevel requiredAccess(String method, String path, EndpointSensitivity sensitivity) {
+        AccessLevel routeActionLevel = RouteActionAccessRegistry.requiredAccess(method, path);
+        if (routeActionLevel != null) {
+            return routeActionLevel;
+        }
         if (path.startsWith("/api/v1/governance/")) {
             return "GET".equalsIgnoreCase(method) ? AccessLevel.AUDITOR : AccessLevel.ADMIN;
         }
@@ -670,7 +713,7 @@ public final class DataCloudSecurityFilter {
         private PolicyEngine policyEngine;
         private AuditService auditService;
         private boolean enforcing = true;
-        private Set<String> policyExcludedTenants;
+        private Set<String> breakGlassTenants;
 
         /**
          * Resolver that validates API keys and maps them to {@link com.ghatana.platform.governance.security.Principal}.
@@ -726,10 +769,13 @@ public final class DataCloudSecurityFilter {
         }
 
         /**
-         * Tenants that are excluded from the policy engine check (e.g. internal service tenants).
+         * Tenants that may invoke break-glass on CRITICAL routes.
+         *
+         * <p>Break-glass still requires ADMIN role and a non-empty
+         * {@value HEADER_BREAK_GLASS_REASON} header in each request.
          */
-        public Builder policyExcludedTenants(Set<String> tenants) {
-            this.policyExcludedTenants = tenants;
+        public Builder breakGlassTenants(Set<String> tenants) {
+            this.breakGlassTenants = tenants;
             return this;
         }
 
@@ -738,7 +784,7 @@ public final class DataCloudSecurityFilter {
         }
     }
 
-    private enum AccessLevel {
+    enum AccessLevel {
         NONE,
         VIEWER,
         AUDITOR,

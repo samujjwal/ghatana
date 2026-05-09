@@ -11,6 +11,8 @@ import com.ghatana.platform.http.security.filter.TenantExtractor;
 import io.activej.http.*;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -37,6 +39,7 @@ public class HttpHandlerSupport {
     private final String corsAllowHeaders;
     private final boolean strictTenantResolution;
     private final String deploymentMode;
+    private final Executor sharedBlockingExecutor;
     private static final java.util.Set<String> SAFE_FALLBACK_MODES = java.util.Set.of("local", "test", "development");
 
     public HttpHandlerSupport(ObjectMapper objectMapper,
@@ -66,6 +69,7 @@ public class HttpHandlerSupport {
         this.corsAllowHeaders       = corsAllowHeaders;
         this.strictTenantResolution = strictTenantResolution;
         this.deploymentMode         = (deploymentMode == null || deploymentMode.isBlank()) ? "local" : deploymentMode;
+        this.sharedBlockingExecutor = Executors.newVirtualThreadPerTaskExecutor();
     }
 
     /**
@@ -249,7 +253,7 @@ public class HttpHandlerSupport {
      * @return Executor for blocking operations
      */
     public java.util.concurrent.Executor blockingExecutor() {
-        return java.util.concurrent.Executors.newCachedThreadPool();
+        return sharedBlockingExecutor;
     }
 
     /**

@@ -7,6 +7,61 @@ import { createHash } from "crypto";
 type AIUseCase = "tutor_query" | "content_generation" | "intent_parsing" | "simulation_explanation" | "query_parsing";
 type AISafetyFilterResult = "passed" | "blocked" | "human_review_required" | "redacted";
 
+/**
+ * Typed AI Governance Decision Envelope
+ * 
+ * Encapsulates the decision-making process for AI interactions with
+ * explicit separation of success/failure metadata for auditability.
+ */
+export interface AIGovernanceDecision {
+  /** Whether the interaction was allowed */
+  allowed: boolean;
+  /** Primary reason for the decision */
+  reason: GovernanceReason;
+  /** Detailed failure information if not allowed */
+  failure?: GovernanceFailure;
+  /** Consent state at time of decision */
+  consentState: AIInteractionGovernanceMetadata["consentState"];
+  /** Safety filter result */
+  safetyFilterResult: AISafetyFilterResult;
+  /** Timestamp of decision */
+  decidedAt: string;
+  /** Additional context */
+  context?: Record<string, unknown>;
+}
+
+/**
+ * Reasons for governance decisions
+ */
+export type GovernanceReason =
+  | "consent_granted"
+  | "consent_missing"
+  | "consent_revoked"
+  | "safety_blocked"
+  | "human_review_required"
+  | "rate_limited"
+  | "validation_error"
+  | "service_error"
+  | "allowed";
+
+/**
+ * Detailed failure information for audit trails
+ */
+export interface GovernanceFailure {
+  /** Category of failure */
+  category: "consent" | "safety" | "rate_limit" | "validation" | "service";
+  /** Specific error code */
+  code: string;
+  /** Human-readable error message */
+  message: string;
+  /** Whether this failure is retryable */
+  retryable: boolean;
+  /** Recommended action for user */
+  recommendedAction?: string;
+  /** Additional diagnostic information */
+  diagnostics?: Record<string, unknown>;
+}
+
 interface AIInteractionGovernanceMetadata {
   consentState: "granted" | "missing" | "revoked" | "not_required";
   learnerContextScope:
@@ -193,50 +248,142 @@ export async function buildAIGovernanceMetadata(
   };
 }
 
-export function assertAIInteractionAllowed(
+/**
+ * Create a typed AI Governance Decision from governance metadata
+ * 
+ * This function centralizes decision-making logic and produces a typed
+ * decision envelope with explicit failure information for audit trails.
+ */
+export function createAIGovernanceDecision(
   governance: AIInteractionGovernanceMetadata,
   learner?: { age?: number; parentalConsentGranted?: boolean },
-): void {
+): AIGovernanceDecision {
   const consentRevoked = governance.consentState === "revoked";
+  const decidedAt = new Date().toISOString();
 
+  // Check consent state
   if (governance.consentState === "missing") {
-    throw new AIGovernanceError(
-      "AI interaction blocked because consent is missing.",
-      "AI_CONSENT_MISSING",
-    );
+    return {
+      allowed: false,
+      reason: "consent_missing",
+      failure: {
+        category: "consent",
+        code: "AI_CONSENT_MISSING",
+        message: "AI interaction blocked because consent is missing",
+        retryable: false,
+        recommendedAction: "Request user to grant AI processing consent",
+      },
+      consentState: governance.consentState,
+      safetyFilterResult: governance.safetyFilterResult,
+      decidedAt,
+    };
   }
 
   if (governance.consentState === "revoked") {
-    throw new AIGovernanceError(
-      "AI interaction blocked because consent was revoked.",
-      "AI_CONSENT_REVOKED",
-    );
+    return {
+      allowed: false,
+      reason: "consent_revoked",
+      failure: {
+        category: "consent",
+        code: "AI_CONSENT_REVOKED",
+        message: "AI interaction blocked because consent was revoked",
+        retryable: false,
+        recommendedAction: "Contact support to restore consent if this was in error",
+      },
+      consentState: governance.consentState,
+      safetyFilterResult: governance.safetyFilterResult,
+      decidedAt,
+    };
   }
 
-  assertConsentAllowed({
-    useCase: "ai_tutor",
-    granted: governance.consentState === "granted" || governance.consentState === "not_required",
-    revoked: consentRevoked,
-    ...(typeof learner?.age === "number" ? { learnerAge: learner.age } : {}),
-    ...(typeof learner?.parentalConsentGranted === "boolean"
-      ? { parentalConsentGranted: learner.parentalConsentGranted }
-      : {}),
-  });
+  // Verify consent policy
+  try {
+    assertConsentAllowed({
+      useCase: "ai_tutor",
+      granted: governance.consentState === "granted" || governance.consentState === "not_required",
+      revoked: consentRevoked,
+      ...(typeof learner?.age === "number" ? { learnerAge: learner.age } : {}),
+      ...(typeof learner?.parentalConsentGranted === "boolean"
+        ? { parentalConsentGranted: learner.parentalConsentGranted }
+        : {}),
+    });
+  } catch (error) {
+    return {
+      allowed: false,
+      reason: "consent_revoked",
+      failure: {
+        category: "consent",
+        code: "AI_CONSENT_POLICY_VIOLATION",
+        message: error instanceof Error ? error.message : "Consent policy violation",
+        retryable: false,
+        recommendedAction: "Review consent settings",
+      },
+      consentState: governance.consentState,
+      safetyFilterResult: governance.safetyFilterResult,
+      decidedAt,
+    };
+  }
 
+  // Check safety filter
   if (governance.safetyFilterResult === "blocked") {
-    throw new AIGovernanceError(
-      "AI interaction blocked by safety filter.",
-      "AI_SAFETY_BLOCKED",
-    );
+    return {
+      allowed: false,
+      reason: "safety_blocked",
+      failure: {
+        category: "safety",
+        code: "AI_SAFETY_BLOCKED",
+        message: "AI interaction blocked by safety filter",
+        retryable: false,
+        recommendedAction: "Modify input content to remove blocked patterns",
+        diagnostics: { safetyFilterResult: governance.safetyFilterResult },
+      },
+      consentState: governance.consentState,
+      safetyFilterResult: governance.safetyFilterResult,
+      decidedAt,
+    };
   }
 
   if (
     governance.humanReviewRequired ||
     governance.safetyFilterResult === "human_review_required"
   ) {
+    return {
+      allowed: false,
+      reason: "human_review_required",
+      failure: {
+        category: "safety",
+        code: "AI_HUMAN_REVIEW_REQUIRED",
+        message: "AI interaction requires human review before release",
+        retryable: false,
+        recommendedAction: "Submit for human review",
+        diagnostics: { humanReviewRequired: governance.humanReviewRequired },
+      },
+      consentState: governance.consentState,
+      safetyFilterResult: governance.safetyFilterResult,
+      decidedAt,
+    };
+  }
+
+  // All checks passed
+  return {
+    allowed: true,
+    reason: "allowed",
+    consentState: governance.consentState,
+    safetyFilterResult: governance.safetyFilterResult,
+    decidedAt,
+  };
+}
+
+export function assertAIInteractionAllowed(
+  governance: AIInteractionGovernanceMetadata,
+  learner?: { age?: number; parentalConsentGranted?: boolean },
+): void {
+  const decision = createAIGovernanceDecision(governance, learner);
+
+  if (!decision.allowed) {
     throw new AIGovernanceError(
-      "AI interaction requires human review before release.",
-      "AI_HUMAN_REVIEW_REQUIRED",
+      decision.failure?.message || "AI interaction not allowed",
+      decision.failure?.code as AIGovernanceError["code"],
     );
   }
 }

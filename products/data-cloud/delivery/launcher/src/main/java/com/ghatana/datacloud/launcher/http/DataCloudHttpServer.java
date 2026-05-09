@@ -1232,6 +1232,35 @@ public class DataCloudHttpServer {
         return !className.contains("inmemory");
     }
 
+    static void validateCriticalRuntimeDependencies(String deploymentMode,
+                                                    boolean genericIdempotencyStoreAvailable,
+                                                    boolean transactionManagerAvailable,
+                                                    boolean completionServiceAvailable,
+                                                    Logger logger) {
+        requireNonNull(logger, "logger");
+        if (!isProductionMode(deploymentMode)) {
+            return;
+        }
+        if (!genericIdempotencyStoreAvailable) {
+            throw new IllegalStateException(
+                "P0.5: Durable generic idempotency store is required for production profiles. "
+                    + "Call withGenericIdempotencyStore() before start()."
+            );
+        }
+        if (!transactionManagerAvailable) {
+            throw new IllegalStateException(
+                "P0.5: Transaction manager is required for production profiles. "
+                    + "Call withTransactionManager() before start()."
+            );
+        }
+        if (!completionServiceAvailable) {
+            throw new IllegalStateException(
+                "P0.5: AI completion service is required for production profiles. "
+                    + "Call withCompletionService() before start()."
+            );
+        }
+    }
+
     /**
      * P0.1: Production/strict profiles must not run settings APIs on in-memory storage.
      */
@@ -1310,6 +1339,12 @@ public class DataCloudHttpServer {
             metricsCollectorConfigured,
             traceExportService != null,
             true,
+            log);
+        validateCriticalRuntimeDependencies(
+            deploymentMode,
+            genericIdempotencyStore != null,
+            transactionManager != null,
+            completionService != null,
             log);
         corsAllowOrigin = resolveCorsAllowOrigin(System.getenv("DATACLOUD_CORS_ALLOWED_ORIGINS"), strictTenantResolution, log);
 

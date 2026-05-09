@@ -12,8 +12,7 @@ info:
     Data-Cloud now exposes plugin-backed workflow execution endpoints for pipeline execution,
     execution status inspection, and execution log retrieval inside the standalone launcher.
     In this API, workflow and pipeline execution means data-local plugin runtime execution.
-    AEP still owns broader agentic orchestration, but Data-Cloud can execute and observe
-    pipeline workflows through its runtime plugin layer.
+    Data Cloud includes the Action Plane runtime implementation for plugin-backed workflow execution and observability.
 
     The Data-Cloud platform provides:
     - **Entity storage** — multi-tenant JSONB entity CRUD with pluggable storage backends
@@ -100,8 +99,8 @@ tags:
     description: Data lifecycle, retention policies, PII redaction, and compliance posture.
   - name: reports
     description: Reporting — generate and retrieve analytical reports.
-  - name: capabilities
-    description: Runtime capability and subsystem configuration exposure.
+  - name: surfaces
+    description: Runtime surface and subsystem configuration exposure.
   - name: autonomy
     description: Autonomous-operation override and audit controls.
   - name: plugins
@@ -5943,7 +5942,7 @@ paths:
     get:
       summary: Get the canonical runtime surface registry snapshot
       operationId: apiV1SurfacesGet
-      tags: [capabilities]
+      tags: [surfaces]
       responses:
         "200":
           description: Runtime surface registry snapshot with runtime posture metadata.
@@ -6011,7 +6010,7 @@ paths:
     get:
       summary: Get the canonical runtime surface registry schema
       operationId: apiV1SurfacesSchemaGet
-      tags: [capabilities]
+      tags: [surfaces]
       responses:
         "200":
           description: Runtime surface registry schema.
@@ -6026,7 +6025,7 @@ paths:
     get:
       summary: Get general admin settings
       operationId: apiV1SettingsGet
-      tags: [capabilities]
+      tags: [surfaces]
       responses:
         "200":
           description: Current general settings.
@@ -6043,7 +6042,7 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/FreeformObject"
-      tags: [capabilities]
+      tags: [surfaces]
       responses:
         "200":
           description: Updated general settings.
@@ -6057,7 +6056,7 @@ paths:
     get:
       summary: Get admin security settings
       operationId: apiV1SettingsSecurityGet
-      tags: [capabilities]
+      tags: [surfaces]
       responses:
         "200":
           description: Current security settings.
@@ -6074,7 +6073,7 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/FreeformObject"
-      tags: [capabilities]
+      tags: [surfaces]
       responses:
         "200":
           description: Updated security settings.
@@ -6088,7 +6087,7 @@ paths:
     get:
       summary: List API keys
       operationId: apiV1SettingsKeysGet
-      tags: [capabilities]
+      tags: [surfaces]
       responses:
         "200":
           description: API keys list.
@@ -6099,7 +6098,7 @@ paths:
     post:
       summary: Create API key
       operationId: apiV1SettingsKeysPost
-      tags: [capabilities]
+      tags: [surfaces]
       requestBody:
         required: true
         content:
@@ -6153,7 +6152,7 @@ paths:
     delete:
       summary: Revoke API key
       operationId: apiV1SettingsKeysIdRevokeDelete
-      tags: [capabilities]
+      tags: [surfaces]
       parameters:
         - name: id
           in: path
@@ -6173,7 +6172,7 @@ paths:
     get:
       summary: Get profile settings
       operationId: apiV1SettingsProfileGet
-      tags: [capabilities]
+      tags: [surfaces]
       responses:
         "200":
           description: Current profile settings.
@@ -6184,7 +6183,7 @@ paths:
     patch:
       summary: Update profile settings
       operationId: apiV1SettingsProfilePatch
-      tags: [capabilities]
+      tags: [surfaces]
       requestBody:
         required: true
         content:
@@ -6204,7 +6203,7 @@ paths:
     get:
       summary: Get user preferences
       operationId: apiV1SettingsPreferencesGet
-      tags: [capabilities]
+      tags: [surfaces]
       responses:
         "200":
           description: Current user preferences.
@@ -6215,7 +6214,7 @@ paths:
     patch:
       summary: Update user preferences
       operationId: apiV1SettingsPreferencesPatch
-      tags: [capabilities]
+      tags: [surfaces]
       requestBody:
         required: true
         content:
@@ -6235,7 +6234,7 @@ paths:
     get:
       summary: Get notification preferences
       operationId: apiV1SettingsNotificationsGet
-      tags: [capabilities]
+      tags: [surfaces]
       responses:
         "200":
           description: Current notification preferences.
@@ -6246,7 +6245,7 @@ paths:
     patch:
       summary: Update notification preferences
       operationId: apiV1SettingsNotificationsPatch
-      tags: [capabilities]
+      tags: [surfaces]
       requestBody:
         required: true
         content:
@@ -6266,7 +6265,7 @@ paths:
     post:
       summary: Propose a sensitive settings change requiring admin approval (P3.5)
       operationId: apiV1SettingsApprovalRequestPost
-      tags: [capabilities]
+      tags: [surfaces]
       requestBody:
         required: true
         content:
@@ -6292,7 +6291,7 @@ paths:
     get:
       summary: List pending admin approval requests (P3.5)
       operationId: apiV1SettingsApprovalsGet
-      tags: [capabilities]
+      tags: [surfaces]
       responses:
         "200":
           description: Pending approvals list.
@@ -6305,7 +6304,7 @@ paths:
     post:
       summary: Approve a pending settings change (P3.5)
       operationId: apiV1SettingsApprovalsIdApprovePost
-      tags: [capabilities]
+      tags: [surfaces]
       parameters:
         - name: id
           in: path
@@ -6324,7 +6323,7 @@ paths:
     post:
       summary: Reject a pending settings change (P3.5)
       operationId: apiV1SettingsApprovalsIdRejectPost
-      tags: [capabilities]
+      tags: [surfaces]
       parameters:
         - name: id
           in: path
@@ -7516,3 +7515,5 @@ paths:
       responses:
         "200": { description: Migration scheduled or completed. }
         "503": { description: Tier migration scheduler not configured. }
+
+

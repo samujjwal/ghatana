@@ -127,6 +127,30 @@ public enum EndpointSensitivity {
     );
 
     /**
+     * Contract-backed explicit CRITICAL route-action entries.
+     */
+    private static final Set<String> CRITICAL_ROUTE_ACTIONS = Set.of(
+        "POST /api/v1/governance/retention/purge",
+        "POST /api/v1/governance/privacy/redact",
+        "POST /api/v1/learning/review/{id}/approve",
+        "POST /api/v1/learning/review/{id}/reject",
+        "POST /api/v1/models/{id}/promote",
+        "DELETE /api/v1/entities/{collection}/{id}"
+    );
+
+    /**
+     * Contract-backed explicit SENSITIVE route-action entries.
+     */
+    private static final Set<String> SENSITIVE_ROUTE_ACTIONS = Set.of(
+        "POST /api/v1/entities/{collection}",
+        "POST /api/v1/events",
+        "POST /api/v1/voice/intent",
+        "POST /api/v1/voice/classify",
+        "POST /api/v1/memory/search",
+        "POST /api/v1/pipelines/{id}/execute"
+    );
+
+    /**
      * Classify a given HTTP method + path pair.
      *
      * <p>Rules (evaluated in order):
@@ -145,6 +169,14 @@ public enum EndpointSensitivity {
     public static EndpointSensitivity classify(String method, String path) {
         if (PUBLIC_PATHS.contains(path)) {
             return PUBLIC;
+        }
+
+        String actionKey = method.toUpperCase() + " " + normalizePath(path);
+        if (CRITICAL_ROUTE_ACTIONS.contains(actionKey)) {
+            return CRITICAL;
+        }
+        if (SENSITIVE_ROUTE_ACTIONS.contains(actionKey)) {
+            return SENSITIVE;
         }
 
         // ── 1. Always-CRITICAL paths (governance, voice transcripts, review) ──
@@ -203,5 +235,15 @@ public enum EndpointSensitivity {
         }
 
         return INTERNAL;
+    }
+
+    private static String normalizePath(String path) {
+        String normalized = path.replaceAll("/[0-9a-fA-F-]{8,}", "/{id}");
+        normalized = normalized.replaceAll("/learning/review/[^/]+/(approve|reject)$", "/learning/review/{id}/$1");
+        normalized = normalized.replaceAll("/models/[^/]+/promote$", "/models/{id}/promote");
+        normalized = normalized.replaceAll("/pipelines/[^/]+/execute$", "/pipelines/{id}/execute");
+        normalized = normalized.replaceAll("/entities/[^/]+/[^/]+$", "/entities/{collection}/{id}");
+        normalized = normalized.replaceAll("/entities/[^/]+$", "/entities/{collection}");
+        return normalized;
     }
 }

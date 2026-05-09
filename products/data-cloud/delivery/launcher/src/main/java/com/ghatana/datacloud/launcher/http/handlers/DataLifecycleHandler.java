@@ -198,6 +198,22 @@ public class DataLifecycleHandler {
         // DC-BE-002: Check idempotency for retention classification
         String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
         String operationScope = "governance:retention:classify";
+        if (requiresStrictIdempotency() && (idempotencyKey == null || idempotencyKey.isBlank())) {
+            return Promise.of(http.errorEnvelopeResponse(
+                ApiResponse.error("MISSING_IDEMPOTENCY_KEY",
+                    "X-Idempotency-Key is required for retention classification in strict profiles",
+                    tenantId, requestId),
+                objectMapper,
+                400));
+        }
+        if (requiresStrictIdempotency() && idempotencyStore == null) {
+            return Promise.of(http.errorEnvelopeResponse(
+                ApiResponse.error("IDEMPOTENCY_STORE_REQUIRED",
+                    "Durable idempotency store is required for retention classification in strict profiles",
+                    tenantId, requestId),
+                objectMapper,
+                503));
+        }
         if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
             var cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
             if (cached.isPresent()) {
@@ -346,6 +362,22 @@ public class DataLifecycleHandler {
         // DC-BE-002: Check idempotency for retention purge
         String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
         String operationScope = "governance:retention:purge";
+        if (requiresStrictIdempotency() && (idempotencyKey == null || idempotencyKey.isBlank())) {
+            return Promise.of(http.errorEnvelopeResponse(
+                ApiResponse.error("MISSING_IDEMPOTENCY_KEY",
+                    "X-Idempotency-Key is required for purge operations in strict profiles",
+                    tenantId, requestId),
+                objectMapper,
+                400));
+        }
+        if (requiresStrictIdempotency() && idempotencyStore == null) {
+            return Promise.of(http.errorEnvelopeResponse(
+                ApiResponse.error("IDEMPOTENCY_STORE_REQUIRED",
+                    "Durable idempotency store is required for purge operations in strict profiles",
+                    tenantId, requestId),
+                objectMapper,
+                503));
+        }
         if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
             var cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
             if (cached.isPresent()) {
@@ -588,6 +620,22 @@ public class DataLifecycleHandler {
         // DC-BE-002: Check idempotency for privacy redaction
         String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
         String operationScope = "governance:privacy:redact";
+        if (requiresStrictIdempotency() && (idempotencyKey == null || idempotencyKey.isBlank())) {
+            return Promise.of(http.errorEnvelopeResponse(
+                ApiResponse.error("MISSING_IDEMPOTENCY_KEY",
+                    "X-Idempotency-Key is required for redaction operations in strict profiles",
+                    tenantId, requestId),
+                objectMapper,
+                400));
+        }
+        if (requiresStrictIdempotency() && idempotencyStore == null) {
+            return Promise.of(http.errorEnvelopeResponse(
+                ApiResponse.error("IDEMPOTENCY_STORE_REQUIRED",
+                    "Durable idempotency store is required for redaction operations in strict profiles",
+                    tenantId, requestId),
+                objectMapper,
+                503));
+        }
         if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
             var cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
             if (cached.isPresent()) {
@@ -1590,6 +1638,10 @@ public class DataLifecycleHandler {
     private static String sanitise(String input) {
         if (input == null) return "";
         return input.replaceAll("[\\x00-\\x1F`\\\\<>]", "").strip();
+    }
+
+    private boolean requiresStrictIdempotency() {
+        return http.isStrictTenantResolution() || !http.isFallbackTenantAllowed();
     }
 
     private static String resolveRequestId(HttpRequest request) {

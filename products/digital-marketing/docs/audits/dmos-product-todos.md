@@ -1,175 +1,419 @@
-- [x] [P0] [UI/UX] Fix BudgetPage type/import blocker
-  - Where: products/digital-marketing/ui/src/pages/BudgetPage.tsx; products/digital-marketing/ui/src/hooks/useBudget.ts
-  - Problem: BudgetPage imports useBudget but calls useBudgetRecommendation; hook exports useBudgetRecommendation.
-  - Required fix: Replace useBudget import with useBudgetRecommendation and remove unused/invalid imports.
-  - Acceptance criteria: pnpm type-check passes; /budget route renders for authorized users.
-  - Required tests: Type-check; BudgetPage render test; budget load/generate/submit/approve component tests.
+# DMOS audit execution — commit `4b9fff1bf67dd3b75ca393eb6b40a1a7014f8a9b`
 
-- [x] [P0] [UI/UX] Fix ApprovalDetailPage missing Link import
-  - Where: products/digital-marketing/ui/src/pages/ApprovalDetailPage.tsx
-  - Problem: Page renders Link but does not import it.
-  - Required fix: Import Link from react-router-dom; remove unused imports.
-  - Acceptance criteria: pnpm type-check and lint pass; approval detail route renders.
-  - Required tests: Approval detail route render; back-to-queue link; AI action log link.
+I verified the target commit and audited the Digital Marketing product against the tailored prompt using the repository state and canonical product docs available through the GitHub connector. I did **not** run local Gradle/pnpm/Playwright tests, so build/test pass claims are treated as **documented but not independently executed**. The target commit is present as `refactor 42`. 
 
-- [x] [P0] [UI/UX] Fix AiActionLogPage missing useAiActionDetail import
-  - Where: products/digital-marketing/ui/src/pages/AiActionLogPage.tsx
-  - Problem: Page calls useAiActionDetail but imports only useAiActionLog.
-  - Required fix: Import useAiActionDetail; remove unused imports.
-  - Acceptance criteria: pnpm type-check and lint pass; /ai-actions/:actionId renders details.
-  - Required tests: AI action list render; detail route render; empty/error/loading states.
+## 1. Production readiness verdict
 
-- [x] [P0] [API] Remove fake dashboard budget and connector health data
-  - Where: products/digital-marketing/ui/src/pages/DashboardPage.tsx
-  - Problem: BudgetTrackingWidget and ConnectorHealthWidget receive hardcoded production-looking values.
-  - Required fix: Wire real API hooks or show explicit unavailable/empty states with data freshness.
-  - Acceptance criteria: Dashboard never renders fake spend, budget, connector status, or sync timestamp.
-  - Required tests: Dashboard with empty data; dashboard with real budget; connector disabled; connector unhealthy; API failure.
+**Production ready: No**
 
-- [x] [P0] [API] Align canonical API error envelope across docs, server, client, and tests
-  - Where: products/digital-marketing/docs/canonical/02-API_CONTRACTS.md; dm-api servlets; UI ApiError handling
-  - Problem: Canonical docs define nested error object while servlet comments indicate flat error shape.
-  - Required fix: Choose one canonical shape, update OpenAPI/docs/server/client/tests.
-  - Acceptance criteria: Every servlet error response matches OpenAPI and UI parses it safely.
-  - Required tests: Contract tests for 400/401/403/404/409/422/423/429/500.
-  - Progress update: Canonical shape aligned to flat envelope in docs/spec/server core path; added `DmosApiErrorResponses`, updated `StandardErrorEnvelope` codes (including `LOCKED`), migrated rate-limiter + localization + strategy + website-audit + proposal + sow + lead-scoring + landing-page + email-follow-up + next-best-action-recommendation + content-version + intake-questionnaire + competitor-research + public-intake + workspace + content-validation + ai-action-log + ad-copy + budget-recommendation + approval + campaign + anomaly-detection + experiment-suggestion + budget-reallocation-proposal servlets, and kept module-wide validation green (latest run: full `:products:digital-marketing:dm-api:test`; prior focused runs in this stream: Campaign + Approval + AiActionLog/AdCopy/BudgetRecommendation + PublicIntake/Workspace/ContentValidation + ContentVersion/IntakeQuestionnaire/CompetitorResearch + LandingPage/EmailFollowUp/NextBestActionRecommendation + Proposal/Sow/LeadScoring + Strategy/WebsiteAudit + HttpContextFactory + RateLimiter). Remaining work: complete any non-servlet dm-api envelope cleanup and keep the full status-code contract test matrix green.
-  - Progress update: UI `ApiError` now parses the canonical flat envelope (`error`, `message`, `status`, `correlationId`, `details`) and surfaces user-safe messages for 400/401/403/404/409/422/423/429/500. Added focused matrix coverage in `ui/src/lib/__tests__/http-client.test.ts` to keep client-side parsing behavior aligned with canonical status-code handling.
-  - Progress update: Migrated the remaining agency/demo servlet family to the canonical flat envelope helper (`DmosAgencyRetainerServlet`, `DmosAgencyDeliverableServlet`, `DmosAgencyContractServlet`, `DmosAgencyApprovalSLAServlet`, `DmosDemoWorkspaceServlet`), removed ad hoc JSON 400/404/500 responses, threaded correlation IDs through `mapServiceError`, and fixed the demo-workspace route parameter bug so `demoWorkspaceId` is routed and read correctly. Focused backend validation passed via `:products:digital-marketing:dm-api:compileJava`.
-  - Progress update: Verified remaining dm-api main Java sources for raw ad hoc `{"error":...}` responses via targeted source scan; no additional non-servlet outliers found in `products/digital-marketing/dm-api/src/main/java`.
-  - Progress update: Added focused backend canonical-envelope helper coverage in `dm-api/src/test/java/com/ghatana/digitalmarketing/api/DmosApiErrorResponsesTest.java`, including explicit status matrix assertions for 400/401/403/404/409/422/423/429/500 plus correlation-id/details propagation. Revalidated with `:products:digital-marketing:dm-api:test --tests "com.ghatana.digitalmarketing.api.DmosApiErrorResponsesTest"` (`BUILD SUCCESSFUL`).
+**Confidence: Medium-high** for architectural/readiness findings; **medium** for test/build status because tests were inspected from code/docs/workflows but not executed.
 
-- [x] [P0] [Permission] Implement action-level permission gates
-  - Where: routeManifest.tsx; api/capabilities.ts; CampaignsPage; StrategyPage; BudgetPage; approval components; backend servlets/services
-  - Problem: Route-level gates exist, but user actions are not consistently gated by explicit action permission.
-  - Required fix: Create canonical action-permission map for every routeManifest action and enforce in UI and backend.
-  - Acceptance criteria: Read-only/partial-permission users can view but cannot execute disallowed actions.
-  - Required tests: Viewer, brand-manager, marketing-director, exec-sponsor, admin matrix; direct API call denial.
-  - Progress update: Added canonical UI action map in `ui/src/lib/action-permissions.ts`, enforced action-level gating in `CampaignsPage`, `StrategyPage`, and `BudgetPage` (mutation controls now role-gated while preserving view access), and added contract coverage requiring every route-manifest action to exist in the canonical map (`route-contracts.test.tsx`). Added viewer-role gating tests for campaigns/strategy/budget and validated focused suites (`CampaignsPage`, `StrategyPage`, `BudgetPage`, `route-contracts`) all passing.
-  - Progress update: Added backend canonical action-role registry (`dm-api/src/main/java/com/ghatana/digitalmarketing/api/security/DmosActionPermissionRegistry.java`), integrated action enforcement in shared context factory (`DmosHttpContextFactory`) and wired mutation endpoints in campaign/strategy/budget plus approval decide flow to explicit actions. Added direct API role-denial/allow tests for viewer/brand-manager/marketing-director/exec-sponsor cases across `DmosCampaignServletTest`, `DmosStrategyServletTest`, `DmosBudgetRecommendationServletTest`, and `DmosApprovalServletTest`; focused backend validation passed via `:products:digital-marketing:dm-api:test --tests ...` for those four suites. Remaining work: extend matrix coverage to admin and read-only view cases where needed.
-  - Progress update: Extended backend permission matrix to include admin mutation allow-cases and explicit viewer read-only allow-cases for campaign list, strategy get, budget recommendation get, and approval status get; added corresponding assertions in the four servlet suites and revalidated focused backend suites successfully (`BUILD SUCCESSFUL` for Campaign/Strategy/BudgetRecommendation/Approval tests).
-  - Progress update: Approval UI now uses the canonical action-permission registry on both queue and detail surfaces instead of the older generic approver helpers. `ApprovalQueuePage` preserves review access while warning users who lack `approve`/`reject`; `ApprovalDetailPage` now requires both canonical action permission and the request's `requiredApproverRole` hierarchy before enabling decisions. Added focused viewer/admin/higher-required-role coverage in `ApprovalQueuePage.test.tsx` and `ApprovalDetailPage.test.tsx`; targeted validation passed (`pnpm vitest run src/pages/__tests__/ApprovalQueuePage.test.tsx src/pages/__tests__/ApprovalDetailPage.test.tsx`, `pnpm type-check`).
-  - Progress update: Added direct backend registry coverage in `dm-api/src/test/java/com/ghatana/digitalmarketing/api/security/DmosActionPermissionRegistryTest.java` to assert (1) every route-contract action is allowed for admin and recognized by the registry, (2) stricter actions (`approve-budget`) remain blocked for lower roles, and (3) unknown actions fail closed. Added UI canonical map assertions in `ui/src/lib/__tests__/action-permissions.test.ts` for route-action completeness and critical role matrix paths. Revalidated with focused runs (`pnpm vitest run src/lib/__tests__/action-permissions.test.ts` and `:products:digital-marketing:dm-api:test --tests "com.ghatana.digitalmarketing.api.security.DmosActionPermissionRegistryTest"`; both passing).
+**Direction of travel: Significantly improving, but still incomplete.**
 
-- [ ] [P0] [Testing] Make DMOS build/type/lint/route/API contract gates mandatory in CI
-  - Where: products/digital-marketing/ui/package.json; .github workflows; Gradle DMOS modules
-  - Problem: Scripts exist, but inspected commit had no usable CI evidence and source has type blockers.
-  - Required fix: Add/verify CI jobs for pnpm build/type/lint/test/e2e and Gradle DMOS checks.
-  - Acceptance criteria: PR cannot merge when UI type-check, lint, route contract, API contract, or backend checks fail.
-  - Required tests: CI workflow validation and failing fixture test.
-  - Progress update: `.github/workflows/dmos-release-gate.yml` now includes mandatory `ui-quality-gates` (type-check, lint, route-contract) wired into release `needs` with explicit per-job release summary checks.
-  - Progress update: Completed equivalent gate wiring across other DMOS workflows: `dmos-test-matrix.yml` now has dedicated `ui-quality-gates` (type-check/lint/route-contract) as a required dependency of `test-gate`; `dmos-openapi-client-gen.yml` now requires `ui-quality-gates` and `api-contract-tests` alongside OpenAPI/client generation before final drift gate passes; release-gate contract parity now also executes backend `*ContractTest` suite. Remaining work: verify repository branch-protection required-check settings in GitHub so these workflow gates are enforced as merge blockers at policy level.
-  - Progress update: Verified repository codebase has no settings-as-code branch protection file under `.github/` in this workspace; branch protection required-check enforcement remains an external GitHub repository setting and cannot be enforced or confirmed solely via in-repo code changes.
-  - Progress update: Identified concrete branch-protection required-check candidates from current DMOS workflows (job `name` values): `Test Gate` from `.github/workflows/dmos-test-matrix.yml`, `P0 Release Gate` from `.github/workflows/dmos-release-gate.yml`, and `Contract Drift Check` from `.github/workflows/dmos-openapi-client-gen.yml`. Apply these as required status checks in GitHub branch protection for `main` (and `release/*` where applicable).
-  - Progress update: Ran wider regression validation after focused passes: UI gates succeeded (`pnpm lint`, `pnpm type-check`, `pnpm test:route-contract`), `:products:digital-marketing:dm-api:test` passed, and combined backend run surfaced 4 failures in `:products:digital-marketing:dm-persistence:test` under `FlywayMigrationValidationTest` (`Fresh migration from empty database succeeds`, `Migration from V20 to current succeeds`, `Migration from V10 to current succeeds`, `Migration info shows correct version history`). Focused Flyway test had passed earlier in isolation, so this is currently tracked as a suite-order/environment-sensitive regression to resolve before claiming full green broad backend matrix.
-  - Progress update: Closed the persistence regression by scoping Flyway test migration discovery to the DMOS module migration directory (instead of global `classpath:db/migration`, which was pulling plugin migrations with duplicate versions). Revalidated `:products:digital-marketing:dm-persistence:test --tests "*FlywayMigrationValidationTest"` and full `:products:digital-marketing:dm-persistence:test`; both now pass (`BUILD SUCCESSFUL`).
-  - Progress update: Added operations handoff runbook with exact required check names and GitHub configuration steps in `products/digital-marketing/docs/runbooks/DMOS-BRANCH-PROTECTION-REQUIRED-CHECKS.md` (required checks: `Test Gate`, `Contract Drift Check`, `P0 Release Gate`).
-  - Progress update: Re-ran DMOS UI gates on current workspace state: `pnpm lint` passes, while `pnpm type-check` and `pnpm test:route-contract` currently fail due cross-workspace platform package resolution/import issues (`react`, `react/jsx-dev-runtime`, `clsx`, `lucide-react`, `zod`, `@ghatana/platform-events`, `@ghatana/ds-schema`) in `platform/typescript/*` dependencies outside DMOS UI feature code. P0 testing item remains open until (1) workspace dependency-resolution issue is stabilized and (2) repository admins apply required checks from the new runbook in branch protection.
+DMOS has moved from loose scaffolding toward a coherent product: canonical docs exist, stable UI routes are identified, backend context/auth hardening exists, route/action permission concepts are present, and production bootstrap checks exist. The README explicitly describes DMOS as an AI-native, governance-first product and identifies stable vs boundary surfaces, while also admitting several partial areas: integration tests partial, UI E2E pending/partial, Google Ads partial, and privacy/security partial. 
 
-- [x] [P1] [Design System] Replace native confirm/prompt with design-system dialogs
-  - Where: CampaignsPage archive/rollback/duplicate actions
-  - Problem: window.confirm/window.prompt are inaccessible and inconsistent.
-  - Required fix: Use shared Dialog/Modal/Form components with clear risk, confirmation, and validation.
-  - Acceptance criteria: Keyboard accessible dialogs; destructive action confirmation; duplicate name validation.
-  - Required tests: Component tests; a11y tests; E2E destructive action confirmation.
-  - Progress update: Replaced `window.confirm`/`window.prompt` in `CampaignsPage` with design-system `Dialog` flows for archive, rollback, and duplicate actions; added duplicate-name validation and focused component coverage in `CampaignsPage.test.tsx` (10/10 passing). Remaining work: add dedicated a11y assertions and E2E destructive-action confirmation coverage.
-  - Progress update: Added campaign dialog accessibility and destructive-confirmation component coverage in `CampaignsPage.test.tsx` (archive dialog semantics, duplicate dialog labeling, and archive confirm callback assertions); focused suite now passes with 14/14 tests.
-  - Progress update: Added Playwright spec `ui/e2e/campaign-dialogs.spec.ts` covering archive destructive confirm and duplicate-name validation/confirm flow.
-  - Progress update: Resolved shared E2E harness crash by fixing router primitive imports in shared product shell (`react-router-dom` for `NavLink`/`Outlet`) and aligned approval/campaign specs with current dialog testids and behavior; targeted runtime validation now passes (`pnpm playwright test e2e/approval-detail.spec.ts e2e/campaign-dialogs.spec.ts --project=chromium`: 11/11).
+**Main blockers**
 
-- [x] [P1] [UI/UX] Redesign StrategyPage as outcome-first guided workflow
-  - Where: StrategyPage and related strategy hooks/API
-  - Problem: Users manually enter audit/keyword/competitor counts, which violates low-cognitive-load AI-native design.
-  - Required fix: Ask for business objective, offer, geography, constraints, budget, and audience; derive audit/market inputs from real services.
-  - Acceptance criteria: Non-expert user can generate a strategy without precomputed metrics.
-  - Required tests: Guided form flow; missing data states; generated strategy review; provenance display.
-  - Progress update: Replaced manual metric entry in `StrategyPage` with a guided outcome-first form (`objective`, `offer`, `audience`, `geography`, `constraints`, `budget`, optional website URL) and derived strategy generation inputs from real services via new hooks (`useIntakeProfile`, `useLatestWebsiteAudit`, `useLatestCompetitorResearch`).
-  - Progress update: Added explicit missing-data notices for absent audit/research snapshots while keeping safe conservative defaults, preserved generated strategy review/provenance rendering, and added focused test coverage in `StrategyPage.test.tsx` for guided fields, derived inputs, and missing-data states.
+The biggest issue is not one missing page. It is that the canonical product promise is much broader than the implemented stable product. The canonical vision says DMOS should run a governed growth lifecycle from objective → strategy → proposal/SOW/contract → onboarding → research → assets → approval → execution → lead capture/CRM → analytics/attribution → optimization → renewal, while the stable code surface is mainly dashboard, approvals, AI action log, campaigns, strategy, and budget. 
 
-- [x] [P1] [AI-ML] Expand AI action detail and provenance surface
-  - Where: AiActionLogPage; AI action DTOs/API; AIProvenancePanel
-  - Problem: AI log details do not show full model/provider/version/confidence/risk/policy/human-edit/execution state.
-  - Required fix: Extend DTOs and UI to match design requirements.
-  - Acceptance criteria: Every AI-generated/recommended output has traceable provenance and risk/policy context.
-  - Required tests: AI action detail render; redaction; missing provenance blocked/flagged.
-  - Progress update: Expanded `AiActionLogPage` detail panel with execution state, initiation source (AI vs human), confidence surface, derived risk signal, policy checks, evidence-link rendering, and empty-state handling via shared state primitive; integrated `AIProvenancePanel` into selected action detail with explicit fallback metadata when model/provider fields are not present in DTOs.
-  - Progress update: Added focused unit coverage in `AiActionLogPage.test.tsx` for rich detail render, policy/evidence list rendering, and missing provenance/evidence fallback behavior; suite passing.
-  - Progress update: Added provenance completeness classification (`COMPLETE`/`PARTIAL`/`MISSING`) with warning state for incomplete metadata, plus explicit redaction notice when action detail payload is masked (`REDACTED`). Added focused tests for both missing-provenance warning and redaction handling.
-  - Progress update: Extended backend/domain/API contract to carry provenance metadata (`provider`, `modelVersion`, `humanEdited`) through `AiActionLogEntry`, `AiActionLogService`, `DmosAiActionLogServlet` response mapping, persistence SQL mapping, and Flyway schema migration (`V35__add_ai_action_provenance_columns.sql`). Updated UI DTO/type and detail panel rendering to use real model/provider/human-edit values and removed placeholder-only provenance behavior.
+**Highest-risk area**
 
-- [x] [P1] [Observability] Add DataFreshnessBadge and source metadata to dashboard/reporting cards
-  - Where: Dashboard widgets; reporting/boundary pages
-  - Problem: Users cannot tell whether data is real, stale, partial, or unavailable.
-  - Required fix: Add source, lastUpdated, freshness, partial-data, and unavailable states.
-  - Acceptance criteria: Every KPI/reporting card shows source/freshness or explicit unavailable state.
-  - Required tests: Fresh data, stale data, partial data, unavailable data.
+The highest-risk area is **execution trust**: campaign launch, connector execution, analytics, consent/privacy, and reporting must be proven end-to-end through durable workflows, real data, idempotency, rollback/kill switches, audit, and tests. Current code/docs show meaningful progress, but not enough evidence for production-grade, revenue-impacting marketing execution.
 
-- [x] [P1] [Security] Prove backend ignores client-provided roles/permissions in production
-  - Where: DmosHttpContextFactory; API tests; UI http-client
-  - Problem: UI sends X-Roles/X-Permissions when present; production must not trust them.
-  - Required fix: Add tests that spoof headers and verify permissions are derived server-side.
-  - Acceptance criteria: Spoofed client headers never grant access.
-  - Required tests: API security tests for spoofed role/permission escalation.
+---
 
-- [x] [P1] [UI/UX] Standardize approval pages on design-system components
-  - Where: ApprovalQueuePage; ApprovalDetailPage; DecideDialog; ApprovalSnapshotPanel
-  - Problem: Approval UX uses raw select/button/styles and lacks full decision-workflow polish.
-  - Required fix: Use shared Select/Button/Dialog/Badge/Table components and consistent approval layout.
-  - Acceptance criteria: Approval queue/detail match design-system and are keyboard/a11y safe.
-  - Required tests: Component, a11y, approval decision E2E.
-  - Progress update: Refactored approval surfaces to shared design-system primitives: `ApprovalQueuePage` now uses design-system `Select`; `ApprovalQueueTable` now uses design-system `Table` and `Badge`; `ApprovalDetailPage` now uses design-system `Badge` and `Button`; `DecideDialog` now uses design-system `Dialog`, `Select`, `TextArea`, and `Button` with retained role/keyboard flows. Updated approval page tests for the workspace-scoped queue API mock and dialog decision select, then revalidated focused suites (`ApprovalQueuePage.test.tsx`, `ApprovalDetailPage.test.tsx`) plus `pnpm type-check` and `pnpm lint`.
-  - Progress update: Added explicit accessibility assertions for decision dialog semantics and labels in `ApprovalDetailPage.test.tsx`, and verified approval decision E2E coverage remains in place (`ui/e2e/approval-detail.spec.ts` includes approve/reject and high-risk comment-required flows).
+# 2. Root architectural blockers
 
-- [x] [P1] [API] Add real connector health API and dashboard integration
-  - Where: Connector service/API; DashboardPage; ConnectorHealthWidget
-  - Problem: Connector health is currently hardcoded on dashboard.
-  - Required fix: Expose connector status, OAuth health, last sync, error, rate-limit, kill-switch state.
-  - Acceptance criteria: Dashboard reflects real Google Ads connector state; Meta Ads not shown unless real.
-  - Required tests: Healthy, disabled, expired token, rate-limited, kill-switch active.
-  - Progress update: Added `ui/src/api/connectors.ts` + `ui/src/hooks/useConnectorHealth.ts` backed by DMOS `/health` bridge signals, mapped bridge status (`UP/DEGRADED/DOWN`) to connector health states, surfaced reason + last sync in `ConnectorHealthWidget`, and wired `DashboardPage` to live connector health source/freshness metadata.
-  - Progress update: Added dashboard test coverage for connector unavailable, unhealthy/expired-token, and degraded rate-limit/kill-switch conditions in `DashboardPage.test.tsx`.
+## P0-1 — Product promise and implemented stable surface are not yet aligned
 
-- [x] [P1] [API] Add real budget tracking source for dashboard
-  - Where: Budget service/API; DashboardPage; BudgetTrackingWidget
-  - Problem: Dashboard budget values are static.
-  - Required fix: Expose approved budget, spend, remaining, utilization, source/freshness.
-  - Acceptance criteria: Dashboard budget matches backend budget/spend source.
-  - Required tests: No budget, draft budget, approved budget, overspend, API failure.
-  - Progress update: Budget tracking now derives from real APIs in `DashboardPage` using `useBudgetRecommendation` + `useCampaigns`: approved budget cap, computed spend/remaining/utilization, partial/draft visibility rules, and explicit unavailable states when recommendation or spend telemetry is absent.
-  - Progress update: Expanded `DashboardPage.test.tsx` with state-matrix coverage for budget no-budget/draft/approved/overspend/API-failure scenarios. Focused validation passed (`pnpm vitest run src/pages/__tests__/DashboardPage.test.tsx src/pages/__tests__/ApprovalDetailPage.test.tsx`; `pnpm run lint`).
+**Why it matters:** The canonical vision defines DMOS as a full governed growth execution OS, not just campaign CRUD plus dashboards. The stable route manifest only covers dashboard, approvals, AI actions, campaigns, strategy, and budget as stable surfaces; funnel analytics, attribution, ROI/ROAS, self-marketing, market research, advanced channels, localization, agency, and AI optimization are boundary routes. 
 
-- [x] [P2] [Voice] Implement or explicitly exclude native voice support from current readiness claims
-  - Where: UI command layer; API action layer; docs/design if needed
-  - Problem: No inspected UI/API evidence of voice-native flows.
-  - Required fix: Either add permission-aware voice command flow for key actions or mark voice out of MVP readiness.
-  - Acceptance criteria: Voice cannot bypass permissions and risky actions require confirmation.
-  - Required tests: Voice approval, voice denied action, voice cancel, transcript/audit.
-  - Progress update: Explicitly excluded native voice command/speech-interaction surfaces from MVP readiness claims in canonical product vision (`docs/canonical/00-VISION.md`), keeping voice/video AI scoped to post-MVP phases.
+**Root cause:** Scope expansion is captured in canonical docs, but product runtime is still split between stable MVP surfaces and feature-gated boundary pages.
 
-- [x] [P2] [Boundary Routes] Add verified unavailable/feature-gated states for all boundary routes
-  - Where: FunnelAnalyticsPage; AttributionPage; RoiRoasPage; SelfMarketingFunnelPage; MarketResearchPage; AdvancedChannelsPage; LocalizationPage; AgencyOperationsPage; AiOptimizationPage
-  - Problem: Routes exist, but implementation/API completeness was not verified in this pass.
-  - Required fix: For each boundary route, either wire real API or show honest feature-unavailable state.
-  - Acceptance criteria: No boundary route shows fake analytics, fake reports, or fake operational data.
-  - Required tests: Direct URL access by unauthorized/authorized users; capability disabled; capability enabled but API unavailable.
+**Affected surfaces:** Full growth lifecycle, analytics, attribution, self-marketing, agency operations, customer lifecycle, sales/proposal/contract loop, lead/CRM loop.
 
-- [x] [P2] [Reuse] Consolidate duplicated status/loading/error/card patterns
-  - Where: Dashboard widgets; route pages; approval/AI/campaign pages
-  - Problem: Pages implement states and styling inconsistently.
-  - Required fix: Create reusable page-state, card-state, mutation-state, and feature-unavailable components.
-  - Acceptance criteria: Major pages use shared primitives for loading/empty/error/unauthorized/disabled/stale.
-  - Required tests: Component tests for shared states.
-  - Progress update: Added shared `PageStateNotice` primitive with component tests and refactored major pages (`CampaignsPage`, `BudgetPage`, `StrategyPage`, `ApprovalQueuePage`, `ApprovalDetailPage`, `AiActionLogPage`) to use the shared loading/error/empty/warning state rendering path.
-  - Progress update: Added shared `DashboardWidgetCard` primitive for dashboard card loading/error/unavailable/ready states and refactored `CampaignStatusWidget`, `StrategyInsightsWidget`, `BudgetTrackingWidget`, and `ConnectorHealthWidget` to use it, including shared footer slots for freshness/link actions. Added focused component coverage in `DashboardWidgetCard.test.tsx` (loading/error/unavailable/ready rendering).
-  - Progress update: Completed dashboard-wide shared-card migration by refactoring `ApprovalWidget`, `WorkflowStatusWidget`, `RiskComplianceWidget`, `GrowthGoalWidget`, and `AiActionLogWidget` to `DashboardWidgetCard` state flows and aligned focused widget tests (`DashboardWidgetCard`, `GrowthGoalWidget`, `RiskComplianceWidget`, `WorkflowStatusWidget` all passing).
+**Target pattern:** Keep the first production pass intentionally narrow, but make the MVP loop truly complete: intake → audit/research → strategy → budget → content → approval → Google Search execution/export → lead capture → reporting → next-best action.
 
-- [x] [P3] [Code Quality] Remove stale comments, duplicated comments, and unused imports
-  - Where: useCampaigns.ts; approval/AI/budget pages
-  - Problem: Duplicated comments and unused imports reduce maintainability and may fail strict lint.
-  - Required fix: Clean imports/comments and enforce lint.
-  - Acceptance criteria: pnpm lint has zero warnings.
-  - Required tests: Lint gate.
-  - Progress update: Subset completed for touched files (ApprovalDetail/AI/Budget and generated api types lint blockers); full repository-wide stale-comment and unused-import sweep remains open.
-  - Progress update: Removed duplicated stale comments in `ui/src/hooks/useCampaigns.ts` pending-state logic and revalidated `pnpm run lint` (ESLint passes with zero warnings; only external TypeScript-version compatibility notice remains).
-  - Progress update: Removed stale inline ticket comments and comment-only catch blocks in `CampaignsPage` and `BudgetPage` by converting mutation handlers to explicit promise chains while preserving centralized error callbacks; `pnpm lint` continues to pass for `products/digital-marketing/ui`.
-  - Progress update: Removed silent no-op mutation catches in `CampaignsPage` and `BudgetPage`; handlers now surface unexpected failures explicitly while preserving existing typed `ApiError` callback flows. Focused UI tests covering touched areas pass (`http-client`, `action-permissions`, dashboard shared-widget suites), and `pnpm lint` remains green. Package-level `pnpm type-check` is still blocked by existing cross-workspace module-resolution issues in shared `platform/typescript/*` packages outside DMOS UI touched scope.
-  - Progress update: Completed remaining scoped cleanup in `ui/src/hooks/useCampaigns.ts`, `ui/src/pages/ApprovalQueuePage.tsx`, and `ui/src/pages/BudgetPage.tsx` by removing stale ticket comments, duplicate comment blocks, and unused values (`tenantId`, `refetch`). Revalidated with `pnpm lint` (zero ESLint warnings/errors) plus focused regression suites (`pnpm vitest run src/lib/__tests__/action-permissions.test.ts src/lib/__tests__/http-client.test.ts src/components/dashboard/__tests__/DashboardWidgetCard.test.tsx src/components/dashboard/__tests__/GrowthGoalWidget.test.tsx src/components/dashboard/__tests__/RiskComplianceWidget.test.tsx src/components/dashboard/__tests__/WorkflowStatusWidget.test.tsx`, all passing).
+**Required fix:** Declare one executable MVP path as the production path and mark everything else as boundary with explicit unavailable states, backend gates, docs, and tests.
+
+**Required tests:** One real-backend E2E for the declared MVP loop, plus tests proving boundary routes cannot masquerade as production-ready.
+
+**Cleanup implication:** Remove “production-ready” language from boundary surfaces unless backed by real APIs, persistence, and E2E proof.
+
+---
+
+## P0-2 — Campaign execution architecture is still short of durable governed execution
+
+**Why it matters:** Canonical architecture requires governed event-driven execution: recommendation → policy/compliance check → approval gate → durable command → connector/service execution → event publication → analytics/learning feedback. It also requires workflow persistence, outbox/inbox, retry, DLQ, idempotency, rollback, and kill switches. 
+
+**Root cause:** Campaign APIs and lifecycle operations exist, but production-grade execution semantics are not fully proven across durable command execution, Google Ads connector runtime, kill switch, rollback, and analytics feedback.
+
+**Evidence:** README marks Google Ads connector as partial despite adapter and workflow progress; it specifically notes remaining event-loop blocking mitigation and command/workflow wiring concerns. 
+
+**Affected surfaces:** Campaign launch, Google Ads execution, connector health, campaign rollback, budget enforcement, analytics/reporting.
+
+**Target pattern:** Campaign launch should create a durable execution command with idempotency, preflight, approval state, connector kill switch, retry/DLQ, external ID mapping, rollback plan, and auditable result.
+
+**Required fix:** Make launch/connector execution a first-class durable workflow, not just a servlet/service mutation.
+
+**Required tests:** Workflow replay, duplicate idempotency, connector timeout, rate limit, DLQ, kill switch, rollback, missing approval, missing conversion tracking, budget exceeded.
+
+**Cleanup implication:** Remove or feature-flag any launch path that updates internal state without proving external execution safety.
+
+---
+
+## P0-3 — Analytics, attribution, and ROI/ROAS are boundary surfaces, not production reporting
+
+**Why it matters:** DMOS success depends on measurable outcomes: funnel progression, ROI/ROAS, attribution, cost per lead/acquisition, and optimization. Canonical vision explicitly requires real source data, freshness, and confidence labels for analytics/reporting. 
+
+**Root cause:** Reporting/analytics pages are route-manifested as boundary lifecycle routes, while the dashboard still mixes API-derived values with UI-side aggregation and derived presentation.
+
+**Evidence:** The route manifest marks funnel analytics, attribution, ROI/ROAS, AI optimization, self-marketing, market research, advanced channels, localization, and agency as `lifecycle: 'boundary'`. 
+
+**Affected surfaces:** Dashboard KPI cards, budget tracking, funnel analytics, attribution, ROI/ROAS, self-marketing reporting.
+
+**Target pattern:** Canonical analytics runtime with source events, freshness, attribution model, dashboard/report/export parity, and confidence labels.
+
+**Required fix:** Introduce a server-side analytics/reporting contract for MVP metrics and make dashboard consume that contract instead of deriving business-critical metrics ad hoc.
+
+**Required tests:** Metric formula tests, dashboard/report/export parity, stale data tests, empty/partial states, attribution model tests, ROI/ROAS tests.
+
+**Cleanup implication:** Boundary analytics pages should be unavailable or clearly marked until backed by real data.
+
+---
+
+## P0-4 — Privacy, consent, PII, and DSAR are not yet first-class enough for marketing data
+
+**Why it matters:** Digital marketing handles contacts, leads, customer data, audience segments, consent, unsubscribe/suppression, and potentially sensitive customer behavior.
+
+**Root cause:** The README explicitly states PII model and token hardening are pending: hashed identifiers, encrypted PII, DSAR, PII redaction, and key management are still listed as pending implementation. 
+
+**Affected surfaces:** Contact/lead capture, audience targeting, email/SMS follow-up, CRM-lite, exports, AI prompts/logs, analytics, support access.
+
+**Target pattern:** Consent and suppression should be enforced server-side before any audience sync, email/SMS follow-up, CRM export, AI use, or report/export.
+
+**Required fix:** Implement canonical contact/consent/suppression/privacy services and force all lead/audience/content/AI/export paths through them.
+
+**Required tests:** Consent capture/revocation, suppression enforcement, purpose mismatch, DSAR export/delete/anonymize, AI/action-log redaction, token/secret log redaction.
+
+**Cleanup implication:** Remove any “lead/customer/audience” production claim unless it goes through the privacy model.
+
+---
+
+## P0-5 — Authorization is improved, but route/action/capability governance is duplicated
+
+**Why it matters:** Authorization must be backend-enforced and consistent across UI route metadata, API routes, action permissions, capabilities, and docs.
+
+**Evidence:** `DmosHttpContextFactory` derives identity server-side in production, requires tenant context, enforces idempotency for writes, and checks capability/action when provided.  Backend action-role mapping exists in `DmosActionPermissionRegistry`, but it manually mirrors route manifest actions. 
+
+**Root cause:** UI route manifest, backend action registry, capability resolver, API docs, and README are separate sources that must stay synchronized manually.
+
+**Affected surfaces:** All routes/actions, approvals, campaign operations, budget/strategy actions, boundary pages.
+
+**Target pattern:** One generated product capability/action registry that emits both TypeScript and Java artifacts plus OpenAPI metadata.
+
+**Required fix:** Generate route/action/capability/role metadata from a canonical manifest and validate parity in CI.
+
+**Required tests:** Unknown action fails closed, every UI action has backend rule, every backend action has route/API coverage or documented internal-only status, disabled capability returns locked state.
+
+**Cleanup implication:** Remove hand-maintained duplicate role/action maps once generated artifacts exist.
+
+---
+
+## P0-6 — AI-native behavior is visible, but not yet governed as a complete agent/runtime system
+
+**Why it matters:** Canonical architecture says product-level agents must define capabilities, scopes, confidence model, evidence requirements, tool allowlist, budget authority, rollback, evaluation suite, prompt/model version, memory policy, audit, and telemetry. 
+
+**Root cause:** Strategy and budget flows expose provenance and AI action logging, but the full agent contract system is not yet evident across content, market research, optimization, sales/proposal, contract, analytics, and customer success.
+
+**Affected surfaces:** Strategy, budget, content generation, market research, AI optimization, next-best action, proposal/SOW/contract, self-marketing.
+
+**Target pattern:** Every AI-assisted workflow should produce a traceable candidate output with evidence, policy validation, approval decision, model/prompt version, and audit entry.
+
+**Required fix:** Implement a product-level AI action contract and enforce it across every AI-generated artifact.
+
+**Required tests:** Prompt/version persistence, evidence presence, unsafe claim blocking, approval required for high risk, no private data leakage, AI log redaction, model provenance visible in UI.
+
+**Cleanup implication:** Remove/flag any AI-generated output that cannot explain model, inputs, evidence, policy checks, and approval status.
+
+---
+
+## P1-7 — UI/UX is improving, but not yet “low cognitive load with full visibility”
+
+**Why it matters:** Canonical product principles require low cognitive load and dashboards that show the next useful decision, not every possible control. 
+
+**Root cause:** The dashboard aggregates many widgets, but the product still lacks a clear “next best step” workbench that guides the MVP loop from intake to measurable outcome.
+
+**Affected surfaces:** Dashboard, campaigns, strategy, budget, approvals, AI action log.
+
+**Target pattern:** One command-center flow: “what needs attention now,” “what can launch,” “what is blocked,” “what changed,” “what result happened,” and “what should I do next.”
+
+**Required fix:** Add a canonical workspace readiness model and render dashboard sections from that model.
+
+**Required tests:** Empty workspace, partially configured workspace, blocked launch, pending approval, failed connector, stale analytics, unauthorized user, keyboard navigation.
+
+**Cleanup implication:** Remove static or weak dashboard cards that do not map to a user decision.
+
+---
+
+## P1-8 — Tests and release gates exist, but are not sufficient proof of production readiness
+
+**Why it matters:** Canonical testing requires cross-layer proof across UI, API, backend, domain, persistence, connector, audit, and telemetry; it explicitly rejects fake green tests and tests that mock away the behavior under review. 
+
+**Root cause:** README marks integration tests partial and UI E2E pending/partial. Some E2E fixtures route mocked API responses, which is acceptable for UI tests but insufficient as release evidence for real backend behavior.
+
+**Affected surfaces:** Critical flows: login, dashboard, campaign lifecycle, strategy approval, budget approval, content generation, launch, connector-disabled/enabled, AI log, unauthorized user.
+
+**Target pattern:** Separate test tiers: UI mocked tests for states, real-backend E2E for critical flows, API integration with Postgres, connector chaos tests, privacy/security tests.
+
+**Required fix:** Make real-backend stable route E2E mandatory before production release, not conditional or optional.
+
+**Required tests:** All canonical E2E journeys in `04-TESTING.md`, plus privacy, consent, DSAR, analytics, connector, and workflow replay tests.
+
+**Cleanup implication:** Delete or archive stale audit/TODO docs once release gates encode them.
+
+---
+
+## P1-9 — Documentation is better, but canonical/non-canonical docs still create audit noise
+
+**Why it matters:** Repeated audits keep rediscovering stale expectations when old prompts, audit docs, wrappers, and feature-freeze docs coexist with canonical docs.
+
+**Root cause:** The canonical set exists under `docs/canonical`, but older entrypoint docs, API contract docs, prompts, freeze policy, audit baselines, and README readiness claims still overlap.
+
+**Affected surfaces:** Product planning, QA, release review, audit prompts, implementation sequencing.
+
+**Target pattern:** One canonical documentation set with all other docs either linked as current operational docs or archived.
+
+**Required fix:** Keep `docs/canonical/00-11` as the primary source. Convert root docs to thin pointers or delete/merge them. Move prompts/audits to an archive outside canonical decision-making.
+
+**Required tests:** Documentation lint/link check, canonical-doc matrix check, stale-audit scan.
+
+**Cleanup implication:** Mandatory cleanup phase below.
+
+---
+
+# 3. Digital Marketing completeness matrix
+
+| Surface                         | Route Registry | Scope/Auth | Domain Model | AI Workflow | Campaign/Execution Runtime | Analytics Runtime | Privacy/Consent | Tests | Cleanup |                                                 Status |
+| ------------------------------- | -------------: | ---------: | -----------: | ----------: | -------------------------: | ----------------: | --------------: | ----: | ------: | -----------------------------------------------------: |
+| Dashboard / command center      |              ✅ |         🟡 |           🟡 |          🟡 |                         🟡 |                🟡 |              🟡 |    🟡 |      🟡 |                                             🟡 Partial |
+| Campaign lifecycle              |              ✅ |         🟡 |           🟡 |           ⚫ |                         🟡 |                🟡 |              🟡 |    🟡 |      🟡 |                                             🟡 Partial |
+| Strategy generation             |              ✅ |         🟡 |           🟡 |          🟡 |                          ⚫ |                 ⚫ |              🟡 |    🟡 |      🟡 |                                             🟡 Partial |
+| Budget recommendation           |              ✅ |         🟡 |           🟡 |          🟡 |                         🟡 |                🟡 |               ⚫ |    🟡 |      🟡 |                                             🟡 Partial |
+| Approval workflow               |              ✅ |         🟡 |           🟡 |          🟡 |                         🟡 |                 ⚫ |              🟡 |    🟡 |      🟡 |                                      🟡 Strong partial |
+| AI action log                   |              ✅ |         🟡 |           🟡 |          🟡 |                          ⚫ |                 ⚫ |              🟡 |    🟡 |      🟡 |                                             🟡 Partial |
+| Content generation              |             🟡 |         🟡 |           🟡 |          🟡 |                          ⚫ |                 ⚫ |              🟡 |    🟡 |      🟡 | 🟡 Backend/API visible, UI maturity not fully verified |
+| Website audit / market research |             🟡 |         🟡 |           🟡 |          🟡 |                          ⚫ |                🟡 |              🟡 |    🟡 |      🟡 |                                    🟡 Boundary/partial |
+| Google Ads connector            |              ⚫ |         🟡 |           🟡 |           ⚫ |                         🟡 |                🟡 |              🟡 |    🟡 |      🟡 |                                             🟡 Partial |
+| Funnel analytics                |              ✅ |         🟡 |           🔴 |           ⚫ |                          ⚫ |                🔴 |              🟡 |    🔴 |      🟡 |                          🔴 Missing production runtime |
+| Attribution                     |              ✅ |         🟡 |           🔴 |           ⚫ |                          ⚫ |                🔴 |              🟡 |    🔴 |      🟡 |                          🔴 Missing production runtime |
+| ROI/ROAS                        |              ✅ |         🟡 |           🔴 |           ⚫ |                          ⚫ |                🔴 |              🟡 |    🔴 |      🟡 |                          🔴 Missing production runtime |
+| Self-marketing funnel           |              ✅ |         🟡 |           🔴 |          🟡 |                         🔴 |                🔴 |              🟡 |    🔴 |      🟡 |                                       🔴 Boundary only |
+| Agency operations               |              ✅ |         🟡 |           🔴 |           ⚫ |                          ⚫ |                🔴 |              🔴 |    🔴 |      🟡 |                                       🔴 Boundary only |
+| Consent/suppression/DSAR        |             🔴 |         🟡 |           🔴 |          🟡 |                         🟡 |                🟡 |              🔴 |    🔴 |      🟡 |                                  🔴 Production blocker |
+| i18n/a11y                       |             🟡 |          ⚫ |            ⚫ |           ⚫ |                          ⚫ |                 ⚫ |               ⚫ |    🟡 |      🟡 |                                             🟡 Partial |
+
+---
+
+# 4. File-level gaps necessary for migration
+
+| Area                     | Path                                                               | Gap                                                                                                                                          | Required fix                                                                                               | Required tests                                                             |
+| ------------------------ | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Canonical product scope  | `products/digital-marketing/docs/canonical/00-VISION.md`           | Vision is strong and broad; implementation only covers a narrow stable subset.                                                               | Add explicit “production MVP contract” section mapping each implemented route/API to readiness.            | Canonical-doc status check.                                                |
+| README status            | `products/digital-marketing/README.md`                             | README mixes “production-ready” route language with partial statuses for UI E2E, Google Ads, privacy/security, and integration tests.        | Replace readiness table with `Ready / Partial / Boundary / Not verified` evidence-based statuses.          | Docs lint and status matrix check.                                         |
+| Route/action duplication | `ui/src/routeManifest.tsx`, `DmosActionPermissionRegistry.java`    | Backend action registry manually mirrors UI route/action metadata.                                                                           | Generate Java/TS route-action-capability registry from one manifest.                                       | Route/action parity tests.                                                 |
+| Auth context             | `DmosHttpContextFactory.java`                                      | Strong production identity path exists, but non-production anonymous fallback remains; capability resolution uses path substring heuristics. | Keep fallback test/local-only; replace path heuristics with generated route metadata.                      | Prod-mode spoofing, missing auth, unknown capability, action denied.       |
+| Analytics/dashboard      | `DashboardPage.tsx` and dashboard widgets                          | Dashboard still derives some metrics in UI; confidence/freshness must come from backend analytics/provenance.                                | Add `DashboardSummary` API contract with metric source/freshness/confidence.                               | Dashboard/report parity and stale-data tests.                              |
+| Campaign lifecycle       | `CampaignsPage.tsx`, `CampaignService`, `DmosCampaignServlet`      | Campaign operations exist, but durable workflow/connector/rollback/kill-switch completeness is not fully proven.                             | Route all launch/external execution through durable workflow/outbox.                                       | Launch, pause, complete, archive, rollback, idempotency, DLQ, kill switch. |
+| Budget domain            | `BudgetRecommendationService.java`                                 | Service validates numeric inputs but not full financial/marketing assumptions or analytics linkage.                                          | Persist assumptions, source strategy, model provenance, approval gates, and downstream budget enforcement. | Budget formula, approval, over-budget launch block.                        |
+| API contracts            | `docs/API_CONTRACT.md`, `docs/canonical/02-API_CONTRACTS.md`       | API docs appear split and risk drift around auth headers/error envelope.                                                                     | Keep only canonical OpenAPI/contract source and generate docs from implementation.                         | OpenAPI route parity, error envelope parity, generated client build.       |
+| Production bootstrap     | `ProductionBootstrapValidator.java`                                | Bootstrap validation is valuable, but kernel/plugin validation should prove actual plugin readiness, not only adapter presence.              | Add plugin health/capability probes for audit, approval, consent, feature flags, telemetry, notifications. | Production bootstrap failure tests per missing plugin.                     |
+| Release gates            | `.github/workflows/dmos-release-gate.yml`                          | Release gates exist, but real-backend E2E must be mandatory for production release.                                                          | Make production branch protection require real-backend stable E2E with configured env.                     | Branch protection/runbook validation.                                      |
+| Audit/prompt docs        | `products/digital-marketing/new-product-prompt.md`, old audit docs | These are not canonical and can confuse future audits.                                                                                       | Move to `docs/archive/audits/` or delete if superseded.                                                    | Stale-doc scan.                                                            |
+
+---
+
+# 5. Prioritized implementation sequence
+
+## 1. Define the production MVP contract
+
+**Goal:** Freeze one complete production loop.
+
+**Expected outcome:** A single documented path: workspace setup/intake → audit/research → strategy → budget → content → approval → Google Search launch/export → lead capture → report → next-best action.
+
+**Acceptance criteria:** Every step has UI route, API, backend service, persistence, authorization, audit, telemetry, and tests.
+
+---
+
+## 2. Generate canonical route/action/capability registry
+
+**Goal:** Remove manual duplication between UI route manifest, backend action registry, capability resolver, API docs, and tests.
+
+**Expected outcome:** One product manifest generates TS route data, Java action registry, OpenAPI security metadata, and test fixtures.
+
+**Acceptance criteria:** No manually duplicated role/action map remains.
+
+---
+
+## 3. Harden auth, scope, tenant, workspace, and support access
+
+**Goal:** Make backend enforcement authoritative everywhere.
+
+**Expected outcome:** Production identity always derived server-side; all reads/writes require tenant/workspace/principal/session; cross-tenant and cross-workspace tests pass.
+
+**Acceptance criteria:** Spoofed `X-Roles`, `X-Permissions`, `X-Principal-ID` cannot grant access in production.
+
+---
+
+## 4. Convert campaign launch into durable workflow execution
+
+**Goal:** Make campaign execution trustworthy.
+
+**Expected outcome:** Launch creates durable command/outbox record; preflight, approval, connector, retry, DLQ, kill switch, rollback, audit, telemetry all participate.
+
+**Acceptance criteria:** Duplicate launch cannot double-execute external connector; failed connector enters retry/DLQ; rollback/kill switch are operator-visible.
+
+---
+
+## 5. Implement canonical analytics/reporting runtime
+
+**Goal:** Make dashboard and reports agree.
+
+**Expected outcome:** Backend computes dashboard summary, funnel, attribution, ROI/ROAS, budget pacing, freshness, and confidence.
+
+**Acceptance criteria:** Dashboard values equal report/export values for the same filters.
+
+---
+
+## 6. Complete privacy, consent, suppression, and DSAR
+
+**Goal:** Make marketing data safe.
+
+**Expected outcome:** Contact/lead/audience/AI/export paths enforce consent, suppression, purpose, redaction, retention, and DSAR behavior.
+
+**Acceptance criteria:** No email/SMS/audience sync/export/AI prompt can use contact data without valid consent/purpose.
+
+---
+
+## 7. Govern AI workflows end to end
+
+**Goal:** Make AI native but trustworthy.
+
+**Expected outcome:** Every AI output has model/prompt version, evidence, assumptions, confidence, policy checks, approval requirement, and AI action log.
+
+**Acceptance criteria:** No generated strategy/content/budget/recommendation can be approved or executed without provenance.
+
+---
+
+## 8. Tighten UI/UX into a command center
+
+**Goal:** Reduce cognitive load while preserving visibility.
+
+**Expected outcome:** Dashboard shows next decision, blockers, readiness, risks, stale data, and actions.
+
+**Acceptance criteria:** Empty, partial, ready, blocked, failed, stale, unauthorized, and degraded states are tested.
+
+---
+
+## 9. Make production release gates mandatory
+
+**Goal:** Stop relying on documented readiness.
+
+**Expected outcome:** CI proves Gradle checks, pnpm type/lint/build, API contract parity, Postgres integration, real-backend E2E, accessibility, security/privacy, and connector chaos.
+
+**Acceptance criteria:** Production deployment is impossible unless all required gates pass.
+
+---
+
+## 10. Repository cleanup and doc consolidation
+
+**Goal:** Stop repeated audits from stale docs and old prompts.
+
+**Expected outcome:** Canonical docs are minimal, complete, and current; stale audit prompts and old TODOs are archived/deleted.
+
+**Acceptance criteria:** Repo has one canonical source set and a doc matrix CI check.
+
+---
+
+# 6. Regression and release gates before production readiness
+
+Minimum required gates:
+
+1. Login/auth context: dev vs prod, missing auth, spoofed headers, session derivation.
+2. Dashboard traversal from `/workspaces/:workspaceId/dashboard`.
+3. Role/capability/access matrix for viewer, brand-manager, marketing-director, exec-sponsor, admin.
+4. Tenant/workspace/client isolation across all APIs and reports.
+5. Campaign lifecycle golden path: create → launch blocked until ready → approve → launch → pause → complete → archive → duplicate → rollback where supported.
+6. Durable workflow replay: restart, retry, DLQ, idempotency, causation/correlation IDs.
+7. Google Ads connector: OAuth missing/expired, success, external validation error, transient failure, rate limit, timeout, kill switch, rollback.
+8. Strategy workflow: generate → provenance → submit → approve/reject.
+9. Budget workflow: generate → assumptions → submit → approve → enforce spend caps.
+10. Content workflow: generate → validate → version → approve.
+11. Consent/privacy: consent capture/revoke, suppression, DSAR export/delete/anonymize, PII redaction.
+12. Analytics/reporting: funnel, attribution, ROI/ROAS, CPL/CPA/CAC, conversion rate, budget pacing, freshness.
+13. Dashboard/report/export parity.
+14. AI safety: model/prompt version, evidence, unsafe claim block, approval gate, AI log redaction.
+15. i18n: dates, numbers, currency, percentages, timezone, translation readiness.
+16. Accessibility: keyboard, focus, modal/table/chart semantics, screen-reader labels, error announcements.
+17. Mock/stub guard: no production dependency on test fixtures, local mocks, deterministic adapters, fake analytics.
+18. Cleanup validation: no dead routes, stale docs, duplicate registries, duplicate report runtimes.
+
+---
+
+# Repository Cleanup Plan
+
+| Priority | Classification     | Path                                                                                           | Reason                                                              | Evidence                                                                               | Safe Fix                                                   | Tests/Validation                     |
+| -------: | ------------------ | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------ |
+|       P0 | Merge              | `products/digital-marketing/docs/API_CONTRACT.md` → `docs/canonical/02-API_CONTRACTS.md`       | API contract sources risk drift.                                    | README/API docs/auth behavior overlap.                                                 | Keep canonical OpenAPI/contract only; generate human docs. | OpenAPI parity test.                 |
+|       P0 | Replace            | `ui/src/routeManifest.tsx` + `DmosActionPermissionRegistry.java`                               | Duplicated action/role/capability metadata.                         | Both contain role/action maps.                                                         | Generate both from one manifest.                           | Route/action parity CI.              |
+|       P0 | Replace            | `DmosHttpContextFactory.resolveRequiredCapability`                                             | Path substring capability detection is brittle.                     | Capability resolver is code-based path matching.                                       | Use generated route metadata.                              | Unknown/missing capability tests.    |
+|       P0 | Keep, but harden   | `ProductionBootstrapValidator.java`                                                            | Important guard, but must prove plugin readiness deeply.            | Validator pattern exists but plugin validation needs stronger probes.                  | Add required plugin health checks.                         | Production bootstrap negative tests. |
+|       P1 | Merge/archive      | `products/digital-marketing/docs/00-VISION.md`, `01-ARCHITECTURE.md`, `04-TESTING.md` wrappers | Thin wrappers duplicate canonical doc navigation.                   | Canonical docs exist under `docs/canonical`.                                           | Replace wrappers with pointers or remove if redundant.     | Link/doc matrix test.                |
+|       P1 | Archive            | `products/digital-marketing/new-product-prompt.md`                                             | Prompt artifact, not canonical product source.                      | It is an audit/review prompt, not product spec.                                        | Move to `docs/archive/prompts/` or delete.                 | Stale prompt scan.                   |
+|       P1 | Update             | `products/digital-marketing/README.md`                                                         | Readiness table overstates some areas relative to partial statuses. | README marks some dimensions ready while also listing E2E/privacy/Google Ads partial.  | Make evidence-based status table.                          | README status lint.                  |
+|       P1 | Replace            | Dashboard metric derivation                                                                    | Dashboard should consume canonical backend summary.                 | Dashboard hooks/aggregation visible in inspected UI snippets.                          | Add `DashboardSummary` API.                                | Dashboard/report parity tests.       |
+|       P1 | Delete/Merge       | Old audit/TODO docs under product audit paths                                                  | Repeated audits use stale TODOs.                                    | Current prompt forbids prior audits as source of truth.                                | Move to dated archive or delete.                           | Stale audit scan.                    |
+|       P2 | Keep, document why | Boundary pages                                                                                 | Useful route placeholders if explicit.                              | Route manifest marks them `boundary`.                                                  | Add visible locked/unavailable state and backend gate.     | Feature-off UI/API tests.            |
+
+## Canonical docs matrix
+
+| Doc                                           | Keep | Merge | Archive | Delete | Notes                                                     |
+| --------------------------------------------- | ---: | ----: | ------: | -----: | --------------------------------------------------------- |
+| `docs/canonical/00-VISION.md`                 |    ✅ |       |         |        | Primary product vision.                                   |
+| `docs/canonical/01-ARCHITECTURE.md`           |    ✅ |       |         |        | Primary architecture.                                     |
+| `docs/canonical/02-API_CONTRACTS.md`          |    ✅ |     ✅ |         |        | Merge older `API_CONTRACT.md` into this.                  |
+| `docs/canonical/03-UX_WORKFLOWS.md`           |    ✅ |       |         |        | Must include stable/boundary route states.                |
+| `docs/canonical/04-TESTING.md`                |    ✅ |       |         |        | Primary testing standard.                                 |
+| `docs/canonical/05-OPERATIONS.md`             |    ✅ |       |         |        | Must link runbooks.                                       |
+| `docs/canonical/06-IMPLEMENTATION_PLAN.md`    |    ✅ |       |         |        | Keep as phased plan, not audit TODO dump.                 |
+| `docs/canonical/07-MARKET_AND_POSITIONING.md` |    ✅ |       |         |        | Keep for product strategy.                                |
+| `docs/canonical/08-PRODUCT_REQUIREMENTS.md`   |    ✅ |       |         |        | Should drive feature inventory.                           |
+| `docs/canonical/09-FEATURE_CATALOG.md`        |    ✅ |       |         |        | Add production/boundary/test status per feature.          |
+| `docs/canonical/10-DESIGN.md`                 |    ✅ |       |         |        | Keep UI/service/AI/governance design.                     |
+| `docs/canonical/11-DATA_MODEL.md`             |    ✅ |       |         |        | Must include consent/contact/analytics model.             |
+| `docs/API_CONTRACT.md`                        |      |     ✅ |         |        | Merge into canonical API contract.                        |
+| `docs/00-VISION.md` etc wrappers              |      |     ✅ |       ✅ |        | Thin pointers only, or archive/delete.                    |
+| `new-product-prompt.md`                       |      |       |       ✅ |        | Prompt artifact, not product truth.                       |
+| Old audits/TODOs                              |      |       |       ✅ |      ✅ | Keep only if explicitly referenced as historical archive. |
+
+## Final cleanup checklist
+
+* [ ] Legacy audit prompts archived or deleted.
+* [ ] Canonical docs consolidated under `docs/canonical/00-11`.
+* [ ] README readiness table corrected to evidence-based statuses.
+* [ ] API contract docs merged into one canonical source.
+* [ ] UI/backend action-capability metadata generated from one manifest.
+* [ ] Boundary pages clearly feature-gated with backend/data pending status.
+* [ ] Dashboard metrics moved behind canonical backend summary/report contract.
+* [ ] Production stubs/fake/demo paths removed or hard-fail behind non-prod guards.
+* [ ] Privacy/PII/consent docs tied to implementation and tests.
+* [ ] Release gates made mandatory for production branch protection.
+* [ ] No duplicate report/analytics runtime remains.
+* [ ] No product-specific logic leaks into Kernel/platform modules.
+* [ ] Build/lint/typecheck/unit/integration/E2E/security/a11y gates pass before readiness claim.
+
+## Final decision
+
+DMOS at `4b9fff1bf67dd3b75ca393eb6b40a1a7014f8a9b` is **not production-ready**, but it is **meaningfully improving** toward the intended architecture.
+
+The next step should not be another broad audit. It should be a focused hardening cycle around one complete production MVP loop, with mandatory real-backend release gates and cleanup of stale docs/prompts so future audits measure real progress instead of rediscovering old scope drift.

@@ -427,6 +427,13 @@ export const CapabilityRegistryDataSchema = z.object({
 
 export const CapabilityRegistryEnvelopeSchema = apiEnvelopeSchema(CapabilityRegistryDataSchema);
 
+export const SurfaceRegistryDataSchema = z.object({
+  surfaces: z.record(z.string(), z.unknown()),
+  generatedAt: z.string(),
+});
+
+export const SurfaceRegistryEnvelopeSchema = apiEnvelopeSchema(SurfaceRegistryDataSchema);
+
 export const PiiFieldRegistryDataSchema = z.object({
   globalFields: z.array(z.string()),
   tenantFields: z.array(z.string()),
@@ -1444,6 +1451,8 @@ export type ReportResult = z.infer<typeof ReportResultSchema>;
 export type ReportList = z.infer<typeof ReportListSchema>;
 export type AiModel = z.infer<typeof AiModelSchema>;
 export type AiModelList = z.infer<typeof AiModelListSchema>;
+export type SurfaceRegistryData = z.infer<typeof SurfaceRegistryDataSchema>;
+export type SurfaceRegistryEnvelope = z.infer<typeof SurfaceRegistryEnvelopeSchema>;
 export type CapabilityRegistryData = z.infer<typeof CapabilityRegistryDataSchema>;
 export type CapabilityRegistryEnvelope = z.infer<typeof CapabilityRegistryEnvelopeSchema>;
 export type PiiFieldRegistryData = z.infer<typeof PiiFieldRegistryDataSchema>;

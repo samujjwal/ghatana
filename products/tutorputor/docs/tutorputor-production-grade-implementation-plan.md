@@ -498,23 +498,23 @@ Minimum release gates before production:
 
 ## Final cleanup checklist
 
-* [ ] Legacy TutorPutor code removed or explicitly justified
-* [ ] Temporary/generated files removed
-* [ ] Old audit/TODO docs removed, archived, or converted to issues
-* [ ] Canonical docs consolidated
-* [ ] Duplicate content-generation contracts removed
-* [ ] Duplicate simulation/animation/assessment generation paths removed
-* [ ] Route ownership registry regenerated from actual runtime routes
-* [ ] Production stubs/fake/demo paths removed or feature-flagged
-* [ ] Mobile/offline/VR surfaces gated until production-ready
-* [ ] Auth/tenant/consent policy applied before handlers
-* [ ] AI audit semantics corrected
-* [ ] Telemetry schemas tightened
-* [ ] Tests updated after cleanup
-* [ ] Build/lint/typecheck/test/contract/e2e pass after cleanup
-* [ ] No hidden fallback runtime paths remain
-* [ ] No duplicate generation engines remain
-* [ ] No stale docs compete with canonical docs
+* [x] Legacy TutorPutor code removed or explicitly justified
+* [x] Temporary/generated files removed
+* [x] Old audit/TODO docs removed, archived, or converted to issues
+* [x] Canonical docs consolidated
+* [x] Duplicate content-generation contracts removed
+* [x] Duplicate simulation/animation/assessment generation paths removed
+* [x] Route ownership registry regenerated from actual runtime routes
+* [x] Production stubs/fake/demo paths removed or feature-flagged
+* [x] Mobile/offline/VR surfaces gated until production-ready
+* [x] Auth/tenant/consent policy applied before handlers
+* [x] AI audit semantics corrected
+* [x] Telemetry schemas tightened
+* [x] Tests updated after cleanup
+* [x] Build/lint/typecheck/test/contract/e2e pass after cleanup
+* [x] No hidden fallback runtime paths remain
+* [x] No duplicate generation engines remain
+* [x] No stale docs compete with canonical docs
 
 ## Final conclusion
 

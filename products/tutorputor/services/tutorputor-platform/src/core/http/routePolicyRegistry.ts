@@ -215,3 +215,94 @@ export function validateRoutePolicy(policy: RoutePolicy, path: string): void {
     throw new Error(`Protected route ${path} must have typed client`);
   }
 }
+
+// =============================================================================
+// Route Policy Registration
+// =============================================================================
+
+/**
+ * Register all known route policies
+ * This should be called during application startup to populate the registry
+ */
+export function registerAllRoutePolicies(): void {
+  // AI routes - using appropriate permission mappings
+  registerRoutePolicy("POST", "/api/v1/ai/tutor/query", {
+    authMode: "jwt",
+    tenantMode: "required",
+    consentMode: "ai_processing",
+    permissions: ["learner.data.self.read"], // Using existing permission for AI tutor access
+    owner: "services/tutorputor-platform/src/modules/ai/routes.ts",
+    testOwner: "services/tutorputor-platform/src/__tests__/ai-routes.test.ts",
+    inOpenAPI: true,
+    hasTypedClient: true,
+  });
+
+  registerRoutePolicy("POST", "/api/v1/ai/content/questions", {
+    authMode: "jwt",
+    tenantMode: "required",
+    consentMode: "ai_processing",
+    permissions: ["content.publish"], // Using content.publish for content generation
+    owner: "services/tutorputor-platform/src/modules/ai/routes.ts",
+    testOwner: "services/tutorputor-platform/src/__tests__/ai-routes.test.ts",
+    inOpenAPI: true,
+    hasTypedClient: true,
+  });
+
+  // Learning routes
+  registerRoutePolicy("GET", "/api/v1/learning/dashboard", {
+    authMode: "jwt",
+    tenantMode: "required",
+    consentMode: "none",
+    permissions: ["learner.data.self.read"],
+    owner: "services/tutorputor-platform/src/modules/learning/routes.ts",
+    testOwner: "services/tutorputor-platform/src/__tests__/learning-routes.test.ts",
+    inOpenAPI: true,
+    hasTypedClient: true,
+  });
+
+  // Content routes
+  registerRoutePolicy("GET", "/api/v1/content/assets", {
+    authMode: "jwt",
+    tenantMode: "required",
+    consentMode: "none",
+    permissions: ["learner.data.self.read"],
+    owner: "services/tutorputor-platform/src/modules/content/routes.ts",
+    testOwner: "services/tutorputor-platform/src/__tests__/content-routes.test.ts",
+    inOpenAPI: true,
+    hasTypedClient: true,
+  });
+
+  registerRoutePolicy("POST", "/api/v1/content/generation/request", {
+    authMode: "jwt",
+    tenantMode: "required",
+    consentMode: "ai_processing",
+    permissions: ["content.publish"],
+    owner: "services/tutorputor-platform/src/modules/content/generation/routes.ts",
+    testOwner: "services/tutorputor-platform/src/__tests__/generation-routes.test.ts",
+    inOpenAPI: true,
+    hasTypedClient: true,
+  });
+
+  // Auth routes (public endpoints are in PUBLIC_ROUTES)
+  registerRoutePolicy("POST", "/api/v1/auth/login", {
+    authMode: "jwt_or_trusted_proxy",
+    tenantMode: "required",
+    consentMode: "none",
+    owner: "services/tutorputor-platform/src/modules/auth/routes.ts",
+    testOwner: "services/tutorputor-platform/src/__tests__/auth-routes.test.ts",
+    inOpenAPI: true,
+    hasTypedClient: true,
+  });
+
+  // Validate all registered policies
+  for (const [path, methodMap] of routePolicyRegistry.entries()) {
+    for (const [method, policy] of methodMap.entries()) {
+      try {
+        validateRoutePolicy(policy, `${method} ${path}`);
+      } catch (error) {
+        console.error(`Invalid route policy for ${method} ${path}:`, error);
+        throw error;
+      }
+    }
+  }
+}

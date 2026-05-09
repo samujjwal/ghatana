@@ -182,4 +182,47 @@ class DataCloudHttpServerProductionDependencyTest {
             true, "production", true, true, true, true, true, true, true, true, true, true, logger))
             .doesNotThrowAnyException();
     }
+
+    @Test
+    @DisplayName("blocks startup when generic idempotency store is missing in production profile")
+    void blocksStartupWhenGenericIdempotencyMissingInProduction() {
+        Logger logger = mock(Logger.class);
+
+        assertThatThrownBy(() -> DataCloudHttpServer.validateCriticalRuntimeDependencies(
+            "production", false, true, true, logger))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("Durable generic idempotency store is required");
+    }
+
+    @Test
+    @DisplayName("blocks startup when transaction manager is missing in production profile")
+    void blocksStartupWhenTransactionManagerMissingInProduction() {
+        Logger logger = mock(Logger.class);
+
+        assertThatThrownBy(() -> DataCloudHttpServer.validateCriticalRuntimeDependencies(
+            "production", true, false, true, logger))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("Transaction manager is required");
+    }
+
+    @Test
+    @DisplayName("blocks startup when completion service is missing in production profile")
+    void blocksStartupWhenCompletionServiceMissingInProduction() {
+        Logger logger = mock(Logger.class);
+
+        assertThatThrownBy(() -> DataCloudHttpServer.validateCriticalRuntimeDependencies(
+            "production", true, true, false, logger))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("AI completion service is required");
+    }
+
+    @Test
+    @DisplayName("allows missing runtime dependencies in local profile")
+    void allowsMissingRuntimeDependenciesInLocalProfile() {
+        Logger logger = mock(Logger.class);
+
+        assertThatCode(() -> DataCloudHttpServer.validateCriticalRuntimeDependencies(
+            "local", false, false, false, logger))
+            .doesNotThrowAnyException();
+    }
 }

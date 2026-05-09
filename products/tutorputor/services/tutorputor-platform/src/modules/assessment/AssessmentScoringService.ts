@@ -3,9 +3,10 @@
  *
  * Canonical scoring service for assessments with Confidence-Based Marking (CBM).
  * Provides standardized scoring logic across the platform.
+ * Hardened to bind scoring to attempts, validate telemetry schemas, and enforce CBM linkage.
  *
  * @doc.type class
- * @doc.purpose Canonical assessment scoring with CBM support
+ * @doc.purpose Canonical assessment scoring with CBM support and evidence binding
  * @doc.layer platform
  * @doc.pattern Service
  */
@@ -42,6 +43,27 @@ export interface ScoringResult {
     medium: { correct: number; total: number; adjustment: number };
     high: { correct: number; total: number; adjustment: number };
   };
+  // Evidence binding fields
+  attemptId: string;
+  scoredAt: string; // ISO timestamp
+  telemetryValidated: boolean;
+  cbmLinked: boolean;
+}
+
+export interface AttemptBinding {
+  attemptId: string;
+  userId: string;
+  tenantId: string;
+  assessmentId: string;
+  startedAt: string;
+}
+
+export interface TelemetryEvent {
+  eventType: string;
+  timestamp: string;
+  attemptId: string;
+  itemId?: string;
+  data: Record<string, unknown>;
 }
 
 export interface CBMConfig {
@@ -77,10 +99,13 @@ export class AssessmentScoringService {
 
   /**
    * Score an assessment with optional CBM
+   * Hardened to bind scoring to attempts and validate telemetry
    */
   scoreAssessment(
     responses: AssessmentResponse[],
     isCorrect: (response: AssessmentResponse) => boolean,
+    attemptBinding: AttemptBinding,
+    telemetryEvents?: TelemetryEvent[],
     pointsPerItem: number = 10,
     config?: Partial<CBMConfig>,
   ): ScoringResult {
@@ -164,6 +189,9 @@ export class AssessmentScoringService {
     const score = Math.max(0, Math.min(100, (rawScore / maxScore) * 100));
     const correctCount = responses.filter((r) => isCorrect(r)).length;
 
+    // Validate telemetry events if provided
+    const telemetryValidated = this.validateTelemetryEvents(attemptBinding.attemptId, telemetryEvents);
+
     logger.info({
       message: "Assessment scored",
       cbmEnabled: cbmConfig.enabled,
@@ -172,6 +200,8 @@ export class AssessmentScoringService {
       correctCount,
       totalCount,
       confidenceAdjustment,
+      attemptId: attemptBinding.attemptId,
+      telemetryValidated,
     }, "AssessmentScoringService");
 
     return {
@@ -181,7 +211,45 @@ export class AssessmentScoringService {
       totalCount,
       confidenceAdjustment,
       confidenceBreakdown,
+      attemptId: attemptBinding.attemptId,
+      scoredAt: new Date().toISOString(),
+      telemetryValidated,
+      cbmLinked: cbmConfig.enabled,
     };
+  }
+
+  /**
+   * Validate telemetry events for an attempt
+   */
+  private validateTelemetryEvents(attemptId: string, events?: TelemetryEvent[]): boolean {
+    if (!events || events.length === 0) {
+      return false;
+    }
+
+    // All events must belong to the same attempt
+    const allMatchAttempt = events.every((event) => event.attemptId === attemptId);
+    if (!allMatchAttempt) {
+      logger.warn({
+        message: "Telemetry events attempt ID mismatch",
+        attemptId,
+        eventAttemptIds: events.map((e) => e.attemptId),
+      }, "AssessmentScoringService");
+      return false;
+    }
+
+    // Validate required fields
+    const allValid = events.every((event) => {
+      return (
+        event.eventType &&
+        typeof event.eventType === "string" &&
+        event.timestamp &&
+        typeof event.timestamp === "string" &&
+        event.data &&
+        typeof event.data === "object"
+      );
+    });
+
+    return allValid;
   }
 
   /**
@@ -233,6 +301,7 @@ export class AssessmentScoringService {
 
   /**
    * Calculate item-level scoring with CBM
+   * Returns item-level scoring without attempt binding (for internal use)
    */
   scoreItem(
     response: AssessmentResponse,
@@ -266,6 +335,19 @@ export class AssessmentScoringService {
     }
 
     return { points, adjustment };
+  }
+
+  /**
+   * Validate attempt binding consistency
+   */
+  validateAttemptBinding(attemptBinding: AttemptBinding): boolean {
+    return !!(
+      attemptBinding.attemptId &&
+      attemptBinding.userId &&
+      attemptBinding.tenantId &&
+      attemptBinding.assessmentId &&
+      attemptBinding.startedAt
+    );
   }
 }
 

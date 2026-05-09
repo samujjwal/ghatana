@@ -1,31 +1,74 @@
 /**
  * JWT Authentication Pre-Handler
  *
- * Global JWT verification pre-handler for protected routes.
- * This must be registered before any protected route handlers.
+ * Global pre-handler for JWT verification on protected routes.
+ * Skips public routes, verifies JWT tokens, and populates req.user.
+ * Enforces consistent authorization policy including tenant scoping and permissions.
  *
  * @doc.type module
- * @doc.purpose Global JWT verification for protected routes
+ * @doc.purpose Global JWT verification and authorization for protected routes
  * @doc.layer platform
- * @doc.pattern Middleware
+ * @doc.pattern PreHandler
  */
 
 import type { FastifyRequest, FastifyReply } from "fastify";
-import { createHttpError } from "./requestContext.js";
-import {
-  isInPublicAllowlist,
-  getRoutePolicy,
-} from "./routePolicyRegistry.js";
-import { canUseTrustedProxyAuth } from "./trustedProxyAuth.js";
+import { isInPublicAllowlist, getRoutePolicy } from "./routePolicyRegistry.js";
+import { hasPermission } from "../authz/permissionPolicy.js";
 
 /** Shape of the JWT payload as decoded by @fastify/jwt into req.user */
 interface JwtUser {
-  id?: string;
-  sub?: string;
-  userId?: string;
-  tenantId?: string;
+  userId: string;
+  tenantId: string;
   role?: string;
-  email?: string;
+}
+
+/**
+ * Custom HTTP error with status code
+ */
+function createHttpError(
+  statusCode: number,
+  code: string,
+  message: string,
+): Error & { statusCode: number; code: string } {
+  const error = new Error(message) as Error & { statusCode: number; code: string };
+  error.statusCode = statusCode;
+  error.code = code;
+  return error;
+}
+
+/**
+ * Check if trusted proxy authentication can be used
+ * Only allowed in non-production environments
+ */
+function canUseTrustedProxyAuth(req: FastifyRequest): boolean {
+  const env = process.env.NODE_ENV || "development";
+  if (env === "production") {
+    return false;
+  }
+
+  // Check for trusted proxy headers
+  return !!(
+    req.headers["x-tenant-id"] &&
+    req.headers["x-user-id"] &&
+    (req.headers["x-forwarded-for"] || req.headers["x-real-ip"])
+  );
+}
+
+/**
+ * Enforce tenant scoping based on route policy
+ */
+function enforceTenantScoping(
+  req: FastifyRequest,
+  policy: { tenantMode: "none" | "required" | "optional" },
+  user: JwtUser,
+): void {
+  if (policy.tenantMode === "required" && !user.tenantId) {
+    throw createHttpError(
+      401,
+      "TENANT_REQUIRED",
+      "Tenant context is required for this endpoint",
+    );
+  }
 }
 
 /**
@@ -36,6 +79,7 @@ interface JwtUser {
  * 2. Verifies JWT token for protected routes
  * 3. Populates req.user with decoded JWT payload
  * 4. Optionally allows trusted proxy auth in non-production environments
+ * 5. Enforces tenant scoping and permissions based on route policy
  */
 export async function jwtAuthPreHandler(
   req: FastifyRequest,
@@ -100,6 +144,26 @@ export async function jwtAuthPreHandler(
       "UNAUTHORIZED",
       "JWT token missing required claims (userId, tenantId)",
     );
+  }
+
+  // Enforce tenant scoping based on route policy
+  if (policy) {
+    enforceTenantScoping(req, policy, user);
+
+    // Enforce permissions if specified in route policy
+    if (policy.permissions && policy.permissions.length > 0) {
+      const hasRequiredPermission = policy.permissions.some((permission) =>
+        hasPermission(user.role, permission),
+      );
+
+      if (!hasRequiredPermission) {
+        throw createHttpError(
+          403,
+          "FORBIDDEN",
+          `Insufficient permissions. Required: ${policy.permissions.join(", ")}`,
+        );
+      }
+    }
   }
 }
 

@@ -12,7 +12,7 @@
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { apiClient } from '../lib/api/client';
-import { CapabilityRegistryEnvelopeSchema } from '../contracts/schemas';
+import { SurfaceRegistryEnvelopeSchema } from '../contracts/schemas';
 
 // =============================================================================
 // CANONICAL TYPES
@@ -149,10 +149,10 @@ function normalizeSurfaceEntry(key: string, rawValue: unknown): SurfaceSignal {
 // =============================================================================
 
 async function fetchFromSurfaces(): Promise<SurfaceRegistrySnapshot> {
-  // DC-P1.12: Use canonical /surfaces endpoint only; /capabilities compatibility alias removed
+  // DC-P1.12: Use canonical /surfaces endpoint only; /capabilities compatibility alias removed.
   const rawResponse = await apiClient.get<unknown>('/surfaces');
-  const envelope = CapabilityRegistryEnvelopeSchema.parse(rawResponse);
-  const surfaces = Object.entries(envelope.data.capabilities)
+  const envelope = SurfaceRegistryEnvelopeSchema.parse(rawResponse);
+  const surfaces = Object.entries(envelope.data.surfaces)
     .map(([key, value]) => normalizeSurfaceEntry(key, value))
     .sort((a, b) => a.label.localeCompare(b.label));
   return {
@@ -246,25 +246,17 @@ export async function fetchCapabilityRegistry(): Promise<CapabilityRegistrySnaps
 }
 
 /**
- * Canonical hook for fetching Runtime Truth surface registry.
- * DC-P1-004: Replaces useCapabilityRegistry as the standard API.
+ * Deprecated compatibility hook.
+ * DC-P1-004: New code should use useSurfaceRegistry().
  */
-export function useSurfaceRegistry(): UseQueryResult<CapabilityRegistrySnapshot, Error> {
+export function useCapabilityRegistry(): UseQueryResult<CapabilityRegistrySnapshot, Error> {
   return useQuery({
-    queryKey: ['surface-registry'],
+    queryKey: ['capability-registry-compat'],
     queryFn: fetchCapabilityRegistry,
     staleTime: 60_000,
     refetchInterval: 60_000,
     refetchOnWindowFocus: false,
   });
-}
-
-/**
- * @deprecated Use useSurfaceRegistry instead. This compatibility alias will be removed in a future release.
- * DC-P1-004: Deprecated in favor of useSurfaceRegistry terminology.
- */
-export function useCapabilityRegistry(): UseQueryResult<CapabilityRegistrySnapshot, Error> {
-  return useSurfaceRegistry();
 }
 
 export function getCapabilitySignal(

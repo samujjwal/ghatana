@@ -683,8 +683,8 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
             }
 
         @Test
-        @DisplayName("policyExcludedTenants bypasses policy engine for matching tenant")
-        void criticalPath_excludedTenant_bypassesPolicy() { 
+        @DisplayName("breakGlassTenants requires explicit break-glass reason header")
+        void criticalPath_breakGlassTenant_requiresReasonHeader() {
             when(apiKeyResolver.resolve(VALID_API_KEY)) 
                 .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder() 
@@ -692,7 +692,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
                     .policyEngine(policyEngine) 
                     .auditService(auditService) 
                     .enforcing(true) 
-                    .policyExcludedTenants(Set.of(TEST_TENANT)) 
+                    .breakGlassTenants(Set.of(TEST_TENANT))
                     .build(); 
 
             when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE)); 
@@ -701,8 +701,35 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
             int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
 
-            // Despite policy denial, excluded tenant bypasses the policy check → passes
-            assertThat(status).isEqualTo(200); 
+            assertThat(status).isEqualTo(403);
+            verify(policyEngine, never()).evaluate(anyString(), any());
+        }
+
+        @Test
+        @DisplayName("breakGlassTenants bypasses policy engine when ADMIN provides reason")
+        void criticalPath_breakGlassTenant_allowsWithReasonHeader() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(policyEngine)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .breakGlassTenants(Set.of(TEST_TENANT))
+                    .build();
+
+            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE));
+            AsyncServlet secured = filter.apply(OK_DELEGATE);
+            HttpRequest req = HttpRequest.get("http://localhost" + CRITICAL_PATH)
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                    .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                    .withHeader(HttpHeaders.of(DataCloudSecurityFilter.HEADER_BREAK_GLASS_REASON), "Emergency restore")
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
+
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
+
+            assertThat(status).isEqualTo(200);
             verify(policyEngine, never()).evaluate(anyString(), any()); 
         }
     }
@@ -916,8 +943,8 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("policyExcludedTenants defaults to empty set")
-        void defaultExcludedTenants_isEmpty() { 
+        @DisplayName("breakGlassTenants defaults to empty set")
+        void defaultBreakGlassTenants_isEmpty() {
             // With no excluded tenants override and policy denying, should get 403
             when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE)); 
             DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder() 

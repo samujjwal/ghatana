@@ -55,9 +55,9 @@ const checks = [
     2,
   ),
   check(
-    'Canonical route capability registry exists',
-    fileExists('products/data-cloud/delivery/ui/src/lib/routing/RouteCapabilityRegistry.ts'),
-    'products/data-cloud/delivery/ui/src/lib/routing/RouteCapabilityRegistry.ts',
+    'Canonical runtime surface registry exists',
+    fileExists('products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts'),
+    'products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts',
     2,
   ),
   check(

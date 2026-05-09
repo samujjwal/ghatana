@@ -38,9 +38,18 @@ const ConfigSchema = z.object({
       'JWT_SECRET must be a secure, unique value'
     ),
 
+  // AI Service Configuration - Required in production
+  AI_SERVICE_URL: z.string().url().optional(),
+  AI_SERVICE_API_KEY: z.string().optional(),
+  AI_SERVICE_MODEL: z.string().optional(),
+
+  // Simulation Runtime Configuration - Required in production
+  SIM_RUNTIME_URL: z.string().url().optional(),
+  SIM_RUNTIME_API_KEY: z.string().optional(),
+
   // External Services
-  AI_SERVICE_URL: z.string().url().default('localhost:50051'),
-  SIM_RUNTIME_URL: z.string().url().default('localhost:50052'),
+  // AI_SERVICE_URL: z.string().url().default('localhost:50051'),
+  // SIM_RUNTIME_URL: z.string().url().default('localhost:50052'),
 
   // Object Storage Configuration
   S3_ENDPOINT: z.string().url().optional(),
@@ -71,6 +80,11 @@ const ConfigSchema = z.object({
   QUEUE_ENABLED: z.coerce.boolean().default(true),
   AI_PROXY_ENABLED: z.coerce.boolean().default(true),
   SIMULATION_ENABLED: z.coerce.boolean().default(true),
+  
+  // Non-production channels (must be disabled in production)
+  MOBILE_ENABLED: z.coerce.boolean().default(false),
+  OFFLINE_ENABLED: z.coerce.boolean().default(false),
+  VR_ENABLED: z.coerce.boolean().default(false),
 
   // Queue Configuration
   QUEUE_CONCURRENCY: z.coerce.number().default(5),
@@ -171,6 +185,11 @@ export function loadConfig(): Config {
     AI_PROXY_ENABLED: process.env.AI_PROXY_ENABLED,
     SIMULATION_ENABLED: process.env.SIMULATION_ENABLED,
 
+    // Non-production channels
+    MOBILE_ENABLED: process.env.MOBILE_ENABLED,
+    OFFLINE_ENABLED: process.env.OFFLINE_ENABLED,
+    VR_ENABLED: process.env.VR_ENABLED,
+
     // Queue Configuration
     QUEUE_CONCURRENCY: process.env.QUEUE_CONCURRENCY,
     QUEUE_RETRY_ATTEMPTS: process.env.QUEUE_RETRY_ATTEMPTS,
@@ -238,6 +257,36 @@ function validateProductionSecurity(config: Config): void {
   // Check for SSL/TLS enforcement
   if (!config.DATABASE_URL.includes('sslmode=')) {
     errors.push('DATABASE_URL must enforce SSL/TLS with sslmode parameter');
+  }
+
+  // Check for required AI services in production
+  if (!config.AI_SERVICE_URL) {
+    errors.push('AI_SERVICE_URL is required in production');
+  }
+
+  if (!config.SIM_RUNTIME_URL) {
+    errors.push('SIM_RUNTIME_URL is required in production');
+  }
+
+  if (config.AI_PROXY_ENABLED && !config.AI_SERVICE_API_KEY) {
+    errors.push('AI_SERVICE_API_KEY is required when AI_PROXY_ENABLED is true in production');
+  }
+
+  if (config.SIMULATION_ENABLED && !config.SIM_RUNTIME_API_KEY) {
+    errors.push('SIM_RUNTIME_API_KEY is required when SIMULATION_ENABLED is true in production');
+  }
+
+  // Check that non-production channels are disabled in production
+  if (config.MOBILE_ENABLED) {
+    errors.push('MOBILE_ENABLED must be false in production (mobile channel is not production-ready)');
+  }
+
+  if (config.OFFLINE_ENABLED) {
+    errors.push('OFFLINE_ENABLED must be false in production (offline channel is not production-ready)');
+  }
+
+  if (config.VR_ENABLED) {
+    errors.push('VR_ENABLED must be false in production (VR channel is not production-ready)');
   }
 
   if (errors.length > 0) {
