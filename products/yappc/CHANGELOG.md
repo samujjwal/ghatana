@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: build green 33 [`e2c97e1`](https://github.com/samujjwal/ghatana/commit/e2c97e146c4b4928c897591d5a08585080fe8253)
 - **Changed**: refactors 40 [`c88567c`](https://github.com/samujjwal/ghatana/commit/c88567caed8c1fd2e02f54e40faf77791ebf35f0)
 - **Changed**: refactors 38 [`2e2ebfb`](https://github.com/samujjwal/ghatana/commit/2e2ebfbc5a85ef47f5543532cfa572d6b438a357)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`d2b9879`](https://github.com/samujjwal/ghatana/commit/d2b9879349b5445969e74151526fad53e81b5f5b)
