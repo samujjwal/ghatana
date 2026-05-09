@@ -138,15 +138,15 @@ describe('TraceabilityPanel', () => {
     }
   });
 
-  it('shows AI Analyze button when onAIAnalyze is provided', () => {
+  it('shows Analyze Guidance button when onAIAnalyze is provided', () => {
     const onAIAnalyze = vi.fn().mockResolvedValue({ gaps: [], suggestions: [] });
     render(<TraceabilityPanel {...makeProps({ onAIAnalyze })} />);
-    expect(screen.getByText('AI Analyze')).toBeDefined();
+    expect(screen.getByText('Analyze Guidance')).toBeDefined();
   });
 
-  it('hides AI Analyze button when onAIAnalyze is not provided', () => {
+  it('hides Analyze Guidance button when onAIAnalyze is not provided', () => {
     render(<TraceabilityPanel {...makeProps()} />);
-    expect(screen.queryByText('AI Analyze')).toBeNull();
+    expect(screen.queryByText('Analyze Guidance')).toBeNull();
   });
 
   it('shows AI analysis results after analyze completes', async () => {
@@ -156,10 +156,10 @@ describe('TraceabilityPanel', () => {
     });
     render(<TraceabilityPanel {...makeProps({ onAIAnalyze })} />);
 
-    fireEvent.click(screen.getByText('AI Analyze'));
+    fireEvent.click(screen.getByText('Analyze Guidance'));
 
     await waitFor(() => {
-      expect(screen.getByText('AI Analysis')).toBeDefined();
+      expect(screen.getByText('Guided Analysis')).toBeDefined();
       expect(screen.getByText('Coverage Gaps')).toBeDefined();
       expect(screen.getByText('Missing test coverage artifact')).toBeDefined();
     });
@@ -175,13 +175,13 @@ describe('TraceabilityPanel', () => {
 
     render(<TraceabilityPanel {...makeProps({ onAIAnalyze })} />);
 
-    fireEvent.click(screen.getByText('AI Analyze'));
+    fireEvent.click(screen.getByText('Analyze Guidance'));
     expect(screen.getByText('Analyzing...')).toBeDefined();
 
     resolveAnalyze({ gaps: [], suggestions: [] });
     await waitFor(() => {
       expect(screen.queryByText('Analyzing...')).toBeNull();
-      expect(screen.getByText('AI Analyze')).toBeDefined();
+      expect(screen.getByText('Analyze Guidance')).toBeDefined();
     });
   });
 

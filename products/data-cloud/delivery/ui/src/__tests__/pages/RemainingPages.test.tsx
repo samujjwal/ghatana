@@ -43,11 +43,11 @@ describe('WorkflowDesigner', () => {
 // ── WorkflowList ──────────────────────────────────────────────────────────────
 
 describe('WorkflowList', () => {
-  it('renders the legacy workflow-list stub and redirection copy', () => {
+  it('acts as a redirect-only compatibility shim', () => {
     render(<WorkflowList />, { wrapper: TestWrapper });
 
-    expect(screen.getByRole('heading', { name: 'Legacy Workflow List' })).toBeInTheDocument();
-    expect(screen.getByText(/not the canonical pipelines list/i)).toBeInTheDocument();
+    expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(screen.queryByText(/Legacy Workflow List/i)).toBeNull();
   });
 });
 

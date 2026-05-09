@@ -26,7 +26,7 @@ describe('EndToEndOnboarding (F-Y033)', () => {
     expect(screen.getByRole('button', { name: /Create Workspace/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Create Project/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Define Intent/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /AI Assistance/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Guided Suggestions/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Review & Approve/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Deploy Preview/i })).toBeInTheDocument();
   });

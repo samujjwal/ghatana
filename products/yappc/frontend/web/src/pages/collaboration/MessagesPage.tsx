@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { yappcApi } from '@/lib/api/client';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -40,23 +41,11 @@ interface ChannelMessages {
 // ============================================================================
 
 async function fetchChannels(): Promise<Channel[]> {
-  const res = await fetch('/api/messages/channels', {
-    headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
-  });
-  if (!res.ok) {
-    throw new Error(await readErrorResponse(res, 'Failed to load channels'));
-  }
-  return parseJsonResponse<Channel[]>(res, 'message channels');
+  return yappcApi.collaboration.getMessageChannels<Channel[]>();
 }
 
 async function fetchChannelMessages(channelId: string): Promise<ChannelMessages> {
-  const res = await fetch(`/api/messages/channels/${channelId}`, {
-    headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
-  });
-  if (!res.ok) {
-    throw new Error(await readErrorResponse(res, 'Failed to load messages'));
-  }
-  return parseJsonResponse<ChannelMessages>(res, 'channel messages');
+  return yappcApi.collaboration.getChannelMessages<ChannelMessages>(channelId);
 }
 
 // ============================================================================
@@ -73,6 +62,7 @@ async function fetchChannelMessages(channelId: string): Promise<ChannelMessages>
 const MessagesPage: React.FC = () => {
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const { t } = useI18n();
 
   const { data: channels, isLoading, error } = useQuery<Channel[]>({
     queryKey: ['messages-channels'],
@@ -93,7 +83,7 @@ const MessagesPage: React.FC = () => {
     return (
       <div className="p-8">
         <div className="bg-destructive-bg/20 border border-destructive-border rounded-lg p-4 text-destructive">
-          Failed to load channels: {error instanceof Error ? error.message : 'Unknown error'}
+          {t('messages.loadError', { message: error instanceof Error ? error.message : 'Unknown error' })}
         </div>
       </div>
     );
@@ -104,10 +94,10 @@ const MessagesPage: React.FC = () => {
       {/* Sidebar */}
       <div className="w-72 shrink-0 border-r border-border flex flex-col bg-surface">
         <div className="p-4 border-b border-border">
-          <h1 className="text-lg font-bold text-fg-muted mb-3">Messages</h1>
+          <h1 className="text-lg font-bold text-fg-muted mb-3">{t('messages.heading')}</h1>
           <Input
             type="text"
-            placeholder="Search channels..."
+            placeholder={t('messages.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             fullWidth
@@ -124,7 +114,7 @@ const MessagesPage: React.FC = () => {
           ) : (
             <div className="py-1">
               {/* Channels */}
-              <p className="px-4 py-2 text-xs font-semibold text-fg-muted uppercase tracking-wider">Channels</p>
+              <p className="px-4 py-2 text-xs font-semibold text-fg-muted uppercase tracking-wider">{t('messages.channels')}</p>
               {filteredChannels
                 ?.filter((c) => c.type === 'channel')
                 .map((channel) => (
@@ -160,7 +150,7 @@ const MessagesPage: React.FC = () => {
                 ))}
 
               {/* Direct Messages */}
-              <p className="px-4 py-2 mt-3 text-xs font-semibold text-fg-muted uppercase tracking-wider">Direct Messages</p>
+              <p className="px-4 py-2 mt-3 text-xs font-semibold text-fg-muted uppercase tracking-wider">{t('messages.directMessages')}</p>
               {filteredChannels
                 ?.filter((c) => c.type === 'direct')
                 .map((channel) => (
@@ -198,7 +188,7 @@ const MessagesPage: React.FC = () => {
                 ))}
 
               {filteredChannels?.length === 0 && (
-                <p className="px-4 py-8 text-center text-xs text-fg-muted">No channels found</p>
+                <p className="px-4 py-8 text-center text-xs text-fg-muted">{t('messages.noChannels')}</p>
               )}
             </div>
           )}
@@ -220,7 +210,7 @@ const MessagesPage: React.FC = () => {
                 )}
               </div>
               <span className="ml-auto text-xs text-fg-muted">
-                {channelData.channel.memberCount} members
+                {t('messages.membersCount', { count: String(channelData.channel.memberCount) })}
               </span>
             </div>
 
@@ -253,12 +243,12 @@ const MessagesPage: React.FC = () => {
               <div className="flex gap-2">
                 <Input
                   type="text"
-                  placeholder={`Message #${channelData.channel.name}`}
+                  placeholder={t('messages.messagePlaceholder', { name: channelData.channel.name })}
                   fullWidth
                   className="px-4 py-2.5 bg-surface border border-border rounded-lg text-fg-muted text-sm placeholder-zinc-500 focus:ring-blue-500/40 focus:border-info-border"
                 />
                 <Button className="px-4 py-2.5 rounded-lg">
-                  Send
+                  {t('messages.send')}
                 </Button>
               </div>
             </div>
@@ -266,7 +256,7 @@ const MessagesPage: React.FC = () => {
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-fg-muted">
             <span className="text-4xl mb-3">💬</span>
-            <p className="text-sm">Select a channel to start messaging</p>
+            <p className="text-sm">{t('messages.selectChannel')}</p>
           </div>
         )}
       </div>

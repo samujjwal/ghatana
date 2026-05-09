@@ -181,7 +181,7 @@ function OperatorDiagnosticsPanel({
         <div>
           <h2 className="text-sm font-medium text-gray-900 dark:text-white">Operator Diagnostics</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            One place to confirm tenant bootstrap, auth session state, and capability boundary truth before investigating deeper product behavior.
+            One place to confirm tenant bootstrap, auth session state, and surface boundary truth before investigating deeper product behavior.
           </p>
         </div>
         {generatedAt && <span className="text-xs text-gray-400 whitespace-nowrap">Snapshot {generatedAt}</span>}
@@ -213,7 +213,7 @@ function OperatorDiagnosticsPanel({
         </article>
 
         <article className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 px-4 py-3">
-          <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Capability Boundaries</div>
+          <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Surface Boundaries</div>
           <div className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
             {unavailableCount} unavailable / {degradedCount} degraded
           </div>
@@ -223,7 +223,7 @@ function OperatorDiagnosticsPanel({
         </article>
 
         <article className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 px-4 py-3">
-          <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Registry Request</div>
+          <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Surface Request</div>
           <div className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
             {capabilityRegistry?.requestId ?? 'Unavailable'}
           </div>
@@ -369,8 +369,8 @@ function OverviewTab({
       <ModelTelemetryPanel qualitySummary={aiQualitySummary} />
 
       <CapabilityTruthPanel
-        title="Runtime Capability Truth"
-        description="Live capability registration from the launcher. Operators can confirm which optional subsystems are active, degraded, or unavailable without inferring from UI behavior."
+        title="Runtime Surface Truth"
+        description="Live runtime surface registration from the launcher. Operators can confirm which optional subsystems are active, degraded, or unavailable without inferring from UI behavior."
         capabilities={capabilities}
       />
 
@@ -1186,7 +1186,7 @@ export function InsightsPage() {
         />
       ) : capabilitiesLoading && !capabilityRegistry ? (
         <CapabilityLoadingState
-          title="Loading runtime capabilities"
+          title="Loading runtime surfaces"
           message="Checking which optional insights dependencies are active before rendering AI suggestions."
         />
       ) : aiLoading ? (
@@ -1281,7 +1281,7 @@ export function InsightsPage() {
           {activeTab === 'analytics' && (
             capabilitiesLoading && !capabilityRegistry ? (
               <CapabilityLoadingState
-                title="Loading runtime capabilities"
+                title="Loading runtime surfaces"
                 message="Confirming analytics and federated query dependencies before enabling live analytics views."
               />
             ) : analyticsUnavailable ? (

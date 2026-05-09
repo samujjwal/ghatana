@@ -444,7 +444,7 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
                 </span>
             )}
 
-            {/* AI Action */}
+            {/* Assistant Action */}
             <Button
                 variant="outlined"
                 size="sm"
@@ -452,7 +452,7 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
                 onClick={() => handlers.openAI?.() || handleActionClick('ai.open')}
                 className="text-info-color border-info-border hover:bg-info-bg dark:text-info-color dark:border-info-border dark:hover:bg-info-bg/30"
             >
-                AI
+                Assist
             </Button>
 
             {/* Phase-specific Actions */}

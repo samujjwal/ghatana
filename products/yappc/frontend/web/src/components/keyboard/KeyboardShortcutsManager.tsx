@@ -183,7 +183,7 @@ const DEFAULT_SHORTCUTS: KeyboardShortcut[] = [
   {
     id: 'tab-accept',
     keys: ['Tab'],
-    description: 'Accept AI suggestion',
+    description: 'Accept suggested improvement',
     category: 'code-editor',
     action: () => {},
   },
@@ -211,7 +211,7 @@ const DEFAULT_SHORTCUTS: KeyboardShortcut[] = [
   {
     id: 'cmd-dot',
     keys: ['⌘', '.'],
-    description: 'Quick fix (AI-powered)',
+    description: 'Quick fix (guided)',
     category: 'code-editor',
     action: () => {},
   },

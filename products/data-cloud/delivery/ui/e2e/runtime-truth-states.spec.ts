@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Runtime Truth Capability States — E2E Tests
+ * Runtime Truth Surface States — E2E Tests
  *
  * Verifies that Data Cloud UI correctly responds to live/degraded/unavailable
- * runtime capability states from the backend capabilities registry.
+ * runtime surface states from the backend surfaces registry.
  *
  * Acceptance criteria:
  * - When a capability is "active", the route renders normally
@@ -13,19 +13,19 @@ import { test, expect } from '@playwright/test';
  * - No unavailable surface renders as live
  *
  * @doc.type test
- * @doc.purpose E2E validation of Runtime Truth capability gating
+ * @doc.purpose E2E validation of Runtime Truth surface gating
  * @doc.layer frontend
  */
 
-test.describe('Runtime Truth Capability States', () => {
+test.describe('Runtime Truth Surface States', () => {
   // ──────────────────────────────────────────────────────────────────────────
-  // Setup: Mock capability registry responses
+  // Setup: Mock surface registry responses
   // ──────────────────────────────────────────────────────────────────────────
 
   test.beforeEach(async ({ page }) => {
     // Enable request interception to mock API responses
     await page.route('**/api/**/capabilities', async (route) => {
-      // Default: all capabilities active
+      // Default: all surfaces active
       const requestUrl = new URL(route.request().url());
       const state = requestUrl.searchParams.get('state') || 'active';
 

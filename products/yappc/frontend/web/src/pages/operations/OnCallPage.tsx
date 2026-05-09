@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { yappcApi } from '@/lib/api/client';
 import { Button } from '../../components/ui/Button';
 
 // ============================================================================
@@ -49,13 +49,7 @@ type TabType = 'schedule' | 'escalation';
 // ============================================================================
 
 async function fetchOnCallSchedule(): Promise<OnCallSchedule> {
-  const res = await fetch('/api/oncall', {
-    headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
-  });
-  if (!res.ok) {
-    throw new Error(await readErrorResponse(res, 'Failed to load on-call schedule'));
-  }
-  return parseJsonResponse<OnCallSchedule>(res, 'on-call schedule');
+  return yappcApi.operations.getOnCallSchedule<OnCallSchedule>();
 }
 
 // ============================================================================

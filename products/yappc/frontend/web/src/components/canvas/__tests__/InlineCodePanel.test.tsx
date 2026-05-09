@@ -29,7 +29,7 @@ describe('InlineCodePanel', () => {
 
     fireEvent.click(format);
     fireEvent.click(run);
-    fireEvent.click(screen.getByRole('button', { name: /ai fix/i }));
+      fireEvent.click(screen.getByRole('button', { name: /guided fix/i }));
     fireEvent.click(screen.getByRole('button', { name: /hide code panel/i }));
 
     expect(onFormat).toHaveBeenCalled();

@@ -61,19 +61,19 @@ describe('RequirementsPanel', () => {
             expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument();
         });
 
-        it('does not render AI Assist button when onAIAssist is not provided', () => {
+        it('does not render Guided Assist button when onAIAssist is not provided', () => {
             render(<RequirementsPanel {...defaultProps()} />);
-            expect(screen.queryByRole('button', { name: /ai assist/i })).not.toBeInTheDocument();
+            expect(screen.queryByRole('button', { name: /guided assist/i })).not.toBeInTheDocument();
         });
 
-        it('renders AI Assist button when onAIAssist is provided', () => {
+        it('renders Guided Assist button when onAIAssist is provided', () => {
             render(
                 <RequirementsPanel
                     {...defaultProps()}
                     onAIAssist={vi.fn().mockResolvedValue(null)}
                 />
             );
-            expect(screen.getByRole('button', { name: /ai assist/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /guided assist/i })).toBeInTheDocument();
         });
 
         it('renders Add Epic button', () => {
@@ -320,14 +320,14 @@ describe('RequirementsPanel', () => {
     // ─── AI assist ──────────────────────────────────────────────────────────
 
     describe('AI assist', () => {
-        it('calls onAIAssist with current requirements context when AI Assist clicked', async () => {
+        it('calls onAIAssist with current requirements context when Guided Assist clicked', async () => {
             const onAIAssist = vi.fn().mockResolvedValue(null);
             render(<RequirementsPanel {...defaultProps({ onAIAssist })} />);
 
             const input = screen.getByPlaceholderText('Epic title');
             fireEvent.change(input, { target: { value: 'Payments' } });
 
-            fireEvent.click(screen.getByRole('button', { name: /ai assist/i }));
+            fireEvent.click(screen.getByRole('button', { name: /guided assist/i }));
 
             await waitFor(() => {
                 expect(onAIAssist).toHaveBeenCalledOnce();
@@ -341,7 +341,7 @@ describe('RequirementsPanel', () => {
             const onAIAssist = vi.fn().mockResolvedValue({ epics: aiEpics });
 
             render(<RequirementsPanel {...defaultProps({ onAIAssist })} />);
-            fireEvent.click(screen.getByRole('button', { name: /ai assist/i }));
+            fireEvent.click(screen.getByRole('button', { name: /guided assist/i }));
 
             await waitFor(() => {
                 expect(screen.getByDisplayValue('AI Epic')).toBeInTheDocument();
@@ -355,7 +355,7 @@ describe('RequirementsPanel', () => {
             }));
 
             render(<RequirementsPanel {...defaultProps({ onAIAssist })} />);
-            fireEvent.click(screen.getByRole('button', { name: /ai assist/i }));
+            fireEvent.click(screen.getByRole('button', { name: /guided assist/i }));
 
             await waitFor(() => {
                 expect(screen.getByRole('button', { name: /generating/i })).toBeInTheDocument();
@@ -366,14 +366,14 @@ describe('RequirementsPanel', () => {
             });
         });
 
-        it('disables AI Assist button while AI is loading', async () => {
+        it('disables Guided Assist button while AI is loading', async () => {
             let resolveAI!: () => void;
             const onAIAssist = vi.fn().mockReturnValue(new Promise<null>((resolve) => {
                 resolveAI = () => resolve(null);
             }));
 
             render(<RequirementsPanel {...defaultProps({ onAIAssist })} />);
-            fireEvent.click(screen.getByRole('button', { name: /ai assist/i }));
+            fireEvent.click(screen.getByRole('button', { name: /guided assist/i }));
 
             await waitFor(() => {
                 expect(screen.getByRole('button', { name: /generating/i })).toBeDisabled();

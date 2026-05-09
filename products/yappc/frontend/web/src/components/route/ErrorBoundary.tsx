@@ -9,6 +9,7 @@ import { useEffect } from "react";
 import { useRouteError, Link } from "react-router";
 import { removeStorage, writeFlag } from '../../services/storage';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 type RouteErrorLike = Error & { status?: number; statusText?: string };
 
@@ -36,11 +37,12 @@ export interface RouteErrorBoundaryProps {
  *
  */
 export function RouteErrorBoundary({
-    title = "Something went wrong",
+    title,
     message,
     showNavigation = true
 }: RouteErrorBoundaryProps) {
     const error = useRouteError() as RouteErrorLike;
+    const { t } = useI18n();
 
     // Log error for the configured monitoring path when available.
     useEffect(() => {
@@ -62,7 +64,7 @@ export function RouteErrorBoundary({
 
     // Determine error details
     const isNotFound = error.status === 404;
-    const errorTitle = isNotFound ? "Page Not Found" : title;
+    const errorTitle = isNotFound ? t('errorBoundary.pageNotFound') : (title ?? t('errorBoundary.somethingWentWrong'));
     const errorMessage = message || error.message || error.statusText || "An unexpected error occurred";
 
     return (
@@ -138,7 +140,7 @@ export function RouteErrorBoundary({
                             transition: "var(--transition-fast)"
                         }}
                     >
-                        Retry
+                        {t('errorBoundary.retry')}
                     </Button>
 
                     <Link
@@ -154,7 +156,7 @@ export function RouteErrorBoundary({
                             transition: "var(--transition-fast)"
                         }}
                     >
-                        Go to Dashboard
+                        {t('errorBoundary.goToDashboard')}
                     </Link>
                 </div>
             )}
@@ -162,7 +164,7 @@ export function RouteErrorBoundary({
             {import.meta.env.DEV && error.stack && (
                 <details style={{ marginTop: "2rem", textAlign: "left", maxWidth: "100%", color: "var(--text-primary)" }}>
                     <summary style={{ cursor: "pointer", marginBottom: "0.5rem" }}>
-                        Error Details (Development)
+                        {t('errorBoundary.errorDetailsDev')}
                     </summary>
                     <pre
                         style={{

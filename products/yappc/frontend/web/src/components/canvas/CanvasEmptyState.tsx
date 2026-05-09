@@ -129,7 +129,7 @@ export const CanvasEmptyState = ({
                             className="font-semibold flex items-center gap-1 text-info-color"
                         >
                             <AutoAwesome className="text-base" />
-                            AI Suggestions
+                            Suggested Improvements
                         </Typography>
                         {aiSuggestions.map((suggestion, index) => (
                             <Button

@@ -213,7 +213,7 @@ export function PhaseGuidedFlow({
                                         {/* AI Assistance */}
                                         <Alert severity="info" icon={<AutoAwesome />} className="mb-4">
                                             <Typography as="p" className="text-sm">
-                                                AI assistance available for this task. Get intelligent suggestions
+                                                Guided assistance available for this task. Get intelligent suggestions
                                                 and automated completion based on your persona ({persona}).
                                             </Typography>
                                         </Alert>

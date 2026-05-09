@@ -93,7 +93,7 @@ describe('DashboardView', () => {
 
   it('renders the search placeholder text', () => {
     render(<DashboardView {...defaultProps} />);
-    expect(screen.getByPlaceholderText(/Search tasks, projects, code, or ask AI/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Search tasks, projects, code, or get guidance/i)).toBeInTheDocument();
   });
 
   it('calls onSearchClick when Enter pressed in search input', () => {

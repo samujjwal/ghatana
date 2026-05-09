@@ -137,9 +137,12 @@ function UnifiedCanvasInner() {
 
   // Fetch project data
   const { data: project } = useQuery({
-    queryKey: ['project', projectId],
+    queryKey: ['project', projectId, currentWorkspaceId],
     queryFn: async () => {
       if (!projectId) return null;
+      if (currentWorkspaceId) {
+        return yappcApi.projects.getScoped(projectId, currentWorkspaceId) as Promise<CanvasProjectData>;
+      }
       return yappcApi.projects.get(projectId) as Promise<CanvasProjectData>;
     },
     enabled: !!projectId,

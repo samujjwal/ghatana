@@ -11,7 +11,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { yappcApi } from '@/lib/api/client';
 
 /**
  * Anomaly data model
@@ -107,28 +107,14 @@ export function useAnomalyDetection(tenantId: string) {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       // Call GraphQL query or REST API
-      const response = await fetch('/api/anomalies', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await yappcApi.anomalies.query<{ anomalies?: Anomaly[] }>({
           tenantId,
           startDate,
           endDate,
           severity,
           status,
-        }),
       });
 
-      if (!response.ok) {
-        throw new Error(
-          await readErrorResponse(response, `Failed to fetch anomalies: ${response.statusText}`)
-        );
-      }
-
-      const data = await parseJsonResponse<{ anomalies?: Anomaly[] }>(
-        response,
-        'fetch anomalies'
-      );
       const anomalies = data.anomalies || [];
       const criticalCount = anomalies.filter(
         (a: Anomaly) => a.severity === 'CRITICAL',
@@ -178,21 +164,7 @@ export function useAnomalyDetection(tenantId: string) {
   const getAnomaliesByUser = useCallback(async (userId: string) => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const response = await fetch(`/api/anomalies/user/${userId}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json', 'X-Tenant-Id': tenantId },
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          await readErrorResponse(response, `Failed to fetch user anomalies: ${response.statusText}`)
-        );
-      }
-
-      const data = await parseJsonResponse<{ anomalies?: Anomaly[] }>(
-        response,
-        'fetch user anomalies'
-      );
+      const data = await yappcApi.anomalies.byUser<{ anomalies?: Anomaly[] }>(userId, tenantId);
       setState({
         anomalies: data.anomalies || [],
         loading: false,
@@ -216,18 +188,10 @@ export function useAnomalyDetection(tenantId: string) {
   const updateAnomalyStatus = useCallback(
     async (anomalyId: string, newStatus: string, notes?: string) => {
       try {
-        const response = await fetch(`/api/anomalies/${anomalyId}/status`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Tenant-Id': tenantId,
-          },
-          body: JSON.stringify({ status: newStatus, notes }),
+        const response = await yappcApi.anomalies.updateStatus<unknown>(anomalyId, tenantId, {
+          status: newStatus,
+          notes,
         });
-
-        if (!response.ok) {
-          throw new Error(`Failed to update anomaly: ${response.statusText}`);
-        }
 
         // Update local state
         setState((prev) => ({
@@ -237,7 +201,7 @@ export function useAnomalyDetection(tenantId: string) {
           ),
         }));
 
-        return await parseJsonResponse<unknown>(response, 'update anomaly status');
+        return response;
       } catch (err) {
         setState((prev) => ({
           ...prev,
@@ -255,20 +219,11 @@ export function useAnomalyDetection(tenantId: string) {
   const createInvestigation = useCallback(
     async (anomalyId: string, assignedTo: string) => {
       try {
-        const response = await fetch(`/api/anomalies/${anomalyId}/investigation`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Tenant-Id': tenantId,
-          },
-          body: JSON.stringify({ assignedTo }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to create investigation: ${response.statusText}`);
-        }
-
-        return await parseJsonResponse<unknown>(response, 'create investigation');
+        return await yappcApi.anomalies.createInvestigation<unknown>(
+          anomalyId,
+          tenantId,
+          { assignedTo },
+        );
       } catch (err) {
         setState((prev) => ({
           ...prev,
@@ -285,19 +240,7 @@ export function useAnomalyDetection(tenantId: string) {
    */
   const getBaselines = useCallback(async () => {
     try {
-      const response = await fetch('/api/anomaly-baselines', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Tenant-Id': tenantId,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch baselines: ${response.statusText}`);
-      }
-
-      return await parseJsonResponse<unknown>(response, 'get baselines');
+      return await yappcApi.anomalies.baselines<unknown>(tenantId);
     } catch (err) {
       setState((prev) => ({
         ...prev,
@@ -312,19 +255,7 @@ export function useAnomalyDetection(tenantId: string) {
    */
   const getThreatIntelligence = useCallback(async () => {
     try {
-      const response = await fetch('/api/threat-intelligence', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Tenant-Id': tenantId,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch threat intel: ${response.statusText}`);
-      }
-
-      return await parseJsonResponse<unknown>(response, 'get threat intelligence');
+      return await yappcApi.anomalies.threatIntelligence<unknown>(tenantId);
     } catch (err) {
       setState((prev) => ({
         ...prev,
@@ -379,11 +310,7 @@ export function useRiskScores(tenantId: string) {
   const fetchRiskScores = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/risk-scores', {
-        headers: { 'X-Tenant-Id': tenantId },
-      });
-      if (!response.ok) throw new Error('Failed to fetch risk scores');
-      const data = await parseJsonResponse<unknown[]>(response, 'fetch risk scores');
+      const data = await yappcApi.anomalies.riskScores<unknown[]>(tenantId);
       setRiskScores(data);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
@@ -410,11 +337,7 @@ export function useAnomalyDetail(anomalyId: string, tenantId: string) {
   const fetchDetail = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/anomalies/${anomalyId}`, {
-        headers: { 'X-Tenant-Id': tenantId },
-      });
-      if (!response.ok) throw new Error('Failed to fetch anomaly detail');
-      const data = await parseJsonResponse<Anomaly>(response, 'fetch anomaly detail');
+      const data = await yappcApi.anomalies.detail<Anomaly>(anomalyId, tenantId);
       setAnomaly(data);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));

@@ -1,13 +1,13 @@
 /**
- * Route Capability Metadata Verification
+ * Route Surface Metadata Verification
  *
- * Validates that all runtime capability route gates in routes.tsx are properly
+ * Validates that all runtime surface route gates in routes.tsx are properly
  * registered and consistent with the canonical RouteCapabilityRegistry.
  *
  * This test prevents drift between:
  * - Hand-maintained RuntimeCapabilityRouteGate aliases in routes.tsx
- * - Statically registered capabilities in RouteCapabilityRegistry
- * - Runtime capability state from backend
+ * - Statically registered surfaces in RouteCapabilityRegistry
+ * - Runtime truth state from backend
  *
  * @doc.type test
  * @doc.purpose Verify route/action gate metadata consistency
@@ -28,6 +28,11 @@ const gatedRoutesFromUI = [
     routeName: 'alerts',
     aliases: ['alert-triage', 'monitoring', 'alerts'],
     canonicalCapability: 'alert-triage',
+  },
+  {
+    routeName: 'events',
+    aliases: ['event-stream', 'aep', 'event-explorer', 'events'],
+    canonicalCapability: 'event-stream',
   },
   {
     routeName: 'memory',
@@ -60,14 +65,19 @@ const gatedRoutesFromUI = [
     canonicalCapability: 'settings',
   },
   {
+    routeName: 'plugins',
+    aliases: ['plugin-management', 'plugins', 'extensions'],
+    canonicalCapability: 'plugin-management',
+  },
+  {
     routeName: 'connectors',
     aliases: ['data-connectors', 'connectors'],
     canonicalCapability: 'data-connectors',
   },
 ];
 
-describe('Route Capability Metadata Verification', () => {
-  it('verifies all gated route capabilities are registered in RouteCapabilityRegistry', () => {
+describe('Route Surface Metadata Verification', () => {
+  it('verifies all gated route surfaces are registered in RouteCapabilityRegistry', () => {
     for (const gatedRoute of gatedRoutesFromUI) {
       const registryEntry = canonicalRouteRegistry[gatedRoute.routeName];
       expect(
@@ -93,18 +103,18 @@ describe('Route Capability Metadata Verification', () => {
     }
   });
 
-  it('verifies all route aliases have a canonical capability in the registry', () => {
+  it('verifies all route aliases have a canonical surface in the registry', () => {
     for (const gatedRoute of gatedRoutesFromUI) {
       const registryEntry = canonicalRouteRegistry[gatedRoute.routeName];
 
-      // At least one alias should match a registered capability
+      // At least one alias should match a registered surface
       const aliasesMatchRegistry = gatedRoute.aliases.some((alias) =>
         registryEntry.capabilities.includes(alias)
       );
 
       expect(
         aliasesMatchRegistry,
-        `Route '${gatedRoute.routeName}': at least one alias ${JSON.stringify(gatedRoute.aliases)} must exist in capabilities ${JSON.stringify(registryEntry.capabilities)}`
+        `Route '${gatedRoute.routeName}': at least one alias ${JSON.stringify(gatedRoute.aliases)} must exist in surfaces ${JSON.stringify(registryEntry.capabilities)}`
       ).toBe(true);
     }
   });
@@ -143,7 +153,7 @@ describe('Route Capability Metadata Verification', () => {
     }
   });
 
-  it('extracts and validates route capability metadata from source', () => {
+  it('extracts and validates route surface metadata from source', () => {
     // Read routes.tsx source to extract aliases directly
     const routesSourcePath = path.join(__dirname, '../../routes.tsx');
     const routesSource = fs.readFileSync(routesSourcePath, 'utf-8');
@@ -245,7 +255,7 @@ describe('Route Capability Metadata Verification', () => {
     ).toBe(0);
   });
 
-  it('provides route capability index for feature gate generation', () => {
+  it('provides route surface index for feature gate generation', () => {
     // This index can be used to generate feature gate code or schemas
     const routeCapabilityIndex: Record<string, { aliases: string[]; route: string }> = {};
 
@@ -261,7 +271,7 @@ describe('Route Capability Metadata Verification', () => {
     // Verify index is complete
     expect(
       Object.keys(routeCapabilityIndex).length,
-      'Route capability index must include all aliases'
+      'Route surface index must include all aliases'
     ).toBe(
       gatedRoutesFromUI.reduce((sum, r) => sum + r.aliases.length, 0)
     );
@@ -272,17 +282,19 @@ describe('Route Capability Metadata Verification', () => {
     expect(routeCapabilityIndex['entity-browser']?.route).toBe('entities');
   });
 
-  it('validates alignment between runtime capability names and route aliases', () => {
-    // This test ensures that capability names coming from the backend
+  it('validates alignment between runtime truth names and route aliases', () => {
+    // This test ensures that runtime truth names coming from the backend
     // would properly map to route gates
 
     const capabilityNameVariations: Record<string, string[]> = {
       alerts: ['alert-triage', 'monitoring', 'alerts'],
+      events: ['event-stream', 'aep', 'event-explorer', 'events'],
       memory: ['memory-plane', 'memory'],
       entities: ['entity-browser', 'entities'],
       context: ['context-explorer', 'context'],
       fabric: ['data-fabric', 'fabric'],
       agents: ['agent-catalog', 'agents'],
+      plugins: ['plugin-management', 'plugins', 'extensions'],
       settings: ['settings', 'config'],
       connectors: ['data-connectors', 'connectors'],
     };

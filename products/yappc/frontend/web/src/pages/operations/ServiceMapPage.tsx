@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { yappcApi } from '@/lib/api/client';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 
@@ -45,13 +45,7 @@ type StatusFilter = 'all' | HealthStatus;
 // ============================================================================
 
 async function fetchTopology(): Promise<TopologyData> {
-  const res = await fetch('/api/services/topology', {
-    headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
-  });
-  if (!res.ok) {
-    throw new Error(await readErrorResponse(res, 'Failed to load service topology'));
-  }
-  return parseJsonResponse<TopologyData>(res, 'service topology');
+  return yappcApi.operations.getServiceTopology<TopologyData>();
 }
 
 // ============================================================================

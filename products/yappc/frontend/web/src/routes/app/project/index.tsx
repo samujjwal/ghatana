@@ -14,6 +14,8 @@ import type {
   ProjectContract,
 } from '@/contracts/workspace-project';
 import { yappcApi } from '@/lib/api';
+import { useAtomValue } from 'jotai';
+import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
 import {
   phaseTransitionAPI,
   type PhaseTransitionPreview,
@@ -103,12 +105,16 @@ function getStatusPanelClassName(
 
 export default function ProjectIndexRoute() {
   const { projectId } = useParams<{ projectId: string }>();
+  const currentWorkspaceId = useAtomValue(currentWorkspaceIdAtom);
 
   const projectQuery = useQuery<ProjectContract>({
-    queryKey: ['project', projectId],
+    queryKey: ['project', projectId, currentWorkspaceId],
     queryFn: async () => {
       if (!projectId) {
         throw new Error('Project id is required to load project overview.');
+      }
+      if (currentWorkspaceId) {
+        return yappcApi.projects.getScoped(projectId, currentWorkspaceId) as unknown as Promise<ProjectContract>;
       }
       return yappcApi.projects.get(projectId) as unknown as Promise<ProjectContract>;
     },

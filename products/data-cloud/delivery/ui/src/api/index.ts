@@ -56,9 +56,6 @@ export { pluginService } from "./plugin.service";
 // Runtime Truth surfaces — canonical registry API
 export * from "./surfaces.service";
 
-// Capabilities — compatibility alias for legacy imports
-export * from "./capabilities.service";
-
 // AI Observability — quality telemetry
 export * from "./ai-observability.service";
 

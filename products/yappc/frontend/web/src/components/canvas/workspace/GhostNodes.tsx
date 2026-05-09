@@ -363,7 +363,7 @@ export const GhostNodes: React.FC<GhostNodesProps> = ({
                             onClick={onAISuggestion}
                             className="rounded-lg normal-case"
                         >
-                            Get AI Suggestion
+                            Get Suggested Guidance
                         </Button>
                     )}
                 </Box>

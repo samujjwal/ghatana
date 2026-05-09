@@ -1,7 +1,7 @@
 /**
  * DC-P1-006: Tests for useCapabilityGate and useCapabilitySignal hooks.
  *
- * Verifies that the hooks correctly translate runtime capability registry data
+ * Verifies that the hooks correctly translate runtime surface registry data
  * into boolean access signals for all three gate modes.
  */
 

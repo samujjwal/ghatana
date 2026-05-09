@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { Button } from '../../components/ui/Button';
 import { Textarea } from '../../components/ui/Textarea';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface DMUser {
   id: string;
@@ -45,6 +46,7 @@ const DirectMessagePage: React.FC = () => {
   const [draft, setDraft] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+  const { t } = useI18n();
 
   const { data: conversation, isLoading, error } = useQuery<DMConversation>({
     queryKey: ['dm', userId],
@@ -110,7 +112,7 @@ const DirectMessagePage: React.FC = () => {
     return (
       <div className="p-8">
         <div className="bg-destructive-bg/20 border border-destructive-border rounded-lg p-4 text-destructive">
-          {error instanceof Error ? error.message : 'Failed to load conversation'}
+          {error instanceof Error ? error.message : t('dm.loadError')}
         </div>
       </div>
     );
@@ -151,10 +153,10 @@ const DirectMessagePage: React.FC = () => {
           <h1 className="text-base font-semibold text-fg-muted">{user?.name ?? 'User'}</h1>
           <p className="text-xs text-fg-muted">
             {user?.online
-              ? 'Online'
+              ? t('dm.online')
               : user?.lastSeen
-                ? `Last seen ${new Date(user.lastSeen).toLocaleString()}`
-                : 'Offline'}
+                ? t('dm.lastSeen', { date: new Date(user.lastSeen).toLocaleString() })
+                : t('dm.offline')}
           </p>
         </div>
       </div>
@@ -166,7 +168,7 @@ const DirectMessagePage: React.FC = () => {
             <svg className="w-12 h-12 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
-            <p className="text-sm">Start a conversation with {user?.name ?? 'this user'}.</p>
+            <p className="text-sm">{t('dm.startConversation', { name: user?.name ?? 'this user' })}.</p>
           </div>
         ) : (
           groups.map((group) => (
@@ -209,7 +211,7 @@ const DirectMessagePage: React.FC = () => {
             resize="none"
             className="min-h-0 max-h-32 border-0 bg-transparent px-0 py-0 text-sm text-fg-muted placeholder-zinc-500 focus:ring-0 focus:ring-offset-0"
             rows={1}
-            placeholder={`Message ${user?.name ?? ''}...`}
+            placeholder={t('dm.messagePlaceholder', { name: user?.name ?? '' })}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -221,8 +223,7 @@ const DirectMessagePage: React.FC = () => {
             loading={sendMessage.isPending}
             className="px-3 py-1.5 rounded-md"
           >
-            Send
-          </Button>
+            {t('dm.send')}
         </div>
       </div>
     </div>

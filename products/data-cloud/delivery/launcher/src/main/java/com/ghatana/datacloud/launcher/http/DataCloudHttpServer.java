@@ -373,7 +373,7 @@ public class DataCloudHttpServer {
     private PluginInstallHandler pluginInstallHandler; // B6: plugin install/upgrade lifecycle API
     private boolean pluginUpgradeEnabled = false;
     private DataCloudRuntimePluginManager runtimePluginManager;
-    private CapabilityRegistryHandler capabilityRegistryHandler; // P2.7: runtime capability registry API
+    private CapabilityRegistryHandler capabilityRegistryHandler; // P2.7: runtime surface registry API
     private ContextLayerHandler contextLayerHandler; // P3.1: tenant-scoped context layer API
     private CollectionContextHandler collectionContextHandler; // P3.1: unified collection context API
     private McpToolsHandler mcpToolsHandler; // P3.1.2: MCP tool registry and invocation

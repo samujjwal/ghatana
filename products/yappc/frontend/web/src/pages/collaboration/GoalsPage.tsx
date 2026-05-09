@@ -13,9 +13,11 @@ import React from 'react';
 import { useParams } from 'react-router';
 import { Target, Plus, TrendingUp } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 const GoalsPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
+  const { t } = useI18n();
 
   return (
     <div className="min-h-screen bg-surface text-white p-8">
@@ -26,21 +28,20 @@ const GoalsPage: React.FC = () => {
               <Target className="w-6 h-6 text-emerald-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Goals</h1>
-              <p className="text-fg-muted">Track objectives and key results</p>
+              <h1 className="text-2xl font-bold">{t('goals.title')}</h1>
+              <p className="text-fg-muted">{t('goals.subtitle')}</p>
             </div>
           </div>
           <Button startIcon={<Plus className="w-4 h-4" />} className="rounded-lg bg-violet-600 hover:bg-violet-500">
-            New Goal
+            {t('goals.newGoal')}
           </Button>
         </div>
 
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <Target className="w-12 h-12 text-fg-muted mb-4" />
-          <h3 className="text-lg font-semibold text-fg-muted mb-2">No goals set</h3>
+          <h3 className="text-lg font-semibold text-fg-muted mb-2">{t('goals.noGoals')}</h3>
           <p className="text-fg-muted max-w-md">
-            Define team objectives and measurable key results to align everyone
-            on what matters most.
+            {t('goals.noGoalsDesc')}
           </p>
         </div>
       </div>

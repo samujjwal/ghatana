@@ -238,16 +238,16 @@ describe('InsightsPage', () => {
     });
   }, 15000);
 
-  it('renders the runtime capability truth panel', async () => {
+  it('renders the runtime surface truth panel', async () => {
     render(<InsightsPage />, { wrapper: TestWrapper });
 
-    const capabilityPanel = await screen.findByText('Runtime Capability Truth');
+    const capabilityPanel = await screen.findByText('Runtime Surface Truth');
     expect(capabilityPanel).toBeInTheDocument();
     expect(screen.getAllByText('Analytics').length).toBeGreaterThan(0);
     expect(screen.getByText('Voice dependencies are optional in this launcher profile.')).toBeInTheDocument();
   });
 
-  it('renders operator diagnostics with tenant, auth, and capability registry state', async () => {
+  it('renders operator diagnostics with tenant, auth, and runtime surface registry state', async () => {
     render(<InsightsPage />, { wrapper: TestWrapper });
 
     expect(await screen.findByText('Operator Diagnostics')).toBeInTheDocument();
@@ -305,7 +305,7 @@ describe('InsightsPage', () => {
     expect(screen.getByText('Analytics connectors are not configured for this launcher profile.')).toBeInTheDocument();
   });
 
-  it('shows a capability loading state before runtime truth is available', async () => {
+  it('shows a runtime surface loading state before runtime truth is available', async () => {
     analyticsMocks.useCapabilityRegistry.mockReturnValue({
       data: undefined,
       isLoading: true,
@@ -313,7 +313,7 @@ describe('InsightsPage', () => {
 
     render(<InsightsPage />, { wrapper: TestWrapper });
 
-    expect(screen.getByText('Loading runtime capabilities')).toBeInTheDocument();
+    expect(screen.getByText('Loading runtime surfaces')).toBeInTheDocument();
     expect(screen.getByText('Checking which optional insights dependencies are active before rendering AI suggestions.')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Analytics' }));

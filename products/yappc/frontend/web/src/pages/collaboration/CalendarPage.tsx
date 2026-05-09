@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { yappcApi } from '@/lib/api/client';
 import { Button } from '../../components/ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -67,13 +68,7 @@ function toDateKey(year: number, month: number, day: number): string {
 // ============================================================================
 
 async function fetchCalendarEvents(): Promise<CalendarResponse> {
-  const res = await fetch('/api/calendar/events', {
-    headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
-  });
-  if (!res.ok) {
-    throw new Error(await readErrorResponse(res, 'Failed to load calendar events'));
-  }
-  return parseJsonResponse<CalendarResponse>(res, 'calendar events');
+  return yappcApi.collaboration.getCalendarEvents<CalendarResponse>();
 }
 
 // ============================================================================
@@ -91,6 +86,7 @@ const CalendarPage: React.FC = () => {
   const today = useMemo(() => new Date(), []);
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const { t } = useI18n();
 
   const { data, isLoading, error } = useQuery<CalendarResponse>({
     queryKey: ['calendar-events'],
@@ -161,8 +157,8 @@ const CalendarPage: React.FC = () => {
   return (
     <div className="mx-auto max-w-6xl px-6 py-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-fg-muted">Calendar</h1>
-        <p className="mt-1 text-sm text-fg-muted">Team events, deadlines, and milestones</p>
+        <h1 className="text-2xl font-bold text-fg-muted">{t('calendar.title')}</h1>
+        <p className="mt-1 text-sm text-fg-muted">{t('calendar.subtitle')}</p>
       </div>
 
       {isLoading ? (
@@ -171,7 +167,7 @@ const CalendarPage: React.FC = () => {
         </div>
       ) : error ? (
         <div className="rounded-lg border border-destructive-border bg-destructive-bg/20 p-4">
-          <p className="text-sm text-destructive">Failed to load calendar. Please try again later.</p>
+          <p className="text-sm text-destructive">{t('calendar.loadError')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -184,7 +180,7 @@ const CalendarPage: React.FC = () => {
                 size="sm"
                 onClick={goToPrev}
                 className="min-h-0 p-1.5 rounded-lg text-fg-muted hover:text-fg-muted hover:bg-surface"
-                aria-label="Previous month"
+                aria-label={t('calendar.prevMonth')}
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M15 19l-7-7 7-7" /></svg>
               </Button>
@@ -196,7 +192,7 @@ const CalendarPage: React.FC = () => {
                 size="sm"
                 onClick={goToNext}
                 className="min-h-0 p-1.5 rounded-lg text-fg-muted hover:text-fg-muted hover:bg-surface"
-                aria-label="Next month"
+                aria-label={t('calendar.nextMonth')}
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M9 5l7 7-7 7" /></svg>
               </Button>
@@ -262,10 +258,10 @@ const CalendarPage: React.FC = () => {
           {/* Upcoming Events Sidebar */}
           <div className="bg-surface border border-border rounded-lg p-5">
             <h3 className="text-sm font-semibold text-fg-muted uppercase tracking-wider mb-4">
-              Upcoming Events
+              {t('calendar.upcomingEvents')}
             </h3>
             {upcomingEvents.length === 0 ? (
-              <p className="text-sm text-fg-muted">No upcoming events.</p>
+              <p className="text-sm text-fg-muted">{t('calendar.noUpcomingEvents')}</p>
             ) : (
               <div className="space-y-3">
                 {upcomingEvents.map((ev) => (
@@ -282,7 +278,7 @@ const CalendarPage: React.FC = () => {
                           month: 'short',
                           day: 'numeric',
                         })}
-                        {ev.time ? ` at ${ev.time}` : ''}
+                        {ev.time ? t('calendar.atTime', { time: ev.time }) : ''}
                       </p>
                       {ev.description && (
                         <p className="mt-0.5 text-xs text-fg-muted truncate">{ev.description}</p>

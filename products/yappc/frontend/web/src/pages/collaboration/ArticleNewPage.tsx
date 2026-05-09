@@ -15,6 +15,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
+import { useI18n } from '../../i18n/I18nProvider';
 
 const templates = [
   { id: 'blank', label: 'Blank', icon: FileText, description: 'Start from scratch' },
@@ -26,6 +27,7 @@ const ArticleNewPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [title, setTitle] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState('blank');
+  const { t } = useI18n();
 
   return (
     <div className="min-h-screen bg-surface text-white p-8">
@@ -34,7 +36,7 @@ const ArticleNewPage: React.FC = () => {
           to={projectId ? ROUTES.team.knowledge(projectId) : '/'}
           className="inline-flex items-center gap-2 text-sm text-fg-muted hover:text-white mb-8"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Knowledge Base
+            <ArrowLeft className="w-4 h-4" /> {t('articleEdit.backToKb')}
         </NavLink>
 
         <div className="flex items-center gap-4 mb-8">
@@ -42,17 +44,17 @@ const ArticleNewPage: React.FC = () => {
             <FilePlus className="w-6 h-6 text-violet-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">New Article</h1>
-            <p className="text-fg-muted">Choose a template and start writing</p>
+            <h1 className="text-2xl font-bold">{t('kb.newArticle')}</h1>
+            <p className="text-fg-muted">{t('articleNew.subtitle')}</p>
           </div>
         </div>
 
         <div className="space-y-6">
           <div>
-            <label className="block text-sm text-fg-muted mb-2">Title</label>
+            <label className="block text-sm text-fg-muted mb-2">{t('articleNew.titleLabel')}</label>
             <Input
               type="text"
-              placeholder="Article title..."
+              placeholder={t('articleEdit.titlePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               fullWidth
@@ -61,7 +63,7 @@ const ArticleNewPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm text-fg-muted mb-3">Template</label>
+            <label className="block text-sm text-fg-muted mb-3">{t('articleNew.templateLabel')}</label>
             <div className="grid grid-cols-3 gap-3">
               {templates.map((t) => (
                 <Button
@@ -86,7 +88,7 @@ const ArticleNewPage: React.FC = () => {
           </div>
 
           <Button startIcon={<Save className="w-4 h-4" />} className="px-6 py-3 rounded-lg bg-violet-600 hover:bg-violet-500">
-            Create Article
+            {t('articleNew.create')}
           </Button>
         </div>
       </div>

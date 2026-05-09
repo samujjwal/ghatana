@@ -157,21 +157,21 @@ describe('ThreatModelPanel', () => {
     expect(arg).toHaveProperty('mitigations');
   });
 
-  it('renders AI Assist button when onAIAssist provided', () => {
+  it('renders Guided Assist button when onAIAssist provided', () => {
     const onAIAssist = vi.fn().mockResolvedValue(null);
     render(<ThreatModelPanel {...makeProps({ onAIAssist })} />);
-    expect(screen.getByText('AI Assist')).toBeDefined();
+    expect(screen.getByText('Guided Assist')).toBeDefined();
   });
 
-  it('does not render AI Assist when onAIAssist absent', () => {
+  it('does not render Guided Assist when onAIAssist absent', () => {
     render(<ThreatModelPanel {...makeProps({ onAIAssist: undefined })} />);
-    expect(screen.queryByText('AI Assist')).toBeNull();
+    expect(screen.queryByText('Guided Assist')).toBeNull();
   });
 
   it('calls onAIAssist when button clicked', async () => {
     const onAIAssist = vi.fn().mockResolvedValue(null);
     render(<ThreatModelPanel {...makeProps({ onAIAssist })} />);
-    fireEvent.click(screen.getByText('AI Assist'));
+    fireEvent.click(screen.getByText('Guided Assist'));
     await waitFor(() => {
       expect(onAIAssist).toHaveBeenCalledOnce();
     });

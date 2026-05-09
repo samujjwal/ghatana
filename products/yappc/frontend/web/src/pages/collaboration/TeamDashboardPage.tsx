@@ -50,6 +50,7 @@ import {
   type Activity as ActivityType,
   type TeamRole,
 } from 'yappc-api';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -258,6 +259,7 @@ const TeamDashboardPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'members' | 'channels' | 'activity'>('members');
+  const { t } = useI18n();
 
   // Data queries
   const { data: teamData, loading: teamLoading } = useTeam(teamId ?? '');
@@ -352,7 +354,7 @@ const TeamDashboardPage: React.FC = () => {
               <NativeButton
                 onClick={() => navigate(`/teams/${teamId}/settings`)}
                 className="p-2 hover:bg-surface-muted rounded-lg transition-colors"
-                aria-label="Team settings"
+                aria-label={t('teamDashboard.settings')}
               >
                 <Settings className="w-5 h-5 text-fg-muted" />
               </NativeButton>
@@ -423,7 +425,7 @@ const TeamDashboardPage: React.FC = () => {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
                   <NativeInput
                     type="text"
-                    placeholder="Search members..."
+                    placeholder={t('teamDashboard.searchMembers')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 bg-surface border border-border rounded-lg text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-primary"
@@ -591,7 +593,7 @@ const TeamDashboardPage: React.FC = () => {
                     type="email"
                     required
                     className="w-full px-3 py-2 bg-surface-muted border border-border rounded-lg text-fg focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="colleague@company.com"
+                    placeholder={t('teamDashboard.invitePlaceholder')}
                   />
                 </div>
                 <div>
@@ -600,9 +602,9 @@ const TeamDashboardPage: React.FC = () => {
                     name="role"
                     className="w-full px-3 py-2 bg-surface-muted border border-border rounded-lg text-fg focus:outline-none focus:ring-2 focus:ring-primary"
                   >
-                    <option value="MEMBER">Member</option>
-                    <option value="ADMIN">Admin</option>
-                    <option value="GUEST">Guest</option>
+                    <option value="MEMBER">{t('teamDashboard.role.member')}</option>
+                    <option value="ADMIN">{t('teamDashboard.role.admin')}</option>
+                    <option value="GUEST">{t('teamDashboard.role.guest')}</option>
                   </NativeSelect>
                 </div>
               </div>

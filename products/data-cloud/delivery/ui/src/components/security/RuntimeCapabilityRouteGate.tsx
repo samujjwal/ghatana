@@ -1,15 +1,15 @@
 /**
- * Runtime capability route gate.
+ * Runtime surface route gate.
  *
  * Guards optional route surfaces based on live surface registry state so UI
- * route accessibility follows backend capability truth.
+ * route accessibility follows backend runtime truth.
  *
  * DC-P1-001: Updated to use surfaces.service.ts (canonical /surfaces endpoint).
  * DC-P1-002: Shows safe skeleton/disabled state while registry is loading —
  *   optional surfaces never flash visible before runtime truth loads.
  *
  * @doc.type component
- * @doc.purpose Route-level runtime capability gate for optional surfaces
+ * @doc.purpose Route-level runtime surface gate for optional surfaces
  * @doc.layer frontend
  * @doc.pattern Guard
  */

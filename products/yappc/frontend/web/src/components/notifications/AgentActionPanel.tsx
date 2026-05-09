@@ -80,7 +80,7 @@ export function AgentActionPanel({
     return (
       <div className={`p-4 text-center text-text-secondary ${className}`}>
         <div className="text-2xl mb-2">✨</div>
-        <p className="text-sm">All AI agents report no issues</p>
+        <p className="text-sm">All guided agents report no issues</p>
       </div>
     );
   }
@@ -116,7 +116,7 @@ export function AgentActionPanel({
     <div className={`space-y-4 ${className}`}>
       {/* Summary Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-text-primary">AI Agent Reports</h3>
+        <h3 className="text-sm font-semibold text-text-primary">Guided Agent Reports</h3>
         <div className="flex items-center gap-2">
           {blockingCount > 0 && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-destructive-bg dark:bg-destructive-bg text-destructive dark:text-destructive font-medium">
@@ -292,7 +292,7 @@ export function AgentActionBadge({
         className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-success-color dark:text-success-color hover:bg-success-bg dark:hover:bg-success-bg transition-colors ${className}`}
       >
         <span>✓</span>
-        <span>AI OK</span>
+        <span>Guidance OK</span>
       </Button>
     );
   }
@@ -322,7 +322,7 @@ export function AgentActionBadge({
       ) : (
         <>
           <span>🤖</span>
-          <span>{totalActive} AI issue{totalActive > 1 ? 's' : ''}</span>
+          <span>{totalActive} guidance issue{totalActive > 1 ? 's' : ''}</span>
         </>
       )}
     </Button>

@@ -239,7 +239,7 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
     }
 
     if (isError || hints.length === 0) {
-        return null; // Fail silently — hints are advisory, not critical
+        return null; // Hints are advisory only; an empty result does not block the page.
     }
 
     // Render advisories from ai-operations.service below the hints list when available.

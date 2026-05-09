@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * Project Creation Wizard - Guided project setup with AI recommendations
+ * Project Creation Wizard - Guided project setup with recommendations
  * 
  * Smart project creation that provides templates, recommendations,
  * and intelligent defaults based on user context.

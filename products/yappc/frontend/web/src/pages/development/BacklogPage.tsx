@@ -25,6 +25,7 @@ import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { useI18n } from '../../i18n/I18nProvider';
 
 type Priority = 'critical' | 'high' | 'medium' | 'low';
 
@@ -47,6 +48,7 @@ const priorityColors: Record<Priority, string> = {
 };
 
 const BacklogPage: React.FC = () => {
+    const { t } = useI18n();
   const { projectId } = useParams<{ projectId: string }>();
   const [search, setSearch] = useState('');
   const [items] = useState<BacklogItem[]>([]);
@@ -81,7 +83,7 @@ const BacklogPage: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
             <Input
               type="text"
-              placeholder="Search backlog..."
+              placeholder={t('backlog.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               fullWidth

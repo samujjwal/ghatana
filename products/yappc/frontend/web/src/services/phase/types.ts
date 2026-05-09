@@ -98,6 +98,8 @@ export interface PhaseProjectSnapshot extends ProjectAccessFields {
   updatedAt?: string;
   healthScore?: number | null;
   nextActionHints?: string[];
+  tenantTier?: TenantTier;
+  enabledPhaseFlags?: PhaseFeatureFlag[];
 }
 
 export interface PhaseActivityEvent {

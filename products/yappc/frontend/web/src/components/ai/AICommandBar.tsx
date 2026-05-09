@@ -274,7 +274,7 @@ export function AICommandBar({
                             disabled:opacity-50 disabled:cursor-not-allowed
                             text-sm
                         `}
-                        aria-label="AI prompt input"
+                        aria-label="Prompt input"
                         resize="none"
                         fullWidth
                     />
@@ -293,7 +293,7 @@ export function AICommandBar({
                             disabled:opacity-50 disabled:cursor-not-allowed
                             text-sm
                         `}
-                        aria-label="AI prompt input"
+                        aria-label="Prompt input"
                         fullWidth
                     />
                 )}

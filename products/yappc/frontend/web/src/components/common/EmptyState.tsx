@@ -100,7 +100,7 @@ export function NoProjectsEmptyState({ onCreateProject }: { onCreateProject?: ()
         </svg>
       }
       title="No projects yet"
-      description="Create your first project to get started building with AI."
+      description="Create your first project to get started with guided implementation."
       action={
         onCreateProject && (
           <Button
@@ -124,7 +124,7 @@ export function NoTasksEmptyState({ onCreateTask }: { onCreateTask?: () => void 
         </svg>
       }
       title="No tasks"
-      description="All caught up! Create a new task or let AI suggest what to work on next."
+      description="All caught up! Create a new task or use guided suggestions for next priorities."
       action={
         onCreateTask && (
           <Button

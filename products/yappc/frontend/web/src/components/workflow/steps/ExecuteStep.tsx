@@ -125,7 +125,7 @@ export function ExecuteStep() {
                     label={
                         <Box className="flex items-center gap-1">
                             <AIIcon size={16} />
-                            <Typography className="text-sm">AI Assist</Typography>
+                            <Typography className="text-sm">Guided Assist</Typography>
                         </Box>
                     }
                 />

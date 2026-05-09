@@ -35,7 +35,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
 import { IntentDrawer } from '../../../components/intent';
 import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
-import { parseJsonResponse } from '@/lib/http';
 import { yappcApi } from '@/lib/api';
 import { useLifecycleArtifacts } from '../../../services/canvas/lifecycle/LifecycleArtifactService';
 import { useLastOpenedProject } from '../../../hooks/useLastOpenedProject';
@@ -115,9 +114,12 @@ export function Layout() {
 
   // Fetch project data
   const { data: project, isLoading } = useQuery({
-    queryKey: ['project', projectId],
+    queryKey: ['project', projectId, currentWorkspace?.id],
     queryFn: async () => {
       if (!projectId) return null;
+      if (currentWorkspace?.id) {
+        return yappcApi.projects.getScoped(projectId, currentWorkspace.id) as Promise<ProjectShellContract>;
+      }
       return yappcApi.projects.get(projectId) as Promise<ProjectShellContract>;
     },
     enabled: !!projectId,
@@ -133,25 +135,25 @@ export function Layout() {
 
     void queryClient.prefetchQuery({
       queryKey: ['project-artifacts', projectId],
-      queryFn: () => fetch(`/api/projects/${projectId}/artifacts`).then((r) => r.json()),
+      queryFn: () => yappcApi.projects.artifacts(projectId),
       staleTime: 60_000,
     });
 
     void queryClient.prefetchQuery({
       queryKey: ['project-sprint-current', projectId],
-      queryFn: () => fetch(`/api/projects/${projectId}/sprints/current`).then((r) => r.json()),
+      queryFn: () => yappcApi.projects.sprintCurrent(projectId),
       staleTime: 60_000,
     });
 
     void queryClient.prefetchQuery({
       queryKey: ['project-backlog', projectId],
-      queryFn: () => fetch(`/api/projects/${projectId}/backlog?limit=20`).then((r) => r.json()),
+      queryFn: () => yappcApi.projects.backlog(projectId, 20),
       staleTime: 60_000,
     });
 
     void queryClient.prefetchQuery({
       queryKey: ['project-runs-recent', projectId],
-      queryFn: () => fetch(`/api/projects/${projectId}/runs?limit=10`).then((r) => r.json()),
+      queryFn: () => yappcApi.projects.recentRuns(projectId, 10),
       staleTime: 60_000,
     });
   }, [projectId, queryClient]);
@@ -230,8 +232,10 @@ export function Layout() {
             onClick: () => {
               void (async () => {
                 try {
-                  const res = await fetch(`/api/projects/${projectId}/export`);
-                  if (!res.ok) throw new Error(`Export failed: ${res.status}`);
+                  if (!projectId) {
+                    return;
+                  }
+                  const res = await yappcApi.projects.export(projectId);
                   const blob = await res.blob();
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');
@@ -314,19 +318,10 @@ export function Layout() {
   );
 
   const handleAIAssist = useCallback(async (kind: LifecycleArtifactKind) => {
-    if (!aiAssistEnabled) {
+    if (!aiAssistEnabled || !projectId) {
       return null;
     }
-    const response = await fetch(`/api/ai/assist`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kind, projectId }),
-    });
-    if (!response.ok) return null;
-    return parseJsonResponse<Record<string, unknown>>(
-      response,
-      'project shell suggested assist'
-    );
+    return yappcApi.ai.assist({ kind, projectId });
   }, [projectId, aiAssistEnabled]);
 
   // Load existing intent data from artifacts

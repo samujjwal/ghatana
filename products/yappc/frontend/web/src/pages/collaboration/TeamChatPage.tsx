@@ -63,6 +63,7 @@ import {
   type Thread,
   type UserPresence,
 } from 'yappc-api';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -138,6 +139,7 @@ const MessageBubble: React.FC<{
 }> = ({ message, isOwn, onReply, onEdit, onDelete, onPin, onReact }) => {
   const [showActions, setShowActions] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
+  const { t } = useI18n();
 
   const reactions = [
     { emoji: '👍', icon: ThumbsUp },
@@ -240,7 +242,7 @@ const MessageBubble: React.FC<{
             <NativeButton
               onClick={() => setShowReactions(!showReactions)}
               className="p-1.5 hover:bg-surface-muted rounded"
-              aria-label="Show reactions"
+              aria-label={t('teamChat.showReactions')}
             >
               <Smile className="w-4 h-4 text-fg-muted" />
             </NativeButton>
@@ -424,7 +426,7 @@ const TeamChatPage: React.FC = () => {
       <aside className="w-64 flex-shrink-0 border-r border-border flex flex-col">
         {/* Team Header */}
         <div className="p-4 border-b border-border">
-          <h2 className="text-lg font-semibold text-fg">Team Chat</h2>
+          <h2 className="text-lg font-semibold text-fg">{t('teamChat.title')}</h2>
         </div>
 
         {/* Search */}
@@ -433,7 +435,7 @@ const TeamChatPage: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
             <NativeInput
               type="text"
-              placeholder="Search channels..."
+              placeholder={t('teamChat.searchChannels')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 bg-surface border border-border rounded-lg text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-primary"
@@ -450,7 +452,7 @@ const TeamChatPage: React.FC = () => {
             <NativeButton
               onClick={() => navigate(`/teams/${teamId}/channels/new`)}
               className="p-1 hover:bg-surface-muted rounded"
-              aria-label="Create channel"
+              aria-label={t('teamChat.createChannel')}
             >
               <Plus className="w-4 h-4 text-fg-muted" />
             </NativeButton>
@@ -509,7 +511,7 @@ const TeamChatPage: React.FC = () => {
                     'p-2 rounded-lg transition-colors',
                     showSearch ? 'bg-primary text-primary-foreground' : 'hover:bg-surface-muted text-fg-muted'
                   )}
-                  aria-label="Search messages"
+                  aria-label={t('teamChat.searchMessages')}
                 >
                   <Search className="w-5 h-5" />
                 </NativeButton>
@@ -560,7 +562,7 @@ const TeamChatPage: React.FC = () => {
                 <NativeButton
                   onClick={() => setReplyingTo(null)}
                   className="p-1 hover:bg-surface-muted rounded"
-                  aria-label="Cancel reply"
+                  aria-label={t('teamChat.cancelReply')}
                 >
                   <X className="w-4 h-4 text-fg-muted" />
                 </NativeButton>
@@ -579,7 +581,7 @@ const TeamChatPage: React.FC = () => {
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={`Message #${channel.name}`}
+                    placeholder={t('channel.messagePlaceholder', { name: channel.name })}
                     rows={1}
                     className="w-full px-4 py-3 bg-surface-muted border border-border rounded-lg text-fg placeholder:text-fg-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary"
                   />
@@ -599,7 +601,7 @@ const TeamChatPage: React.FC = () => {
                       ? 'bg-primary hover:opacity-90 text-primary-foreground'
                       : 'bg-muted text-fg-muted cursor-not-allowed'
                   )}
-                  aria-label="Send message"
+                  aria-label={t('teamChat.sendMessage')}
                 >
                   <Send className="w-5 h-5" />
                 </NativeButton>
@@ -610,10 +612,8 @@ const TeamChatPage: React.FC = () => {
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <MessageSquare className="w-16 h-16 text-fg-muted mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-fg-muted">Select a channel</h3>
-              <p className="text-sm text-fg-muted mt-1">
-                Choose a channel from the sidebar to start chatting
-              </p>
+              <h3 className="text-lg font-medium text-fg-muted">{t('teamChat.selectChannel')}</h3>
+              <p className="text-sm text-fg-muted mt-1">{t('teamChat.selectChannelDesc')}</p>
             </div>
           </div>
         )}

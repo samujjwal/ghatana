@@ -14,6 +14,7 @@ import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
 import { useCreateProject, useWorkspaceContext } from './useWorkspaceData';
+import { yappcApi } from '@/lib/api/client';
 import type { LifecyclePhase } from '@/shared/types/lifecycle';
 
 // ============================================================================
@@ -701,36 +702,12 @@ export function useAICommand(): UseAICommandResult {
 
         // Save via API to database
         try {
-          const response = await fetch('/api/canvas', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              projectId: project.id,
-              canvasId: 'main',
-              data: canvasState,
-            }),
+          await yappcApi.canvas.save<unknown>({
+            projectId: project.id,
+            canvasId: 'main',
+            data: canvasState,
           });
-
-          if (!response.ok) {
-            console.error(
-              '[AICommand] Failed to save canvas via API:',
-              response.status
-            );
-            // Fallback to localStorage
-            const snapshot = {
-              id: `snapshot-${Date.now()}`,
-              projectId: project.id,
-              canvasId: 'main',
-              version: 1,
-              timestamp: Date.now(),
-              data: canvasState,
-              checksum: '',
-            };
-            const storageKey = `yappc-canvas:${project.id}:main`;
-            localStorage.setItem(storageKey, JSON.stringify(snapshot));
-          } else {
-            console.log('[AICommand] Canvas saved to database successfully');
-          }
+          console.log('[AICommand] Canvas saved to database successfully');
         } catch (err) {
           console.error('[AICommand] Error saving canvas:', err);
           // Fallback to localStorage

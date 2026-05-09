@@ -120,12 +120,14 @@ describe('RoleProtectedRoute gating', () => {
 describe('RuntimeCapabilityRouteGate and Runtime Truth aliases', () => {
   const gatedRoutes: Array<{ path: string; aliases: string[] }> = [
     { path: 'alerts',     aliases: ['alert-triage', 'monitoring', 'alerts'] },
+    { path: 'events',     aliases: ['event-stream', 'aep', 'event-explorer', 'events'] },
     { path: 'memory',     aliases: ['memory-plane', 'memory'] },
     { path: 'entities',   aliases: ['entity-browser', 'entities'] },
     { path: 'context',    aliases: ['context-explorer', 'context'] },
     { path: 'fabric',     aliases: ['data-fabric', 'fabric'] },
     { path: 'agents',     aliases: ['agent-catalog', 'agents'] },
     { path: 'settings',   aliases: ['settings', 'config'] },
+    { path: 'plugins',    aliases: ['plugin-management', 'plugins', 'extensions'] },
     { path: 'connectors', aliases: ['data-connectors', 'connectors'] },
   ];
 

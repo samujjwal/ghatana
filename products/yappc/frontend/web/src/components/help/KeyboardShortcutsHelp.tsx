@@ -57,7 +57,7 @@ const CATEGORY_LABELS: Record<ActionCategory, string> = {
     view: 'View',
     canvas: 'Canvas',
     selection: 'Selection',
-    ai: 'AI Assistant',
+    ai: 'Suggestion Center',
     navigation: 'Navigation',
     project: 'Project',
     deploy: 'Deploy',

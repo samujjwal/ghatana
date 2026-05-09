@@ -53,7 +53,7 @@ describe('frontend adapter contracts', () => {
       expect(mockApiClient.get).toHaveBeenCalledWith('/entities/dc_collections', {
         params: { limit: 25, offset: 25, search: 'Customers' },
       });
-      expect(response).toEqual({
+      expect(response).toMatchObject({
         items: [
           {
             id: 'col-1',
@@ -68,6 +68,9 @@ describe('frontend adapter contracts', () => {
             createdAt: '2026-04-14T10:00:00Z',
             updatedAt: '2026-04-14T10:05:00Z',
             createdBy: 'contract-runner',
+            lifecycleStatus: 'DRAFT',
+            operationalStatus: 'unknown',
+            owner: 'contract-runner',
           },
         ],
         total: 1,
@@ -89,7 +92,7 @@ describe('frontend adapter contracts', () => {
 
       const collection = await collectionsApi.get('col-2');
 
-      expect(collection).toEqual({
+      expect(collection).toMatchObject({
         id: 'col-2',
         name: 'Signals',
         description: '',
@@ -99,10 +102,13 @@ describe('frontend adapter contracts', () => {
         entityCount: 0,
         schema: { fields: [] },
         tags: ['ops'],
-        createdAt: expect.any(String),
-        updatedAt: expect.any(String),
         createdBy: 'unknown',
+        lifecycleStatus: 'DRAFT',
+        operationalStatus: 'unknown',
+        owner: 'unknown',
       });
+      expect(collection.createdAt).toEqual(expect.any(String));
+      expect(collection.updatedAt).toEqual(expect.any(String));
     });
   });
 

@@ -111,21 +111,21 @@ describe('AdrPanel', () => {
     });
   });
 
-  it('renders AI Assist button when onAIAssist is provided', () => {
+  it('renders Guided Assist button when onAIAssist is provided', () => {
     const onAIAssist = vi.fn().mockResolvedValue(null);
     render(<AdrPanel {...makeProps({ onAIAssist })} />);
-    expect(screen.getByText('AI Assist')).toBeDefined();
+    expect(screen.getByText('Guided Assist')).toBeDefined();
   });
 
-  it('does not render AI Assist when onAIAssist absent', () => {
+  it('does not render Guided Assist when onAIAssist absent', () => {
     render(<AdrPanel {...makeProps({ onAIAssist: undefined })} />);
-    expect(screen.queryByText('AI Assist')).toBeNull();
+    expect(screen.queryByText('Guided Assist')).toBeNull();
   });
 
-  it('calls onAIAssist when AI Assist button clicked', async () => {
+  it('calls onAIAssist when Guided Assist button clicked', async () => {
     const onAIAssist = vi.fn().mockResolvedValue(null);
     render(<AdrPanel {...makeProps({ onAIAssist })} />);
-    fireEvent.click(screen.getByText('AI Assist'));
+    fireEvent.click(screen.getByText('Guided Assist'));
     await waitFor(() => {
       expect(onAIAssist).toHaveBeenCalledOnce();
     });

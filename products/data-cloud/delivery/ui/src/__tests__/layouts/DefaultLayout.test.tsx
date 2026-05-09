@@ -14,6 +14,7 @@ const NAV_SURFACE_PATHS = new Set([
   '/events',
   '/alerts',
   '/plugins',
+  '/connectors',
   '/operations',
 ]);
 

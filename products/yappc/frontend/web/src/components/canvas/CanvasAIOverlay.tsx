@@ -91,7 +91,7 @@ export function CanvasAIOverlay({
           startIcon={<AIIcon className="w-4 h-4" />}
           className="bg-info-color hover:bg-info-bg text-white shadow-lg"
         >
-          AI Suggestions
+          Suggested Improvements
           <Chip
             size="sm"
             label={suggestions.length + (showNextAction && nextAction ? 1 : 0)}

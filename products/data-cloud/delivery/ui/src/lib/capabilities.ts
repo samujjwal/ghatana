@@ -78,6 +78,11 @@ export interface CapabilitySchema {
  */
 let cachedSchema: CapabilitySchema | null = null;
 
+const RUNTIME_SCHEMA_ENDPOINTS = [
+  '/api/v1/surfaces/schema',
+  '/api/v1/capabilities/schema',
+] as const;
+
 /**
  * Mock schema for development (should be replaced with API fetch in production)
  */
@@ -292,13 +297,34 @@ export async function loadCapabilitySchema(): Promise<CapabilitySchema> {
   }
 
   try {
-    const response = await fetch('/api/v1/capabilities/schema');
-    if (!response.ok) {
-      throw new Error(`Failed to fetch capability schema: ${response.statusText}`);
+    let lastError: Error | null = null;
+
+    for (const endpoint of RUNTIME_SCHEMA_ENDPOINTS) {
+      try {
+        const response = await fetch(endpoint);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch capability schema from ${endpoint}: ${response.status} ${response.statusText}`);
+        }
+
+        const envelope = await response.json() as { data?: CapabilitySchema };
+        if (!envelope.data) {
+          throw new Error(`Capability schema envelope from ${endpoint} is missing data`);
+        }
+
+        if (endpoint !== RUNTIME_SCHEMA_ENDPOINTS[0]) {
+          console.warn(
+            `Capability schema fetched from compatibility endpoint ${endpoint}; prefer ${RUNTIME_SCHEMA_ENDPOINTS[0]}.`,
+          );
+        }
+
+        cachedSchema = envelope.data;
+        return cachedSchema;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+      }
     }
-    const envelope = await response.json();
-    cachedSchema = envelope.data as CapabilitySchema;
-    return cachedSchema;
+
+    throw lastError ?? new Error('Failed to fetch capability schema from all configured runtime endpoints');
   } catch (error) {
     console.error('Failed to load capability schema from backend, falling back to mock:', error);
     // Fallback to mock schema for development

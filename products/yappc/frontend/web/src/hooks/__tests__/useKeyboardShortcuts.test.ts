@@ -91,4 +91,9 @@ describe('useKeyboardShortcuts', () => {
     fireKeydown('a', { ctrlKey: true });
     expect(onSelectAll).toHaveBeenCalledTimes(1);
   });
+
+  it('includes the guided assistant shortcut description', () => {
+    const { result } = renderHook(() => useKeyboardShortcuts({ onOpenAI: vi.fn() }));
+    expect(result.current.shortcuts.some((s) => s.description === 'Open Guided Assistant')).toBe(true);
+  });
 });

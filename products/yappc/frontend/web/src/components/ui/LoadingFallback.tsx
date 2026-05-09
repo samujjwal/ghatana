@@ -1,4 +1,5 @@
 import React from 'react';
+import { useI18n } from '../i18n/I18nProvider';
 
 /**
  * Loading fallback component.
@@ -6,6 +7,7 @@ import React from 'react';
  * Simple centered spinner and label used as a generic loading state.
  */
 export default function LoadingFallback() {
+  const { t } = useI18n();
   return (
     <div style={{ padding: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center' }}>
@@ -21,7 +23,7 @@ export default function LoadingFallback() {
             </g>
           </svg>
         </div>
-        <div style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>Loading…</div>
+        <div style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>{t('loading.generic')}</div>
       </div>
     </div>
   );

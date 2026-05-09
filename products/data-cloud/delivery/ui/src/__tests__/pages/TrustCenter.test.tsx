@@ -244,7 +244,7 @@ describe('TrustCenter', () => {
       'Access review remains derived from audit and compliance summary data in this deployment.',
     );
     expect(screen.getByTestId('trust-action-summary')).toHaveTextContent(/Access review remains read-only/i);
-    expect(screen.getByTestId('trust-action-summary')).toHaveTextContent(/not yet available/i);
+    expect(screen.getByTestId('trust-action-summary')).toHaveTextContent(/planned for the Data Cloud governance backlog in Q3 2026/i);
   });
 
   it('submits a real retention classification quick action', async () => {

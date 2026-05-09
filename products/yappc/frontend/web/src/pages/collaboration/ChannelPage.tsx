@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { Button } from '../../components/ui/Button';
 import { Textarea } from '../../components/ui/Textarea';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface ChannelMember {
   id: string;
@@ -47,6 +48,7 @@ const ChannelPage: React.FC = () => {
   const [draft, setDraft] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+  const { t } = useI18n();
 
   const { data: channel, isLoading, error } = useQuery<ChannelData>({
     queryKey: ['channel', channelId],
@@ -216,7 +218,7 @@ const ChannelPage: React.FC = () => {
             resize="none"
             className="min-h-0 max-h-32 border-0 bg-transparent px-0 py-0 text-sm text-fg-muted placeholder-zinc-500 focus:ring-0 focus:ring-offset-0"
             rows={1}
-            placeholder={`Message #${channel?.name ?? 'channel'}...`}
+            placeholder={t('channel.messagePlaceholder', { name: channel?.name ?? 'channel' })}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={handleKeyDown}

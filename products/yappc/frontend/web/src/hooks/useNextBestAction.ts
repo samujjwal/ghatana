@@ -171,5 +171,5 @@ function buildActionDescription(title: string, phase: string | undefined): strin
   if (phase) {
     return `Recommended next step for the ${phase} phase.`;
   }
-  return 'AI-recommended next step for your workflow.';
+  return 'Recommended next step for your workflow.';
 }

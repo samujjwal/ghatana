@@ -1,5 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const { mockAuthApi } = vi.hoisted(() => ({
+  mockAuthApi: {
+    loginSession: vi.fn(),
+    refresh: vi.fn(),
+    logout: vi.fn(),
+    updateProfile: vi.fn(),
+  },
+}));
+
+vi.mock('../../../lib/api/client', () => ({
+  yappcApi: {
+    auth: mockAuthApi,
+  },
+}));
+
 import { authService } from '../AuthService';
 
 function resetAuthServiceState(): void {
@@ -26,6 +41,10 @@ describe('AuthService', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', fetchMock);
     fetchMock.mockReset();
+    mockAuthApi.loginSession.mockReset();
+    mockAuthApi.refresh.mockReset();
+    mockAuthApi.logout.mockReset();
+    mockAuthApi.updateProfile.mockReset();
     localStorage.clear();
     resetAuthServiceState();
   });
@@ -38,32 +57,27 @@ describe('AuthService', () => {
   });
 
   it('maps the BFF login response into the stored auth-session shape', async () => {
-    fetchMock.mockResolvedValue(
-      jsonResponse({
-        user: {
-          id: 'user-1',
-          email: 'sam@yappc.local',
-          name: 'Sam User',
-          role: 'ADMIN',
-        },
-        tokens: {
-          accessToken: 'access-token-1',
-          refreshToken: 'refresh-token-1',
-          expiresIn: 900,
-        },
-      })
-    );
+    mockAuthApi.loginSession.mockResolvedValue({
+      user: {
+        id: 'user-1',
+        email: 'sam@yappc.local',
+        name: 'Sam User',
+        role: 'ADMIN',
+      },
+      tokens: {
+        accessToken: 'access-token-1',
+        refreshToken: 'refresh-token-1',
+        expiresIn: 900,
+      },
+    });
 
     const result = await authService.login({ email: 'sam@yappc.local', password: 'secret' });
     const storedSession = JSON.parse(localStorage.getItem('auth-session') ?? '{}') as Record<string, unknown>;
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/auth/login', expect.objectContaining({
-      method: 'POST',
-      body: JSON.stringify({
+    expect(mockAuthApi.loginSession).toHaveBeenCalledWith({
         email: 'sam@yappc.local',
         password: 'secret',
-      }),
-    }));
+      });
     expect(result).toMatchObject({
       success: true,
       token: 'access-token-1',
@@ -112,22 +126,17 @@ describe('AuthService', () => {
       permissions: ['*'],
     }));
     Reflect.set(authService, 'currentSession', JSON.parse(localStorage.getItem('auth-session') ?? '{}'));
-    fetchMock.mockResolvedValue(
-      jsonResponse({
-        accessToken: 'access-token-2',
-        refreshToken: 'refresh-token-2',
-        expiresIn: 1800,
-      })
-    );
+    mockAuthApi.refresh.mockResolvedValue({
+      accessToken: 'access-token-2',
+      refreshToken: 'refresh-token-2',
+      expiresIn: 1800,
+    });
 
     const refreshed = await authService.refreshToken();
     const storedSession = JSON.parse(localStorage.getItem('auth-session') ?? '{}') as Record<string, unknown>;
 
     expect(refreshed).toBe(true);
-    expect(fetchMock).toHaveBeenCalledWith('/api/auth/refresh', expect.objectContaining({
-      method: 'POST',
-      body: JSON.stringify({ refreshToken: 'refresh-token-1' }),
-    }));
+    expect(mockAuthApi.refresh).toHaveBeenCalledWith({ refreshToken: 'refresh-token-1' });
     expect(storedSession).toMatchObject({
       token: 'access-token-2',
       refreshToken: 'refresh-token-2',
@@ -154,14 +163,11 @@ describe('AuthService', () => {
     };
     localStorage.setItem('auth-session', JSON.stringify(currentSession));
     Reflect.set(authService, 'currentSession', currentSession);
-    fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+    mockAuthApi.logout.mockResolvedValue(undefined);
 
     await authService.logout();
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/auth/logout', expect.objectContaining({
-      method: 'POST',
-      body: JSON.stringify({ refreshToken: 'refresh-token-1' }),
-    }));
+    expect(mockAuthApi.logout).toHaveBeenCalledWith({ refreshToken: 'refresh-token-1' });
     expect(localStorage.getItem('auth-session')).toBeNull();
     expect(authService.getCurrentUser()).toBeNull();
   });

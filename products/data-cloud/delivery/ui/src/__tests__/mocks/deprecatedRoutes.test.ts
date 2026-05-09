@@ -4,6 +4,7 @@ import {
   warnDeprecatedRoute,
   COLLECTION_RUNTIME_OPENAPI_PATHS,
   DEPRECATED_COLLECTION_ROUTE_REDIRECTS,
+  DEPRECATED_RUNTIME_TRUTH_ROUTE_REDIRECTS,
 } from '../../mocks/deprecatedRoutes';
 
 describe('deprecatedRoutes', () => {
@@ -45,5 +46,17 @@ describe('deprecatedRoutes', () => {
       '/api/v1/collections/{id}/migrate',
     ]);
     expect(DEPRECATED_COLLECTION_ROUTE_REDIRECTS).toHaveLength(2);
+    expect(DEPRECATED_RUNTIME_TRUTH_ROUTE_REDIRECTS).toEqual([
+      {
+        legacyPath: '/api/v1/capabilities',
+        canonicalPath: '/api/v1/surfaces',
+        openApiPath: '/api/v1/surfaces',
+      },
+      {
+        legacyPath: '/api/v1/capabilities/schema',
+        canonicalPath: '/api/v1/surfaces/schema',
+        openApiPath: '/api/v1/surfaces/schema',
+      },
+    ]);
   });
 });

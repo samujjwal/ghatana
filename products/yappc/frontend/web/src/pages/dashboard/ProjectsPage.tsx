@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import { yappcApi, type Project as ApiProject } from '@/lib/api';
 import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
+import { useI18n } from '@/i18n/I18nProvider';
 
 interface ProjectSummary {
   id: string;
@@ -40,6 +41,7 @@ function toProjectSummary(project: ApiProject): ProjectSummary {
  * @doc.layer product
  */
 const ProjectsPage: React.FC = () => {
+  const { t } = useI18n();
   const currentWorkspaceId = useAtomValue(currentWorkspaceIdAtom);
   const { data: projects, isLoading, error } = useQuery<ProjectSummary[]>({
     queryKey: ['projects', currentWorkspaceId],
@@ -69,16 +71,16 @@ const ProjectsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-fg-muted">Projects</h1>
+          <h1 className="text-2xl font-bold text-fg-muted">{t('projects.title')}</h1>
           <p className="mt-1 text-sm text-fg-muted">
-            {sorted.length} project{sorted.length !== 1 ? 's' : ''} in this workspace
+            {t('projects.count', { count: String(sorted.length), suffix: sorted.length !== 1 ? 's' : '' })}
           </p>
         </div>
         <Link
           to="/projects/new"
           className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg"
         >
-          New project
+          {t('projects.newProject')}
         </Link>
       </div>
 
@@ -92,24 +94,24 @@ const ProjectsPage: React.FC = () => {
 
         {isLoading && (
           <div className="flex items-center justify-center py-16 text-fg-muted">
-            Loading projects…
+            {t('projects.loading')}
           </div>
         )}
 
         {error && (
           <div className="rounded-md border border-destructive-border bg-destructive-bg/50 px-4 py-3 text-sm text-destructive">
-            {error instanceof Error ? error.message : 'Failed to load projects'}
+            {error instanceof Error ? error.message : t('projects.loadError')}
           </div>
         )}
 
         {!isLoading && !error && sorted.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border py-16 text-center">
-            <p className="text-fg-muted">No projects yet</p>
+            <p className="text-fg-muted">{t('projects.noProjects')}</p>
             <Link
               to="/projects/new"
               className="mt-4 rounded-md bg-primary px-4 py-2 text-sm text-white hover:bg-info-bg"
             >
-              Create your first project
+                  {t('projects.createFirst')}
             </Link>
           </div>
         )}
@@ -141,7 +143,7 @@ const ProjectsPage: React.FC = () => {
                   </p>
                 )}
                 <p className="mt-3 text-[10px] text-fg-muted">
-                  Updated {new Date(project.updatedAt).toLocaleDateString()}
+                  {t('projects.updated', { date: new Date(project.updatedAt).toLocaleDateString() })}
                 </p>
               </Link>
             ))}

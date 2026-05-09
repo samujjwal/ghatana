@@ -74,15 +74,15 @@ describe('UnifiedCanvasToolbar', () => {
       expect(screen.getByText('75%')).toBeInTheDocument();
     });
 
-    it('should render AI assist button when provided', () => {
+    it('should render guided assist button when provided', () => {
       const onAIAssist = vi.fn();
       render(<UnifiedCanvasToolbar {...defaultProps} onAIAssist={onAIAssist} />);
-      expect(screen.getByTitle('AI Assist')).toBeInTheDocument();
+      expect(screen.getByTitle('Guided Assist')).toBeInTheDocument();
     });
 
-    it('should not render AI assist button when not provided', () => {
+    it('should not render guided assist button when not provided', () => {
       render(<UnifiedCanvasToolbar {...defaultProps} />);
-      expect(screen.queryByTitle('AI Assist')).not.toBeInTheDocument();
+      expect(screen.queryByTitle('Guided Assist')).not.toBeInTheDocument();
     });
 
     it('should render more options button', () => {
@@ -162,11 +162,11 @@ describe('UnifiedCanvasToolbar', () => {
     });
   });
 
-  describe('AI Assist', () => {
-    it('should call onAIAssist when AI button is clicked', () => {
+  describe('Guided Assist', () => {
+    it('should call onAIAssist when guided assist button is clicked', () => {
       const onAIAssist = vi.fn();
       render(<UnifiedCanvasToolbar {...defaultProps} onAIAssist={onAIAssist} />);
-      fireEvent.click(screen.getByTitle('AI Assist'));
+      fireEvent.click(screen.getByTitle('Guided Assist'));
       expect(onAIAssist).toHaveBeenCalled();
     });
   });

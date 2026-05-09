@@ -49,7 +49,7 @@ function AIAssistantTab({ projectId }: { projectId: string }) {
     if (error) {
         return (
             <Alert severity="error" className="m-4">
-                Failed to load AI insights
+                Failed to load insights
             </Alert>
         );
     }
@@ -59,7 +59,7 @@ function AIAssistantTab({ projectId }: { projectId: string }) {
             <Box className="p-6 text-center">
                 <AIIcon className="mb-4 text-5xl text-fg-muted dark:text-fg-muted" />
                 <Typography className="text-sm" color="text.secondary">
-                    No AI insights available yet
+                    No insights available yet
                 </Typography>
             </Box>
         );
@@ -220,7 +220,7 @@ export function ContextDrawer({ open = true, onToggle, flowStage, phase }: Conte
     if (!projectId) return null;
 
     const tabs: TabNavigationItem[] = [
-        { id: 'ai', label: 'AI Assistant', path: '#', icon: <AIIcon /> },
+        { id: 'ai', label: 'Guided Assistant', path: '#', icon: <AIIcon /> },
         { id: 'artifacts', label: 'Artifacts', path: '#', icon: <FolderIcon /> },
         { id: 'audit', label: 'Audit', path: '#', icon: <SecurityIcon /> },
     ];

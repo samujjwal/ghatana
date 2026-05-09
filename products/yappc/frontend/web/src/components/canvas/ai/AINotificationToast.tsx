@@ -108,7 +108,7 @@ export const AINotificationToast: React.FC<AINotificationToastProps> = ({
                                         <AutoAwesome className="text-lg text-white" />
                                     </Box>
                                     <Typography variant="subtitle2" fontWeight="bold">
-                                        AI Suggestion{suggestionCount > 1 ? 's' : ''} Ready!
+                                        Suggestion{suggestionCount > 1 ? 's' : ''} Ready!
                                     </Typography>
                                 </Stack>
                                 <IconButton size="small" onClick={handleDismiss} className="mt--1 mr--1">

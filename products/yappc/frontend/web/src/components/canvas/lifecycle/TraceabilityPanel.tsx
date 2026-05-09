@@ -169,7 +169,7 @@ export const TraceabilityPanel: React.FC<TraceabilityPanelProps> = ({
                             className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-text-secondary border border-transparent hover:border-divider hover:text-text-primary hover:bg-surface-muted dark:hover:bg-surface-muted rounded-lg transition-colors disabled:opacity-50"
                         >
                             <AutoAwesome className="w-4 h-4" />
-                            {isAnalyzing ? 'Analyzing...' : 'AI Analyze'}
+                            {isAnalyzing ? 'Analyzing...' : 'Analyze Guidance'}
                         </Button>
                     )}
                     <Button
@@ -430,11 +430,11 @@ export const TraceabilityPanel: React.FC<TraceabilityPanelProps> = ({
                     </div>
                 )}
 
-                {/* AI Analysis Results */}
+                {/* Guided Analysis Results */}
                 {aiAnalysis && (
                     <div className="mt-4 p-4 border border-info-border dark:border-info-border rounded-lg bg-info-bg dark:bg-info-bg/20 space-y-3">
                         <h4 className="font-medium text-text-primary flex items-center gap-2">
-                            <AutoAwesome className="w-4 h-4 text-info-color" /> AI Analysis
+                            <AutoAwesome className="w-4 h-4 text-info-color" /> Guided Analysis
                         </h4>
                         {aiAnalysis.gaps.length > 0 && (
                             <div>

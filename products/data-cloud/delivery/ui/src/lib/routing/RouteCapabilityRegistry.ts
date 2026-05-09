@@ -1,5 +1,5 @@
 /**
- * Route Capability Registry
+ * Route Surface Registry
  *
  * Single source of truth for canonical routes, their capabilities,
  * required roles, and discoverability. Consumed by navigation,
@@ -55,7 +55,7 @@ export const RouteCapabilitySchema = z.object({
 export type RouteCapability = z.infer<typeof RouteCapabilitySchema>;
 
 /**
- * Route Capability Registry type
+ * Route Surface Registry type
  */
 export const RouteCapabilityRegistrySchema = z.record(z.string(), RouteCapabilitySchema);
 

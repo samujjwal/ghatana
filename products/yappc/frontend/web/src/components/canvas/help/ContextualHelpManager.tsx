@@ -58,8 +58,8 @@ const HELP_TIPS: Record<string, HelpTip> = {
     aiAssistant: {
         id: 'ai-assistant',
         phase: [LifecyclePhase.INTENT, LifecyclePhase.SHAPE, LifecyclePhase.VALIDATE],
-        title: 'Get AI-Powered Suggestions',
-        message: 'The AI assistant has analyzed your design. Click the AI badge in the toolbar to see recommendations and improvements.',
+        title: 'Review Suggested Improvements',
+        message: 'Your design was analyzed. Open the suggestions badge in the toolbar to review recommendations and improvements.',
         priority: 'high',
     },
 
@@ -75,7 +75,7 @@ const HELP_TIPS: Record<string, HelpTip> = {
         id: 'phase-transition-validate',
         phase: [LifecyclePhase.SHAPE],
         title: 'Ready to Validate?',
-        message: 'Your architecture looks good! Move to the Validate phase to check for issues and get AI recommendations before generating code.',
+        message: 'Your architecture looks good. Move to Validate to check for issues and review recommendations before generating code.',
         priority: 'medium',
     },
 
@@ -129,7 +129,7 @@ export function ContextualHelpManager({
     const previousElementCount = useRef(canvasElementCount);
     const previousSuggestionCount = useRef(aiSuggestionCount);
     const shownTipsSession = useRef<Set<string>>(new Set());
-    const tipTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+    const tipTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     // Show tip with delay and anchor
     const displayTip = useCallback((tip: HelpTip, anchor?: HTMLElement | null, delay = 1000) => {
@@ -181,11 +181,13 @@ export function ContextualHelpManager({
         previousElementCount.current = canvasElementCount;
     }, [canvasElementCount, displayTip]);
 
-    // Rule 3: AI suggestions available
+    // Rule 3: Suggested improvements available
     useEffect(() => {
         if (previousSuggestionCount.current === 0 && aiSuggestionCount > 0) {
-            // Find AI badge button in toolbar
-            const aiButton = document.querySelector('[title*="AI suggestion"]') as HTMLElement;
+            // Find assistant/suggestions badge button in toolbar
+            const aiButton = document.querySelector(
+                '[aria-label*="Suggested improvements"], [title*="Guided Assistant"], [aria-label*="Guided Assistant"]'
+            ) as HTMLElement | null;
             displayTip(HELP_TIPS.aiAssistant, aiButton, 1000);
         }
         previousSuggestionCount.current = aiSuggestionCount;

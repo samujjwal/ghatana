@@ -40,9 +40,9 @@ describe('EvidencePanel', () => {
         expect(screen.getByText('Audit')).toBeTruthy();
     });
 
-    it('renders AI tab', () => {
+    it('renders Suggestions tab', () => {
         render(<EvidencePanel />);
-        expect(screen.getByText('AI')).toBeTruthy();
+        expect(screen.getByText('Suggestions')).toBeTruthy();
     });
 
     it('renders empty audit trail state', () => {

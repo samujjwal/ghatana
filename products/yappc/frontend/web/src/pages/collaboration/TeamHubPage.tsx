@@ -1,7 +1,8 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
-import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { yappcApi } from '@/lib/api/client';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -42,13 +43,7 @@ interface TeamHubData {
 // ============================================================================
 
 async function fetchTeamHub(): Promise<TeamHubData> {
-  const res = await fetch('/api/teams/hub', {
-    headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
-  });
-  if (!res.ok) {
-    throw new Error(await readErrorResponse(res, 'Failed to load team hub'));
-  }
-  return parseJsonResponse<TeamHubData>(res, 'team hub');
+  return yappcApi.collaboration.getTeamHub<TeamHubData>();
 }
 
 // ============================================================================
@@ -84,12 +79,13 @@ const TeamHubPage: React.FC = () => {
     queryKey: ['team-hub'],
     queryFn: fetchTeamHub,
   });
+  const { t } = useI18n();
 
   if (error) {
     return (
       <div className="p-8">
         <div className="bg-destructive-bg/20 border border-destructive-border rounded-lg p-4 text-destructive">
-          Failed to load team hub: {error instanceof Error ? error.message : 'Unknown error'}
+          {t('teamHub.loadError', { message: error instanceof Error ? error.message : 'Unknown error' })}
         </div>
       </div>
     );
@@ -109,7 +105,7 @@ const TeamHubPage: React.FC = () => {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-fg-muted">Team Hub</h1>
+        <h1 className="text-2xl font-bold text-fg-muted">{t('teamHub.title')}</h1>
         <p className="text-sm text-fg-muted mt-1">
           {data.name} &middot; {data.members.length} members &middot;{' '}
           <span className="text-emerald-400">{onlineCount} online</span>
@@ -137,7 +133,7 @@ const TeamHubPage: React.FC = () => {
         {/* Members */}
         <div className="lg:col-span-1 bg-surface border border-border rounded-xl">
           <div className="px-5 py-4 border-b border-border">
-            <h2 className="text-sm font-semibold text-fg-muted">Members</h2>
+            <h2 className="text-sm font-semibold text-fg-muted">{t('teamHub.members')}</h2>
           </div>
           <div className="divide-y divide-zinc-800 max-h-[420px] overflow-y-auto">
             {data.members.map((member) => (
@@ -162,11 +158,11 @@ const TeamHubPage: React.FC = () => {
         {/* Activity Feed */}
         <div className="lg:col-span-2 bg-surface border border-border rounded-xl">
           <div className="px-5 py-4 border-b border-border">
-            <h2 className="text-sm font-semibold text-fg-muted">Recent Activity</h2>
+            <h2 className="text-sm font-semibold text-fg-muted">{t('teamHub.recentActivity')}</h2>
           </div>
           <div className="divide-y divide-zinc-800 max-h-[420px] overflow-y-auto">
             {data.activity.length === 0 ? (
-              <div className="px-5 py-12 text-center text-fg-muted">No recent activity</div>
+              <div className="px-5 py-12 text-center text-fg-muted">{t('teamHub.noActivity')}</div>
             ) : (
               data.activity.map((item) => (
                 <div key={item.id} className="px-5 py-3 hover:bg-surface/40 transition-colors">

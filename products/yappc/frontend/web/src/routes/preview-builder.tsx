@@ -155,6 +155,15 @@ function readSessionTokenFromUrl(): string | null {
   return params.get('session');
 }
 
+function isDevPreviewModeRequested(): boolean {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('mode') === 'dev';
+}
+
+function isDevPreviewModeEnabled(): boolean {
+  return import.meta.env.DEV && import.meta.env.VITE_FEATURE_PREVIEW_DEV_MODE === 'true';
+}
+
 /**
  * Derive the expected parent origin from document.referrer.
  * Falls back to window.location.origin if referrer is not available.
@@ -204,9 +213,15 @@ export default function BuilderPreviewRoute() {
   // Validate the server-issued preview session on mount before accepting any messages.
   useEffect(() => {
     const sessionToken = readSessionTokenFromUrl();
+    if (!sessionToken && isDevPreviewModeRequested() && isDevPreviewModeEnabled()) {
+      setSessionValid(true);
+      setSessionError(null);
+      return;
+    }
+
     if (!sessionToken) {
       setSessionValid(false);
-      setSessionError('No preview session token found in URL. Access denied.');
+      setSessionError('No preview session token found in URL. Access denied unless explicit dev preview mode is enabled.');
       return;
     }
 

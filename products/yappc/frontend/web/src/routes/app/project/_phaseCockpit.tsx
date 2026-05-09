@@ -23,6 +23,7 @@ import type {
   RunPostAction,
 } from '../../../services/phase';
 import type { GenerateReviewDecision } from '@/lib/api/client';
+import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
 import { PhaseStatusPanels } from './PhaseStatusPanels';
 import { PhaseEmbeddedSurface } from './PhaseEmbeddedSurface';
 import { currentUserAtom } from '../../../stores/user.store';
@@ -160,6 +161,7 @@ function PhaseDataRecoveryPanel({ warnings }: { readonly warnings: readonly Phas
 
 function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   const { projectId } = useParams<{ projectId: string }>();
+  const currentWorkspaceId = useAtomValue(currentWorkspaceIdAtom);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const currentUser = useAtomValue(currentUserAtom);
@@ -195,6 +197,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   } = usePhaseCockpitData({
     phase,
     projectId,
+    workspaceId: currentWorkspaceId,
     onSuggestionAction: scrollToSupportingSurface,
   });
 

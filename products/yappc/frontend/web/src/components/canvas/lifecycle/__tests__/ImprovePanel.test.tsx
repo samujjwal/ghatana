@@ -123,21 +123,21 @@ describe('ImprovePanel', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it('renders AI Assist button when onAIAssist is provided', () => {
+  it('renders Guided Assist button when onAIAssist is provided', () => {
     const onAIAssist = vi.fn().mockResolvedValue(null);
     render(<ImprovePanel {...makeProps({ onAIAssist })} />);
-    expect(screen.getByText('AI Assist')).toBeDefined();
+    expect(screen.getByText('Guided Assist')).toBeDefined();
   });
 
-  it('does not render AI Assist button when onAIAssist is absent', () => {
+  it('does not render Guided Assist button when onAIAssist is absent', () => {
     render(<ImprovePanel {...makeProps({ onAIAssist: undefined })} />);
-    expect(screen.queryByText('AI Assist')).toBeNull();
+    expect(screen.queryByText('Guided Assist')).toBeNull();
   });
 
-  it('calls onAIAssist when AI Assist button clicked', async () => {
+  it('calls onAIAssist when Guided Assist button clicked', async () => {
     const onAIAssist = vi.fn().mockResolvedValue(null);
     render(<ImprovePanel {...makeProps({ onAIAssist })} />);
-    fireEvent.click(screen.getByText('AI Assist'));
+    fireEvent.click(screen.getByText('Guided Assist'));
     await waitFor(() => {
       expect(onAIAssist).toHaveBeenCalledOnce();
     });
@@ -154,7 +154,7 @@ describe('ImprovePanel', () => {
     // Remove button is a button with an icon - find by its aria context
     const removeButtons = screen.getAllByRole('button');
     // The remove button is the small minus icon button in the enhancement card
-    // Find the remove for this item (not Save/AI Assist/Add Enhancement)
+    // Find the remove for this item (not Save/Guided Assist/Add Enhancement)
     const itemRemoveBtn = removeButtons.find(
       (btn) =>
         btn !== screen.queryByText('Save')?.closest('button') &&

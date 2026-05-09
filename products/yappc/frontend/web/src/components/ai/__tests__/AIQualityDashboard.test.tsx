@@ -46,7 +46,7 @@ describe('AIQualityDashboard', () => {
 
   it('should render header', () => {
     render(<AIQualityDashboard />);
-    expect(screen.getByText('AI Quality')).toBeDefined();
+    expect(screen.getByText('Quality Insights')).toBeDefined();
   });
 
   it('should render summary metric cards', () => {
@@ -108,6 +108,6 @@ describe('AIQualityDashboard - Empty State', () => {
       resetMetrics: vi.fn(),
     });
     render(<AIQualityDashboard />);
-    expect(screen.getByText(/No AI quality data available/)).toBeDefined();
+    expect(screen.getByText(/No quality insights data available/)).toBeDefined();
   });
 });

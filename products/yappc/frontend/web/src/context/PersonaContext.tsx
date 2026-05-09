@@ -1,11 +1,11 @@
 /**
  * PersonaContext
  * 
- * Provides multi-persona selection with Virtual Persona (AI Agent) support.
+ * Provides multi-persona selection with Virtual Persona (Guided Agent) support.
  * When a human doesn't fill a role, a Virtual Persona is automatically assigned.
  * 
  * @doc.type context
- * @doc.purpose Persona state management with AI agent support
+ * @doc.purpose Persona state management with guided agent support
  * @doc.layer product
  * @doc.pattern Context Provider
  */

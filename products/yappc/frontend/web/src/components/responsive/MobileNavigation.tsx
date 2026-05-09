@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Typography, Button, Box, Chip } from '@ghatana/design-system';
 import { useResponsive } from '../../hooks/useResponsive';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -49,6 +50,7 @@ export interface MobileNavigationProps {
 export function MobileNavigation({ items, activeItemId, className = '' }: MobileNavigationProps): ReactNode {
   const { isMobile, isTablet } = useResponsive();
   const [expanded, setExpanded] = useState(false);
+  const { t } = useI18n();
 
   // Only show on mobile/tablet
   if (!isMobile && !isTablet) {
@@ -66,7 +68,7 @@ export function MobileNavigation({ items, activeItemId, className = '' }: Mobile
       {expanded && (
         <div className="absolute bottom-full left-0 right-0 bg-white dark:bg-surface border-t border-border dark:border-border p-4 shadow-lg">
           <div className="flex items-center justify-between mb-4">
-            <Typography className="font-semibold">All Navigation</Typography>
+            <Typography className="font-semibold">{t('mobileNav.allNavigation')}</Typography>
             <Button
               size="sm"
               variant="text"

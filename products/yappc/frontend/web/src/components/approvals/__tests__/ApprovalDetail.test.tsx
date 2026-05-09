@@ -33,6 +33,7 @@ describe('ApprovalDetail', () => {
 
     expect(screen.getByTestId('approval-detail')).toBeTruthy();
     expect(screen.getByText('Approve generated requirement version')).toBeTruthy();
+    expect(screen.getByText('Suggested rationale')).toBeTruthy();
     expect(screen.getByText('Confidence: 87%')).toBeTruthy();
     expect(screen.getByText('High-impact scope detected')).toBeTruthy();
   });
@@ -115,6 +116,7 @@ describe('ApprovalDetail', () => {
     );
 
     expect(screen.getByTestId('enrichment-suggestion')).toBeTruthy();
+    expect(screen.getByText('Enrichment Details')).toBeTruthy();
     expect(screen.getByText('User can authenticate via SSO')).toBeTruthy();
     expect(screen.getByText('Given a valid SSO token, the user is logged in')).toBeTruthy();
     expect(screen.getByText('Invalid tokens return 401')).toBeTruthy();
@@ -176,7 +178,7 @@ describe('ApprovalDetail', () => {
     );
 
     const confidenceChip = screen.getByLabelText('Confidence: 70%');
-    expect(confidenceChip.className).toMatch(/amber/);
+    expect(confidenceChip.className).toMatch(/warning/);
   });
 
   it('does not render enrichment panel when enrichmentSuggestion is undefined', () => {

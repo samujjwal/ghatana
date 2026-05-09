@@ -75,6 +75,7 @@ export function LivePreviewPanel({
   const previewServiceRef = useRef<PreviewHostService | null>(null);
   const mountedDocumentIdRef = useRef<string | null>(null);
   const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previewDevModeEnabled = import.meta.env.DEV && import.meta.env.VITE_FEATURE_PREVIEW_DEV_MODE === 'true';
 
   const previewPolicy = useMemo(() => {
     // Default to the built-in same-origin preview runtime so postMessage can flow.
@@ -111,7 +112,16 @@ export function LivePreviewPanel({
     }
 
     if (!previewContext) {
-      setResolvedPreviewUrl('/preview/builder');
+      if (previewDevModeEnabled) {
+        setResolvedPreviewUrl('/preview/builder?mode=dev');
+      } else {
+        setResolvedPreviewUrl(null);
+        setError(
+          document || componentPath
+            ? 'Secure preview session is required. Provide previewContext or enable explicit dev preview mode.'
+            : null,
+        );
+      }
       return () => {
         cancelled = true;
       };
@@ -142,7 +152,7 @@ export function LivePreviewPanel({
     return () => {
       cancelled = true;
     };
-  }, [previewContext, previewUrl]);
+  }, [componentPath, document, previewContext, previewDevModeEnabled, previewUrl]);
 
   // Initialize preview host service
   useEffect(() => {
@@ -426,11 +436,24 @@ export function LivePreviewPanel({
               <p className="text-sm">Preparing secure preview session…</p>
             </div>
           </div>
+        ) : !previewContext && !previewUrl && !resolvedPreviewUrl ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center text-fg-muted dark:text-fg-muted">
+              <LockKeyhole
+                className="mx-auto mb-2 h-10 w-10 text-fg-muted"
+                role="img"
+                aria-label="Preview unavailable"
+              />
+              <p className="text-sm">
+                {error ?? 'Secure preview session is required. Provide previewContext or enable explicit dev preview mode.'}
+              </p>
+            </div>
+          </div>
         ) : (
           <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-border dark:border-border p-4 min-h-[200px] overflow-auto">
             <iframe
               ref={iframeRef}
-              src={resolvedPreviewUrl ?? previewUrl ?? '/preview/builder'}
+              src={resolvedPreviewUrl ?? previewUrl ?? undefined}
               title="Live Preview"
               data-testid="live-preview-iframe"
               className="h-full max-w-full border-0 transition-[width,height] duration-200 ease-out"

@@ -569,13 +569,13 @@ export function UnifiedCanvasToolbar({
                 {/* AI Suggestions Badge - Always visible */}
                 <BadgeButton
                     onClick={handleOpenAI}
-                    title="AI Assistant"
+                    title="Guided Assistant"
                     label={aiSuggestionCount > 0 ? aiSuggestionCount : '✨'}
                     variant={aiSuggestionCount > 0 ? "info" : "default"}
                     isLoading={isAnalyzing}
                     icon={<AutoAwesome className={`w-3 h-3 ${aiSuggestionCount > 0 ? 'animate-pulse' : ''}`} />}
                     className={aiSuggestionCount > 0 ? 'ring-2 ring-blue-400 ring-opacity-50 animate-pulse-slow' : ''}
-                    aria-label="AI Suggestions"
+                    aria-label="Suggested improvements"
                 />
             </ToolbarSection>
 

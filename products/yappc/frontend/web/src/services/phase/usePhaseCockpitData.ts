@@ -18,17 +18,20 @@ import { buildPhaseSuggestedSteps } from './PhaseSuggestionBuilder';
 import { yappcApi } from '@/lib/api/client';
 import { projectGuidanceRole } from '@/services/workspace/accessControl';
 import type {
+  PhaseFeatureFlag,
   MountedPhase,
   PhaseActivityEvent,
   PhaseActivityResponse,
   PhaseCockpitContext,
   PhaseProjectSnapshot,
   PhaseTransitionPreviewSnapshot,
+  TenantTier,
 } from './types';
 
 export interface UsePhaseCockpitDataParams {
   readonly phase: MountedPhase;
   readonly projectId?: string;
+  readonly workspaceId?: string;
   readonly onSuggestionAction: () => void;
 }
 
@@ -58,11 +61,24 @@ export interface UsePhaseCockpitDataResult {
   readonly hasPartialData: boolean;
 }
 
-const DEFAULT_ENABLED_PHASE_FLAGS: PhaseCockpitContext['enabledFlags'] = new Set([
+const FALLBACK_ENABLED_PHASE_FLAGS: readonly PhaseFeatureFlag[] = [
   'phase.generate.enabled',
   'phase.run.preview.enabled',
   'phase.observe.enabled',
-]);
+];
+
+function resolveTenantTier(project: PhaseProjectSnapshot | undefined): TenantTier {
+  return project?.tenantTier ?? 'starter';
+}
+
+function resolveEnabledFlags(project: PhaseProjectSnapshot | undefined): ReadonlySet<PhaseFeatureFlag> {
+  const sourceFlags = project?.enabledPhaseFlags;
+  if (Array.isArray(sourceFlags) && sourceFlags.length > 0) {
+    return new Set(sourceFlags);
+  }
+
+  return new Set(FALLBACK_ENABLED_PHASE_FLAGS);
+}
 
 function describeQueryError(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message.trim().length > 0) {
@@ -75,16 +91,17 @@ function describeQueryError(error: unknown, fallback: string): string {
 export function usePhaseCockpitData({
   phase,
   projectId,
+  workspaceId,
   onSuggestionAction,
 }: UsePhaseCockpitDataParams): UsePhaseCockpitDataResult {
   const projectQuery = useQuery<PhaseProjectSnapshot>({
-    queryKey: ['project', projectId],
+    queryKey: ['project', projectId, workspaceId],
     queryFn: async () => {
       if (!projectId) {
         throw new Error('Missing project id for phase cockpit.');
       }
 
-      return fetchProjectSnapshot(projectId);
+      return fetchProjectSnapshot(projectId, workspaceId);
     },
     enabled: Boolean(projectId),
     retry: false,
@@ -201,17 +218,19 @@ export function usePhaseCockpitData({
         : null,
     [activity, blockers, evidence, governance, phase, preview, project, suggestions],
   );
+  const tier = useMemo(() => resolveTenantTier(project), [project]);
+  const enabledFlags = useMemo(() => resolveEnabledFlags(project), [project]);
   const config = useMemo(
     () =>
       getAdaptivePhaseCockpitConfig(phase, {
         role: projectRole === 'owner' ? 'owner' : projectRole === 'collaborator' ? 'contributor' : 'viewer',
-        tier: 'starter',
-        enabledFlags: DEFAULT_ENABLED_PHASE_FLAGS,
+        tier,
+        enabledFlags,
         hasBlockers: blockers.length > 0,
         gatesPassed: preview?.canAdvance ?? true,
         currentLifecyclePhase: phase,
       }),
-    [blockers.length, phase, preview?.canAdvance, projectRole],
+    [blockers.length, enabledFlags, phase, preview?.canAdvance, projectRole, tier],
   );
 
   return {

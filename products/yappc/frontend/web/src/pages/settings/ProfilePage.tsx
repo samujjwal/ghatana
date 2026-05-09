@@ -1,8 +1,9 @@
 // @ts-nocheck
 import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { yappcApi } from '@/lib/api/client';
 import DeleteMyDataSection from '@/components/admin/DeleteMyDataSection';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -49,28 +50,11 @@ interface UserProfile {
 // ============================================================================
 
 async function fetchProfile(): Promise<UserProfile> {
-  const res = await fetch('/api/user/profile', {
-    headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
-  });
-  if (!res.ok) {
-    throw new Error(await readErrorResponse(res, 'Failed to load profile'));
-  }
-  return parseJsonResponse<UserProfile>(res, 'settings profile');
+  return yappcApi.userProfile.get() as Promise<UserProfile>;
 }
 
 async function updateProfile(profile: Partial<UserProfile>): Promise<UserProfile> {
-  const res = await fetch('/api/user/profile', {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}`,
-    },
-    body: JSON.stringify(profile),
-  });
-  if (!res.ok) {
-    throw new Error(await readErrorResponse(res, 'Failed to update profile'));
-  }
-  return parseJsonResponse<UserProfile>(res, 'settings profile update');
+  return yappcApi.userProfile.update(profile) as Promise<UserProfile>;
 }
 
 // ============================================================================
@@ -121,6 +105,7 @@ const Toggle: React.FC<ToggleProps> = ({ enabled, onChange, label, description }
  */
 const ProfilePage: React.FC = () => {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   const { data: profile, isLoading, error } = useQuery<UserProfile>({
@@ -140,7 +125,7 @@ const ProfilePage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
       setFormData({});
-      setSaveMessage('Profile updated successfully');
+      setSaveMessage(t('profileSettings.savedSuccess'));
       setTimeout(() => setSaveMessage(null), 3000);
     },
   });
@@ -173,7 +158,7 @@ const ProfilePage: React.FC = () => {
     return (
       <div className="p-8">
         <div className="bg-destructive-bg/20 border border-destructive-border rounded-lg p-4 text-destructive">
-          Failed to load profile: {error instanceof Error ? error.message : 'Unknown error'}
+          Failed to load profile: {error instanceof Error ? error.message : t('profileSettings.loadError', { message: 'Unknown error' })}
         </div>
       </div>
     );
@@ -190,14 +175,14 @@ const ProfilePage: React.FC = () => {
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-fg-muted">Profile Settings</h1>
-        <p className="text-sm text-fg-muted mt-1">Manage your account details and preferences</p>
+        <h1 className="text-2xl font-bold text-fg-muted">{t('profileSettings.title')}</h1>
+        <p className="text-sm text-fg-muted mt-1">{t('profileSettings.subtitle')}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Avatar & Identity */}
         <section className="bg-surface border border-border rounded-xl p-6 space-y-5">
-          <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider">Account</h2>
+          <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider">{t('profileSettings.account')}</h2>
 
           <div className="flex items-center gap-5">
             <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-2xl font-bold text-info-color shrink-0">
@@ -210,14 +195,14 @@ const ProfilePage: React.FC = () => {
                 type="button"
                 className="text-xs text-info-color hover:text-info-color transition-colors"
               >
-                Change avatar
+                {t('profileSettings.changeAvatar')}
               </NativeButton>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="block">
-              <span className="text-xs font-medium text-fg-muted">Full Name</span>
+              <span className="text-xs font-medium text-fg-muted">{t('profileSettings.fullName')}</span>
               <NativeInput
                 type="text"
                 value={merged.name}
@@ -226,7 +211,7 @@ const ProfilePage: React.FC = () => {
               />
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-fg-muted">Email</span>
+              <span className="text-xs font-medium text-fg-muted">{t('profileSettings.email')}</span>
               <NativeInput
                 type="email"
                 value={merged.email}
@@ -237,7 +222,7 @@ const ProfilePage: React.FC = () => {
           </div>
 
           <label className="block">
-            <span className="text-xs font-medium text-fg-muted">Bio</span>
+            <span className="text-xs font-medium text-fg-muted">{t('profileSettings.bio')}</span>
             <NativeTextarea
               value={merged.bio}
               onChange={(e) => handleFieldChange('bio', e.target.value)}
@@ -247,7 +232,7 @@ const ProfilePage: React.FC = () => {
           </label>
 
           <label className="block">
-            <span className="text-xs font-medium text-fg-muted">Timezone</span>
+            <span className="text-xs font-medium text-fg-muted">{t('profileSettings.timezone')}</span>
             <NativeInput
               type="text"
               value={merged.timezone}
@@ -259,7 +244,7 @@ const ProfilePage: React.FC = () => {
 
         {/* Theme */}
         <section className="bg-surface border border-border rounded-xl p-6 space-y-4">
-          <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider">Appearance</h2>
+          <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider">{t('profileSettings.appearance')}</h2>
           <div className="flex gap-3">
             {(['dark', 'light', 'system'] as ThemePreference[]).map((t) => (
               <NativeButton
@@ -280,28 +265,28 @@ const ProfilePage: React.FC = () => {
 
         {/* Notifications */}
         <section className="bg-surface border border-border rounded-xl p-6 space-y-1">
-          <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider mb-3">Notifications</h2>
+          <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider mb-3">{t('profileSettings.notifications')}</h2>
           <Toggle
-            label="Email notifications"
-            description="Receive project updates via email"
+            label={t('profileSettings.notif.email')}
+            description={t('profileSettings.notif.emailDesc')}
             enabled={merged.notifications.email}
             onChange={(v) => handleNotifChange('email', v)}
           />
           <Toggle
-            label="Push notifications"
-            description="Browser push notifications"
+            label={t('profileSettings.notif.push')}
+            description={t('profileSettings.notif.pushDesc')}
             enabled={merged.notifications.push}
             onChange={(v) => handleNotifChange('push', v)}
           />
           <Toggle
-            label="Slack notifications"
-            description="Receive alerts in your Slack workspace"
+            label={t('profileSettings.notif.slack')}
+            description={t('profileSettings.notif.slackDesc')}
             enabled={merged.notifications.slack}
             onChange={(v) => handleNotifChange('slack', v)}
           />
           <Toggle
-            label="Weekly digest"
-            description="Summary of activity sent every Monday"
+            label={t('profileSettings.notif.weekly')}
+            description={t('profileSettings.notif.weeklyDesc')}
             enabled={merged.notifications.weeklyDigest}
             onChange={(v) => handleNotifChange('weeklyDigest', v)}
           />
@@ -314,7 +299,7 @@ const ProfilePage: React.FC = () => {
           )}
           {mutation.error && (
             <p className="text-sm text-destructive">
-              {mutation.error instanceof Error ? mutation.error.message : 'Save failed'}
+              {mutation.error instanceof Error ? mutation.error.message : t('profileSettings.saveFailed')}
             </p>
           )}
           <div className="ml-auto flex gap-3">
@@ -323,14 +308,13 @@ const ProfilePage: React.FC = () => {
               onClick={() => setFormData({})}
               className="px-4 py-2 text-sm font-medium text-fg-muted hover:text-fg-muted transition-colors"
             >
-              Reset
-            </NativeButton>
+              {t('profileSettings.reset')}
             <NativeButton
               type="submit"
               disabled={mutation.isPending || Object.keys(formData).length === 0}
               className="px-5 py-2 bg-primary hover:bg-info-bg disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
             >
-              {mutation.isPending ? 'Saving...' : 'Save Changes'}
+              {mutation.isPending ? t('profileSettings.saving') : t('profileSettings.saveChanges')}
             </NativeButton>
           </div>
         </div>

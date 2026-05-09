@@ -223,7 +223,7 @@ export const ValidationSummaryPanel: React.FC<ValidationSummaryPanelProps> = ({
                             className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50"
                         >
                             <AutoAwesome className="w-4 h-4" />
-                            {isAILoading ? 'Analyzing...' : 'Assist'}
+                            {isAILoading ? 'Analyzing...' : 'Guided Assist'}
                         </Button>
                     )}
                     <Button
