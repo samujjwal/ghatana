@@ -121,7 +121,7 @@ class AgentControllerTest extends EventloopTestBase {
     void getAgentFlattensStoredAgentData() throws Exception { 
         when(dataCloudClient.entityStore()).thenReturn(entityStore); 
         AgentController dataCloudBackedController = new AgentController(engine, dataCloudClient, sloMetrics); 
-        when(entityStore.findById(any(), any())).thenReturn(Promise.of(Optional.of(new EntityStore.Entity( 
+        when(entityStore.findByRef(any(), any())).thenReturn(Promise.of(Optional.of(new EntityStore.Entity( 
             EntityStore.EntityId.of("agent-direct"),
             "aep_agents",
             Map.of( 
@@ -284,10 +284,10 @@ class AgentControllerTest extends EventloopTestBase {
             EntityStore.EntityMetadata.empty()
         );
 
-        when(entityStore.findById(any(), any())).thenAnswer(invocation -> {
+        when(entityStore.findByRef(any(), any())).thenAnswer(invocation -> {
             TenantContext tenantContext = invocation.getArgument(0);
-            EntityStore.EntityId entityId = invocation.getArgument(1);
-            if ("tenant-b".equals(tenantContext.tenantId()) && "agent-cross".equals(entityId.value())) {
+            EntityStore.EntityRef ref = invocation.getArgument(1);
+            if ("tenant-b".equals(tenantContext.tenantId()) && "agent-cross".equals(ref.entityId().value())) {
                 return Promise.of(Optional.of(tenantBAgent));
             }
             return Promise.of(Optional.empty());

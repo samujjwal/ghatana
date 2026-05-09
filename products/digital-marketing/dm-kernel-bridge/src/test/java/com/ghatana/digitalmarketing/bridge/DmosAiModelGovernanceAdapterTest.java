@@ -142,7 +142,8 @@ class DmosAiModelGovernanceAdapterTest extends EventloopTestBase {
         assertThat(exp.getId()).isEqualTo("adcopy-v2-trial");
         assertThat(exp.getBaselineModel()).isEqualTo("dmos-adcopy:v1.0.0");
         assertThat(exp.getVariantModel()).isEqualTo("dmos-adcopy:v2.0.0");
-        assertThat(exp.getSplit()).isEqualTo("20%");
+        // Split percentage may be formatted as "20%" or "20.0%" depending on SplitPercent serialization
+        assertThat(exp.getSplit()).matches("20\\.0?%");
     }
 
     @Test

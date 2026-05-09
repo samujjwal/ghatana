@@ -100,11 +100,11 @@ class AepHttpServerAgentRegistryIntegrationTest {
             ))
             .build();
 
-        when(entityStore.findById(any(TenantContext.class), any(EntityStore.EntityId.class)))
+        when(entityStore.findByRef(any(TenantContext.class), any(EntityStore.EntityRef.class)))
             .thenAnswer(invocation -> {
                 TenantContext tenant = invocation.getArgument(0);
-                EntityStore.EntityId requestedId = invocation.getArgument(1);
-                if (tenantId.equals(tenant.tenantId()) && agentId.equals(requestedId.value())) {
+                EntityStore.EntityRef requestedRef = invocation.getArgument(1);
+                if (tenantId.equals(tenant.tenantId()) && agentId.equals(requestedRef.entityId().value())) {
                     return Promise.of(Optional.of(storedEntity));
                 }
                 return Promise.of(Optional.empty());

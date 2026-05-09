@@ -301,7 +301,7 @@ class GdprErasureIntegrationTest extends EventloopTestBase {
     private boolean matchesFilters(Map<String, Object> data, Query query) { 
         return query.filters().stream().allMatch(filter -> { 
             Object value = data.get(filter.field()); 
-            if ("eq".equals(filter.operator())) { 
+            if (filter.operator() == com.ghatana.datacloud.entity.storage.FilterCriteria.Operator.EQ) {
                 return java.util.Objects.equals(value, filter.value()); 
             }
             return true;

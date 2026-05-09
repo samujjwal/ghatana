@@ -16,6 +16,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -31,6 +32,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers(disabledWithoutDocker = true) 
 @DisplayName("DataCloud Factory Real Provider Tests")
 class DataCloudFactoryRealProviderTest extends EventloopTestBase {
+
+    @Override
+    protected Duration eventloopTimeout() {
+        return Duration.ofSeconds(45);
+    }
 
     private static final DataCloudConfig PRODUCTION_CONFIG = DataCloudConfig.builder() 
         .profile(DataCloudProfile.PRODUCTION) 

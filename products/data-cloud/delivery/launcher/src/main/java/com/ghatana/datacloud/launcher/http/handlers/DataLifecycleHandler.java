@@ -6,6 +6,7 @@ import com.ghatana.datacloud.launcher.DataCloudLauncherSettings;
 import com.ghatana.datacloud.launcher.audit.AuditSummaryProvider;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
+import com.ghatana.datacloud.spi.BatchResult;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.spi.TenantContext;
@@ -444,7 +445,7 @@ public class DataLifecycleHandler {
                                 ), tenantId, requestId), objectMapper));
                         }
 
-                        return entityStore.deleteByRefs(tenantContext, entityRefs)
+                        return deleteByRefsOrLegacy(entityStore, tenantContext, entityRefs)
                             .then(batchResult -> {
                                 log.info("[DC-E5] purge COMPLETED collection={} tenant={} deleted={}",
                                     collection, tenantId, batchResult.successCount());
@@ -565,7 +566,7 @@ public class DataLifecycleHandler {
                                 objectMapper,
                                 423));
                         }
-                        return entityStore.findByRef(tenantContext, entityRef)
+                        return findByRefOrLegacy(entityStore, tenantContext, entityRef)
                             .then(entityOpt -> {
                         if (entityOpt.isEmpty()) {
                             return Promise.of(http.errorEnvelopeResponse(
@@ -810,7 +811,10 @@ public class DataLifecycleHandler {
 
         TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
         return loadRetentionPolicy(tenantContext, collection)
-            .then(policy -> requireEntityStore().findByRef(tenantContext, EntityStore.EntityRef.of(collection, entityId))
+                .then(policy -> findByRefOrLegacy(
+                    requireEntityStore(),
+                    tenantContext,
+                    EntityStore.EntityRef.of(collection, entityId))
                 .map(entityOpt -> {
                     if (entityOpt.isEmpty()) {
                         return http.errorEnvelopeResponse(
@@ -1253,7 +1257,8 @@ public class DataLifecycleHandler {
 
     private Promise<Optional<Map<String, Object>>> loadRetentionPolicy(TenantContext tenantContext,
                                                                        String collection) {
-        return requireEntityStore().findByRef(
+        return findByRefOrLegacy(
+            requireEntityStore(),
             tenantContext,
             EntityStore.EntityRef.of(GOVERNANCE_POLICY_COLLECTION, policyId(collection)))
             .map(found -> found
@@ -1820,20 +1825,11 @@ public class DataLifecycleHandler {
                 if (existingOpt.isEmpty()) {
                     return Promise.of(http.errorResponse(404, "Policy not found: " + policyId));
                 }
-                Promise<Void> deletePromise = requireEntityStore().deleteByRef(
+                return deleteByRefOrLegacy(
+                    requireEntityStore(),
                     tenantContext,
-                    EntityStore.EntityRef.of(GOVERNANCE_POLICIES_COLLECTION, governancePolicyEntityId(policyId)));
-                if (deletePromise == null) {
-                    emitAudit(tenantId, requestId, "POLICY_DELETED", GOVERNANCE_POLICIES_COLLECTION,
-                        Map.of("policyId", policyId));
-                    return Promise.of(http.envelopeResponse(
-                        ApiResponse.success(Map.of(
-                            "id", policyId,
-                            "status", "deleted",
-                            "deletedAt", Instant.now().toString()
-                        ), tenantId, requestId), objectMapper));
-                }
-                return deletePromise.map(ignored -> {
+                    EntityStore.EntityRef.of(GOVERNANCE_POLICIES_COLLECTION, governancePolicyEntityId(policyId)))
+                    .map(ignored -> {
                     log.info("[P1-1] Policy deleted tenant={} policyId={}", tenantId, policyId);
                     emitAudit(tenantId, requestId, "POLICY_DELETED", GOVERNANCE_POLICIES_COLLECTION,
                         Map.of("policyId", policyId));
@@ -1932,12 +1928,59 @@ public class DataLifecycleHandler {
 
     private Promise<Optional<Map<String, Object>>> loadGovernancePolicyById(TenantContext tenantContext,
                                                                              String policyId) {
-        return requireEntityStore().findByRef(
+        return findByRefOrLegacy(
+            requireEntityStore(),
             tenantContext,
             EntityStore.EntityRef.of(GOVERNANCE_POLICIES_COLLECTION, governancePolicyEntityId(policyId)))
             .map(found -> found
                 .filter(entity -> GOVERNANCE_POLICIES_COLLECTION.equals(entity.collection()))
                 .map(this::normalizeGovernancePolicy));
+
+    }
+
+    private Promise<Optional<EntityStore.Entity>> findByRefOrLegacy(EntityStore entityStore,
+                                                                     TenantContext tenantContext,
+                                                                     EntityStore.EntityRef ref) {
+        Promise<Optional<EntityStore.Entity>> refPromise = entityStore.findByRef(tenantContext, ref);
+        if (refPromise != null) {
+            return refPromise;
+        }
+        Promise<Optional<EntityStore.Entity>> legacyPromise = entityStore.findById(tenantContext, ref.entityId());
+        if (legacyPromise != null) {
+            return legacyPromise;
+        }
+        return Promise.of(Optional.empty());
+    }
+
+    private Promise<Void> deleteByRefOrLegacy(EntityStore entityStore,
+                                              TenantContext tenantContext,
+                                              EntityStore.EntityRef ref) {
+        Promise<Void> refDeletePromise = entityStore.deleteByRef(tenantContext, ref);
+        if (refDeletePromise != null) {
+            return refDeletePromise;
+        }
+        Promise<Void> legacyDeletePromise = entityStore.delete(tenantContext, ref.entityId());
+        if (legacyDeletePromise != null) {
+            return legacyDeletePromise;
+        }
+        return Promise.of(null);
+    }
+
+    private Promise<BatchResult<String>> deleteByRefsOrLegacy(EntityStore entityStore,
+                                                               TenantContext tenantContext,
+                                                               List<EntityStore.EntityRef> refs) {
+        Promise<BatchResult<String>> refsDeletePromise = entityStore.deleteByRefs(tenantContext, refs);
+        if (refsDeletePromise != null) {
+            return refsDeletePromise;
+        }
+        return io.activej.promise.Promises.toList(refs.stream()
+                .map(ref -> deleteByRefOrLegacy(entityStore, tenantContext, ref)
+                    .then(ignored -> Promise.of(1), e -> Promise.of(0)))
+                .toList())
+            .map(results -> {
+                int deleted = results.stream().mapToInt(Integer::intValue).sum();
+                return new BatchResult<>(refs.size(), deleted, refs.size() - deleted, List.of());
+            });
     }
 
     @SuppressWarnings("unchecked")

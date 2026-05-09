@@ -599,8 +599,8 @@ class DataCloudHttpLauncherBootstrapTest {
 
         // Rotation scenario: two keys are present — an old key still valid during
         // the rolling-update window, and a newly issued key for new callers.
-        String oldKey = "old-production-key-aaaabbbbccccdddd";
-        String newKey = "new-production-key-xxxxyyyyzzzz1111";
+        String oldKey = "old-production-key-aaaabbbbccccdddd:tenant-1";
+        String newKey = "new-production-key-xxxxyyyyzzzz1111:tenant-2";
 
         ApiKeyResolver resolver = DataCloudHttpLauncherBootstrap.buildApiKeyResolver(
             Map.of(
@@ -609,8 +609,8 @@ class DataCloudHttpLauncherBootstrapTest {
             log);
 
         // Both keys must resolve independently — enabling caller-transparent rotation.
-        Optional<Principal> oldPrincipal = resolver.resolve(oldKey);
-        Optional<Principal> newPrincipal = resolver.resolve(newKey);
+        Optional<Principal> oldPrincipal = resolver.resolve("old-production-key-aaaabbbbccccdddd");
+        Optional<Principal> newPrincipal = resolver.resolve("new-production-key-xxxxyyyyzzzz1111");
 
         assertThat(oldPrincipal).isPresent();
         assertThat(newPrincipal).isPresent();
@@ -624,7 +624,7 @@ class DataCloudHttpLauncherBootstrapTest {
     void buildApiKeyResolverRejectsRevokedKeyAfterRotation() { // P1-03
         Logger log = mock(Logger.class);
 
-        String activeKey = "active-key-aaaabbbbccccddddeeeeffffgggg";
+        String activeKey = "active-key-aaaabbbbccccddddeeeeffffgggg:tenant-1";
         String revokedKey = "revoked-key-11112222333344445555666677778";
 
         // Only the active key is configured — simulates post-rotation state.
@@ -634,7 +634,7 @@ class DataCloudHttpLauncherBootstrapTest {
                 "DATACLOUD_API_KEYS", activeKey),
             log);
 
-        assertThat(resolver.resolve(activeKey)).isPresent();
+        assertThat(resolver.resolve("active-key-aaaabbbbccccddddeeeeffffgggg")).isPresent();
         assertThat(resolver.resolve(revokedKey))
             .as("Revoked key must not resolve to a principal after rotation")
             .isEmpty();
@@ -645,7 +645,7 @@ class DataCloudHttpLauncherBootstrapTest {
     void buildApiKeyResolverNeverLogsRawApiKeyValue() { // P1-03
         Logger log = mock(Logger.class);
 
-        String sensitiveKey = "ultra-secret-key-0000000000000000";
+        String sensitiveKey = "ultra-secret-key-0000000000000000:tenant-1";
 
         DataCloudHttpLauncherBootstrap.buildApiKeyResolver(
             Map.of(
@@ -656,8 +656,8 @@ class DataCloudHttpLauncherBootstrapTest {
         // Verify no logger call carried the raw key string.
         // Mockito captures all invocations — none should reference the literal secret.
         org.mockito.verification.VerificationMode never = org.mockito.Mockito.never();
-        verify(log, never).info(org.mockito.ArgumentMatchers.contains(sensitiveKey));
-        verify(log, never).debug(org.mockito.ArgumentMatchers.contains(sensitiveKey));
+        verify(log, never).info(org.mockito.ArgumentMatchers.contains("ultra-secret-key-0000000000000000"));
+        verify(log, never).debug(org.mockito.ArgumentMatchers.contains("ultra-secret-key-0000000000000000"));
         verify(log, never).warn(org.mockito.ArgumentMatchers.contains(sensitiveKey));
         verify(log, never).error(org.mockito.ArgumentMatchers.contains(sensitiveKey));
     }

@@ -422,7 +422,7 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
             Map<String, Object> data = (Map<String, Object>) respBody.get("data");
             assertThat(data.get("status")).isEqualTo("PURGE_COMPLETED");
             assertThat(data.get("deletedRows")).isEqualTo(2);
-            verify(mockEntityStore).deleteBatch(any(), argThat(ids -> ids.size() == 2)); 
+            verify(mockEntityStore).deleteByRefs(any(), argThat(refs -> refs.size() == 2)); 
             verify(mockAuditService).record(argThat(event -> 
                 "RETENTION_PURGE".equals(event.eventType()) 
                     && sha256Hex(confirmationToken) 
@@ -474,7 +474,7 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
             Map<String, Object> secondData = (Map<String, Object>) mapper.readValue(secondExecute.body(), Map.class).get("data");
             assertThat(secondData.get("status")).isEqualTo("PURGE_COMPLETED");
             assertThat(secondData.get("deletedRows")).isEqualTo(0);
-            verify(mockEntityStore).deleteBatch(any(), argThat(ids -> ids.size() == 1));
+            verify(mockEntityStore).deleteByRefs(any(), argThat(refs -> refs.size() == 1));
         }
 
         @Test
@@ -512,7 +512,7 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
             Map<String, Object> data = (Map<String, Object>) mapper.readValue(resp.body(), Map.class).get("data");
             assertThat(data.get("status")).isEqualTo("PURGE_COMPLETED");
             assertThat(data.get("deletedRows")).isEqualTo(1_200);
-            verify(mockEntityStore).deleteBatch(any(), argThat(ids -> ids.size() == 1_200)); 
+            verify(mockEntityStore).deleteByRefs(any(), argThat(refs -> refs.size() == 1_200)); 
             assertThat(entityState.getOrDefault("bulk_expired_events", Map.of())).isEmpty(); 
         }
 

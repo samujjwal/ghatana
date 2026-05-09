@@ -354,7 +354,7 @@ class DataCloudHttpServerCollectionContextTest {
 
         @Override
         public EventLogStore eventLogStore() { 
-            throw new UnsupportedOperationException("Not used in this test");
+            return mock(EventLogStore.class);
         }
     }
 }

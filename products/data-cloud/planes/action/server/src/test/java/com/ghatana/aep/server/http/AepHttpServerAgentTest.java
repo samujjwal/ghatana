@@ -146,7 +146,7 @@ class AepHttpServerAgentTest {
         EntityStore.Entity entity = EntityStore.Entity.builder() 
             .id("agent-42").collection("aep_agents")
             .data(Map.of("name", "Sentinel", "type", "LLM", "status", "ACTIVE")).build(); 
-        when(mockEntityStore.findById(any(TenantContext.class), eq(EntityStore.EntityId.of("agent-42"))))
+        when(mockEntityStore.findByRef(any(TenantContext.class), eq(EntityStore.EntityRef.of("aep_agents", "agent-42"))))
             .thenReturn(Promise.of(Optional.of(entity))); 
 
         server = new AepHttpServer(engine, port, null, mockDc); 
@@ -166,7 +166,7 @@ class AepHttpServerAgentTest {
     @Test
     @DisplayName("getAgent: entity not found in DC → 404")
     void getAgent_whenEntityNotFound_returns404() throws Exception { 
-        when(mockEntityStore.findById(any(TenantContext.class), eq(EntityStore.EntityId.of("missing-agent"))))
+        when(mockEntityStore.findByRef(any(TenantContext.class), eq(EntityStore.EntityRef.of("aep_agents", "missing-agent"))))
             .thenReturn(Promise.of(Optional.empty())); 
 
         server = new AepHttpServer(engine, port, null, mockDc); 

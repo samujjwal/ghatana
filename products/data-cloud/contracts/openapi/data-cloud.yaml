@@ -2695,14 +2695,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/AlertListResponse"
 
-  /api/v1/alerts/{alertId}/acknowledge:
+  /api/v1/alerts/{id}/acknowledge:
     post:
       summary: Acknowledge an alert
       operationId: apiV1AlertsIdAcknowledgePost
       tags: [alerts]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
-        - name: alertId
+        - name: id
           in: path
           required: true
           schema:
@@ -2716,14 +2716,14 @@ paths:
                 $ref: "#/components/schemas/Alert"
         "404": { $ref: "#/components/responses/NotFound" }
 
-  /api/v1/alerts/{alertId}/resolve:
+  /api/v1/alerts/{id}/resolve:
     post:
       summary: Resolve an alert
       operationId: apiV1AlertsIdResolvePost
       tags: [alerts]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
-        - name: alertId
+        - name: id
           in: path
           required: true
           schema:
@@ -5929,20 +5929,6 @@ paths:
                 additionalProperties:
                   type: string
 
-  /api/v1/surfaces:
-    get:
-      summary: Get the canonical runtime surface registry snapshot
-      operationId: apiV1SurfacesGet
-      tags: [capabilities]
-      responses:
-        "200":
-          description: Canonical runtime surface registry snapshot.
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: true
-
   /api/v1/capabilities/schema:
     get:
       summary: Get the runtime capability registry schema (compatibility alias)
@@ -5951,19 +5937,6 @@ paths:
       responses:
         "200":
           description: Capability registry schema.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FreeformObject"
-
-  /api/v1/surfaces/schema:
-    get:
-      summary: Get the canonical runtime surface registry schema
-      operationId: apiV1SurfacesSchemaGet
-      tags: [capabilities]
-      responses:
-        "200":
-          description: Canonical runtime surface registry schema.
           content:
             application/json:
               schema:

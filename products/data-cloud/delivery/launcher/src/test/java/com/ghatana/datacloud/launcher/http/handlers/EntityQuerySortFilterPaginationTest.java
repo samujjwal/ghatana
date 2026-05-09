@@ -5,6 +5,7 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.entity.storage.FilterCriteria;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.HttpRequest;
@@ -326,7 +327,7 @@ class EntityQuerySortFilterPaginationTest extends EventloopTestBase {
             List<DataCloudClient.Filter> filters = queryCaptor.getValue().filters();
             assertThat(filters).hasSize(1);
             assertThat(filters.get(0).field()).isEqualTo("status");
-            assertThat(filters.get(0).operator()).isEqualTo("eq");
+                assertThat(filters.get(0).operator()).isEqualTo(FilterCriteria.Operator.EQ);
             assertThat(filters.get(0).value()).isEqualTo("active");
         }
 

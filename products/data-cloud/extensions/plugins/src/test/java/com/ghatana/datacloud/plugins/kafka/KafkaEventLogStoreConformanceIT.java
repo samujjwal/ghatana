@@ -173,10 +173,13 @@ class KafkaEventLogStoreConformanceIT extends EventloopTestBase {
 
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<EventEntry> received = new AtomicReference<>();
+        Offset latest = runPromise(() -> store.getLatestOffset(tenant));
 
-        runPromise(() -> store.tail(tenant, Offset.of(-1L), event -> {
-            received.set(event);
-            latch.countDown();
+        runPromise(() -> store.tail(tenant, latest, event -> {
+            if ("after-1".equals(event.eventType())) {
+                received.set(event);
+                latch.countDown();
+            }
         }));
 
         runPromise(() -> store.append(tenant, entry("after-1", "{\"n\":3}")));

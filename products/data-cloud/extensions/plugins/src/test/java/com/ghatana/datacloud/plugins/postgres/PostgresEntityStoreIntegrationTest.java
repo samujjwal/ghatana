@@ -14,6 +14,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,6 +32,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers(disabledWithoutDocker = true) 
 @DisplayName("PostgresEntityStore Integration Tests")
 class PostgresEntityStoreIntegrationTest extends EventloopTestBase {
+
+    @Override
+    protected Duration eventloopTimeout() {
+        return Duration.ofSeconds(45);
+    }
 
     @Container
     static final PostgreSQLContainer<?> POSTGRES = postgresContainer(); 

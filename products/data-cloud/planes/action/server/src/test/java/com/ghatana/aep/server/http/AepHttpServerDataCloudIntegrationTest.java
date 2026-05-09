@@ -137,6 +137,9 @@ class AepHttpServerDataCloudIntegrationTest {
 
         assertThat(waitForRunCount(firstPort, "tenant-runs", 1).body()).contains(runId); 
         assertDurableDeepHealth(firstPort, "sovereign"); 
+        // Allow time for the sovereign DataCloud's async write-behind to flush to disk
+        // before stopping the server, ensuring run history is durable for the restart check.
+        Thread.sleep(500);
 
         server.stop(); 
         engine.close(); 

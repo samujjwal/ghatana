@@ -2695,14 +2695,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/AlertListResponse"
 
-  /api/v1/alerts/{alertId}/acknowledge:
+  /api/v1/alerts/{id}/acknowledge:
     post:
       summary: Acknowledge an alert
       operationId: apiV1AlertsIdAcknowledgePost
       tags: [alerts]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
-        - name: alertId
+        - name: id
           in: path
           required: true
           schema:
@@ -2716,14 +2716,14 @@ paths:
                 $ref: "#/components/schemas/Alert"
         "404": { $ref: "#/components/responses/NotFound" }
 
-  /api/v1/alerts/{alertId}/resolve:
+  /api/v1/alerts/{id}/resolve:
     post:
       summary: Resolve an alert
       operationId: apiV1AlertsIdResolvePost
       tags: [alerts]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
-        - name: alertId
+        - name: id
           in: path
           required: true
           schema:
@@ -5886,9 +5886,37 @@ paths:
 
   # ── Runtime capability registry and autonomy ─────────────────────────────
 
+  /api/v1/surfaces:
+    get:
+      summary: Get the canonical runtime surface registry snapshot
+      operationId: apiV1SurfacesGet
+      tags: [capabilities]
+      responses:
+        "200":
+          description: Runtime surface registry snapshot.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+
+  /api/v1/surfaces/schema:
+    get:
+      summary: Get the canonical runtime surface registry schema
+      operationId: apiV1SurfacesSchemaGet
+      tags: [capabilities]
+      responses:
+        "200":
+          description: Runtime surface registry schema.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
   /api/v1/capabilities:
     get:
-      summary: Get the runtime capability registry snapshot
+      summary: Get the runtime capability registry snapshot (compatibility alias)
       operationId: apiV1CapabilitiesGet
       tags: [capabilities]
       responses:
@@ -5903,7 +5931,7 @@ paths:
 
   /api/v1/capabilities/schema:
     get:
-      summary: Get the runtime capability registry schema
+      summary: Get the runtime capability registry schema (compatibility alias)
       operationId: apiV1CapabilitiesSchemaGet
       tags: [capabilities]
       responses:
