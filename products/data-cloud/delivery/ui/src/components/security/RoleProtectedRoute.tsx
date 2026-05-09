@@ -1,7 +1,7 @@
 /**
  * RoleProtectedRoute — route-level guard for the Data Cloud shell.
  *
- * Enforces route-level access control using the canonical route registry as the
+ * Enforces route-level access control using the canonical surface registry as the
  * single source of truth. Navigation visibility and route access use the same
  * source of truth (RBAC-001).
  *
@@ -22,9 +22,9 @@ import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router';
 import SessionBootstrap, { type ShellRole } from '../../lib/auth/session';
 import {
-  getRouteByPath,
+  getRouteSurfaceByPath,
   type RouteCapability,
-} from '../../lib/routing/RouteCapabilityRegistry';
+} from '../../lib/routing/RouteSurfaceRegistry';
 
 interface RoleProtectedRouteProps {
   children?: React.ReactNode;
@@ -59,14 +59,14 @@ function shellRoleMeetsMinimum(current: ShellRole, required: ShellRole): boolean
  */
 function resolveRoute(pathname: string): RouteCapability | undefined {
   // Try exact match first
-  const exact = getRouteByPath(pathname);
+  const exact = getRouteSurfaceByPath(pathname);
   if (exact) return exact;
 
   // Try stripping trailing segments to find a parent route
   const parts = pathname.split('/').filter(Boolean);
   for (let len = parts.length - 1; len >= 1; len--) {
     const candidate = '/' + parts.slice(0, len).join('/');
-    const match = getRouteByPath(candidate);
+    const match = getRouteSurfaceByPath(candidate);
     if (match) return match;
   }
 

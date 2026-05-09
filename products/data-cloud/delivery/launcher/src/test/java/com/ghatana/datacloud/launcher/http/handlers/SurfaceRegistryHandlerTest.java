@@ -51,8 +51,8 @@ class SurfaceRegistryHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("returns capability envelope when tenant header is present")
-    void returnsCapabilityEnvelopeWhenTenantPresent() {
+    @DisplayName("returns surfaces envelope when tenant header is present")
+    void returnsSurfacesEnvelopeWhenTenantPresent() {
         when(httpSupport.requireTenantIdOrFail(request)).thenReturn("tenant-capabilities");
         when(httpSupport.resolveCorrelationId(request)).thenReturn("req-1");
         when(httpSupport.envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class))).thenReturn(successResponse);
@@ -64,8 +64,8 @@ class SurfaceRegistryHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("returns surfaces envelope when tenant header is present")
-    void returnsSurfacesEnvelopeWhenTenantPresent() {
+    @DisplayName("returns surfaces envelope when tenant header is present (alternate tenant)")
+    void returnsSurfacesEnvelopeWhenTenantPresentForAlternateTenant() {
         when(httpSupport.requireTenantIdOrFail(request)).thenReturn("tenant-surfaces");
         when(httpSupport.resolveCorrelationId(request)).thenReturn("req-2");
         when(httpSupport.envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class))).thenReturn(successResponse);

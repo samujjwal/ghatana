@@ -12,14 +12,14 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * HTTP handler exposing the runtime capability registry and capability schema.
+ * HTTP handler exposing the runtime surface registry and surface schema.
  *
  * <p>Returns the feature configuration the server actually started with,
  * translated into client-facing states so the UI can avoid implying support
- * for features that are absent or degraded.
+ * for surfaces that are absent or degraded.
  *
- * <p>Also serves the unified capability schema which is the single source of truth
- * for all capability-based feature gates, preventing drift between docs/UI/runtime.
+ * <p>Also serves the unified surface schema which is the single source of truth
+ * for all surface-based feature gates, preventing drift between docs/UI/runtime.
  *
  * @doc.type class
  * @doc.purpose Runtime Truth surface registry and schema HTTP handler

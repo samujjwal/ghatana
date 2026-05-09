@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
  *     .withAiAssistRoutes(aiAssistHandler)
  *     .withVoiceRoutes(voiceHandler)
  *     .withGovernanceRoutes(dataLifecycleHandler)
- *     .withCapabilityRoutes(capabilityRegistryHandler)
+ *     .withSurfaceRoutes(surfaceRegistryHandler)
  *     .withLineageRoutes(lineageHandler)
  *     .withContextRoutes(contextLayerHandler, collectionContextHandler, semanticSearchHandler)
  *     .withMcpRoutes(mcpToolsHandler)
@@ -462,10 +462,18 @@ public class DataCloudRouterBuilder {
      * Adds Runtime Truth surface endpoints.
      * DC-P1.12: Removed compatibility /api/v1/capabilities aliases; use canonical /api/v1/surfaces only.
      */
-    public DataCloudRouterBuilder withCapabilityRoutes(SurfaceRegistryHandler surfaceRegistryHandler) {
+    public DataCloudRouterBuilder withSurfaceRoutes(SurfaceRegistryHandler surfaceRegistryHandler) {
         builder.with(HttpMethod.GET, "/api/v1/surfaces", surfaceRegistryHandler::handleSurfaces);
         builder.with(HttpMethod.GET, "/api/v1/surfaces/schema", surfaceRegistryHandler::handleSurfaceSchema);
         return this;
+    }
+
+    /**
+     * @deprecated Use withSurfaceRoutes(SurfaceRegistryHandler).
+     */
+    @Deprecated(forRemoval = false)
+    public DataCloudRouterBuilder withCapabilityRoutes(SurfaceRegistryHandler surfaceRegistryHandler) {
+        return withSurfaceRoutes(surfaceRegistryHandler);
     }
 
     /**

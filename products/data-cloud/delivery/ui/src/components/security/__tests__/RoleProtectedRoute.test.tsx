@@ -36,8 +36,8 @@ vi.mock('../../../lib/auth/session', () => ({
 // Mock route registry to return deterministic data without reading real files
 // ---------------------------------------------------------------------------
 
-vi.mock('../../../lib/routing/RouteCapabilityRegistry', () => ({
-  getRouteByPath: (path: string) => {
+vi.mock('../../../lib/routing/RouteSurfaceRegistry', () => ({
+  getRouteSurfaceByPath: (path: string) => {
     const routes: Record<string, { path: string; minimumShellRole: 'primary-user' | 'operator' | 'admin' }> = {
       '/insights': { path: '/insights', minimumShellRole: 'operator' },
       '/operations': { path: '/operations', minimumShellRole: 'admin' },

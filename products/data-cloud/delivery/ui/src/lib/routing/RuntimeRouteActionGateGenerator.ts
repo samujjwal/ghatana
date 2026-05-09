@@ -1,21 +1,21 @@
 /**
  * Runtime Route/Action Gate Generator
  *
- * Generates route gate metadata directly from runtime-truth capability snapshots
+ * Generates route gate metadata directly from runtime-truth surface snapshots
  * plus the canonical route registry.
  *
  * @doc.type module
- * @doc.purpose Generate route/action gates from runtime truth capability signals
+ * @doc.purpose Generate route/action gates from runtime truth surface signals
  * @doc.layer shared
  * @doc.pattern Generator
  */
 
 import type { CapabilitySignal } from '@/api/surfaces.service';
 import {
-  canonicalRouteRegistry,
+  canonicalRouteSurfaceRegistry,
   type RouteCapability,
   type RouteLifecycle,
-} from './RouteCapabilityRegistry';
+} from './RouteSurfaceRegistry';
 
 export type GeneratedGateStatus = 'active' | 'degraded' | 'unavailable' | 'unknown';
 
@@ -93,7 +93,7 @@ function reduceRouteStatus(actions: GeneratedActionGate[]): GeneratedGateStatus 
 export function generateRouteActionGates(capabilities: CapabilitySignal[]): GeneratedRouteGate[] {
   const lookup = toLookup(capabilities);
 
-  return Object.values(canonicalRouteRegistry)
+  return Object.values(canonicalRouteSurfaceRegistry)
     .map((route) => {
       const actions = route.capabilities.map((alias) => {
         const signal = resolveCapabilitySignal(alias, lookup);

@@ -2,11 +2,11 @@
  * Route Surface Metadata Verification
  *
  * Validates that all runtime surface route gates in routes.tsx are properly
- * registered and consistent with the canonical RouteCapabilityRegistry.
+ * registered and consistent with the canonical RouteSurfaceRegistry.
  *
  * This test prevents drift between:
  * - Hand-maintained RuntimeCapabilityRouteGate aliases in routes.tsx
- * - Statically registered surfaces in RouteCapabilityRegistry
+ * - Statically registered surfaces in RouteSurfaceRegistry
  * - Runtime truth state from backend
  *
  * @doc.type test
@@ -17,7 +17,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { canonicalRouteRegistry } from '../../lib/routing/RouteCapabilityRegistry';
+import { canonicalRouteSurfaceRegistry } from '../../lib/routing/RouteSurfaceRegistry';
 
 /**
  * Gated routes as they appear in routes.tsx
@@ -77,12 +77,12 @@ const gatedRoutesFromUI = [
 ];
 
 describe('Route Surface Metadata Verification', () => {
-  it('verifies all gated route surfaces are registered in RouteCapabilityRegistry', () => {
+  it('verifies all gated route surfaces are registered in RouteSurfaceRegistry', () => {
     for (const gatedRoute of gatedRoutesFromUI) {
-      const registryEntry = canonicalRouteRegistry[gatedRoute.routeName];
+      const registryEntry = canonicalRouteSurfaceRegistry[gatedRoute.routeName];
       expect(
         registryEntry,
-        `Route '${gatedRoute.routeName}' must be registered in canonicalRouteRegistry`
+        `Route '${gatedRoute.routeName}' must be registered in canonicalRouteSurfaceRegistry`
       ).toBeDefined();
 
       expect(
@@ -105,7 +105,7 @@ describe('Route Surface Metadata Verification', () => {
 
   it('verifies all route aliases have a canonical surface in the registry', () => {
     for (const gatedRoute of gatedRoutesFromUI) {
-      const registryEntry = canonicalRouteRegistry[gatedRoute.routeName];
+      const registryEntry = canonicalRouteSurfaceRegistry[gatedRoute.routeName];
 
       // At least one alias should match a registered surface
       const aliasesMatchRegistry = gatedRoute.aliases.some((alias) =>
@@ -121,7 +121,7 @@ describe('Route Surface Metadata Verification', () => {
 
   it('verifies all gated routes have lifecycle and discoverable metadata', () => {
     for (const gatedRoute of gatedRoutesFromUI) {
-      const registryEntry = canonicalRouteRegistry[gatedRoute.routeName];
+      const registryEntry = canonicalRouteSurfaceRegistry[gatedRoute.routeName];
 
       expect(
         registryEntry.lifecycle,
@@ -142,7 +142,7 @@ describe('Route Surface Metadata Verification', () => {
 
   it('verifies gated routes have appropriate role requirements', () => {
     for (const gatedRoute of gatedRoutesFromUI) {
-      const registryEntry = canonicalRouteRegistry[gatedRoute.routeName];
+      const registryEntry = canonicalRouteSurfaceRegistry[gatedRoute.routeName];
 
       // Gated routes should require at least operator role
       const validRoles = ['operator', 'admin'];
@@ -188,7 +188,7 @@ describe('Route Surface Metadata Verification', () => {
   it('generates feature gate metadata for Runtime Truth validation', () => {
     // This metadata could be used for code generation or verification
     const featureGateMetadata = gatedRoutesFromUI.map((gatedRoute) => {
-      const registryEntry = canonicalRouteRegistry[gatedRoute.routeName];
+      const registryEntry = canonicalRouteSurfaceRegistry[gatedRoute.routeName];
 
       return {
         routePath: registryEntry.path,

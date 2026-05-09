@@ -21,7 +21,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-@DisplayName("DataCloudHttpServer capability registry")
+@DisplayName("DataCloudHttpServer surface registry")
 class DataCloudHttpServerCapabilityTest {
 
     private static final String TEST_JWT_SECRET = "0123456789abcdef0123456789abcdef";
@@ -45,9 +45,9 @@ class DataCloudHttpServerCapabilityTest {
     }
 
     @Test
-    @DisplayName("capabilities endpoint reports configured and degraded features")
+    @DisplayName("surfaces endpoint reports configured and degraded features")
     @SuppressWarnings("unchecked")
-    void capabilitiesEndpointReportsConfiguredAndDegradedFeatures() throws Exception { 
+    void surfacesEndpointReportsConfiguredAndDegradedFeatures() throws Exception { 
         JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L); 
         String token = provider.createToken("ui-user", List.of("viewer"), Map.of("tenant_id", "tenant-a"));
 
@@ -61,16 +61,16 @@ class DataCloudHttpServerCapabilityTest {
         assertThat(response.statusCode()).isEqualTo(200); 
         Map<String, Object> body = mapper.readValue(response.body(), Map.class); 
         Map<String, Object> data = (Map<String, Object>) body.get("data");
-        Map<String, Object> capabilities = (Map<String, Object>) data.get("capabilities");
-        Map<String, Object> meta = (Map<String, Object>) capabilities.get("_meta");
+        Map<String, Object> surfaces = (Map<String, Object>) data.get("surfaces");
+        Map<String, Object> meta = (Map<String, Object>) surfaces.get("_meta");
         Map<String, Object> runtimePosture = (Map<String, Object>) meta.get("runtimePosture");
-        Map<String, Object> jwtCapability = (Map<String, Object>) capabilities.get("authentication.jwt");
-        Map<String, Object> databaseCapability = (Map<String, Object>) capabilities.get("health.database");
-        Map<String, Object> searchCapability = (Map<String, Object>) capabilities.get("search.openSearch");
+        Map<String, Object> jwtCapability = (Map<String, Object>) surfaces.get("authentication.jwt");
+        Map<String, Object> databaseCapability = (Map<String, Object>) surfaces.get("health.database");
+        Map<String, Object> searchCapability = (Map<String, Object>) surfaces.get("search.openSearch");
         Map<String, Object> eventTail = (Map<String, Object>) runtimePosture.get("eventTail");
 
         assertThat(jwtCapability).containsEntry("status", "ACTIVE"); 
-        assertThat(databaseCapability).containsEntry("status", "DEGRADED"); 
+        assertThat(databaseCapability).containsEntry("status", "NOT_CONFIGURED"); 
         assertThat(databaseCapability).containsEntry("dependencyStatus", "DOWN"); 
         assertThat(searchCapability).containsEntry("status", "NOT_CONFIGURED"); 
         assertThat(eventTail).containsEntry("available", false);
@@ -80,7 +80,7 @@ class DataCloudHttpServerCapabilityTest {
     @Test
     @DisplayName("surfaces endpoint is idempotent")
     @SuppressWarnings("unchecked")
-    void surfacesEndpointMatchesCapabilitiesPayload() throws Exception {
+    void surfacesEndpointIsStableAcrossRequests() throws Exception {
         JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L);
         String token = provider.createToken("ui-user", List.of("viewer"), Map.of("tenant_id", "tenant-a"));
 
@@ -100,14 +100,14 @@ class DataCloudHttpServerCapabilityTest {
 
         Map<String, Object> surfacesData = (Map<String, Object>) surfacesBody.get("data");
         Map<String, Object> surfacesData2 = (Map<String, Object>) surfacesBody2.get("data");
-        Map<String, Object> surfacesCapabilities = (Map<String, Object>) surfacesData.get("capabilities");
-        Map<String, Object> surfacesCapabilities2 = (Map<String, Object>) surfacesData2.get("capabilities");
+        Map<String, Object> surfacesPayload = (Map<String, Object>) surfacesData.get("surfaces");
+        Map<String, Object> surfacesPayload2 = (Map<String, Object>) surfacesData2.get("surfaces");
 
-        assertThat(surfacesCapabilities.keySet()).containsAll(surfacesCapabilities2.keySet());
-        assertThat(surfacesCapabilities2.keySet()).containsAll(surfacesCapabilities.keySet());
+        assertThat(surfacesPayload.keySet()).containsAll(surfacesPayload2.keySet());
+        assertThat(surfacesPayload2.keySet()).containsAll(surfacesPayload.keySet());
 
-        Map<String, Object> surfacesRuntimePosture = (Map<String, Object>) ((Map<String, Object>) surfacesCapabilities.get("_meta")).get("runtimePosture");
-        Map<String, Object> surfacesRuntimePosture2 = (Map<String, Object>) ((Map<String, Object>) surfacesCapabilities2.get("_meta")).get("runtimePosture");
+        Map<String, Object> surfacesRuntimePosture = (Map<String, Object>) ((Map<String, Object>) surfacesPayload.get("_meta")).get("runtimePosture");
+        Map<String, Object> surfacesRuntimePosture2 = (Map<String, Object>) ((Map<String, Object>) surfacesPayload2.get("_meta")).get("runtimePosture");
         
         // DC-P1.18: Profile-posture parity checks for all durability fields
         assertThat(surfacesRuntimePosture.get("authenticationConfigured")).isEqualTo(true);
@@ -134,10 +134,10 @@ class DataCloudHttpServerCapabilityTest {
         assertThat(surfacesRuntimePosture.get("idempotencyStoreDurable")).isEqualTo(surfacesRuntimePosture2.get("idempotencyStoreDurable"));
         assertThat(surfacesRuntimePosture.get("settingsStorageMode")).isEqualTo(surfacesRuntimePosture2.get("settingsStorageMode"));
 
-        assertThat(((Map<String, Object>) surfacesCapabilities.get("authentication.jwt")).get("status"))
-            .isEqualTo(((Map<String, Object>) surfacesCapabilities2.get("authentication.jwt")).get("status"));
-        assertThat(((Map<String, Object>) surfacesCapabilities.get("health.database")).get("status"))
-            .isEqualTo(((Map<String, Object>) surfacesCapabilities2.get("health.database")).get("status"));
+        assertThat(((Map<String, Object>) surfacesPayload.get("authentication.jwt")).get("status"))
+            .isEqualTo(((Map<String, Object>) surfacesPayload2.get("authentication.jwt")).get("status"));
+        assertThat(((Map<String, Object>) surfacesPayload.get("health.database")).get("status"))
+            .isEqualTo(((Map<String, Object>) surfacesPayload2.get("health.database")).get("status"));
         assertThat(((Map<String, Object>) surfacesBody.get("meta")).get("tenantId"))
             .isEqualTo(((Map<String, Object>) surfacesBody2.get("meta")).get("tenantId"));
     }

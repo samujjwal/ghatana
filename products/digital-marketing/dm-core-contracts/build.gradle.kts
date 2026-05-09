@@ -13,6 +13,10 @@ dependencies {
 
     compileOnly(libs.spotbugs.annotations)
 
+    // YAML parsing for route manifest generator
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.dataformat.yaml)
+
     testImplementation(libs.bundles.testing.core)
     testImplementation(project(":platform-kernel:kernel-testing"))
     testRuntimeOnly(libs.junit.jupiter.engine)
@@ -51,4 +55,15 @@ tasks.jacocoTestCoverageVerification {
 
 tasks.named("check") {
     dependsOn(tasks.jacocoTestCoverageVerification)
+}
+
+// Task to generate route/action/capability artifacts from canonical YAML manifest
+// Note: This task should be run manually after changes to dmos-route-manifest.yaml
+// It does not automatically depend on compileJava to avoid circular dependency
+tasks.register<JavaExec>("generateRouteManifest") {
+    group = "generation"
+    description = "Generate route/action/capability artifacts from canonical YAML manifest"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.ghatana.digitalmarketing.contracts.generated.DmosRouteManifestGenerator")
+    workingDir = projectDir
 }

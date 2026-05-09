@@ -4,7 +4,7 @@
 #
 # PURPOSE:
 #   Detects divergence between the HTTP routes registered in
-#   DataCloudHttpServer.java and the paths declared in contracts/openapi/data-cloud.yaml.
+#   DataCloudRouterBuilder.java and the paths declared in contracts/openapi/data-cloud.yaml.
 #   Fails CI when routes are added / removed in code without updating the spec.
 #
 # USAGE:
@@ -19,7 +19,7 @@
 #   2  Required files not found
 #
 # ALGORITHM:
-#   1. Extract routes from DataCloudHttpServer.java using .with(HttpMethod.X, "path") lines
+#   1. Extract routes from DataCloudRouterBuilder.java using .with(HttpMethod.X, "path") lines
 #   2. Normalise ActiveJ parameters (:param → {param}) to match OpenAPI style
 #   3. Extract path keys from contracts/openapi/data-cloud.yaml (lines matching '^  /…:')
 #   4. Compute symmetric difference; exit 1 on any mismatch
@@ -56,7 +56,7 @@ if [[ ! -f "${OPENAPI_FILE}" ]]; then
   exit 2
 fi
 
-# ── Step 1: Extract routes from DataCloudHttpServer.java ─────────────────────
+# ── Step 1: Extract routes from DataCloudRouterBuilder.java ──────────────────
 # Match lines with .with(HttpMethod.METHOD, "/path", ...)
 CODE_ROUTES_RAW=$(grep -E '\.with\(HttpMethod\.[A-Z]+, *"' "${SERVER_FILE}" \
   | sed -E 's/.*\.with\(HttpMethod\.[A-Z]+, *"([^"]+)".*/\1/')

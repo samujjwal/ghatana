@@ -2,18 +2,18 @@
  * DC-P1-010: Surface Registry Composition tests
  *
  * Verifies that:
- * 1. All canonical Data Cloud routes are registered in the RouteCapabilityRegistry.
- * 2. All Action Plane routes (agents, connectors, events) are also present.
+ * 1. All canonical Data Cloud routes are registered in the RouteSurfaceRegistry.
+ * 1. All canonical Data Cloud routes are registered in the RouteSurfaceRegistry.
  * 3. Routes marked 'boundary' lifecycle have corresponding definitions in unsupportedSurfaceRegistry.
  * 4. No route entry drifts from the set of known paths (guards against orphan registrations).
  */
 import { describe, expect, it } from 'vitest';
 import {
-  canonicalRouteRegistry,
-  getActiveRoutes,
-  getDiscoverableRoutes,
-  getRouteByPath,
-} from '@/lib/routing/RouteCapabilityRegistry';
+  canonicalRouteSurfaceRegistry,
+  getActiveRouteSurfaces,
+  getDiscoverableRouteSurfaces,
+  getRouteSurfaceByPath,
+} from '@/lib/routing/RouteSurfaceRegistry';
 import {
   alertsSurfaceBoundary,
   dataFabricMetricsBoundary,
@@ -26,14 +26,14 @@ import {
 
 describe('Data Cloud primary surfaces are registered', () => {
   it('has home route', () => {
-    const route = getRouteByPath('/');
+    const route = getRouteSurfaceByPath('/');
     expect(route).toBeDefined();
     expect(route?.lifecycle).toBe('active');
     expect(route?.minimumShellRole).toBe('primary-user');
   });
 
   it('has /data route (entity store primary surface)', () => {
-    const route = getRouteByPath('/data');
+    const route = getRouteSurfaceByPath('/data');
     expect(route).toBeDefined();
     expect(route?.lifecycle).toBe('active');
     expect(route?.discoverable).toBe(true);
@@ -41,25 +41,25 @@ describe('Data Cloud primary surfaces are registered', () => {
   });
 
   it('has /query route (analytics surface)', () => {
-    const route = getRouteByPath('/query');
+    const route = getRouteSurfaceByPath('/query');
     expect(route).toBeDefined();
     expect(route?.lifecycle).toBe('active');
   });
 
   it('has /insights route', () => {
-    const route = getRouteByPath('/insights');
+    const route = getRouteSurfaceByPath('/insights');
     expect(route).toBeDefined();
     expect(route?.lifecycle).toBe('active');
   });
 
   it('has /trust route (data governance)', () => {
-    const route = getRouteByPath('/trust');
+    const route = getRouteSurfaceByPath('/trust');
     expect(route).toBeDefined();
     expect(route?.lifecycle).toBe('active');
   });
 
   it('has /pipelines route (data-local plugin workflow execution)', () => {
-    const route = getRouteByPath('/pipelines');
+    const route = getRouteSurfaceByPath('/pipelines');
     expect(route).toBeDefined();
     expect(route?.capabilities).toContain('plugin-execution');
     expect(route?.description?.toLowerCase()).toContain('data-local plugin workflow execution');
@@ -70,19 +70,19 @@ describe('Data Cloud primary surfaces are registered', () => {
 
 describe('Action Plane surfaces are registered', () => {
   it('has /connectors route (external data source connectors)', () => {
-    const route = getRouteByPath('/connectors');
+    const route = getRouteSurfaceByPath('/connectors');
     expect(route).toBeDefined();
     expect(route?.capabilities).toContain('data-connectors');
   });
 
   it('has /events route (AEP event stream explorer)', () => {
-    const route = getRouteByPath('/events');
+    const route = getRouteSurfaceByPath('/events');
     expect(route).toBeDefined();
     expect(route?.capabilities).toContain('event-stream');
   });
 
   it('has /agents route (agent plugin catalog)', () => {
-    const route = getRouteByPath('/agents');
+    const route = getRouteSurfaceByPath('/agents');
     expect(route).toBeDefined();
     expect(route?.capabilities).toContain('agent-catalog');
     // Agents require operator-level role — not discoverable to primary-users by default
@@ -90,13 +90,13 @@ describe('Action Plane surfaces are registered', () => {
   });
 
   it('excludes /agents from primary-user discoverable routes', () => {
-    const primaryUserRoutes = getDiscoverableRoutes('primary-user');
+    const primaryUserRoutes = getDiscoverableRouteSurfaces('primary-user');
     const agentRoute = primaryUserRoutes.find((r) => r.path === '/agents');
     expect(agentRoute).toBeUndefined();
   });
 
   it('includes /agents in operator discoverable routes', () => {
-    const operatorRoutes = getDiscoverableRoutes('operator');
+    const operatorRoutes = getDiscoverableRouteSurfaces('operator');
     const agentRoute = operatorRoutes.find((r) => r.path === '/agents');
     expect(agentRoute).toBeDefined();
   });
@@ -106,40 +106,40 @@ describe('Action Plane surfaces are registered', () => {
 
 describe('Operator and admin surfaces are registered', () => {
   it('has /operations route (ops console)', () => {
-    const route = getRouteByPath('/operations');
+    const route = getRouteSurfaceByPath('/operations');
     expect(route).toBeDefined();
     expect(route?.minimumShellRole).toBe('admin');
     expect(route?.lifecycle).toBe('active');
   });
 
   it('has /operations/jobs route (background ops center)', () => {
-    const route = getRouteByPath('/operations/jobs');
+    const route = getRouteSurfaceByPath('/operations/jobs');
     expect(route).toBeDefined();
     expect(route?.discoverable).toBe(false);
   });
 
   it('has /operations/release-truth route (unified release readiness dashboard)', () => {
-    const route = getRouteByPath('/operations/release-truth');
+    const route = getRouteSurfaceByPath('/operations/release-truth');
     expect(route).toBeDefined();
     expect(route?.minimumShellRole).toBe('admin');
     expect(route?.discoverable).toBe(true);
   });
 
   it('has /plugins route (plugin management)', () => {
-    const route = getRouteByPath('/plugins');
+    const route = getRouteSurfaceByPath('/plugins');
     expect(route).toBeDefined();
     expect(route?.minimumShellRole).toBe('operator');
     expect(route?.lifecycle).toBe('active');
   });
 
   it('has /alerts route (operator surface — boundary-guarded)', () => {
-    const route = getRouteByPath('/alerts');
+    const route = getRouteSurfaceByPath('/alerts');
     expect(route).toBeDefined();
     expect(route?.minimumShellRole).toBe('operator');
   });
 
   it('has /fabric route (data fabric topology)', () => {
-    const route = getRouteByPath('/fabric');
+    const route = getRouteSurfaceByPath('/fabric');
     expect(route).toBeDefined();
     expect(route?.capabilities).toContain('data-fabric');
   });
@@ -149,7 +149,7 @@ describe('Operator and admin surfaces are registered', () => {
 
 describe('Boundary surface definitions align with registry', () => {
   it('/settings is marked boundary lifecycle in registry', () => {
-    const route = getRouteByPath('/settings');
+    const route = getRouteSurfaceByPath('/settings');
     expect(route).toBeDefined();
     expect(route?.lifecycle).toBe('boundary');
     // settings is not discoverable at admin level by default
@@ -193,7 +193,7 @@ describe('Boundary surface definitions align with registry', () => {
 
 describe('Registry coherence and drift prevention', () => {
   it('all registry entries have valid path, label, lifecycle, and minimumShellRole', () => {
-    for (const [key, route] of Object.entries(canonicalRouteRegistry)) {
+    for (const [key, route] of Object.entries(canonicalRouteSurfaceRegistry)) {
       expect(route.path, `${key}.path`).toBeTruthy();
       expect(route.path, `${key}.path must start with /`).toMatch(/^\//);
       expect(route.label, `${key}.label`).toBeTruthy();
@@ -209,19 +209,19 @@ describe('Registry coherence and drift prevention', () => {
   });
 
   it('all paths are unique (no duplicate registrations)', () => {
-    const paths = Object.values(canonicalRouteRegistry).map((r) => r.path);
+    const paths = Object.values(canonicalRouteSurfaceRegistry).map((r) => r.path);
     const uniquePaths = new Set(paths);
     expect(uniquePaths.size).toBe(paths.length);
   });
 
   it('getActiveRoutes returns only active-lifecycle routes', () => {
-    const active = getActiveRoutes();
+    const active = getActiveRouteSurfaces();
     expect(active.every((r) => r.lifecycle === 'active')).toBe(true);
     expect(active.length).toBeGreaterThan(0);
   });
 
   it('primary-user discoverable routes do not include operator-or-admin-only routes', () => {
-    const routes = getDiscoverableRoutes('primary-user');
+    const routes = getDiscoverableRouteSurfaces('primary-user');
     const elevated = routes.filter(
       (r) => r.minimumShellRole === 'operator' || r.minimumShellRole === 'admin',
     );
@@ -231,14 +231,14 @@ describe('Registry coherence and drift prevention', () => {
   it('known Data Cloud core routes are present (anti-regression)', () => {
     const expectedPaths = ['/', '/data', '/query', '/pipelines', '/insights', '/trust', '/events'];
     for (const p of expectedPaths) {
-      expect(getRouteByPath(p), `Expected ${p} to be in registry`).toBeDefined();
+      expect(getRouteSurfaceByPath(p), `Expected ${p} to be in registry`).toBeDefined();
     }
   });
 
   it('known Action Plane routes are present (anti-regression)', () => {
     const actionPlanePaths = ['/connectors', '/events', '/agents'];
     for (const p of actionPlanePaths) {
-      expect(getRouteByPath(p), `Expected action-plane route ${p} to be in registry`).toBeDefined();
+      expect(getRouteSurfaceByPath(p), `Expected action-plane route ${p} to be in registry`).toBeDefined();
     }
   });
 });

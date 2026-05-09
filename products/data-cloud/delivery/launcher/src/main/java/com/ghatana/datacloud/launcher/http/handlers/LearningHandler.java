@@ -86,6 +86,9 @@ public class LearningHandler {
         String reviewId = request.getPathParameter("reviewId");
         boolean applied = learningBridge.approveReview(reviewId);
         if (!applied) {
+            if (learningBridge.getReviewQueue().containsKey(reviewId)) {
+                return Promise.of(http.errorResponse(409, "Review item already finalized: " + reviewId));
+            }
             return Promise.of(http.errorResponse(404, "Review item not found: " + reviewId));
         }
         return Promise.of(http.jsonResponse(Map.of(
@@ -102,6 +105,9 @@ public class LearningHandler {
         String reviewId = request.getPathParameter("reviewId");
         boolean applied = learningBridge.rejectReview(reviewId);
         if (!applied) {
+            if (learningBridge.getReviewQueue().containsKey(reviewId)) {
+                return Promise.of(http.errorResponse(409, "Review item already finalized: " + reviewId));
+            }
             return Promise.of(http.errorResponse(404, "Review item not found: " + reviewId));
         }
         return Promise.of(http.jsonResponse(Map.of(

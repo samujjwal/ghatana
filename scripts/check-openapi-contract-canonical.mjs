@@ -16,23 +16,15 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
 
 const files = {
-  dataCloudApi: join(repoRoot, 'products', 'data-cloud', 'api', 'openapi.yaml'),
-  dataCloudDocsGenerated: join(
-    repoRoot,
-    'products',
-    'data-cloud',
-    'docs-generated',
-    '05-usage-manuals-and-api-docs',
-    'openapi.yaml',
-  ),
-  aepContracts: join(repoRoot, 'products', 'aep', 'contracts', 'openapi.yaml'),
-  aepServer: join(repoRoot, 'products', 'aep', 'server', 'src', 'main', 'resources', 'openapi.yaml'),
+  dataCloudApi: join(repoRoot, 'products', 'data-cloud', 'contracts', 'openapi', 'data-cloud.yaml'),
+  aepContracts: join(repoRoot, 'products', 'data-cloud', 'contracts', 'openapi', 'aep.yaml'),
+  aepServer: join(repoRoot, 'products', 'data-cloud', 'planes', 'action', 'server', 'src', 'main', 'resources', 'openapi.yaml'),
   dmosApi: join(repoRoot, 'products', 'digital-marketing', 'dm-api', 'src', 'main', 'resources', 'openapi.json'),
   flashitGateway: join(repoRoot, 'products', 'flashit', 'backend', 'gateway', 'openapi.yaml'),
 };
 
 const requiredPaths = {
-  dataCloud: ['/api/v1/capabilities', '/api/v1/capabilities/schema'],
+  dataCloud: ['/api/v1/surfaces', '/api/v1/surfaces/schema'],
   aep: [
     '/health',
     '/ready',
@@ -79,20 +71,11 @@ for (const [name, fullPath] of Object.entries(files)) {
 }
 
 const dataCloudSpec = safeRead(files.dataCloudApi);
-const dataCloudDocsSpec = safeRead(files.dataCloudDocsGenerated);
 const aepContractsSpec = safeRead(files.aepContracts);
 const aepServerSpec = safeRead(files.aepServer);
 
 if (dataCloudSpec != null) {
   assertPathSet('Data Cloud API', files.dataCloudApi, dataCloudSpec, requiredPaths.dataCloud);
-}
-if (dataCloudDocsSpec != null) {
-  assertPathSet(
-    'Data Cloud generated docs',
-    files.dataCloudDocsGenerated,
-    dataCloudDocsSpec,
-    requiredPaths.dataCloud,
-  );
 }
 if (aepContractsSpec != null) {
   assertPathSet('AEP contracts', files.aepContracts, aepContractsSpec, requiredPaths.aep);

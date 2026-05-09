@@ -163,7 +163,7 @@ class DataCloudRouterBuilderIntegrationTest {
             .withAiAssistRoutes(aiAssistHandler)
             .withVoiceRoutes(voiceHandler)
             .withGovernanceRoutes(dataLifecycleHandler)
-            .withCapabilityRoutes(surfaceRegistryHandler)
+            .withSurfaceRoutes(surfaceRegistryHandler)
             .withLineageRoutes(lineageHandler)
             .withContextRoutes(contextLayerHandler, collectionContextHandler, semanticSearchHandler)
             .withMcpRoutes(mcpToolsHandler)

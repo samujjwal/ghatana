@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, expect, it } from 'vitest';
 
 import { getNavigationSectionsForShellRole } from '../../layouts/DefaultLayout';
-import { getDiscoverableRoutes } from '../../lib/routing/RouteCapabilityRegistry';
+import { getDiscoverableRouteSurfaces } from '../../lib/routing/RouteSurfaceRegistry';
 
 const NAV_SURFACE_PATHS = new Set([
   '/',
@@ -24,7 +24,7 @@ function getSectionPaths(role: 'primary-user' | 'operator' | 'admin'): string[] 
 }
 
 function getExpectedPathsFromRegistry(role: 'primary-user' | 'operator' | 'admin'): string[] {
-  return getDiscoverableRoutes(role)
+  return getDiscoverableRouteSurfaces(role)
     .map((route) => route.path)
     .filter((path) => NAV_SURFACE_PATHS.has(path))
     .sort();

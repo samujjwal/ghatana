@@ -193,7 +193,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: openapi-spec
-          path: products/data-cloud/docs/openapi.yaml
+          path: products/data-cloud/contracts/openapi/data-cloud.yaml
           retention-days: 30
 
       # Fail loudly on any issue
@@ -355,33 +355,41 @@ jobs:
       - name: Install pnpm
         run: corepack enable && corepack prepare pnpm@latest --activate
 
-      # Generate all three SDK targets from docs/openapi.yaml
+      # Generate all three SDK targets from contracts/openapi/data-cloud.yaml
       - name: Generate Data-Cloud SDKs from OpenAPI spec
         run: |
-          ./gradlew :products:data-cloud:delivery:sdk:generateAllSdks --no-daemon
+          ./gradlew :products:data-cloud:delivery:sdk:generateDataCloudSdks --no-daemon
 
-      # Validate the generated Java SDK compiles cleanly
-      - name: Validate generated Java SDK compiles
+      # Validate generated SDK artifacts exist at canonical output paths
+      - name: Validate generated SDK artifacts exist
         run: |
-          JAVA_SDK_DIR="products/data-cloud/delivery/sdk/build/generated/java-sdk"
-          if [ ! -d "$JAVA_SDK_DIR/src" ]; then
-            echo "::error::Java SDK source directory not found after generation"
+          SDK_ROOT="products/data-cloud/delivery/sdk/build/generated/sdk"
+          JAVA_SDK_FILE="$SDK_ROOT/java/src/main/java/com/ghatana/datacloud/sdk/generated/DataCloudJavaSdk.java"
+          TS_SDK_FILE="$SDK_ROOT/typescript/src/index.ts"
+          PY_SDK_FILE="$SDK_ROOT/python/datacloud_sdk/client.py"
+          if [ ! -f "$JAVA_SDK_FILE" ]; then
+            echo "::error::Generated Java SDK file missing: $JAVA_SDK_FILE"
             exit 1
           fi
-          cd "$JAVA_SDK_DIR"
-          # The generator emits a self-contained Gradle project — build it
-          if [ -f "gradlew" ]; then
-            chmod +x gradlew && ./gradlew compileJava --no-daemon -q
-          else
-            echo "::error::No gradlew in generated Java SDK — generator must emit a self-contained Gradle wrapper."
+          if [ ! -f "$TS_SDK_FILE" ]; then
+            echo "::error::Generated TypeScript SDK file missing: $TS_SDK_FILE"
             exit 1
           fi
-          echo "✓ Java SDK generated and compiles."
+          if [ ! -f "$PY_SDK_FILE" ]; then
+            echo "::error::Generated Python SDK file missing: $PY_SDK_FILE"
+            exit 1
+          fi
+          echo "✓ Generated Java/TypeScript/Python SDK artifacts are present."
+
+      # Validate SDK verification tasks wired in the module
+      - name: Validate SDK module checks
+        run: |
+          ./gradlew :products:data-cloud:delivery:sdk:check --no-daemon
 
       # Validate the generated TypeScript SDK type-checks cleanly
       - name: Validate generated TypeScript SDK type-checks
         run: |
-          TS_SDK_DIR="products/data-cloud/delivery/sdk/build/generated/typescript-sdk"
+          TS_SDK_DIR="products/data-cloud/delivery/sdk/build/generated/sdk/typescript"
           if [ -d "$TS_SDK_DIR" ]; then
             cd "$TS_SDK_DIR"
             if [ -f "package.json" ]; then
@@ -400,9 +408,9 @@ jobs:
         with:
           name: data-cloud-sdks
           path: |
-            products/data-cloud/delivery/sdk/build/generated/java-sdk/
-            products/data-cloud/delivery/sdk/build/generated/typescript-sdk/
-            products/data-cloud/delivery/sdk/build/generated/python-sdk/
+            products/data-cloud/delivery/sdk/build/generated/sdk/java/
+            products/data-cloud/delivery/sdk/build/generated/sdk/typescript/
+            products/data-cloud/delivery/sdk/build/generated/sdk/python/
           retention-days: 14
 
   # E2E smoke validation: runs the 8-check smoke matrix against a live DC instance.

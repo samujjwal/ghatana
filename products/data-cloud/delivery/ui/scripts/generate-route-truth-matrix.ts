@@ -1,10 +1,10 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
-  canonicalRouteRegistry,
-  getRoutesByLifecycle,
+  canonicalRouteSurfaceRegistry,
+  getRouteSurfacesByLifecycle,
   type RouteLifecycle,
-} from '../src/lib/routing/RouteCapabilityRegistry';
+} from '../src/lib/routing/RouteSurfaceRegistry';
 
 const lifecycleOrder: RouteLifecycle[] = [
   'active',
@@ -28,14 +28,14 @@ const targetPath = resolve(process.cwd(), 'docs/ROUTE_TRUTH_MATRIX.md');
 const checkOnly = process.argv.includes('--check');
 
 function generateMarkdown(): string {
-  const rows = Object.entries(canonicalRouteRegistry)
+  const rows = Object.entries(canonicalRouteSurfaceRegistry)
     .map(([key, route]) => {
       const capabilities = route.capabilities.length > 0 ? route.capabilities.join(', ') : '—';
       return `| \`${key}\` | \`${route.path}\` | ${route.label} | ${route.minimumShellRole} | ${lifecycleBadge[route.lifecycle]} | ${route.discoverable ? 'Yes' : 'No'} | ${capabilities} |`;
     })
     .join('\n');
 
-  const grouped = getRoutesByLifecycle();
+  const grouped = getRouteSurfacesByLifecycle();
   const lifecycleSummary = lifecycleOrder
     .map((lifecycle) => `- ${lifecycle}: ${grouped[lifecycle].length}`)
     .join('\n');
@@ -43,7 +43,7 @@ function generateMarkdown(): string {
   return [
     '# Data Cloud Route Truth Matrix',
     '',
-    '> **Generated from**: `src/lib/routing/RouteCapabilityRegistry.ts` — `canonicalRouteRegistry`',
+    '> **Generated from**: `src/lib/routing/RouteSurfaceRegistry.ts` — `canonicalRouteSurfaceRegistry`',
     '> **Generation command**: `pnpm --filter @data-cloud/ui docs:routes:generate`',
     '',
     '## Route Matrix',

@@ -16,17 +16,15 @@ generated at build time and are NOT committed to VCS.
 
 | SDK | Language | Generator | Output |
 |-----|----------|-----------|--------|
-| Java | Java 8+ | `openapi-generator` (okhttp-gson) | `build/generated/java-sdk` |
-| TypeScript | ES2020 | `openapi-generator` (fetch) | `build/generated/typescript-sdk` |
-| Python | 3.9+ | `openapi-generator` (urllib3) | `build/generated/python-sdk` |
+| Java | Java 21+ | in-repo generator (`DataCloudSdkGeneratorMain`) | `build/generated/sdk/java` |
+| TypeScript | ES2020 | in-repo generator (`DataCloudSdkGeneratorMain`) | `build/generated/sdk/typescript` |
+| Python | 3.9+ | in-repo generator (`DataCloudSdkGeneratorMain`) | `build/generated/sdk/python` |
 
 ### Generation Commands
 
 ```bash
-./gradlew :products:data-cloud:delivery:sdk:generateJavaSdk
-./gradlew :products:data-cloud:delivery:sdk:generateTypescriptSdk
-./gradlew :products:data-cloud:delivery:sdk:generatePythonSdk
-./gradlew :products:data-cloud:delivery:sdk:generateAllSdks
+./gradlew :products:data-cloud:delivery:sdk:generateDataCloudSdks
+./gradlew :products:data-cloud:delivery:sdk:check
 ```
 
 ## Source of Truth
@@ -35,7 +33,7 @@ generated at build time and are NOT committed to VCS.
 
 ## Contract Stability
 
-SDK generation MUST be triggered after every change to `openapi.yaml`. The CI
+SDK generation MUST be triggered after every change to `contracts/openapi/data-cloud.yaml`. The CI
 drift check ensures the spec stays in sync with the implementation.
 
 ## Consumers

@@ -52,7 +52,7 @@ import { KeyboardShortcuts, useKeyboardShortcuts } from '../components/common/Ke
 import { AiAssistant, useAiAssistant, AiAssistantTrigger } from '../components/ai/AiAssistant';
 import { useNotificationCenter, NotificationTrigger, NotificationPanel } from '../components/notifications/NotificationCenter';
 import { useWebSocketAutoConnect, useWebSocketState } from '../lib/websocket';
-import { getDiscoverableRoutes } from '../lib/routing/RouteCapabilityRegistry';
+import { getDiscoverableRouteSurfaces } from '../lib/routing/RouteSurfaceRegistry';
 import { OperationsProvider } from '../contexts/OperationsContext';
 import { ActiveOperationsBar } from '../components/common/ActiveOperationsBar';
 import { isAlertsSurfaceEnabled, isFabricSurfaceEnabled } from '../lib/feature-gates';
@@ -91,7 +91,7 @@ function mapProductViewModeToShellRole(mode: ProductViewMode): ShellRole {
  *
  * Operator surfaces (Events, Alerts, Memory, Entities, Context, Fabric, Agents)
  * are restored as canonical first-class routes. Navigation is now generated from
- * the canonical RouteCapabilityRegistry to ensure shell disclosure always matches
+ * the canonical RouteSurfaceRegistry to ensure shell disclosure always matches
  * route capability truth (RBAC-001).
  */
 const navSections: NavSection[] = [
@@ -129,7 +129,7 @@ const navSections: NavSection[] = [
  * Ensures navigation always matches route capability truth (RBAC-001).
  */
 export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
-    const discoverable = getDiscoverableRoutes(shellRole);
+    const discoverable = getDiscoverableRouteSurfaces(shellRole);
 
     const corePaths = new Set(['/', '/data', '/connectors', '/pipelines', '/query']);
     const intelPaths = new Set(['/insights', '/trust', '/events', '/alerts']);
@@ -176,7 +176,7 @@ export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
  * stays in `navSections`; the static `minimumShellRole` on nav items is ignored.
  */
 export function getNavigationSectionsForShellRole(role: ShellRole): NavSection[] {
-    const accessiblePaths = new Set(getDiscoverableRoutes(role).map((r) => r.path));
+    const accessiblePaths = new Set(getDiscoverableRouteSurfaces(role).map((r) => r.path));
 
     if (!isAlertsSurfaceEnabled()) {
         accessiblePaths.delete('/alerts');

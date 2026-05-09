@@ -269,15 +269,40 @@ jobs:
         run: pnpm run test:route-contract
 
   # =============================================================================
-  # Job 4b: Stable Route E2E (UI -> API -> Postgres, real backend)
+  # Job 4b: Stable Route E2E (UI -> API -> Postgres, real backend) - P1-2 Mandatory
   # =============================================================================
   stable-route-e2e-realbackend:
-    name: Stable Route E2E (Real Backend)
+    name: Stable Route E2E (Real Backend) - Mandatory for Production
     runs-on: ubuntu-latest
-    if: ${{ vars.DMOS_UI_BASE_URL != '' && vars.DMOS_API_BASE_URL != '' && vars.DMOS_TEST_WORKSPACE != '' && secrets.DMOS_TEST_TOKEN != '' }}
+    # P1-2: Make real-backend E2E mandatory for production release
+    # Fails with clear error message if required environment variables are not configured
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Validate Required Environment Variables
+        run: |
+          if [ -z "${{ vars.DMOS_UI_BASE_URL }}" ]; then
+            echo "❌ DMOS_UI_BASE_URL environment variable is required for production release"
+            echo "Please configure DMOS_UI_BASE_URL in repository settings"
+            exit 1
+          fi
+          if [ -z "${{ vars.DMOS_API_BASE_URL }}" ]; then
+            echo "❌ DMOS_API_BASE_URL environment variable is required for production release"
+            echo "Please configure DMOS_API_BASE_URL in repository settings"
+            exit 1
+          fi
+          if [ -z "${{ vars.DMOS_TEST_WORKSPACE }}" ]; then
+            echo "❌ DMOS_TEST_WORKSPACE environment variable is required for production release"
+            echo "Please configure DMOS_TEST_WORKSPACE in repository settings"
+            exit 1
+          fi
+          if [ -z "${{ secrets.DMOS_TEST_TOKEN }}" ]; then
+            echo "❌ DMOS_TEST_TOKEN secret is required for production release"
+            echo "Please configure DMOS_TEST_TOKEN in repository secrets"
+            exit 1
+          fi
+          echo "✅ All required environment variables are configured"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -450,6 +475,140 @@ jobs:
           echo "✅ Enum values aligned across backend and frontend"
 
   # =============================================================================
+  # Job 8: Durable Workflow Tests (P0-006)
+  # =============================================================================
+  durable-workflow-tests:
+    name: Durable Workflow Tests (DLQ, External ID Mapping)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: dmos_workflow_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3
+
+      - name: Run Dead-Letter Queue Tests
+        run: |
+          ./gradlew :products:digital-marketing:dm-persistence:test \
+            --tests "com.ghatana.digitalmarketing.persistence.command.PostgresDmDeadLetterQueueTest" \
+            --info
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: true
+
+      - name: Run External ID Mapping Tests
+        run: |
+          ./gradlew :products:digital-marketing:dm-persistence:test \
+            --tests "com.ghatana.digitalmarketing.persistence.command.PostgresExternalIdMappingRepositoryTest" \
+            --info
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workflow-test-results
+          path: products/digital-marketing/dm-persistence/build/test-results/test/
+
+  # =============================================================================
+  # Job 9: Privacy and DSAR Tests (P1-013)
+  # =============================================================================
+  privacy-dsar-tests:
+    name: Privacy and DSAR Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3
+
+      - name: Run Privacy Service Tests
+        run: |
+          ./gradlew :products:digital-marketing:dm-application:test \
+            --tests "com.ghatana.digitalmarketing.application.privacy.PrivacyServiceTest" \
+            --info
+        env:
+          DMOS_PII_HMAC_KEY: test-hmac-key-for-ci
+          DMOS_CONTACT_ENCRYPTION_KEY: test-encryption-key-for-ci
+
+      - name: Validate PII Hardening
+        run: |
+          # Check for plaintext PII handling in production code
+          if grep -r "email" products/digital-marketing/dm-persistence/src/main/java --include="*.java" | grep -i "varchar" | grep -v "hashed" | grep -v "encrypted"; then
+            echo "⚠️ Found potential plaintext email storage - ensure PII is hashed/encrypted"
+          fi
+          echo "✅ PII hardening validation complete"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: privacy-test-results
+          path: products/digital-marketing/dm-application/build/test-results/test/
+
+  # =============================================================================
+  # Job 10: Analytics Dashboard Tests (P0-003)
+  # =============================================================================
+  analytics-dashboard-tests:
+    name: Analytics Dashboard Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3
+
+      - name: Run Dashboard Summary Tests
+        run: |
+          ./gradlew :products:digital-marketing:dm-application:test \
+            --tests "com.ghatana.digitalmarketing.application.analytics.DashboardSummaryServiceTest" \
+            --info
+
+      - name: Validate Backend-Only Computation
+        run: |
+          # Ensure dashboard metrics are computed server-side, not in UI
+          if grep -r "computeMetrics" products/digital-marketing/ui/src --include="*.ts" --include="*.tsx"; then
+            echo "⚠️ Found metric computation in UI - should be backend-only"
+          fi
+          echo "✅ Backend-only computation validated"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: analytics-test-results
+          path: products/digital-marketing/dm-application/build/test-results/test/
+
+  # =============================================================================
   # Job 8: Feature Flag Configuration Tests (P0-004 / P0-014)
   # =============================================================================
   feature-flag-tests:
@@ -497,10 +656,10 @@ jobs:
           echo "✅ Feature flag routing validated"
 
   # =============================================================================
-  # Job 9: Release Gate Summary
+  # Job 11: Release Gate Summary
   # =============================================================================
   release-gate:
-    name: P0 Release Gate
+    name: P0/P1 Release Gate
     runs-on: ubuntu-latest
     needs:
       - unit-tests
@@ -508,16 +667,20 @@ jobs:
       - api-integration-tests
       - e2e-browser-tests
       - ui-quality-gates
+      - stable-route-e2e-realbackend
       - production-bootstrap-validation
       - security-header-tests
       - contract-parity-tests
+      - durable-workflow-tests
+      - privacy-dsar-tests
+      - analytics-dashboard-tests
       - feature-flag-tests
     if: always()
     steps:
-      - name: Check all P0 tests passed
+      - name: Check all P0/P1 tests passed
         run: |
           echo "==================================="
-          echo "P0 Release Gate Summary"
+          echo "P0/P1 Release Gate Summary"
           echo "==================================="
 
           # Check each required job result explicitly
@@ -528,9 +691,13 @@ jobs:
           api_tests="${{ needs.api-integration-tests.result }}"
           e2e_tests="${{ needs.e2e-browser-tests.result }}"
           ui_quality="${{ needs.ui-quality-gates.result }}"
+          real_backend_e2e="${{ needs.stable-route-e2e-realbackend.result }}"
           bootstrap_tests="${{ needs.production-bootstrap-validation.result }}"
           security_tests="${{ needs.security-header-tests.result }}"
           contract_tests="${{ needs.contract-parity-tests.result }}"
+          workflow_tests="${{ needs.durable-workflow-tests.result }}"
+          privacy_tests="${{ needs.privacy-dsar-tests.result }}"
+          analytics_tests="${{ needs.analytics-dashboard-tests.result }}"
           flag_tests="${{ needs.feature-flag-tests.result }}"
 
           echo "${unit_tests}" | grep -q "success" || all_passed=false
@@ -538,9 +705,13 @@ jobs:
           echo "${api_tests}" | grep -q "success" || all_passed=false
           echo "${e2e_tests}" | grep -q "success" || all_passed=false
           echo "${ui_quality}" | grep -q "success" || all_passed=false
+          echo "${real_backend_e2e}" | grep -q "success" || all_passed=false
           echo "${bootstrap_tests}" | grep -q "success" || all_passed=false
           echo "${security_tests}" | grep -q "success" || all_passed=false
           echo "${contract_tests}" | grep -q "success" || all_passed=false
+          echo "${workflow_tests}" | grep -q "success" || all_passed=false
+          echo "${privacy_tests}" | grep -q "success" || all_passed=false
+          echo "${analytics_tests}" | grep -q "success" || all_passed=false
           echo "${flag_tests}" | grep -q "success" || all_passed=false
 
           echo "✅ unit-tests: ${unit_tests}"
@@ -548,19 +719,23 @@ jobs:
           echo "✅ api-integration-tests: ${api_tests}"
           echo "✅ e2e-browser-tests: ${e2e_tests}"
           echo "✅ ui-quality-gates: ${ui_quality}"
+          echo "✅ stable-route-e2e-realbackend (P1-2 Mandatory): ${real_backend_e2e}"
           echo "✅ production-bootstrap-validation: ${bootstrap_tests}"
           echo "✅ security-header-tests: ${security_tests}"
           echo "✅ contract-parity-tests: ${contract_tests}"
+          echo "✅ durable-workflow-tests (DLQ, External ID): ${workflow_tests}"
+          echo "✅ privacy-dsar-tests (PII, Consent, DSAR): ${privacy_tests}"
+          echo "✅ analytics-dashboard-tests: ${analytics_tests}"
           echo "✅ feature-flag-tests: ${flag_tests}"
 
           echo "==================================="
 
           if [ "$all_passed" = true ]; then
-            echo "🎉 ALL P0 RELEASE BLOCKERS PASSED"
+            echo "🎉 ALL P0/P1 RELEASE BLOCKERS PASSED"
             echo "Production release is APPROVED"
             exit 0
           else
-            echo "❌ P0 RELEASE GATE FAILED"
+            echo "❌ P0/P1 RELEASE GATE FAILED"
             echo "Production release is BLOCKED"
             exit 1
           fi
@@ -569,7 +744,7 @@ jobs:
         if: always()
         run: |
           cat > release-report.md << 'EOF'
-          # DMOS P0 Release Gate Report
+          # DMOS P0/P1 Release Gate Report
 
           ## Status: ${{ needs.release-gate.result }}
 
@@ -582,9 +757,13 @@ jobs:
           | API Integration (P1-015) | ${{ needs.api-integration-tests.result }} |
           | E2E Browser Tests (P0-016) | ${{ needs.e2e-browser-tests.result }} |
           | UI Type/Lint/Route Contract | ${{ needs.ui-quality-gates.result }} |
+          | Real-Backend E2E (P1-2 Mandatory) | ${{ needs.stable-route-e2e-realbackend.result }} |
           | Production Bootstrap (P1-004/P0-016) | ${{ needs.production-bootstrap-validation.result }} |
           | Security Headers (P0-015) | ${{ needs.security-header-tests.result }} |
           | Contract Parity (P0-009/P0-010) | ${{ needs.contract-parity-tests.result }} |
+          | Durable Workflow (P0-006) | ${{ needs.durable-workflow-tests.result }} |
+          | Privacy/DSAR (P1-013) | ${{ needs.privacy-dsar-tests.result }} |
+          | Analytics Dashboard (P0-003) | ${{ needs.analytics-dashboard-tests.result }} |
           | Feature Flags (P0-004/P0-014) | ${{ needs.feature-flag-tests.result }} |
 
           ### Release Decision

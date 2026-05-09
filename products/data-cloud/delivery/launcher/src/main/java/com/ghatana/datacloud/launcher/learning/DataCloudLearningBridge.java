@@ -262,6 +262,18 @@ public class DataCloudLearningBridge implements AutoCloseable {
     private boolean applyDecision(String reviewId, String decision) {
         Map<String, Object> existing = reviewQueue.get(reviewId);
         if (existing == null) return false;
+
+        Object currentStatus = existing.get("status");
+        if (decision.equals(currentStatus)) {
+            log.info("DataCloudLearningBridge: review {} already {}", reviewId, decision);
+            return true;
+        }
+
+        if ("APPROVED".equals(currentStatus) || "REJECTED".equals(currentStatus)) {
+            log.warn("DataCloudLearningBridge: review {} already finalized as {}; refusing {} transition", reviewId, currentStatus, decision);
+            return false;
+        }
+
         LinkedHashMap<String, Object> updated = new LinkedHashMap<>(existing);
         updated.put("status", decision);
         updated.put("reviewedAt", Instant.now().toString());

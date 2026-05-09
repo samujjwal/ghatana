@@ -28,10 +28,10 @@ import { cn, textStyles, bgStyles } from '../../lib/theme';
 import { collectionsApi } from '../../lib/api/collections';
 import { workflowsApi } from '../../lib/api/workflows';
 import SessionBootstrap, { type ShellRole, canAccessShellRole } from '../../lib/auth/session';
-import { canonicalRouteRegistry } from '../../lib/routing/RouteCapabilityRegistry';
+import { canonicalRouteSurfaceRegistry } from '../../lib/routing/RouteSurfaceRegistry';
 
-// DC-UX-048: flat array of registry entries for lifecycle lookup
-const routeRegistryEntries = Object.values(canonicalRouteRegistry);
+// DC-UX-048: flat array of surface registry entries for lifecycle lookup
+const routeRegistryEntries = Object.values(canonicalRouteSurfaceRegistry);
 
 /**
  * Search result item

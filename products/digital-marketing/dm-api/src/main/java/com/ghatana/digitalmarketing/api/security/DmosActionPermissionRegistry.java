@@ -8,8 +8,8 @@ import java.util.Set;
 /**
  * Canonical DMOS backend action-to-role permission registry.
  *
- * <p>This map mirrors route-manifest actions and includes DMOS page-level mutation
- * actions that are not declared in route metadata but are exposed by API endpoints.</p>
+ * <p>This class is generated from the canonical route manifest.
+ * Do not edit manually - regenerate from dmos-route-manifest.yaml.</p>
  *
  * @doc.type class
  * @doc.purpose Canonical backend action-level role authorization for DMOS APIs
@@ -19,42 +19,47 @@ import java.util.Set;
 public final class DmosActionPermissionRegistry {
 
     private static final Map<String, Integer> ROLE_ORDER = Map.of(
-        "viewer", 0,
+        "admin", 4,
         "brand-manager", 1,
-        "marketing-director", 2,
         "exec-sponsor", 3,
-        "admin", 4
+        "marketing-director", 2,
+        "viewer", 0,
     );
 
     private static final Map<String, String> ACTION_MINIMUM_ROLES = Map.ofEntries(
-        Map.entry("view-dashboard", "viewer"),
-        Map.entry("review-approval", "viewer"),
         Map.entry("approve", "brand-manager"),
-        Map.entry("reject", "brand-manager"),
-        Map.entry("view-audit-log", "viewer"),
-        Map.entry("launch-campaign", "brand-manager"),
-        Map.entry("submit-strategy", "brand-manager"),
-        Map.entry("approve-strategy", "marketing-director"),
-        Map.entry("submit-budget", "marketing-director"),
         Map.entry("approve-budget", "exec-sponsor"),
-        Map.entry("view-funnel", "brand-manager"),
-        Map.entry("view-attribution", "brand-manager"),
-        Map.entry("view-roi", "marketing-director"),
-        Map.entry("view-recommendations", "brand-manager"),
         Map.entry("approve-optimizations", "marketing-director"),
-        Map.entry("manage-funnel", "brand-manager"),
-        Map.entry("view-research", "brand-manager"),
-        Map.entry("manage-channels", "marketing-director"),
-        Map.entry("manage-locales", "brand-manager"),
-        Map.entry("manage-agency", "admin"),
-        Map.entry("create-campaign", "brand-manager"),
-        Map.entry("pause-campaign", "brand-manager"),
-        Map.entry("complete-campaign", "brand-manager"),
+        Map.entry("approve-strategy", "marketing-director"),
         Map.entry("archive-campaign", "brand-manager"),
-        Map.entry("rollback-campaign", "brand-manager"),
+        Map.entry("complete-campaign", "brand-manager"),
+        Map.entry("create-campaign", "brand-manager"),
         Map.entry("duplicate-campaign", "brand-manager"),
+        Map.entry("generate-budget", "marketing-director"),
         Map.entry("generate-strategy", "brand-manager"),
-        Map.entry("generate-budget", "marketing-director")
+        Map.entry("launch-campaign", "brand-manager"),
+        Map.entry("manage-agency", "admin"),
+        Map.entry("manage-channels", "marketing-director"),
+        Map.entry("manage-funnel", "brand-manager"),
+        Map.entry("manage-locales", "brand-manager"),
+        Map.entry("pause-campaign", "brand-manager"),
+        Map.entry("reject", "brand-manager"),
+        Map.entry("review-approval", "viewer"),
+        Map.entry("rollback-campaign", "brand-manager"),
+        Map.entry("submit-budget", "marketing-director"),
+        Map.entry("submit-strategy", "brand-manager"),
+        Map.entry("view-approval-detail", "viewer"),
+        Map.entry("view-attribution", "brand-manager"),
+        Map.entry("view-audit-log", "viewer"),
+        Map.entry("view-budget", "marketing-director"),
+        Map.entry("view-campaign-detail", "brand-manager"),
+        Map.entry("view-campaigns", "brand-manager"),
+        Map.entry("view-dashboard", "viewer"),
+        Map.entry("view-funnel", "brand-manager"),
+        Map.entry("view-recommendations", "brand-manager"),
+        Map.entry("view-research", "brand-manager"),
+        Map.entry("view-roi", "marketing-director"),
+        Map.entry("view-strategy", "brand-manager"),
     );
 
     private DmosActionPermissionRegistry() {

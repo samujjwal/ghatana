@@ -1,6 +1,6 @@
 package com.ghatana.digitalmarketing.api.security;
 
-import com.ghatana.digitalmarketing.application.capabilities.DmosCapabilityRegistry;
+import com.ghatana.digitalmarketing.application.capabilities.DmosCapability;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
@@ -213,7 +213,7 @@ public final class DmosHttpContextFactory {
         }
 
         if (requiredCapability != null && !requiredCapability.isBlank()) {
-            if (!DmosCapabilityRegistry.isDefined(requiredCapability)) {
+            if (!DmosCapability.isDefined(requiredCapability)) {
                 throw new IllegalArgumentException("Unknown capability key required by route: " + requiredCapability);
             }
             boolean shouldEnforceCapability = productionMode;
@@ -307,6 +307,15 @@ public final class DmosHttpContextFactory {
             .anyMatch(requiredCapability::startsWith);
     }
 
+    /**
+     * P0-005: Resolves required capability from request path using canonical route manifest.
+     * 
+     * <p>This method uses the generated DmosCapability enum to resolve capabilities from paths,
+     * eliminating manual duplication between the route manifest and auth enforcement.</p>
+     * 
+     * @param request the HTTP request
+     * @return required capability key, or null if no capability check is needed
+     */
     private static String resolveRequiredCapability(HttpRequest request) {
         String path = request.getPath();
         if (path == null || path.isBlank()) {
@@ -316,36 +325,52 @@ public final class DmosHttpContextFactory {
             return null;
         }
 
+        // Canonical route-to-capability mapping from dmos-route-manifest.yaml
+        // This mapping is derived from the route manifest and should stay in sync
         if (path.contains("/campaigns")) {
-            return DmosCapabilityRegistry.CAMPAIGNS;
+            return DmosCapability.DMOS_CAMPAIGNS.getKey();
         }
         if (path.contains("/strategy")) {
-            return DmosCapabilityRegistry.STRATEGY;
+            return DmosCapability.DMOS_STRATEGY.getKey();
         }
-        if (path.contains("/budget")) {
-            return DmosCapabilityRegistry.BUDGET;
+        if (path.contains("/budget") || path.contains("/budget-recommendation")) {
+            return DmosCapability.DMOS_BUDGET.getKey();
         }
         if (path.contains("/approvals")) {
-            return DmosCapabilityRegistry.APPROVALS;
+            // Approvals is a governance capability, not a feature capability
+            return null;
         }
         if (path.contains("/ai-actions")) {
-            return DmosCapabilityRegistry.AI_ACTIONS;
+            // AI action log is governance, not a feature capability
+            return null;
         }
-        if (path.contains("/next-best-action-recommendations")
-            || path.contains("/anomaly")
-            || path.contains("/experiment")
-            || path.contains("/reallocation")) {
-            return DmosCapabilityRegistry.AI_OPTIMIZATION;
+        if (path.contains("/ai-optimization")) {
+            return DmosCapability.DMOS_AI_OPTIMIZATION.getKey();
         }
-        if (path.contains("/competitor") || path.contains("/audit")) {
-            return DmosCapabilityRegistry.MARKET_RESEARCH;
+        if (path.contains("/funnel-analytics")
+            || path.contains("/attribution")
+            || path.contains("/roi-roas")) {
+            return DmosCapability.DMOS_REPORTING.getKey();
+        }
+        if (path.contains("/self-marketing-funnel")) {
+            return DmosCapability.DMOS_SELF_MARKETING.getKey();
+        }
+        if (path.contains("/market-research")
+            || path.contains("/competitor")
+            || path.contains("/audit")) {
+            return DmosCapability.DMOS_MARKET_RESEARCH.getKey();
+        }
+        if (path.contains("/advanced-channels")) {
+            return DmosCapability.DMOS_ADVANCED_CHANNELS.getKey();
         }
         if (path.contains("/localization")) {
-            return DmosCapabilityRegistry.LOCALIZATION;
+            return DmosCapability.DMOS_LOCALIZATION.getKey();
         }
         if (path.contains("/agency")) {
-            return DmosCapabilityRegistry.AGENCY;
+            return DmosCapability.DMOS_AGENCY.getKey();
         }
+        
+        // Workspace routes and dashboard don't require specific capability checks
         return null;
     }
 }

@@ -1323,6 +1323,7 @@ public class DataCloudHttpServer {
      */
     public void start() throws Exception {
         boolean authConfigured = apiKeyResolver != null || jwtProvider != null;
+        boolean tenantResolverAvailable = authConfigured;
         boolean entityStoreDurable = isDurableStoreBacking(client != null ? client.entityStore() : null);
         boolean coreEventStoreDurable = isDurableStoreBacking(client != null ? client.eventLogStore() : null);
         validateSecurityConfiguration(apiKeyResolver != null || jwtProvider != null, strictTenantResolution, log);
@@ -1338,7 +1339,7 @@ public class DataCloudHttpServer {
             coreEventStoreDurable,
             metricsCollectorConfigured,
             traceExportService != null,
-            true,
+            tenantResolverAvailable,
             log);
         validateCriticalRuntimeDependencies(
             deploymentMode,
@@ -1519,7 +1520,7 @@ public class DataCloudHttpServer {
         surfaceRegistryHandler = new SurfaceRegistryHandler(
             httpSupport,
             objectMapper,
-            this::buildCapabilitySnapshot);
+            this::buildSurfaceSnapshot);
 
         // P3.1: Tenant-scoped runtime context layer — in-memory key-value store
         contextLayerHandler = new ContextLayerHandler(httpSupport, objectMapper, knowledgeGraphPlugin);
@@ -1612,7 +1613,7 @@ public class DataCloudHttpServer {
             conformanceHandler = null;
         }
 
-        log.info("[DC-CAP] Runtime capability summary {}", buildCapabilitySummaryLog());
+        log.info("[DC-SURFACE] Runtime surface summary {}", buildSurfaceSummaryLog());
 
         RoutingServlet router = new DataCloudRouterBuilder(eventloop)
             .withHealthRoutes(healthHandler)
@@ -1634,7 +1635,7 @@ public class DataCloudHttpServer {
             .withAiAssistRoutes(aiAssistHandler)
             .withVoiceRoutes(voiceHandler)
             .withGovernanceRoutes(dataLifecycleHandler)
-            .withCapabilityRoutes(surfaceRegistryHandler)
+            .withSurfaceRoutes(surfaceRegistryHandler)
             .withLineageRoutes(lineageHandler)
             .withContextRoutes(contextLayerHandler, collectionContextHandler, semanticSearchHandler)
             .withMcpRoutes(mcpToolsHandler)
@@ -1768,8 +1769,8 @@ public class DataCloudHttpServer {
         log.info("Data-Cloud HTTP Server stopped");
     }
 
-    private Map<String, Object> buildCapabilitySnapshot() {
-        Map<String, Object> capabilities = new LinkedHashMap<>();
+    private Map<String, Object> buildSurfaceSnapshot() {
+        Map<String, Object> surfaces = new LinkedHashMap<>();
         // DC-AUD-024: Expose deployment mode for UI/consumer awareness
         boolean authConfigured = apiKeyResolver != null || jwtProvider != null;
         String settingsStorageMode = settingsStore != null ? settingsStore.getStorageMode() : "in-memory";
@@ -1794,7 +1795,7 @@ public class DataCloudHttpServer {
         runtimePosture.put("metricsConfigured", metricsCollectorConfigured);
         runtimePosture.put("traceConfigured", traceExportService != null);
 
-        capabilities.put("_meta", Map.of(
+        surfaces.put("_meta", Map.of(
             "deploymentMode", deploymentMode,
             "strictTenantResolution", strictTenantResolution,
             "generatedAt", Instant.now().toString(),
@@ -1805,18 +1806,18 @@ public class DataCloudHttpServer {
         workflowExecution.put("executionStore", workflowExecutionAvailable ? "datacloud" : "none");
         workflowExecution.put("lifecycleModel", workflowExecutionAvailable ? "durable-single-process" : "absent");
         workflowExecution.put("gated", true);
-        capabilities.put("pipelines.metadata", capabilityEntry(true, null));
-        capabilities.put("pipelines.execution", workflowExecution);
-        capabilities.put("authentication.apiKey", capabilityEntry(apiKeyResolver != null, null));
-        capabilities.put("authentication.jwt", capabilityEntry(jwtProvider != null, null));
-        capabilities.put("brain", capabilityEntry(brain != null, null));
-        capabilities.put("learning", capabilityEntry(learningBridge != null, null));
-        capabilities.put("analytics", capabilityEntry(analyticsEngine != null, null));
+        surfaces.put("pipelines.metadata", capabilityEntry(true, null));
+        surfaces.put("pipelines.execution", workflowExecution);
+        surfaces.put("authentication.apiKey", capabilityEntry(apiKeyResolver != null, null));
+        surfaces.put("authentication.jwt", capabilityEntry(jwtProvider != null, null));
+        surfaces.put("brain", capabilityEntry(brain != null, null));
+        surfaces.put("learning", capabilityEntry(learningBridge != null, null));
+        surfaces.put("analytics", capabilityEntry(analyticsEngine != null, null));
         // DC-P1-001: Cancellation requires a distributed query tracker; unavailable in single-process deployment
         Map<String, Object> analyticsCancellation = capabilityEntry(false, null);
         analyticsCancellation.put("reason", "Query cancellation requires a distributed query tracker — not available in single-process deployment");
-        capabilities.put("analytics.cancellation", analyticsCancellation);
-        capabilities.put("reporting", capabilityEntry(reportService != null, null));
+        surfaces.put("analytics.cancellation", analyticsCancellation);
+        surfaces.put("reporting", capabilityEntry(reportService != null, null));
         // DC-P1-002: Data Fabric is a preview capability; disabled unless DATA_CLOUD_DATA_FABRIC=true AND connector is wired
         boolean dataFabricEnabled = DataCloudFeatureFlags.isEnabled(DataCloudFeature.DATA_CLOUD_DATA_FABRIC);
         Map<String, Object> dataFabricCap = capabilityEntry(dataFabricEnabled, null);
@@ -1825,24 +1826,24 @@ public class DataCloudHttpServer {
         dataFabricCap.put("reason",   dataFabricEnabled
             ? "Data Fabric is enabled in preview mode — live connector implementation may not be present"
             : "Data Fabric requires DATA_CLOUD_DATA_FABRIC=true and a live DataFabricConnector implementation");
-        capabilities.put("dataFabric", dataFabricCap);
-        capabilities.put("search.openSearch", capabilityEntry(openSearchConnector != null, null));
-        capabilities.put("entityExport", capabilityEntry(exportService != null, null));
-        capabilities.put("anomalyDetection", capabilityEntry(anomalyDetector != null, null));
-        capabilities.put("schemaValidation", capabilityEntry(schemaValidator != null, null));
-        capabilities.put("ai.modelRegistry", capabilityEntry(aiModelManager != null, null));
-        capabilities.put("ai.featureStore", capabilityEntry(featureStoreService != null, resolveSubsystemStatus("ai_inference")));
-        capabilities.put("ai.assist", capabilityEntry(completionService != null, null));
-        capabilities.put(
+        surfaces.put("dataFabric", dataFabricCap);
+        surfaces.put("search.openSearch", capabilityEntry(openSearchConnector != null, null));
+        surfaces.put("entityExport", capabilityEntry(exportService != null, null));
+        surfaces.put("anomalyDetection", capabilityEntry(anomalyDetector != null, null));
+        surfaces.put("schemaValidation", capabilityEntry(schemaValidator != null, null));
+        surfaces.put("ai.modelRegistry", capabilityEntry(aiModelManager != null, null));
+        surfaces.put("ai.featureStore", capabilityEntry(featureStoreService != null, resolveSubsystemStatus("ai_inference")));
+        surfaces.put("ai.assist", capabilityEntry(completionService != null, null));
+        surfaces.put(
             "voiceGateway",
             capabilityEntry(completionService != null || WhisperSttConfig.fromEnv().enabled(), resolveSubsystemStatus("voice_gateway")));
-        capabilities.put("governance.audit", capabilityEntry(auditService != null, resolveSubsystemStatus("audit_service")));
-        capabilities.put("governance.policyEngine", capabilityEntry(policyEngine != null, resolveSubsystemStatus("policy_engine")));
-        capabilities.put("federatedQuery.trino", capabilityEntry(trinoUrl != null && !trinoUrl.isBlank(), null));
-        capabilities.put("autonomy", capabilityEntry(autonomyController != null, null));
-        capabilities.put("storage.compaction", capabilityEntry(storageCompactionTask != null, resolveSubsystemStatus("storage_compaction")));
-        capabilities.put("tierMigration.warm", capabilityEntry(warmMigrationScheduler != null, null));
-        capabilities.put("tierMigration.cold", capabilityEntry(coldMigrationScheduler != null, null));
+        surfaces.put("governance.audit", capabilityEntry(auditService != null, resolveSubsystemStatus("audit_service")));
+        surfaces.put("governance.policyEngine", capabilityEntry(policyEngine != null, resolveSubsystemStatus("policy_engine")));
+        surfaces.put("federatedQuery.trino", capabilityEntry(trinoUrl != null && !trinoUrl.isBlank(), null));
+        surfaces.put("autonomy", capabilityEntry(autonomyController != null, null));
+        surfaces.put("storage.compaction", capabilityEntry(storageCompactionTask != null, resolveSubsystemStatus("storage_compaction")));
+        surfaces.put("tierMigration.warm", capabilityEntry(warmMigrationScheduler != null, null));
+        surfaces.put("tierMigration.cold", capabilityEntry(coldMigrationScheduler != null, null));
         // DC-P1-012: Optional 501/503 services are represented in Runtime Truth with capabilityEntry()
         // - search.openSearch, entityExport, anomalyDetection, reporting, ai.modelRegistry, ai.featureStore
         // - federatedQuery.trino, tierMigration.warm, tierMigration.cold
@@ -1876,27 +1877,27 @@ public class DataCloudHttpServer {
         tierRoutingPolicy.put("tiers", tiers);
         tierRoutingPolicy.put("defaultRules", defaultRules);
         tierRoutingPolicy.put("schedulerAvailable", warmMigrationScheduler != null || coldMigrationScheduler != null);
-        capabilities.put("tierRoutingPolicy", tierRoutingPolicy);
-        capabilities.put("health.database", capabilityEntry(healthSubsystemSuppliers.containsKey("database"), resolveSubsystemStatus("database")));
-        capabilities.put("health.aiInference", capabilityEntry(healthSubsystemSuppliers.containsKey("ai_inference"), resolveSubsystemStatus("ai_inference")));
-        capabilities.put("health.eventStore", capabilityEntry(healthSubsystemSuppliers.containsKey("event_store"), resolveSubsystemStatus("event_store")));
-        capabilities.put("health.storageCompaction", capabilityEntry(healthSubsystemSuppliers.containsKey("storage_compaction"), resolveSubsystemStatus("storage_compaction")));
+        surfaces.put("tierRoutingPolicy", tierRoutingPolicy);
+        surfaces.put("health.database", capabilityEntry(healthSubsystemSuppliers.containsKey("database"), resolveSubsystemStatus("database")));
+        surfaces.put("health.aiInference", capabilityEntry(healthSubsystemSuppliers.containsKey("ai_inference"), resolveSubsystemStatus("ai_inference")));
+        surfaces.put("health.eventStore", capabilityEntry(healthSubsystemSuppliers.containsKey("event_store"), resolveSubsystemStatus("event_store")));
+        surfaces.put("health.storageCompaction", capabilityEntry(healthSubsystemSuppliers.containsKey("storage_compaction"), resolveSubsystemStatus("storage_compaction")));
 
         // DC-AUD-017: Runtime capability registry as universal truth — align with registered routes
-        capabilities.put("settings", capabilityEntry(settingsHandler != null, null));
-        capabilities.put("events.streaming", capabilityEntry(sseHandler != null, null));
-        capabilities.put("events.webSocket", capabilityEntry(sseHandler != null, null));
-        capabilities.put("dataProducts", capabilityEntry(dataProductHandler != null, null));
-        capabilities.put("contextLayer", capabilityEntry(contextLayerHandler != null, null));
-        capabilities.put("collectionContext", capabilityEntry(collectionContextHandler != null, null));
-        capabilities.put("mcpTools", capabilityEntry(mcpToolsHandler != null, null));
-        capabilities.put("lineage", capabilityEntry(lineageHandler != null, null));
-        capabilities.put("semanticSearch", capabilityEntry(semanticSearchHandler != null, null));
-        capabilities.put("ai.operations", capabilityEntry(aiAssistHandler != null, null));
-        capabilities.put("plugins", capabilityEntry(runtimePluginManager != null, null));
-        capabilities.put("agentCatalog", capabilityEntry(agentCatalogHandler != null, null));
+        surfaces.put("settings", capabilityEntry(settingsHandler != null, null));
+        surfaces.put("events.streaming", capabilityEntry(sseHandler != null, null));
+        surfaces.put("events.webSocket", capabilityEntry(sseHandler != null, null));
+        surfaces.put("dataProducts", capabilityEntry(dataProductHandler != null, null));
+        surfaces.put("contextLayer", capabilityEntry(contextLayerHandler != null, null));
+        surfaces.put("collectionContext", capabilityEntry(collectionContextHandler != null, null));
+        surfaces.put("mcpTools", capabilityEntry(mcpToolsHandler != null, null));
+        surfaces.put("lineage", capabilityEntry(lineageHandler != null, null));
+        surfaces.put("semanticSearch", capabilityEntry(semanticSearchHandler != null, null));
+        surfaces.put("ai.operations", capabilityEntry(aiAssistHandler != null, null));
+        surfaces.put("plugins", capabilityEntry(runtimePluginManager != null, null));
+        surfaces.put("agentCatalog", capabilityEntry(agentCatalogHandler != null, null));
         // DC-P1-006: Alerting surface capability — required for UI to gate alert creation/viewing
-        capabilities.put("alerts", capabilityEntry(alertingHandler != null, null));
+        surfaces.put("alerts", capabilityEntry(alertingHandler != null, null));
 
         // P0.1: Wire SDK feature flags into capability registry so clients know
         // which optional capabilities are enabled for this deployment.
@@ -1909,9 +1910,9 @@ public class DataCloudHttpServer {
                 "source", enabled == feature.defaultEnabled() ? "default" : "override"
             ));
         }
-        capabilities.put("featureFlags", featureFlags);
+        surfaces.put("featureFlags", featureFlags);
 
-        return capabilities;
+        return surfaces;
     }
 
     @SuppressWarnings("unchecked")
@@ -1943,8 +1944,8 @@ public class DataCloudHttpServer {
             "storeType", coreEventStore.getClass().getSimpleName());
     }
 
-    private String buildCapabilitySummaryLog() {
-        return buildCapabilitySnapshot().entrySet().stream()
+    private String buildSurfaceSummaryLog() {
+        return buildSurfaceSnapshot().entrySet().stream()
             .filter(entry -> !"_meta".equals(entry.getKey()))
             .map(entry -> entry.getKey() + "=" + ((Map<?, ?>) entry.getValue()).get("status"))
             .sorted()

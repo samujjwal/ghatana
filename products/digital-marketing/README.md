@@ -2,6 +2,19 @@
 
 DMOS is the Ghatana product workspace for an AI-native, governance-first digital marketing platform. It covers campaign management, budget planning, approval workflows, Google Ads connector, content generation, analytics, and AI action transparency.
 
+## Documentation
+
+For detailed documentation, see the canonical documentation in [docs/canonical/](docs/canonical/):
+- [docs/canonical/00-VISION.md](docs/canonical/00-VISION.md) - Product vision and positioning
+- [docs/canonical/01-ARCHITECTURE.md](docs/canonical/01-ARCHITECTURE.md) - System architecture and module design
+- [docs/canonical/02-API_CONTRACTS.md](docs/canonical/02-API_CONTRACTS.md) - API contracts and endpoints
+- [docs/canonical/03-UX_WORKFLOWS.md](docs/canonical/03-UX_WORKFLOWS.md) - UX workflows and user journeys
+- [docs/canonical/04-TESTING.md](docs/canonical/04-TESTING.md) - Testing strategy and guidelines
+- [docs/canonical/05-OPERATIONS.md](docs/canonical/05-OPERATIONS.md) - Operations and deployment
+- [docs/canonical/06-PRODUCTION_MVP_CONTRACT.md](docs/canonical/06-PRODUCTION_MVP_CONTRACT.md) - Production MVP contract and readiness
+
+Archived documentation (stale or superseded) is available in [docs/audits/archived/](docs/audits/archived/).
+
 ## Module Overview
 
 | Module | Purpose | Production Status |
@@ -98,7 +111,7 @@ P0-005: Production identity derivation uses `DmosHttpContextFactory` to derive p
 
 ## Security & Privacy (DMOS-P0-1)
 
-P1-013: PII model and token hardening is pending implementation. Current security posture:
+P1-013: PII model and token hardening is implemented in PrivacyService. Current security posture:
 - **Tenant Isolation**: All data is scoped to tenant with workspace-level isolation
 - **Header Enforcement**: Production identity derivation uses `DmosHttpContextFactory` to derive principal, roles, and permissions from trusted token/session (P0-005)
 - **Rate Limiting**: API rate limiting via `DmosApiRateLimiter`
@@ -173,11 +186,28 @@ P2-001: README UI routes section split by implementation state (stable vs bounda
 | Build cleanliness | ✅ Ready | All quality gates pass |
 | API correctness | ✅ Ready | Enums, DTO shapes, headers aligned with backend |
 | UI (unit-tested) | ✅ Ready | 61 unit tests pass |
-| UI (E2E) | ⚠️ Partial | Playwright config and core E2E tests exist; CI wiring pending |
+| UI (E2E) | ✅ Ready | Real-backend E2E mandatory for production release (P1-2) |
 | Persistence | ✅ Ready | PostgreSQL adapters implemented in dm-persistence with full migration support |
-| Google Ads connector | ⚠️ Partial | HTTP adapters complete; event-loop blocking mitigation and command/workflow wiring pending |
+| Google Ads connector | ✅ Ready | Durable workflow execution with idempotency, retry, DLQ, kill switch (P0-4) |
 | Observability (OTel) | ✅ Complete | OTLP gRPC exporter wired in production/staging (`OTEL_EXPORTER_OTLP_ENDPOINT` or `OTEL_COLLECTOR_ENDPOINT`); correlation IDs propagated UI → API span attributes; `DmosTelemetry` instruments all HTTP, command, and connector flows |
-| Privacy/security | ⚠️ Partial | Rate limiting, tenant isolation, header enforcement in place; PII model and token hardening pending |
+| Privacy/security | ✅ Ready | AES-GCM encryption, HMAC-SHA256 hashing, consent enforcement, DSAR export/delete/anonymize (P0-6) |
 | Approval workflow | ✅ Ready | Full UI + API + plugin integration; snapshot, decide, audit trail |
 | AI action transparency | ✅ Ready | AI action log persisted and surfaced in UI |
+| AI governance | ✅ Ready | End-to-end AI workflow governance with provenance, evidence, policy checks (P0-7) |
+| Analytics/runtime | ✅ Ready | Canonical analytics with source events, freshness, confidence (P0-5) |
+| Command center | ✅ Ready | Next-best-step guidance with real data integration (P1-1) |
 | Kernel bridge integration | ✅ Complete | Platform plugins wired; real kernel bridge authorization/audit integration verified (P0-008) |
+
+**P0 Production Readiness Summary:**
+- ✅ P0-1: Production MVP contract documented in canonical/06-PRODUCTION_MVP_CONTRACT.md
+- ✅ P0-2: Canonical route/action/capability registry generated from single manifest
+- ✅ P0-3: Auth, scope, tenant, workspace, and support access enforcement hardened
+- ✅ P0-4: Campaign launch converted to durable workflow execution with idempotency, retry, DLQ, kill switch
+- ✅ P0-5: Canonical analytics/reporting runtime with source events, freshness, confidence
+- ✅ P0-6: Privacy, consent, suppression, and DSAR implementation complete
+- ✅ P0-7: AI workflows governed end to end with provenance, evidence, policy checks
+
+**P1 Production Readiness Summary:**
+- ✅ P1-1: UI/UX tightened into command center with next-best-step guidance
+- ✅ P1-2: Production release gates made mandatory with real-backend E2E
+- ✅ P1-3: Repository cleanup and doc consolidation completed

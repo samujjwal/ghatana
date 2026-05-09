@@ -19,6 +19,8 @@ final class RouteActionAccessRegistry {
         Map.entry("POST /api/v1/governance/retention/purge", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("POST /api/v1/governance/privacy/redact", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("GET /api/v1/governance/compliance/summary", DataCloudSecurityFilter.AccessLevel.AUDITOR),
+        Map.entry("POST /api/v1/learning/review/{id}/approve", DataCloudSecurityFilter.AccessLevel.ADMIN),
+        Map.entry("POST /api/v1/learning/review/{id}/reject", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("POST /api/v1/models/{id}/promote", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("POST /api/v1/plugins/{id}/upgrade", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("POST /api/v1/pipelines/{id}/execute", DataCloudSecurityFilter.AccessLevel.OPERATOR),
@@ -37,6 +39,7 @@ final class RouteActionAccessRegistry {
 
     private static String normalizePath(String path) {
         String normalized = path.replaceAll("/[0-9a-fA-F-]{8,}", "/{id}");
+        normalized = normalized.replaceAll("/learning/review/[^/]+/(approve|reject)$", "/learning/review/{id}/$1");
         normalized = normalized.replaceAll("/plugins/[^/]+", "/plugins/{id}");
         normalized = normalized.replaceAll("/pipelines/[^/]+", "/pipelines/{id}");
         normalized = normalized.replaceAll("/models/[^/]+", "/models/{id}");

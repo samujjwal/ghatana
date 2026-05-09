@@ -173,17 +173,6 @@ public final class AlertingHandler {
         String alertId = request.getPathParameter("id");
         if (alertId == null || alertId.isBlank()) {
             return Promise.of(http.errorResponse(400, "alertId path parameter is required"));
-
-        // DC-BE-002: Check idempotency for alert status mutation
-        String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
-        String operationScope = "alerts:" + status;
-        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
-            var cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
-            if (cached.isPresent()) {
-                log.info("[DC-BE-002] Returning cached alert status mutation response for key={}", idempotencyKey);
-                return Promise.of(http.jsonResponse(cached.get()));
-            }
-        }
         }
         return client.findById(tenantId, ALERTS_COLLECTION, alertId)
             .then(opt -> {
@@ -285,17 +274,6 @@ public final class AlertingHandler {
         String alertId = request.getPathParameter("id");
         if (alertId == null || alertId.isBlank()) {
             return Promise.of(http.errorResponse(400, "alertId path parameter is required"));
-
-        // DC-BE-002: Check idempotency for alert status mutation
-        String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
-        String operationScope = "alerts:" + status;
-        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
-            var cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
-            if (cached.isPresent()) {
-                log.info("[DC-BE-002] Returning cached alert status mutation response for key={}", idempotencyKey);
-                return Promise.of(http.jsonResponse(cached.get()));
-            }
-        }
         }
         return request.loadBody().then(buf -> {
             try {
@@ -360,17 +338,6 @@ public final class AlertingHandler {
         String alertId = request.getPathParameter("id");
         if (alertId == null || alertId.isBlank()) {
             return Promise.of(http.errorResponse(400, "alertId path parameter is required"));
-
-        // DC-BE-002: Check idempotency for alert status mutation
-        String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
-        String operationScope = "alerts:" + status;
-        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
-            var cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
-            if (cached.isPresent()) {
-                log.info("[DC-BE-002] Returning cached alert status mutation response for key={}", idempotencyKey);
-                return Promise.of(http.jsonResponse(cached.get()));
-            }
-        }
         }
         return request.loadBody().then(buf -> {
             try {
@@ -425,17 +392,6 @@ public final class AlertingHandler {
         String alertId = request.getPathParameter("id");
         if (alertId == null || alertId.isBlank()) {
             return Promise.of(http.errorResponse(400, "alertId path parameter is required"));
-
-        // DC-BE-002: Check idempotency for alert status mutation
-        String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
-        String operationScope = "alerts:" + status;
-        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
-            var cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
-            if (cached.isPresent()) {
-                log.info("[DC-BE-002] Returning cached alert status mutation response for key={}", idempotencyKey);
-                return Promise.of(http.jsonResponse(cached.get()));
-            }
-        }
         }
         int limit = HttpHandlerSupport.parseIntParam(request.getQueryParameter("limit"), 50);
         return client.query(tenantId, DC_REMEDIATION_ACTIONS_COLLECTION,
@@ -510,21 +466,25 @@ public final class AlertingHandler {
             @SuppressWarnings("unchecked")
             List<String> alertIds = (List<String>) group.get().get("alertIds");
             return resolveAlertIds(tenantId, alertIds, "alert.group.resolved")
-                .map(response -> {
+                .map(resolvedAlertIds -> {
+                    Map<String, Object> responseBody = Map.of(
+                        "tenantId", tenantId,
+                        "groupId", groupId,
+                        "resolvedAlertIds", resolvedAlertIds,
+                        "resolvedCount", resolvedAlertIds.size(),
+                        "timestamp", Instant.now().toString()
+                    );
                     // DC-BE-002: Store response in idempotency store
                     if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
                         try {
-                            Map<String, Object> cachedResponseBody = http.objectMapper().readValue(
-                                http.objectMapper().writeValueAsString(response),
-                                new TypeReference<Map<String, Object>>() {}
-                            );
-                            idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
+                            idempotencyStore.put(tenantId, operationScope, idempotencyKey, responseBody);
                         } catch (Exception e) {
                             log.warn("[DC-BE-002] Failed to cache idempotent response for alert group resolution: {}", e.getMessage());
                         }
                     }
-                    return response;
+                    return http.jsonResponse(responseBody);
                 });
+        });
     }
 
     public Promise<HttpResponse> handleListResolutionSuggestions(HttpRequest request) {
@@ -572,21 +532,25 @@ public final class AlertingHandler {
             : suggestionId;
 
         return resolveAlertIds(tenantId, List.of(alertId), "alert.suggestion.applied")
-            .map(response -> {
+            .map(resolvedAlertIds -> {
+                Map<String, Object> responseBody = Map.of(
+                    "tenantId", tenantId,
+                    "suggestionId", suggestionId,
+                    "resolvedAlertIds", resolvedAlertIds,
+                    "resolvedCount", resolvedAlertIds.size(),
+                    "timestamp", Instant.now().toString()
+                );
                 // DC-BE-002: Store response in idempotency store
                 if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
                     try {
-                        Map<String, Object> cachedResponseBody = http.objectMapper().readValue(
-                            http.objectMapper().writeValueAsString(response),
-                            new TypeReference<Map<String, Object>>() {}
-                        );
-                        idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
+                        idempotencyStore.put(tenantId, operationScope, idempotencyKey, responseBody);
                     } catch (Exception e) {
                         log.warn("[DC-BE-002] Failed to cache idempotent response for suggestion application: {}", e.getMessage());
                     }
                 }
-                return response;
+                return http.jsonResponse(responseBody);
             });
+    }
 
     public Promise<HttpResponse> handleListAlertRules(HttpRequest request) {
         String tenantId = resolveTenantId(request);
@@ -624,21 +588,23 @@ public final class AlertingHandler {
                 Map<String, Object> rule = http.objectMapper().readValue(body.getString(StandardCharsets.UTF_8), Map.class);
                 Map<String, Object> persisted = normaliseRulePayload(rule, null);
                 return client.save(tenantId, ALERT_RULES_COLLECTION, persisted)
-                    .then(saved -> appendMutationEvent(tenantId, "alert.rule.created", Map.of("ruleId", saved.id())))
-                    .map(response -> {
+                    .then(saved -> appendMutationEvent(tenantId, "alert.rule.created", Map.of("ruleId", saved.id()))
+                        .map(ignored -> saved))
+                    .map(saved -> {
+                        Map<String, Object> responseBody = Map.of(
+                            "tenantId", tenantId,
+                            "rule", toRuleView(saved, tenantId),
+                            "timestamp", Instant.now().toString()
+                        );
                         // DC-BE-002: Store response in idempotency store
                         if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
                             try {
-                                Map<String, Object> cachedResponseBody = http.objectMapper().readValue(
-                                    http.objectMapper().writeValueAsString(response),
-                                    new TypeReference<Map<String, Object>>() {}
-                                );
-                                idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
+                                idempotencyStore.put(tenantId, operationScope, idempotencyKey, responseBody);
                             } catch (Exception e) {
                                 log.warn("[DC-BE-002] Failed to cache idempotent response for alert rule creation: {}", e.getMessage());
                             }
                         }
-                        return response;
+                        return http.jsonResponse(responseBody);
                     });
             } catch (Exception exception) {
                 log.warn("[DC-Alerts] create rule failed tenant={}: {}", tenantId, exception.getMessage());
@@ -673,21 +639,23 @@ public final class AlertingHandler {
                 Map<String, Object> rule = http.objectMapper().readValue(body.getString(StandardCharsets.UTF_8), Map.class);
                 Map<String, Object> persisted = normaliseRulePayload(rule, ruleId);
                 return client.save(tenantId, ALERT_RULES_COLLECTION, persisted)
-                    .then(saved -> appendMutationEvent(tenantId, "alert.rule.updated", Map.of("ruleId", saved.id())))
-                    .map(response -> {
+                    .then(saved -> appendMutationEvent(tenantId, "alert.rule.updated", Map.of("ruleId", saved.id()))
+                        .map(ignored -> saved))
+                    .map(saved -> {
+                        Map<String, Object> responseBody = Map.of(
+                            "tenantId", tenantId,
+                            "rule", toRuleView(saved, tenantId),
+                            "timestamp", Instant.now().toString()
+                        );
                         // DC-BE-002: Store response in idempotency store
                         if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
                             try {
-                                Map<String, Object> cachedResponseBody = http.objectMapper().readValue(
-                                    http.objectMapper().writeValueAsString(response),
-                                    new TypeReference<Map<String, Object>>() {}
-                                );
-                                idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
+                                idempotencyStore.put(tenantId, operationScope, idempotencyKey, responseBody);
                             } catch (Exception e) {
                                 log.warn("[DC-BE-002] Failed to cache idempotent response for alert rule update: {}", e.getMessage());
                             }
                         }
-                        return response;
+                        return http.jsonResponse(responseBody);
                     });
             } catch (Exception exception) {
                 log.warn("[DC-Alerts] update rule failed tenant={} ruleId={}: {}", tenantId, ruleId, exception.getMessage());
@@ -718,20 +686,22 @@ public final class AlertingHandler {
         }
         return client.delete(tenantId, ALERT_RULES_COLLECTION, ruleId)
             .then(ignored -> appendMutationEvent(tenantId, "alert.rule.deleted", Map.of("ruleId", ruleId)))
-            .map(response -> {
+            .map(ignored -> {
+                Map<String, Object> responseBody = Map.of(
+                    "tenantId", tenantId,
+                    "ruleId", ruleId,
+                    "deleted", true,
+                    "timestamp", Instant.now().toString()
+                );
                 // DC-BE-002: Store response in idempotency store
                 if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
                     try {
-                        Map<String, Object> cachedResponseBody = http.objectMapper().readValue(
-                            http.objectMapper().writeValueAsString(response),
-                            new TypeReference<Map<String, Object>>() {}
-                        );
-                        idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
+                        idempotencyStore.put(tenantId, operationScope, idempotencyKey, responseBody);
                     } catch (Exception e) {
                         log.warn("[DC-BE-002] Failed to cache idempotent response for alert rule deletion: {}", e.getMessage());
                     }
                 }
-                return response;
+                return http.jsonResponse(responseBody);
             });
 
     }
@@ -809,22 +779,20 @@ public final class AlertingHandler {
                             "status", status,
                             "reason", finalReason != null ? finalReason : "",
                             "actor", resolvePrincipalName(request)
-                        )))
-                        .map(response -> {
+                        )).map(ignored -> saved))
+                        .map(saved -> {
+                            Map<String, Object> responseBody = toAlertView(saved, tenantId);
                             // DC-BE-002: Store response in idempotency store
                             if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
                                 try {
-                                    Map<String, Object> cachedResponseBody = http.objectMapper().readValue(
-                                        http.objectMapper().writeValueAsString(response),
-                                        new TypeReference<Map<String, Object>>() {}
-                                    );
-                                    idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
+                                    idempotencyStore.put(tenantId, operationScope, idempotencyKey, responseBody);
                                 } catch (Exception e) {
                                     log.warn("[DC-BE-002] Failed to cache idempotent response for alert status mutation: {}", e.getMessage());
                                 }
                             }
-                            return response;
+                            return http.jsonResponse(responseBody);
                         });
+                });
         });
     }
 
@@ -899,22 +867,20 @@ public final class AlertingHandler {
                         "escalationLevel", currentLevel + 1,
                         "incidentId", updated.get("incidentId"),
                         "actor", resolvePrincipalName(request)
-                    )))
-                    .map(response -> {
+                    )).map(ignored -> saved))
+                    .map(saved -> {
+                        Map<String, Object> responseBody = toAlertView(saved, tenantId);
                         // DC-BE-002: Store response in idempotency store
                         if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
                             try {
-                                Map<String, Object> cachedResponseBody = http.objectMapper().readValue(
-                                    http.objectMapper().writeValueAsString(response),
-                                    new TypeReference<Map<String, Object>>() {}
-                                );
-                                idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
+                                idempotencyStore.put(tenantId, operationScope, idempotencyKey, responseBody);
                             } catch (Exception e) {
                                 log.warn("[DC-BE-002] Failed to cache idempotent response for alert escalation: {}", e.getMessage());
                             }
                         }
-                        return response;
+                        return http.jsonResponse(responseBody);
                     });
+            });
     }
 
     private Promise<List<Map<String, Object>>> activeAlerts(String tenantId) {

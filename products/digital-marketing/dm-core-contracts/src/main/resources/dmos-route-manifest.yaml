@@ -1,0 +1,367 @@
+# Canonical DMOS Route/Action/Capability Manifest
+# This is the single source of truth for all route, action, and capability metadata.
+# TypeScript and Java artifacts are generated from this manifest.
+# Last Updated: 2026-05-09
+#
+# Schema:
+# - routes: List of route definitions
+#   - path: URL path pattern
+#   - method: HTTP method
+#   - capability: Required capability key
+#   - actions: List of actions supported by this route
+#   - minimumRole: Minimum role required
+#   - lifecycle: stable | boundary
+# capabilities: Capability definitions
+# roles: Role hierarchy definitions
+
+version: "1.0"
+product: "DMOS"
+generatedAt: "2026-05-09T00:00:00Z"
+
+capabilities:
+  dmos.campaigns:
+    description: Campaign management and orchestration
+    tier: core
+  dmos.strategy:
+    description: Strategy generation, review, and approvals
+    tier: growth
+  dmos.budget:
+    description: Budget recommendations and approval decisions
+    tier: growth
+  dmos.reporting:
+    description: Analytics, attribution, and ROI/ROAS reporting
+    tier: growth
+    lifecycle: boundary
+  dmos.ai_optimization:
+    description: AI-driven optimization and recommendations
+    tier: enterprise
+    lifecycle: boundary
+  dmos.self_marketing:
+    description: Product-led growth funnel management
+    tier: enterprise
+    lifecycle: boundary
+  dmos.market_research:
+    description: Market research and competitive intelligence
+    tier: enterprise
+    lifecycle: boundary
+  dmos.advanced_channels:
+    description: Programmatic advertising and advanced channels
+    tier: enterprise
+    lifecycle: boundary
+  dmos.localization:
+    description: Multi-language campaign support
+    tier: enterprise
+    lifecycle: boundary
+  dmos.agency:
+    description: Agency operations and multi-client management
+    tier: enterprise
+    lifecycle: boundary
+
+roles:
+  viewer:
+    level: 0
+    description: Read-only access to workspace data
+  brand-manager:
+    level: 1
+    description: Can manage campaigns and content
+  marketing-director:
+    level: 2
+    description: Can approve budgets and high-level strategy
+  exec-sponsor:
+    level: 3
+    description: Executive oversight and final approvals
+  admin:
+    level: 4
+    description: Full administrative access
+
+routes:
+  # Stable Routes - Production Ready
+  - path: /v1/workspaces/:workspaceId/dashboard
+    method: GET
+    capability: null
+    actions:
+      - view-dashboard
+    minimumRole: viewer
+    lifecycle: stable
+    servlet: DmosWorkspaceServlet
+
+  - path: /v1/workspaces/:workspaceId/approvals
+    method: GET
+    capability: null
+    actions:
+      - review-approval
+    minimumRole: viewer
+    lifecycle: stable
+    servlet: DmosApprovalServlet
+
+  - path: /v1/workspaces/:workspaceId/approvals/:requestId
+    method: GET
+    capability: null
+    actions:
+      - view-approval-detail
+    minimumRole: viewer
+    lifecycle: stable
+    servlet: DmosApprovalServlet
+
+  - path: /v1/workspaces/:workspaceId/approvals/:requestId/decide
+    method: POST
+    capability: null
+    actions:
+      - approve
+      - reject
+    minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosApprovalServlet
+
+  - path: /v1/workspaces/:workspaceId/ai-actions
+    method: GET
+    capability: null
+    actions:
+      - view-audit-log
+    minimumRole: viewer
+    lifecycle: stable
+    servlet: DmosAiActionLogServlet
+
+  - path: /v1/workspaces/:workspaceId/campaigns
+    method: GET
+    capability: dmos.campaigns
+    actions:
+      - view-campaigns
+    minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosCampaignServlet
+
+  - path: /v1/workspaces/:workspaceId/campaigns
+    method: POST
+    capability: dmos.campaigns
+    actions:
+      - create-campaign
+    minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosCampaignServlet
+
+  - path: /v1/workspaces/:workspaceId/campaigns/:id
+    method: GET
+    capability: dmos.campaigns
+    actions:
+      - view-campaign-detail
+    minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosCampaignServlet
+
+  - path: /v1/workspaces/:workspaceId/campaigns/:id/launch
+    method: POST
+    capability: dmos.campaigns
+    actions:
+      - launch-campaign
+    minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosCampaignServlet
+
+  - path: /v1/workspaces/:workspaceId/campaigns/:id/pause
+    method: POST
+    capability: dmos.campaigns
+    actions:
+      - pause-campaign
+    minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosCampaignServlet
+
+  - path: /v1/workspaces/:workspaceId/campaigns/:id/complete
+    method: POST
+    capability: dmos.campaigns
+    actions:
+      - complete-campaign
+    minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosCampaignServlet
+
+  - path: /v1/workspaces/:workspaceId/campaigns/:id/archive
+    method: POST
+    capability: dmos.campaigns
+    actions:
+      - archive-campaign
+    minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosCampaignServlet
+
+  - path: /v1/workspaces/:workspaceId/campaigns/:id/rollback
+    method: POST
+    capability: dmos.campaigns
+    actions:
+      - rollback-campaign
+    minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosCampaignServlet
+
+  - path: /v1/workspaces/:workspaceId/campaigns/:id/duplicate
+    method: POST
+    capability: dmos.campaigns
+    actions:
+      - duplicate-campaign
+    minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosCampaignServlet
+
+  - path: /v1/workspaces/:workspaceId/strategy
+    method: GET
+    capability: dmos.strategy
+    actions:
+      - view-strategy
+    minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosStrategyServlet
+
+  - path: /v1/workspaces/:workspaceId/strategy
+    method: POST
+    capability: dmos.strategy
+    actions:
+      - generate-strategy
+    minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosStrategyServlet
+
+  - path: /v1/workspaces/:workspaceId/strategy/:strategyId/submit
+    method: POST
+    capability: dmos.strategy
+    actions:
+      - submit-strategy
+    minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosStrategyServlet
+
+  - path: /v1/workspaces/:workspaceId/strategy/:strategyId/approve
+    method: POST
+    capability: dmos.strategy
+    actions:
+      - approve-strategy
+    minimumRole: marketing-director
+    lifecycle: stable
+    servlet: DmosStrategyServlet
+
+  - path: /v1/workspaces/:workspaceId/budget
+    method: GET
+    capability: dmos.budget
+    actions:
+      - view-budget
+    minimumRole: marketing-director
+    lifecycle: stable
+    servlet: DmosBudgetRecommendationServlet
+
+  - path: /v1/workspaces/:workspaceId/budget-recommendation
+    method: POST
+    capability: dmos.budget
+    actions:
+      - generate-budget
+    minimumRole: marketing-director
+    lifecycle: stable
+    servlet: DmosBudgetRecommendationServlet
+
+  - path: /v1/workspaces/:workspaceId/budget-recommendation/:recId/submit
+    method: POST
+    capability: dmos.budget
+    actions:
+      - submit-budget
+    minimumRole: marketing-director
+    lifecycle: stable
+    servlet: DmosBudgetRecommendationServlet
+
+  - path: /v1/workspaces/:workspaceId/budget-recommendation/:recId/approve
+    method: POST
+    capability: dmos.budget
+    actions:
+      - approve-budget
+    minimumRole: exec-sponsor
+    lifecycle: stable
+    servlet: DmosBudgetRecommendationServlet
+
+  # Boundary Routes - Feature-Gated, Backend/Data Pending
+  - path: /v1/workspaces/:workspaceId/funnel-analytics
+    method: GET
+    capability: dmos.reporting
+    actions:
+      - view-funnel
+    minimumRole: brand-manager
+    lifecycle: boundary
+    servlet: null
+
+  - path: /v1/workspaces/:workspaceId/attribution
+    method: GET
+    capability: dmos.reporting
+    actions:
+      - view-attribution
+    minimumRole: brand-manager
+    lifecycle: boundary
+    servlet: null
+
+  - path: /v1/workspaces/:workspaceId/roi-roas
+    method: GET
+    capability: dmos.reporting
+    actions:
+      - view-roi
+    minimumRole: marketing-director
+    lifecycle: boundary
+    servlet: null
+
+  - path: /v1/workspaces/:workspaceId/ai-optimization
+    method: GET
+    capability: dmos.ai_optimization
+    actions:
+      - view-recommendations
+    minimumRole: brand-manager
+    lifecycle: boundary
+    servlet: DmosNextBestActionRecommendationServlet
+
+  - path: /v1/workspaces/:workspaceId/ai-optimization
+    method: POST
+    capability: dmos.ai_optimization
+    actions:
+      - approve-optimizations
+    minimumRole: marketing-director
+    lifecycle: boundary
+    servlet: null
+
+  - path: /v1/workspaces/:workspaceId/self-marketing-funnel
+    method: GET
+    capability: dmos.self_marketing
+    actions:
+      - manage-funnel
+    minimumRole: brand-manager
+    lifecycle: boundary
+    servlet: null
+
+  - path: /v1/workspaces/:workspaceId/market-research
+    method: GET
+    capability: dmos.market_research
+    actions:
+      - view-research
+    minimumRole: brand-manager
+    lifecycle: boundary
+    servlet: null
+
+  - path: /v1/workspaces/:workspaceId/advanced-channels
+    method: GET
+    capability: dmos.advanced_channels
+    actions:
+      - manage-channels
+    minimumRole: marketing-director
+    lifecycle: boundary
+    servlet: null
+
+  - path: /v1/workspaces/:workspaceId/localization
+    method: GET
+    capability: dmos.localization
+    actions:
+      - manage-locales
+    minimumRole: brand-manager
+    lifecycle: boundary
+    servlet: null
+
+  - path: /v1/workspaces/:workspaceId/agency
+    method: GET
+    capability: dmos.agency
+    actions:
+      - manage-agency
+    minimumRole: admin
+    lifecycle: boundary
+    servlet: null

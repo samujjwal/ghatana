@@ -5936,7 +5936,7 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "500": { $ref: "#/components/responses/InternalError" }
 
-  # ── Runtime capability registry and autonomy ─────────────────────────────
+  # ── Runtime surface registry and autonomy ─────────────────────────────
 
   /api/v1/surfaces:
     get:
@@ -5954,47 +5954,11 @@ paths:
                   data:
                     type: object
                     properties:
-                      capabilities:
+                      surfaces:
                         type: object
                         additionalProperties: true
-                      _meta:
-                        type: object
-                        properties:
-                          deploymentMode:
-                            type: string
-                          strictTenantResolution:
-                            type: boolean
-                          generatedAt:
-                            type: string
-                          runtimePosture:
-                            type: object
-                            properties:
-                              productionLikeProfile:
-                                type: boolean
-                              authenticationConfigured:
-                                type: boolean
-                              settingsStorageMode:
-                                type: string
-                              settingsDurable:
-                                type: boolean
-                              entityStoreDurable:
-                                type: boolean
-                              eventStoreWired:
-                                type: boolean
-                              coreEventStoreDurable:
-                                type: boolean
-                              eventTail:
-                                type: object
-                              idempotencyStoreDurable:
-                                type: boolean
-                              auditConfigured:
-                                type: boolean
-                              policyConfigured:
-                                type: boolean
-                              metricsConfigured:
-                                type: boolean
-                              traceConfigured:
-                                type: boolean
+                      generatedAt:
+                        type: string
                   meta:
                     type: object
                     properties:

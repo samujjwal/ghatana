@@ -207,6 +207,35 @@ class DataCloudLearningBridgeTest {
         }
 
         @Test
+        @DisplayName("approveReview: same decision is idempotent and preserves reviewedAt")
+        void approveReview_sameDecision_isIdempotent() {
+            seedReviewItem("pat-3");
+            String reviewKey = "review-pat-3";
+
+            assertThat(bridge.approveReview(reviewKey)).isTrue();
+            String firstReviewedAt = (String) bridge.getReviewQueue().get(reviewKey).get("reviewedAt");
+
+            assertThat(bridge.approveReview(reviewKey)).isTrue();
+            Map<String, Object> item = bridge.getReviewQueue().get(reviewKey);
+
+            assertThat(item.get("status")).isEqualTo("APPROVED");
+            assertThat(item.get("reviewedAt")).isEqualTo(firstReviewedAt);
+        }
+
+        @Test
+        @DisplayName("rejectReview: conflicting terminal decision is rejected")
+        void rejectReview_afterApproval_returnsFalse() {
+            seedReviewItem("pat-4");
+            String reviewKey = "review-pat-4";
+
+            assertThat(bridge.approveReview(reviewKey)).isTrue();
+            assertThat(bridge.rejectReview(reviewKey)).isFalse();
+            Map<String, Object> item = bridge.getReviewQueue().get(reviewKey);
+
+            assertThat(item.get("status")).isEqualTo("APPROVED");
+        }
+
+        @Test
         @DisplayName("approveReview: returns false when item not found")
         void approveReview_notFound_returnsFalse() { 
             assertThat(bridge.approveReview("no-such-id")).isFalse();

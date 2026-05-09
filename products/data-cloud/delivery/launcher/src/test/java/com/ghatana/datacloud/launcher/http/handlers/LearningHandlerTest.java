@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,7 +44,7 @@ class LearningHandlerTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { 
         handler = new LearningHandler(learningBridge, http); 
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
+        lenient().when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
     }
 
     @Test
@@ -55,5 +56,18 @@ class LearningHandlerTest extends EventloopTestBase {
 
         assertThat(response).isSameAs(errorResponse); 
         verify(learningBridge, never()).runLearning("default", true); 
+    }
+
+    @Test
+    @DisplayName("learning review approve returns 409 when item already finalized")
+    void learningReviewApproveReturns409WhenFinalized() {
+        when(request.getPathParameter("reviewId")).thenReturn("review-1");
+        when(learningBridge.approveReview("review-1")).thenReturn(false);
+        when(learningBridge.getReviewQueue()).thenReturn(java.util.Map.of("review-1", java.util.Map.of("status", "APPROVED")));
+        when(http.errorResponse(409, "Review item already finalized: review-1")).thenReturn(errorResponse);
+
+        HttpResponse response = runPromise(() -> handler.handleLearningReviewApprove(request));
+
+        assertThat(response).isSameAs(errorResponse);
     }
 }
