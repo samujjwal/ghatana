@@ -22,6 +22,7 @@ import {
 import { Command } from 'cmdk';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { RADIUS, TRANSITIONS } from '../../../styles/design-tokens';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -381,6 +382,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onShowHelp,
   onShowShortcuts,
 }) => {
+  const { t } = useI18n();
   const [search, setSearch] = useState('');
 
   // Reset search when closed
@@ -498,7 +500,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             <Command.Input
               value={search}
               onValueChange={setSearch}
-              placeholder="Type a command or search..."
+              placeholder={t('canvas.commandPalette.placeholder')}
               style={{
                 border: 'none',
                 outline: 'none',

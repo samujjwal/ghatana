@@ -1,6 +1,7 @@
 import { Box, Chip, Stack, Typography } from '@ghatana/design-system';
 import { Divider, InteractiveList as List, ListItem, ListItemText, Surface as Paper, type PaperProps } from '@ghatana/design-system';
 import { forwardRef, memo, useCallback, useMemo } from 'react';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 import type * as FeatureStories from './data';
 
@@ -8,9 +9,6 @@ import type * as FeatureStories from './data';
  *
  */
 type CanvasFeatureStory = FeatureStories.CanvasFeatureStory;
-/**
- *
- */
 type CanvasStoryTestReference = FeatureStories.CanvasStoryTestReference;
 
 /**
@@ -93,7 +91,7 @@ const renderTestTargets = (test: CanvasStoryTestReference) => {
       spacing={1}
       flexWrap="wrap"
       role="list"
-      aria-label="Test targets"
+      aria-label={t('canvas.featureStory.testTargets')}
       className="mt-1"
     >
       {test.targets.map((target) => (
@@ -129,6 +127,7 @@ const CanvasFeatureStoryCardComponent = forwardRef<
     },
     ref
   ) => {
+    const { t } = useI18n();
     const cardTitleId = useMemo(() => `${story.slug}-title`, [story.slug]);
 
     const interactive = typeof onStorySelect === 'function';

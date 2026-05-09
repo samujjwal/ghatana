@@ -23,6 +23,7 @@ import { useOnboardingStatus } from '../../services/onboarding/OnboardingStatusS
 import { PERSONA_DEFINITIONS, ALL_PERSONA_TYPES, type PersonaType } from '../../context/PersonaContext';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -182,6 +183,7 @@ function WorkspaceStep({
     onNext: () => void;
     onBack: () => void;
 }) {
+    const { t } = useI18n();
     const useSuggestion = useCallback(() => {
         if (suggestedName) {
             setWorkspaceName(suggestedName);
@@ -218,13 +220,13 @@ function WorkspaceStep({
                 )}
                 <div>
                     <label className="block text-sm font-medium text-text-primary mb-1">
-                        Workspace Name
+                        {t('workspace.onboarding.workspaceName')}
                     </label>
                     <Input
                         type="text"
                         value={workspaceName}
                         onChange={(e) => setWorkspaceName(e.target.value)}
-                        placeholder="My Awesome Workspace"
+                        placeholder={t('workspace.onboarding.workspacePlaceholder')}
                         className="w-full px-4 py-3 border border-border dark:border-border rounded-xl bg-white dark:bg-surface text-text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         autoFocus
                     />
@@ -385,13 +387,13 @@ function ProjectStep({
             <div className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-text-primary mb-1">
-                        Project Name
+                        {t('workspace.onboarding.projectName')}
                     </label>
                     <Input
                         type="text"
                         value={projectName}
                         onChange={(e) => setProjectName(e.target.value)}
-                        placeholder="My First Project"
+                        placeholder={t('workspace.onboarding.projectPlaceholder')}
                         className="w-full px-4 py-3 border border-border dark:border-border rounded-xl bg-white dark:bg-surface text-text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     />
                 </div>

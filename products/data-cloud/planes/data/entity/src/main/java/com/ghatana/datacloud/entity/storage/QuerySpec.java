@@ -80,7 +80,7 @@ import java.util.*;
  * @doc.layer product
  * @doc.pattern Value Object, Query Builder Pattern
  */
-public final class QuerySpec {
+public final class QuerySpec implements QuerySpecInterface {
 
     /**
      * Default result limit when none is specified by the caller.
@@ -139,11 +139,71 @@ public final class QuerySpec {
         return new Builder();
     }
 
+    // DC-34: Removed duplicate getFilter() - QuerySpecInterface implementation handles this
+    // The interface requires String getFilter(), which is implemented below at line 154
+
+    @Override
+    public String getFilter() {
+        return filter;
+    }
+
+    @Override
+    public void setFilter(String filter) {
+        throw new UnsupportedOperationException("QuerySpec is immutable. Use QuerySpec.builder() to create a new instance.");
+    }
+
     /**
-     * Get filter expression (backend-agnostic).
+     * Get filter expression as Optional (convenience method).
+     * DC-34: Non-interface method for Optional return type.
      */
-    public Optional<String> getFilter() {
+    public Optional<String> getFilterOptional() {
         return Optional.ofNullable(filter);
+    }
+
+    @Override
+    public Integer getLimit() {
+        return limit > 0 ? limit : null;
+    }
+
+    @Override
+    public void setLimit(Integer limit) {
+        throw new UnsupportedOperationException("QuerySpec is immutable. Use QuerySpec.builder() to create a new instance.");
+    }
+
+    /**
+     * Get result limit as int (0 = unlimited, but adapter may enforce max).
+     * DC-34: Non-interface method for primitive int return type.
+     */
+    public int getLimitInt() {
+        return limit;
+    }
+
+    @Override
+    public Integer getOffset() {
+        return offset > 0 ? offset : null;
+    }
+
+    @Override
+    public void setOffset(Integer offset) {
+        throw new UnsupportedOperationException("QuerySpec is immutable. Use QuerySpec.builder() to create a new instance.");
+    }
+
+    /**
+     * Get result offset as int for pagination.
+     * DC-34: Non-interface method for primitive int return type.
+     */
+    public int getOffsetInt() {
+        return offset;
+    }
+
+    @Override
+    public String getQueryType() {
+        return metadata != null ? metadata.get("queryType") : null;
+    }
+
+    @Override
+    public void setQueryType(String queryType) {
+        throw new UnsupportedOperationException("QuerySpec is immutable. Use QuerySpec.builder() to create a new instance.");
     }
 
     /**
@@ -153,18 +213,37 @@ public final class QuerySpec {
         return sortFields;
     }
 
-    /**
-     * Get result limit (0 = unlimited, but adapter may enforce max).
-     */
-    public int getLimit() {
-        return limit;
+    @Override
+    public List<SortSpec> getSortSpecs() {
+        // Convert SortField to SortSpec for interface compatibility
+        if (sortFields == null || sortFields.isEmpty()) {
+            return null;
+        }
+        return sortFields.stream()
+                .map(sf -> {
+                    SortSpec.Direction direction = "asc".equalsIgnoreCase(sf.direction().getSymbol())
+                            ? SortSpec.Direction.ASC
+                            : SortSpec.Direction.DESC;
+                    return SortSpec.of(sf.fieldName(), direction);
+                })
+                .toList();
     }
 
-    /**
-     * Get result offset for pagination.
-     */
-    public int getOffset() {
-        return offset;
+    @Override
+    public void setSortSpecs(List<SortSpec> sortSpecs) {
+        throw new UnsupportedOperationException("QuerySpec is immutable. Use QuerySpec.builder() to create a new instance.");
+    }
+
+    @Override
+    public List<FilterCriteria> getFilterCriteria() {
+        // For now, return null as QuerySpec uses string-based filter expressions
+        // Future enhancement could parse the filter string into FilterCriteria
+        return null;
+    }
+
+    @Override
+    public void setFilterCriteria(List<FilterCriteria> criteria) {
+        throw new UnsupportedOperationException("QuerySpec is immutable. Use QuerySpec.builder() to create a new instance.");
     }
 
     /**

@@ -14,6 +14,7 @@
 import React, { useState, useCallback } from 'react';
 import { Button, Card, CardContent } from '@ghatana/design-system';
 import { Textarea } from '../ui/Textarea';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export type ApprovalDecision = 'approved' | 'changes-requested' | 'rejected' | 'pending';
 
@@ -100,6 +101,7 @@ export const ValidateApprovalPanel: React.FC<ValidateApprovalPanelProps> = ({
   cannotDecideReason,
   className = '',
 }) => {
+  const { t } = useI18n();
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -130,7 +132,7 @@ export const ValidateApprovalPanel: React.FC<ValidateApprovalPanelProps> = ({
   return (
     <section
       className={`validate-approval-panel space-y-6 ${className}`}
-      aria-label="Approval workflow"
+      aria-label={t('phase.validate.panel')}
       data-testid="validate-approval-panel"
       data-artifact-id={artifactId}
     >
@@ -153,7 +155,7 @@ export const ValidateApprovalPanel: React.FC<ValidateApprovalPanelProps> = ({
             </div>
             <span
               className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${badge.className}`}
-              aria-label={`Approval status: ${badge.label}`}
+              aria-label={t('phase.validate.approvalStatus', { label: badge.label })}
             >
               {badge.label}
             </span>
@@ -163,7 +165,7 @@ export const ValidateApprovalPanel: React.FC<ValidateApprovalPanelProps> = ({
 
       {/* Automated Gates */}
       {gates.length > 0 && (
-        <section aria-label="Automated gates">
+        <section aria-label={t('phase.validate.automatedGates')}>
           <h4 className="text-sm font-medium text-fg mb-3">
             Automated gates ({gates.filter((g) => g.passed).length}/{gates.length} passed)
           </h4>
@@ -206,7 +208,7 @@ export const ValidateApprovalPanel: React.FC<ValidateApprovalPanelProps> = ({
 
       {/* Reviewer Decisions */}
       {reviewers.length > 0 && (
-        <section aria-label="Reviewer decisions">
+        <section aria-label={t('phase.validate.reviewerDecisions')}>
           <h4 className="text-sm font-medium text-fg mb-3">
             Reviewers ({reviewers.filter((r) => r.decision && r.decision !== 'pending').length}/{reviewers.length} responded)
           </h4>
@@ -248,7 +250,7 @@ export const ValidateApprovalPanel: React.FC<ValidateApprovalPanelProps> = ({
 
       {/* Decision Form */}
       {canDecide ? (
-        <section aria-label="Submit your decision">
+        <section aria-label={t('phase.validate.submitDecision')}>
           <h4 className="text-sm font-medium text-fg mb-3">Your decision</h4>
           {!allGatesPassed && (
             <div className="mb-4 rounded-lg bg-warning-bg border border-warning-border p-3">
@@ -271,18 +273,18 @@ export const ValidateApprovalPanel: React.FC<ValidateApprovalPanelProps> = ({
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={3}
-                  placeholder="Add context for your decision…"
+                  placeholder={t('phase.validate.decisionCommentPlaceholder')}
                   className="w-full rounded-md border border-border bg-surface text-fg text-sm p-2 resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                  aria-label="Approval comment"
+                  aria-label={t('phase.validate.approvalComment')}
                 />
               </div>
-              <div className="flex flex-wrap gap-2" role="group" aria-label="Decision buttons">
+              <div className="flex flex-wrap gap-2" role="group" aria-label={t('phase.validate.decisionButtons')}>
                 <Button
                   variant="solid"
                   size="sm"
                   onClick={() => handleDecision('approve')}
                   disabled={isSubmitting || !allGatesPassed}
-                  aria-label="Approve this artifact"
+                  aria-label={t('phase.validate.approveArtifact')}
                 >
                   Approve
                 </Button>
@@ -291,7 +293,7 @@ export const ValidateApprovalPanel: React.FC<ValidateApprovalPanelProps> = ({
                   size="sm"
                   onClick={() => handleDecision('request-changes')}
                   disabled={isSubmitting}
-                  aria-label="Request changes to this artifact"
+                  aria-label={t('phase.validate.requestChangesArtifact')}
                 >
                   Request changes
                 </Button>
@@ -300,7 +302,7 @@ export const ValidateApprovalPanel: React.FC<ValidateApprovalPanelProps> = ({
                   size="sm"
                   onClick={() => handleDecision('reject')}
                   disabled={isSubmitting}
-                  aria-label="Reject this artifact"
+                  aria-label={t('phase.validate.rejectArtifact')}
                 >
                   Reject
                 </Button>
@@ -313,7 +315,7 @@ export const ValidateApprovalPanel: React.FC<ValidateApprovalPanelProps> = ({
           <div
             className="rounded-lg border border-border bg-surface-muted p-4"
             role="status"
-            aria-label="Decision not available"
+            aria-label={t('phase.validate.decisionUnavailable')}
           >
             <p className="text-sm text-fg-muted">{cannotDecideReason}</p>
           </div>

@@ -28,6 +28,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { X as Close, Lightbulb, Keyboard as KeyboardOutlined, CheckCircle } from 'lucide-react';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 import type { LifecyclePhase } from '../../../types/lifecycle';
 
@@ -76,6 +77,7 @@ export function ContextualHelpTooltip({
     position = 'bottom',
     anchor,
 }: ContextualHelpTooltipProps) {
+    const { t } = useI18n();
     const [coordinates, setCoordinates] = useState({ top: 0, left: 0 });
     const tooltipRef = useRef<HTMLDivElement>(null);
 
@@ -165,7 +167,7 @@ export function ContextualHelpTooltip({
                     size="small"
                     onClick={onDismiss}
                     className="absolute top-[4px] right-[4px]"
-                    aria-label="Close tip"
+                    aria-label={t('contextualHelp.closeTip')}
                 >
                     <Close size={16} />
                 </IconButton>

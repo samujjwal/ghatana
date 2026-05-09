@@ -50,6 +50,7 @@ import { createPortal } from 'react-dom';
 import { X as Close } from 'lucide-react';
 import { TRANSITIONS, RADIUS, Z_INDEX } from '../../styles/design-tokens';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface StandardModalProps {
     /** Whether modal is open */
@@ -120,6 +121,7 @@ export function StandardModal({
 }: StandardModalProps) {
     const modalRef = useRef<HTMLDivElement>(null);
     const previousActiveElement = useRef<HTMLElement | null>(null);
+    const { t } = useI18n();
 
     // Focusable element selector for focus trap
     const FOCUSABLE_SELECTOR = [
@@ -280,7 +282,7 @@ export function StandardModal({
                   ${TRANSITIONS.fast}
                   ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
-                                aria-label="Close dialog"
+                                aria-label={t('dialogs.closeModal')}
                             >
                                 <Close className="w-5 h-5" />
                             </Button>

@@ -26,6 +26,7 @@ import {
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/Button';
 import { Textarea } from '../ui/Textarea';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface OnboardingStep {
   id: string;
@@ -42,6 +43,7 @@ interface EndToEndOnboardingProps {
 export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
+  const { t } = useI18n();
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
 
   const steps: OnboardingStep[] = [
@@ -222,7 +224,7 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
               <div>
                 <p className="mb-3">Describe what you want to build in a few sentences.</p>
                 <Textarea
-                  placeholder="e.g., I want to build a task management app with team collaboration features..."
+                  placeholder={t('onboarding.intentPlaceholder')}
                   fullWidth
                   resize="none"
                   className="w-full h-32 bg-surface border border-border rounded-lg p-3 text-fg-muted placeholder-zinc-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-info-border"
@@ -301,7 +303,7 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
                 size="sm"
                 onClick={() => setShowCompletionDialog(false)}
                 className="p-1 rounded hover:bg-surface text-fg-muted hover:text-fg-muted"
-                aria-label="Close completion dialog"
+                 aria-label={t('onboarding.closeCompletionDialog')}
               >
                 <CloseIcon className="w-5 h-5" />
               </Button>

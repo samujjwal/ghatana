@@ -17,6 +17,7 @@ import {
     draftStepDataAtom,
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface ContextReference {
     id: string;
@@ -48,6 +49,7 @@ const REFERENCE_TYPES: { value: ContextReference['type']; label: string; icon: R
 // ============================================================================
 
 export function ContextStep() {
+    const { t } = useI18n();
     const workflow = useAtomValue(currentWorkflowAtom);
     const draftData = useAtomValue(draftStepDataAtom) as ContextStepData | null;
     const updateDraft = useSetAtom(updateDraftStepDataAtom);
@@ -135,7 +137,7 @@ export function ContextStep() {
                         <TextField
                             fullWidth
                             size="small"
-                            placeholder="Add a system or service..."
+                            placeholder={t('workflow.context.systemPlaceholder')}
                             value={newSystem}
                             onChange={(e) => setNewSystem(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleAddSystem()}
@@ -178,7 +180,7 @@ export function ContextStep() {
                         <TextField
                             fullWidth
                             size="small"
-                            placeholder="Add a constraint or assumption..."
+                            placeholder={t('workflow.context.constraintPlaceholder')}
                             value={newConstraint}
                             onChange={(e) => setNewConstraint(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleAddConstraint()}
@@ -243,14 +245,14 @@ export function ContextStep() {
                         </FormControl>
                         <TextField
                             size="small"
-                            placeholder="Name"
+                            placeholder={t('workflow.context.referenceNamePlaceholder')}
                             value={newRefName}
                             onChange={(e) => setNewRefName(e.target.value)}
                             className="grow min-w-[150px]"
                         />
                         <TextField
                             size="small"
-                            placeholder="URL (optional)"
+                            placeholder={t('workflow.context.referenceUrlPlaceholder')}
                             value={newRefUrl}
                             onChange={(e) => setNewRefUrl(e.target.value)}
                             className="grow min-w-[200px]"

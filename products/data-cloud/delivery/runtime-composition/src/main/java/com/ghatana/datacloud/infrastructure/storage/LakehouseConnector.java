@@ -306,14 +306,14 @@ public class LakehouseConnector implements StorageConnector {
 
             // Apply partition pruning (simulate by filtering)
             List<Entity> filtered = storeSnapshot.stream()
-                    .filter(e -> applyFilter(e, spec.getFilter().orElse(null)))
+                    .filter(e -> applyFilter(e, spec.getFilterOptional().orElse(null)))
                     .toList();
 
                 List<Entity> sorted = applySorts(filtered, spec.getSortFields());
 
             // Apply pagination
-            int limit = spec.getLimit() > 0 ? spec.getLimit() : 100;
-            int offset = spec.getOffset() >= 0 ? spec.getOffset() : 0;
+            int limit = spec.getLimitInt() > 0 ? spec.getLimitInt() : 100;
+            int offset = spec.getOffsetInt() >= 0 ? spec.getOffsetInt() : 0;
 
                 List<Entity> paginated = sorted.stream()
                     .skip(offset)

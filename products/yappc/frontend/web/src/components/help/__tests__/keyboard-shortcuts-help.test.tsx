@@ -20,7 +20,7 @@ describe('KeyboardShortcutsHelp', () => {
   it('calls onClose when close button clicked', () => {
     const onClose = vi.fn();
     render(<KeyboardShortcutsHelp open onClose={onClose} />);
-    // Close button has aria-label="Close"
+    // Close button has an accessible close label
     const closeBtn = screen.getByLabelText('Close');
     fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalled();

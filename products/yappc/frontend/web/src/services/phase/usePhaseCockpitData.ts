@@ -61,23 +61,23 @@ export interface UsePhaseCockpitDataResult {
   readonly hasPartialData: boolean;
 }
 
-const FALLBACK_ENABLED_PHASE_FLAGS: readonly PhaseFeatureFlag[] = [
-  'phase.generate.enabled',
-  'phase.run.preview.enabled',
-  'phase.observe.enabled',
-];
+// YAPPC-P0-005: Removed hardcoded fallback flags - tier and flags must come from backend entitlement/capability system
 
 function resolveTenantTier(project: PhaseProjectSnapshot | undefined): TenantTier {
-  return project?.tenantTier ?? 'starter';
+  // YAPPC-P0-005: Require explicit backend tier - no fallback
+  if (!project?.tenantTier) {
+    throw new Error('Tenant tier not provided by backend entitlement system');
+  }
+  return project.tenantTier;
 }
 
 function resolveEnabledFlags(project: PhaseProjectSnapshot | undefined): ReadonlySet<PhaseFeatureFlag> {
+  // YAPPC-P0-005: Require explicit backend flags - no fallback
   const sourceFlags = project?.enabledPhaseFlags;
-  if (Array.isArray(sourceFlags) && sourceFlags.length > 0) {
-    return new Set(sourceFlags);
+  if (!Array.isArray(sourceFlags) || sourceFlags.length === 0) {
+    throw new Error('Enabled phase flags not provided by backend capability system');
   }
-
-  return new Set(FALLBACK_ENABLED_PHASE_FLAGS);
+  return new Set(sourceFlags);
 }
 
 function describeQueryError(error: unknown, fallback: string): string {

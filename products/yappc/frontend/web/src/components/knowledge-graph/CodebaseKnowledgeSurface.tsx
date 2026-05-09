@@ -17,6 +17,7 @@ import { Brain, Database, Search, RefreshCw, AlertCircle, Loader2 } from 'lucide
 import { cn } from '../../lib/utils';
 import { AIAssistLabel } from '../ai/AIAssistLabel';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -73,6 +74,8 @@ export function CodebaseKnowledgeSurface({
 }: CodebaseKnowledgeSurfaceProps): React.ReactElement | null {
   if (!projectId) return null;
 
+  const { t } = useI18n();
+
   const { data, isLoading, isError, refetch } = useQuery<CodebaseKnowledgeData>({
     queryKey: ['codebase-knowledge', projectId],
     queryFn: () => fetchCodebaseKnowledge(projectId),
@@ -95,7 +98,7 @@ export function CodebaseKnowledgeSurface({
           size="sm"
           onClick={() => { void refetch(); }}
           className="p-1.5 rounded-lg hover:bg-surface text-fg-muted hover:text-fg-muted transition-colors"
-          aria-label="Refresh knowledge"
+          aria-label={t('knowledge.refresh')}
           data-testid="knowledge-refresh-btn"
         >
           <RefreshCw size={14} />

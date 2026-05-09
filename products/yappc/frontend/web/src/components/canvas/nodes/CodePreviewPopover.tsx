@@ -14,6 +14,7 @@ import { Box, ListItemText, ListItemButton, Button, Typography, Chip, IconButton
 import { Code as CodeIcon, Bug as TestIcon, FileText as DocIcon, Drama as MockIcon, X as CloseIcon, ExternalLink as OpenIcon, Trash2 as DeleteIcon } from 'lucide-react';
 import type { CodeAssociation, CodeRelationshipType } from '../../../hooks/useCodeAssociations';
 import { getAssociationColor } from '../../../hooks/useCodeAssociations';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 export interface CodePreviewPopoverProps {
     /** Anchor element for popover */
@@ -82,6 +83,7 @@ export const CodePreviewPopover: React.FC<CodePreviewPopoverProps> = ({
     isLoading = false,
     error = null,
 }) => {
+    const { t } = useI18n();
     const [selectedAssociation, setSelectedAssociation] = useState<CodeAssociation | null>(
         associations[0] || null
     );
@@ -115,7 +117,7 @@ export const CodePreviewPopover: React.FC<CodePreviewPopoverProps> = ({
                 <Box
                     className="p-4 flex items-center justify-between border-border dark:border-border border-b" >
                     <Typography as="h6">Linked Code</Typography>
-                    <IconButton size="sm" onClick={onClose} aria-label="Close">
+                    <IconButton size="sm" onClick={onClose} aria-label={t('canvas.codePreview.close')}>
                         <CloseIcon />
                     </IconButton>
                 </Box>
@@ -246,7 +248,7 @@ export const CodePreviewPopover: React.FC<CodePreviewPopoverProps> = ({
                                                         onClose();
                                                     }
                                                 }}
-                                                aria-label="Remove association"
+                                                aria-label={t('canvas.codePreview.removeAssociation')}
                                             >
                                                 <DeleteIcon />
                                             </IconButton>

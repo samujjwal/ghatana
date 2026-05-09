@@ -326,7 +326,14 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
                             List.of(Filter.eq("classification", "secret")), 
                             List.of(), 
                             0,
-                            100)));
+                            100,
+                            List.of(), // projections
+                            null, // timeWindowStart
+                            null, // timeWindowEnd
+                            Map.of(), // metadata
+                            null, // consistencyLevel
+                            null // freshnessHint
+                    )));
 
             assertThat(leaked).isEmpty(); 
         }

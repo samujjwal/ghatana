@@ -19,6 +19,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface ComponentCoverage {
     id: string;
@@ -101,6 +102,7 @@ const getCoverageColor = (coverage: number) => {
 };
 
 export const UnitCoverageCanvas = () => {
+    const { t } = useI18n();
     const [coverage] = useState<ComponentCoverage[]>(MOCK_COVERAGE);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -131,7 +133,7 @@ export const UnitCoverageCanvas = () => {
                 <Box className="p-4 border-b border-solid border-b-[rgba(0,_0,_0,_0.12)] bg-white">
                     <TextField
                         size="small"
-                        placeholder="Search components..."
+                        placeholder={t('canvas.unitCoverage.searchComponents')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full"

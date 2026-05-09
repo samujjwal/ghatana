@@ -8,7 +8,8 @@
 import React from 'react';
 import { NavLink } from 'react-router';
 import { useAtomValue } from 'jotai';
-import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/Button';
+import { ProgressBar } from '@/components/ui/ProgressBar';
 import {
   Plus,
   FolderKanban,
@@ -237,12 +238,7 @@ const DashboardPage: React.FC = () => {
                         <span className="text-fg-muted">{t('dashboard.progress')}</span>
                         <span className="text-white">{project.progress}%</span>
                       </div>
-                      <div className="h-1.5 bg-surface rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-violet-500 rounded-full"
-                          style={{ width: `${project.progress}%` }}
-                        />
-                      </div>
+                      <ProgressBar percentage={project.progress} height="h-1.5" />
                     </div>
                     {/* Team avatars */}
                     <div className="flex -space-x-2">

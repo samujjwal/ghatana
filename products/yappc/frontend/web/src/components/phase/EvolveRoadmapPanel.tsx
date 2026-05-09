@@ -13,6 +13,7 @@
 import React, { useCallback, useState } from 'react';
 import { Button, Card, CardContent } from '@ghatana/design-system';
 import { Select } from '../ui/Select';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export type RoadmapPhase =
   | 'intent'
@@ -138,6 +139,7 @@ export const EvolveRoadmapPanel: React.FC<EvolveRoadmapPanelProps> = ({
   cannotApproveReason,
   className = '',
 }) => {
+  const { t } = useI18n();
   const [promotingId, setPromotingId] = useState<string | null>(null);
   const [promotePhase, setPromotePhase] = useState<RoadmapPhase>('intent');
   const [promotePriority, setPromotePriority] = useState<RoadmapItemPriority>('medium');
@@ -168,7 +170,7 @@ export const EvolveRoadmapPanel: React.FC<EvolveRoadmapPanelProps> = ({
   return (
     <section
       className={`evolve-roadmap-panel space-y-6 ${className}`}
-      aria-label="Evolve roadmap"
+      aria-label={t('phase.evolve.panel')}
       data-testid="evolve-roadmap-panel"
     >
       {/* Cycle Header */}
@@ -206,7 +208,7 @@ export const EvolveRoadmapPanel: React.FC<EvolveRoadmapPanelProps> = ({
       )}
 
       {/* Roadmap */}
-      <section aria-label="Roadmap items">
+      <section aria-label={t('phase.evolve.roadmapItems')}>
         <h4 className="text-sm font-medium text-fg mb-3">
           Roadmap ({activeRoadmapItems.length} active)
         </h4>
@@ -259,7 +261,7 @@ export const EvolveRoadmapPanel: React.FC<EvolveRoadmapPanelProps> = ({
 
       {/* Backlog */}
       {backlogItems.length > 0 && (
-        <section aria-label="Backlog">
+        <section aria-label={t('phase.evolve.backlog')}>
           <h4 className="text-sm font-medium text-fg mb-3">
             Backlog ({backlogItems.length})
           </h4>
@@ -369,7 +371,7 @@ export const EvolveRoadmapPanel: React.FC<EvolveRoadmapPanelProps> = ({
 
       {/* Handoff Gate */}
       {!handoffApproved && (
-        <section aria-label="Cycle handoff">
+        <section aria-label={t('phase.evolve.cycleHandoff')}>
           {!canApproveHandoff && cannotApproveReason && (
             <div className="mb-3 rounded-lg bg-warning-bg border border-warning-border p-3">
               <p className="text-sm text-warning-color">{cannotApproveReason}</p>

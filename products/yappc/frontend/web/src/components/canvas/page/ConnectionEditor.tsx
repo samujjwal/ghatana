@@ -20,6 +20,7 @@ import {
   Paper,
 } from '@ghatana/design-system';
 import React, { useState, useCallback } from 'react';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 import type {
   EventConnection,
@@ -54,6 +55,7 @@ export const ConnectionEditor: React.FC<ConnectionEditorProps> = ({
   onConnectionsChange,
   availableComponents = [],
 }) => {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<ConnectionType>('event');
   const [editingConnection, setEditingConnection] = useState<
     EventConnection | DataConnection | NavigationConnection | null
@@ -232,7 +234,7 @@ export const ConnectionEditor: React.FC<ConnectionEditorProps> = ({
                 onChange={(e) => handleUpdateEditingConnection('sourcePath', e.target.value)}
                 fullWidth
                 size="small"
-                placeholder="e.g., value"
+                  placeholder={t('canvas.connection.sourcePathPlaceholder')}
               />
 
               <TextField
@@ -256,7 +258,7 @@ export const ConnectionEditor: React.FC<ConnectionEditorProps> = ({
                 onChange={(e) => handleUpdateEditingConnection('targetProp', e.target.value)}
                 fullWidth
                 size="small"
-                placeholder="e.g., value"
+                placeholder={t('canvas.connection.targetPropertyPlaceholder')}
               />
 
               <TextField
@@ -321,7 +323,7 @@ export const ConnectionEditor: React.FC<ConnectionEditorProps> = ({
                 onChange={(e) => handleUpdateEditingConnection('targetRoute', e.target.value)}
                 fullWidth
                 size="small"
-                placeholder="/page-path"
+                placeholder={t('canvas.connection.navigationPathPlaceholder')}
               />
             </>
           )}

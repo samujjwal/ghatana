@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -43,6 +44,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 // ============================================================================
 
 const InfrastructureConfigPage: React.FC = () => {
+  const { t } = useI18n();
   const [services, setServices] = useState(SERVICES);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -95,7 +97,11 @@ const InfrastructureConfigPage: React.FC = () => {
                             svc.enabled ? 'bg-primary' : 'bg-surface-muted'
                           }`}
                           aria-pressed={svc.enabled}
-                          aria-label={`${svc.enabled ? 'Disable' : 'Enable'} ${svc.name}`}
+                          aria-label={
+                            svc.enabled
+                              ? t('infrastructureConfig.disableService', { name: svc.name })
+                              : t('infrastructureConfig.enableService', { name: svc.name })
+                          }
                         >
                           <span
                             className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${

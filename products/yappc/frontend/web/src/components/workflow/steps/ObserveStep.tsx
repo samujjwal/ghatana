@@ -17,6 +17,7 @@ import {
     draftStepDataAtom,
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface Anomaly {
     id: string;
@@ -67,6 +68,7 @@ const SEVERITY_LEVELS: { value: Anomaly['severity']; label: string; color: 'succ
 // ============================================================================
 
 export function ObserveStep() {
+    const { t } = useI18n();
     const workflow = useAtomValue(currentWorkflowAtom);
     const draftData = useAtomValue(draftStepDataAtom) as ObserveStepData | null;
     const updateDraft = useSetAtom(updateDraftStepDataAtom);
@@ -241,14 +243,14 @@ export function ObserveStep() {
                     <Box className="flex gap-2 mb-4 flex-wrap">
                         <TextField
                             size="small"
-                            placeholder="Metric name"
+                            placeholder={t('workflow.observe.metricNamePlaceholder')}
                             value={newMetricName}
                             onChange={(e) => setNewMetricName(e.target.value)}
                             className="min-w-[150px]"
                         />
                         <TextField
                             size="small"
-                            placeholder="Before"
+                            placeholder={t('workflow.observe.beforePlaceholder')}
                             type="number"
                             value={newMetricBefore}
                             onChange={(e) => setNewMetricBefore(e.target.value)}
@@ -256,7 +258,7 @@ export function ObserveStep() {
                         />
                         <TextField
                             size="small"
-                            placeholder="After"
+                            placeholder={t('workflow.observe.afterPlaceholder')}
                             type="number"
                             value={newMetricAfter}
                             onChange={(e) => setNewMetricAfter(e.target.value)}
@@ -346,14 +348,14 @@ export function ObserveStep() {
                         </FormControl>
                         <TextField
                             size="small"
-                            placeholder="Metric"
+                            placeholder={t('workflow.observe.anomalyMetricPlaceholder')}
                             value={newAnomalyMetric}
                             onChange={(e) => setNewAnomalyMetric(e.target.value)}
                             className="min-w-[120px]"
                         />
                         <TextField
                             size="small"
-                            placeholder="Description"
+                            placeholder={t('workflow.observe.anomalyDescriptionPlaceholder')}
                             value={newAnomalyDesc}
                             onChange={(e) => setNewAnomalyDesc(e.target.value)}
                             className="grow min-w-[200px]"

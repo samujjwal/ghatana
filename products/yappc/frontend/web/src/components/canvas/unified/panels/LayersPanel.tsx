@@ -67,6 +67,7 @@ export function LayersPanel({
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [localSearch, setLocalSearch] = useState('');
+  const { t } = useI18n();
 
   const canvasNodes = useMemo(
     () => nodes.filter(isCanvasNodeRecord),
@@ -178,7 +179,7 @@ export function LayersPanel({
           <Input
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            placeholder="Search layers..."
+            placeholder={t('canvas.layers.search')}
             fullWidth
             size="sm"
             className="min-w-0 flex-1 bg-transparent text-sm outline-none"

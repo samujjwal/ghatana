@@ -20,6 +20,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface MindMapNode {
     id: string;
@@ -303,6 +304,7 @@ const ConnectionLine = ({
 };
 
 export const MindMapCanvas = () => {
+    const { t } = useI18n();
     const [nodes] = useState<MindMapNode[]>(MOCK_NODES);
     const [selectedNode, setSelectedNode] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -392,7 +394,7 @@ export const MindMapCanvas = () => {
                     <Box className="flex gap-4 items-center">
                         <TextField
                             size="small"
-                            placeholder="Search topics, notes, tags..."
+                            placeholder={t('canvas.mindMap.searchTopics')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="flex-1"

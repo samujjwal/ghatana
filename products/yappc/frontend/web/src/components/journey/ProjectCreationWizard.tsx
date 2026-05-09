@@ -9,12 +9,14 @@
 import React, { useState } from 'react';
 import { Box, Card, CardContent, Typography, Button, TextField, Stepper, Step, StepLabel, Avatar } from '@ghatana/design-system';
 import { Plus as Add, ArrowRight as ArrowForward, ArrowLeft as ArrowBack, CheckCircle, Sparkles as AutoAwesome } from 'lucide-react';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface ProjectCreationWizardProps {
     onComplete: (projectId: string) => void;
 }
 
 export function ProjectCreationWizard({ onComplete }: ProjectCreationWizardProps) {
+    const { t } = useI18n();
     const [currentStep, setCurrentStep] = useState(0);
     const [projectData, setProjectData] = useState({
         name: '',
@@ -90,18 +92,18 @@ export function ProjectCreationWizard({ onComplete }: ProjectCreationWizardProps
                         </Typography>
                         <TextField
                             fullWidth
-                            label="Project Name"
+                            label={t('journey.projectCreation.name')}
                             value={projectData.name}
                             onChange={(e) => setProjectData({ ...projectData, name: e.target.value })}
-                            placeholder="My Awesome Project"
+                            placeholder={t('journey.projectCreation.projectNamePlaceholder')}
                             className="mb-6"
                         />
                         <TextField
                             fullWidth
-                            label="Description"
+                            label={t('journey.projectCreation.description')}
                             value={projectData.description}
                             onChange={(e) => setProjectData({ ...projectData, description: e.target.value })}
-                            placeholder="What are you building?"
+                            placeholder={t('journey.projectCreation.descriptionPlaceholder')}
                             multiline
                             rows={3}
                             className="mb-6"

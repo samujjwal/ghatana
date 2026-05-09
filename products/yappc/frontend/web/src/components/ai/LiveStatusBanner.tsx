@@ -19,6 +19,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -97,6 +98,7 @@ export const LiveStatusBanner = React.memo<LiveStatusBannerProps>(function LiveS
   autoDismissMs = 3000,
   className,
 }) {
+  const { t } = useI18n();
   const [dismissed, setDismissed] = useState(false);
 
   // Reset dismissed state when status changes back to an active state.
@@ -158,7 +160,7 @@ export const LiveStatusBanner = React.memo<LiveStatusBannerProps>(function LiveS
           variant="ghost"
           size="sm"
           onClick={handleDismiss}
-          aria-label="Dismiss status banner"
+          aria-label={t('ai.liveStatus.dismiss')}
           className="ml-auto p-0.5 opacity-60 hover:opacity-100 transition-opacity"
         >
           ✕

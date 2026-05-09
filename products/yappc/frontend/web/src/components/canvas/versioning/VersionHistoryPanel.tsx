@@ -29,6 +29,7 @@ import {
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
 import { RotateCcw as Restore, Eye as Visibility, Trash2 as Delete, Save } from 'lucide-react';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 import type { CanvasSnapshot } from '../../../services/canvas/CanvasPersistence';
 
@@ -94,6 +95,7 @@ export const VersionHistoryList: React.FC<{
     onDelete?: (snapshotId: string) => void;
     onViewDiff?: (snapshot: CanvasSnapshot) => void;
 }> = ({ snapshots, currentVersion, onRestore, onDelete, onViewDiff }) => {
+    const { t } = useI18n();
     const sortedSnapshots = [...snapshots].sort((a, b) => b.timestamp - a.timestamp);
 
     if (sortedSnapshots.length === 0) {
@@ -144,7 +146,7 @@ export const VersionHistoryList: React.FC<{
                                     <IconButton
                                         size="small"
                                         color="primary"
-                                        aria-label="Restore"
+                                        aria-label={t('canvas.version.restore')}
                                         onClick={() => onRestore(snapshot.id)}
                                         className="p-1"
                                     >
@@ -155,7 +157,7 @@ export const VersionHistoryList: React.FC<{
                                     <IconButton
                                         size="small"
                                         color="error"
-                                        aria-label="Delete"
+                                        aria-label={t('canvas.version.delete')}
                                         onClick={() => onDelete(snapshot.id)}
                                         className="p-1"
                                     >
@@ -197,6 +199,7 @@ export const VersionHistoryPanel: React.FC<VersionHistoryPanelProps> = ({
     open,
     onClose,
 }) => {
+    const { t } = useI18n();
     const [showCreateDialog, setShowCreateDialog] = useState(false);
     const [newSnapshotLabel, setNewSnapshotLabel] = useState('');
     const [newSnapshotDescription, setNewSnapshotDescription] = useState('');
@@ -261,7 +264,7 @@ export const VersionHistoryPanel: React.FC<VersionHistoryPanelProps> = ({
                             fullWidth
                             required
                             autoFocus
-                            placeholder="e.g. Pre-auth implementation"
+                            placeholder={t('canvas.version.snapshotNamePlaceholder')}
                         />
                         <TextField
                             label="Description (optional)"
@@ -270,7 +273,7 @@ export const VersionHistoryPanel: React.FC<VersionHistoryPanelProps> = ({
                             fullWidth
                             multiline
                             rows={3}
-                            placeholder="What changed in this version?"
+                            placeholder={t('canvas.version.snapshotDescriptionPlaceholder')}
                         />
                     </Stack>
                 </DialogContent>

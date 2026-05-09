@@ -25,6 +25,7 @@ import {
   Spinner as CircularProgress,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
+import { useI18n } from '../../../../i18n/I18nProvider';
 
 export type EmbedType = 'url' | 'youtube' | 'figma' | 'google-docs' | 'google-sheets' | 'image' | 'video';
 
@@ -123,6 +124,7 @@ function getEmbedIcon(type: EmbedType): string {
 }
 
 function EmbedNodeComponent({ data, selected, id }: EmbedNodeProps) {
+    const { t } = useI18n();
     const {
         url = '',
         embedType: providedType,
@@ -231,7 +233,7 @@ function EmbedNodeComponent({ data, selected, id }: EmbedNodeProps) {
                                 value={inputUrl}
                                 onChange={(e) => setInputUrl(e.target.value)}
                                 onKeyDown={handleKeyDown}
-                                placeholder="https://..."
+                                placeholder={t('canvas.embed.url')}
                                 fullWidth
                                 size="small"
                                 autoFocus

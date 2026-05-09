@@ -57,27 +57,22 @@ public final class CapabilityRegistryHandler {
     }
 
     /**
-     * Handle GET /api/v1/capabilities - compatibility runtime truth endpoint.
-     */
-    public Promise<HttpResponse> handleCapabilities(HttpRequest request) {
-        return handleRuntimeTruthSnapshot(request);
-    }
-
-    /**
      * Handle GET /api/v1/surfaces - canonical runtime truth endpoint.
+     * DC-P1.12: Removed compatibility /api/v1/capabilities handler; use this canonical endpoint only.
      */
     public Promise<HttpResponse> handleSurfaces(HttpRequest request) {
         return handleRuntimeTruthSnapshot(request);
     }
 
     /**
-     * Handle GET /api/v1/capabilities/schema - returns unified capability schema
+     * Handle GET /api/v1/surfaces/schema - canonical runtime truth schema endpoint.
+     * DC-P1.12: Removed compatibility /api/v1/capabilities/schema handler; use this canonical endpoint only.
      * 
      * P2-CAP-1: This endpoint serves the capability schema which is the single source
      * of truth for all capability-based feature gates, preventing drift between
      * docs/UI/runtime.
      */
-    public Promise<HttpResponse> handleCapabilitySchema(HttpRequest request) {
+    public Promise<HttpResponse> handleSurfaceSchema(HttpRequest request) {
         String tenantId = httpSupport.requireTenantIdOrFail(request);
         if (tenantId == null) {
             return Promise.of(httpSupport.errorResponse(400, "X-Tenant-Id header is required"));
@@ -90,12 +85,5 @@ public final class CapabilityRegistryHandler {
         return Promise.of(httpSupport.envelopeResponse(
             ApiResponse.success(schema, tenantId, requestId),
             objectMapper));
-    }
-
-    /**
-     * Handle GET /api/v1/surfaces/schema - canonical runtime truth schema endpoint.
-     */
-    public Promise<HttpResponse> handleSurfaceSchema(HttpRequest request) {
-        return handleCapabilitySchema(request);
     }
 }

@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -65,6 +66,14 @@ public class DynamicQueryBuilder {
 
     private static final Set<String> ALLOWED_OPERATORS = Set.of(
         "=", "!=", "<", "<=", ">", ">=", "LIKE", "IN", "NOT IN", "IS NULL", "IS NOT NULL"
+    );
+
+    // DC-9: Strict JSONB path validation - allow only safe JSONB operators and field names
+    // Pattern matches: field_name->'key' or field_name->>'key' or field_name#>'{path}' or field_name#>>'{path}'
+    // Field name: alphanumeric + underscore, starts with letter
+    // Keys/paths: alphanumeric + underscore + hyphen, wrapped in single quotes or braces
+    private static final Pattern JSONB_PATH_PATTERN = Pattern.compile(
+        "^[a-zA-Z][a-zA-Z0-9_]*(->|->>|#>|#>>)(?:'[a-zA-Z0-9_\\-]+'|\\{[a-zA-Z0-9_\\-]+\\})$"
     );
 
     private final MetaCollection collection;
@@ -208,7 +217,8 @@ public class DynamicQueryBuilder {
      * Supports path expressions like 'data->status' or 'data->>name'.
      *
      * <p><b>SQL Injection Prevention</b><br>
-     * Path validated against allowed patterns. Value parameterized.
+     * DC-9: Path validated against strict allowlist regex. Value parameterized.
+     * Only allows safe JSONB operators (->, ->>, #>, #>>) with alphanumeric field names.
      *
      * @param jsonPath the JSONB path expression (e.g., "data->'status'")
      * @param operator the comparison operator (=, !=, <, >, LIKE, etc.)
@@ -219,6 +229,13 @@ public class DynamicQueryBuilder {
     public DynamicQueryBuilder filterJsonb(String jsonPath, String operator, Object value) {
         Objects.requireNonNull(jsonPath, "JSON path must not be null");
         Objects.requireNonNull(operator, "Operator must not be null");
+
+        // DC-9: Validate JSONB path against strict allowlist pattern
+        if (!JSONB_PATH_PATTERN.matcher(jsonPath).matches()) {
+            throw new IllegalArgumentException(
+                "Invalid JSONB path: " + jsonPath + ". Path must match pattern: " + JSONB_PATH_PATTERN.pattern()
+            );
+        }
 
         // Validate operator
         String upperOp = operator.toUpperCase();

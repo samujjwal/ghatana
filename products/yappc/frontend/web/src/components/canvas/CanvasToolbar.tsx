@@ -18,6 +18,7 @@ import {
   Menu,
   Tooltip,
 } from '@ghatana/design-system';
+import { useI18n } from '../../i18n/I18nProvider';
 import { MenuItem } from '@ghatana/design-system';
 import { RefreshCw as Autorenew, Code, Download as FileDownload, Image, FileType as PictureAsPdf, Redo2 as Redo, Undo2 as Undo } from 'lucide-react';
 import { CanvasHistoryManager, useCanvasHistory } from '../../utils/canvasHistory';
@@ -42,6 +43,7 @@ export function CanvasToolbar<T>({
     showExport = true,
     showHistory = true,
 }: CanvasToolbarProps<T>) {
+    const { t } = useI18n();
     const [exportAnchor, setExportAnchor] = useState<null | HTMLElement>(null);
     const [exporting, setExporting] = useState(false);
 
@@ -105,7 +107,7 @@ export function CanvasToolbar<T>({
                                 size="small"
                                 onClick={handleUndo}
                                 disabled={!history.canUndo()}
-                                aria-label="Undo"
+                                aria-label={t('canvasToolbar.undo')}
                             >
                                 <Undo size={16} />
                             </IconButton>
@@ -118,7 +120,7 @@ export function CanvasToolbar<T>({
                                 size="small"
                                 onClick={handleRedo}
                                 disabled={!history.canRedo()}
-                                aria-label="Redo"
+                                aria-label={t('canvasToolbar.redo')}
                             >
                                 <Redo size={16} />
                             </IconButton>
@@ -137,7 +139,7 @@ export function CanvasToolbar<T>({
                             size="small"
                             onClick={(e) => setExportAnchor(e.currentTarget)}
                             disabled={exporting}
-                            aria-label="Export"
+                            aria-label={t('canvasToolbar.export')}
                         >
                             {exporting ? <Autorenew size={16} /> : <FileDownload size={16} />}
                         </IconButton>

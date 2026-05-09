@@ -14,6 +14,7 @@ import React, { useState, useCallback } from 'react';
 import { AlertTriangle as Warning, CheckCircle, XCircle as Cancel, Plus as Add, User as Person, Clock as Schedule, FileText as Description, ChevronDown as ExpandMore, ChevronUp as ExpandLess, Link as LinkIcon } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface IncidentEvent {
     timestamp: string;
@@ -91,6 +92,7 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
     onAssign,
     isLoading = false,
 }) => {
+    const { t } = useI18n();
     const [expandedIncident, setExpandedIncident] = useState<string | null>(null);
     const [filter, setFilter] = useState<'all' | 'open' | 'resolved'>('all');
     const [newNote, setNewNote] = useState<Record<string, string>>({});
@@ -332,7 +334,7 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                                                                 [incident.id]: e.target.value,
                                                             }))
                                                         }
-                                                        placeholder="Add a note..."
+                                                        placeholder={t('observe.addNotePlaceholder')}
                                                         className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                                     />
                                                     <Button

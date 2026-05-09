@@ -10,6 +10,7 @@
 import React from 'react';
 import { Box, Button, Card, CardContent, Chip, Typography } from '@ghatana/design-system';
 import { AISourceChip } from '../ai/AISourceChip';
+import { useI18n } from '../../i18n/I18nProvider';
 
 import type { ApprovalDecisionStatus, ApprovalRecord } from './ApprovalInbox';
 
@@ -77,6 +78,7 @@ export const ApprovalDetail: React.FC<ApprovalDetailProps> = ({
   onReject,
   onRequestChanges,
 }) => {
+  const { t } = useI18n();
   const isPending = approval.status === 'PENDING';
   const showActions = isPending && isAuthorizedApprover;
 
@@ -106,7 +108,7 @@ export const ApprovalDetail: React.FC<ApprovalDetailProps> = ({
         {enrichmentSuggestion && (
           <Box
             className="space-y-3 rounded-md border border-info-border bg-info-bg p-4"
-            aria-label="Enrichment suggestion"
+            aria-label={t('approval.enrichmentSuggestion')}
             data-testid="enrichment-suggestion"
           >
             <Typography className="text-sm font-semibold text-info-color">Enrichment Details</Typography>

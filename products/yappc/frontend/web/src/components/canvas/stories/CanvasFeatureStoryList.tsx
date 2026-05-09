@@ -20,6 +20,7 @@ type CanvasFeatureStory = FeatureStories.CanvasFeatureStory;
 type CanvasFeatureStoryCategory = FeatureStories.CanvasFeatureStoryCategory;
 
 import { CanvasFeatureStoryCard } from './CanvasFeatureStoryCard';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 const ALL_TAB_VALUE = 'all';
 const ALL_PROGRESS_VALUE = 'all-progress';
@@ -142,6 +143,7 @@ export function CanvasFeatureStoryList({
   initialProgressFilter,
   'data-testid': dataTestId = 'canvas-feature-story-list',
 }: CanvasFeatureStoryListProps) {
+  const { t } = useI18n();
   const [activeCategoryId, setActiveCategoryId] = useState(
     defaultCategoryId ?? categories[0]?.id ?? ALL_TAB_VALUE
   );
@@ -266,7 +268,7 @@ export function CanvasFeatureStoryList({
             value={activeTabValue}
             onChange={(_event, value) => setActiveCategoryId(value)}
             variant="underline"
-            aria-label="Canvas feature story categories"
+            aria-label={t('canvas.featureStories.categories')}
             data-testid="canvas-feature-story-tabs"
           >
             {tabs.map((tab) => (
@@ -286,7 +288,7 @@ export function CanvasFeatureStoryList({
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder={searchPlaceholder}
-              aria-label="Search canvas feature stories"
+              aria-label={t('canvas.featureStories.search')}
               className="min-w-0 flex-1 bg-transparent text-sm outline-none"
             />
           </Box>

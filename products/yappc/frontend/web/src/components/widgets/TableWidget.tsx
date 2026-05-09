@@ -10,6 +10,7 @@
  */
 import React, { useState, useMemo } from 'react';
 import { Button, Input, Checkbox } from '@ghatana/design-system';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface ColumnDef<T = Record<string, unknown>> {
   key: string;
@@ -42,6 +43,7 @@ export function TableWidget<T extends Record<string, unknown>>({
   onSelectionChange,
   onExport,
 }: TableWidgetProps<T>): React.ReactElement {
+  const { t } = useI18n();
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortAsc, setSortAsc] = useState<boolean>(true);
   const [page, setPage] = useState<number>(0);
@@ -104,7 +106,7 @@ export function TableWidget<T extends Record<string, unknown>>({
     <div>
       {filterable && (
         <Input
-          placeholder="Filter..."
+          placeholder={t('table.filterPlaceholder')}
           value={filter}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             setFilter(e.target.value);
@@ -115,13 +117,13 @@ export function TableWidget<T extends Record<string, unknown>>({
       )}
       {exportable && (
         <Button
-          aria-label="Export"
+          aria-label={t('table.export')}
           onClick={() => onExport?.(data)}
           variant="outline"
           size="sm"
           className="mb-2 mr-2"
         >
-          Export
+          {t('table.export')}
         </Button>
       )}
       <table>
@@ -168,25 +170,25 @@ export function TableWidget<T extends Record<string, unknown>>({
       {pageSize && totalPages > 1 && (
         <div>
           <Button
-            aria-label="Previous"
+            aria-label={t('table.previous')}
             variant="outline"
             size="sm"
             disabled={page === 0}
             onClick={() => setPage((p) => p - 1)}
           >
-            Previous
+            {t('table.previous')}
           </Button>
           <span>
             {page + 1} / {totalPages}
           </span>
           <Button
-            aria-label="Next"
+            aria-label={t('table.next')}
             variant="outline"
             size="sm"
             disabled={page >= totalPages - 1}
             onClick={() => setPage((p) => p + 1)}
           >
-            Next
+            {t('table.next')}
           </Button>
         </div>
       )}

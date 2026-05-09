@@ -72,13 +72,7 @@ Target surface:
 GET /api/v1/surfaces
 ```
 
-Compatibility endpoint:
-
-```text
-GET /api/v1/capabilities
-```
-
-The compatibility endpoint should remain only until callers migrate to Runtime Truth Registry naming.
+DC-P1.12: Compatibility endpoint /api/v1/capabilities has been removed; all callers should use canonical /api/v1/surfaces.
 
 ## Contracts
 

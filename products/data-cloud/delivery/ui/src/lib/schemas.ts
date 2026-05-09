@@ -33,6 +33,9 @@ export const CollectionSchema = z.object({
 /**
  * Workflow status enum
  */
+// DC-32: Canonical execution status aligned with OperatorState
+export const ExecutionStatusSchema = z.enum(['CREATED', 'INITIALIZED', 'RUNNING', 'STOPPED', 'FAILED']);
+
 export const WorkflowStatusSchema = z.enum(['active', 'paused', 'completed', 'failed']);
 
 /**

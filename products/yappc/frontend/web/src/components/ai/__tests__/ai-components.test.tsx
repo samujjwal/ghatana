@@ -189,7 +189,8 @@ describe('CommandInput', () => {
     });
 
     it('renders custom placeholder', () => {
-        render(<CommandInput onSubmit={vi.fn()} placeholder="Type a command..." autoFocus={false} />);
+        const commandPlaceholder = 'Type a command...';
+        render(<CommandInput onSubmit={vi.fn()} placeholder={commandPlaceholder} autoFocus={false} />);
         expect(screen.getByPlaceholderText('Type a command...')).toBeTruthy();
     });
 

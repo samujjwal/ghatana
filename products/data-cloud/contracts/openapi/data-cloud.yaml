@@ -533,6 +533,18 @@ components:
       type: object
       additionalProperties: true
 
+    # DC-32: Canonical execution status enum aligned with OperatorState
+    ExecutionStatus:
+      type: string
+      enum: [CREATED, INITIALIZED, RUNNING, STOPPED, FAILED]
+      description: |
+        Canonical execution status aligned with OperatorState lifecycle:
+        - CREATED: Execution instance created, not yet initialized
+        - INITIALIZED: Execution initialized (resources allocated, config validated)
+        - RUNNING: Execution actively processing
+        - STOPPED: Execution stopped gracefully
+        - FAILED: Execution failed (initialization error, runtime error, resource exhaustion)
+
     WorkflowExecutionLaunchResponse:
       type: object
       required: [executionId, workflowId, status, startedAt]
@@ -542,7 +554,7 @@ components:
         workflowId:
           type: string
         status:
-          type: string
+          $ref: "#/components/schemas/ExecutionStatus"
         startedAt:
           type: string
           format: date-time
@@ -556,7 +568,7 @@ components:
         workflowId:
           type: string
         status:
-          type: string
+          $ref: "#/components/schemas/ExecutionStatus"
         startedAt:
           type: string
           format: date-time
@@ -597,7 +609,7 @@ components:
         name:
           type: string
         status:
-          type: string
+          $ref: "#/components/schemas/ExecutionStatus"
         startTime:
           type: string
           format: date-time
@@ -620,7 +632,7 @@ components:
         pipelineName:
           type: string
         status:
-          type: string
+          $ref: "#/components/schemas/ExecutionStatus"
         startTime:
           type: string
           format: date-time
@@ -5893,13 +5905,66 @@ paths:
       tags: [capabilities]
       responses:
         "200":
-          description: Runtime surface registry snapshot.
+          description: Runtime surface registry snapshot with runtime posture metadata.
           content:
             application/json:
               schema:
                 type: object
-                additionalProperties:
-                  type: string
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      capabilities:
+                        type: object
+                        additionalProperties: true
+                      _meta:
+                        type: object
+                        properties:
+                          deploymentMode:
+                            type: string
+                          strictTenantResolution:
+                            type: boolean
+                          generatedAt:
+                            type: string
+                          runtimePosture:
+                            type: object
+                            properties:
+                              productionLikeProfile:
+                                type: boolean
+                              authenticationConfigured:
+                                type: boolean
+                              settingsStorageMode:
+                                type: string
+                              settingsDurable:
+                                type: boolean
+                              entityStoreDurable:
+                                type: boolean
+                              eventStoreWired:
+                                type: boolean
+                              coreEventStoreDurable:
+                                type: boolean
+                              eventTail:
+                                type: object
+                              idempotencyStoreDurable:
+                                type: boolean
+                              auditConfigured:
+                                type: boolean
+                              policyConfigured:
+                                type: boolean
+                              metricsConfigured:
+                                type: boolean
+                              traceConfigured:
+                                type: boolean
+                  meta:
+                    type: object
+                    properties:
+                      requestId:
+                        type: string
+                      tenantId:
+                        type: string
+                      apiVersion:
+                        type: string
+                additionalProperties: true
 
   /api/v1/surfaces/schema:
     get:
@@ -5914,33 +5979,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/FreeformObject"
 
-  /api/v1/capabilities:
-    get:
-      summary: Get the runtime capability registry snapshot (compatibility alias)
-      operationId: apiV1CapabilitiesGet
-      tags: [capabilities]
-      responses:
-        "200":
-          description: Capability registry snapshot.
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties:
-                  type: string
-
-  /api/v1/capabilities/schema:
-    get:
-      summary: Get the runtime capability registry schema (compatibility alias)
-      operationId: apiV1CapabilitiesSchemaGet
-      tags: [capabilities]
-      responses:
-        "200":
-          description: Capability registry schema.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FreeformObject"
+  # DC-P1.12: Removed compatibility /api/v1/capabilities endpoints; use canonical /api/v1/surfaces only
 
   /api/v1/settings:
     get:

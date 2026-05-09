@@ -31,6 +31,7 @@ import { NodeResizer } from '@xyflow/react';
 import { useAtomValue } from 'jotai';
 import { cameraZoomAtom } from '../workspace';
 import { CanvasContentWrapper } from '../CanvasContentWrapper';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -104,7 +105,7 @@ interface NativeCodeEditorProps {
 function NativeCodeEditor({ value, onChange, readOnly }: NativeCodeEditorProps) {
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         // Tab key: insert spaces instead of changing focus
-        if (e.key === 'Tab') {
+type MonacoCanvasNode = Node<MonacoNodeData, 'monaco'>;
             e.preventDefault();
             const el = e.currentTarget;
             const start = el.selectionStart;
@@ -126,7 +127,7 @@ function NativeCodeEditor({ value, onChange, readOnly }: NativeCodeEditorProps) 
             onKeyDown={handleKeyDown}
             readOnly={readOnly}
             spellCheck={false}
-            aria-label="Code editor"
+            aria-label={t('canvas.monaco.editor')}
             aria-multiline="true"
             aria-readonly={readOnly}
         />
@@ -192,7 +193,7 @@ export function MonacoNode({ data, selected }: NodeProps<MonacoCanvasNode>) {
                             data.onChange?.(value); // keep value, just triggers re-render
                             void e.target.value; // allow controlled/uncontrolled parents to handle
                         }}
-                        aria-label="Language selector"
+                        aria-label={t('canvas.monaco.languageSelector')}
                     >
                         {LANGUAGES.map((l) => (
                             <option key={l} value={l}>{l}</option>

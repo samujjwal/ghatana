@@ -23,8 +23,8 @@ test.describe('Runtime Truth Surface States', () => {
   // ──────────────────────────────────────────────────────────────────────────
 
   test.beforeEach(async ({ page }) => {
-    // Enable request interception to mock API responses
-    await page.route('**/api/**/capabilities', async (route) => {
+    // DC-P1.12: Use canonical /surfaces endpoint instead of /capabilities
+    await page.route('**/api/**/surfaces', async (route) => {
       // Default: all surfaces active
       const requestUrl = new URL(route.request().url());
       const state = requestUrl.searchParams.get('state') || 'active';
@@ -152,7 +152,8 @@ test.describe('Runtime Truth Surface States', () => {
     });
 
     test('should show degraded status in capability registry', async ({ page }) => {
-      await page.route('**/api/**/capabilities', (route) => {
+      // DC-P1.12: Use canonical /surfaces endpoint instead of /capabilities
+      await page.route('**/api/**/surfaces', (route) => {
         route.abort('blockedbyresponse');
       });
       await page.goto('/operations', { waitUntil: 'networkidle' });

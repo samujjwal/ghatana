@@ -117,7 +117,9 @@ public final class ProviderConformanceSuite {
         results.add(test("event_append_and_read", () -> {
             EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
                 UUID.randomUUID(), "conformance.test", "1.0.0", Instant.now(),
-                ByteBuffer.wrap("{\"test\":\"true\"}".getBytes()), "application/json", Map.of(), Optional.empty());
+                ByteBuffer.wrap("{\"test\":\"true\"}".getBytes()), "application/json", Map.of(), Optional.empty(),
+                // DC-20: New optional fields
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
             Offset offset = block(store.append(tenant, entry));
             if (offset == null || Long.parseLong(offset.value()) < 0) throw new AssertionError("Append returned invalid offset");
             List<EventLogStore.EventEntry> read = block(store.read(tenant, Offset.zero(), 100));
@@ -128,9 +130,13 @@ public final class ProviderConformanceSuite {
         results.add(test("event_batch_append", () -> {
             List<EventLogStore.EventEntry> batch = List.of(
                 new EventLogStore.EventEntry(UUID.randomUUID(), "batch.1", "1.0.0", Instant.now(),
-                    ByteBuffer.wrap("{}".getBytes()), "application/json", Map.of(), Optional.empty()),
+                    ByteBuffer.wrap("{}".getBytes()), "application/json", Map.of(), Optional.empty(),
+                    // DC-20: New optional fields
+                    Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()),
                 new EventLogStore.EventEntry(UUID.randomUUID(), "batch.2", "1.0.0", Instant.now(),
-                    ByteBuffer.wrap("{}".getBytes()), "application/json", Map.of(), Optional.empty())
+                    ByteBuffer.wrap("{}".getBytes()), "application/json", Map.of(), Optional.empty(),
+                    // DC-20: New optional fields
+                    Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty())
             );
             List<Offset> offsets = block(store.appendBatch(tenant, batch));
             if (offsets == null || offsets.size() != 2) throw new AssertionError("Batch append failed");
@@ -140,7 +146,9 @@ public final class ProviderConformanceSuite {
         results.add(test("event_read_by_type", () -> {
             EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
                 UUID.randomUUID(), "typed.test", "1.0.0", Instant.now(),
-                ByteBuffer.wrap("{\"key\":\"value\"}".getBytes()), "application/json", Map.of(), Optional.empty());
+                ByteBuffer.wrap("{\"key\":\"value\"}".getBytes()), "application/json", Map.of(), Optional.empty(),
+                // DC-20: New optional fields
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
             block(store.append(tenant, entry));
             List<EventLogStore.EventEntry> found = block(store.readByType(tenant, "typed.test", Offset.zero(), 100));
             if (found.stream().noneMatch(e -> e.eventType().equals("typed.test"))) throw new AssertionError("ReadByType did not find expected event");
@@ -151,7 +159,9 @@ public final class ProviderConformanceSuite {
             Instant now = Instant.now();
             EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
                 UUID.randomUUID(), "timerange.test", "1.0.0", now,
-                ByteBuffer.wrap("{}".getBytes()), "application/json", Map.of(), Optional.empty());
+                ByteBuffer.wrap("{}".getBytes()), "application/json", Map.of(), Optional.empty(),
+                // DC-20: New optional fields
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
             block(store.append(tenant, entry));
             List<EventLogStore.EventEntry> found = block(store.readByTimeRange(tenant, now.minusSeconds(60), now.plusSeconds(60), 100));
             if (found.stream().noneMatch(e -> e.eventType().equals("timerange.test"))) throw new AssertionError("ReadByTimeRange did not find expected event");
@@ -162,7 +172,9 @@ public final class ProviderConformanceSuite {
             TenantContext other = TenantContext.of("other-tenant");
             EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
                 UUID.randomUUID(), "isolation.test", "1.0.0", Instant.now(),
-                ByteBuffer.wrap("{}".getBytes()), "application/json", Map.of(), Optional.empty());
+                ByteBuffer.wrap("{}".getBytes()), "application/json", Map.of(), Optional.empty(),
+                // DC-20: New optional fields
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
             block(store.append(tenant, entry));
             List<EventLogStore.EventEntry> crossTenant = block(store.read(other, Offset.zero(), 100));
             if (crossTenant.stream().anyMatch(e -> e.eventType().equals("isolation.test"))) throw new AssertionError("Cross-tenant event access allowed");

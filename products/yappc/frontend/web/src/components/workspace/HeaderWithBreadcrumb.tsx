@@ -15,6 +15,7 @@ import { Breadcrumb } from '../ui';
 import { breadcrumbItemsAtom, navigationContextAtom } from '../../state/atoms/breadcrumbAtom';
 import { WorkspaceSelector } from './WorkspaceSelector';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface HeaderWithBreadcrumbProps {
     onCreateWorkspace?: () => void;
@@ -29,6 +30,7 @@ export function HeaderWithBreadcrumb({
     onThemeToggle,
     className = '',
 }: HeaderWithBreadcrumbProps) {
+    const { t } = useI18n();
     const [breadcrumbItems] = useAtom(breadcrumbItemsAtom);
     const [navContext] = useAtom(navigationContextAtom);
 
@@ -85,7 +87,7 @@ export function HeaderWithBreadcrumb({
               hover:bg-grey-100 dark:hover:bg-grey-800
               transition-colors
             "
-                        aria-label="Toggle theme"
+                        aria-label={t('workspace.header.themeToggle')}
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -109,7 +111,7 @@ export function HeaderWithBreadcrumb({
               hover:bg-grey-100 dark:hover:bg-grey-800
               transition-colors
             "
-                        aria-label="Settings"
+                        aria-label={t('workspace.header.settings')}
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}

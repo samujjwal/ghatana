@@ -49,6 +49,7 @@ import {
   type PageArtifactDocument,
 } from '../page/pageArtifactDocument';
 import { type BuilderDocument, type ValidationResult } from '@ghatana/ui-builder';
+import { useI18n } from '../../../i18n/I18nProvider';
 import {
   HttpPageArtifactPersistenceAdapter,
   LocalStoragePageArtifactPersistenceAdapter,
@@ -193,6 +194,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
   positionAbsoluteY,
   selected,
 }) => {
+  const { t } = useI18n();
   const executeCommand = useSetAtom(executeCommandAtom);
   const { projectId } = useParams<{ projectId: string }>();
   const currentUser = useAtomValue(currentUserAtom);
@@ -927,7 +929,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
           <IconButton
             size="small"
             onClick={handleToggleExpand}
-            aria-label={isExpanded ? 'Collapse page designer' : 'Expand page designer'}
+            aria-label={isExpanded ? t('canvas.pageDesignerNode.collapse') : t('canvas.pageDesignerNode.expand')}
             title={isExpanded ? 'Collapse' : 'Expand (or double-click)'}
           >
             {isExpanded ? <CollapseIcon size={14} /> : <ExpandIcon size={14} />}
@@ -1017,8 +1019,8 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
 	                      onChange={(event) => setOverwriteReason(event.target.value)}
                       disabled={!canMutatePageDocument}
                       rows={2}
-                      aria-label="Overwrite audit reason"
-                      placeholder="Why is overwriting the remote version safe?"
+                      aria-label={t('canvas.pageDesignerNode.overwriteAuditReasonAria')}
+                      placeholder={t('canvas.pageDesignerNode.overwriteAuditReasonPlaceholder')}
                       data-testid="page-conflict-overwrite-reason"
                       className="mb-2 w-full text-xs"
                     />
@@ -1122,7 +1124,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
                   variant="outlined"
                   size="small"
                   onClick={handleToggleExpand}
-                  aria-label="Open page designer"
+                  aria-label={t('canvas.pageDesignerNode.open')}
                 >
                   Design
                 </Button>

@@ -17,12 +17,14 @@ import { ListItemButton, TextField } from '@ghatana/design-system';
 import { FolderOpen, File as InsertDriveFile, MoreVertical as MoreVert, Search, Upload, FolderPlus as CreateNewFolder } from 'lucide-react';
 import type { FileItem } from '../panel-types';
 import { railService } from '@/services/rail/RailServiceClient';
+import { useI18n } from '../../../../i18n/I18nProvider';
 
 /**
  * Files Panel - File explorer for project
  * Browse project files and folders, upload new files
  */
 export function FilesPanel() {
+  const { t } = useI18n();
   const [files, setFiles] = useState<FileItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -103,7 +105,7 @@ export function FilesPanel() {
 
       <TextField
         size="small"
-        placeholder="Search files..."
+        placeholder={t('canvas.files.search')}
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         InputProps={{

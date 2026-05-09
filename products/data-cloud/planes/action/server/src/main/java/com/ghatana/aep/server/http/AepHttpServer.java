@@ -1027,7 +1027,8 @@ public class AepHttpServer {
             .with(HttpMethod.GET, "/api/v1/ai/suggestions/metrics", aiSuggestionsController::handleGetMetrics)
 
             // T-24: Capability manifest — drives server-side UI feature gating
-            .with(HttpMethod.GET, "/api/v1/capabilities", this::handleCapabilityManifest)
+            // DC-P1.12: Migrated to canonical /api/v1/surfaces endpoint
+            .with(HttpMethod.GET, "/api/v1/surfaces", this::handleCapabilityManifest)
 
             // NLQ (Natural Language Query) endpoint (delegated to NlpController)
             .with(HttpMethod.POST, "/api/v1/nlp/parse", nlpController::handleParseQuery)
@@ -1216,7 +1217,8 @@ public class AepHttpServer {
     }
 
     /**
-     * T-24: GET /api/v1/capabilities
+     * T-24: GET /api/v1/surfaces
+     * DC-P1.12: Migrated from /api/v1/capabilities to canonical /api/v1/surfaces endpoint.
      *
      * <p>Returns a server-driven capability manifest that the UI uses to gate
      * features and prevent dead actions. The manifest reflects actual server-side

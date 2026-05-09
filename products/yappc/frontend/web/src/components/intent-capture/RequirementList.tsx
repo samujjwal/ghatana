@@ -17,6 +17,7 @@ import {
   Chip,
 } from '@ghatana/design-system';
 import React, { useState, useMemo, useCallback } from 'react';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface RequirementConfig {
   id: string;
@@ -45,6 +46,7 @@ export const RequirementList: React.FC<RequirementListProps> = ({
   onRequirementSelect,
   selectedId,
 }) => {
+  const { t } = useI18n();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
@@ -101,7 +103,7 @@ export const RequirementList: React.FC<RequirementListProps> = ({
 
       {/* Search */}
       <TextField
-        placeholder="Search requirements..."
+        placeholder={t('requirements.searchPlaceholder')}
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         fullWidth

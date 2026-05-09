@@ -451,11 +451,13 @@ public class DataCloudRouterBuilder {
         return this;
     }
 
+    /**
+     * Adds Runtime Truth surface endpoints.
+     * DC-P1.12: Removed compatibility /api/v1/capabilities aliases; use canonical /api/v1/surfaces only.
+     */
     public DataCloudRouterBuilder withCapabilityRoutes(CapabilityRegistryHandler capabilityRegistryHandler) {
         builder.with(HttpMethod.GET, "/api/v1/surfaces", capabilityRegistryHandler::handleSurfaces);
         builder.with(HttpMethod.GET, "/api/v1/surfaces/schema", capabilityRegistryHandler::handleSurfaceSchema);
-        builder.with(HttpMethod.GET, "/api/v1/capabilities", capabilityRegistryHandler::handleCapabilities);
-        builder.with(HttpMethod.GET, "/api/v1/capabilities/schema", capabilityRegistryHandler::handleCapabilitySchema);
         return this;
     }
 

@@ -19,6 +19,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface Container {
     id: string;
@@ -172,6 +173,7 @@ const getTypeIcon = (type: Container['type']) => {
 };
 
 export const ContainerOrchestrationCanvas = () => {
+    const { t } = useI18n();
     const [containers] = useState<Container[]>(MOCK_CONTAINERS);
     const [selectedContainer, setSelectedContainer] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -212,7 +214,7 @@ export const ContainerOrchestrationCanvas = () => {
                     <Box className="flex gap-4 mb-2">
                         <TextField
                             size="small"
-                            placeholder="Search containers..."
+                            placeholder={t('canvas.containerOrchestration.searchContainers')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="flex-1"

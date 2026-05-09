@@ -2,6 +2,7 @@ import React from 'react';
 import { AlertTriangle, CheckCircle2, Info, Lightbulb, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 /**
  * Validation Panel component.
@@ -82,7 +83,7 @@ function ValidationIssueItem({
           </p>
           {issue.suggestion && (
             <p className="flex items-start gap-1 text-xs text-info-color dark:text-info-color italic">
-              <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0" role="img" aria-label="Suggestion" />
+              <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0" role="img" aria-label={t('studio.validationSuggestion')} />
               <span>{issue.suggestion}</span>
             </p>
           )}
@@ -127,6 +128,7 @@ export function ValidationPanel({
         'flex flex-col h-full bg-white dark:bg-surface',
         className
       )}
+        const { t } = useI18n();
     >
       {/* Header */}
       <div className="h-10 border-b border-border dark:border-border flex items-center justify-between px-3">
@@ -174,7 +176,7 @@ export function ValidationPanel({
               <CheckCircle2
                 className="mx-auto mb-2 h-10 w-10 text-success-color"
                 role="img"
-                aria-label="Validation passed"
+                aria-label={t('studio.validationPassed')}
               />
               <p className="text-sm">No issues found</p>
             </div>

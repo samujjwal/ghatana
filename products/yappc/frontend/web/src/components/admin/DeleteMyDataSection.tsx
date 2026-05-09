@@ -18,6 +18,7 @@
 import React, { useState, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { userData } from '@/lib/api';
+import { useI18n } from '../../i18n/I18nProvider';
 import { Button } from '../ui/Button';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -52,6 +53,7 @@ type Stage = 'idle' | 'confirm' | 'submitting' | 'requested' | 'error';
  * delete-my-data request. Two-step confirmation prevents accidental data loss.
  */
 const DeleteMyDataSection: React.FC<DeleteMyDataSectionProps> = ({ className }) => {
+  const { t } = useI18n();
   const [stage, setStage] = useState<Stage>('idle');
   const [statusUrl, setStatusUrl] = useState<string>('');
 
@@ -84,7 +86,7 @@ const DeleteMyDataSection: React.FC<DeleteMyDataSectionProps> = ({ className }) 
   return (
     <div
       className={`rounded-lg border border-destructive-border bg-destructive-bg p-6 ${className ?? ''}`}
-      aria-label="Delete my data"
+      aria-label={t('admin.deleteMyData.sectionLabel')}
     >
       <h3 className="text-base font-semibold text-destructive">Delete my data</h3>
       <p className="mt-1 text-sm text-destructive">

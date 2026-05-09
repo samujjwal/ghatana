@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import { AIAssistLabel } from '../ai/AIAssistLabel';
 import type { AIAssistSource } from '../ai/AIAssistLabel';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -122,6 +123,7 @@ function RiskItem({ risk }: { risk: SprintRisk }) {
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export function SprintPlanningAidPanel({ projectId, sprintId, className }: SprintPlanningAidPanelProps) {
+  const { t } = useI18n();
   const enabled = Boolean(projectId) && Boolean(sprintId);
 
   const { data, isLoading, isError } = useQuery<SprintPlanningAidData>({
@@ -156,7 +158,7 @@ export function SprintPlanningAidPanel({ projectId, sprintId, className }: Sprin
   return (
     <section
       data-testid="sprint-aid-panel"
-      aria-label="AI sprint planning aid"
+      aria-label={t('planning.sprintAidPanel')}
       className={['space-y-3', className].filter(Boolean).join(' ')}
     >
       {/* Header */}

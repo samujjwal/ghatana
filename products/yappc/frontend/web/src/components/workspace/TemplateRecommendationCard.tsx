@@ -24,6 +24,7 @@ import { Loader2, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useTemplateRecommendation } from '../../hooks/useTemplateRecommendation';
 import type { TemplateRecommendationContext, TemplateRecommendation } from '../../hooks/useTemplateRecommendation';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -109,6 +110,7 @@ export function TemplateRecommendationCard({
   selectedTemplateId,
   className,
 }: TemplateRecommendationCardProps) {
+  const { t } = useI18n();
   const { recommendations, isLoading, isError } = useTemplateRecommendation(context);
 
   // Nothing to show without context
@@ -137,7 +139,7 @@ export function TemplateRecommendationCard({
   return (
     <section
       data-testid="template-rec-panel"
-      aria-label="AI-recommended project templates"
+      aria-label={t('workspace.templateRecommendations')}
       className={['space-y-2', className].filter(Boolean).join(' ')}
     >
       <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted">

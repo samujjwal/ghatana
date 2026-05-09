@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { Textarea } from '../../ui/Textarea';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -122,13 +123,14 @@ interface StatusStepperProps {
 }
 
 const StatusStepper: React.FC<StatusStepperProps> = ({ current }) => {
+  const { t } = useI18n();
   const forwardSteps: AdrLifecycleStatus[] = ['DRAFT', 'IN_REVIEW', 'ACCEPTED', 'SUPERSEDED'];
   const currentIndex = STATUS_ORDER.indexOf(current);
   return (
     <Box
       className="flex items-center gap-1 overflow-x-auto pb-1"
       role="progressbar"
-      aria-label="ADR lifecycle progress"
+      aria-label={t('canvas.adrLifecycle.progressAria')}
       aria-valuenow={currentIndex}
       aria-valuemin={0}
       aria-valuemax={STATUS_ORDER.length - 1}
@@ -179,6 +181,7 @@ const TransitionForm: React.FC<TransitionFormProps> = ({
   onCancel,
   isBusy,
 }) => {
+  const { t } = useI18n();
   const [note, setNote] = useState('');
   return (
     <Box
@@ -204,8 +207,8 @@ const TransitionForm: React.FC<TransitionFormProps> = ({
         fullWidth
         resize="none"
         className="w-full rounded border border-divider bg-bg-paper dark:bg-bg-paper px-2 py-1 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-info-border resize-none"
-        placeholder="Reason for this transition…"
-        aria-label="Transition note"
+        placeholder={t('canvas.adrLifecycle.transitionReasonPlaceholder')}
+        aria-label={t('canvas.adrLifecycle.transitionNoteAria')}
       />
       <Box className="flex justify-end gap-2">
         <Button
@@ -257,6 +260,7 @@ export const AdrLifecycle: React.FC<AdrLifecycleProps> = ({
   currentUser,
   onTransition,
 }) => {
+  const { t } = useI18n();
   const [adr, setAdr] = useState<AdrLifecycleRecord>(initialAdr);
   const [pendingTransition, setPendingTransition] = useState<AdrLifecycleStatus | null>(null);
   const [isBusy, setIsBusy] = useState(false);
@@ -304,7 +308,7 @@ export const AdrLifecycle: React.FC<AdrLifecycleProps> = ({
             onClick={() => setShowAudit((prev) => !prev)}
             className="min-h-0 gap-1 rounded px-2 py-1 text-xs text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-muted transition-colors"
             aria-expanded={showAudit}
-            aria-label="Toggle audit trail"
+            aria-label={t('canvas.adrLifecycle.toggleAuditTrail')}
           >
             <History className="h-3.5 w-3.5" aria-hidden="true" />
             Audit ({adr.auditTrail.length})

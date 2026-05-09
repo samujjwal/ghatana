@@ -13,6 +13,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Hammer as Build, CheckCircle, XCircle as Cancel, Hourglass as HourglassEmpty, RefreshCw as Refresh, Terminal, ChevronDown as ExpandMore, ChevronUp as ExpandLess, Download } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface BuildStep {
     id: string;
@@ -103,6 +104,7 @@ export const BuildProgressTracker: React.FC<BuildProgressTrackerProps> = ({
     onDownloadArtifact,
     isPolling = false,
 }) => {
+    const { t } = useI18n();
     const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
     const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -189,7 +191,7 @@ export const BuildProgressTracker: React.FC<BuildProgressTrackerProps> = ({
                         className="p-2 text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors disabled:opacity-50"
                         variant="ghost"
                         size="sm"
-                        aria-label="Refresh build status"
+                        aria-label={t('build.refreshStatus')}
                     >
                         <Refresh className={`w-4 h-4 ${isRefreshing || isPolling ? 'animate-spin' : ''}`} />
                     </Button>

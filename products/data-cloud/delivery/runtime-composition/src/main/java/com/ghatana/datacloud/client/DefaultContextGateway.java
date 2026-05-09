@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
  * <li>Freshness and confidence filtering</li>
  * <li>Multiple selection strategies</li>
  * <li>Tenant isolation enforcement</li>
+ * <li>DC-25: Query tracking and statistics for observability</li>
  * </ul>
  *
  * <p>
@@ -74,6 +76,9 @@ public class DefaultContextGateway implements ContextGateway {
 
     private final StoragePlugin<EventRecord> storagePlugin;
     private final EmbeddingProvider embeddingProvider;
+    // DC-25: Query tracking for statistics beyond placeholder boundary
+    private final AtomicLong totalQueryCount = new AtomicLong(0);
+    private final AtomicLong totalContextHits = new AtomicLong(0);
 
     /**
      * Pluggable embedding provider for semantic similarity scoring.
@@ -172,6 +177,9 @@ public class DefaultContextGateway implements ContextGateway {
         log.debug("Selecting context for query: {} (tenant: {})",
                 request.query(), request.tenantId());
 
+        // DC-25: Track query count for statistics
+        totalQueryCount.incrementAndGet();
+
         // Build filters
         List<RecordQuery.FilterCondition> filters = new ArrayList<>();
 
@@ -254,6 +262,9 @@ public class DefaultContextGateway implements ContextGateway {
         metadata.put("filteredCount", filtered.size());
         metadata.put("selectedCount", selected.size());
         metadata.put("selectionStrategy", strategy.name());
+
+        // DC-25: Track context hits for statistics
+        totalContextHits.addAndGet(selected.size());
 
         int totalTokens = selected.stream()
                 .mapToInt(doc -> doc.getTokenCount() != null ? doc.getTokenCount() : DEFAULT_TOKEN_ESTIMATE)

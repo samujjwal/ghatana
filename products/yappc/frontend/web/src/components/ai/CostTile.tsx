@@ -16,6 +16,7 @@
 
 import React from 'react';
 import { useProjectAiCost } from '@/hooks/useProjectAiCost';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 
@@ -36,13 +37,14 @@ function formatCost(usd: number): string {
 // ── Component ──────────────────────────────────────────────────────────────────
 
 const CostTile: React.FC<CostTileProps> = ({ projectId, className }) => {
+  const { t } = useI18n();
   const { data, isLoading, isError } = useProjectAiCost(projectId);
 
   if (isLoading) {
     return (
       <div
         role="status"
-        aria-label="Loading AI cost data"
+        aria-label={t('ai.cost.loading')}
         className={`rounded-lg border border-neutral-200 bg-white p-4 shadow-sm ${className ?? ''}`}
       >
         <div className="h-4 w-24 animate-pulse rounded bg-neutral-200" />
@@ -69,7 +71,7 @@ const CostTile: React.FC<CostTileProps> = ({ projectId, className }) => {
   return (
     <div
       className={`rounded-lg border border-neutral-200 bg-white p-4 shadow-sm ${className ?? ''}`}
-      aria-label="AI cost tile"
+      aria-label={t('ai.cost.tile')}
     >
       {/* Header */}
       <div className="mb-1 flex items-center justify-between">
@@ -104,7 +106,7 @@ const CostTile: React.FC<CostTileProps> = ({ projectId, className }) => {
 
       {/* Top agent breakdown */}
       {topAgents.length > 0 && (
-        <ul className="mt-3 space-y-1 border-t border-neutral-100 pt-3" aria-label="Top agents">
+        <ul className="mt-3 space-y-1 border-t border-neutral-100 pt-3" aria-label={t('ai.cost.topAgents')}>
           {topAgents.map(([agentName, entry]) => (
             <li key={agentName} className="flex items-center justify-between text-xs">
               <span className="truncate text-neutral-600" title={agentName}>

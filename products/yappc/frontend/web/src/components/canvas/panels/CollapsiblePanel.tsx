@@ -18,6 +18,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { ChevronLeft as CollapseLeftIcon, ChevronRight as ExpandLeftIcon, X as CloseIcon } from 'lucide-react';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -119,6 +120,7 @@ export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
     sx = {},
     keyboardShortcut,
 }) => {
+    const { t } = useI18n();
     // Initialize collapsed state from localStorage or default
     const [isCollapsed, setIsCollapsed] = useState(() => {
         const stored = getStoredCollapseState(panelId);
@@ -204,11 +206,11 @@ export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
 
                     {/* Close button */}
                     {showClose && onClose && !isCollapsed && (
-                        <Tooltip title="Close" placement={position === 'left' ? 'right' : 'left'}>
+                        <Tooltip title={t('canvas.collapsiblePanel.close')} placement={position === 'left' ? 'right' : 'left'}>
                             <IconButton
                                 size="small"
                                 onClick={onClose}
-                                aria-label="Close panel"
+                                aria-label={t('canvas.collapsiblePanel.close')}
                                 className="hover:bg-surface-muted hover:dark:bg-surface"
                             >
                                 <CloseIcon size={16} />

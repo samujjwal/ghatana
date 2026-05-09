@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -55,6 +56,7 @@ const TemplateGalleryPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<Category>('all');
   const [sortBy, setSortBy] = useState<'stars' | 'name'>('stars');
+  const { t } = useI18n();
 
   const { data: templates } = useQuery<Template[]>({
     queryKey: ['template-gallery'],
@@ -98,7 +100,7 @@ const TemplateGalleryPage: React.FC = () => {
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted">🔍</span>
             <Input
               type="text"
-              placeholder="Search templates..."
+              placeholder={t('templateGallery.searchPlaceholder')}
               value={search}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
               fullWidth

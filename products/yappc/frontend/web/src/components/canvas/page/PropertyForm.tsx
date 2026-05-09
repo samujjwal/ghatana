@@ -10,6 +10,7 @@ import { Select } from '../../ui/Select';
 import { Textarea } from '../../ui/Textarea';
 import type { Binding, ComponentInstance, ResponsiveVariant, StateVariant } from '@ghatana/ui-builder';
 import React, { useEffect, useMemo, useState } from 'react';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 import {
   getConfiguratorGroups,
@@ -286,6 +287,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
   readOnly = false,
   readOnlyReason,
 }) => {
+  const { t } = useI18n();
   const fields = useMemo(() => getRegistryFields(contractName), [contractName]);
   const configuratorGroups = useMemo(
     () => getConfiguratorGroups(contractName),
@@ -559,7 +561,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
                   {field.label}
                   {field.required && <span aria-hidden="true"> *</span>}
                   {reviewRequiredProps.has(field.name) && (
-                    <span aria-label="review-required"> {' '}(review required)</span>
+                    <span aria-label={t('canvas.property.reviewRequiredAria')}> {' '}(review required)</span>
                   )}
                 </Typography>
                 <Select
@@ -604,7 +606,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
                   {field.label}
                   {field.required && <span aria-hidden="true"> *</span>}
                   {reviewRequiredProps.has(field.name) && (
-                    <span aria-label="review-required"> {' '}(review required)</span>
+                    <span aria-label={t('canvas.property.reviewRequiredAria')}> {' '}(review required)</span>
                   )}
                 </Typography>
                 {field.description ? (
@@ -722,7 +724,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         </Typography>
         <TextField
           label="Responsive breakpoint"
-          placeholder="md"
+          placeholder={t('canvas.property.responsiveBreakpointPlaceholder')}
           value={responsiveBreakpoint}
           fullWidth
           size="sm"
@@ -732,7 +734,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         <label style={{ display: 'block', marginTop: 8 }}>
           <Typography variant="caption" color="subtle">Responsive props JSON</Typography>
           <Textarea
-            aria-label="Responsive props JSON"
+            aria-label={t('canvas.property.responsivePropsJsonAria')}
             value={responsivePropsJson}
             disabled={readOnly}
             placeholder={'{\n  "size": "lg"\n}'}
@@ -755,7 +757,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         <Box className="flex flex-col gap-1">
           <Typography variant="caption" color="subtle">State</Typography>
           <Select
-            aria-label="State variant"
+            aria-label={t('canvas.property.stateVariantAria')}
             value={stateVariantState}
             disabled={readOnly}
             onChange={(event) => setStateVariantState(event.target.value as EditableStateVariant)}
@@ -777,7 +779,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         <label style={{ display: 'block', marginTop: 8 }}>
           <Typography variant="caption" color="subtle">State props JSON</Typography>
           <Textarea
-            aria-label="State props JSON"
+            aria-label={t('canvas.property.statePropsJsonAria')}
             value={stateVariantPropsJson}
             disabled={readOnly}
             placeholder={'{\n  "variant": "outline"\n}'}
@@ -799,7 +801,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         </Typography>
         <TextField
           label="Data source"
-          placeholder="dataSource.users"
+          placeholder={t('canvas.property.dataSourcePlaceholder')}
           value={dataBindingSource}
           fullWidth
           size="sm"
@@ -809,7 +811,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         <Box className="flex flex-col gap-1">
           <Typography variant="caption" color="subtle">Data target prop</Typography>
           <Select
-            aria-label="Data target prop"
+            aria-label={t('canvas.property.dataTargetPropAria')}
             value={dataBindingTarget}
             disabled={readOnly}
             onChange={(event) => setDataBindingTarget(event.target.value)}
@@ -831,7 +833,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         </Box>
         <TextField
           label="Data transform"
-          placeholder="user.name"
+          placeholder={t('canvas.property.dataTransformPlaceholder')}
           value={dataBindingTransform}
           fullWidth
           size="sm"
@@ -857,7 +859,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         <Box className="flex flex-col gap-1">
           <Typography variant="caption" color="subtle">Action event</Typography>
           <Select
-            aria-label="Action event"
+            aria-label={t('canvas.property.actionEventAria')}
             value={actionBindingEvent}
             disabled={readOnly}
             onChange={(event) => setActionBindingEvent(event.target.value)}
@@ -879,7 +881,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         </Box>
         <TextField
           label="Action target"
-          placeholder="navigate:/projects"
+          placeholder={t('canvas.property.actionTargetPlaceholder')}
           value={actionBindingTarget}
           fullWidth
           size="sm"
@@ -888,7 +890,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         />
         <TextField
           label="Action payload"
-          placeholder="projectId"
+          placeholder={t('canvas.property.actionPayloadPlaceholder')}
           value={actionBindingPayload}
           fullWidth
           size="sm"
@@ -902,7 +904,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
           Privacy classification
         </Typography>
         <Select
-          aria-label="Privacy classification"
+          aria-label={t('canvas.property.privacyClassificationAria')}
           value={privacyClassification}
           disabled={readOnly}
           onChange={(event) =>

@@ -20,6 +20,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface ConfigFile {
     id: string;
@@ -153,6 +154,7 @@ const getEnvColor = (env: ConfigFile['environment']) => {
 };
 
 export const ConfigEditorCanvas = () => {
+    const { t } = useI18n();
     const [configs] = useState<ConfigFile[]>(MOCK_CONFIGS);
     const [selectedConfig, setSelectedConfig] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -186,7 +188,7 @@ export const ConfigEditorCanvas = () => {
                     <Box className="flex gap-4 mb-2">
                         <TextField
                             size="small"
-                            placeholder="Search configs..."
+                            placeholder={t('canvas.configEditor.searchConfigs')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="flex-1"

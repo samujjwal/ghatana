@@ -35,6 +35,7 @@ import { Loader2, AlertCircle, FileText, Sparkles } from 'lucide-react';
 import { AIAssistLabel } from '../../ai/AIAssistLabel';
 import type { AIAssistSource } from '../../ai/AIAssistLabel';
 import { Button } from '../../ui/Button';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -92,6 +93,7 @@ type GenerationState = 'idle' | 'loading' | 'done' | 'error';
  * to trigger the model, then reviews and optionally accepts the result.
  */
 export function AdrDraftPanel({ nodeId, onAcceptDraft, className }: AdrDraftPanelProps) {
+  const { t } = useI18n();
   const [state, setState] = useState<GenerationState>('idle');
   const [draft, setDraft] = useState<AdrDraft | null>(null);
 
@@ -112,7 +114,7 @@ export function AdrDraftPanel({ nodeId, onAcceptDraft, className }: AdrDraftPane
   return (
     <section
       data-testid="adr-draft-panel"
-      aria-label="AI ADR draft generator"
+      aria-label={t('canvas.adrDraft.aria')}
       className={['space-y-3', className].filter(Boolean).join(' ')}
     >
       {/* Trigger */}

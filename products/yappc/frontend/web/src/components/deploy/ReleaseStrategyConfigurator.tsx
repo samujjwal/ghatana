@@ -15,6 +15,7 @@ import React, { useState, useCallback } from 'react';
 import { Button } from '../ui/Button';
 import { Plus as Add, Minus as Remove, Save, Sparkles as AutoAwesome, Rocket as RocketLaunch, Cloud, Settings, Shield as Security } from 'lucide-react';
 import type { ReleaseStrategyPayload } from '@/shared/types/lifecycle-artifacts';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface ReleaseStrategyConfiguratorProps {
     data?: ReleaseStrategyPayload;
@@ -88,6 +89,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
     onAIAssist,
     isLoading = false,
 }) => {
+    const { t } = useI18n();
     const [strategy, setStrategy] = useState<ReleaseStrategyPayload>({
         ...defaultData,
         ...data,
@@ -360,7 +362,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                             type="text"
                                             value={gate.name}
                                             onChange={(e) => updateApprovalGate(idx, { name: e.target.value })}
-                                            placeholder="Gate name (e.g., QA Approval)"
+                                            placeholder={t('deploy.release.gateNamePlaceholder')}
                                             className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                         />
                                         <NativeInput
@@ -371,7 +373,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                                     approvers: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
                                                 })
                                             }
-                                            placeholder="Approvers (comma-separated)"
+                                            placeholder={t('deploy.release.approversPlaceholder')}
                                             className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                         />
                                         <label className="flex items-center gap-1 text-xs text-text-secondary">
@@ -406,7 +408,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                             <NativeTextarea
                                 value={strategy.rollbackPlan}
                                 onChange={(e) => setStrategy((prev) => ({ ...prev, rollbackPlan: e.target.value }))}
-                                placeholder="Describe the rollback procedure..."
+                                placeholder={t('deploy.release.rollbackPlaceholder')}
                                 rows={4}
                                 className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                             />
@@ -436,7 +438,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                                 type="text"
                                                 value={env.name}
                                                 onChange={(e) => updateEnvironment(idx, { name: e.target.value })}
-                                                placeholder="Environment name"
+                                                placeholder={t('deploy.release.environmentNamePlaceholder')}
                                                 className="flex-1 px-2 py-1 text-sm font-medium border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                             />
                                             <NativeSelect
@@ -460,7 +462,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                                 type="url"
                                                 value={env.url}
                                                 onChange={(e) => updateEnvironment(idx, { url: e.target.value })}
-                                                placeholder="Environment URL"
+                                                placeholder={t('deploy.release.environmentUrlPlaceholder')}
                                                 className="w-full px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                             />
                                             <div>
@@ -476,7 +478,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                                                 onChange={(e) =>
                                                                     updateEnvVariable(idx, vIdx, { key: e.target.value })
                                                                 }
-                                                                placeholder="KEY"
+                                                                placeholder={t('deploy.release.envVarKeyPlaceholder')}
                                                                 className="w-1/3 px-2 py-1 text-xs font-mono border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                                             />
                                                             <NativeInput
@@ -485,7 +487,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                                                 onChange={(e) =>
                                                                     updateEnvVariable(idx, vIdx, { value: e.target.value })
                                                                 }
-                                                                placeholder="value"
+                                                                placeholder={t('deploy.release.envVarValuePlaceholder')}
                                                                 className="flex-1 px-2 py-1 text-xs font-mono border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                                             />
                                                             <label className="flex items-center gap-1 text-xs text-text-secondary">
@@ -582,7 +584,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                                         type="text"
                                                         value={step.duration}
                                                         onChange={(e) => updateRolloutStep(idx, { duration: e.target.value })}
-                                                        placeholder="e.g., 1h, 30m"
+                                                        placeholder={t('deploy.release.durationPlaceholder')}
                                                         className="w-full px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                                     />
                                                 </div>
@@ -600,7 +602,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                                                                 .filter((l) => l.trim()),
                                                         })
                                                     }
-                                                    placeholder="Error rate < 1%&#10;P99 latency < 500ms"
+                                                    placeholder={t('deploy.release.successCriteriaPlaceholder')}
                                                     rows={2}
                                                     className="w-full px-2 py-1 text-xs border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none"
                                                 />

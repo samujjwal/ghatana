@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react';
 import { Button, StageNavigation, type StageNavigationProps } from '../ui';
 import { useRealtimeLifecycle } from '../../hooks/useRealtimeLifecycle';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // Define lifecycle stage type locally to avoid import issues
 type LifecycleStageId = 'intent' | 'context' | 'plan' | 'execute' | 'verify' | 'observe' | 'learn' | 'institutionalize';
@@ -45,6 +46,7 @@ export function RealtimeStageNavigation({
   onProjectAdvance,
   onProjectGoBack
 }: RealtimeStageNavigationProps) {
+  const { t } = useI18n();
   const {
     project,
     phases,
@@ -186,7 +188,7 @@ export function RealtimeStageNavigation({
             type="button"
             onClick={() => setLocalError(null)}
             className="text-destructive hover:text-destructive"
-            aria-label="Dismiss realtime lifecycle error"
+            aria-label={t('realtimeStage.dismissError')}
           >
             ×
           </Button>

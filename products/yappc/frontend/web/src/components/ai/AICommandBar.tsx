@@ -27,6 +27,7 @@ import { LifecyclePhase, PHASE_LABELS } from '../../types/lifecycle';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -128,6 +129,7 @@ export function AICommandBar({
     recentPrompts = [],
     className = '',
 }: AICommandBarProps) {
+    const { t } = useI18n();
     const [value, setValue] = useState('');
     const [isExpanded, setIsExpanded] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
@@ -274,7 +276,7 @@ export function AICommandBar({
                             disabled:opacity-50 disabled:cursor-not-allowed
                             text-sm
                         `}
-                        aria-label="Prompt input"
+                        aria-label={t('ai.commandBar.promptInput')}
                         resize="none"
                         fullWidth
                     />
@@ -293,7 +295,7 @@ export function AICommandBar({
                             disabled:opacity-50 disabled:cursor-not-allowed
                             text-sm
                         `}
-                        aria-label="Prompt input"
+                        aria-label={t('ai.commandBar.promptInput')}
                         fullWidth
                     />
                 )}
@@ -302,7 +304,7 @@ export function AICommandBar({
                 <div className="flex items-center gap-1 flex-shrink-0">
                     {/* History */}
                     {recentPrompts.length > 0 && (
-                        <Tooltip title="Recent prompts">
+                        <Tooltip title={t('ai.commandBar.recentPrompts')}>
                             <Button
                                 type="button"
                                 onClick={() => setShowHistory(!showHistory)}
@@ -312,7 +314,7 @@ export function AICommandBar({
                                 `}
                                 variant="ghost"
                                 size="sm"
-                                aria-label="Show recent prompts"
+                                aria-label={t('ai.commandBar.showRecentPrompts')}
                             >
                                 <History className="w-4 h-4" />
                             </Button>
@@ -320,7 +322,7 @@ export function AICommandBar({
                     )}
 
                     {/* Expand/Collapse */}
-                    <Tooltip title={isExpanded ? 'Collapse' : 'Expand'}>
+                    <Tooltip title={isExpanded ? t('ai.commandBar.collapse') : t('ai.commandBar.expand')}>
                         <Button
                             type="button"
                             onClick={() => setIsExpanded(!isExpanded)}
@@ -330,7 +332,7 @@ export function AICommandBar({
                             `}
                             variant="ghost"
                             size="sm"
-                            aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                            aria-label={isExpanded ? t('ai.commandBar.collapse') : t('ai.commandBar.expand')}
                         >
                             {isExpanded ? (
                                 <ExpandLess className="w-4 h-4" />
@@ -351,7 +353,7 @@ export function AICommandBar({
                             `}
                             variant="ghost"
                             size="sm"
-                            aria-label="Clear"
+                            aria-label={t('ai.commandBar.clear')}
                         >
                             <Close className="w-4 h-4" />
                         </Button>
@@ -370,7 +372,7 @@ export function AICommandBar({
                             }
                             disabled:opacity-50
                         `}
-                        aria-label="Submit"
+                        aria-label={t('ai.commandBar.submit')}
                     >
                         {isProcessing ? (
                             <CircularProgress size={16} color="inherit" />

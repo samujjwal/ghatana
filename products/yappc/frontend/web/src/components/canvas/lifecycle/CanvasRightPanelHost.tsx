@@ -14,6 +14,7 @@ import React, { useCallback, Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router';
 import { X as Close, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../../ui/Button';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 async function loadArtifactsPanel() {
     const module = await import('./ArtifactsPanel');
@@ -151,6 +152,7 @@ export const CanvasRightPanelHost: React.FC<CanvasRightPanelHostProps> = ({
     onToggleCollapse,
     dataContext = {},
 }) => {
+    const { t } = useI18n();
     const [searchParams, setSearchParams] = useSearchParams();
     const currentPanel = (searchParams.get('panel') as PanelType) || null;
 
@@ -221,8 +223,8 @@ export const CanvasRightPanelHost: React.FC<CanvasRightPanelHostProps> = ({
                     size="small"
                     onClick={onToggleCollapse}
                     className="min-h-0 p-2 text-text-secondary hover:text-text-primary hover:bg-surface-muted dark:hover:bg-surface-muted rounded transition-colors"
-                    title="Expand panel"
-                    aria-label="Expand panel"
+                    title={t('canvas.rightPanel.expand')}
+                    aria-label={t('canvas.rightPanel.expand')}
                 >
                     <ChevronLeft className="w-4 h-4" />
                 </Button>
@@ -244,8 +246,8 @@ export const CanvasRightPanelHost: React.FC<CanvasRightPanelHostProps> = ({
                         onClick={() => handleNavigatePanel('prev')}
                         disabled={!hasPrev}
                         className="min-h-0 p-1 text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
-                        title="Previous panel"
-                        aria-label="Previous panel"
+                        title={t('canvas.rightPanel.previous')}
+                        aria-label={t('canvas.rightPanel.previous')}
                     >
                         <ChevronLeft className="w-4 h-4" />
                     </Button>
@@ -258,8 +260,8 @@ export const CanvasRightPanelHost: React.FC<CanvasRightPanelHostProps> = ({
                         onClick={() => handleNavigatePanel('next')}
                         disabled={!hasNext}
                         className="min-h-0 p-1 text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
-                        title="Next panel"
-                        aria-label="Next panel"
+                        title={t('canvas.rightPanel.next')}
+                        aria-label={t('canvas.rightPanel.next')}
                     >
                         <ChevronRight className="w-4 h-4" />
                     </Button>
@@ -271,26 +273,24 @@ export const CanvasRightPanelHost: React.FC<CanvasRightPanelHostProps> = ({
                             size="small"
                             onClick={onToggleCollapse}
                             className="min-h-0 p-1 text-text-secondary hover:text-text-primary rounded transition-colors"
-                            title="Collapse panel"
-                            aria-label="Collapse panel"
+                            title={t('canvas.rightPanel.collapse')}
+                            aria-label={t('canvas.rightPanel.collapse')}
                         >
                             <ChevronRight className="w-4 h-4" />
                         </Button>
                     )}
                     <Button
                         variant="ghost"
-                        size="small"
                         onClick={handleClose}
                         className="min-h-0 p-1 text-text-secondary hover:text-text-primary rounded transition-colors"
-                        title="Close panel"
-                        aria-label="Close panel"
+                        title={t('canvas.rightPanel.close')}
+                        aria-label={t('canvas.rightPanel.close')}
                     >
                         <Close className="w-4 h-4" />
                     </Button>
                 </div>
             </div>
 
-            {/* Panel Content */}
             <div className="flex-1 overflow-hidden">
                 <Suspense fallback={<PanelLoadingFallback />}>
                     {currentPanel === 'artifacts' && (

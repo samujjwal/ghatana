@@ -18,6 +18,7 @@ import type { ReactNode } from 'react';
 import { TRANSITIONS, RADIUS } from '../../styles/design-tokens';
 import ActionRegistry, { type ActionDefinition, type ActionCategory, type ActionState } from '../../services/ActionRegistry';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -76,6 +77,7 @@ export function KeyboardShortcutsHelp({
     actionState,
 }: KeyboardShortcutsHelpProps) {
     const [searchQuery, setSearchQuery] = useState('');
+    const { t } = useI18n();
 
     // Reset search when modal closes
     useEffect(() => {
@@ -165,7 +167,7 @@ export function KeyboardShortcutsHelp({
                         <div className="flex items-center gap-3">
                             <Keyboard className="w-6 h-6 text-primary-500" />
                             <Typography className="font-semibold">
-                                Keyboard Shortcuts
+                                {t('keyboardShortcuts.title')}
                             </Typography>
                         </div>
                         <Button
@@ -176,7 +178,7 @@ export function KeyboardShortcutsHelp({
                                 p-2 ${RADIUS.button} ${TRANSITIONS.fast}
                                 text-text-tertiary hover:text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800
                             `}
-                            aria-label="Close"
+                            aria-label={t('keyboardShortcuts.close')}
                         >
                             <Close className="w-5 h-5" />
                         </Button>
@@ -189,7 +191,7 @@ export function KeyboardShortcutsHelp({
                             <TextField
                                 fullWidth
                                 size="sm"
-                                placeholder="Search shortcuts..."
+                                placeholder={t('keyboardShortcuts.searchPlaceholder')}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 autoFocus
@@ -201,7 +203,7 @@ export function KeyboardShortcutsHelp({
                     <div className="flex-1 overflow-y-auto px-6 py-4">
                         {groupedActions.length === 0 ? (
                             <div className="text-center py-8 text-text-tertiary">
-                                No shortcuts found matching "{searchQuery}"
+                                {t('keyboardShortcuts.noResults', { query: searchQuery })}
                             </div>
                         ) : (
                             <div className="space-y-6">

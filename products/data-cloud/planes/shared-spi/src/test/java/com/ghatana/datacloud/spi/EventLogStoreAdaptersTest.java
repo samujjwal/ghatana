@@ -28,7 +28,9 @@ class EventLogStoreAdaptersTest {
     void eventEntry_roundtrip() { 
         com.ghatana.datacloud.spi.EventLogStore.EventEntry dc = new com.ghatana.datacloud.spi.EventLogStore.EventEntry( 
             java.util.UUID.randomUUID(), "type", "1", Instant.now(), 
-            java.nio.ByteBuffer.wrap("payload".getBytes()), "ct", Map.of(), Optional.of("idk"));
+            java.nio.ByteBuffer.wrap("payload".getBytes()), "ct", Map.of(), Optional.of("idk"),
+            // DC-20: New optional fields
+            Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
         com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry plat = EventLogStoreAdapters.toPlatformEventEntry(dc); 
         com.ghatana.datacloud.spi.EventLogStore.EventEntry dc2 = EventLogStoreAdapters.toDataCloudEventEntry(plat); 
         assertThat(dc2.eventId()).isEqualTo(dc.eventId()); 

@@ -39,6 +39,7 @@ import {
   type QueryClient,
 } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -120,6 +121,7 @@ interface InvitePanelProps {
 }
 
 function InvitePanel({ workspaceId, onInvited, onClose }: InvitePanelProps): ReactNode {
+  const { t } = useI18n();
   const [userSearch, setUserSearch] = useState('');
   const [selectedRole, setSelectedRole] = useState<WorkspaceMemberRole>('EDITOR');
 
@@ -185,7 +187,7 @@ function InvitePanel({ workspaceId, onInvited, onClose }: InvitePanelProps): Rea
             size="sm"
             variant="ghost"
             onClick={onClose}
-            aria-label="Close invite panel"
+            aria-label={t('workspace.members.closeInvitePanel')}
             className="text-fg-muted hover:text-fg-muted dark:hover:text-fg-muted"
           >
             <CloseIcon className="h-4 w-4" aria-hidden="true" />
@@ -203,8 +205,8 @@ function InvitePanel({ workspaceId, onInvited, onClose }: InvitePanelProps): Rea
               type="text"
               value={userSearch}
               onChange={handleSearchChange}
-              placeholder="Search by name or email…"
-              aria-label="Search users"
+              placeholder={t('workspace.members.searchPlaceholder')}
+              aria-label={t('workspace.members.searchUsers')}
               className="w-full pl-8 pr-3 py-1.5 text-sm border rounded-md dark:bg-surface dark:border-border focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -213,7 +215,7 @@ function InvitePanel({ workspaceId, onInvited, onClose }: InvitePanelProps): Rea
           <Select
             value={selectedRole}
             onChange={handleRoleChange}
-            aria-label="Select role"
+            aria-label={t('workspace.members.selectRole')}
             className="text-sm border rounded-md px-2 py-1.5 dark:bg-surface dark:border-border focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {ROLES.map((role) => (
@@ -250,7 +252,7 @@ function InvitePanel({ workspaceId, onInvited, onClose }: InvitePanelProps): Rea
                   variant="outline"
                   onClick={() => inviteMutation.mutate({ userId: user.id })}
                   disabled={inviteMutation.isPending}
-                  aria-label={`Add ${user.name} as ${selectedRole}`}
+                  aria-label={`${t('workspace.members.addAs')} ${user.name} ${selectedRole}`}
                   className="text-xs"
                 >
                   Add
@@ -299,6 +301,7 @@ function MemberRow({
   onRemove,
   isMutating,
 }: MemberRowProps): ReactNode {
+  const { t } = useI18n();
   const handleRoleChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       onUpdateRole(member.userId, e.target.value as WorkspaceMemberRole);
@@ -336,7 +339,7 @@ function MemberRow({
           value={member.role}
           onChange={handleRoleChange}
           disabled={isMutating}
-          aria-label={`Role for ${member.user.name}`}
+          aria-label={`${t('workspace.members.roleFor')} ${member.user.name}`}
           className="text-xs border rounded-md px-1.5 py-1 dark:bg-surface dark:border-border focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           {ROLES.map((role) => (
@@ -348,7 +351,7 @@ function MemberRow({
       ) : (
         <span
           className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${getRoleColor(member.role)}`}
-          aria-label={`Role: ${member.role}`}
+          aria-label={`${t('workspace.members.role')}: ${member.role}`}
         >
           {getRoleIcon(member.role)}
           {member.role}
@@ -362,7 +365,7 @@ function MemberRow({
           variant="ghost"
           onClick={handleRemove}
           disabled={isMutating}
-          aria-label={`Remove ${member.user.name}`}
+          aria-label={`${t('workspace.members.removeMember')} ${member.user.name}`}
           className="text-destructive hover:text-destructive hover:bg-destructive-bg dark:hover:bg-destructive-bg p-1.5"
         >
           <RemoveIcon className="h-4 w-4" aria-hidden="true" />
@@ -394,6 +397,7 @@ export function WorkspaceMembers({
   currentUserRole,
   className = '',
 }: WorkspaceMembersProps): ReactNode {
+  const { t } = useI18n();
   const queryClient: QueryClient = useQueryClient();
   const [showInvite, setShowInvite] = useState(false);
 
@@ -479,7 +483,7 @@ export function WorkspaceMembers({
         <div
           className="flex items-center justify-center gap-2 text-fg-muted"
           role="status"
-          aria-label="Loading members"
+          aria-label={t('workspace.members.loadingMembers')}
         >
           <MembersIcon className="h-5 w-5 animate-pulse" aria-hidden="true" />
           <Typography variant="body2">Loading members…</Typography>
@@ -510,7 +514,7 @@ export function WorkspaceMembers({
           <Typography variant="h6" className="font-semibold">
             Members
           </Typography>
-          <Chip label={`${members.length}`} size="small" aria-label={`${members.length} members`} />
+          <Chip label={`${members.length}`} size="small" aria-label={`${members.length} ${t('workspace.members.membersCount')}`} />
         </div>
 
         {canManage && (
@@ -519,7 +523,7 @@ export function WorkspaceMembers({
             variant={showInvite ? 'outline' : 'default'}
             onClick={() => setShowInvite((prev) => !prev)}
             aria-expanded={showInvite}
-            aria-label={showInvite ? 'Cancel invite' : 'Invite member'}
+            aria-label={showInvite ? t('workspace.members.cancelInvite') : t('workspace.members.inviteMember')}
           >
             {showInvite ? (
               <>

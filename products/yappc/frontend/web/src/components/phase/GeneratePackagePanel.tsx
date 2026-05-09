@@ -12,6 +12,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Button, Card, CardContent } from '@ghatana/design-system';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export type GenerationStatus =
   | 'idle'
@@ -104,6 +105,7 @@ export const GeneratePackagePanel: React.FC<GeneratePackagePanelProps> = ({
   cannotGenerateReason,
   className = '',
 }) => {
+  const { t } = useI18n();
   const [expandedFile, setExpandedFile] = useState<string | null>(null);
 
   const badge = STATUS_BADGE[status];
@@ -120,7 +122,7 @@ export const GeneratePackagePanel: React.FC<GeneratePackagePanelProps> = ({
   return (
     <section
       className={`generate-package-panel space-y-6 ${className}`}
-      aria-label="Generation package"
+      aria-label={t('phase.generate.panel')}
       data-testid="generate-package-panel"
     >
       {/* Status Header */}
@@ -149,7 +151,7 @@ export const GeneratePackagePanel: React.FC<GeneratePackagePanelProps> = ({
                 size="sm"
                 onClick={onGenerate}
                 disabled={!canGenerate || status === 'running'}
-                aria-label="Run code generation"
+                aria-label={t('phase.generate.runCodeGeneration')}
                 title={cannotGenerateReason}
               >
                 {status === 'running' ? 'Generating…' : 'Generate'}
@@ -166,7 +168,7 @@ export const GeneratePackagePanel: React.FC<GeneratePackagePanelProps> = ({
 
       {/* Output Files */}
       {outputFiles.length > 0 && (
-        <section aria-label="Output files">
+        <section aria-label={t('phase.generate.outputFiles')}>
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-medium text-fg">
               Output files ({outputFiles.length})
@@ -232,7 +234,7 @@ export const GeneratePackagePanel: React.FC<GeneratePackagePanelProps> = ({
 
       {/* Residual Islands */}
       {residuals.length > 0 && (
-        <section aria-label="Residual islands requiring review">
+        <section aria-label={t('phase.generate.residualReview')}>
           <h4 className="text-sm font-medium text-fg mb-3">
             Residual islands ({pendingResiduals.length} pending review)
           </h4>
@@ -285,7 +287,7 @@ export const GeneratePackagePanel: React.FC<GeneratePackagePanelProps> = ({
 
       {/* Merge Gate */}
       {canMerge && (
-        <section aria-label="Merge generated code">
+        <section aria-label={t('phase.generate.mergeGeneratedCode')}>
           {mergeBlocked && (
             <div className="mb-3 rounded-lg bg-warning-bg border border-warning-border p-3">
               <p className="text-sm text-warning-color">
@@ -299,7 +301,7 @@ export const GeneratePackagePanel: React.FC<GeneratePackagePanelProps> = ({
             variant="solid"
             onClick={onMerge}
             disabled={mergeBlocked}
-            aria-label="Merge generated code into project"
+            aria-label={t('phase.generate.mergeIntoProject')}
             className="w-full sm:w-auto"
           >
             Merge into project

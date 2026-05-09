@@ -14,6 +14,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { readStorage, writeStorage } from '../../services/storage';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface FeatureHighlight {
     id: string;
@@ -66,6 +67,7 @@ export function FeatureDiscoveryTooltip({
     isOpen = false,
     onDismiss,
 }: FeatureDiscoveryProps) {
+    const { t } = useI18n();
     const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
     const feature = FEATURE_HIGHLIGHTS.find(f => f.id === featureId);
 
@@ -93,7 +95,7 @@ export function FeatureDiscoveryTooltip({
                 transform: 'translateX(-50%)',
             }}
             role="dialog"
-            aria-label={`Feature: ${feature.title}`}
+            aria-label={t('featureDiscovery.ariaFeature', { title: feature.title })}
         >
             <div className="flex items-start justify-between gap-2">
                 <div>
@@ -105,7 +107,7 @@ export function FeatureDiscoveryTooltip({
                     variant="ghost"
                     size="small"
                     className="text-fg-muted hover:text-fg-muted"
-                    aria-label="Dismiss"
+                    aria-label={t('featureDiscovery.dismiss')}
                 >
                     ×
                 </Button>
@@ -117,7 +119,7 @@ export function FeatureDiscoveryTooltip({
                     size="small"
                     className="text-sm text-info-color hover:text-info-color font-medium"
                 >
-                    Got it
+                    {t('featureDiscovery.gotIt')}
                 </Button>
             </div>
         </div>

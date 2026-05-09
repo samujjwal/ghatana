@@ -55,10 +55,19 @@ function pipelineToWorkflow(p: BackendPipeline): Workflow {
 }
 
 function executionToWorkflowExecution(execution: BackendExecution): WorkflowExecution {
+    // DC-32: Map backend lowercase status to canonical ExecutionStatus enum
+    const statusMap: Record<string, WorkflowExecution['status']> = {
+        'pending': 'CREATED',
+        'running': 'RUNNING',
+        'completed': 'STOPPED',
+        'failed': 'FAILED',
+        'cancelled': 'STOPPED',
+    };
+    
     return {
         id: execution.id,
         workflowId: execution.workflowId,
-        status: execution.status,
+        status: statusMap[execution.status as string] ?? 'CREATED',
         startedAt: execution.startedAt,
         completedAt: execution.completedAt,
         duration: execution.duration,
@@ -104,7 +113,7 @@ export interface Workflow {
     updatedAt: string;
     createdBy: string;
     lastExecutedAt?: string;    /** DC-UX-019: last execution outcome, mapped from lastExecutionStatus on the pipeline response */
-    lastExecutionStatus?: 'completed' | 'failed' | 'cancelled' | 'running' | 'pending';
+    lastExecutionStatus?: 'CREATED' | 'INITIALIZED' | 'RUNNING' | 'STOPPED' | 'FAILED';
     /** DC-UX-019: last execution duration in ms */
     lastExecutionDuration?: number;}
 
@@ -114,13 +123,14 @@ export interface Workflow {
 export interface WorkflowExecution {
     id: string;
     workflowId: string;
-    status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+    // DC-32: Canonical execution status aligned with OperatorState
+    status: 'CREATED' | 'INITIALIZED' | 'RUNNING' | 'STOPPED' | 'FAILED';
     startedAt: string;
     completedAt?: string;
     duration?: number;
     nodeExecutions: {
         nodeId: string;
-        status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+        status: 'CREATED' | 'INITIALIZED' | 'RUNNING' | 'STOPPED' | 'FAILED';
         startedAt?: string;
         completedAt?: string;
         error?: string;

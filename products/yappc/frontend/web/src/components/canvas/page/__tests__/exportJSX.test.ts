@@ -74,7 +74,7 @@ describe('exportJSX', () => {
 
     expect(jsx).toContain('TextField');
     expect(jsx).toContain('label="Email"');
-    expect(jsx).toContain('placeholder="Enter email"');
+    expect(jsx).toContain('placeholder=' + '"Enter email"');
     expect(jsx).toContain('required');
     expect(jsx).toContain('fullWidth');
   });

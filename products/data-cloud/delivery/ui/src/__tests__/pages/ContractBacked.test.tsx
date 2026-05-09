@@ -1617,8 +1617,7 @@ describe('Contract-Backed Route Tests', () => {
         '/api/v1/voice/intent/classify',
         '/api/v1/surfaces',
         '/api/v1/surfaces/schema',
-        '/api/v1/capabilities',
-        '/api/v1/capabilities/schema',
+        // DC-P1.12: Removed compatibility /api/v1/capabilities endpoints
         '/api/v1/collections/{id}/cost-report',
         '/api/v1/collections/{id}/migrate',
         '/metrics',
@@ -1753,8 +1752,7 @@ describe('Contract-Backed Route Tests', () => {
       expect(canonicalOpenApi).toContain('/api/v1/voice/intent/classify:');
       expect(canonicalOpenApi).toContain('/api/v1/surfaces:');
       expect(canonicalOpenApi).toContain('/api/v1/surfaces/schema:');
-      expect(canonicalOpenApi).toContain('/api/v1/capabilities:');
-      expect(canonicalOpenApi).toContain('/api/v1/capabilities/schema:');
+      // DC-P1.12: Removed compatibility /api/v1/capabilities endpoints
       expect(canonicalOpenApi).toContain('VoiceIntentRequest:');
       expect(canonicalOpenApi).toContain('VoiceIntentClassificationRequest:');
     });

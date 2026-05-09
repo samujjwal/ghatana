@@ -7,6 +7,10 @@ import java.util.Optional;
 /**
  * Tenant context value object for event-store operations.
  *
+ * <p><b>DC-17:</b> Canonical TenantWorkspaceContext with tenant ID, optional workspace ID,
+ * and metadata. This context is propagated across API/storage/audit/events/AI/plugins layers
+ * to ensure consistent tenant and workspace scoping throughout the system.
+ *
  * @doc.type record
  * @doc.purpose Multi-tenant context for platform-level event-store contracts
  * @doc.layer platform
@@ -51,5 +55,16 @@ public record TenantContext(
         Map<String, String> updated = new java.util.HashMap<>(metadata);
         updated.put(key, value);
         return new TenantContext(tenantId, workspaceId, Map.copyOf(updated));
+    }
+
+    /**
+     * DC-17: Returns a new {@code TenantContext} with the given workspace ID.
+     * Enables workspace-level scoping for multi-workspace tenants.
+     *
+     * @param workspaceId the workspace ID (null to clear workspace)
+     * @return new TenantContext with the updated workspace ID
+     */
+    public TenantContext withWorkspace(String workspaceId) {
+        return new TenantContext(tenantId, Optional.ofNullable(workspaceId), metadata);
     }
 }

@@ -36,6 +36,7 @@ import {
   type QueryClient,
 } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -181,6 +182,7 @@ function ItemCard({
   onMoveToSprint,
   isMutating,
 }: ItemCardProps): ReactNode {
+  const { t } = useI18n();
   const [expanded, setExpanded] = useState(false);
 
   const handleToggle = useCallback(() => {
@@ -195,13 +197,13 @@ function ItemCard({
           {item.priority === 'CRITICAL' && (
             <CriticalIcon
               className={`h-4 w-4 flex-shrink-0 mt-0.5 ${getPriorityColor(item.priority)}`}
-              aria-label="Critical priority"
+              aria-label={t('planning.backlog.criticalPriority')}
             />
           )}
           {item.priority === 'HIGH' && (
             <TagIcon
               className={`h-4 w-4 flex-shrink-0 mt-0.5 ${getPriorityColor(item.priority)}`}
-              aria-label="High priority"
+              aria-label={t('planning.backlog.highPriority')}
             />
           )}
 
@@ -233,7 +235,7 @@ function ItemCard({
           {item.description && (
             <Button
               onClick={handleToggle}
-              aria-label={expanded ? 'Collapse' : 'Expand'}
+              aria-label={expanded ? t('planning.backlog.collapse') : t('planning.backlog.expand')}
               className="flex-shrink-0 text-fg-muted hover:text-fg-muted dark:hover:text-fg-muted"
               variant="ghost"
               size="sm"
@@ -376,7 +378,7 @@ export function BacklogBoard({
         <div
           className="flex items-center justify-center gap-2 text-fg-muted"
           role="status"
-          aria-label="Loading backlog"
+          aria-label={t('planning.backlog.loading')}
         >
           <BacklogIcon className="h-5 w-5 animate-pulse" aria-hidden="true" />
           <Typography variant="body2">Loading backlog…</Typography>

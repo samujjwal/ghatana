@@ -32,6 +32,7 @@ import { Loader2, AlertCircle, FlaskConical, Copy } from 'lucide-react';
 import { AIAssistLabel } from './AIAssistLabel';
 import type { AIAssistSource } from './AIAssistLabel';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -123,6 +124,7 @@ function TestCaseItem({ test }: { test: GeneratedTestCase }) {
 type GenState = 'idle' | 'loading' | 'done' | 'error';
 
 export function TestGenerationPanel({ runId, onAccept, className }: TestGenerationPanelProps) {
+  const { t } = useI18n();
   const [state, setState] = useState<GenState>('idle');
   const [result, setResult] = useState<TestGenerationResult | null>(null);
 
@@ -143,7 +145,7 @@ export function TestGenerationPanel({ runId, onAccept, className }: TestGenerati
   return (
     <section
       data-testid="test-gen-panel"
-      aria-label="AI test generation"
+      aria-label={t('ai.testGeneration.panelLabel')}
       className={['space-y-3', className].filter(Boolean).join(' ')}
     >
       {/* Idle trigger */}

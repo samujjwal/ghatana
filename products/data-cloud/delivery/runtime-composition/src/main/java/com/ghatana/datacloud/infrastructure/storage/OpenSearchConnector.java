@@ -394,7 +394,7 @@ public class OpenSearchConnector implements StorageConnector {
         if (!spec.hasFilters()) {
             return tenantFilter;
         }
-        String filterExpr = spec.getFilter().orElse("");
+        String filterExpr = spec.getFilterOptional().orElse("");
         Query userFilter = Query.of(q -> q.queryString(qs -> qs.query(filterExpr)));
         return Query.of(q -> q.bool(b -> b.must(tenantFilter).must(userFilter)));
     }

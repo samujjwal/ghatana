@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -50,6 +51,7 @@ const INITIAL_VARS: EnvVar[] = [
 // ============================================================================
 
 const EnvironmentSetupPage: React.FC = () => {
+  const { t } = useI18n();
   const [activeEnv, setActiveEnv] = useState<Environment>('development');
   const [envVars, setEnvVars] = useState<EnvVar[]>(INITIAL_VARS);
   const [newKey, setNewKey] = useState('');
@@ -142,7 +144,7 @@ const EnvironmentSetupPage: React.FC = () => {
                   size="sm"
                   onClick={() => removeVar(v.key)}
                   className="text-fg-muted hover:text-destructive"
-                  aria-label={`Remove ${v.key}`}
+                  aria-label={t('environmentSetup.removeVar', { name: v.key })}
                 >
                   ✕
                 </Button>
@@ -153,13 +155,13 @@ const EnvironmentSetupPage: React.FC = () => {
           {/* Add new */}
           <div className="flex gap-2">
             <Input
-              placeholder="KEY"
+              placeholder={t('environmentSetup.keyPlaceholder')}
               value={newKey}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewKey(e.target.value)}
               className="w-40 rounded border px-3 py-1.5 font-mono text-sm focus:border-info-border focus:outline-none"
             />
             <Input
-              placeholder="value"
+              placeholder={t('environmentSetup.valuePlaceholder')}
               value={newValue}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewValue(e.target.value)}
               className="flex-1 rounded border px-3 py-1.5 font-mono text-sm focus:border-info-border focus:outline-none"
@@ -168,7 +170,7 @@ const EnvironmentSetupPage: React.FC = () => {
               onClick={addVar}
               className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-white hover:bg-info-bg"
             >
-              Add
+              {t('environmentSetup.add')}
             </Button>
           </div>
         </div>

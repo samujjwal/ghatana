@@ -91,12 +91,13 @@ export function AIResponseCard({
                 <div className="flex items-center gap-2 flex-1">
                     <AutoAwesome className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                     {isEditing ? (
+                    import { useI18n } from '../../i18n/I18nProvider';
                         <Input
                             type="text"
                             value={editedName}
                             onChange={(e) => setEditedName(e.target.value)}
                             className="flex-1 px-3 py-1 text-sm font-semibold bg-white dark:bg-grey-800 border border-divider rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
-                            placeholder="Project name"
+                            placeholder={t('ai.response.projectName')}
                             fullWidth
                         />
                     ) : (
@@ -159,7 +160,7 @@ export function AIResponseCard({
                                                     className="p-0 min-h-0 hover:text-error-color"
                                                     variant="ghost"
                                                     size="sm"
-                                                    aria-label={`Remove feature: ${feature}`}
+                                                    aria-label={t('ai.response.featureRemove', { feature })}
                                                 >
                                                     <Close className="w-3 h-3" />
                                                 </Button>
@@ -173,9 +174,9 @@ export function AIResponseCard({
                                             type="text"
                                             value={newFeature}
                                             onChange={(e) => setNewFeature(e.target.value)}
-                                            onKeyPress={(e) => e.key === 'Enter' && handleAddFeature()}
+                                                placeholder={t('ai.response.projectName')}
                                             className="flex-1 px-3 py-1 text-sm bg-white dark:bg-grey-800 border border-divider rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                            placeholder="Add a feature..."
+                                            placeholder={t('ai.response.addFeaturePlaceholder')}
                                             fullWidth
                                         />
                                         <Button
@@ -236,7 +237,7 @@ export function AIResponseCard({
                                 </ul>
                             </div>
                         )}
-                    </>
+                                                                        aria-label={t('ai.response.featureRemove', { feature })}
                 )}
             </div>
 
@@ -252,7 +253,7 @@ export function AIResponseCard({
                                 setEditedFeatures(details.features || []);
                                 setNewFeature('');
                             }}
-                            className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
+                                                                placeholder={t('ai.response.addFeaturePlaceholder')}
                             variant="ghost"
                         >
                             Cancel

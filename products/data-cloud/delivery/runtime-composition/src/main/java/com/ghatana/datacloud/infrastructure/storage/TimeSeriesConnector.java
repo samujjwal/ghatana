@@ -309,13 +309,13 @@ public class TimeSeriesConnector implements StorageConnector {
 
             // Apply filters
             List<Entity> filtered = entities.stream()
-                    .filter(e -> applyFilter(e, spec.getFilter().orElse(null)))
+                    .filter(e -> applyFilter(e, spec.getFilterOptional().orElse(null)))
                     .filter(e -> applyTimeWindowFilter(e, spec))
                     .toList();
 
             // Apply pagination
-            int limit = spec.getLimit() > 0 ? spec.getLimit() : 100;
-            int offset = spec.getOffset() >= 0 ? spec.getOffset() : 0;
+            int limit = spec.getLimitInt() > 0 ? spec.getLimitInt() : 100;
+            int offset = spec.getOffsetInt() >= 0 ? spec.getOffsetInt() : 0;
 
             List<Entity> paginated = filtered.stream()
                     .skip(offset)

@@ -64,7 +64,7 @@ function componentToJSX(data: ComponentData, indent: number = 0): string {
       const props: string[] = [];
       
       props.push(`label="${textFieldData.label}"`);
-      if (textFieldData.placeholder) props.push(`placeholder="${textFieldData.placeholder}"`);
+      if (textFieldData.placeholder) props.push(`placeholder=${JSON.stringify(textFieldData.placeholder)}`);
       if (textFieldData.variant !== 'outlined') props.push(`variant="${textFieldData.variant}"`);
       if (textFieldData.size !== 'medium') props.push(`size="${textFieldData.size}"`);
       if (textFieldData.required) props.push('required');

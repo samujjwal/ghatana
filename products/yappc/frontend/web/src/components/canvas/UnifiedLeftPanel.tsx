@@ -28,6 +28,7 @@ import { AuditTimeline, type AuditEvent } from './audit/AuditTimeline';
 import { GovernancePanel } from './governance/GovernancePanel';
 import { GraphVisualizer } from './visualizer/GraphVisualizer';
 import { TRANSITIONS } from '../../styles/design-tokens';
+import { useI18n } from '../../i18n/I18nProvider';
 import type { CanvasAccessPolicy } from './canvasAccessPolicy';
 
 // ============================================================================
@@ -72,6 +73,7 @@ export function UnifiedLeftPanel({
   edges = [],
   className = '',
 }: UnifiedLeftPanelProps) {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<TabType>('tasks');
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const [panelWidth, setPanelWidth] = useState(320);
@@ -142,7 +144,7 @@ export function UnifiedLeftPanel({
           ${className}
         `}
       >
-        <Tooltip title="Tasks" placement="right">
+        <Tooltip title={t('canvas.leftPanel.tasks')} placement="right">
           <Button
             onClick={() => {
               handleCollapseChange(false);
@@ -150,7 +152,7 @@ export function UnifiedLeftPanel({
             }}
             variant="ghost"
             size="sm"
-            aria-label="Open tasks panel"
+            aria-label={t('canvas.leftPanel.openTasks')}
             className={`p-2 rounded transition-colors ${activeTab === 'tasks'
               ? 'bg-info-bg dark:bg-info-bg/20 text-info-color'
               : 'hover:bg-surface-muted dark:hover:bg-surface-muted text-text-secondary'
@@ -159,7 +161,7 @@ export function UnifiedLeftPanel({
             <Assignment className="w-5 h-5" />
           </Button>
         </Tooltip>
-        <Tooltip title="Widgets" placement="right">
+        <Tooltip title={t('canvas.leftPanel.widgets')} placement="right">
           <Button
             onClick={() => {
               handleCollapseChange(false);
@@ -167,7 +169,7 @@ export function UnifiedLeftPanel({
             }}
             variant="ghost"
             size="sm"
-            aria-label="Open widgets panel"
+            aria-label={t('canvas.leftPanel.openWidgets')}
             className={`p-2 rounded transition-colors ${activeTab === 'components'
               ? 'bg-info-bg dark:bg-info-bg/20 text-info-color'
               : 'hover:bg-surface-muted dark:hover:bg-surface-muted text-text-secondary'
@@ -176,7 +178,7 @@ export function UnifiedLeftPanel({
             <Widgets className="w-5 h-5" />
           </Button>
         </Tooltip>
-        <Tooltip title="Build" placement="right">
+        <Tooltip title={t('canvas.leftPanel.build')} placement="right">
           <Button
             onClick={() => {
               handleCollapseChange(false);
@@ -184,7 +186,7 @@ export function UnifiedLeftPanel({
             }}
             variant="ghost"
             size="sm"
-            aria-label="Open build panel"
+            aria-label={t('canvas.leftPanel.openBuild')}
             className={`p-2 rounded transition-colors ${activeTab === 'artifacts'
               ? 'bg-info-bg dark:bg-info-bg/20 text-info-color'
               : 'hover:bg-surface-muted dark:hover:bg-surface-muted text-text-secondary'
@@ -193,7 +195,7 @@ export function UnifiedLeftPanel({
             <Build className="w-5 h-5" />
           </Button>
         </Tooltip>
-        <Tooltip title="Timeline" placement="right">
+        <Tooltip title={t('canvas.leftPanel.timeline')} placement="right">
           <Button
             onClick={() => {
               handleCollapseChange(false);
@@ -201,7 +203,7 @@ export function UnifiedLeftPanel({
             }}
             variant="ghost"
             size="sm"
-            aria-label="Open timeline panel"
+            aria-label={t('canvas.leftPanel.openTimeline')}
             className={`p-2 rounded transition-colors ${activeTab === 'phases'
               ? 'bg-info-bg dark:bg-info-bg/20 text-info-color'
               : 'hover:bg-surface-muted dark:hover:bg-surface-muted text-text-secondary'
@@ -210,7 +212,7 @@ export function UnifiedLeftPanel({
             <Timeline className="w-5 h-5" />
           </Button>
         </Tooltip>
-        <Tooltip title="History" placement="right">
+        <Tooltip title={t('canvas.leftPanel.history')} placement="right">
           <Button
             onClick={() => {
               handleCollapseChange(false);
@@ -218,7 +220,7 @@ export function UnifiedLeftPanel({
             }}
             variant="ghost"
             size="sm"
-            aria-label="Open history panel"
+            aria-label={t('canvas.leftPanel.openHistory')}
             className={`p-2 rounded transition-colors ${activeTab === 'history'
               ? 'bg-info-bg dark:bg-info-bg/20 text-info-color'
               : 'hover:bg-surface-muted dark:hover:bg-surface-muted text-text-secondary'
@@ -227,7 +229,7 @@ export function UnifiedLeftPanel({
             <History className="w-5 h-5" />
           </Button>
         </Tooltip>
-        <Tooltip title="Activity" placement="right">
+        <Tooltip title={t('canvas.leftPanel.activity')} placement="right">
           <Button
             onClick={() => {
               handleCollapseChange(false);
@@ -235,7 +237,7 @@ export function UnifiedLeftPanel({
             }}
             variant="ghost"
             size="sm"
-            aria-label="Open activity panel"
+            aria-label={t('canvas.leftPanel.openActivity')}
             className={`p-2 rounded transition-colors ${activeTab === 'activity'
               ? 'bg-info-bg dark:bg-info-bg/20 text-info-color'
               : 'hover:bg-surface-muted dark:hover:bg-surface-muted text-text-secondary'
@@ -244,7 +246,7 @@ export function UnifiedLeftPanel({
             <ListAlt className="w-5 h-5" />
           </Button>
         </Tooltip>
-        <Tooltip title="Governance" placement="right">
+        <Tooltip title={t('canvas.leftPanel.governance')} placement="right">
           <Button
             onClick={() => {
               handleCollapseChange(false);
@@ -252,7 +254,7 @@ export function UnifiedLeftPanel({
             }}
             variant="ghost"
             size="sm"
-            aria-label="Open governance panel"
+            aria-label={t('canvas.leftPanel.openGovernance')}
             className={`p-2 rounded transition-colors ${activeTab === 'governance'
               ? 'bg-info-bg dark:bg-info-bg/20 text-info-color'
               : 'hover:bg-surface-muted dark:hover:bg-surface-muted text-text-secondary'
@@ -261,7 +263,7 @@ export function UnifiedLeftPanel({
             <Security className="w-5 h-5" />
           </Button>
         </Tooltip>
-        <Tooltip title="Visualize" placement="right">
+        <Tooltip title={t('canvas.leftPanel.visualize')} placement="right">
           <Button
             onClick={() => {
               handleCollapseChange(false);
@@ -269,7 +271,7 @@ export function UnifiedLeftPanel({
             }}
             variant="ghost"
             size="sm"
-            aria-label="Open visualize panel"
+            aria-label={t('canvas.leftPanel.openVisualize')}
             className={`p-2 rounded transition-colors ${activeTab === 'visualize'
               ? 'bg-info-bg dark:bg-info-bg/20 text-info-color'
               : 'hover:bg-surface-muted dark:hover:bg-surface-muted text-text-secondary'
@@ -306,7 +308,7 @@ export function UnifiedLeftPanel({
         <Typography className="text-lg font-medium tracking-[-0.02em]" fontWeight="700" color="text.primary">
           Canvas Tools
         </Typography>
-        <Tooltip title="Collapse panel">
+        <Tooltip title={t('canvas.leftPanel.collapse')}>
           <IconButton
             size="sm"
             onClick={() => handleCollapseChange(true)}

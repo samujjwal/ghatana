@@ -42,8 +42,9 @@ import java.util.UUID;
  * <ul>
  *   <li>Non-bypassable: every request goes through ALL active checks before
  *       reaching a business handler.</li>
- *   <li>Fail-closed: any unexpected exception during policy evaluation returns
- *       HTTP 403, never silently passes.</li>
+ *   <li>DC-P1.16: Fail-closed: any unexpected exception during policy evaluation returns
+ *       HTTP 403, never silently passes. AI suggestions remain advisory only and should not
+ *       be treated as guaranteed outcomes when the service is degraded.</li>
  *   <li>Audit integrity: audit records are fire-and-forget but errors are
  *       logged; they never block the response path.</li>
  *   <li>SSRF-safe: API keys are validated server-side; no user-supplied URL

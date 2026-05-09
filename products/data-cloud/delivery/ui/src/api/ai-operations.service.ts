@@ -4,9 +4,10 @@
  * Typed contract for cross-surface AI-assisted operation suggestions.
  * Covers alerts, workflows, data quality, and fabric placement advisories.
  *
- * All methods are backend-first with explicit fail-closed boundary handling:
+ * All methods are backend-first with explicit boundary handling:
  * - When the ML platform or feature scoring service is unavailable,
  *   methods raise a runtime boundary error (404/405/501 → boundary).
+ * - In production, unavailable services return HTTP 503 instead of heuristic fallback.
  * - Callers can catch `UnsupportedRuntimeBoundaryError` and render the
  *   appropriate `UnsupportedSurfaceBoundary` or capability-gated notice.
  *

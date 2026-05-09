@@ -15,6 +15,7 @@ import React, { useState, useCallback } from 'react';
 import { Button } from '../ui/Button';
 import { Package as Inventory, CheckCircle, XCircle as Cancel, Hourglass as HourglassEmpty, Download, BadgeCheck as Verified, User as Person, Clock as Schedule, FileText as Description, Shield as Security } from 'lucide-react';
 import type { ReleasePacketPayload, EvidencePackPayload } from '@/shared/types/lifecycle-artifacts';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface ApprovalGate {
     id: string;
@@ -69,6 +70,7 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
     currentUserId,
     isLoading = false,
 }) => {
+    const { t } = useI18n();
     const [activeTab, setActiveTab] = useState<'overview' | 'artifacts' | 'evidence' | 'approvals'>('overview');
     const [approvalComments, setApprovalComments] = useState<Record<string, string>>({});
     const [processingGate, setProcessingGate] = useState<string | null>(null);
@@ -476,7 +478,7 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
                                                     [gate.id]: e.target.value,
                                                 }))
                                             }
-                                            placeholder="Add comments (optional for approval, required for rejection)"
+                                            placeholder={t('deploy.releasePacket.commentsPlaceholder')}
                                             rows={2}
                                             className="w-full px-3 py-2 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none"
                                         />

@@ -17,6 +17,7 @@ import {
     draftStepDataAtom,
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 import type { InstitutionalizeStepData, InstitutionalAction } from 'yappc-core/types';
 
@@ -61,6 +62,7 @@ NativeInput.displayName = 'NativeInput';
 // ============================================================================
 
 export function InstitutionalizeStep() {
+    const { t } = useI18n();
     const workflow = useAtomValue(currentWorkflowAtom);
     const draftData = useAtomValue(draftStepDataAtom) as InstitutionalizeStepData | null;
     const updateDraft = useSetAtom(updateDraftStepDataAtom);
@@ -210,7 +212,7 @@ export function InstitutionalizeStep() {
                         <TextField
                             fullWidth
                             label="Action Title"
-                            placeholder="What needs to be created or updated?"
+                            placeholder={t('workflow.institutionalize.actionPlaceholder')}
                             value={newActionTitle}
                             onChange={(e) => setNewActionTitle(e.target.value)}
                         />

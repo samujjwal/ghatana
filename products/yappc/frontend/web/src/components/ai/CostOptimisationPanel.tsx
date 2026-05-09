@@ -32,6 +32,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, AlertCircle, DollarSign, TrendingDown } from 'lucide-react';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -119,6 +120,7 @@ function ModelRow({ entry }: { entry: ModelCostBreakdown }) {
  * Disabled (renders nothing) when `runId` is empty.
  */
 export function CostOptimisationPanel({ runId, className }: CostOptimisationPanelProps) {
+  const { t } = useI18n();
   const { data, isLoading, isError } = useQuery<CostAnalysisData>({
     queryKey: ['cost-analysis', runId],
     queryFn: () => fetchCostAnalysis(runId),
@@ -154,7 +156,7 @@ export function CostOptimisationPanel({ runId, className }: CostOptimisationPane
   return (
     <section
       data-testid="cost-panel"
-      aria-label="AI run cost analysis"
+      aria-label={t('ai.cost.panelLabel')}
       className={['space-y-3', className].filter(Boolean).join(' ')}
     >
       {/* Header */}

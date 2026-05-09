@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { Search, X } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { useI18n } from '../../i18n/I18nProvider';
 
 /**
  * Global search bar with autocomplete.
@@ -24,6 +25,7 @@ import { Input } from '../ui/Input';
  */
 export function SearchBar({ tenantId }: { tenantId: string }) {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [query, setQuery] = React.useState('');
   const [isOpen, setIsOpen] = React.useState(false);
   const [results, setResults] = React.useState<SearchResult[]>([]);
@@ -73,7 +75,7 @@ export function SearchBar({ tenantId }: { tenantId: string }) {
           className="w-full pl-10 pr-10 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           fullWidth
           size="sm"
-          placeholder="Search dashboards, incidents, vulnerabilities..."
+          placeholder={t('search.bar.placeholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -89,7 +91,7 @@ export function SearchBar({ tenantId }: { tenantId: string }) {
               setResults([]);
               setIsOpen(false);
             }}
-            aria-label="Clear search"
+            aria-label={t('search.bar.clear')}
           >
             <X className="w-4 h-4" />
           </Button>

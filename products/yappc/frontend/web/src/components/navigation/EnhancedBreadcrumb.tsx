@@ -27,6 +27,7 @@ import { LifecyclePhase } from '../../types/lifecycle';
 import { PHASE_LABELS } from '../../styles/design-tokens';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface BreadcrumbSegment {
     type: 'home' | 'workspace' | 'project' | 'section';
@@ -379,6 +380,7 @@ export function EnhancedBreadcrumb({
     onCreateWorkspace,
     onCreateProject,
 }: EnhancedBreadcrumbProps) {
+    const { t } = useI18n();
     const navigate = useNavigate();
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const [anchorElements, setAnchorElements] = useState<Record<string, HTMLElement>>({});
@@ -545,7 +547,7 @@ export function EnhancedBreadcrumb({
 
     return (
         <nav
-            aria-label="Breadcrumb navigation"
+            aria-label={t('nav.breadcrumbNavigation')}
             className={`flex items-center gap-1 px-4 py-2 bg-bg-default border-b border-divider ${className}`}
         >
             {segments.map((segment, index) => {
@@ -565,7 +567,7 @@ export function EnhancedBreadcrumb({
                             <Link
                                 to={segment.href!}
                                 className="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                aria-label="Home"
+                                aria-label={t('nav.home')}
                                 onClick={() => onNavigate?.(segment)}
                             >
                                 {segment.icon}

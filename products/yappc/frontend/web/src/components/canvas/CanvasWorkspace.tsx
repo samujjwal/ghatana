@@ -66,6 +66,7 @@ import { CanvasReactFlowSurface } from './CanvasReactFlowSurface';
 import { CanvasOverlays } from './CanvasOverlays';
 import { deriveCanvasAccessPolicy } from './canvasAccessPolicy';
 import type { ProjectAccessFields } from '@/services/workspace/accessControl';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -112,6 +113,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     flowStage,
     projectAccess,
 }) => {
+    const { t } = useI18n();
     // ── Jotai atoms (UI state only – no domain logic) ──────────────────
     const [activePersona, setActivePersona] = useAtom(activePersonaAtom);
     const [isAIModalOpen, setIsAIModalOpen] = useAtom(isAIModalOpenAtom);
@@ -649,7 +651,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         <Box
             className="w-full h-full relative"
             role="application"
-            aria-label="Canvas workspace"
+            aria-label={t('canvas.workspace.label')}
             aria-roledescription="interactive canvas"
         >
             {/* Skip-to-content link for keyboard users */}

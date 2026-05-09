@@ -1,3 +1,5 @@
+# DEPRECATED: This file is superseded by action-plane.yaml. Use action-plane.yaml as the canonical contract.
+# This file is retained for historical reference only.
 openapi: 3.0.3
 info:
   title: Ghatana AEP (Agentic Event Processor) API

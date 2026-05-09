@@ -19,6 +19,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface E2ETestSuite {
     id: string;
@@ -97,6 +98,7 @@ const getCoverageColor = (coverage: number) => {
 };
 
 export const E2ECoverageCanvas = () => {
+    const { t } = useI18n();
     const [suites] = useState<E2ETestSuite[]>(MOCK_SUITES);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -126,7 +128,7 @@ export const E2ECoverageCanvas = () => {
                 <Box className="p-4 border-b border-solid border-b-[rgba(0,_0,_0,_0.12)] bg-white">
                     <TextField
                         size="small"
-                        placeholder="Search test suites..."
+                        placeholder={t('canvas.e2eCoverage.searchSuites')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full"
@@ -165,7 +167,7 @@ export const E2ECoverageCanvas = () => {
 
                             <Box className="w-full rounded overflow-hidden h-[8px] bg-[#E5E7EB]">
                                 <Box
-                                    style={{ width: `${suite.coverage }}
+                                    style={{ width: `${suite.coverage}%`, height: '100%', backgroundColor: getCoverageColor(suite.coverage) }}
                                 />
                             </Box>
                         </Paper>
@@ -178,19 +180,19 @@ export const E2ECoverageCanvas = () => {
                     <Typography variant="subtitle2" className="font-semibold mb-2">
                         E2E Coverage
                     </Typography>
-                    <Typography variant="caption" display="block">
+                    <Typography variant="caption" className="block">
                         Suites: {stats.suites}
                     </Typography>
-                    <Typography variant="caption" display="block">
+                    <Typography variant="caption" className="block">
                         Tests: {stats.total}
                     </Typography>
-                    <Typography variant="caption" display="block" className="text-[#10B981]">
+                    <Typography variant="caption" className="block text-[#10B981]">
                         Passed: {stats.passed}
                     </Typography>
-                    <Typography variant="caption" display="block" className="text-[#EF4444]">
+                    <Typography variant="caption" className="block text-[#EF4444]">
                         Failed: {stats.failed}
                     </Typography>
-                    <Typography variant="caption" display="block" style={{ color: getCoverageColor(stats.avgCoverage) }}>
+                    <Typography variant="caption" className="block" style={{ color: getCoverageColor(stats.avgCoverage) }}>
                         Avg Coverage: {stats.avgCoverage}%
                     </Typography>
                 </Box>

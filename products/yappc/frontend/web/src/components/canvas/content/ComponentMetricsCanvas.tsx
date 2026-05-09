@@ -19,6 +19,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface ComponentMetrics {
     id: string;
@@ -115,6 +116,7 @@ const getRenderTimeColor = (time: number) => {
 };
 
 export const ComponentMetricsCanvas = () => {
+    const { t } = useI18n();
     const [metrics] = useState<ComponentMetrics[]>(MOCK_METRICS);
     const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -148,7 +150,7 @@ export const ComponentMetricsCanvas = () => {
                 <Box className="p-4 border-b border-solid border-b-[rgba(0,_0,_0,_0.12)] bg-white">
                     <TextField
                         size="small"
-                        placeholder="Search components..."
+                        placeholder={t('canvas.components.search')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full"

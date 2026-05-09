@@ -34,6 +34,7 @@ import {
 import { cn } from '../../utils/cn';
 import { Button } from '@ghatana/design-system';
 import { Input } from '@ghatana/design-system';
+import { useI18n } from '../../i18n/I18nProvider';
 
 import {
   currentProjectAtom,
@@ -142,6 +143,7 @@ function NativeButton({ children, type = 'button', ...props }: NativeButtonProps
 const UnifiedProjectDashboard: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const currentProject = useAtomValue(currentProjectAtom);
   const breadcrumbs = useAtomValue(breadcrumbsAtom);
@@ -255,7 +257,7 @@ const UnifiedProjectDashboard: React.FC = () => {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" />
                 <Input
                   type="search"
-                  placeholder="Search project..."
+                  placeholder={t('unifiedDashboard.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-64 pl-9"

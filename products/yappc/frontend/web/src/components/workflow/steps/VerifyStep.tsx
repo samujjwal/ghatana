@@ -17,6 +17,7 @@ import {
     draftStepDataAtom,
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface VerificationEvidence {
     id: string;
@@ -53,6 +54,7 @@ const EVIDENCE_TYPES: { value: VerificationEvidence['type']; label: string; icon
 // ============================================================================
 
 export function VerifyStep() {
+    const { t } = useI18n();
     const workflow = useAtomValue(currentWorkflowAtom);
     const draftData = useAtomValue(draftStepDataAtom) as VerifyStepData | null;
     const updateDraft = useSetAtom(updateDraftStepDataAtom);
@@ -167,7 +169,7 @@ export function VerifyStep() {
                     <TextField
                         fullWidth
                         size="sm"
-                        placeholder="Add acceptance criterion..."
+                        placeholder={t('workflow.verify.acceptanceCriterionPlaceholder')}
                         value={newChecklistItem}
                         onChange={(e) => setNewChecklistItem(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleAddChecklistItem()}
@@ -251,7 +253,7 @@ export function VerifyStep() {
                     <TextField
                         fullWidth
                         size="sm"
-                        placeholder="Evidence name"
+                        placeholder={t('workflow.verify.evidenceNamePlaceholder')}
                         value={newEvidenceName}
                         onChange={(e) => setNewEvidenceName(e.target.value)}
                     />

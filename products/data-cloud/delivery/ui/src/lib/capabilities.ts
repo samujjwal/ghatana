@@ -80,7 +80,6 @@ let cachedSchema: CapabilitySchema | null = null;
 
 const RUNTIME_SCHEMA_ENDPOINTS = [
   '/api/v1/surfaces/schema',
-  '/api/v1/capabilities/schema',
 ] as const;
 
 /**
@@ -193,7 +192,7 @@ const mockSchema: CapabilitySchema = {
       type: 'EVENT_PROCESSING',
       status: 'stable',
       products: ['aep'],
-      description: 'Durable event storage and processing with fail-closed behavior',
+      description: 'Durable event storage and processing with HTTP 503 for unavailable services in production',
       metadata: {
         fail_closed: 'true',
         notes: 'Production requires durable EventCloud provider; in-memory only for dev/test with allow flag',

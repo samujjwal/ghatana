@@ -156,11 +156,13 @@ function readSessionTokenFromUrl(): string | null {
 }
 
 function isDevPreviewModeRequested(): boolean {
+  // YAPPC-P0-002: Dev-only mode must be explicitly requested via mode=dev query param
   const params = new URLSearchParams(window.location.search);
   return params.get('mode') === 'dev';
 }
 
 function isDevPreviewModeEnabled(): boolean {
+  // YAPPC-P0-002: Dev-only mode requires explicit opt-in via environment variable
   return import.meta.env.DEV && import.meta.env.VITE_FEATURE_PREVIEW_DEV_MODE === 'true';
 }
 
@@ -210,18 +212,24 @@ export default function BuilderPreviewRoute() {
   const [runtimeEnvironment, setRuntimeEnvironment] = useState<PreviewRuntimeEnvironment>(DEFAULT_PREVIEW_ENVIRONMENT);
   const pendingCorrelationRef = useRef<string | null>(null);
 
-  // Validate the server-issued preview session on mount before accepting any messages.
+  // YAPPC-P0-002: Validate the server-issued preview session on mount before accepting any messages.
+  // Explicit dev-only mode requires both mode=dev query param AND VITE_FEATURE_PREVIEW_DEV_MODE=true env var.
   useEffect(() => {
     const sessionToken = readSessionTokenFromUrl();
-    if (!sessionToken && isDevPreviewModeRequested() && isDevPreviewModeEnabled()) {
-      setSessionValid(true);
-      setSessionError(null);
-      return;
-    }
-
+    const devModeRequested = isDevPreviewModeRequested();
+    const devModeEnabled = isDevPreviewModeEnabled();
+    
+    // Allow access only if:
+    // 1. Valid session token is present, OR
+    // 2. Explicit dev-only mode is BOTH requested (mode=dev) AND enabled (env var)
     if (!sessionToken) {
+      if (devModeRequested && devModeEnabled) {
+        setSessionValid(true);
+        setSessionError(null);
+        return;
+      }
       setSessionValid(false);
-      setSessionError('No preview session token found in URL. Access denied unless explicit dev preview mode is enabled.');
+      setSessionError('No preview session token found. Access denied unless explicit dev-only mode is enabled (mode=dev&VITE_FEATURE_PREVIEW_DEV_MODE=true).');
       return;
     }
 

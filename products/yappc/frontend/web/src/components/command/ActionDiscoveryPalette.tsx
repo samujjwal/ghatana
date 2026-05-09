@@ -1,3 +1,4 @@
+import { useI18n } from '../../i18n/I18nProvider';
 /**
  * Action Discovery Palette
  *
@@ -61,6 +62,7 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
   initialQuery = '',
   loading = false,
 }) => {
+  const { t } = useI18n();
   const [query, setQuery] = useState(initialQuery);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -197,7 +199,7 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
           onKeyDown={handleKeyDown}
           role="dialog"
           aria-modal="true"
-          aria-label="Command palette"
+          aria-label={t('actionDiscovery.commandPalette')}
         >
         {/* Search Input */}
         <div className="flex items-center border-b border-border px-4 py-3">
@@ -206,8 +208,8 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search actions"
-            aria-label="Search actions"
+            placeholder={t('actionDiscovery.searchActions')}
+            aria-label={t('actionDiscovery.searchActions')}
             className="flex-1"
             data-testid="command-palette-input"
           />

@@ -19,6 +19,7 @@ import {
   FeatureFlag,
   useFeatureFlag,
 } from '../../providers/FeatureFlagProvider';
+import { useI18n } from '../../i18n/I18nProvider';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -125,6 +126,7 @@ export const AgentAdvancedSettings: React.FC<AgentAdvancedSettingsProps> = ({
   onBasicChange,
   onAdvancedChange,
 }) => {
+  const { t } = useI18n();
   const { isFeatureEnabled } = useFeatureFlag();
   const planningAvailable = isFeatureEnabled(FeatureFlag.AGENT_ORCHESTRATION);
 
@@ -262,7 +264,7 @@ export const AgentAdvancedSettings: React.FC<AgentAdvancedSettingsProps> = ({
       {/* Memory mode */}
       <div>
         <span className={labelCls}>Memory mode</span>
-        <div className="mt-1 flex gap-2 flex-wrap" role="radiogroup" aria-label="Memory mode">
+        <div className="mt-1 flex gap-2 flex-wrap" role="radiogroup" aria-label={t('agent.advanced.memoryMode')}>
           {MEMORY_MODE_OPTIONS.map((opt) => (
             <Button
               key={opt.value}
@@ -316,7 +318,7 @@ export const AgentAdvancedSettings: React.FC<AgentAdvancedSettingsProps> = ({
   return (
     <Box className="space-y-6">
       {/* Basic settings — always visible */}
-      <section aria-label="Basic agent settings">
+      <section aria-label={t('agent.basicSettings')}>
         <div className="space-y-4">
           <div>
             <label htmlFor="agent-name" className={labelCls}>
@@ -328,7 +330,7 @@ export const AgentAdvancedSettings: React.FC<AgentAdvancedSettingsProps> = ({
               className={fieldCls}
               value={basic.name}
               disabled={readOnly}
-              placeholder="My Agent"
+              placeholder={t('agent.namePlaceholder')}
               onChange={(e) => onBasicChange({ name: e.target.value })}
               data-testid="agent-name-input"
             />
@@ -344,7 +346,7 @@ export const AgentAdvancedSettings: React.FC<AgentAdvancedSettingsProps> = ({
               className={fieldCls}
               value={basic.description}
               disabled={readOnly}
-              placeholder="Describe what this agent does…"
+              placeholder={t('agent.descriptionPlaceholder')}
               onChange={(e) => onBasicChange({ description: e.target.value })}
               data-testid="agent-description-input"
             />
@@ -353,7 +355,7 @@ export const AgentAdvancedSettings: React.FC<AgentAdvancedSettingsProps> = ({
       </section>
 
       {/* Advanced settings — progressive disclosure via Accordion */}
-      <section aria-label="Advanced agent settings">
+      <section aria-label={t('agent.advancedSettings')}>
         <Accordion
           items={[
             {

@@ -18,10 +18,10 @@ class QuerySpecTest {
     void builderDefaultsToEmptyImmutableQuery() { 
         QuerySpec query = QuerySpec.builder().build(); 
 
-        assertThat(query.getFilter()).isEmpty(); 
+        assertThat(query.getFilterOptional()).isEmpty(); 
         assertThat(query.getSortFields()).isEmpty(); 
-        assertThat(query.getLimit()).isZero(); 
-        assertThat(query.getOffset()).isZero(); 
+        assertThat(query.getLimitInt()).isZero(); 
+        assertThat(query.getOffsetInt()).isZero(); 
         assertThat(query.getProjections()).isEmpty(); 
         assertThat(query.getMetadata()).isEmpty(); 
         assertThat(query.hasFilters()).isFalse(); 
@@ -56,8 +56,8 @@ class QuerySpecTest {
         assertThat(query.getSortFields()).hasSize(2); 
         assertThat(query.getSortFields().get(0).toString()).isEqualTo("createdAt desc");
         assertThat(query.getSortFields().get(1).toString()).isEqualTo("name asc");
-        assertThat(query.getLimit()).isEqualTo(50); 
-        assertThat(query.getOffset()).isEqualTo(10); 
+        assertThat(query.getLimitInt()).isEqualTo(50); 
+        assertThat(query.getOffsetInt()).isEqualTo(10); 
         assertThat(query.getProjections()).containsExactly("id", "name"); 
         assertThat(query.getTimeWindowStart()).contains(start); 
         assertThat(query.getTimeWindowEnd()).contains(end); 
@@ -82,7 +82,7 @@ class QuerySpecTest {
                 .collectionId(" ")
                 .build(); 
 
-        assertThat(query.getFilter()).isEmpty(); 
+        assertThat(query.getFilterOptional()).isEmpty(); 
         assertThat(query.getCollectionId()).isNull(); 
     }
 

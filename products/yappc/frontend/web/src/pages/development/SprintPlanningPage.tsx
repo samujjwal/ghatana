@@ -15,6 +15,7 @@ import { StoryCard } from 'yappc-ui/development-ui';
 import { Spinner as LoadingSpinner } from '@ghatana/design-system';
 import { ErrorBoundary } from '@ghatana/design-system';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -298,6 +299,7 @@ export const SprintPlanningPage: React.FC = () => {
     projectId: string;
     sprintId: string;
   }>();
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   // State
@@ -463,9 +465,9 @@ export const SprintPlanningPage: React.FC = () => {
     return (
       <div className="sprint-planning-page sprint-planning-page--error">
         <div className="error-container">
-          <h2>Failed to load planning session</h2>
+          <h2>{t('sprintPlanning.loadError')}</h2>
           <p>{error || 'Session not found'}</p>
-          <NativeButton onClick={() => window.location.reload()}>Retry</NativeButton>
+          <NativeButton onClick={() => window.location.reload()}>{t('sprintPlanning.retry')}</NativeButton>
         </div>
       </div>
     );
@@ -521,7 +523,7 @@ export const SprintPlanningPage: React.FC = () => {
             <div className="story-list">
               {session.backlogStories.length === 0 ? (
                 <div className="empty-list">
-                  <p>No stories in backlog</p>
+                  <p>{t('sprintPlanning.noStoriesBacklog')}</p>
                 </div>
               ) : (
                 session.backlogStories.map((story) => (
@@ -566,7 +568,7 @@ export const SprintPlanningPage: React.FC = () => {
             <div className="story-list">
               {session.plannedStories.length === 0 ? (
                 <div className="empty-list drop-zone">
-                  <p>Drag stories here to add to sprint</p>
+                  <p>{t('sprintPlanning.dragStories')}</p>
                 </div>
               ) : (
                 session.plannedStories.map((story) => (
@@ -612,7 +614,7 @@ export const SprintPlanningPage: React.FC = () => {
                 <p className="story-description">{selectedStory.description}</p>
                 {selectedStory.acceptanceCriteria.length > 0 && (
                   <div className="acceptance-criteria">
-                    <h4>Acceptance Criteria</h4>
+                    <h4>{t('sprintPlanning.acceptanceCriteria')}</h4>
                     <ul>
                       {selectedStory.acceptanceCriteria.map((ac, i) => (
                         <li key={i}>{ac}</li>
@@ -621,7 +623,7 @@ export const SprintPlanningPage: React.FC = () => {
                   </div>
                 )}
                 <div className="pointing-section">
-                  <h4>Story Points</h4>
+                  <h4>{t('sprintPlanning.storyPoints')}</h4>
                   <p className="pointing-instruction">
                     {selectedStory.points !== undefined
                       ? `Currently estimated at ${selectedStory.points} points`

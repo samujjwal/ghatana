@@ -12,6 +12,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { Button, Card, CardContent } from '@ghatana/design-system';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export type HealthStatus = 'healthy' | 'degraded' | 'down' | 'unknown';
 
@@ -137,6 +138,7 @@ export const ObserveSignalsPanel: React.FC<ObserveSignalsPanelProps> = ({
   isRefreshing = false,
   className = '',
 }) => {
+  const { t } = useI18n();
   const [showResolved, setShowResolved] = useState(false);
 
   const activeIncidents = incidents.filter((i) => i.status !== 'resolved');
@@ -153,7 +155,7 @@ export const ObserveSignalsPanel: React.FC<ObserveSignalsPanelProps> = ({
   return (
     <section
       className={`observe-signals-panel space-y-6 ${className}`}
-      aria-label="Observe signals"
+      aria-label={t('phase.observe.panel')}
       data-testid="observe-signals-panel"
     >
       {/* Health Header */}
@@ -189,7 +191,7 @@ export const ObserveSignalsPanel: React.FC<ObserveSignalsPanelProps> = ({
                 size="sm"
                 onClick={onRefresh}
                 disabled={isRefreshing}
-                aria-label="Refresh signals"
+                aria-label={t('phase.observe.refreshSignals')}
               >
                 {isRefreshing ? 'Refreshing…' : 'Refresh'}
               </Button>
@@ -200,7 +202,7 @@ export const ObserveSignalsPanel: React.FC<ObserveSignalsPanelProps> = ({
 
       {/* Metrics */}
       {metrics.length > 0 && (
-        <section aria-label="Key metrics">
+        <section aria-label={t('phase.observe.keyMetrics')}>
           <h4 className="text-sm font-medium text-fg mb-3">
             Metrics
             {breachedMetrics.length > 0 && (
@@ -249,7 +251,7 @@ export const ObserveSignalsPanel: React.FC<ObserveSignalsPanelProps> = ({
       )}
 
       {/* Incidents */}
-      <section aria-label="Incidents">
+      <section aria-label={t('phase.observe.incidents')}>
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-medium text-fg">
             Incidents
@@ -329,7 +331,7 @@ export const ObserveSignalsPanel: React.FC<ObserveSignalsPanelProps> = ({
 
       {/* Trace / Log Links */}
       {traceLinks.length > 0 && (
-        <section aria-label="Traces, logs, and dashboards">
+        <section aria-label={t('phase.observe.tracesLogsDashboards')}>
           <h4 className="text-sm font-medium text-fg mb-3">Observability links</h4>
           <div className="space-y-1">
             {traceLinks.map((link) => (

@@ -198,8 +198,7 @@ POST /api/v1/context/tickets/rag
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/api/v1/surfaces` | Runtime Truth Registry target surface |
-| GET | `/api/v1/capabilities` | Compatibility runtime truth endpoint; migrate callers to `/api/v1/surfaces` (retirement tracked in `docs/api/CAPABILITIES_ENDPOINT_RETIREMENT_ISSUE.md`) |
+| GET | `/api/v1/surfaces` | Runtime Truth Registry target surface (DC-P1.12: compatibility endpoint /api/v1/capabilities removed) |
 | PUT | `/api/v1/autonomy/level` | Set global autonomy level |
 | GET | `/api/v1/autonomy/level` | Get global autonomy level |
 | GET | `/api/v1/autonomy/domains` | List autonomy domains |
@@ -241,15 +240,9 @@ POST /api/v1/context/tickets/rag
 - Unsupported optional subsystem: `501` or `503` depending on handler behavior
 - Successful mutations usually return JSON with IDs, timestamps, and request correlation fields
 
-## Runtime Truth Surface Migration
+## Runtime Truth Surface
 
-The canonical Runtime Truth endpoint is `/api/v1/surfaces`. The older `/api/v1/capabilities` endpoint remains available for backwards compatibility but is scheduled for retirement — see `docs/api/CAPABILITIES_ENDPOINT_RETIREMENT_ISSUE.md`.
-
-**Migration Guide:**
-
-| Old Usage | New Usage |
-| --- | --- |
-| `GET /api/v1/capabilities` | `GET /api/v1/surfaces` |
+The canonical Runtime Truth endpoint is `/api/v1/surfaces`. DC-P1.12: The compatibility endpoint `/api/v1/capabilities` has been removed; all callers must use `/api/v1/surfaces`.
 
 The `/api/v1/surfaces` response includes the full plane/surface map as registered by the Runtime Truth Registry at startup. Callers should treat the surface list as read-only and authoritative for surface discovery.
 

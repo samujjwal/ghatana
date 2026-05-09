@@ -66,7 +66,8 @@ export interface ExecutionLog {
   timestamp: string;
   workflowId?: string;
   datasetId: string;
-  status: 'SUCCESS' | 'FAILED' | 'RUNNING';
+  // DC-32: Canonical execution status aligned with OperatorState
+  status: 'CREATED' | 'INITIALIZED' | 'RUNNING' | 'STOPPED' | 'FAILED';
   duration: number;
   recordsProcessed?: number;
   error?: string;

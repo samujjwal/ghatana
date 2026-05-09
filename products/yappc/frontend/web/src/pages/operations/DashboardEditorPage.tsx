@@ -5,6 +5,7 @@ import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
+import { useI18n } from '../../i18n/I18nProvider';
 
 type WidgetType = 'chart' | 'metric' | 'table' | 'log' | 'status';
 
@@ -52,6 +53,7 @@ const GRID_COLS = 12;
 const DashboardEditorPage: React.FC = () => {
   const { dashboardId } = useParams<{ dashboardId: string }>();
   const queryClient = useQueryClient();
+  const { t } = useI18n();
 
   const { data: savedDashboard, isLoading, error } = useQuery<DashboardData>({
     queryKey: ['dashboard-editor', dashboardId],
@@ -198,7 +200,7 @@ const DashboardEditorPage: React.FC = () => {
             fullWidth
             size="sm"
             className="bg-surface border-border rounded-lg px-3 py-2 text-sm text-fg-muted placeholder-zinc-500 focus:border-info-border"
-            placeholder="Dashboard name…"
+            placeholder={t('dashboardEditor.namePlaceholder')}
           />
         </div>
         <div className="flex gap-2 shrink-0">
@@ -290,7 +292,7 @@ const DashboardEditorPage: React.FC = () => {
                   size="sm"
                   onClick={() => removeWidget(widget.id)}
                   className="text-fg-muted hover:text-destructive transition-colors"
-                  aria-label="Remove widget"
+                  aria-label={t('dashboardEditor.removeWidget')}
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

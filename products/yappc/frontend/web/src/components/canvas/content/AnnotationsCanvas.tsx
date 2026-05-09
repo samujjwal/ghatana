@@ -20,6 +20,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface Annotation {
     id: string;
@@ -237,6 +238,7 @@ const AnnotationCard = ({
 };
 
 export const AnnotationsCanvas = () => {
+    const { t } = useI18n();
     const [annotations] = useState<Annotation[]>(MOCK_ANNOTATIONS);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<Annotation['type'] | 'all'>('all');
@@ -312,7 +314,7 @@ export const AnnotationsCanvas = () => {
                     <Box className="flex gap-4 items-center mb-2">
                         <TextField
                             size="small"
-                            placeholder="Search annotations..."
+                            placeholder={t('canvas.annotations.search')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="flex-1"

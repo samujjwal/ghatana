@@ -16,6 +16,7 @@ import type { ProblemStatementPayload } from '@/shared/types/lifecycle-artifacts
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface ProblemStatementEditorProps {
     initialData?: Partial<ProblemStatementPayload>;
@@ -69,6 +70,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
     onCancel,
     isSubmitting = false,
 }) => {
+    const { t } = useI18n();
     const [data, setData] = useState<ProblemStatementFormData>({
         ...defaultData,
         ...initialData,
@@ -202,7 +204,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                     id="problem-statement"
                     value={data.problem}
                     onChange={(e) => updateField('problem', e.target.value)}
-                    placeholder="What is the core problem we are trying to solve?"
+                    placeholder={t('intent.problem.statementPlaceholder')}
                     rows={4}
                     className={`w-full px-3 py-2 border rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none ${errors.problem ? 'border-error-color' : 'border-divider'
                         }`}
@@ -226,7 +228,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                     type="text"
                     value={data.who}
                     onChange={(e) => updateField('who', e.target.value)}
-                    placeholder="e.g., Small business owners who manage remote teams"
+                    placeholder={t('intent.problem.whoPlaceholder')}
                     className={`w-full px-3 py-2 border rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 ${errors.who ? 'border-error-color' : 'border-divider'
                         }`}
                     disabled={isSubmitting}
@@ -249,7 +251,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                     type="text"
                     value={data.when}
                     onChange={(e) => updateField('when', e.target.value)}
-                    placeholder="e.g., During quarterly planning cycles"
+                    placeholder={t('intent.problem.whenPlaceholder')}
                     className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
                     disabled={isSubmitting}
                 />
@@ -267,7 +269,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                     id="problem-whynow"
                     value={data.whyNow}
                     onChange={(e) => updateField('whyNow', e.target.value)}
-                    placeholder="What makes this problem urgent or timely?"
+                    placeholder={t('intent.problem.whyNowPlaceholder')}
                     rows={3}
                     className={`w-full px-3 py-2 border rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none ${errors.whyNow ? 'border-error-color' : 'border-divider'
                         }`}
@@ -294,7 +296,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                                     type="text"
                                     value={metric.name}
                                     onChange={(e) => updateMetric(index, { name: e.target.value })}
-                                    placeholder="Metric name (e.g., Time to complete task)"
+                                    placeholder={t('intent.problem.metricNamePlaceholder')}
                                     className="flex-1 px-3 py-2 border border-divider rounded-lg bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
                                     disabled={isSubmitting}
                                 />
@@ -305,7 +307,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                                         variant="ghost"
                                         size="small"
                                         className="p-2 text-text-secondary hover:text-error-color transition-colors"
-                                        aria-label="Remove metric"
+                                        aria-label={t('intent.problem.removeMetric')}
                                         disabled={isSubmitting}
                                     >
                                         <Remove className="w-5 h-5" />
@@ -319,7 +321,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                                         type="text"
                                         value={metric.target}
                                         onChange={(e) => updateMetric(index, { target: e.target.value })}
-                                        placeholder="e.g., < 5 minutes"
+                                        placeholder={t('intent.problem.metricTargetPlaceholder')}
                                         className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
                                         disabled={isSubmitting}
                                     />
@@ -330,7 +332,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                                         type="text"
                                         value={metric.current || ''}
                                         onChange={(e) => updateMetric(index, { current: e.target.value })}
-                                        placeholder="e.g., 30 minutes"
+                                        placeholder={t('intent.problem.metricCurrentPlaceholder')}
                                         className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
                                         disabled={isSubmitting}
                                     />
@@ -366,7 +368,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                                 type="text"
                                 value={nonGoal}
                                 onChange={(e) => updateNonGoal(index, e.target.value)}
-                                placeholder="e.g., We are not building a mobile app in v1"
+                                placeholder={t('intent.problem.nonGoalPlaceholder')}
                                 className="flex-1 px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 disabled={isSubmitting}
                             />
@@ -377,7 +379,7 @@ export const ProblemStatementEditor: React.FC<ProblemStatementEditorProps> = ({
                                     variant="ghost"
                                     size="small"
                                     className="p-2 text-text-secondary hover:text-error-color transition-colors"
-                                    aria-label="Remove non-goal"
+                                    aria-label={t('intent.problem.removeNonGoal')}
                                     disabled={isSubmitting}
                                 >
                                     <Remove className="w-5 h-5" />

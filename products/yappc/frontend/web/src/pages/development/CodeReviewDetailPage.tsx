@@ -459,6 +459,7 @@ export const CodeReviewDetailPage: React.FC = () => {
     prId: string;
   }>();
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   // State
   const [pr, setPr] = useState<PullRequest | null>(null);

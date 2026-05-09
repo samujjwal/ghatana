@@ -21,6 +21,7 @@ import {
     type ArtifactTemplate,
     type ArtifactType,
 } from './artifact-templates';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 // Re-export for backward compatibility
 export type { ArtifactTemplate, ArtifactType };
@@ -31,6 +32,7 @@ export interface ArtifactPaletteProps {
 }
 
 export const ArtifactPalette: React.FC<ArtifactPaletteProps> = ({ onDragStart, onQuickCreate }) => {
+    const { t } = useI18n();
     const [expandedPhases, setExpandedPhases] = React.useState<Set<LifecyclePhase>>(
         new Set([LifecyclePhase.INTENT, LifecyclePhase.SHAPE])
     );
@@ -62,7 +64,7 @@ export const ArtifactPalette: React.FC<ArtifactPaletteProps> = ({ onDragStart, o
                     Artifacts Library
                 </Typography>
                 <Tooltip title="Drag to canvas or click to quick create" enterDelay={TIMING.tooltipDelay}>
-                    <IconButton size="sm" aria-label="Artifact palette info" className="p-1">
+                    <IconButton size="sm" aria-label={t('canvas.artifactPalette.info')} className="p-1">
                         <InfoIcon className="text-base" />
                     </IconButton>
                 </Tooltip>

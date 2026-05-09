@@ -82,7 +82,8 @@ describe('GlobalSearch', () => {
         return [];
       });
 
-      render(<GlobalSearch placeholder="Custom search..." />);
+      const customPlaceholder = 'Custom search...';
+      render(<GlobalSearch placeholder={customPlaceholder} />);
       expect(screen.getByPlaceholderText('Custom search...')).toBeInTheDocument();
     });
 

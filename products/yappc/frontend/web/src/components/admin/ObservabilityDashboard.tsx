@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -189,6 +190,7 @@ export const ObservabilityDashboard: React.FC<ObservabilityDashboardProps> = ({
   onRefresh,
   className = '',
 }) => {
+  const { t } = useI18n();
   const overallStatus: HealthStatus = metrics.some((m) => m.status === 'down')
     ? 'down'
     : metrics.some((m) => m.status === 'degraded')
@@ -196,7 +198,7 @@ export const ObservabilityDashboard: React.FC<ObservabilityDashboardProps> = ({
     : 'healthy';
 
   return (
-    <Box className={cn('space-y-6', className)} aria-label="Observability Dashboard">
+    <Box className={cn('space-y-6', className)} aria-label={t('admin.observability.dashboard')}>
       {/* Header */}
       <Box className="flex items-center justify-between">
         <Box className="flex items-center gap-2">
@@ -218,7 +220,7 @@ export const ObservabilityDashboard: React.FC<ObservabilityDashboardProps> = ({
             disabled={isLoading}
             variant="outline"
             size="small"
-            aria-label="Refresh metrics"
+            aria-label={t('admin.observability.refresh')}
             className="flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm text-fg-muted hover:bg-surface-muted disabled:opacity-50"
           >
             <Zap className="h-3 w-3" />
@@ -289,7 +291,7 @@ export const ObservabilityDashboard: React.FC<ObservabilityDashboardProps> = ({
               href={link.href}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label={`Open ${link.label}`}
+              aria-label={t('admin.observability.openLink', { label: link.label })}
               className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm text-fg hover:border-info-border hover:bg-info-bg hover:text-info-color transition-colors"
             >
               <Box>

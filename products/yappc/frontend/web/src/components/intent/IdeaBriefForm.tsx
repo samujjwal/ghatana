@@ -16,6 +16,7 @@ import type { IdeaBriefPayload } from '@/shared/types/lifecycle-artifacts';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface IdeaBriefFormProps {
     initialData?: Partial<IdeaBriefPayload>;
@@ -44,6 +45,7 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
     onCancel,
     isSubmitting = false,
 }) => {
+    const { t } = useI18n();
     const [data, setData] = useState<IdeaBriefPayload>({
         ...defaultData,
         ...initialData,
@@ -163,7 +165,7 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
                     type="text"
                     value={data.title}
                     onChange={(e) => updateField('title', e.target.value)}
-                    placeholder="e.g., Smart Task Manager"
+                    placeholder={t('intent.idea.titlePlaceholder')}
                     className={`w-full px-3 py-2 border rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 ${errors.title ? 'border-error-color' : 'border-divider'
                         }`}
                     disabled={isSubmitting}
@@ -186,7 +188,7 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
                     type="text"
                     value={data.oneLiner}
                     onChange={(e) => updateField('oneLiner', e.target.value)}
-                    placeholder="A brief description of what this idea solves"
+                    placeholder={t('intent.idea.oneLinerPlaceholder')}
                     className={`w-full px-3 py-2 border rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 ${errors.oneLiner ? 'border-error-color' : 'border-divider'
                         }`}
                     disabled={isSubmitting}
@@ -208,7 +210,7 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
                                 type="text"
                                 value={user}
                                 onChange={(e) => updateArrayItem('targetUsers', index, e.target.value)}
-                                placeholder="e.g., Product managers, Developers"
+                                placeholder={t('intent.idea.targetUserPlaceholder')}
                                 className="flex-1 px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 disabled={isSubmitting}
                             />
@@ -219,7 +221,7 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
                                     variant="ghost"
                                     size="small"
                                     className="p-2 text-text-secondary hover:text-error-color transition-colors"
-                                    aria-label="Remove target user"
+                                    aria-label={t('intent.idea.removeTargetUser')}
                                     disabled={isSubmitting}
                                 >
                                     <Remove className="w-5 h-5" />
@@ -255,7 +257,7 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
                     id="idea-value"
                     value={data.businessValue}
                     onChange={(e) => updateField('businessValue', e.target.value)}
-                    placeholder="What value does this bring to users and the business?"
+                    placeholder={t('intent.idea.businessValuePlaceholder')}
                     rows={3}
                     className={`w-full px-3 py-2 border rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none ${errors.businessValue ? 'border-error-color' : 'border-divider'
                         }`}
@@ -278,7 +280,7 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
                                 type="text"
                                 value={constraint}
                                 onChange={(e) => updateArrayItem('constraints', index, e.target.value)}
-                                placeholder="e.g., Must work offline, Budget < $10k"
+                                placeholder={t('intent.idea.constraintPlaceholder')}
                                 className="flex-1 px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 disabled={isSubmitting}
                             />
@@ -289,7 +291,7 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
                                     variant="ghost"
                                     size="small"
                                     className="p-2 text-text-secondary hover:text-error-color transition-colors"
-                                    aria-label="Remove constraint"
+                                    aria-label={t('intent.idea.removeConstraint')}
                                     disabled={isSubmitting}
                                 >
                                     <Remove className="w-5 h-5" />
@@ -322,7 +324,7 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
                                 type="text"
                                 value={assumption}
                                 onChange={(e) => updateArrayItem('assumptions', index, e.target.value)}
-                                placeholder="e.g., Users have internet access"
+                                placeholder={t('intent.idea.assumptionPlaceholder')}
                                 className="flex-1 px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 disabled={isSubmitting}
                             />
@@ -333,7 +335,7 @@ export const IdeaBriefForm: React.FC<IdeaBriefFormProps> = ({
                                     variant="ghost"
                                     size="small"
                                     className="p-2 text-text-secondary hover:text-error-color transition-colors"
-                                    aria-label="Remove assumption"
+                                    aria-label={t('intent.idea.removeAssumption')}
                                     disabled={isSubmitting}
                                 >
                                     <Remove className="w-5 h-5" />

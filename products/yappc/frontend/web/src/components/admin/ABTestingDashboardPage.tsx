@@ -33,6 +33,7 @@ import {
   type Experiment,
   type CreateVariantRequest,
 } from '../../services/admin/abTestingApi';
+import { useI18n } from '../../i18n/I18nProvider';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
@@ -42,6 +43,7 @@ interface ABTestingDashboardPageProps {
 }
 
 export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProps) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
 
   const [selectedExperiment, setSelectedExperiment] = useState<Experiment | null>(null);
@@ -172,7 +174,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
               onClick={() => void refetch()}
               disabled={isLoading}
               className="inline-flex items-center gap-1.5 px-3 py-2 bg-surface hover:bg-surface-muted text-fg-muted text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
-              title="Refresh experiments"
+              title={t('admin.ab.refreshExperiments')}
               variant="ghost"
               size="sm"
             >
@@ -352,7 +354,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                 className="p-1 rounded hover:bg-surface text-fg-muted hover:text-fg-muted"
                 variant="ghost"
                 size="sm"
-                aria-label="Close experiment details"
+                aria-label={t('admin.ab.closeExperimentDetails')}
               >
                 <CloseIcon size={20} />
               </Button>
@@ -439,7 +441,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                 className="p-1 rounded hover:bg-surface text-fg-muted hover:text-fg-muted"
                 variant="ghost"
                 size="sm"
-                aria-label="Close promote dialog"
+                aria-label={t('admin.ab.closePromoteDialog')}
               >
                 <CloseIcon size={20} />
               </Button>
@@ -478,7 +480,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                   type="text"
                   value={promoteReason}
                   onChange={(e) => setPromoteReason(e.target.value)}
-                  placeholder="Why are you promoting this variant?"
+                  placeholder={t('admin.ab.promoteReasonPlaceholder')}
                   className="w-full px-3 py-2 bg-surface border border-border text-fg-muted text-sm rounded-lg placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-purple-500"
                   fullWidth
                 />
@@ -525,7 +527,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                 className="p-1 rounded hover:bg-surface text-fg-muted hover:text-fg-muted"
                 variant="ghost"
                 size="sm"
-                aria-label="Close create experiment dialog"
+                aria-label={t('admin.ab.closeCreateExperimentDialog')}
               >
                 <CloseIcon size={20} />
               </Button>
@@ -540,7 +542,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                   type="text"
                   value={newExperimentName}
                   onChange={(e) => setNewExperimentName(e.target.value)}
-                  placeholder="e.g. Prompt Template A/B Test"
+                  placeholder={t('admin.ab.experimentNamePlaceholder')}
                   className="w-full px-3 py-2 bg-surface border border-border text-fg-muted text-sm rounded-lg placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   fullWidth
                 />
@@ -553,7 +555,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                   id="exp-desc"
                   value={newExperimentDescription}
                   onChange={(e) => setNewExperimentDescription(e.target.value)}
-                  placeholder="What are you testing?"
+                  placeholder={t('admin.ab.experimentDescriptionPlaceholder')}
                   rows={3}
                   className="w-full px-3 py-2 bg-surface border border-border text-fg-muted text-sm rounded-lg placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                   resize="none"
@@ -569,7 +571,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                   type="text"
                   value={newExperimentPromptName}
                   onChange={(e) => setNewExperimentPromptName(e.target.value)}
-                  placeholder="e.g. requirement-gen-v1"
+                  placeholder={t('admin.ab.promptNamePlaceholder')}
                   className="w-full px-3 py-2 bg-surface border border-border text-fg-muted text-sm rounded-lg placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   fullWidth
                 />
@@ -583,7 +585,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                   type="text"
                   value={newExperimentVariantA}
                   onChange={(e) => setNewExperimentVariantA(e.target.value)}
-                  placeholder="e.g. template-a"
+                  placeholder={t('admin.ab.variantAPlaceholder')}
                   className="w-full px-3 py-2 bg-surface border border-border text-fg-muted text-sm rounded-lg placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   fullWidth
                 />
@@ -597,7 +599,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                   type="text"
                   value={newExperimentVariantB}
                   onChange={(e) => setNewExperimentVariantB(e.target.value)}
-                  placeholder="e.g. template-b"
+                  placeholder={t('admin.ab.variantBPlaceholder')}
                   className="w-full px-3 py-2 bg-surface border border-border text-fg-muted text-sm rounded-lg placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   fullWidth
                 />

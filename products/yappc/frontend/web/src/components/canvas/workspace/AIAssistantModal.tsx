@@ -13,6 +13,7 @@
 import * as React from 'react';
 import { Dialog, DialogTitle, DialogContent, TextField, Box, Typography, Chip, Stack, IconButton, Spinner as CircularProgress, Surface as Paper, Divider } from '@ghatana/design-system';
 import { X as CloseIcon, Sparkles as AIIcon, Lightbulb as LightbulbIcon, AlertTriangle as WarningIcon, TrendingUp as TrendingUpIcon, CheckCircle as CheckCircleIcon } from 'lucide-react';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 export interface AISuggestion {
     id: string;
@@ -62,6 +63,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
     context,
     onSubmit,
 }) => {
+    const { t } = useI18n();
     const [query, setQuery] = React.useState('');
     const [isLoading, setIsLoading] = React.useState(false);
     const [suggestions, setSuggestions] = React.useState<AISuggestion[]>([]);
@@ -168,7 +170,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
                 <Box className="flex items-center justify-between">
                     <Box className="flex items-center gap-2">
                         <AIIcon tone="primary" />
-                        <Typography as="h6">Guided Assistant</Typography>
+                        <Typography as="h6">{t('canvas.aiAssistant.title')}</Typography>
                         <Chip
                             label="⌘K"
                             size="sm"
@@ -188,7 +190,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
                     <TextField
                         inputRef={inputRef}
                         fullWidth
-                        placeholder="Ask anything about your project..."
+                        placeholder={t('canvas.aiAssistant.placeholder')}
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         disabled={isLoading}

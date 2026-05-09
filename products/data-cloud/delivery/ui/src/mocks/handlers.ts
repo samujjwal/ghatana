@@ -897,26 +897,8 @@ const supportHandlers = [
     });
   }),
 
-  http.get(`${BASE}/capabilities`, async () => {
-    await delay(SIMULATED_DELAY_MS);
-    const legacyPath = `${BASE}/capabilities`;
-    const canonicalPath = `${BASE}/surfaces`;
-    warnDeprecatedRoute(legacyPath, canonicalPath);
-    return HttpResponse.json({
-      data: {
-        capabilities: {},
-        generatedAt: new Date().toISOString(),
-      },
-      meta: {
-        requestId: 'req-capabilities-msw',
-        tenantId: MOCK_TENANT_ID,
-        timestamp: new Date().toISOString(),
-        apiVersion: 'v1',
-      },
-    }, {
-      headers: buildDeprecatedRouteHeaders(legacyPath, canonicalPath, canonicalPath),
-    });
-  }),
+  // DC-P1.12: Removed /capabilities and /capabilities/schema handlers - compatibility aliases no longer supported
+  // Use canonical /surfaces and /surfaces/schema endpoints only
 
   http.get(`${BASE}/surfaces/schema`, async () => {
     await delay(SIMULATED_DELAY_MS);
@@ -931,23 +913,8 @@ const supportHandlers = [
     });
   }),
 
-  http.get(`${BASE}/capabilities/schema`, async () => {
-    await delay(SIMULATED_DELAY_MS);
-    const legacyPath = `${BASE}/capabilities/schema`;
-    const canonicalPath = `${BASE}/surfaces/schema`;
-    warnDeprecatedRoute(legacyPath, canonicalPath);
-    return HttpResponse.json({
-      data: runtimeCapabilitySchema,
-      meta: {
-        requestId: 'req-capabilities-schema-msw',
-        tenantId: MOCK_TENANT_ID,
-        timestamp: new Date().toISOString(),
-        apiVersion: 'v1',
-      },
-    }, {
-      headers: buildDeprecatedRouteHeaders(legacyPath, canonicalPath, canonicalPath),
-    });
-  }),
+  // DC-P1.12: Removed /capabilities/schema handler - compatibility alias no longer supported
+  // Use canonical /surfaces/schema endpoint only
 
   http.post(`${BASE}/analytics/query`, async () => {
     await delay(SIMULATED_DELAY_MS);

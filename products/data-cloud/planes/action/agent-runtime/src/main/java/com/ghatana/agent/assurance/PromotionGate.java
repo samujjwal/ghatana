@@ -17,6 +17,9 @@ import java.util.Objects;
  * <p>Gates enforce a minimum bar for agent quality through evaluation packs,
  * shadow testing, and human review sign-off.
  *
+ * <p><b>DC-33:</b> Rejects releases with stale audit/TODO target references to ensure
+ * all tracked items remain current before promotion.
+ *
  * @doc.type record
  * @doc.purpose Promotion gate for controlled agent deployment
  * @doc.layer agent-runtime
@@ -42,7 +45,10 @@ public record PromotionGate(
         @NotNull java.time.Duration shadowTestDuration,
 
         /** Maximum allowed regression from previous version. */
-        double maxRegressionPercent
+        double maxRegressionPercent,
+
+        // DC-33: Whether to reject releases with stale audit/TODO refs
+        boolean rejectStaleRefs
 ) {
 
     /**
@@ -88,6 +94,22 @@ public record PromotionGate(
                                 result.passRate() * 100,
                                 minimumPassRate * 100),
                         Instant.now());
+            }
+        }
+
+        // DC-33: Reject if any results have stale audit/TODO references
+        if (rejectStaleRefs) {
+            for (EvaluationResult result : results) {
+                if (result.hasStaleRefs()) {
+                    return new PromotionDecision(gateId, targetStage, false,
+                            String.format("Pack %s has %d stale reference(s) (%d audit, %d TODO). " +
+                                    "Resolve all stale audit/TODO targets before promotion.",
+                                    result.packId(),
+                                    result.totalStaleRefCount(),
+                                    result.staleAuditTargetRefs().size(),
+                                    result.staleTodoTargetRefs().size()),
+                            Instant.now());
+                }
             }
         }
 

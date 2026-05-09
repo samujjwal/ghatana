@@ -35,6 +35,7 @@ import {
   activeProjectAtom,
 } from '../../state/atoms';
 import { ROUTES } from '../../router/paths';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // =============================================================================
 // Types
@@ -228,7 +229,7 @@ const SprintBurndownChart: React.FC<{
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
         className="w-full h-32"
-        aria-label="Sprint burndown chart"
+        aria-label={t('devDashboard.burndownChart')}
       >
         {/* Grid lines */}
         {[0, 25, 50, 75, 100].map((pct) => (
@@ -314,6 +315,7 @@ const SprintBurndownChart: React.FC<{
 
 const DevDashboardPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
+  const { t } = useI18n();
   const activeSprint = useAtomValue(activeSprintAtom);
   const stories = useAtomValue(sprintStoriesAtom);
   const project = useAtomValue(activeProjectAtom);
@@ -405,7 +407,7 @@ const DevDashboardPage: React.FC = () => {
         <h1 className="text-2xl font-bold text-white mb-2">Development</h1>
         <p className="text-fg-muted">
           {activeSprint?.name || 'No active sprint'} • {activeSprint?.daysRemaining || 0} days
-          remaining
+            remaining
         </p>
       </div>
 

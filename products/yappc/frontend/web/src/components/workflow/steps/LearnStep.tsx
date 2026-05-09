@@ -17,6 +17,7 @@ import {
     draftStepDataAtom,
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface Lesson {
     id: string;
@@ -59,6 +60,7 @@ const ROOT_CAUSE_CATEGORIES: { value: RootCause['category']; label: string; icon
 // ============================================================================
 
 export function LearnStep() {
+    const { t } = useI18n();
     const workflow = useAtomValue(currentWorkflowAtom);
     const draftData = useAtomValue(draftStepDataAtom) as LearnStepData | null;
     const updateDraft = useSetAtom(updateDraftStepDataAtom);
@@ -180,7 +182,7 @@ export function LearnStep() {
                         <TextField
                             fullWidth
                             size="sm"
-                            placeholder="Describe the lesson..."
+                            placeholder={t('workflow.learn.lessonPlaceholder')}
                             value={newLessonDesc}
                             onChange={(e) => setNewLessonDesc(e.target.value)}
                         />
@@ -271,7 +273,7 @@ export function LearnStep() {
                         <TextField
                             fullWidth
                             size="sm"
-                            placeholder="Root cause description"
+                            placeholder={t('workflow.learn.rootCauseDescriptionPlaceholder')}
                             value={newRootCauseDesc}
                             onChange={(e) => setNewRootCauseDesc(e.target.value)}
                         />
@@ -285,7 +287,7 @@ export function LearnStep() {
                         <Box className="flex gap-2 mb-2">
                             <TextField
                                 size="small"
-                                placeholder="Add factor..."
+                                placeholder={t('workflow.learn.factorPlaceholder')}
                                 value={newFactor}
                                 onChange={(e) => setNewFactor(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && handleAddFactor()}

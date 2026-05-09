@@ -37,7 +37,7 @@ describe('route truth matrix', () => {
     expect(globalSearchSource).toContain("id: 'nav-trust'");
   });
 
-  it('keeps preview routes fail-closed behind RuntimeCapabilityRouteGate', () => {
+  it('keeps preview routes behind RuntimeCapabilityRouteGate with HTTP 503 for unavailable services', () => {
     // Preview routes are gated via RoleProtectedRoute + RuntimeCapabilityRouteGate
     // (supercedes the old isXxxSurfaceEnabled() ternary pattern)
     expect(routesSource).toContain("path: 'alerts'");

@@ -4,6 +4,7 @@ import type { OperationState } from '@ghatana/design-system';
 import { cn } from '@/lib/utils';
 import { AITypeChip, type AITypeChipProps } from './AITypeChip';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 /**
  * AI Status Bar component.
@@ -94,6 +95,7 @@ export function AIStatusBar({
   aiRationale,
   aiSources,
 }: AIStatusBarProps) {
+  const { t } = useI18n();
   const [showPhaseSelector, setShowPhaseSelector] = React.useState(false);
   const { setCurrentPhase } = useAIStatusBar();
   const prefersReducedMotion = React.useMemo(
@@ -113,7 +115,7 @@ export function AIStatusBar({
   return (
     <div
       data-testid="ai-status-bar"
-      aria-label="AI Status and next actions"
+      aria-label={t('aiStatus.barAria')}
       className={cn(
         'fixed bottom-0 left-0 right-0 h-12 bg-white dark:bg-surface',
         'border-t border-border dark:border-border',
@@ -151,7 +153,7 @@ export function AIStatusBar({
           className="sr-only"
           onClick={() => setShowPhaseSelector((v) => !v)}
           aria-haspopup="listbox"
-          aria-label="Select phase"
+          aria-label={t('aiStatus.selectPhase')}
         >
           {currentPhase}
         </Button>

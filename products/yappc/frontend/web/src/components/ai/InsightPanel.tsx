@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import type { InsightStreamItem } from '@/hooks/useInsightStream';
 import { ConfidenceBadge } from './ConfidenceBadge';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface InsightPanelProps {
   open: boolean;
@@ -33,6 +34,7 @@ export function InsightPanel({
   onDismiss,
   onMarkAllRead,
 }: InsightPanelProps) {
+  const { t } = useI18n();
   if (!open) {
     return null;
   }
@@ -41,7 +43,7 @@ export function InsightPanel({
     <aside
       className="fixed right-0 top-14 z-40 flex h-[calc(100vh-3.5rem)] w-full max-w-md flex-col border-l border-divider bg-bg-paper shadow-2xl"
       role="complementary"
-      aria-label="Insights panel"
+      aria-label={t('ai.insight.panelLabel')}
       data-testid="insight-panel"
     >
       <div className="flex items-center justify-between border-b border-divider px-5 py-4">
@@ -70,7 +72,7 @@ export function InsightPanel({
             size="sm"
             onClick={onClose}
             className="rounded-md p-1 text-text-secondary hover:bg-grey-100"
-            aria-label="Close insights panel"
+            aria-label={t('ai.insights.closePanel')}
           >
             <X className="h-4 w-4" />
           </Button>
@@ -133,7 +135,7 @@ export function InsightPanel({
                     size="sm"
                     onClick={() => onDismiss(insight.id)}
                     className="rounded-md p-1 text-text-secondary hover:bg-grey-100"
-                    aria-label={`Dismiss ${insight.title}`}
+                    aria-label={t('ai.insights.dismiss', { title: insight.title })}
                   >
                     <X className="h-4 w-4" />
                   </Button>

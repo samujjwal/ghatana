@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useState, useRef } from 'react';
+import { useI18n } from '../../i18n/I18nProvider';
 
 const palette = {
     primary: { '500': '#3b82f6' },
@@ -53,6 +54,7 @@ export function RouteProgressBar({
     color = palette.primary['500'],
     simulationDuration = 1000,
 }: RouteProgressBarProps) {
+     const { t } = useI18n();
     const [progress, setProgress] = useState(0);
     const [isVisible, setIsVisible] = useState(false);
     const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -121,7 +123,7 @@ export function RouteProgressBar({
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(progress)}
-            aria-label="Page loading"
+                aria-label={t('route.pageLoading')}
             style={{
                 position: 'fixed',
                 top: 0,

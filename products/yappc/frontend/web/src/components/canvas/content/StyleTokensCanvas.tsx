@@ -20,6 +20,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface StyleToken {
     id: string;
@@ -214,6 +215,7 @@ const getCategoryColor = (category: StyleToken['category']) => {
 };
 
 export const StyleTokensCanvas = () => {
+    const { t } = useI18n();
     const [tokens] = useState<StyleToken[]>(MOCK_TOKENS);
     const [selectedToken, setSelectedToken] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -293,7 +295,7 @@ export const StyleTokensCanvas = () => {
                     <Box className="flex gap-4 items-center mb-2">
                         <TextField
                             size="small"
-                            placeholder="Search tokens..."
+                            placeholder={t('canvas.styleTokens.searchTokens')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="flex-1"

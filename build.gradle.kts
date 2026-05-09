@@ -126,6 +126,71 @@ val checkDataCloudNoDeprecatedEventFactory by tasks.registering {
 
 tasks.matching { it.name == "check" }.configureEach {
     dependsOn(checkDataCloudNoDeprecatedEventFactory)
+    dependsOn(checkDataCloudNoAepServerDependencies)
+}
+
+val checkDataCloudNoAepServerDependencies by tasks.registering {
+    group = "verification"
+    description = "DC-15: Fails when Data Cloud modules import AEP server implementation internals."
+
+    val scanRoots = listOf(
+        rootProject.file("products/data-cloud/planes/data"),
+        rootProject.file("products/data-cloud/planes/event"),
+        rootProject.file("products/data-cloud/planes/governance"),
+        rootProject.file("products/data-cloud/planes/intelligence"),
+        rootProject.file("products/data-cloud/delivery/runtime-composition"),
+        rootProject.file("products/data-cloud/delivery/api"),
+        rootProject.file("products/data-cloud/delivery/launcher")
+    )
+
+    inputs.files(scanRoots.map { root ->
+        project.fileTree(root) {
+            include("**/src/main/**/*.java")
+            include("**/src/test/**/*.java")
+        }
+    })
+
+    doLast {
+        val forbiddenPackages = listOf(
+            "com.ghatana.aep.server",
+            "com.ghatana.aep.bootstrap",
+            "com.ghatana.aep.di"
+        )
+        val violations = mutableListOf<String>()
+
+        scanRoots.forEach { root ->
+            if (!root.exists()) {
+                return@forEach
+            }
+            root.walkTopDown()
+                .filter { it.isFile }
+                .filter { it.extension == "java" }
+                .filter { file ->
+                    val p = file.invariantSeparatorsPath
+                    p.contains("/src/main/") || p.contains("/src/test/")
+                }
+                .forEach { file ->
+                    file.useLines { lines ->
+                        lines.forEachIndexed { index, line ->
+                            forbiddenPackages.forEach { pkg ->
+                                if (line.contains("import $pkg") || line.contains("import static $pkg")) {
+                                    violations += "${project.relativePath(file)}:${index + 1} imports $pkg"
+                                }
+                            }
+                        }
+                    }
+                }
+        }
+
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                "DC-15: AEP server implementation dependency violation found. " +
+                    "Data Cloud modules must not import AEP server internals. " +
+                    "Use public AEP client APIs or shared SPI instead.\n" +
+                    violations.joinToString("\n")
+            )
+        }
+    }
 }
 
 data class ArchitectureDependencyEdge(

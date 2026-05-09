@@ -14,6 +14,7 @@ import React, { useState } from 'react';
 import { ChevronRight, Check, X, Clock, AlertTriangle, Shield, FileText } from 'lucide-react';
 import { Typography, Button, Chip, Box, Surface as Paper } from '@ghatana/design-system';
 import type { DecisionQueueItem } from '../../clients/dashboard';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface DecisionQueueProps {
   items: DecisionQueueItem[];
@@ -43,6 +44,7 @@ export function DecisionQueue({
   onViewAll,
   projectId,
 }: DecisionQueueProps) {
+  const { t } = useI18n();
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [processingItems, setProcessingItems] = useState<Set<string>>(new Set());
 
@@ -205,8 +207,8 @@ export function DecisionQueue({
                             onClick={() => handleApprove(item.id)}
                             disabled={processingItems.has(item.id)}
                             className="p-2 rounded-md bg-success-bg text-success-color hover:bg-success-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            title="Approve"
-                            aria-label="Approve"
+                            title={t('dashboard.approve')}
+                            aria-label={t('dashboard.approve')}
                           >
                             <Check className="w-4 h-4" />
                           </Button>
@@ -216,8 +218,8 @@ export function DecisionQueue({
                             onClick={() => handleReject(item.id)}
                             disabled={processingItems.has(item.id)}
                             className="p-2 rounded-md bg-destructive-bg text-destructive hover:bg-destructive-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            title="Reject"
-                            aria-label="Reject"
+                            title={t('dashboard.reject')}
+                            aria-label={t('dashboard.reject')}
                           >
                             <X className="w-4 h-4" />
                           </Button>
@@ -227,8 +229,8 @@ export function DecisionQueue({
                             onClick={() => handleDefer(item.id)}
                             disabled={processingItems.has(item.id)}
                             className="p-2 rounded-md bg-surface-muted text-fg hover:bg-surface-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            title="Defer"
-                            aria-label="Defer"
+                            title={t('dashboard.defer')}
+                            aria-label={t('dashboard.defer')}
                           >
                             <Clock className="w-4 h-4" />
                           </Button>

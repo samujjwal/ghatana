@@ -50,6 +50,7 @@ import { createPortal } from 'react-dom';
 import { X as Close } from 'lucide-react';
 import { TRANSITIONS, Z_INDEX } from '../../styles/design-tokens';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface StandardDrawerProps {
     /** Whether drawer is open */
@@ -122,6 +123,7 @@ export function StandardDrawer({
     className = '',
     testId = 'standard-drawer',
 }: StandardDrawerProps) {
+    const { t } = useI18n();
     const drawerRef = useRef<HTMLDivElement>(null);
     const previousActiveElement = useRef<HTMLElement | null>(null);
 
@@ -292,7 +294,7 @@ export function StandardDrawer({
                   ${TRANSITIONS.fast}
                   ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
-                                aria-label="Close drawer"
+                                aria-label={t('dialogs.closeDrawer')}
                             >
                                 <Close className="w-5 h-5" />
                             </Button>

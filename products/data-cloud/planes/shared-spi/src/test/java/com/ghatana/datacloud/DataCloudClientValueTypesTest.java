@@ -55,6 +55,8 @@ class DataCloudClientValueTypesTest {
             DataCloudClient.Query q = DataCloudClient.Query.all(); 
             assertThat(q.filters()).isEmpty(); 
             assertThat(q.limit()).isEqualTo(100); 
+            assertThat(q.projections()).isEmpty();
+            assertThat(q.consistencyLevel()).isEqualTo("STRONG");
         }
 
         @Test
@@ -69,10 +71,14 @@ class DataCloudClientValueTypesTest {
                     .filter(DataCloudClient.Filter.eq("status", "active")) 
                     .limit(50) 
                     .offset(10) 
+                    .projection("id", "name")
+                    .consistencyLevel("EVENTUAL")
                     .build(); 
             assertThat(q.filters()).hasSize(1); 
             assertThat(q.limit()).isEqualTo(50); 
-            assertThat(q.offset()).isEqualTo(10); 
+            assertThat(q.offset()).isEqualTo(10);
+            assertThat(q.projections()).containsExactly("id", "name");
+            assertThat(q.consistencyLevel()).isEqualTo("EVENTUAL");
         }
 
         @Test

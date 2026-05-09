@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 /**
  * Keyboard Shortcuts Manager component.
@@ -319,6 +320,7 @@ export function KeyboardShortcutsHelp({
   isOpen: boolean;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   const shortcuts = DEFAULT_SHORTCUTS;
 
   const categorizedShortcuts = {
@@ -356,14 +358,14 @@ export function KeyboardShortcutsHelp({
           {/* Header */}
           <div className="px-6 py-4 border-b border-border dark:border-border flex items-center justify-between">
             <h2 className="text-xl font-bold text-fg dark:text-fg-muted">
-              Keyboard Shortcuts
+              {t('keyboardShortcuts.title')}
             </h2>
             <Button
               variant="ghost"
               size="sm"
               onClick={onClose}
               className="text-fg-muted hover:text-fg dark:hover:text-fg-muted"
-              aria-label="Close keyboard shortcuts"
+              aria-label={t('keyboardShortcutsManager.close')}
             >
               ✕
             </Button>

@@ -15,6 +15,7 @@ import { VelocityChart, BurndownChart } from 'yappc-ui/development-ui';
 import { Spinner as LoadingSpinner } from '@ghatana/design-system';
 import { ErrorBoundary } from '@ghatana/design-system';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { useI18n } from '../../i18n/I18nProvider';
 import { Button } from '../../components/ui/Button';
 
 // ============================================================================
@@ -197,16 +198,18 @@ const SprintTable: React.FC<SprintTableProps> = ({
   sprints,
   onSprintSelect,
   selectedSprintId,
-}) => (
+}) => {
+  const { t } = useI18n();
+  return (
   <div className="sprint-table">
     <table>
       <thead>
         <tr>
-          <th>Sprint</th>
-          <th>Dates</th>
-          <th>Committed</th>
-          <th>Completed</th>
-          <th>Accuracy</th>
+          <th>{t('velocity.sprint')}</th>
+          <th>{t('velocity.dates')}</th>
+          <th>{t('velocity.committed')}</th>
+          <th>{t('velocity.completed')}</th>
+          <th>{t('velocity.accuracy')}</th>
         </tr>
       </thead>
       <tbody>
@@ -246,7 +249,8 @@ const SprintTable: React.FC<SprintTableProps> = ({
       </tbody>
     </table>
   </div>
-);
+  );
+};
 
 // ============================================================================
 // Main Component
@@ -254,6 +258,7 @@ const SprintTable: React.FC<SprintTableProps> = ({
 
 export const VelocityChartsPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
+  const { t } = useI18n();
 
   // State
   const [velocityData, setVelocityData] = useState<VelocityData | null>(null);
@@ -268,9 +273,6 @@ export const VelocityChartsPage: React.FC = () => {
   // Load initial data
   useEffect(() => {
     const loadData = async () => {
-      if (!projectId) return;
-
-      setLoading(true);
       setError(null);
 
       try {
@@ -354,9 +356,9 @@ export const VelocityChartsPage: React.FC = () => {
     return (
       <div className="velocity-page velocity-page--error">
         <div className="error-container">
-          <h2>Failed to load metrics</h2>
+          <h2>{t('velocity.loadError')}</h2>
           <p>{error || 'Data not found'}</p>
-          <Button onClick={() => window.location.reload()}>Retry</Button>
+          <Button onClick={() => window.location.reload()}>{t('velocity.retry')}</Button>
         </div>
       </div>
     );
@@ -477,7 +479,7 @@ export const VelocityChartsPage: React.FC = () => {
                 />
               ) : (
                 <div className="chart-empty">
-                  <p>Select a sprint to view burndown</p>
+                  <p>{t('velocity.selectSprint')}</p>
                 </div>
               )}
             </div>

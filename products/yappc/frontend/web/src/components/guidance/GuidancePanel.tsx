@@ -18,6 +18,7 @@ import { Tooltip, Collapse, IconButton } from '@ghatana/design-system';
 import { useGuidanceContext, usePhaseContext } from '../../context/WorkflowContextProvider';
 import { LifecyclePhase, PHASE_LABELS, PHASE_DESCRIPTIONS } from '../../types/lifecycle';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -152,6 +153,7 @@ const GuidanceStepItem: React.FC<GuidanceStepItemProps> = ({
  * Tip item with dismiss
  */
 const TipItem: React.FC<TipItemProps> = ({ tip, onDismiss }) => {
+    const { t } = useI18n();
     return (
         <div className="relative flex items-start gap-2 p-3 bg-warning-bg dark:bg-warning-bg/20 rounded-lg border border-warning-border dark:border-warning-border">
             <TipIcon className="flex-shrink-0 w-4 h-4 text-warning-color mt-0.5" />
@@ -163,7 +165,7 @@ const TipItem: React.FC<TipItemProps> = ({ tip, onDismiss }) => {
                 size="sm"
                 onClick={onDismiss}
                 className="absolute top-2 right-2 p-0.5 text-warning-color hover:text-warning-color dark:hover:text-warning-color rounded"
-                aria-label="Dismiss tip"
+                aria-label={t('guidance.dismissTip')}
             >
                 <CloseIcon className="w-3.5 h-3.5" />
             </Button>
@@ -244,6 +246,7 @@ export const GuidancePanel: React.FC<GuidancePanelProps> = ({
     className = '',
     onToggle,
 }) => {
+    const { t } = useI18n();
     const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
     const [dismissedTipIds, setDismissedTipIds] = useState<string[]>([]);
     const { currentPhase } = usePhaseContext();
@@ -331,7 +334,7 @@ export const GuidancePanel: React.FC<GuidancePanelProps> = ({
                 ${position === 'left' ? 'border-r' : 'border-l'}
                 ${className}
             `}
-            aria-label="Guidance panel"
+            aria-label={t('guidance.panel')}
         >
             {/* Header */}
             <header className="flex items-center justify-between p-4 border-b border-grey-200 dark:border-grey-800">

@@ -22,6 +22,7 @@ import {
 import { TextField } from '@ghatana/design-system';
 import { CanvasToolbar, useCanvasToolbar } from '../CanvasToolbar';
 import { createCommand } from '../../../utils/canvasHistory';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface MindMapNode {
     id: string;
@@ -72,6 +73,7 @@ const INITIAL_NODES: MindMapNode[] = [
 ];
 
 export const EnhancedMindMapCanvas = () => {
+    const { t } = useI18n();
     const canvasRef = useRef<HTMLDivElement>(null);
     const [nodes, setNodes] = useState<MindMapNode[]>(INITIAL_NODES);
     const [selectedNode, setSelectedNode] = useState<string | null>(null);
@@ -189,7 +191,7 @@ export const EnhancedMindMapCanvas = () => {
                     <Box className="flex gap-4 items-center">
                         <TextField
                             size="small"
-                            placeholder="Search nodes..."
+                            placeholder={t('canvas.enhancedMindMap.searchNodes')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="flex-1"

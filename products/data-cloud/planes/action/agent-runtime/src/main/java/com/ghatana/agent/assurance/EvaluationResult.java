@@ -57,7 +57,12 @@ public record EvaluationResult(
         @NotNull Instant evaluatedAt,
 
         /** Duration of the evaluation run in milliseconds. */
-        long durationMs
+        long durationMs,
+
+        // DC-33: Stale audit/TODO target references that should block release
+        @NotNull List<String> staleAuditTargetRefs,
+
+        @NotNull List<String> staleTodoTargetRefs
 ) {
 
     /**
@@ -70,5 +75,21 @@ public record EvaluationResult(
         Objects.requireNonNull(evaluatedAt, "evaluatedAt");
         dimensionScores = dimensionScores == null ? Map.of() : Map.copyOf(dimensionScores);
         failureSummaries = failureSummaries == null ? List.of() : List.copyOf(failureSummaries);
+        staleAuditTargetRefs = staleAuditTargetRefs == null ? List.of() : List.copyOf(staleAuditTargetRefs);
+        staleTodoTargetRefs = staleTodoTargetRefs == null ? List.of() : List.copyOf(staleTodoTargetRefs);
+    }
+
+    /**
+     * DC-33: Returns true if this result has any stale audit or TODO references.
+     */
+    public boolean hasStaleRefs() {
+        return !staleAuditTargetRefs.isEmpty() || !staleTodoTargetRefs.isEmpty();
+    }
+
+    /**
+     * DC-33: Returns total count of stale references (audit + TODO).
+     */
+    public int totalStaleRefCount() {
+        return staleAuditTargetRefs.size() + staleTodoTargetRefs.size();
     }
 }

@@ -20,6 +20,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Dialog, DialogTitle, DialogContent, Box, Typography, TextField, InputAdornment, InteractiveList as List, ListItemButton, ListItemIcon, ListItemText, IconButton, Button, Divider, Chip, Stack } from '@ghatana/design-system';
 import { Search as SearchIcon, X as CloseIcon, Folder as FolderIcon, Plus as AddIcon, Clock as RecentIcon, Star as StarIcon } from 'lucide-react';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface Project {
     id: string;
@@ -49,6 +50,7 @@ export const ProjectSwitcher: React.FC<ProjectSwitcherProps> = ({
     onClose,
     currentProjectId
 }) => {
+    const { t } = useI18n();
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -116,7 +118,7 @@ export const ProjectSwitcher: React.FC<ProjectSwitcherProps> = ({
                 <Box className="p-4 pb-4 border-b border-solid border-border dark:border-border">
                     <TextField
                         fullWidth
-                        placeholder="Search projects..."
+                        placeholder={t('canvas.projectSwitcher.search')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         variant="outlined"

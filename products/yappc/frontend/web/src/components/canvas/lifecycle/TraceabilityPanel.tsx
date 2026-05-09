@@ -14,6 +14,7 @@ import { GitBranch as AccountTree, Activity as Timeline, Table as TableChart, Li
 import { LifecyclePhase } from '@/types/lifecycle';
 import { LifecycleArtifactKind, getArtifactsForPhase, LIFECYCLE_ARTIFACT_CATALOG } from '@/shared/types/lifecycle-artifacts';
 import { Button } from '../../ui/Button';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 export interface ArtifactNode {
     id: string;
@@ -62,6 +63,7 @@ export const TraceabilityPanel: React.FC<TraceabilityPanelProps> = ({
     onAIAnalyze,
     isLoading = false,
 }) => {
+    const { t } = useI18n();
     const [viewMode, setViewMode] = useState<ViewMode>('graph');
     const [selectedArtifact, setSelectedArtifact] = useState<string | null>(null);
     const [linkingFrom, setLinkingFrom] = useState<string | null>(null);
@@ -177,7 +179,7 @@ export const TraceabilityPanel: React.FC<TraceabilityPanelProps> = ({
                         disabled={isLoading}
                         variant="ghost"
                         size="sm"
-                        aria-label="Refresh traceability"
+                        aria-label={t('canvas.traceability.refresh')}
                         className="flex items-center gap-1 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-muted dark:hover:bg-surface-muted rounded-lg transition-colors disabled:opacity-50"
                     >
                         <Refresh className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />

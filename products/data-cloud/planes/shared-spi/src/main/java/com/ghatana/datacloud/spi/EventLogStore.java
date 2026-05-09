@@ -129,6 +129,16 @@ public interface EventLogStore {
 
     /**
      * Event entry for storage.
+     *
+     * <p><b>DC-20:</b> Core event envelope fields promoted from opaque headers to first-class
+     * queryable storage fields. The following fields are now first-class and queryable:
+     * <ul>
+     *   <li>correlationId: Correlates related events across the system</li>
+     *   <li>causationId: Traces causal chain of events</li>
+     *   <li>source: Origin system/component that generated the event</li>
+     *   <li>userId: User who triggered the event (if applicable)</li>
+     * </ul>
+     * The headers map remains for custom application-specific metadata.
      */
     record EventEntry(
         UUID eventId,
@@ -138,7 +148,12 @@ public interface EventLogStore {
         ByteBuffer payload,
         String contentType,
         Map<String, String> headers,
-        Optional<String> idempotencyKey
+        Optional<String> idempotencyKey,
+        // DC-20: Promoted core fields from opaque headers to first-class queryable fields
+        Optional<String> correlationId,
+        Optional<String> causationId,
+        Optional<String> source,
+        Optional<String> userId
     ) {
         public EventEntry {
             Objects.requireNonNull(eventId, "eventId required");
@@ -149,6 +164,11 @@ public interface EventLogStore {
             contentType = contentType != null ? contentType : "application/json";
             headers = headers != null ? Map.copyOf(headers) : Map.of();
             idempotencyKey = idempotencyKey != null ? idempotencyKey : Optional.empty();
+            // DC-20: Initialize optional fields
+            correlationId = correlationId != null ? correlationId : Optional.empty();
+            causationId = causationId != null ? causationId : Optional.empty();
+            source = source != null ? source : Optional.empty();
+            userId = userId != null ? userId : Optional.empty();
         }
 
         public static Builder builder() {
@@ -164,6 +184,11 @@ public interface EventLogStore {
             private String contentType = "application/json";
             private Map<String, String> headers = Map.of();
             private Optional<String> idempotencyKey = Optional.empty();
+            // DC-20: Builder fields for promoted core fields
+            private Optional<String> correlationId = Optional.empty();
+            private Optional<String> causationId = Optional.empty();
+            private Optional<String> source = Optional.empty();
+            private Optional<String> userId = Optional.empty();
 
             public Builder eventId(UUID eventId) {
                 this.eventId = eventId;
@@ -215,10 +240,32 @@ public interface EventLogStore {
                 return this;
             }
 
+            // DC-20: Builder methods for promoted core fields
+            public Builder correlationId(String correlationId) {
+                this.correlationId = Optional.ofNullable(correlationId);
+                return this;
+            }
+
+            public Builder causationId(String causationId) {
+                this.causationId = Optional.ofNullable(causationId);
+                return this;
+            }
+
+            public Builder source(String source) {
+                this.source = Optional.ofNullable(source);
+                return this;
+            }
+
+            public Builder userId(String userId) {
+                this.userId = Optional.ofNullable(userId);
+                return this;
+            }
+
             public EventEntry build() {
                 return new EventEntry(
                     eventId, eventType, eventVersion, timestamp,
-                    payload, contentType, headers, idempotencyKey
+                    payload, contentType, headers, idempotencyKey,
+                    correlationId, causationId, source, userId
                 );
             }
         }

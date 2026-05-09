@@ -30,6 +30,7 @@ import {
 import { cn } from '../../utils/cn';
 import { Input } from '@ghatana/design-system';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 import {
   globalSearchOpenAtom,
   globalSearchQueryAtom,
@@ -112,6 +113,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
   maxResults = 10,
   recentSearchesLimit = 5,
 }) => {
+  const { t } = useI18n();
   const navigate = useNavigate();
   
   const isOpen = useAtomValue(globalSearchOpenAtom);
@@ -303,7 +305,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
               <Button
                 onClick={handleClose}
                 className="rounded p-1 hover:bg-surface-muted dark:hover:bg-surface"
-                aria-label="Close search"
+                aria-label={t('search.close')}
               >
                 <X className="h-4 w-4" />
               </Button>

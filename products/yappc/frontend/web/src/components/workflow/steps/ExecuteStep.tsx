@@ -17,6 +17,7 @@ import {
     draftStepDataAtom,
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface ChangeRecord {
     id: string;
@@ -55,6 +56,7 @@ const CHANGE_STATUSES: { value: ChangeRecord['status']; label: string; color: 'd
 // ============================================================================
 
 export function ExecuteStep() {
+    const { t } = useI18n();
     const workflow = useAtomValue(currentWorkflowAtom);
     const draftData = useAtomValue(draftStepDataAtom) as ExecuteStepData | null;
     const updateDraft = useSetAtom(updateDraftStepDataAtom);
@@ -173,14 +175,14 @@ export function ExecuteStep() {
                     </FormControl>
                     <TextField
                         size="small"
-                        placeholder="Description"
+                        placeholder={t('workflow.execute.descriptionPlaceholder')}
                         value={newChangeDesc}
                         onChange={(e) => setNewChangeDesc(e.target.value)}
                         className="grow min-w-[200px]"
                     />
                     <TextField
                         size="small"
-                        placeholder="File path (optional)"
+                        placeholder={t('workflow.execute.filePathPlaceholder')}
                         value={newChangePath}
                         onChange={(e) => setNewChangePath(e.target.value)}
                         className="grow min-w-[200px]"

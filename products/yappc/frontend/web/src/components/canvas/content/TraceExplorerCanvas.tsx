@@ -19,6 +19,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface Span {
     id: string;
@@ -107,6 +108,7 @@ const getServiceColor = (service: string) => {
 };
 
 export const TraceExplorerCanvas = () => {
+    const { t } = useI18n();
     const [traces] = useState<Trace[]>(MOCK_TRACES);
     const [selectedTrace, setSelectedTrace] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -139,7 +141,7 @@ export const TraceExplorerCanvas = () => {
                 <Box className="p-4 border-b border-solid border-b-[rgba(0,_0,_0,_0.12)] bg-white">
                     <TextField
                         size="small"
-                        placeholder="Search traces..."
+                        placeholder={t('canvas.traceExplorer.searchTraces')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full"

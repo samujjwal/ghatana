@@ -253,6 +253,7 @@ export const PseudocodeCanvas = () => {
     const [pseudocodeBlocks] = useState<PseudocodeBlock[]>(MOCK_PSEUDOCODE);
     const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const { t } = useI18n();
     const [filterCategory, setFilterCategory] = useState<PseudocodeBlock['category'] | 'all'>('all');
 
     const filteredBlocks = useMemo(() => {
@@ -312,7 +313,7 @@ export const PseudocodeCanvas = () => {
                     <Box className="flex gap-4 items-center mb-2">
                         <TextField
                             size="small"
-                            placeholder="Search algorithms, data structures..."
+                            placeholder={t('canvas.pseudocode.searchAlgorithms')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="flex-1"

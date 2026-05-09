@@ -20,6 +20,7 @@ import {
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
 import { CheckCircle, AlertCircle as Error, AlertTriangle as Warning, Hourglass as HourglassEmpty, Search, Bug as BugReport } from 'lucide-react';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface TestFile {
     path: string;
@@ -203,6 +204,7 @@ const TestFileItem = ({
 };
 
 export const TestFileListCanvas = () => {
+    const { t } = useI18n();
     const [testFiles] = useState<TestFile[]>(MOCK_TEST_FILES);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<TestFile['status'] | 'all'>('all');
@@ -283,7 +285,7 @@ export const TestFileListCanvas = () => {
                     <TextField
                         fullWidth
                         size="small"
-                        placeholder="Search test files..."
+                        placeholder={t('canvas.testFileList.searchFiles')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         InputProps={{

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ChevronRight, Code as CodeIcon, ClipboardList as AssignmentIcon, CloudUpload as DeployIcon, ArrowRight as ArrowForwardIcon, CheckCircle as CheckCircleOutline, Clock as AccessTime, Ban as Block, Check, X, Loader2, AlertCircle } from 'lucide-react';
 import { Typography, Button, Chip, Box, Surface as Paper } from '@ghatana/design-system';
+import { useI18n } from '../../i18n/I18nProvider';
 
 type CheckboxControlProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'>;
 
@@ -102,6 +103,7 @@ export function PriorityTasksList({
     onBulkApprove, 
     onBulkReject 
 }: PriorityTasksListProps) {
+    const { t } = useI18n();
     const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
     const [processingTasks, setProcessingTasks] = useState<Set<string>>(new Set());
 
@@ -310,8 +312,8 @@ export function PriorityTasksList({
                                                         onClick={(e) => handleApprove(task.id, e)}
                                                         disabled={processingTasks.has(task.id)}
                                                         className="p-2 rounded-md bg-success-bg text-success-color hover:bg-success-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                                        title="Approve task"
-                                                        aria-label="Approve task"
+                                                        title={t('priority.approveTask')}
+                                                        aria-label={t('priority.approveTask')}
                                                     >
                                                         <Check className="w-4 h-4" />
                                                     </Button>
@@ -321,8 +323,8 @@ export function PriorityTasksList({
                                                         onClick={(e) => handleReject(task.id, e)}
                                                         disabled={processingTasks.has(task.id)}
                                                         className="p-2 rounded-md bg-destructive-bg text-destructive hover:bg-destructive-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                                        title="Reject task"
-                                                        aria-label="Reject task"
+                                                        title={t('priority.rejectTask')}
+                                                        aria-label={t('priority.rejectTask')}
                                                     >
                                                         <X className="w-4 h-4" />
                                                     </Button>

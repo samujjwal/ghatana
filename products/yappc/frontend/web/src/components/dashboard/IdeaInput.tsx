@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sparkles as AutoAwesomeIcon, ArrowRight as ArrowForwardIcon } from 'lucide-react';
 import { Surface as Paper, IconButton, Input as InputBase, Box, Typography, Chip } from '@ghatana/design-system';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface IdeaInputProps {
     value?: string;
@@ -9,6 +10,7 @@ interface IdeaInputProps {
 }
 
 export function IdeaInput({ value, onChange, onSubmit }: IdeaInputProps) {
+    const { t } = useI18n();
     const handleKeyPress = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && onSubmit) {
             onSubmit();
@@ -21,12 +23,12 @@ export function IdeaInput({ value, onChange, onSubmit }: IdeaInputProps) {
                 elevation={3}
                 className="flex items-center w-full rounded-xl border border-solid border-border dark:border-border p-[2px 4px]"
             >
-                <IconButton className="p-[10px]" aria-label="magic">
+                <IconButton className="p-[10px]" aria-label={t('ideaInput.magic')}>
                     <AutoAwesomeIcon />
                 </IconButton>
                 <InputBase
                     className="ml-2 flex-1 text-[1.1rem]"
-                    placeholder="Describe your idea (e.g., 'A kanban board for marketing teams')..."
+                    placeholder={t('ideaInput.placeholder')}
                     autoFocus
                     value={value}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange?.(e.target.value)}
@@ -35,7 +37,7 @@ export function IdeaInput({ value, onChange, onSubmit }: IdeaInputProps) {
                 <IconButton
                     type="button"
                     className="p-[10px]"
-                    aria-label="search"
+                    aria-label={t('ideaInput.search')}
                     onClick={onSubmit}
                 >
                     <ArrowForwardIcon />

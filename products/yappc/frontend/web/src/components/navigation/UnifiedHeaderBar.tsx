@@ -33,6 +33,7 @@ import { useWorkspaceContext } from '../../hooks/useWorkspaceData';
 import { currentUserAtom } from '../../stores/user.store';
 import { unreadNotificationsCountAtom } from '../../state/atoms';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface UnifiedHeaderBarProps {
     /** Current project ID (for project-specific context) */
@@ -63,6 +64,7 @@ export function UnifiedHeaderBar({
     showAgentActivity = true,
     className = '',
 }: UnifiedHeaderBarProps) {
+    const { t } = useI18n();
     const {
         currentWorkspace,
         ownedProjects,
@@ -143,7 +145,7 @@ export function UnifiedHeaderBar({
                 <Link
                     to="/"
                     className="flex items-center gap-2 px-3 py-2 no-underline hover:opacity-80 transition-opacity flex-shrink-0"
-                    aria-label="YAPPC Home"
+                    aria-label={t('nav.yappcHome')}
                 >
                     <div className="w-6 h-6 rounded-md bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
                         <AutoAwesome className="w-3.5 h-3.5 text-white" />

@@ -17,6 +17,7 @@ import {
   Alert,
 } from '@ghatana/design-system';
 import React, { useState, useCallback } from 'react';
+import { useI18n } from '../../i18n/I18nProvider';
 
 import { IntentParser } from 'yappc-config-compiler';
 import type { IntentConfig } from 'yappc-config-schema';
@@ -40,6 +41,7 @@ export const IntentEditor: React.FC<IntentEditorProps> = ({
   author,
   tags = [],
 }) => {
+  const { t } = useI18n();
   const [intent, setIntent] = useState(initialIntent);
   const [isParsing, setIsParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +96,7 @@ export const IntentEditor: React.FC<IntentEditorProps> = ({
         value={intent}
         onChange={(e) => setIntent(e.target.value)}
         onKeyDown={handleKeyPress}
-        placeholder="e.g., Create a login page with email and password fields, remember me checkbox, and forgot password link"
+        placeholder={t('intentEditor.placeholder')}
         fullWidth
         disabled={isParsing}
         data-testid="intent-input"

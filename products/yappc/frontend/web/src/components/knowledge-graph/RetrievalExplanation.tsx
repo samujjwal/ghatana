@@ -16,6 +16,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { HelpCircle, Database } from 'lucide-react';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -83,6 +84,7 @@ function ScoreChip({ score }: { score: number }) {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function RetrievalExplanation({ runId, className }: RetrievalExplanationProps) {
+  const { t } = useI18n();
   const { data, isLoading, isError } = useQuery({
     queryKey: ['retrieval-explanation', runId],
     queryFn: () => fetchRetrievalExplanation(runId),
@@ -132,7 +134,7 @@ export function RetrievalExplanation({ runId, className }: RetrievalExplanationP
       <div className="flex items-center gap-2">
         <Database className="h-4 w-4 text-text-secondary" aria-hidden="true" />
         <span className="text-sm font-semibold text-text-primary">Retrieved knowledge</span>
-        <HelpCircle className="h-3.5 w-3.5 text-text-secondary" aria-label="Why these nodes were retrieved" />
+        <HelpCircle className="h-3.5 w-3.5 text-text-secondary" aria-label={t('knowledgeGraph.retrievalWhy')} />
       </div>
 
       {data.nodes.map((node) => (

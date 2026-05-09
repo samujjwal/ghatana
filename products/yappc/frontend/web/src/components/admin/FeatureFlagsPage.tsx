@@ -39,6 +39,7 @@ import {
   type FeatureFlag,
   type FeatureFlagAuditEntry,
 } from '../../services/admin/featureFlagsApi';
+import { useI18n } from '../../i18n/I18nProvider';
 import { useAtomValue } from 'jotai';
 import { currentWorkspaceIdAtom } from '../../state/atoms/workspaceAtom';
 import { Button } from '../ui/Button';
@@ -70,6 +71,7 @@ const ToggleConfirmDialog: React.FC<ToggleConfirmDialogProps> = ({
   onCancel,
   isBusy,
 }) => {
+  const { t } = useI18n();
   const [reason, setReason] = useState('');
   const action = flag.enabled ? 'disable' : 'enable';
 
@@ -91,7 +93,7 @@ const ToggleConfirmDialog: React.FC<ToggleConfirmDialogProps> = ({
               type="button"
               onClick={onCancel}
               className="rounded p-1 text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800"
-              aria-label="Cancel"
+              aria-label={t('admin.flags.cancel')}
               variant="ghost"
               size="sm"
             >
@@ -112,7 +114,7 @@ const ToggleConfirmDialog: React.FC<ToggleConfirmDialogProps> = ({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={2}
-              placeholder="Explain why you're changing this flag…"
+              placeholder={t('admin.flags.changeReasonPlaceholder')}
               className="w-full rounded border border-divider bg-white dark:bg-grey-800 px-2 py-1 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary resize-none"
               resize="none"
               fullWidth
@@ -157,6 +159,7 @@ interface AuditDrawerProps {
 }
 
 const AuditDrawer: React.FC<AuditDrawerProps> = ({ tenantId, flagKey, onClose }) => {
+  const { t } = useI18n();
   const { data: entries = [], isLoading } = useQuery<FeatureFlagAuditEntry[]>({
     queryKey: ['flag-audit', tenantId, flagKey],
     queryFn: () => getFeatureFlagAuditLog(tenantId, flagKey),
@@ -174,7 +177,7 @@ const AuditDrawer: React.FC<AuditDrawerProps> = ({ tenantId, flagKey, onClose })
           type="button"
           onClick={onClose}
           className="rounded p-1 text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800"
-          aria-label="Close audit"
+          aria-label={t('admin.flags.closeAudit')}
           variant="ghost"
           size="sm"
         >
@@ -290,6 +293,7 @@ const FlagRow: React.FC<FlagRowProps> = ({ flag, onToggle, onShowAudit }) => {
  * ```
  */
 export const FeatureFlagsPage: React.FC<FeatureFlagsPageProps> = ({ className }) => {
+  const { t } = useI18n();
   const tenantId = useAtomValue(currentWorkspaceIdAtom) ?? 'default';
   const queryClient = useQueryClient();
 
@@ -364,23 +368,23 @@ export const FeatureFlagsPage: React.FC<FeatureFlagsPageProps> = ({ className })
             type="button"
             onClick={() => void refetch()}
             className="flex items-center gap-1 rounded border border-divider px-3 py-1.5 text-sm hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors"
-            aria-label="Refresh"
+            aria-label={t('admin.flags.refresh')}
             variant="outline"
             size="sm"
           >
             <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
-            Refresh
+            {t('admin.flags.refresh')}
           </Button>
         </Box>
 
         {/* Search */}
         <Input
           type="search"
-          placeholder="Filter flags…"
+          placeholder={t('admin.flags.filterPlaceholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full rounded border border-divider bg-white dark:bg-grey-800 px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary"
-          aria-label="Filter feature flags"
+          aria-label={t('admin.flags.filterAria')}
           fullWidth
         />
 

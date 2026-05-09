@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { useGeneratedCodeQualityGate } from '@/hooks/useGeneratedCodeQualityGate';
 import type { QualityCheckResult, QualityCheckStatus } from '@/hooks/useGeneratedCodeQualityGate';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -95,6 +96,7 @@ export function GeneratedCodeQualityGate({
   onAccept,
   className,
 }: GeneratedCodeQualityGateProps) {
+  const { t } = useI18n();
   const { canAccept, isLoading, isError, quality, refetch } =
     useGeneratedCodeQualityGate({ artifactId });
 
@@ -111,7 +113,7 @@ export function GeneratedCodeQualityGate({
           size="sm"
           onClick={() => refetch()}
           className="rounded p-1 text-text-secondary hover:bg-grey-100"
-          aria-label="Refresh quality checks"
+          aria-label={t('ai.quality.refreshChecks')}
           data-testid="btn-refresh-quality"
         >
           <RefreshCw className="h-3.5 w-3.5" />

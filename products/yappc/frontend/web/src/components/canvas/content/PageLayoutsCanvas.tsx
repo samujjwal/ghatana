@@ -20,6 +20,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface PageLayout {
     id: string;
@@ -165,6 +166,7 @@ const getComplexityColor = (complexity: PageLayout['complexity']) => {
 };
 
 export const PageLayoutsCanvas = () => {
+    const { t } = useI18n();
     const [layouts] = useState<PageLayout[]>(MOCK_LAYOUTS);
     const [selectedLayout, setSelectedLayout] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -230,7 +232,7 @@ export const PageLayoutsCanvas = () => {
                     <Box className="flex gap-4 items-center mb-2">
                         <TextField
                             size="small"
-                            placeholder="Search layouts..."
+                            placeholder={t('canvas.pageLayouts.searchLayouts')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="flex-1"

@@ -17,6 +17,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -58,6 +59,7 @@ export const RunLineage = React.memo<RunLineageProps>(function RunLineage({
   onNodeClick,
   className,
 }) {
+  const { t } = useI18n();
   const { data, isLoading, isError, error } = useQuery<RunLineageData, Error>({
     queryKey: ['run-lineage', runId],
     queryFn: () => fetchLineage(runId),
@@ -68,7 +70,7 @@ export const RunLineage = React.memo<RunLineageProps>(function RunLineage({
     return (
       <div
         role="status"
-        aria-label="Loading run lineage"
+        aria-label={t('runLineage.loading')}
         className={['animate-pulse flex gap-2', className].filter(Boolean).join(' ')}
       >
         {[1, 2, 3].map((i) => (
@@ -99,7 +101,7 @@ export const RunLineage = React.memo<RunLineageProps>(function RunLineage({
 
   return (
     <nav
-      aria-label="Run lineage"
+      aria-label={t('runLineage.label')}
       className={['flex items-center gap-1 flex-wrap text-xs', className]
         .filter(Boolean)
         .join(' ')}

@@ -15,6 +15,7 @@ import { BaseCanvasContent } from '../BaseCanvasContent';
 import { Box, Typography, IconButton } from '@ghatana/design-system';
 import { TextField, Collapse } from '@ghatana/design-system';
 import { Folder, FolderOpen, File as InsertDriveFile, Search, ChevronDown as ExpandMore, ChevronRight, Code, FileText as Description, Image as ImageIcon } from 'lucide-react';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface FileNode {
     name: string;
@@ -175,6 +176,7 @@ const FileTreeItem = ({
 };
 
 export const FileExplorerCanvas = () => {
+    const { t } = useI18n();
     const [fileTree] = useState<FileNode[]>(MOCK_FILE_TREE);
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -213,7 +215,7 @@ export const FileExplorerCanvas = () => {
                     <TextField
                         fullWidth
                         size="small"
-                        placeholder="Search files..."
+                        placeholder={t('canvas.files.search')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         InputProps={{

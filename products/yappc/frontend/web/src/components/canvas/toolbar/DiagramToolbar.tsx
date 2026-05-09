@@ -25,6 +25,7 @@ import {
 import { executeCommandAtom, UpdateNodeDataCommand } from '../workspace/canvasCommands';
 import { MERMAID_TEMPLATES } from '../diagram/MermaidDiagram';
 import { Textarea } from '../../ui/Textarea';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 export interface DiagramToolbarProps {
     /** Optional additional class names for the toolbar wrapper */
@@ -42,6 +43,7 @@ export interface DiagramToolbarProps {
  *   (avoids stacking-context bugs inside CSS transform contexts).
  */
 export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => {
+    const { t } = useI18n();
     // ── Global atoms (type + zoom are per-session config, not per-node) ──
     const [diagramType, setDiagramType] = useAtom(diagramTypeAtom);
     const [zoom, setZoom] = useAtom(diagramZoomAtom);
@@ -136,19 +138,19 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
                         }
                     }}
                     size="sm"
-                    aria-label="diagram type"
+                    aria-label={t('canvas.diagram.type')}
                 >
-                    <ToggleButton value="flowchart" aria-label="flowchart">
+                    <ToggleButton value="flowchart" aria-label={t('canvas.diagram.flowchart')}>
                         <Tooltip title="Flowchart">
                             <FlowchartIcon />
                         </Tooltip>
                     </ToggleButton>
-                    <ToggleButton value="sequence" aria-label="sequence diagram">
+                    <ToggleButton value="sequence" aria-label={t('canvas.diagram.sequence')}>
                         <Tooltip title="Sequence Diagram">
                             <SequenceIcon />
                         </Tooltip>
                     </ToggleButton>
-                    <ToggleButton value="class" aria-label="class diagram">
+                    <ToggleButton value="class" aria-label={t('canvas.diagram.class')}>
                         <Tooltip title="Class Diagram">
                             <ClassIcon />
                         </Tooltip>
@@ -196,8 +198,8 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
 
                 {/* Zoom Controls */}
                 <Box className="flex gap-1 items-center">
-                    <Tooltip title="Zoom Out">
-                        <IconButton size="sm" aria-label="Zoom Out" onClick={handleZoomOut} disabled={zoom <= 0.5}>
+                    <Tooltip title={t('canvas.diagram.zoomOut')}>
+                        <IconButton size="sm" aria-label={t('canvas.diagram.zoomOut')} onClick={handleZoomOut} disabled={zoom <= 0.5}>
                             <ZoomOutIcon size={16} />
                         </IconButton>
                     </Tooltip>
@@ -206,14 +208,14 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
                         {Math.round(zoom * 100)}%
                     </Box>
 
-                    <Tooltip title="Zoom In">
-                        <IconButton size="sm" aria-label="Zoom In" onClick={handleZoomIn} disabled={zoom >= 2}>
+                    <Tooltip title={t('canvas.diagram.zoomIn')}>
+                        <IconButton size="sm" aria-label={t('canvas.diagram.zoomIn')} onClick={handleZoomIn} disabled={zoom >= 2}>
                             <ZoomInIcon size={16} />
                         </IconButton>
                     </Tooltip>
 
-                    <Tooltip title="Reset Zoom">
-                        <IconButton size="sm" aria-label="Reset Zoom" onClick={handleResetZoom}>
+                    <Tooltip title={t('canvas.diagram.resetZoom')}>
+                        <IconButton size="sm" aria-label={t('canvas.diagram.resetZoom')} onClick={handleResetZoom}>
                             <ResetIcon size={16} />
                         </IconButton>
                     </Tooltip>
@@ -232,11 +234,11 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
                     <label htmlFor="mermaid-code-editor" className="block text-sm font-medium mb-1">Mermaid code</label>
                     <Textarea
                         id="mermaid-code-editor"
-                        aria-label="Mermaid code"
+                        aria-label={t('canvas.diagram.mermaidCode')}
                         rows={15}
                         value={editBuffer}
                         onChange={(e) => setEditBuffer(e.target.value)}
-                        placeholder="Enter Mermaid diagram code..."
+                        placeholder={t('canvas.diagram.mermaidCodePlaceholder')}
                         fullWidth
                         className="w-full font-mono text-sm border border-border rounded p-2 resize-y"
                     />

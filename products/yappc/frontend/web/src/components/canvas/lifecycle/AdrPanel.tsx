@@ -16,6 +16,7 @@ import type { AdrPayload } from '@/shared/types/lifecycle-artifacts';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
 import { Textarea } from '../../ui/Textarea';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 export interface AdrPanelProps {
     data?: AdrPayload;
@@ -62,6 +63,7 @@ export const AdrPanel: React.FC<AdrPanelProps> = ({
     onClose,
     isLoading = false,
 }) => {
+    const { t } = useI18n();
     const [adr, setAdr] = useState<AdrPayload>({
         ...defaultData,
         ...data,
@@ -240,7 +242,7 @@ export const AdrPanel: React.FC<AdrPanelProps> = ({
                         id="adr-context"
                         value={adr.context}
                         onChange={(e) => updateField('context', e.target.value)}
-                        placeholder="What is the issue that we're seeing that is motivating this decision?"
+                        placeholder={t('canvas.adr.contextPlaceholder')}
                         rows={4}
                         fullWidth
                         resize="none"
@@ -264,7 +266,7 @@ export const AdrPanel: React.FC<AdrPanelProps> = ({
                                         type="text"
                                         value={option.name}
                                         onChange={(e) => updateOption(optIdx, { name: e.target.value })}
-                                        placeholder="Option name"
+                                        placeholder={t('canvas.adr.optionNamePlaceholder')}
                                         fullWidth
                                         size="sm"
                                         className="flex-1 px-2 py-1 border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
@@ -275,7 +277,7 @@ export const AdrPanel: React.FC<AdrPanelProps> = ({
                                             variant="ghost"
                                             size="sm"
                                             className="p-1 text-text-secondary hover:text-error-color transition-colors"
-                                            aria-label="Remove option"
+                                            aria-label={t('canvas.adr.removeOption')}
                                         >
                                             <Remove className="w-4 h-4" />
                                         </Button>
@@ -296,7 +298,7 @@ export const AdrPanel: React.FC<AdrPanelProps> = ({
                                                     onChange={(e) =>
                                                         updateProCon(optIdx, 'pros', proIdx, e.target.value)
                                                     }
-                                                    placeholder="Pro..."
+                                                    placeholder={t('canvas.adr.proPlaceholder')}
                                                     fullWidth
                                                     size="sm"
                                                     className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
@@ -306,7 +308,7 @@ export const AdrPanel: React.FC<AdrPanelProps> = ({
                                                         onClick={() => removeProCon(optIdx, 'pros', proIdx)}
                                                         variant="ghost"
                                                         size="sm"
-                                                        aria-label={`Remove pro ${proIdx + 1}`}
+                                                        aria-label={`${t('canvas.adr.removePro')} ${proIdx + 1}`}
                                                         className="p-0.5 text-text-secondary hover:text-error-color transition-colors"
                                                     >
                                                         <Remove className="w-3 h-3" />
@@ -337,7 +339,7 @@ export const AdrPanel: React.FC<AdrPanelProps> = ({
                                                     onChange={(e) =>
                                                         updateProCon(optIdx, 'cons', conIdx, e.target.value)
                                                     }
-                                                    placeholder="Con..."
+                                                    placeholder={t('canvas.adr.conPlaceholder')}
                                                     fullWidth
                                                     size="sm"
                                                     className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
@@ -347,7 +349,7 @@ export const AdrPanel: React.FC<AdrPanelProps> = ({
                                                         onClick={() => removeProCon(optIdx, 'cons', conIdx)}
                                                         variant="ghost"
                                                         size="sm"
-                                                        aria-label={`Remove con ${conIdx + 1}`}
+                                                        aria-label={`${t('canvas.adr.removeCon')} ${conIdx + 1}`}
                                                         className="p-0.5 text-text-secondary hover:text-error-color transition-colors"
                                                     >
                                                         <Remove className="w-3 h-3" />
@@ -391,7 +393,7 @@ export const AdrPanel: React.FC<AdrPanelProps> = ({
                         id="adr-decision"
                         value={adr.decision}
                         onChange={(e) => updateField('decision', e.target.value)}
-                        placeholder="What is the change that we're proposing and/or doing?"
+                        placeholder={t('canvas.adr.decisionPlaceholder')}
                         rows={4}
                         fullWidth
                         resize="none"
@@ -411,7 +413,7 @@ export const AdrPanel: React.FC<AdrPanelProps> = ({
                         id="adr-consequences"
                         value={adr.consequences}
                         onChange={(e) => updateField('consequences', e.target.value)}
-                        placeholder="What becomes easier or more difficult to do because of this change?"
+                        placeholder={t('canvas.adr.consequencesPlaceholder')}
                         rows={4}
                         fullWidth
                         resize="none"

@@ -90,8 +90,8 @@ test.describe('Route Alias Security E2E', () => {
 
   test.describe('Capability Gates via Aliases', () => {
     test('should enforce capability gate for /alerts alias', async ({ page }) => {
-      // Mock capability response showing alerts unavailable
-      await page.route('**/api/**/capabilities', (route) => {
+      // DC-P1.12: Use canonical /surfaces endpoint instead of /capabilities
+      await page.route('**/api/**/surfaces', (route) => {
         route.abort();
       });
 
@@ -105,18 +105,20 @@ test.describe('Route Alias Security E2E', () => {
     });
 
     test('should show degraded indicator when capability is degraded', async ({ page }) => {
-      // Mock capability response showing capability degraded
-      await page.route('**/api/**/capabilities', (route) => {
+      // DC-P1.12: Use canonical /surfaces endpoint instead of /capabilities
+      await page.route('**/api/**/surfaces', (route) => {
         route.fulfill({
           status: 200,
           body: JSON.stringify({
-            capabilities: [
-              {
-                id: 'memory',
-                status: 'degraded',
-                since: new Date().toISOString(),
-              },
-            ],
+            data: {
+              capabilities: [
+                {
+                  id: 'memory',
+                  status: 'degraded',
+                  since: new Date().toISOString(),
+                },
+              ],
+            },
           }),
         });
       });

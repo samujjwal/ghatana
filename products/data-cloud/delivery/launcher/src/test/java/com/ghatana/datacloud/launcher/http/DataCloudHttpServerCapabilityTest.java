@@ -56,7 +56,7 @@ class DataCloudHttpServerCapabilityTest {
             .withHealthSubsystem("database", () -> Map.of("status", "DOWN")); 
         server.start(); 
 
-        HttpResponse<String> response = get("/api/v1/capabilities", token); 
+        HttpResponse<String> response = get("/api/v1/surfaces", token); 
 
         assertThat(response.statusCode()).isEqualTo(200); 
         Map<String, Object> body = mapper.readValue(response.body(), Map.class); 
@@ -78,7 +78,7 @@ class DataCloudHttpServerCapabilityTest {
     }
 
     @Test
-    @DisplayName("surfaces endpoint matches compatibility capabilities payload")
+    @DisplayName("surfaces endpoint is idempotent")
     @SuppressWarnings("unchecked")
     void surfacesEndpointMatchesCapabilitiesPayload() throws Exception {
         JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L);
@@ -90,34 +90,56 @@ class DataCloudHttpServerCapabilityTest {
         server.start();
 
         HttpResponse<String> surfacesResponse = get("/api/v1/surfaces", token);
-        HttpResponse<String> capabilitiesResponse = get("/api/v1/capabilities", token);
+        HttpResponse<String> surfacesResponse2 = get("/api/v1/surfaces", token);
 
         assertThat(surfacesResponse.statusCode()).isEqualTo(200);
-        assertThat(capabilitiesResponse.statusCode()).isEqualTo(200);
+        assertThat(surfacesResponse2.statusCode()).isEqualTo(200);
 
         Map<String, Object> surfacesBody = mapper.readValue(surfacesResponse.body(), Map.class);
-        Map<String, Object> capabilitiesBody = mapper.readValue(capabilitiesResponse.body(), Map.class);
+        Map<String, Object> surfacesBody2 = mapper.readValue(surfacesResponse2.body(), Map.class);
 
         Map<String, Object> surfacesData = (Map<String, Object>) surfacesBody.get("data");
-        Map<String, Object> capabilitiesData = (Map<String, Object>) capabilitiesBody.get("data");
+        Map<String, Object> surfacesData2 = (Map<String, Object>) surfacesBody2.get("data");
         Map<String, Object> surfacesCapabilities = (Map<String, Object>) surfacesData.get("capabilities");
-        Map<String, Object> compatibilityCapabilities = (Map<String, Object>) capabilitiesData.get("capabilities");
+        Map<String, Object> surfacesCapabilities2 = (Map<String, Object>) surfacesData2.get("capabilities");
 
-        assertThat(surfacesCapabilities.keySet()).containsAll(compatibilityCapabilities.keySet());
-        assertThat(compatibilityCapabilities.keySet()).containsAll(surfacesCapabilities.keySet());
+        assertThat(surfacesCapabilities.keySet()).containsAll(surfacesCapabilities2.keySet());
+        assertThat(surfacesCapabilities2.keySet()).containsAll(surfacesCapabilities.keySet());
 
         Map<String, Object> surfacesRuntimePosture = (Map<String, Object>) ((Map<String, Object>) surfacesCapabilities.get("_meta")).get("runtimePosture");
-        Map<String, Object> capabilitiesRuntimePosture = (Map<String, Object>) ((Map<String, Object>) compatibilityCapabilities.get("_meta")).get("runtimePosture");
+        Map<String, Object> surfacesRuntimePosture2 = (Map<String, Object>) ((Map<String, Object>) surfacesCapabilities2.get("_meta")).get("runtimePosture");
+        
+        // DC-P1.18: Profile-posture parity checks for all durability fields
         assertThat(surfacesRuntimePosture.get("authenticationConfigured")).isEqualTo(true);
-        assertThat(capabilitiesRuntimePosture.get("authenticationConfigured")).isEqualTo(true);
-        assertThat(surfacesRuntimePosture.get("productionLikeProfile")).isEqualTo(capabilitiesRuntimePosture.get("productionLikeProfile"));
+        assertThat(surfacesRuntimePosture2.get("authenticationConfigured")).isEqualTo(true);
+        assertThat(surfacesRuntimePosture.get("productionLikeProfile")).isEqualTo(surfacesRuntimePosture2.get("productionLikeProfile"));
+        
+        // DC-P1.18: Non-local durability posture parity checks
+        assertThat(surfacesRuntimePosture).containsKey("settingsDurable");
+        assertThat(surfacesRuntimePosture).containsKey("entityStoreDurable");
+        assertThat(surfacesRuntimePosture).containsKey("coreEventStoreDurable");
+        assertThat(surfacesRuntimePosture).containsKey("idempotencyStoreDurable");
+        assertThat(surfacesRuntimePosture).containsKey("settingsStorageMode");
+        assertThat(surfacesRuntimePosture).containsKey("eventStoreWired");
+        assertThat(surfacesRuntimePosture).containsKey("eventTail");
+        assertThat(surfacesRuntimePosture).containsKey("auditConfigured");
+        assertThat(surfacesRuntimePosture).containsKey("policyConfigured");
+        assertThat(surfacesRuntimePosture).containsKey("metricsConfigured");
+        assertThat(surfacesRuntimePosture).containsKey("traceConfigured");
+        
+        // DC-P1.18: Ensure parity across both responses for durability fields
+        assertThat(surfacesRuntimePosture.get("settingsDurable")).isEqualTo(surfacesRuntimePosture2.get("settingsDurable"));
+        assertThat(surfacesRuntimePosture.get("entityStoreDurable")).isEqualTo(surfacesRuntimePosture2.get("entityStoreDurable"));
+        assertThat(surfacesRuntimePosture.get("coreEventStoreDurable")).isEqualTo(surfacesRuntimePosture2.get("coreEventStoreDurable"));
+        assertThat(surfacesRuntimePosture.get("idempotencyStoreDurable")).isEqualTo(surfacesRuntimePosture2.get("idempotencyStoreDurable"));
+        assertThat(surfacesRuntimePosture.get("settingsStorageMode")).isEqualTo(surfacesRuntimePosture2.get("settingsStorageMode"));
 
         assertThat(((Map<String, Object>) surfacesCapabilities.get("authentication.jwt")).get("status"))
-            .isEqualTo(((Map<String, Object>) compatibilityCapabilities.get("authentication.jwt")).get("status"));
+            .isEqualTo(((Map<String, Object>) surfacesCapabilities2.get("authentication.jwt")).get("status"));
         assertThat(((Map<String, Object>) surfacesCapabilities.get("health.database")).get("status"))
-            .isEqualTo(((Map<String, Object>) compatibilityCapabilities.get("health.database")).get("status"));
+            .isEqualTo(((Map<String, Object>) surfacesCapabilities2.get("health.database")).get("status"));
         assertThat(((Map<String, Object>) surfacesBody.get("meta")).get("tenantId"))
-            .isEqualTo(((Map<String, Object>) capabilitiesBody.get("meta")).get("tenantId"));
+            .isEqualTo(((Map<String, Object>) surfacesBody2.get("meta")).get("tenantId"));
     }
 
     private HttpResponse<String> get(String path, String token) throws Exception { 

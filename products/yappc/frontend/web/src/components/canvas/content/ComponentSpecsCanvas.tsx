@@ -20,6 +20,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface ComponentSpec {
     id: string;
@@ -220,6 +221,7 @@ const getStatusColor = (status: ComponentSpec['status']) => {
 };
 
 export const ComponentSpecsCanvas = () => {
+    const { t } = useI18n();
     const [specs] = useState<ComponentSpec[]>(MOCK_SPECS);
     const [selectedSpec, setSelectedSpec] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -285,7 +287,7 @@ export const ComponentSpecsCanvas = () => {
                     <Box className="flex gap-4 items-center mb-2">
                         <TextField
                             size="small"
-                            placeholder="Search components..."
+                            placeholder={t('canvas.components.search')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="flex-1"

@@ -78,7 +78,8 @@ describe('Input', () => {
   });
 
   it('renders input element', () => {
-    render(<Input label="Email" placeholder="Enter email" />);
+    const emailPlaceholder = 'Enter email';
+    render(<Input label="Email" placeholder={emailPlaceholder} />);
     expect(screen.getByPlaceholderText('Enter email')).toBeTruthy();
   });
 
@@ -150,7 +151,8 @@ describe('Select', () => {
   });
 
   it('renders placeholder option', () => {
-    render(<Select label="Cat" options={options} placeholder="Select..." />);
+    const selectPlaceholder = 'Select...';
+    render(<Select label="Cat" options={options} placeholder={selectPlaceholder} />);
     expect(screen.getByText('Select...')).toBeTruthy();
   });
 
@@ -188,7 +190,8 @@ describe('Textarea', () => {
   });
 
   it('renders textarea element', () => {
-    render(<Textarea label="Bio" placeholder="Enter bio..." />);
+    const bioPlaceholder = 'Enter bio...';
+    render(<Textarea label="Bio" placeholder={bioPlaceholder} />);
     expect(screen.getByPlaceholderText('Enter bio...')).toBeTruthy();
   });
 

@@ -73,6 +73,7 @@ const PHASE_LABELS: Record<LifecyclePhase, string> = {
 
 const PHASE_ORDER: LifecyclePhase[] = [
     LifecyclePhase.INTENT,
+    import { useI18n } from '../../i18n/I18nProvider';
     LifecyclePhase.SHAPE,
     LifecyclePhase.VALIDATE,
     LifecyclePhase.GENERATE,
@@ -83,6 +84,7 @@ const PHASE_ORDER: LifecyclePhase[] = [
 
 // ============================================================================
 // Sub-components
+        const { t } = useI18n();
 // ============================================================================
 
 interface PhaseDotProps {
@@ -115,7 +117,7 @@ function PhaseDot({ phase, status, isCurrent, progress, onClick }: PhaseDotProps
                 size="small"
                 onClick={onClick}
                 className={`${dotClass} min-h-0 p-0 text-transparent`}
-                aria-label={`Go to ${PHASE_LABELS[phase]} phase`}
+                aria-label={t('canvas.statusBar.goToPhase', { phase: PHASE_LABELS[phase] })}
             >
                 <span className="sr-only">{PHASE_LABELS[phase]}</span>
             </Button>
@@ -237,7 +239,7 @@ export function CanvasStatusBar({
                                 <IconButton
                                     size="small"
                                     onClick={() => setIsExpanded(false)}
-                                    aria-label="Collapse progress bar"
+                                    aria-label={t('canvas.statusBar.collapse')}
                                 >
                                     <UnfoldLessOutlined size={16} />
                                 </IconButton>
@@ -277,7 +279,7 @@ export function CanvasStatusBar({
                             <IconButton
                                 size="small"
                                 onClick={() => setIsExpanded(true)}
-                                aria-label="Expand progress bar"
+                                aria-label={t('canvas.statusBar.expand')}
                                 className="ml-1 p-1"
                             >
                                 <UnfoldMoreOutlined className="text-base" />

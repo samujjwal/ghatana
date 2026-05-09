@@ -24,6 +24,7 @@ import { PHASE_LABELS } from '../../../types/lifecycle';
 import { PANELS, TRANSITIONS, RADIUS } from '../../../styles/design-tokens';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -62,6 +63,7 @@ export function CanvasTaskPanel({
     hoverExpand = true,
     className = '',
 }: CanvasTaskPanelProps) {
+    const { t } = useI18n();
     const { currentPhase } = useLifecyclePhase();
     const {
         tasks,
@@ -183,8 +185,8 @@ export function CanvasTaskPanel({
                     variant="ghost"
                     size="sm"
                     className={`p-2 ${RADIUS.button} hover:bg-surface-muted dark:hover:bg-surface-muted ${TRANSITIONS.fast}`}
-                    title="Expand task panel (hover to preview)"
-                    aria-label="Expand task panel"
+                    title={t('canvas.task.expand')}
+                    aria-label={t('canvas.task.expand')}
                 >
                     <ChevronRight className="w-5 h-5 text-text-secondary" />
                 </Button>
@@ -314,7 +316,7 @@ export function CanvasTaskPanel({
                                 if (e.key === 'Enter') handleAddTask();
                                 if (e.key === 'Escape') setShowAddTask(false);
                             }}
-                            placeholder="Task name..."
+                            placeholder={t('canvas.task.taskNamePlaceholder')}
                             autoFocus
                             fullWidth
                             size="sm"

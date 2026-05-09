@@ -18,6 +18,7 @@ import {
   ALL_PERSONA_TYPES,
   type PersonaType
 } from '../../context/PersonaContext';
+import { useI18n } from '../../i18n/I18nProvider';
 import { Button } from '../ui/Button';
 import { Select } from '../ui/Select';
 
@@ -34,6 +35,7 @@ export function PersonaSwitcher({
   showInSidebar = true,
   className = '',
 }: PersonaSwitcherProps) {
+  const { t } = useI18n();
   const {
     activePersonas,
     primaryPersona,
@@ -47,7 +49,7 @@ export function PersonaSwitcher({
 
   if (variant === 'compact' && !isExpanded) {
     return (
-      <div className={`${className}`} role="region" aria-label="Persona selection">
+      <div className={`${className}`} role="region" aria-label={t('persona.currentRole', { role: PERSONA_DEFINITIONS[primaryPersona].name, count: virtualPersonas.length })}>
         {/* Compact view - show active persona icons */}
         <Button
           onClick={() => setIsExpanded(true)}
@@ -55,7 +57,7 @@ export function PersonaSwitcher({
           title="Switch persona"
           aria-expanded={isExpanded}
           aria-haspopup="listbox"
-          aria-label={`Current role: ${PERSONA_DEFINITIONS[primaryPersona].name}. ${virtualPersonas.length} AI agents active. Click to change roles.`}
+          aria-label={t('persona.currentRole', { role: PERSONA_DEFINITIONS[primaryPersona].name, count: virtualPersonas.length })}
           variant="ghost"
           size="sm"
         >
@@ -99,7 +101,7 @@ export function PersonaSwitcher({
     <div
       className={`bg-bg-paper rounded-lg border border-divider ${className}`}
       role="region"
-      aria-label="Role selection panel"
+      aria-label={t('persona.roleSelectionPanel')}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-divider">
@@ -110,7 +112,7 @@ export function PersonaSwitcher({
           <Button
             onClick={() => setIsExpanded(false)}
             className="p-1 rounded hover:bg-grey-100 dark:hover:bg-grey-800"
-            aria-label="Collapse role selection"
+            aria-label={t('persona.collapseRoleSelection')}
             variant="ghost"
             size="sm"
           >
@@ -134,7 +136,12 @@ export function PersonaSwitcher({
               key={personaId}
               role="option"
               aria-selected={isActive}
-              aria-label={`${persona.name}${isActive ? ', selected' : ''}${isPrimary ? ', primary role' : ''}${isVirtual ? ', handled by AI agent' : ''}`}
+              aria-label={t('persona.personaLabel', {
+                name: persona.name,
+                selected: isActive ? ', selected' : '',
+                primary: isPrimary ? ', primary role' : '',
+                virtual: isVirtual ? ', handled by AI agent' : '',
+              })}
               tabIndex={0}
               className={`
                 flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors

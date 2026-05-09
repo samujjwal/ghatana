@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useCallback } from 'react';
 import { FileText as Description } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useI18n } from '../../i18n/I18nProvider';
 
 /**
  * Zoomable Lifecycle Zones component.
@@ -184,6 +185,7 @@ export function ZoomableLifecycleZones({
   onPhaseClick,
   className,
 }: ZoomableLifecycleZonesProps) {
+  const { t } = useI18n();
   // Stable callback ref to avoid re-creating click handlers each render
   const onPhaseClickRef = useRef(onPhaseClick);
   onPhaseClickRef.current = onPhaseClick;
@@ -239,7 +241,7 @@ export function ZoomableLifecycleZones({
   return (
     <div
       data-testid="lifecycle-zones"
-      aria-label="Lifecycle phases"
+      aria-label={t('canvas.zoomableLifecycleZones.phases')}
       className={cn('relative w-full h-full', className)}
     >
       {/* Connection Lines */}

@@ -17,6 +17,7 @@ import { Undo2 as UndoIcon, Redo2 as RedoIcon, Copy as CopyIcon, ClipboardPaste 
 import { useActions, type ActionDefinition, type ActionCategory, type ActionState } from '../../services/ActionRegistry';
 import { useSelectionContext, useCapabilitiesContext } from '../../context/WorkflowContextProvider';
 import { LifecyclePhase, PHASE_LABELS } from '../../types/lifecycle';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -230,6 +231,7 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
     handlers = {},
 }) => {
     const { actions, execute, formatShortcut } = useActions(state);
+    const { t } = useI18n();
     const { elements, type: selectionType } = useSelectionContext();
     const capabilities = useCapabilitiesContext();
 
@@ -288,7 +290,7 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
                 ${className}
             `}
             role="toolbar"
-            aria-label="Canvas toolbar"
+            aria-label={t('contextualToolbar.canvasToolbar')}
         >
             {/* Phase Indicator */}
             {showPhaseIndicator && state.currentPhase && (
@@ -496,7 +498,7 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
                     <IconButton
                         onClick={handleMoreClick}
                         size="sm"
-                        aria-label="More actions"
+                        aria-label={t('contextualToolbar.moreActions')}
                         aria-haspopup="true"
                     >
                         <MoreIcon className="w-4 h-4" />

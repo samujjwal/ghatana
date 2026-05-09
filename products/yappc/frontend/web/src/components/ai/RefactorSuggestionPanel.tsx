@@ -30,6 +30,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { ConfidenceBadge } from './ConfidenceBadge';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 import {
   applyRefactorSuggestion,
   listRefactorSuggestions,
@@ -107,6 +108,7 @@ interface SuggestionRowProps {
 }
 
 function SuggestionRow({ suggestion, designId, onSimulateSuccess }: SuggestionRowProps) {
+  const { t } = useI18n();
   const [expanded, setExpanded] = useState(false);
   const queryClient = useQueryClient();
 
@@ -308,7 +310,7 @@ export function RefactorSuggestionPanel({
     <aside
       className="fixed right-0 top-14 z-40 flex h-[calc(100vh-3.5rem)] w-full max-w-lg flex-col border-l border-divider bg-bg-paper shadow-2xl"
       role="complementary"
-      aria-label="Refactoring suggestions panel"
+      aria-label={t('ai.refactor.panelLabel')}
       data-testid="refactor-suggestion-panel"
     >
       {/* Header */}
@@ -330,7 +332,7 @@ export function RefactorSuggestionPanel({
           className="rounded-md p-1 text-text-secondary hover:bg-grey-100"
           variant="ghost"
           size="sm"
-          aria-label="Close refactoring suggestions panel"
+          aria-label={t('ai.refactor.closePanel')}
           data-testid="btn-close-refactor-panel"
         >
           <X className="h-4 w-4" />
@@ -339,8 +341,7 @@ export function RefactorSuggestionPanel({
 
       {/* Simulate diff preview (sticky) */}
       {activeSimResult && (
-        <div className="border-b border-divider px-4 py-3">
-          <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2 flex items-center justify-between">
             <p className="text-xs font-semibold text-text-primary">Simulated diff preview</p>
             <Button
               type="button"
@@ -348,13 +349,12 @@ export function RefactorSuggestionPanel({
               variant="ghost"
               size="sm"
               onClick={() => setActiveSimResult(null)}
-              aria-label="Dismiss diff preview"
+              aria-label={t('ai.refactor.dismissDiff')}
             >
               Dismiss
             </Button>
           </div>
           <DiffViewer result={activeSimResult} />
-        </div>
       )}
 
       {/* Suggestions list */}

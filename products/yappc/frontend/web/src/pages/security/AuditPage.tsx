@@ -14,10 +14,12 @@ import { useParams } from 'react-router';
 import { ScrollText, Search, Filter, Download } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { useI18n } from '../../i18n/I18nProvider';
 
 const AuditPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [search, setSearch] = useState('');
+  const { t } = useI18n();
 
   return (
     <div className="min-h-screen bg-surface text-white p-8">
@@ -42,7 +44,7 @@ const AuditPage: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
             <Input
               type="text"
-              placeholder="Search audit events..."
+              placeholder={t('audit.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 rounded-lg bg-surface border border-border text-sm text-white placeholder-zinc-500 focus:border-violet-500 focus:outline-none"

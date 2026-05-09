@@ -15,6 +15,7 @@ import React, { useState, useCallback } from 'react';
 import { Button } from '../ui/Button';
 import { Plus as Add, Minus as Remove, Save, Sparkles as AutoAwesome, Flag, ClipboardList as Assignment, Calendar as CalendarToday, GripVertical as DragIndicator } from 'lucide-react';
 import type { DeliveryPlanPayload } from '@/shared/types/lifecycle-artifacts';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface DeliveryPlanEditorProps {
     data?: DeliveryPlanPayload;
@@ -71,6 +72,7 @@ export const DeliveryPlanEditor: React.FC<DeliveryPlanEditorProps> = ({
     onAIAssist,
     isLoading = false,
 }) => {
+    const { t } = useI18n();
     const [plan, setPlan] = useState<DeliveryPlanPayload>({
         ...defaultData,
         ...data,
@@ -283,7 +285,7 @@ export const DeliveryPlanEditor: React.FC<DeliveryPlanEditorProps> = ({
                                         type="text"
                                         value={milestone.name}
                                         onChange={(e) => updateMilestone(mIdx, { name: e.target.value })}
-                                        placeholder="Milestone name"
+                                        placeholder={t('deploy.delivery.milestoneNamePlaceholder')}
                                         className="flex-1 px-2 py-1 text-sm font-medium border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                     />
                                     <NativeInput
@@ -322,7 +324,7 @@ export const DeliveryPlanEditor: React.FC<DeliveryPlanEditorProps> = ({
                                         <NativeTextarea
                                             value={milestone.description}
                                             onChange={(e) => updateMilestone(mIdx, { description: e.target.value })}
-                                            placeholder="Milestone description..."
+                                            placeholder={t('deploy.delivery.milestoneDescriptionPlaceholder')}
                                             rows={2}
                                             className="w-full px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none"
                                         />
@@ -339,21 +341,21 @@ export const DeliveryPlanEditor: React.FC<DeliveryPlanEditorProps> = ({
                                                             type="text"
                                                             value={task.name}
                                                             onChange={(e) => updateTask(mIdx, tIdx, { name: e.target.value })}
-                                                            placeholder="Task name"
+                                                            placeholder={t('deploy.delivery.taskNamePlaceholder')}
                                                             className="flex-1 px-2 py-1 text-xs border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                                         />
                                                         <NativeInput
                                                             type="text"
                                                             value={task.assignee}
                                                             onChange={(e) => updateTask(mIdx, tIdx, { assignee: e.target.value })}
-                                                            placeholder="Assignee"
+                                                            placeholder={t('deploy.delivery.assigneePlaceholder')}
                                                             className="w-24 px-2 py-1 text-xs border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                                         />
                                                         <NativeInput
                                                             type="text"
                                                             value={task.estimate}
                                                             onChange={(e) => updateTask(mIdx, tIdx, { estimate: e.target.value })}
-                                                            placeholder="Est."
+                                                            placeholder={t('deploy.delivery.estimatePlaceholder')}
                                                             className="w-16 px-2 py-1 text-xs border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                                         />
                                                         <NativeSelect
@@ -405,7 +407,7 @@ export const DeliveryPlanEditor: React.FC<DeliveryPlanEditorProps> = ({
                                     type="text"
                                     value={dep}
                                     onChange={(e) => updateListItem('dependencies', idx, e.target.value)}
-                                    placeholder="External dependency..."
+                                    placeholder={t('deploy.delivery.dependencyPlaceholder')}
                                     className="flex-1 px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                 />
                                 <Button
@@ -435,7 +437,7 @@ export const DeliveryPlanEditor: React.FC<DeliveryPlanEditorProps> = ({
                                     type="text"
                                     value={risk}
                                     onChange={(e) => updateListItem('risks', idx, e.target.value)}
-                                    placeholder="Potential risk..."
+                                    placeholder={t('deploy.delivery.riskPlaceholder')}
                                     className="flex-1 px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                 />
                                 <Button
@@ -465,7 +467,7 @@ export const DeliveryPlanEditor: React.FC<DeliveryPlanEditorProps> = ({
                                     type="text"
                                     value={assumption}
                                     onChange={(e) => updateListItem('assumptions', idx, e.target.value)}
-                                    placeholder="Assumption..."
+                                    placeholder={t('deploy.delivery.assumptionPlaceholder')}
                                     className="flex-1 px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary-500"
                                 />
                                 <Button

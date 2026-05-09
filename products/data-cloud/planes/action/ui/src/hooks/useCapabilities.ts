@@ -1,6 +1,7 @@
 /**
  * F-024 / SIMP-10: Fetches the server-driven capability manifest from
- * `/api/v1/capabilities` and exposes it as a typed hook.
+ * `/api/v1/surfaces` and exposes it as a typed hook.
+ * DC-P1.12: Migrated from /api/v1/capabilities to canonical /api/v1/surfaces endpoint.
  *
  * The manifest is used throughout the cockpit to gate pages and actions on
  * capabilities that are actually wired in the running backend — preventing
@@ -58,7 +59,7 @@ const DEFAULT_CAPABILITIES: AepCapabilities = {
 };
 
 async function fetchCapabilities(): Promise<CapabilitiesResponse> {
-  const response = await apiClient.get<CapabilitiesResponse>('/api/v1/capabilities');
+  const response = await apiClient.get<CapabilitiesResponse>('/api/v1/surfaces');
   return response.data;
 }
 

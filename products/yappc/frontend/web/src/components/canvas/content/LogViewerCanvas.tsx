@@ -22,6 +22,7 @@ import {
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
 import { Search, Download, RefreshCw as Refresh, Play as PlayArrow, Pause } from 'lucide-react';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -147,6 +148,7 @@ const LogEntryItem = ({ log }: { log: LogEntry }) => {
 };
 
 export const LogViewerCanvas = () => {
+    const { t } = useI18n();
     const [logs, setLogs] = useState<LogEntry[]>(generateMockLogs());
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedLevels, setSelectedLevels] = useState<Set<LogLevel>>(new Set(['info', 'warn', 'error']));
@@ -239,7 +241,7 @@ export const LogViewerCanvas = () => {
                     className="flex items-center gap-4 p-3" style={{ borderBottom: '1px solid rgba(255, backgroundColor: 'rgba(255 }} >
                     <TextField
                         size="small"
-                        placeholder="Search logs..."
+                            placeholder={t('canvas.logViewer.searchLogs')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         InputProps={{

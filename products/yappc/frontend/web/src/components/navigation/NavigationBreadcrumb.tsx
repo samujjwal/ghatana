@@ -18,6 +18,7 @@ import { LayoutDashboard as Dashboard, Folder, ChevronDown as KeyboardArrowDown,
 import { Box, MenuItem, ListItemIcon, ListItemText, Divider, Typography } from '@ghatana/design-system';
 import { Button } from '../design-system';
 import { cn } from '../../lib/utils';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export type CanvasMode = 'design' | 'architecture' | 'code' | 'deploy';
 
@@ -80,6 +81,7 @@ export function NavigationBreadcrumb({
     onCanvasModeChange,
     className,
 }: NavigationBreadcrumbProps) {
+    const { t } = useI18n();
     const navigate = useNavigate();
     const [workspaceMenuAnchor, setWorkspaceMenuAnchor] = useState<null | HTMLElement>(null);
     const [projectMenuAnchor, setProjectMenuAnchor] = useState<null | HTMLElement>(null);
@@ -110,7 +112,7 @@ export function NavigationBreadcrumb({
     return (
         <nav
             className={cn('flex items-center gap-2 flex-1 overflow-x-auto', className)}
-            aria-label="Breadcrumb navigation"
+            aria-label={t('nav.breadcrumbNavigation')}
             style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -128,7 +130,7 @@ export function NavigationBreadcrumb({
                         size="sm"
                         onClick={handleWorkspaceClick}
                         className="max-w-[150px] font-semibold"
-                        aria-label="Workspace selector"
+                        aria-label={t('nav.workspaceSelector')}
                     >
                         <span className="truncate">{workspace.name}</span>
                         {workspaces.length > 1 && <KeyboardArrowDown className="w-4 h-4 ml-1 opacity-50" />}
@@ -164,7 +166,7 @@ export function NavigationBreadcrumb({
                         size="sm"
                         onClick={handleProjectClick}
                         className="max-w-[180px] font-semibold"
-                        aria-label="Project selector"
+                        aria-label={t('nav.projectSelector')}
                     >
                         <span className="truncate">{project.name}</span>
                         {projects.length > 0 && <KeyboardArrowDown className="w-4 h-4 ml-1 opacity-50" />}

@@ -15,6 +15,7 @@ import { Button, Card, CardContent } from '@ghatana/design-system';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export type LessonCategory =
   | 'design'
@@ -117,6 +118,7 @@ export const LearnRetrospectivePanel: React.FC<LearnRetrospectivePanelProps> = (
   canAddLessons = true,
   className = '',
 }) => {
+  const { t } = useI18n();
   const [showForm, setShowForm] = useState(false);
   const [draft, setDraft] = useState<NewLessonDraft>(EMPTY_DRAFT);
   const [formError, setFormError] = useState<string | null>(null);
@@ -163,7 +165,7 @@ export const LearnRetrospectivePanel: React.FC<LearnRetrospectivePanelProps> = (
   return (
     <section
       className={`learn-retrospective-panel space-y-6 ${className}`}
-      aria-label="Learn retrospective"
+      aria-label={t('phase.learn.panel')}
       data-testid="learn-retrospective-panel"
     >
       {/* Status Header */}
@@ -200,7 +202,7 @@ export const LearnRetrospectivePanel: React.FC<LearnRetrospectivePanelProps> = (
       )}
 
       {/* Lessons List */}
-      <section aria-label="Captured lessons">
+      <section aria-label={t('phase.learn.capturedLessons')}>
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-medium text-fg">Lessons ({lessons.length})</h4>
           {canAddLessons && !retrospectiveComplete && (
@@ -213,7 +215,7 @@ export const LearnRetrospectivePanel: React.FC<LearnRetrospectivePanelProps> = (
         {showForm && (
           <Card variant="outlined" className="mb-4">
             <CardContent className="p-4">
-              <form onSubmit={handleSubmit} noValidate aria-label="Add new lesson">
+              <form onSubmit={handleSubmit} noValidate aria-label={t('phase.learn.addNewLesson')}>
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="lesson-title" className="block text-sm font-medium text-fg mb-1">
@@ -227,7 +229,7 @@ export const LearnRetrospectivePanel: React.FC<LearnRetrospectivePanelProps> = (
                         handleFieldChange('title', e.target.value)
                       }
                       className="w-full rounded-md border border-border bg-surface text-fg text-sm px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
-                      placeholder="What did you learn?"
+                      placeholder={t('phase.learn.lessonTitlePlaceholder')}
                       required
                       maxLength={200}
                     />
@@ -243,7 +245,7 @@ export const LearnRetrospectivePanel: React.FC<LearnRetrospectivePanelProps> = (
                         handleFieldChange('description', e.target.value)
                       }
                       className="w-full rounded-md border border-border bg-surface text-fg text-sm px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring resize-y min-h-[80px]"
-                      placeholder="Describe the lesson and what should change in future cycles."
+                      placeholder={t('phase.learn.lessonDescriptionPlaceholder')}
                       required
                       maxLength={2000}
                     />
@@ -367,7 +369,7 @@ export const LearnRetrospectivePanel: React.FC<LearnRetrospectivePanelProps> = (
 
       {/* Promoted Patterns */}
       {patterns.length > 0 && (
-        <section aria-label="Reusable patterns">
+        <section aria-label={t('phase.learn.reusablePatterns')}>
           <h4 className="text-sm font-medium text-fg mb-3">
             Reusable patterns ({patterns.length})
           </h4>
@@ -413,11 +415,11 @@ export const LearnRetrospectivePanel: React.FC<LearnRetrospectivePanelProps> = (
 
       {/* Retrospective Complete Gate */}
       {!retrospectiveComplete && lessons.length > 0 && (
-        <section aria-label="Complete retrospective">
+        <section aria-label={t('phase.learn.completeRetrospective')}>
           <Button
             variant="solid"
             onClick={onMarkComplete}
-            aria-label="Mark retrospective as complete"
+            aria-label={t('phase.learn.markComplete')}
             className="w-full sm:w-auto"
           >
             Mark retrospective complete

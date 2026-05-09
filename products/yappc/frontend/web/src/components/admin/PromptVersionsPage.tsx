@@ -30,6 +30,7 @@ import {
   updatePromptWeights,
   type PromptVersion,
 } from '../../services/admin/promptVersioningApi';
+import { useI18n } from '../../i18n/I18nProvider';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 
@@ -38,6 +39,7 @@ interface PromptVersionsPageProps {
 }
 
 export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
 
   const [selectedPrompt, setSelectedPrompt] = useState<PromptVersion | null>(null);
@@ -146,8 +148,8 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
             type="button"
             onClick={() => void refetch()}
             className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-fg-muted transition-colors"
-            aria-label="Refresh"
-            title="Refresh"
+            aria-label={t('admin.prompts.refresh')}
+            title={t('admin.prompts.refresh')}
             variant="ghost"
             size="sm"
           >
@@ -230,8 +232,8 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
                             type="button"
                             onClick={() => handleView(version)}
                             className="p-1.5 rounded hover:bg-surface-muted text-fg-muted hover:text-fg-muted transition-colors"
-                            aria-label="View prompt version"
-                            title="View content"
+                            aria-label={t('admin.prompts.viewPromptVersion')}
+                            title={t('admin.prompts.viewContent')}
                             variant="ghost"
                             size="sm"
                           >
@@ -242,8 +244,8 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
                               type="button"
                               onClick={() => handleRollback(version)}
                               className="p-1.5 rounded hover:bg-surface-muted text-fg-muted hover:text-fg-muted transition-colors"
-                              aria-label="Rollback to this version"
-                              title="Rollback to this version"
+                              aria-label={t('admin.prompts.rollbackVersion')}
+                              title={t('admin.prompts.rollbackVersion')}
                               variant="ghost"
                               size="sm"
                             >
@@ -254,8 +256,8 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
                             type="button"
                             onClick={() => handleWeightRebalance(version)}
                             className="p-1.5 rounded hover:bg-surface-muted text-fg-muted hover:text-fg-muted transition-colors"
-                            aria-label="Configure weight"
-                            title="Configure weight"
+                            aria-label={t('admin.prompts.configureWeight')}
+                            title={t('admin.prompts.configureWeight')}
                             variant="ghost"
                             size="sm"
                           >
@@ -291,7 +293,7 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
                 className="p-1 rounded hover:bg-surface text-fg-muted hover:text-fg-muted"
                 variant="ghost"
                 size="sm"
-                aria-label="Close prompt version content"
+                aria-label={t('admin.prompts.closeContentDialog')}
               >
                 <CloseIcon size={20} />
               </Button>
@@ -341,7 +343,7 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
                 className="p-1 rounded hover:bg-surface text-fg-muted hover:text-fg-muted"
                 variant="ghost"
                 size="sm"
-                aria-label="Close rollback dialog"
+                aria-label={t('admin.prompts.closeRollbackDialog')}
               >
                 <CloseIcon size={20} />
               </Button>
@@ -361,7 +363,7 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
                   type="text"
                   value={rollbackReason}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRollbackReason(e.target.value)}
-                  placeholder="Reason for rollback…"
+                  placeholder={t('admin.prompts.rollbackReasonPlaceholder')}
                   className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-fg-muted placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   fullWidth
                 />
@@ -409,7 +411,7 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
                 className="p-1 rounded hover:bg-surface text-fg-muted hover:text-fg-muted"
                 variant="ghost"
                 size="sm"
-                aria-label="Close weight dialog"
+                aria-label={t('admin.prompts.closeWeightDialog')}
               >
                 <CloseIcon size={20} />
               </Button>

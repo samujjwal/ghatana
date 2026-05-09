@@ -16,6 +16,7 @@ import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
 import { Select } from '../../ui/Select';
 import { Textarea } from '../../ui/Textarea';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 export interface ThreatModelPanelProps {
     data?: ThreatModelPayload;
@@ -85,6 +86,7 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
     onClose,
     isLoading = false,
 }) => {
+    const { t } = useI18n();
     const [model, setModel] = useState<ThreatModelPayload>({
         ...defaultData,
         ...data,
@@ -317,7 +319,7 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                                                 type="text"
                                                 value={asset.name}
                                                 onChange={(e) => updateAsset(idx, { name: e.target.value })}
-                                                placeholder="Asset name"
+                                                placeholder={t('canvas.threat.assetNamePlaceholder')}
                                                 fullWidth
                                                 size="sm"
                                                 className="px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
@@ -326,7 +328,7 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                                                 type="text"
                                                 value={asset.description}
                                                 onChange={(e) => updateAsset(idx, { description: e.target.value })}
-                                                placeholder="Description"
+                                                placeholder={t('canvas.threat.descriptionPlaceholder')}
                                                 fullWidth
                                                 size="sm"
                                                 className="px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
@@ -337,7 +339,7 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                                                 onClick={() => removeAsset(idx)}
                                                 variant="ghost"
                                                 size="sm"
-                                                aria-label={`Remove asset ${idx + 1}`}
+                                                aria-label={`${t('canvas.threat.removeAsset')} ${idx + 1}`}
                                                 className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                             >
                                                 <Remove className="w-4 h-4" />
@@ -367,7 +369,7 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                                                 type="text"
                                                 value={actor.name}
                                                 onChange={(e) => updateActor(idx, { name: e.target.value })}
-                                                placeholder="Actor name"
+                                                placeholder={t('canvas.threat.actorNamePlaceholder')}
                                                 fullWidth
                                                 size="sm"
                                                 className="px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
@@ -376,7 +378,7 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                                                 type="text"
                                                 value={actor.description}
                                                 onChange={(e) => updateActor(idx, { description: e.target.value })}
-                                                placeholder="Description"
+                                                placeholder={t('canvas.threat.descriptionPlaceholder')}
                                                 fullWidth
                                                 size="sm"
                                                 className="px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
@@ -395,7 +397,7 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                                                 onClick={() => removeActor(idx)}
                                                 variant="ghost"
                                                 size="sm"
-                                                aria-label={`Remove actor ${idx + 1}`}
+                                                aria-label={`${t('canvas.threat.removeActor')} ${idx + 1}`}
                                                 className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                             >
                                                 <Remove className="w-4 h-4" />
@@ -460,7 +462,7 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                                                 value={threat.asset}
                                                 onChange={(e) => updateThreat(idx, { asset: e.target.value })}
                                                 options={model.assets.filter((a) => a.name.trim()).map((a) => ({ value: a.name, label: a.name }))}
-                                                placeholder="Select asset"
+                                                placeholder={t('canvas.threat.selectAssetPlaceholder')}
                                                 size="sm"
                                                 className="px-2 py-1 text-xs border border-divider rounded bg-bg-default text-text-primary focus:outline-none focus:ring-1 focus:ring-info-border"
                                             />
@@ -475,7 +477,7 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                                                 onClick={() => removeThreat(idx)}
                                                 variant="ghost"
                                                 size="sm"
-                                                aria-label={`Remove threat ${idx + 1}`}
+                                                aria-label={`${t('canvas.threat.removeThreat')} ${idx + 1}`}
                                                 className="ml-auto p-1 text-text-secondary hover:text-error-color transition-colors"
                                             >
                                                 <Remove className="w-4 h-4" />
@@ -484,7 +486,7 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                                         <Textarea
                                             value={threat.description}
                                             onChange={(e) => updateThreat(idx, { description: e.target.value })}
-                                            placeholder="Describe the threat..."
+                                            placeholder={t('canvas.threat.describeThreatPlaceholder')}
                                             rows={2}
                                             fullWidth
                                             resize="none"
@@ -538,7 +540,7 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                                                 type="text"
                                                 value={mit.threat}
                                                 onChange={(e) => updateMitigation(idx, { threat: e.target.value })}
-                                                placeholder="Related threat"
+                                                placeholder={t('canvas.threat.relatedThreatPlaceholder')}
                                                 fullWidth
                                                 size="sm"
                                                 className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
@@ -559,7 +561,7 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                                                 onClick={() => removeMitigation(idx)}
                                                 variant="ghost"
                                                 size="sm"
-                                                aria-label={`Remove mitigation ${idx + 1}`}
+                                                aria-label={`${t('canvas.threat.removeMitigation')} ${idx + 1}`}
                                                 className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                             >
                                                 <Remove className="w-4 h-4" />
@@ -568,7 +570,7 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                                         <Textarea
                                             value={mit.control}
                                             onChange={(e) => updateMitigation(idx, { control: e.target.value })}
-                                            placeholder="Describe the security control..."
+                                            placeholder={t('canvas.threat.describeControlPlaceholder')}
                                             rows={2}
                                             fullWidth
                                             resize="none"
@@ -597,7 +599,7 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                             <Textarea
                                 value={model.residualRisk}
                                 onChange={(e) => setModel((prev) => ({ ...prev, residualRisk: e.target.value }))}
-                                placeholder="Describe remaining risks after mitigations are applied..."
+                                placeholder={t('canvas.threat.residualRiskPlaceholder')}
                                 rows={3}
                                 fullWidth
                                 resize="none"

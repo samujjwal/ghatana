@@ -34,6 +34,7 @@ import { Loader2, AlertCircle, ShieldPlus } from 'lucide-react';
 import { AIAssistLabel } from '../../ai/AIAssistLabel';
 import type { AIAssistSource } from '../../ai/AIAssistLabel';
 import { Button } from '../../ui/Button';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -160,6 +161,7 @@ function SuggestionItem({
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export function StrideSuggestionPanel({ modelId, onAddThreat, className }: StrideSuggestionPanelProps) {
+  const { t } = useI18n();
   const { data, isLoading, isError } = useQuery<StrideSuggestionData>({
     queryKey: ['stride-suggestions', modelId],
     queryFn: () => fetchSuggestions(modelId),
@@ -198,7 +200,7 @@ export function StrideSuggestionPanel({ modelId, onAddThreat, className }: Strid
   return (
     <section
       data-testid="stride-suggestion-panel"
-      aria-label="AI STRIDE threat suggestions"
+      aria-label={t('canvas.strideSuggestions.aria')}
       className={['space-y-3', className].filter(Boolean).join(' ')}
     >
       <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">

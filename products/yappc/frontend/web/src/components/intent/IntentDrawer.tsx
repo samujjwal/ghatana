@@ -17,6 +17,7 @@ import { IdeaBriefForm } from './IdeaBriefForm';
 import { ResearchPackEditor } from './ResearchPackEditor';
 import { ProblemStatementEditor } from './ProblemStatementEditor';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 import {
     LifecycleArtifactKind,
     LIFECYCLE_ARTIFACT_CATALOG,
@@ -84,6 +85,7 @@ export const IntentDrawer: React.FC<IntentDrawerProps> = ({
     onAIAssist,
     existingData = {},
 }) => {
+    const { t } = useI18n();
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
     const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -164,7 +166,7 @@ export const IntentDrawer: React.FC<IntentDrawerProps> = ({
                         variant="ghost"
                         size="small"
                         className="p-2 text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors"
-                        aria-label="Close drawer"
+                        aria-label={t('intent.drawer.close')}
                     >
                         <Close className="w-5 h-5" />
                     </Button>

@@ -113,7 +113,9 @@ public final class EventLogStoreAdapters {
             entry.payload(),
             entry.contentType(),
             entry.headers(),
-            entry.idempotencyKey()
+            entry.idempotencyKey(),
+            // DC-20: Platform EventEntry doesn't have these fields, use empty
+            Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()
         );
     }
 
@@ -202,7 +204,9 @@ public final class EventLogStoreAdapters {
                 entry.payload(),
                 entry.contentType(),
                 entry.headers(),
-                entry.idempotencyKey()
+                entry.idempotencyKey(),
+                // DC-20: Platform EventEntry doesn't have these fields, use empty
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()
             );
         }
 
@@ -332,7 +336,9 @@ public final class EventLogStoreAdapters {
                 entry.payload(),
                 entry.contentType(),
                 entry.headers(),
-                entry.idempotencyKey()
+                entry.idempotencyKey(),
+                // DC-20: Platform EventEntry doesn't have these fields, use empty
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()
             );
         }
 

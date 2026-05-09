@@ -86,7 +86,8 @@ export interface AutonomyAction {
   timestamp: string;
   domain: string;
   action: string;
-  status: 'SUCCESS' | 'FAILED' | 'PENDING' | 'ADVISORY';
+  // Autonomy decision status (different domain from execution lifecycle)
+  status: 'SUCCESS' | 'FAILED' | 'ADVISORY';
   confidence: number;
   outcome?: string;
   metadata: Record<string, unknown>;

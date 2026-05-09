@@ -12,6 +12,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useI18n } from '../../../i18n/I18nProvider';
 import type { ReactNode } from 'react';
 import {
   Dialog,
@@ -129,6 +130,7 @@ export function CanvasWelcomeDialog({
     onSkip,
     steps = DEFAULT_STEPS,
 }: CanvasWelcomeDialogProps) {
+    const { t } = useI18n();
     const [activeStep, setActiveStep] = useState(0);
     const [neverShowAgain, setNeverShowAgain] = useState(false);
 
@@ -202,7 +204,7 @@ export function CanvasWelcomeDialog({
             {/* Close Button */}
             <IconButton
                 onClick={handleSkip}
-                className="absolute right-[8px] top-[8px] text-fg-muted" aria-label="Close dialog"
+                className="absolute right-[8px] top-[8px] text-fg-muted" aria-label={t('canvasWelcome.closeDialog')}
             >
                 <Close />
             </IconButton>

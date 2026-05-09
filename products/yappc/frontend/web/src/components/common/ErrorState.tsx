@@ -11,6 +11,7 @@
 
 import { AlertCircle, RefreshCw, XCircle } from 'lucide-react';
 import { Button } from '@ghatana/design-system';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface ErrorStateProps {
   /** Error title */
@@ -68,6 +69,7 @@ export function ErrorState({
   variant = 'card',
   className = '',
 }: ErrorStateProps) {
+  const { t } = useI18n();
   const Icon = iconMap[type];
   const sizeClass = sizeClasses[size];
 
@@ -114,7 +116,7 @@ export function ErrorState({
               size="sm"
               onClick={onDismiss}
               className="text-muted-foreground hover:text-foreground"
-              aria-label="Dismiss"
+              aria-label={t('error.dismiss')}
             >
               <XCircle className="w-5 h-5" />
             </Button>

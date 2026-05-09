@@ -13,6 +13,7 @@
 import React, { useState, useCallback } from 'react';
 import { Button, Card, CardContent } from '@ghatana/design-system';
 import { Select } from '../ui/Select';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export type DeploymentMode = 'planning' | 'preview' | 'production';
 
@@ -113,6 +114,7 @@ export const RunReadinessPanel: React.FC<RunReadinessPanelProps> = ({
   cannotDeployReason,
   className = '',
 }) => {
+  const { t } = useI18n();
   const [planExpanded, setPlanExpanded] = useState(false);
 
   const failedRequiredGates = gates.filter((g) => g.required && g.status === 'failed');
@@ -134,7 +136,7 @@ export const RunReadinessPanel: React.FC<RunReadinessPanelProps> = ({
   return (
     <section
       className={`run-readiness-panel space-y-6 ${className}`}
-      aria-label="Run readiness"
+      aria-label={t('phase.run.panel')}
       data-testid="run-readiness-panel"
     >
       {/* Mode Selector */}
@@ -164,7 +166,7 @@ export const RunReadinessPanel: React.FC<RunReadinessPanelProps> = ({
               onChange={handleModeChange}
               disabled={isModeChanging}
               className="rounded-md border border-border bg-surface text-fg text-sm px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
-              aria-label="Select deployment mode"
+              aria-label={t('phase.run.selectDeploymentMode')}
             >
               {(Object.keys(MODE_LABELS) as DeploymentMode[]).map((m) => (
                 <option key={m} value={m}>
@@ -178,7 +180,7 @@ export const RunReadinessPanel: React.FC<RunReadinessPanelProps> = ({
 
       {/* Capability Gates */}
       {gates.length > 0 && (
-        <section aria-label="Capability gates">
+        <section aria-label={t('phase.run.capabilityGates')}>
           <h4 className="text-sm font-medium text-fg mb-3">
             Capability gates ({gates.filter((g) => g.status === 'passed').length}/{gates.length} passed)
           </h4>
@@ -234,7 +236,7 @@ export const RunReadinessPanel: React.FC<RunReadinessPanelProps> = ({
 
       {/* Deployment Plan */}
       {plan.length > 0 && (
-        <section aria-label="Deployment plan">
+        <section aria-label={t('phase.run.deploymentPlan')}>
           <Button
             type="button"
             variant="ghost"
@@ -247,7 +249,7 @@ export const RunReadinessPanel: React.FC<RunReadinessPanelProps> = ({
             <span aria-hidden="true">{planExpanded ? '▲' : '▼'}</span>
           </Button>
           {planExpanded && (
-            <ol className="space-y-2 list-none" aria-label="Deployment steps">
+            <ol className="space-y-2 list-none" aria-label={t('phase.run.deploymentSteps')}>
               {[...plan].sort((a, b) => a.order - b.order).map((step) => {
                 const stepStyle = STEP_STATUS_STYLE[step.status];
                 return (
@@ -281,7 +283,7 @@ export const RunReadinessPanel: React.FC<RunReadinessPanelProps> = ({
       )}
 
       {/* Deploy Action */}
-      <section aria-label="Deploy">
+      <section aria-label={t('phase.run.deploy')}>
         {!allRequiredGatesPassed && (
           <div className="mb-3 rounded-lg bg-destructive-bg border border-destructive-border p-3">
             <p className="text-sm text-destructive">

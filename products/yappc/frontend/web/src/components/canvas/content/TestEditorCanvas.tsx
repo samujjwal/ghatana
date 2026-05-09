@@ -21,6 +21,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface TestCase {
     id: string;
@@ -98,6 +99,7 @@ const getStatusColor = (status: TestCase['status']) => {
 };
 
 export const TestEditorCanvas = () => {
+    const { t } = useI18n();
     const [tests] = useState<TestCase[]>(MOCK_TESTS);
     const [selectedTest, setSelectedTest] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -131,7 +133,7 @@ export const TestEditorCanvas = () => {
                     <Box className="flex gap-4 mb-2">
                         <TextField
                             size="small"
-                            placeholder="Search tests..."
+                            placeholder={t('canvas.testEditor.searchTests')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="flex-1"

@@ -5867,31 +5867,7 @@ paths:
         "500": { $ref: "#/components/responses/InternalError" }
 
   # ── Runtime capability registry and autonomy ─────────────────────────────
-
-  /api/v1/capabilities:
-    get:
-      summary: Get the runtime capability registry snapshot
-      operationId: apiV1CapabilitiesGet
-      tags: [capabilities]
-      responses:
-        "200":
-          description: Capability registry snapshot.
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties:
-                  type: string
-
-  /api/v1/capabilities/schema:
-    get:
-      summary: Get the runtime capability registry schema
-      operationId: apiV1CapabilitiesSchemaGet
-      tags: [capabilities]
-      responses:
-        "200":
-          description: Capability registry schema.
-          content:
+  # DC-P1.12: Removed compatibility /api/v1/capabilities endpoints; use canonical /api/v1/surfaces only
             application/json:
               schema:
                 $ref: "#/components/schemas/FreeformObject"

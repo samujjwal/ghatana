@@ -103,6 +103,7 @@ function ToggleSwitch({
   checked: boolean;
   onChange: (v: boolean) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex items-center justify-between py-3">
       <div>
@@ -114,7 +115,7 @@ function ToggleSwitch({
         size="sm"
         onClick={() => onChange(!checked)}
         aria-pressed={checked}
-        aria-label={`${checked ? 'Disable' : 'Enable'} ${label}`}
+        aria-label={checked ? t('settings.toggleDisable', { label }) : t('settings.toggleEnable', { label })}
         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors [&>span]:inline-flex ${
           checked ? 'bg-primary' : 'bg-surface-muted'
         }`}
@@ -146,7 +147,7 @@ function GeneralPanel({ settings }: { settings: WorkspaceSettings }) {
           onChange={(e) => setName(e.target.value)}
           fullWidth
           className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-muted placeholder-zinc-500 focus:border-info-border focus:ring-blue-500"
-          placeholder="My Workspace"
+          placeholder={t('settings.general.namePlaceholder')}
         />
       </div>
       <div>
@@ -157,7 +158,7 @@ function GeneralPanel({ settings }: { settings: WorkspaceSettings }) {
           rows={3}
           fullWidth
           className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-muted placeholder-zinc-500 focus:border-info-border focus:ring-blue-500"
-          placeholder="What this workspace is about..."
+          placeholder={t('settings.general.descriptionPlaceholder')}
         />
       </div>
       <div>
@@ -168,7 +169,7 @@ function GeneralPanel({ settings }: { settings: WorkspaceSettings }) {
           onChange={(e) => setTimezone(e.target.value)}
           fullWidth
           className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-muted placeholder-zinc-500 focus:border-info-border focus:ring-blue-500"
-          placeholder="America/New_York"
+          placeholder={t('settings.general.timezonePlaceholder')}
         />
       </div>
       <div>

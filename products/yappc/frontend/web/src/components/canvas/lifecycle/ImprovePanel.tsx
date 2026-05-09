@@ -16,6 +16,7 @@ import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
 import { Select } from '../../ui/Select';
 import { Textarea } from '../../ui/Textarea';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 export interface ImprovePanelProps {
     enhancements?: EnhancementBacklogPayload;
@@ -88,6 +89,7 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
     onClose,
     isLoading = false,
 }) => {
+    const { t } = useI18n();
     const [enhancementData, setEnhancementData] = useState<EnhancementBacklogPayload>({
         ...defaultEnhancements,
         ...enhancements,
@@ -346,7 +348,7 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                                 type="text"
                                                 value={item.title}
                                                 onChange={(e) => updateEnhancement(idx, { title: e.target.value })}
-                                                placeholder="Enhancement title"
+                                                placeholder={t('canvas.improve.enhancementTitlePlaceholder')}
                                                 fullWidth
                                                 size="sm"
                                                 className="flex-1 px-2 py-1 text-sm font-medium border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
@@ -362,7 +364,7 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                                 onClick={() => removeEnhancement(idx)}
                                                 variant="ghost"
                                                 size="sm"
-                                                aria-label={`Remove enhancement ${idx + 1}`}
+                                                aria-label={`${t('canvas.improve.removeEnhancement')} ${idx + 1}`}
                                                 className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                             >
                                                 <Remove className="w-4 h-4" />
@@ -371,7 +373,7 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                         <Textarea
                                             value={item.description}
                                             onChange={(e) => updateEnhancement(idx, { description: e.target.value })}
-                                            placeholder="Describe the enhancement..."
+                                            placeholder={t('canvas.improve.enhancementDescriptionPlaceholder')}
                                             rows={2}
                                             fullWidth
                                             resize="none"
@@ -448,7 +450,7 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                                     onClick={() => removeRetrospective(idx)}
                                                     variant="ghost"
                                                     size="sm"
-                                                    aria-label={`Remove retrospective ${idx + 1}`}
+                                                    aria-label={`${t('canvas.improve.removeRetrospective')} ${idx + 1}`}
                                                     className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                                 >
                                                     <Remove className="w-4 h-4" />
@@ -464,7 +466,7 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                                                 wentWell: e.target.value.split('\n').filter((l) => l.trim()),
                                                             })
                                                         }
-                                                        placeholder="One per line..."
+                                                        placeholder={t('canvas.improve.onePerLinePlaceholder')}
                                                         rows={3}
                                                         fullWidth
                                                         resize="none"
@@ -481,7 +483,7 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                                                 improvements: e.target.value.split('\n').filter((l) => l.trim()),
                                                             })
                                                         }
-                                                        placeholder="One per line..."
+                                                        placeholder={t('canvas.improve.onePerLinePlaceholder')}
                                                         rows={3}
                                                         fullWidth
                                                         resize="none"
@@ -498,7 +500,7 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                                                 actions: e.target.value.split('\n').filter((l) => l.trim()),
                                                             })
                                                         }
-                                                        placeholder="One per line..."
+                                                        placeholder={t('canvas.improve.onePerLinePlaceholder')}
                                                         rows={3}
                                                         fullWidth
                                                         resize="none"
@@ -531,7 +533,7 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                             type="text"
                                             value={insight}
                                             onChange={(e) => updateInsight(idx, e.target.value)}
-                                            placeholder="Insight..."
+                                            placeholder={t('canvas.improve.insightPlaceholder')}
                                             fullWidth
                                             size="sm"
                                             className="flex-1 px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
@@ -540,7 +542,7 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                             onClick={() => removeInsight(idx)}
                                             variant="ghost"
                                             size="sm"
-                                            aria-label={`Remove insight ${idx + 1}`}
+                                            aria-label={`${t('canvas.improve.removeInsight')} ${idx + 1}`}
                                             className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                         >
                                             <Remove className="w-4 h-4" />
@@ -568,7 +570,7 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                             type="text"
                                             value={rec}
                                             onChange={(e) => updateRecommendation(idx, e.target.value)}
-                                            placeholder="Recommendation..."
+                                            placeholder={t('canvas.improve.recommendationPlaceholder')}
                                             fullWidth
                                             size="sm"
                                             className="flex-1 px-2 py-1.5 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
@@ -577,7 +579,7 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                             onClick={() => removeRecommendation(idx)}
                                             variant="ghost"
                                             size="sm"
-                                            aria-label={`Remove recommendation ${idx + 1}`}
+                                            aria-label={`${t('canvas.improve.removeRecommendation')} ${idx + 1}`}
                                             className="p-1 text-text-secondary hover:text-error-color transition-colors"
                                         >
                                             <Remove className="w-4 h-4" />

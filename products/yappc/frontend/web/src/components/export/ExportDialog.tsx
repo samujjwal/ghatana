@@ -1,3 +1,4 @@
+import { useI18n } from '../../i18n/I18nProvider';
 /**
  * ExportDialog
  *
@@ -129,6 +130,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
   pastExports = [],
   className = '',
 }) => {
+  const { t } = useI18n();
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('MARKDOWN');
   const [includeRequirements, setIncludeRequirements] = useState(true);
   const [includeDiagrams, setIncludeDiagrams] = useState(true);
@@ -188,7 +190,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
             <Button
               variant="ghost"
               size="small"
-              aria-label="Close export dialog"
+              aria-label={t('export.closeDialog')}
               onClick={onClose}
             >
               <X className="h-4 w-4" />
@@ -338,7 +340,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                         <Button
                           variant="ghost"
                           size="small"
-                          aria-label="Download export"
+                          aria-label={t('export.download')}
                           onClick={() => handleDownload(exp.downloadUrl!)}
                         >
                           <Download className="h-3 w-3" />

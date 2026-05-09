@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -56,6 +57,7 @@ const FEATURE_OPTIONS = [
 // ============================================================================
 
 const SetupWizardPage: React.FC = () => {
+  const { t } = useI18n();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<ProjectForm>({
     name: '', description: '', language: 'Java 21', framework: 'ActiveJ',
@@ -108,12 +110,12 @@ const SetupWizardPage: React.FC = () => {
               <div>
                 <label className="mb-1 block text-sm font-medium text-fg">Project Name</label>
                 <Input value={form.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => update('name', e.target.value)}
-                  placeholder="my-yappc-service" className="w-full rounded-lg border px-4 py-2 focus:border-info-border focus:outline-none" />
+                  placeholder={t('setupWizard.projectNamePlaceholder')} className="w-full rounded-lg border px-4 py-2 focus:border-info-border focus:outline-none" />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-fg">Description</label>
                 <Textarea value={form.description} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => update('description', e.target.value)}
-                  rows={3} placeholder="A brief description..." className="w-full rounded-lg border px-4 py-2 focus:border-info-border focus:outline-none" />
+                  rows={3} placeholder={t('setupWizard.projectDescriptionPlaceholder')} className="w-full rounded-lg border px-4 py-2 focus:border-info-border focus:outline-none" />
               </div>
             </div>
           )}

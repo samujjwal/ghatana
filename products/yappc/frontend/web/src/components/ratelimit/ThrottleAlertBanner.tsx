@@ -25,6 +25,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { yappcApi } from '@/lib/api/client';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 /**
  * Alert severity level
@@ -52,6 +53,7 @@ export const ThrottleAlertBanner: React.FC<ThrottleAlertBannerProps> = ({
   onViewDetails,
   onDismiss,
 }) => {
+  const { t } = useI18n();
   const [isDismissed, setIsDismissed] = useState(false);
   const [severity, setSeverity] = useState<AlertSeverity>('info');
 
@@ -235,7 +237,7 @@ export const ThrottleAlertBanner: React.FC<ThrottleAlertBannerProps> = ({
           size="sm"
           onClick={handleDismiss}
           className={`${colors.text} opacity-60 hover:opacity-100 ml-3 flex-shrink-0`}
-          aria-label="Dismiss alert"
+          aria-label={t('ratelimit.dismissAlert')}
         >
           <svg
             className="w-5 h-5"

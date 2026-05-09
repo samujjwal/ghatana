@@ -15,6 +15,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { Box, IconButton, Tooltip, Select, MenuItem, FormControl, Typography } from '@ghatana/design-system';
 import { Pencil as Edit, Play as PlayArrow, Copy as ContentCopy } from 'lucide-react';
 import { Textarea } from '../../../ui/Textarea';
+import { useI18n } from '../../../../i18n/I18nProvider';
 
 interface CodeNodeContentProps {
     data?: {
@@ -40,6 +41,7 @@ export const CodeNodeContent: React.FC<CodeNodeContentProps> = ({
     onChange,
     readonly = false
 }) => {
+    const { t } = useI18n();
     const [isEditing, setIsEditing] = useState(false);
     const [editContent, setEditContent] = useState(data?.content || DEFAULT_CODE.content);
     const [language, setLanguage] = useState(data?.language || DEFAULT_CODE.language);
@@ -149,7 +151,7 @@ export const CodeNodeContent: React.FC<CodeNodeContentProps> = ({
                         ref={textareaRef}
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
-                        placeholder="Write your code here..."
+                        placeholder={t('canvas.code.content')}
                         resize="none"
                         fullWidth
                         style={{

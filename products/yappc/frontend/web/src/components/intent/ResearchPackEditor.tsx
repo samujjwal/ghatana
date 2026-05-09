@@ -17,6 +17,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface ResearchPackEditorProps {
     initialData?: Partial<ResearchPackPayload>;
@@ -76,6 +77,7 @@ export const ResearchPackEditor: React.FC<ResearchPackEditorProps> = ({
     onCancel,
     isSubmitting = false,
 }) => {
+    const { t } = useI18n();
     const [data, setData] = useState<ResearchPackFormData>({
         ...defaultData,
         ...initialData,
@@ -208,7 +210,7 @@ export const ResearchPackEditor: React.FC<ResearchPackEditorProps> = ({
                                     type="text"
                                     value={source.name}
                                     onChange={(e) => updateSource(index, { name: e.target.value })}
-                                    placeholder="Source name"
+                                    placeholder={t('intent.research.sourceNamePlaceholder')}
                                     className="flex-1 px-3 py-2 border border-divider rounded-lg bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
                                     disabled={isSubmitting}
                                 />
@@ -231,7 +233,7 @@ export const ResearchPackEditor: React.FC<ResearchPackEditorProps> = ({
                                         variant="ghost"
                                         size="small"
                                         className="p-2 text-text-secondary hover:text-error-color transition-colors"
-                                        aria-label="Remove source"
+                                        aria-label={t('intent.research.removeSource')}
                                         disabled={isSubmitting}
                                     >
                                         <Remove className="w-5 h-5" />
@@ -244,7 +246,7 @@ export const ResearchPackEditor: React.FC<ResearchPackEditorProps> = ({
                                     type="url"
                                     value={source.url || ''}
                                     onChange={(e) => updateSource(index, { url: e.target.value })}
-                                    placeholder="URL (optional)"
+                                    placeholder={t('intent.research.sourceUrlPlaceholder')}
                                     className="flex-1 px-3 py-2 border border-divider rounded-lg bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
                                     disabled={isSubmitting}
                                 />
@@ -279,7 +281,7 @@ export const ResearchPackEditor: React.FC<ResearchPackEditorProps> = ({
                     id="research-market"
                     value={data.marketNotes}
                     onChange={(e) => updateField('marketNotes', e.target.value)}
-                    placeholder="Key market observations, trends, and competitive landscape..."
+                    placeholder={t('intent.research.marketNotesPlaceholder')}
                     rows={4}
                     className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                     disabled={isSubmitting}
@@ -298,7 +300,7 @@ export const ResearchPackEditor: React.FC<ResearchPackEditorProps> = ({
                                 type="text"
                                 value={insight}
                                 onChange={(e) => updateArrayItem('userInsights', index, e.target.value)}
-                                placeholder="Key user insight or finding"
+                                placeholder={t('intent.research.userInsightPlaceholder')}
                                 className="flex-1 px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 disabled={isSubmitting}
                             />
@@ -309,7 +311,7 @@ export const ResearchPackEditor: React.FC<ResearchPackEditorProps> = ({
                                     variant="ghost"
                                     size="small"
                                     className="p-2 text-text-secondary hover:text-error-color transition-colors"
-                                    aria-label="Remove insight"
+                                    aria-label={t('intent.research.removeInsight')}
                                     disabled={isSubmitting}
                                 >
                                     <Remove className="w-5 h-5" />
@@ -342,7 +344,7 @@ export const ResearchPackEditor: React.FC<ResearchPackEditorProps> = ({
                                 type="text"
                                 value={risk}
                                 onChange={(e) => updateArrayItem('risks', index, e.target.value)}
-                                placeholder="Potential risk or concern"
+                                placeholder={t('intent.research.riskPlaceholder')}
                                 className="flex-1 px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 disabled={isSubmitting}
                             />
@@ -353,7 +355,7 @@ export const ResearchPackEditor: React.FC<ResearchPackEditorProps> = ({
                                     variant="ghost"
                                     size="small"
                                     className="p-2 text-text-secondary hover:text-error-color transition-colors"
-                                    aria-label="Remove risk"
+                                    aria-label={t('intent.research.removeRisk')}
                                     disabled={isSubmitting}
                                 >
                                     <Remove className="w-5 h-5" />
@@ -386,7 +388,7 @@ export const ResearchPackEditor: React.FC<ResearchPackEditorProps> = ({
                                 type="text"
                                 value={question}
                                 onChange={(e) => updateArrayItem('openQuestions', index, e.target.value)}
-                                placeholder="Question that needs further investigation"
+                                placeholder={t('intent.research.openQuestionPlaceholder')}
                                 className="flex-1 px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 disabled={isSubmitting}
                             />
@@ -397,7 +399,7 @@ export const ResearchPackEditor: React.FC<ResearchPackEditorProps> = ({
                                     variant="ghost"
                                     size="small"
                                     className="p-2 text-text-secondary hover:text-error-color transition-colors"
-                                    aria-label="Remove question"
+                                    aria-label={t('intent.research.removeQuestion')}
                                     disabled={isSubmitting}
                                 >
                                     <Remove className="w-5 h-5" />

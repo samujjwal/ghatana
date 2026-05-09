@@ -123,7 +123,7 @@ class DataCloudOnboardingE2ETest {
     @DisplayName("Onboarding: Capabilities endpoint returns available capabilities")
     void onboardingCapabilitiesEndpointReturnsAvailableCapabilities() throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create("http://localhost:" + port + "/api/v1/capabilities"))
+            .uri(URI.create("http://localhost:" + port + "/api/v1/surfaces"))
             .GET()
             .header("X-Tenant-Id", ONBOARDING_TENANT)
             .build();

@@ -15,6 +15,7 @@ import { BaseCanvasContent } from '../BaseCanvasContent';
 import { Accordion, AccordionSummary, AccordionDetails, Box, Typography, Chip } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
 import { Settings, Search, ChevronDown as ExpandMore, Cloud, Hammer as Build, Shield as Security, Braces as DataObject } from 'lucide-react';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface ConfigFile {
     name: string;
@@ -235,6 +236,7 @@ const ConfigFileItem = ({
 };
 
 export const ConfigBrowserCanvas = () => {
+    const { t } = useI18n();
     const [configFiles] = useState<ConfigFile[]>(MOCK_CONFIG_FILES);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState<ConfigFile['category'] | 'all'>('all');
@@ -292,7 +294,7 @@ export const ConfigBrowserCanvas = () => {
                     <TextField
                         fullWidth
                         size="small"
-                        placeholder="Search config files and variables..."
+                        placeholder={t('canvas.configBrowser.searchFilesAndVariables')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         InputProps={{

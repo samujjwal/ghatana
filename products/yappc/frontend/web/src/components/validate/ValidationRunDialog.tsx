@@ -12,6 +12,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X as Close, Play as PlayArrow, CheckCircle, XCircle as Cancel, AlertTriangle as Warning, Hourglass as HourglassEmpty } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface ValidationRunStep {
     id: string;
@@ -54,6 +55,7 @@ export const ValidationRunDialog: React.FC<ValidationRunDialogProps> = ({
     progress,
     title = 'Run Validation',
 }) => {
+    const { t } = useI18n();
     const [hasStarted, setHasStarted] = useState(false);
 
     useEffect(() => {
@@ -101,7 +103,7 @@ export const ValidationRunDialog: React.FC<ValidationRunDialogProps> = ({
                         size="sm"
                         onClick={handleClose}
                         className="p-1 text-text-secondary hover:text-text-primary rounded transition-colors"
-                        aria-label="Close validation dialog"
+                        aria-label={t('validation.closeDialog')}
                     >
                         <Close className="w-5 h-5" />
                     </Button>

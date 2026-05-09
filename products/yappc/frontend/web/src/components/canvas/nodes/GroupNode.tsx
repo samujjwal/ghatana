@@ -43,6 +43,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { type Node, type NodeProps } from '@xyflow/react';
 import { NodeResizer } from '@xyflow/react';
 import { useAtomValue } from 'jotai';
+import { useI18n } from '../../../i18n/I18nProvider';
 import { cameraZoomAtom } from '../workspace';
 
 // ============================================================================
@@ -75,6 +76,7 @@ export interface GroupNodeData {
 type GroupCanvasNode = Node<GroupNodeData, 'group'>;
 
 export function GroupNode({ data, selected }: NodeProps<GroupCanvasNode>) {
+    const { t } = useI18n();
     const zoom = useAtomValue(cameraZoomAtom);
 
     const [label, setLabel] = useState(data.label ?? 'Group');
@@ -147,7 +149,7 @@ export function GroupNode({ data, selected }: NodeProps<GroupCanvasNode>) {
                             onChange={(e) => setLabel(e.target.value)}
                             onBlur={handleLabelBlur}
                             onKeyDown={handleLabelKeyDown}
-                            aria-label="Group label"
+                            aria-label={t('canvas.groupNode.label')}
                         />
                     ) : (
                         <span
@@ -155,7 +157,7 @@ export function GroupNode({ data, selected }: NodeProps<GroupCanvasNode>) {
                             title="Double-click to rename"
                             tabIndex={0}
                             role="button"
-                            aria-label={`Group label: ${label}. Double-click to rename.`}
+                            aria-label={t('canvas.groupNode.labelEdit', { label })}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') handleLabelDoubleClick();
                             }}

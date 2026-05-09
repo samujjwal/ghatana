@@ -60,6 +60,7 @@ import {
   type PageBuilderCommandAuditContext,
 } from '../../../services/canvas/commands/PageBuilderCommandAuditService';
 import type { PhaseCanvasConfig } from '../../../services/canvas/phase-config/PhaseCanvasConfig';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 import type { ComponentData } from './schemas';
 import {
@@ -331,6 +332,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   readOnlyReason,
   auditContext,
 }) => {
+  const { t } = useI18n();
   const canEdit = phaseConfig?.allowEditing ?? true;
   const canAdd = phaseConfig?.allowAddComponent ?? true;
   const canDelete = phaseConfig?.allowDelete ?? true;
@@ -1489,7 +1491,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
               setImportPanelOpen(true);
             }}
             title="Import from code / Decompile"
-            aria-label="Import from code"
+            aria-label={t('canvas.pageDesigner.importFromCode')}
             data-testid="page-designer-import-btn"
             disabled={!canAdd || !canEdit}
           >
@@ -1497,7 +1499,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
           </IconButton>
         </Box>
         <Stack spacing={1}>
-          <Box className="mb-2 flex gap-2" role="group" aria-label="Page builder command history">
+          <Box className="mb-2 flex gap-2" role="group" aria-label={t('canvas.pageDesigner.commandHistoryAria')}>
             <Button
               type="button"
               variant="outline"
@@ -1520,15 +1522,15 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
             </Button>
           </Box>
           <Input
-            aria-label="Search registry components"
+            aria-label={t('canvas.pageDesigner.searchRegistryAria')}
             value={paletteSearch}
             onChange={(event) => setPaletteSearch(event.target.value)}
-            placeholder="Search components"
+            placeholder={t('canvas.pageDesigner.searchComponentsPlaceholder')}
             className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
             data-testid="page-component-search"
           />
           <Select
-            aria-label="Filter registry category"
+            aria-label={t('canvas.pageDesigner.filterCategoryAria')}
             value={paletteCategory}
             onChange={(event) => setPaletteCategory(event.target.value)}
             className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
@@ -1580,7 +1582,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
               <IconButton
                 size="small"
                 onClick={() => setImportPanelOpen(false)}
-                aria-label="Close import panel"
+                aria-label={t('canvas.pageDesigner.closeImportPanel')}
               >
                 <X size={12} />
               </IconButton>
@@ -1591,7 +1593,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
             <Box
               className="mb-3 grid gap-2"
               role="list"
-              aria-label="Import wizard templates"
+              aria-label={t('canvas.pageDesigner.importTemplatesAria')}
               data-testid="page-designer-import-templates"
             >
               {IMPORT_WIZARD_TEMPLATES.map((template) => (
@@ -1611,7 +1613,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
                 </Button>
               ))}
             </Box>
-            <Box className="mb-2 flex gap-2" role="group" aria-label="Import workflow mode">
+            <Box className="mb-2 flex gap-2" role="group" aria-label={t('canvas.pageDesigner.importModeAria')}>
               <Button
                 variant={importWorkflowMode === 'semantic-model' ? 'solid' : 'outline'}
                 size="small"
@@ -1648,7 +1650,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
                     setImportTemplateId('import-route');
                     setGuidedSourceType(event.target.value as ImportSourceType);
                   }}
-                  aria-label="Source import type"
+                  aria-label={t('canvas.pageDesigner.sourceTypeAria')}
                   data-testid="page-designer-source-type"
                   className="mb-2 w-full rounded border border-border bg-surface px-2 py-1 text-xs"
                 >
@@ -1665,7 +1667,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
                     setImportError(null);
                   }}
                   placeholder={selectedImportTemplate.placeholder}
-                  aria-label="Source locator"
+                  aria-label={t('canvas.pageDesigner.sourceLocatorAria')}
                   data-testid="page-designer-source-locator"
                   className="w-full rounded border border-border bg-surface px-2 py-1 text-xs"
                 />
@@ -1696,7 +1698,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
                 }}
                 rows={6}
                 placeholder={selectedImportTemplate.placeholder}
-                aria-label="Paste semantic model JSON"
+                aria-label={t('canvas.pageDesigner.semanticModelAria')}
                 data-testid="page-designer-import-textarea"
                 className="w-full font-mono text-xs"
               />
@@ -2124,7 +2126,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
           className="absolute bottom-4 right-4 z-20 w-80 rounded-xl border border-info-border bg-white shadow-lg"
           data-testid="governance-panel"
           role="region"
-          aria-label="Governance review panel"
+          aria-label={t('canvas.pageDesigner.governancePanelAria')}
         >
           <Box className="flex items-center justify-between px-4 py-3 border-b border-info-border">
             <Typography variant="body2" style={{ fontWeight: 600 }}>

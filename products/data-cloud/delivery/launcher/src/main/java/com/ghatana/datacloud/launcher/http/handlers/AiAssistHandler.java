@@ -60,7 +60,7 @@ import java.util.concurrent.Executor;
  *   <li>Suggestions default to static ruleset-based heuristics.</li>
  *   <li>The {@code ai.fallback} field is set to {@code true}.</li>
  *   <li>Confidence drops to 0.2 (heuristics baseline).</li>
- *   <li>In production mode, provider outages fail closed with HTTP 503 instead of heuristic output.</li>
+ *   <li>In production mode, provider outages return HTTP 503 (service unavailable) instead of heuristic output.</li>
  * </ul>
  *
  * <h2>Privacy and Governance</h2>
@@ -174,16 +174,22 @@ public class AiAssistHandler {
     }
 
     /**
-     * DC-P0-007: Returns a 503 promise when production mode is active and no CompletionService
+     * DC-P1.16: AI advisory/fail-closed semantics alignment.
+     * Returns a 503 promise when production mode is active and no CompletionService
      * is available. Returns {@code null} when heuristic fallback is permitted or AI is wired.
+     * This implements fail-closed behavior: production deployments return HTTP 503 instead of
+     * falling back to heuristics when the AI service is unavailable. AI suggestions remain
+     * advisory only and should not be treated as guaranteed outcomes when the service is degraded.
      */
     private Promise<HttpResponse> checkAiServiceOrUnavailable() {
         if (productionMode && completionService == null) {
-            log.error("[DC-P0-007] AI assist unavailable in production: no CompletionService configured. " +
-                "Configure DATACLOUD_AI_COMPLETION_URL or disable AI routes.");
+            log.error("[DC-P1.16] AI assist unavailable in production: no CompletionService configured. " +
+                "Configure DATACLOUD_AI_COMPLETION_URL or disable AI routes. " +
+                "AI suggestions remain advisory only and should not be treated as guaranteed outcomes.");
             return Promise.of(http.errorResponse(503,
                 "AI assist is not available: the AI completion service is not configured " +
-                "for this deployment. Enable the service or use local/preview mode."));
+                "for this deployment. Enable the service or use local/preview mode. " +
+                "AI suggestions remain advisory only and should not be treated as guaranteed outcomes."));
         }
         return null;
     }
@@ -192,11 +198,13 @@ public class AiAssistHandler {
         if (!productionMode) {
             return null;
         }
-        log.error("[DC-P0-007] AI provider failure in production route={} tenant={} requestId={} error={}",
+        log.error("[DC-P1.16] AI provider failure in production route={} tenant={} requestId={} error={}",
             route, tenantId, requestId, error == null ? "unknown" : error.getMessage());
+        // DC-P1.16: Fail-closed behavior - return HTTP 503 instead of propagating provider errors in production.
+        // AI suggestions remain advisory only and should not be treated as guaranteed outcomes.
         return Promise.of(http.errorResponse(503,
             "AI assist is temporarily unavailable: the configured AI provider returned an error. "
-                + "Retry later or inspect provider health."));
+            + "Retry later or inspect provider health. AI suggestions remain advisory only and should not be treated as guaranteed outcomes."));
     }
 
     /**

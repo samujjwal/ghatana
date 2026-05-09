@@ -20,6 +20,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -68,6 +69,7 @@ export function LiveProgressNarrative({
 }: LiveProgressNarrativeProps) {
   const [events, setEvents] = useState<NarrativeEvent[]>([]);
   const [status, setStatus] = useState<NarrativeStreamStatus>('idle');
+  const { t } = useI18n();
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const sseRef = useRef<EventSource | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -173,7 +175,7 @@ export function LiveProgressNarrative({
       <div
         ref={containerRef}
         role="log"
-        aria-label="AI run progress narrative"
+        aria-label={t('ai.progress.narrativeLabel')}
         aria-live="polite"
         className="max-h-64 overflow-y-auto px-4 py-3"
         data-testid="narrative-log"

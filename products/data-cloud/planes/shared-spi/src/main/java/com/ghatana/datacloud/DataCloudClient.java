@@ -157,26 +157,37 @@ public interface DataCloudClient extends AutoCloseable {
 
     /**
      * Query specification.
+     * DC-10: Aligned with QuerySpec canonical model for query unification
+     * across DataCloudClient.Query, EntityStore.QuerySpec, OpenAPI, UI, and SDK.
      */
     record Query(
         List<Filter> filters,
         List<Sort> sorts,
         int offset,
-        int limit
+        int limit,
+        List<String> projections,
+        java.time.Instant timeWindowStart,
+        java.time.Instant timeWindowEnd,
+        Map<String, String> metadata,
+        String consistencyLevel,
+        String freshnessHint
     ) {
         public Query {
             filters = filters != null ? List.copyOf(filters) : List.of();
             sorts = sorts != null ? List.copyOf(sorts) : List.of();
             if (offset < 0) offset = 0;
             if (limit <= 0) limit = 100;
+            projections = projections != null ? List.copyOf(projections) : List.of();
+            metadata = metadata != null ? Map.copyOf(metadata) : Map.of();
+            consistencyLevel = consistencyLevel != null ? consistencyLevel : "STRONG";
         }
 
         public static Query all() {
-            return new Query(List.of(), List.of(), 0, 100);
+            return new Query(List.of(), List.of(), 0, 100, List.of(), null, null, Map.of(), "STRONG", null);
         }
 
         public static Query limit(int limit) {
-            return new Query(List.of(), List.of(), 0, limit);
+            return new Query(List.of(), List.of(), 0, limit, List.of(), null, null, Map.of(), "STRONG", null);
         }
 
         public static Builder builder() {
@@ -188,6 +199,12 @@ public interface DataCloudClient extends AutoCloseable {
             private List<Sort> sorts = List.of();
             private int offset = 0;
             private int limit = 100;
+            private List<String> projections = List.of();
+            private java.time.Instant timeWindowStart;
+            private java.time.Instant timeWindowEnd;
+            private Map<String, String> metadata = Map.of();
+            private String consistencyLevel = "STRONG";
+            private String freshnessHint;
 
             public Builder filters(List<Filter> filters) {
                 this.filters = filters;
@@ -214,8 +231,41 @@ public interface DataCloudClient extends AutoCloseable {
                 return this;
             }
 
+            public Builder projections(List<String> projections) {
+                this.projections = projections;
+                return this;
+            }
+
+            public Builder projection(String... fields) {
+                this.projections = List.of(fields);
+                return this;
+            }
+
+            public Builder timeWindow(java.time.Instant start, java.time.Instant end) {
+                this.timeWindowStart = start;
+                this.timeWindowEnd = end;
+                return this;
+            }
+
+            public Builder metadata(String key, String value) {
+                Map<String, String> newMap = new java.util.LinkedHashMap<>(this.metadata);
+                newMap.put(key, value);
+                this.metadata = newMap;
+                return this;
+            }
+
+            public Builder consistencyLevel(String consistencyLevel) {
+                this.consistencyLevel = consistencyLevel;
+                return this;
+            }
+
+            public Builder freshnessHint(String freshnessHint) {
+                this.freshnessHint = freshnessHint;
+                return this;
+            }
+
             public Query build() {
-                return new Query(filters, sorts, offset, limit);
+                return new Query(filters, sorts, offset, limit, projections, timeWindowStart, timeWindowEnd, metadata, consistencyLevel, freshnessHint);
             }
         }
     }

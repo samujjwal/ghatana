@@ -145,37 +145,22 @@ function normalizeSurfaceEntry(key: string, rawValue: unknown): SurfaceSignal {
 }
 
 // =============================================================================
-// API — primary endpoint: /surfaces (falls back to /capabilities for compat)
+// API — canonical endpoint: /surfaces only (DC-P1.12: removed /capabilities fallback)
 // =============================================================================
 
 async function fetchFromSurfaces(): Promise<SurfaceRegistrySnapshot> {
-  try {
-    // Primary: try the canonical /surfaces endpoint (backend may not have it yet)
-    const rawResponse = await apiClient.get<unknown>('/surfaces');
-    const envelope = CapabilityRegistryEnvelopeSchema.parse(rawResponse);
-    const surfaces = Object.entries(envelope.data.capabilities)
-      .map(([key, value]) => normalizeSurfaceEntry(key, value))
-      .sort((a, b) => a.label.localeCompare(b.label));
-    return {
-      generatedAt: envelope.data.generatedAt,
-      requestId: envelope.meta.requestId,
-      tenantId: envelope.meta.tenantId,
-      surfaces,
-    };
-  } catch {
-    // Compat fallback: /capabilities — same schema, same normalization
-    const rawResponse = await apiClient.get<unknown>('/capabilities');
-    const envelope = CapabilityRegistryEnvelopeSchema.parse(rawResponse);
-    const surfaces = Object.entries(envelope.data.capabilities)
-      .map(([key, value]) => normalizeSurfaceEntry(key, value))
-      .sort((a, b) => a.label.localeCompare(b.label));
-    return {
-      generatedAt: envelope.data.generatedAt,
-      requestId: envelope.meta.requestId,
-      tenantId: envelope.meta.tenantId,
-      surfaces,
-    };
-  }
+  // DC-P1.12: Use canonical /surfaces endpoint only; /capabilities compatibility alias removed
+  const rawResponse = await apiClient.get<unknown>('/surfaces');
+  const envelope = CapabilityRegistryEnvelopeSchema.parse(rawResponse);
+  const surfaces = Object.entries(envelope.data.capabilities)
+    .map(([key, value]) => normalizeSurfaceEntry(key, value))
+    .sort((a, b) => a.label.localeCompare(b.label));
+  return {
+    generatedAt: envelope.data.generatedAt,
+    requestId: envelope.meta.requestId,
+    tenantId: envelope.meta.tenantId,
+    surfaces,
+  };
 }
 
 export function useSurfaceRegistry(): UseQueryResult<SurfaceRegistrySnapshot, Error> {

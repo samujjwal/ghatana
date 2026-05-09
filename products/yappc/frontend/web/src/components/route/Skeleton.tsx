@@ -11,6 +11,7 @@
  */
 
 import type { CSSProperties, ReactNode } from 'react';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // BASE SKELETON
@@ -147,11 +148,12 @@ export function SkeletonCard({
  * Dashboard skeleton with KPI cards and content area
  */
 export function SkeletonDashboard() {
+    const { t } = useI18n();
     return (
         <div
             role="status"
             aria-live="polite"
-            aria-label="Loading dashboard..."
+            aria-label={t('skeleton.loadingDashboard')}
             style={{ padding: '24px' }}
         >
             {/* Header */}
@@ -191,11 +193,12 @@ export function SkeletonDashboard() {
  * Project list skeleton
  */
 export function SkeletonProjectList() {
+    const { t } = useI18n();
     return (
         <div
             role="status"
             aria-live="polite"
-            aria-label="Loading projects..."
+            aria-label={t('skeleton.loadingProjects')}
             style={{ padding: '24px' }}
         >
             {/* Header */}
@@ -220,11 +223,12 @@ export function SkeletonProjectList() {
  * Canvas skeleton with toolbar and main area
  */
 export function SkeletonCanvas() {
+    const { t } = useI18n();
     return (
         <div
             role="status"
             aria-live="polite"
-            aria-label="Loading canvas..."
+            aria-label={t('skeleton.loadingCanvas')}
             style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: '400px' }}
         >
             {/* Toolbar */}
@@ -266,11 +270,12 @@ export function SkeletonCanvas() {
  * Table skeleton
  */
 export function SkeletonTable({ rows = 5, cols = 4 }: { rows?: number; cols?: number }) {
+    const { t } = useI18n();
     return (
         <div
             role="status"
             aria-live="polite"
-            aria-label="Loading table..."
+            aria-label={t('skeleton.loadingTable')}
         >
             {/* Header */}
             <div style={{ 
@@ -317,11 +322,12 @@ export function SkeletonTable({ rows = 5, cols = 4 }: { rows?: number; cols?: nu
  * Page Designer skeleton
  */
 export function SkeletonPageDesigner() {
+    const { t } = useI18n();
     return (
         <div
             role="status"
             aria-live="polite"
-            aria-label="Loading page designer..."
+            aria-label={t('skeleton.loadingPageDesigner')}
             style={{ display: 'flex', height: '100%', minHeight: '500px' }}
         >
             {/* Left panel - component palette */}
@@ -365,11 +371,12 @@ export function SkeletonPageDesigner() {
  * Workflow skeleton
  */
 export function SkeletonWorkflow() {
+    const { t } = useI18n();
     return (
         <div
             role="status"
             aria-live="polite"
-            aria-label="Loading workflow..."
+            aria-label={t('skeleton.loadingWorkflow')}
             style={{ padding: '24px' }}
         >
             {/* Header */}

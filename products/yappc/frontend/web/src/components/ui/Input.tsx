@@ -12,6 +12,7 @@
 
 import React, { forwardRef, useState } from 'react';
 import type { InputHTMLAttributes, ReactNode } from 'react';
+import { useI18n } from '../../i18n/I18nProvider';
 
 type InputSize = 'sm' | 'md' | 'lg';
 type InputState = 'default' | 'error' | 'success' | 'warning';
@@ -65,6 +66,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
     disabled = false,
     ...props
 }, ref) => {
+    const { t } = useI18n();
     const [focused, setFocused] = useState(false);
 
     // Determine input state based on props
@@ -161,7 +163,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
                     className={`form-label ${required ? 'required' : ''}`}
                 >
                     {label}
-                    {required && <span className="text-error ml-1" aria-label="Required">*</span>}
+                    {required && <span className="text-error ml-1" aria-label={t('forms.required')}>*</span>}
                 </label>
             )}
 

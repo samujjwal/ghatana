@@ -12,6 +12,7 @@
 
 import { ArrowRight, AlertCircle, Plus, CheckCircle, Activity } from 'lucide-react';
 import React from 'react';
+import { useI18n } from '../../i18n/I18nProvider';
 
 import { Alert, Button, Card, CardContent } from '@ghatana/design-system';
 
@@ -51,11 +52,12 @@ export const NextActionDashboard: React.FC<NextActionDashboardProps> = ({
   healthIndicators = [],
   loading = false,
 }) => {
+  const { t } = useI18n();
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div
-          aria-label="Loading dashboard"
+          aria-label={t('dashboard.loading')}
           className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"
         />
       </div>

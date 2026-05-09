@@ -28,6 +28,7 @@ import {
 } from '@ghatana/design-system';
 import { CardMedia, TextField } from '@ghatana/design-system';
 import type { CanvasState } from '../../../components/canvas/workspace/canvasAtoms';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -200,6 +201,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTemplate, setSelectedTemplate] = useState<AppTemplate | null>(null);
+    const { t } = useI18n();
 
     // Filter templates
     const filteredTemplates = useMemo(() => {
@@ -266,7 +268,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
                         </Typography>
                         <TextField
                             size="small"
-                            placeholder="Search templates..."
+                            placeholder={t('canvas.templateGallery.search')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-[300px]"

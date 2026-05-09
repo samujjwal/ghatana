@@ -8,6 +8,7 @@ import { Undo2 as Undo, Redo2 as Redo } from 'lucide-react';
 import React from 'react';
 
 import { useCanvasHistory } from './hooks/useCanvasHistory';
+import { useI18n } from '../../i18n/I18nProvider';
 
 /**
  * Props for HistoryToolbar component.
@@ -62,6 +63,7 @@ export const HistoryToolbar: React.FC<HistoryToolbarProps> = ({
   size = 'medium',
   orientation = 'horizontal',
 }) => {
+  const { t } = useI18n();
   const { canUndo, canRedo, undo, redo, historySize } = useCanvasHistory(
     projectId,
     canvasId
@@ -95,7 +97,7 @@ export const HistoryToolbar: React.FC<HistoryToolbarProps> = ({
             onClick={handleUndo}
             disabled={!canUndo}
             size={size}
-            aria-label="Undo last action"
+            aria-label={t('canvas.history.undo')}
           >
             <Undo style={{ fontSize: iconSize }} />
           </IconButton>
@@ -108,7 +110,7 @@ export const HistoryToolbar: React.FC<HistoryToolbarProps> = ({
             onClick={handleRedo}
             disabled={!canRedo}
             size={size}
-            aria-label="Redo last undone action"
+            aria-label={t('canvas.history.redo')}
           >
             <Redo style={{ fontSize: iconSize }} />
           </IconButton>

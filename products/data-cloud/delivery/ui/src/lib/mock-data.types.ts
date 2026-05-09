@@ -105,8 +105,8 @@ export interface MockTrigger {
 export interface MockExecution {
   id: string;
   workflowId: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  nodeStatuses: Record<string, 'idle' | 'running' | 'completed' | 'failed'>;
+  status: 'CREATED' | 'INITIALIZED' | 'RUNNING' | 'STOPPED' | 'FAILED';
+  nodeStatuses: Record<string, 'CREATED' | 'INITIALIZED' | 'RUNNING' | 'STOPPED' | 'FAILED'>;
   startedAt: string;
   completedAt?: string;
   duration?: number;

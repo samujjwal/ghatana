@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { Textarea } from '../../ui/Textarea';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -156,6 +157,7 @@ const ThreatDispositionForm: React.FC<ThreatDispositionFormProps> = ({
   onCancel,
   isBusy,
 }) => {
+  const { t } = useI18n();
   const [selected, setSelected] = useState<ThreatDispositionStatus>('MITIGATED');
   const [note, setNote] = useState('');
 
@@ -197,7 +199,7 @@ const ThreatDispositionForm: React.FC<ThreatDispositionFormProps> = ({
         fullWidth
         resize="none"
         className="w-full rounded border border-divider bg-bg-paper dark:bg-bg-paper px-2 py-1 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-info-border resize-none"
-        placeholder="Explain the rationale for this disposition…"
+        placeholder={t('canvas.threatLifecycle.note')}
       />
       <Box className="flex justify-end gap-2">
         <Button
@@ -296,7 +298,7 @@ const ThreatRow: React.FC<ThreatRowProps> = ({ threat: initialThreat, onDispose,
               size="small"
               onClick={() => setShowAudit((prev) => !prev)}
               className="min-h-0 rounded p-1 text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-muted transition-colors"
-              aria-label="Toggle audit trail"
+              aria-label={t('canvas.threatLifecycle.auditTrail')}
               aria-expanded={showAudit}
             >
               <History className="h-3.5 w-3.5" aria-hidden="true" />

@@ -42,6 +42,7 @@ import { MenuItem } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
 
 import { ROUTES } from '../../router/paths';
+import { useI18n } from '../../i18n/I18nProvider';
 
 const NativeButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>((props, ref) =>
   React.createElement('button', { ...props, ref }),
@@ -392,7 +393,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({
                 <Input
                   value={replyContent}
                   onChange={(e) => setReplyContent(e.target.value)}
-                  placeholder="Write a reply..."
+                  placeholder={t('bootstrap.replyPlaceholder')}
                   className="flex-1"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -420,6 +421,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({
 const BootstrapCollaboratePage: React.FC = () => {
   const navigate = useNavigate();
   const { projectId, sessionId } = useParams<{ projectId: string; sessionId: string }>();
+  const { t } = useI18n();
 
   // Local UI state
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -663,7 +665,7 @@ const BootstrapCollaboratePage: React.FC = () => {
                     <Input
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search collaborators..."
+                      placeholder={t('bootstrap.searchCollaborators')}
                       className="pl-10"
                     />
                   </div>
@@ -775,7 +777,7 @@ const BootstrapCollaboratePage: React.FC = () => {
               type="email"
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="colleague@company.com"
+              placeholder={t('bootstrap.invitePlaceholder')}
             />
           </div>
 

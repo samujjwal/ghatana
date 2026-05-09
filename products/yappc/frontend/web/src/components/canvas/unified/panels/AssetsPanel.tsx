@@ -36,6 +36,7 @@ import {
 } from '../rail-config';
 import { SHAPE_TEMPLATES } from '../ShapeLibrary';
 import { Button } from '../../../ui/Button';
+import { useI18n } from '../../../../i18n/I18nProvider';
 
 const CATEGORY_MAP: Record<ShapeTemplate['category'], AssetCategory> = {
   basic: 'basic',
@@ -49,6 +50,7 @@ const CATEGORY_MAP: Record<ShapeTemplate['category'], AssetCategory> = {
  * Enhanced Assets Panel Component
  */
 export function AssetsPanel({ context, onInsertNode }: RailPanelProps) {
+  const { t } = useI18n();
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<
     Set<AssetCategory>
@@ -145,7 +147,7 @@ export function AssetsPanel({ context, onInsertNode }: RailPanelProps) {
         <TextField
           fullWidth
           size="small"
-          placeholder="Search assets..."
+          placeholder={t('canvas.assets.search')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           InputProps={{

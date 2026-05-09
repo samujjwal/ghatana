@@ -135,19 +135,19 @@ export const SMART_WORKFLOW_AI_ASSIST_DEGRADED_TITLE =
   'AI assist degraded';
 
 export const SMART_WORKFLOW_AI_ASSIST_DEGRADED_DETAIL =
-  'Runtime surface truth reports AI assist as degraded. Suggestions remain advisory only and should not be treated as guaranteed outcomes.';
+  'Runtime surface truth reports AI assist as degraded. Suggestions remain advisory only and should not be treated as guaranteed outcomes. AI assist fails closed in production when the service is unavailable (returns HTTP 503).';
 
 export const WORKFLOW_HINTS_UNAVAILABLE_TITLE =
   'AI optimisation hints unavailable';
 
 export const WORKFLOW_HINTS_UNAVAILABLE_DETAIL =
-  'Runtime surface truth reports AI assist as unavailable in this deployment. Pipeline monitoring remains available without generated hints.';
+  'Runtime surface truth reports AI assist as unavailable in this deployment. Pipeline monitoring remains available without generated hints. AI assist fails closed in production when the service is unavailable (returns HTTP 503).';
 
 export const WORKFLOW_HINTS_DEGRADED_TITLE =
   'AI optimisation hints degraded';
 
 export const WORKFLOW_HINTS_DEGRADED_DETAIL =
-  'AI assist is degraded. Any generated hints remain advisory only and should not be treated as guaranteed outcomes.';
+  'AI assist is degraded. Any generated hints remain advisory only and should not be treated as guaranteed outcomes. AI assist fails closed in production when the service is unavailable (returns HTTP 503).';
 
 export const SQL_FEDERATED_QUERY_UNAVAILABLE_DETAIL =
   'Federated query is unavailable until the Trino capability is active.';
@@ -274,13 +274,13 @@ export const AI_OPERATIONS_APPLY_BOUNDARY_MESSAGE =
   'Applying AI-assisted operation suggestions is not exposed by the current Data Cloud launcher API.';
 
 export const AI_WORKFLOW_ADVISORY_BOUNDARY_MESSAGE =
-  'AI workflow advisories are fail-closed in the current Data Cloud launcher profile. Workflow analysis requires the ML platform backend.';
+  'AI workflow advisories require the ML platform backend and are not available in the current deployment profile. AI assist fails closed in production when the service is unavailable (returns HTTP 503).';
 
 export const AI_QUALITY_ADVISORY_BOUNDARY_MESSAGE =
-  'AI data quality advisories are fail-closed in the current Data Cloud launcher profile. Quality scoring requires the ML platform backend.';
+  'AI data quality advisories require the ML platform backend and are not available in the current deployment profile. AI assist fails closed in production when the service is unavailable (returns HTTP 503).';
 
 export const AI_FABRIC_ADVISORY_BOUNDARY_MESSAGE =
-  'AI fabric tier advisories are not exposed by the current Data Cloud launcher. Fabric placement scoring requires the ML platform backend.';
+  'AI fabric tier advisories require the ML platform backend and are not available in the current deployment profile. AI assist fails closed in production when the service is unavailable (returns HTTP 503).';
 
 export const ANALYTICS_AI_DISABLED_BOUNDARY_MESSAGE =
   'Analytics AI features (query suggestions, policy evaluation) are disabled by runtime feature-gate policy for this deployment profile.';

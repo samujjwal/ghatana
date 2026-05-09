@@ -16,6 +16,7 @@ import {
   type PreviewSessionContext,
 } from '@/services/preview/PreviewSessionApi';
 import { getPreviewLocaleFixture, getPreviewLocaleFixtures } from '@/services/preview/PreviewLocaleFixtures';
+import { useI18n } from '../../i18n/I18nProvider';
 
 /**
  * Live Preview Panel component.
@@ -64,6 +65,7 @@ export function LivePreviewPanel({
   onElementClick,
   onElementHover,
 }: LivePreviewPanelProps) {
+  const { t } = useI18n();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
@@ -112,13 +114,14 @@ export function LivePreviewPanel({
     }
 
     if (!previewContext) {
+      // YAPPC-P0-002: Only allow dev-only mode if explicitly enabled via environment variable
       if (previewDevModeEnabled) {
         setResolvedPreviewUrl('/preview/builder?mode=dev');
       } else {
         setResolvedPreviewUrl(null);
         setError(
           document || componentPath
-            ? 'Secure preview session is required. Provide previewContext or enable explicit dev preview mode.'
+            ? 'Secure preview session is required. Provide previewContext or enable explicit dev-only mode (VITE_FEATURE_PREVIEW_DEV_MODE=true).'
             : null,
         );
       }
@@ -196,6 +199,7 @@ export function LivePreviewPanel({
       return;
     }
 
+    // YAPPC-P0-009: Apply CSP attribute to iframe for content security policy enforcement
     iframeRef.current.setAttribute('csp', previewPolicy.contentSecurityPolicy);
   }, [previewPolicy.contentSecurityPolicy]);
 
@@ -399,7 +403,7 @@ export function LivePreviewPanel({
               <AlertTriangle
                 className="mx-auto mb-2 h-10 w-10 text-destructive"
                 role="img"
-                aria-label="Preview unavailable"
+                aria-label={t('studio.previewUnavailable')}
               />
               <p className="text-sm text-destructive dark:text-destructive">
                 {error ?? 'Preview is paused until validation errors are resolved.'}
@@ -420,7 +424,7 @@ export function LivePreviewPanel({
               <Eye
                 className="mx-auto mb-2 h-10 w-10 text-fg-muted"
                 role="img"
-                aria-label="Preview empty"
+                aria-label={t('studio.previewEmpty')}
               />
               <p className="text-sm">Select a document or component to preview</p>
             </div>
@@ -431,7 +435,7 @@ export function LivePreviewPanel({
               <LockKeyhole
                 className="mx-auto mb-2 h-10 w-10 text-fg-muted"
                 role="img"
-                aria-label="Preparing secure preview"
+                aria-label={t('studio.preparingSecurePreview')}
               />
               <p className="text-sm">Preparing secure preview session…</p>
             </div>
@@ -442,7 +446,7 @@ export function LivePreviewPanel({
               <LockKeyhole
                 className="mx-auto mb-2 h-10 w-10 text-fg-muted"
                 role="img"
-                aria-label="Preview unavailable"
+                aria-label={t('studio.previewUnavailable')}
               />
               <p className="text-sm">
                 {error ?? 'Secure preview session is required. Provide previewContext or enable explicit dev preview mode.'}
@@ -468,4 +472,5 @@ export function LivePreviewPanel({
       </div>
     </div>
   );
+}
 }

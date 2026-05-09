@@ -1,3 +1,4 @@
+import { useI18n } from '../../i18n/I18nProvider';
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 
@@ -82,6 +83,7 @@ export function Modal({
   footer,
   className = '',
 }: ModalProps) {
+  const { t } = useI18n();
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -207,7 +209,7 @@ export function Modal({
             <button
               onClick={onClose}
               style={closeButtonStyle}
-              aria-label="Close modal"
+              aria-label={t('dialogs.closeModal')}
             >
               ×
             </button>

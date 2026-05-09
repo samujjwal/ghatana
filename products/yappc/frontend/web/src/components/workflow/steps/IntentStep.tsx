@@ -19,6 +19,7 @@ import {
 } from '../../../stores/workflow.store';
 import { CategoryContextPanel } from '../CategoryContextPanel';
 import { Textarea } from '../../ui/Textarea';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 import type { IntentStepData, WorkflowType, WorkflowCategory } from 'yappc-core/types';
 import { WORKFLOW_TYPE_TO_CATEGORY } from 'yappc-core/types';
@@ -108,6 +109,7 @@ const CATEGORY_LABELS: Record<WorkflowCategory, string> = {
 // ============================================================================
 
 export function IntentStep() {
+    const { t } = useI18n();
     const workflow = useAtomValue(currentWorkflowAtom);
     const draftData = useAtomValue(draftStepDataAtom) as IntentStepData | null;
     const updateDraft = useSetAtom(updateDraftStepDataAtom);
@@ -201,7 +203,7 @@ export function IntentStep() {
                         </Typography>
                         <Textarea
                             className="min-h-[112px] w-full rounded border border-border p-3 text-sm"
-                            placeholder="Example: Implement user authentication with OAuth 2.0 to allow users to sign in with their Google or GitHub accounts..."
+                            placeholder={t('workflow.intent.goalPlaceholder')}
                             value={currentData.goalStatement ?? ''}
                             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange('goalStatement', e.target.value)}
                             fullWidth
@@ -224,7 +226,7 @@ export function IntentStep() {
                             <TextField
                                 fullWidth
                                 size="small"
-                                placeholder="Add a success criterion..."
+                                placeholder={t('workflow.intent.successCriterionPlaceholder')}
                                 value={newCriteria}
                                 onChange={(e) => setNewCriteria(e.target.value)}
                                 onKeyDown={(e) => {

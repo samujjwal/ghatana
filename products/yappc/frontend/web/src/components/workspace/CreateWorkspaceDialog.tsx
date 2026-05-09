@@ -21,6 +21,7 @@ import { useCreateWorkspace, useNameSuggestions } from '../../hooks/useWorkspace
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface CreateWorkspaceDialogProps {
     isOpen: boolean;
@@ -33,6 +34,7 @@ export function CreateWorkspaceDialog({
     onClose,
     onCreated
 }: CreateWorkspaceDialogProps) {
+    const { t } = useI18n();
     const state = useAtomValue(workspaceAtom);
     const setCurrentWorkspaceId = useSetAtom(currentWorkspaceIdAtom);
     const createWorkspace = useCreateWorkspace();
@@ -149,7 +151,7 @@ export function CreateWorkspaceDialog({
                         variant="ghost"
                         size="small"
                         className="p-1 text-grey-400 hover:text-grey-600 dark:hover:text-grey-300 transition-colors"
-                        aria-label="Close"
+                        aria-label={t('workspace.create.close')}
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -195,7 +197,7 @@ export function CreateWorkspaceDialog({
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="e.g., Product Development"
+                            placeholder={t('workspace.create.namePlaceholder')}
                             data-testid="workspace-name-input"
                             className="
                 w-full px-4 py-2.5
@@ -223,7 +225,7 @@ export function CreateWorkspaceDialog({
                             id="workspace-description"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="What's this workspace for?"
+                            placeholder={t('workspace.create.descriptionPlaceholder')}
                             rows={2}
                             className="
                 w-full px-4 py-2.5
@@ -282,7 +284,7 @@ export function CreateWorkspaceDialog({
               rounded-lg transition-colors
             "
                     >
-                        Cancel
+                        {t('workspace.create.cancel')}
                     </Button>
                     <Button
                         type="submit"
@@ -307,7 +309,7 @@ export function CreateWorkspaceDialog({
                                 Creating...
                             </span>
                         ) : (
-                            'Create Workspace'
+                            {t('workspace.create.submit')}
                         )}
                     </Button>
                 </div>

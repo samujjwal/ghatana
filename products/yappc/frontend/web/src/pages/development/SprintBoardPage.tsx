@@ -28,6 +28,7 @@ import {
   activeSprintAtom,
   sprintStoriesAtom,
 } from '../../state/atoms';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // =============================================================================
 // Types
@@ -60,6 +61,7 @@ const FilterPanel: React.FC<{
   onFiltersChange: (filters: FilterState) => void;
   onClose: () => void;
 }> = ({ filters, onFiltersChange, onClose }) => {
+  const { t } = useI18n();
   const stories = useAtomValue(sprintStoriesAtom);
 
   // Extract unique values from stories
@@ -111,7 +113,7 @@ const FilterPanel: React.FC<{
               Clear all
             </NativeButton>
           )}
-          <NativeButton onClick={onClose} className="p-1 hover:bg-surface rounded" aria-label="Close filters">
+          <NativeButton onClick={onClose} className="p-1 hover:bg-surface rounded" aria-label={t('sprintBoard.closeFilters')}>
             <X className="w-4 h-4 text-fg-muted" />
           </NativeButton>
         </div>
@@ -297,6 +299,7 @@ const SprintSelector: React.FC<{
 // =============================================================================
 
 const SprintBoardPage: React.FC = () => {
+    const { t } = useI18n();
   const { projectId, sprintId } = useParams<{ projectId: string; sprintId: string }>();
   
   // State
@@ -380,7 +383,7 @@ const SprintBoardPage: React.FC = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
               <NativeInput
                 type="text"
-                placeholder="Search stories..."
+                placeholder={t('sprintBoard.searchPlaceholder')}
                 value={filters.search}
                 onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                 className={cn(
@@ -404,7 +407,7 @@ const SprintBoardPage: React.FC = () => {
                 )}
               >
                 <Filter className="w-4 h-4" />
-                <span>Filters</span>
+                <span>{t('sprintBoard.filters')}</span>
                 {activeFiltersCount > 0 && (
                   <span className="px-1.5 py-0.5 rounded-full bg-violet-500 text-white text-xs">
                     {activeFiltersCount}

@@ -30,6 +30,7 @@ import {
     canvasInteractionModeAtom,
 } from '../workspace/canvasAtoms';
 import { Input } from '../../ui/Input';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 export interface SketchToolbarProps {
     className?: string;
@@ -41,6 +42,7 @@ type ToolbarTool = SketchTool | 'ellipse' | 'eraser';
  * SketchToolbar - Contextual toolbar for sketch mode
  */
 export const SketchToolbar: React.FC<SketchToolbarProps> = ({ className = '' }) => {
+    const { t } = useI18n();
     const [tool, setTool] = useAtom(sketchToolAtom);
     const [color, setColor] = useAtom(sketchColorAtom);
     const [strokeWidth, setStrokeWidth] = useAtom(sketchStrokeWidthAtom);
@@ -137,25 +139,25 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({ className = '' }) 
                 value={tool}
                 exclusive
                 onChange={handleToolChange}
-                aria-label="sketch tool"
+                aria-label={t('canvas.sketch.tool')}
                 size="sm"
             >
-                <ToggleButton value="pen" aria-label="pen tool">
+                <ToggleButton value="pen" aria-label={t('canvas.sketch.penTool')}>
                     <Tooltip title="Pen (Draw freehand)">
                         <PenIcon />
                     </Tooltip>
                 </ToggleButton>
-                <ToggleButton value="rectangle" aria-label="rectangle tool">
+                <ToggleButton value="rectangle" aria-label={t('canvas.sketch.rectangleTool')}>
                     <Tooltip title="Rectangle">
                         <RectIcon />
                     </Tooltip>
                 </ToggleButton>
-                <ToggleButton value="ellipse" aria-label="ellipse tool">
+                <ToggleButton value="ellipse" aria-label={t('canvas.sketch.ellipseTool')}>
                     <Tooltip title="Circle/Ellipse">
                         <CircleIcon />
                     </Tooltip>
                 </ToggleButton>
-                <ToggleButton value="eraser" aria-label="eraser tool">
+                <ToggleButton value="eraser" aria-label={t('canvas.sketch.eraserTool')}>
                     <Tooltip title="Eraser">
                         <EraserIcon />
                     </Tooltip>
@@ -164,13 +166,13 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({ className = '' }) 
 
             {/* Color Picker */}
             <Box className="flex items-center gap-2">
-                <Tooltip title="Choose color">
+                <Tooltip title={t('canvas.sketch.chooseColor')}>
                     <IconButton
                         onClick={handleOpenColorPicker}
                         size="sm"
                         className="w-[40px] h-[40px] border-[2px] border-solid border-border dark:border-border hover:opacity-[0.8]"
                         style={{ backgroundColor: color }}
-                        aria-label="color picker"
+                        aria-label={t('canvas.sketch.colorPicker')}
                     >
                         <ColorIcon style={{ color: getContrastColor(color) }} />
                     </IconButton>
@@ -206,7 +208,7 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({ className = '' }) 
                     min={1}
                     max={20}
                     step={1}
-                    aria-label="stroke width"
+                    aria-label={t('canvas.sketch.strokeWidth')}
                     size="sm"
                     className="w-[120px]"
                 />

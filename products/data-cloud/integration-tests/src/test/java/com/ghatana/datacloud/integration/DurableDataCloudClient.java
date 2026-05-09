@@ -268,6 +268,10 @@ public class DurableDataCloudClient implements DataCloudClient, AutoCloseable {
             serializeData(event.payload()),
             "application/json",
             event.headers(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
             Optional.empty()
         );
 

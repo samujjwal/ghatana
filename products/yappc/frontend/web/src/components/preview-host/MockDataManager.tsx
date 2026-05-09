@@ -17,6 +17,7 @@ import {
   IconButton,
 } from '@ghatana/design-system';
 import React, { useState, useCallback } from 'react';
+import { useI18n } from '../../i18n/I18nProvider';
 
 import type { PageConfig } from 'yappc-config-schema';
 
@@ -32,6 +33,7 @@ interface MockDataManagerProps {
 }
 
 export const MockDataManager: React.FC<MockDataManagerProps> = ({ config, onDataChange }) => {
+  const { t } = useI18n();
   const [mockData, setMockData] = useState<Record<string, unknown>>({});
   const [newKey, setNewKey] = useState('');
   const [newValue, setNewValue] = useState('');
@@ -98,7 +100,7 @@ export const MockDataManager: React.FC<MockDataManagerProps> = ({ config, onData
             label="Key"
             value={newKey}
             onChange={(e) => setNewKey(e.target.value)}
-            placeholder="e.g., userData"
+            placeholder={t('mockData.keyPlaceholder')}
             fullWidth
             size="small"
           />
@@ -106,7 +108,7 @@ export const MockDataManager: React.FC<MockDataManagerProps> = ({ config, onData
             label="Value (JSON or string)"
             value={newValue}
             onChange={(e) => setNewValue(e.target.value)}
-            placeholder='e.g., {"name": "John"} or "John"'
+            placeholder={t('mockData.valuePlaceholder')}
             fullWidth
             multiline
             rows={2}

@@ -305,8 +305,8 @@ public class PostgresJsonbConnector implements StorageConnector {
         Objects.requireNonNull(spec, "QuerySpec must not be null");
 
         long startTime = System.currentTimeMillis();
-        int limit  = spec.getLimit();
-        int offset = spec.getOffset();
+        int limit  = spec.getLimitInt();
+        int offset = spec.getOffsetInt();
 
         return entityRepository.findByQuery(tenantId, collectionName, spec)
                 .then(entities -> entityRepository.count(tenantId, collectionName)

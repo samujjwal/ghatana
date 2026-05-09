@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router';
 import { Folder, GitBranch as AccountTree, Plus as Add, Search, Building as Business, Code, ExternalLink as Launch } from 'lucide-react';
 import { Card, CardContent, Typography, Button, Box, Grid, Surface as Paper, IconButton, Input as InputBase, Chip, Avatar, Stack } from '@ghatana/design-system';
+import { useI18n } from '../../i18n/I18nProvider';
 
 import { PriorityTasksList, type PriorityTask } from './PriorityTasksList';
 import { ProjectCard } from '../project/ProjectCard';
@@ -52,6 +53,7 @@ export function DashboardView({
     onCreateWorkspace,
     onViewAllWorkspaces
 }: DashboardViewProps) {
+    const { t } = useI18n();
     const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
         if (!onSearchClick) return;
         if (event.key === 'Enter' || event.key === ' ') {
@@ -94,14 +96,14 @@ export function DashboardView({
                         transition: 'box-shadow 0.2s',
                     }}
                 >
-                    <IconButton className="p-[10px]" aria-label="search">
+                    <IconButton className="p-[10px]" aria-label={t('dashboard.search')}>
                         <Search />
                     </IconButton>
                     <InputBase
                         className="ml-2 flex-1"
-                        placeholder="Search tasks, projects, code, or get guidance..."
+                        placeholder={t('dashboard.searchPlaceholder')}
                         readOnly
-                        inputProps={{ 'aria-label': 'Search tasks, projects, code, or get guidance' }}
+                        inputProps={{ 'aria-label': t('dashboard.searchAria') }}
                         onKeyDown={handleSearchKeyDown}
                     />
                     <Chip label="Cmd+K" size="sm" className="mr-2 text-xs rounded h-[24px]" />

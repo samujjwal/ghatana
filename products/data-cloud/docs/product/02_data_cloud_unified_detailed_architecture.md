@@ -673,6 +673,7 @@ Production must fail closed for:
 - missing redaction policy for sensitive export
 - unavailable AEP dependency when AEP is required
 - surface advertised as live without passing probes
+- unavailable AI completion service in production (returns HTTP 503 instead of heuristic fallback)
 ```
 
 ---
@@ -690,7 +691,35 @@ UNAVAILABLE
 MISCONFIGURED
 ```
 
-### 12.2 Surface record
+### 12.2 Runtime posture
+
+The `/api/v1/surfaces` endpoint includes a `runtimePosture` object in the `_meta` section that reports deployment configuration and durability posture:
+
+```text
+productionLikeProfile: boolean
+authenticationConfigured: boolean
+settingsStorageMode: string
+settingsDurable: boolean
+entityStoreDurable: boolean
+eventStoreWired: boolean
+coreEventStoreDurable: boolean
+eventTail: object
+idempotencyStoreDurable: boolean
+auditConfigured: boolean
+policyConfigured: boolean
+metricsConfigured: boolean
+traceConfigured: boolean
+```
+
+DC-P1.18: Non-local durability posture is finalized with explicit fields for:
+- `settingsDurable`: Settings storage is not in-memory (file-backed or database)
+- `entityStoreDurable`: Entity store uses durable provider (not H2 in-memory)
+- `coreEventStoreDurable`: Event log store uses durable provider (not in-memory)
+- `idempotencyStoreDurable`: Write idempotency store is configured
+
+These fields enable UI and operators to validate deployment posture parity against documented requirements.
+
+### 12.3 Surface record
 
 ```json
 {

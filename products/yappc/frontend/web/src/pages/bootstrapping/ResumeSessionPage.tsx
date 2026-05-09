@@ -38,6 +38,7 @@ import { Menu } from '@ghatana/design-system';
 import { MenuItem } from '@ghatana/design-system';
 import { Dialog } from '@ghatana/design-system';
 import { Progress } from '@ghatana/design-system';
+import { useI18n } from '../../i18n/I18nProvider';
 
 import { savedSessionsAtom, type BootstrapSession as StateSession } from '../../state/atoms';
 import { ROUTES } from '../../router/paths';
@@ -131,7 +132,7 @@ const SessionCard: React.FC<SessionCardProps> = ({
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
-                aria-label="Session actions"
+                aria-label={t('resumeSession.actions')}
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
@@ -266,6 +267,7 @@ const EmptyState: React.FC<{ onCreateNew: () => void }> = ({ onCreateNew }) => (
 
 const ResumeSessionPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [sessions, setSessions] = useAtom(savedSessionsAtom);
 
   // Local state
@@ -404,7 +406,7 @@ const ResumeSessionPage: React.FC = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" />
               <Input
-                placeholder="Search sessions..."
+                placeholder={t('resumeSession.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"

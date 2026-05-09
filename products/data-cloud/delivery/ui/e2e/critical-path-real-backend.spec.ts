@@ -52,7 +52,7 @@ test.describe('Critical Path - Real Backend Integration', () => {
     await expect(page.locator('h1, h2')).toBeVisible({ timeout: 15000 });
     
     // Verify we're not using mocked data
-    const response = await page.request.get(`${BASE_URL}/api/v1/capabilities`);
+    const response = await page.request.get(`${BASE_URL}/api/v1/surfaces`);
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
     expect(data).toBeDefined();
@@ -366,7 +366,7 @@ test.describe('Real Backend - Performance Tests', () => {
       page.request.get(`${BASE_URL}/api/v1/pipelines`, {
         headers: { 'X-Tenant-Id': TEST_TENANT }
       }),
-      page.request.get(`${BASE_URL}/api/v1/capabilities`, {
+      page.request.get(`${BASE_URL}/api/v1/surfaces`, {
         headers: { 'X-Tenant-Id': TEST_TENANT }
       }),
     ];

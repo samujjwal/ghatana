@@ -3,6 +3,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Textarea } from '../../components/ui/Textarea';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -48,6 +49,7 @@ const STATUS_BADGES: Record<InviteStatus, { label: string; className: string }> 
 // ============================================================================
 
 const TeamInvitePage: React.FC = () => {
+  const { t } = useI18n();
   const [members, setMembers] = useState(INITIAL_MEMBERS);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Role>('developer');
@@ -112,7 +114,7 @@ const TeamInvitePage: React.FC = () => {
                 value={bulkEmails}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setBulkEmails(e.target.value)}
                 rows={4}
-                placeholder="Enter emails separated by commas or newlines..."
+                placeholder={t('teamInvite.emailPlaceholder')}
                 className="w-full rounded-lg border px-4 py-2 text-sm focus:border-info-border focus:outline-none"
               />
               <div className="flex items-center gap-3">
@@ -121,9 +123,9 @@ const TeamInvitePage: React.FC = () => {
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setRole(e.target.value as Role)}
                   className="rounded-lg border px-3 py-2 text-sm"
                 >
-                  <option value="developer">Developer</option>
-                  <option value="admin">Admin</option>
-                  <option value="viewer">Viewer</option>
+                  <option value="developer">{t('teamInvite.role.developer')}</option>
+                  <option value="admin">{t('teamInvite.role.admin')}</option>
+                  <option value="viewer">{t('teamInvite.role.viewer')}</option>
                 </Select>
                 <Button onClick={bulkInvite} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg">
                   Send Invites
@@ -136,7 +138,7 @@ const TeamInvitePage: React.FC = () => {
                 type="email"
                 value={email}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-                placeholder="teammate@company.com"
+                placeholder={t('teamInvite.singleEmailPlaceholder')}
                 onKeyDown={(e) => e.key === 'Enter' && invite()}
                 className="flex-1 rounded-lg border px-4 py-2 text-sm focus:border-info-border focus:outline-none"
               />
@@ -145,9 +147,9 @@ const TeamInvitePage: React.FC = () => {
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setRole(e.target.value as Role)}
                 className="rounded-lg border px-3 py-2 text-sm"
               >
-                <option value="developer">Developer</option>
-                <option value="admin">Admin</option>
-                <option value="viewer">Viewer</option>
+                <option value="developer">{t('teamInvite.role.developer')}</option>
+                <option value="admin">{t('teamInvite.role.admin')}</option>
+                <option value="viewer">{t('teamInvite.role.viewer')}</option>
               </Select>
               <Button onClick={invite} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg">
                 Invite
@@ -184,7 +186,7 @@ const TeamInvitePage: React.FC = () => {
                   size="sm"
                   onClick={() => remove(m.id)}
                   className="text-fg-muted hover:text-destructive"
-                  aria-label={`Remove ${m.name}`}
+                  aria-label={t('teamInvite.removeMember', { name: m.name })}
                 >
                   ✕
                 </Button>

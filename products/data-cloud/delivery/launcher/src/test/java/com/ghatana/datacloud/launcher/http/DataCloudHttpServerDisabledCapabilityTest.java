@@ -263,11 +263,11 @@ class DataCloudHttpServerDisabledCapabilityTest {
     class AlertingCapabilityTests {
 
         @Test
-        @DisplayName("GET /api/v1/capabilities shows alerts capability as configured")
+        @DisplayName("GET /api/v1/surfaces shows alerts capability as configured")
         void capabilities_alertsEntry_isMapped() throws Exception {
             startServer();
 
-            HttpResponse<String> response = get("/api/v1/capabilities");
+            HttpResponse<String> response = get("/api/v1/surfaces");
 
             assertThat(response.statusCode()).isEqualTo(200);
             assertThat(response.body()).contains("\"alerts\"");
@@ -281,11 +281,11 @@ class DataCloudHttpServerDisabledCapabilityTest {
     class DataFabricCapabilityTests {
 
         @Test
-        @DisplayName("GET /api/v1/capabilities shows dataFabric as unavailable by default")
+        @DisplayName("GET /api/v1/surfaces shows dataFabric as unavailable by default")
         void capabilities_dataFabricEntry_unavailableByDefault() throws Exception {
             startServer();
 
-            HttpResponse<String> response = get("/api/v1/capabilities");
+            HttpResponse<String> response = get("/api/v1/surfaces");
 
             assertThat(response.statusCode()).isEqualTo(200);
             // dataFabric should be present in snapshot with configured=false (feature flag default)

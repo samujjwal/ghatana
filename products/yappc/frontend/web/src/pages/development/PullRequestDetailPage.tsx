@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
+import { useI18n } from '../../i18n/I18nProvider';
 
 type PRState = 'open' | 'closed' | 'merged' | 'draft';
 type CheckStatus = 'success' | 'failure' | 'pending' | 'skipped';
@@ -90,6 +91,7 @@ const PullRequestDetailPage: React.FC = () => {
   const { prId } = useParams<{ prId: string }>();
   const queryClient = useQueryClient();
   const [mergeMethod, setMergeMethod] = useState<MergeMethod>('squash');
+  const { t } = useI18n();
 
   const { data: pr, isLoading, error } = useQuery<PullRequestData>({
     queryKey: ['pull-request', prId],
@@ -298,9 +300,9 @@ const PullRequestDetailPage: React.FC = () => {
               size="sm"
               className="bg-surface border-border text-fg-muted text-sm rounded-lg px-3 py-2 focus:ring-blue-500"
             >
-              <option value="squash">Squash and merge</option>
-              <option value="merge">Create a merge commit</option>
-              <option value="rebase">Rebase and merge</option>
+              <option value="squash">{t('pr.mergeSquash')}</option>
+              <option value="merge">{t('pr.mergeCommit')}</option>
+              <option value="rebase">{t('pr.mergeRebase')}</option>
             </Select>
 
             <Button

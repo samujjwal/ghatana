@@ -9,6 +9,7 @@ import { useNavigate, useParams } from 'react-router';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
+import { useI18n } from '../../i18n/I18nProvider';
 import {
   ConfigurationWizard,
   CostEstimator,
@@ -105,6 +106,7 @@ function toValidationErrors(errors: Record<string, string>): StepValidation {
 export const InitializationWizardPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -223,7 +225,7 @@ export const InitializationWizardPage: React.FC = () => {
                   onChange={(event) =>
                     setRepository((prev) => ({ ...prev, name: event.target.value }))
                   }
-                  placeholder="my-product"
+                  placeholder={t('initWizard.repoNamePlaceholder')}
                 />
               </label>
               <label>
@@ -301,7 +303,7 @@ export const InitializationWizardPage: React.FC = () => {
                   <Input
                     type="email"
                     className="form-input"
-                    placeholder="colleague@example.com"
+                    placeholder={t('initWizard.inviteMemberPlaceholder')}
                     value={inviteEmail}
                     onChange={(event) => setInviteEmail(event.target.value)}
                   />

@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router';
 import { Plus as Add, Folder, Briefcase as WorkOutline, Grid3x3 as GridView, Settings, Share2 as Share, Download as GetApp, History, HelpCircle as HelpOutline, MoreVertical as MoreVert } from 'lucide-react';
 
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface QuickAction {
     id: string;
@@ -46,6 +47,7 @@ export function QuickActionsPanel({
     projectId,
     className = '',
 }: QuickActionsPanelProps) {
+    const { t } = useI18n();
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
@@ -228,10 +230,10 @@ export function QuickActionsPanel({
                     setIsOpen(!isOpen);
                 }}
                 className="p-2 rounded-md text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
-                aria-label="Quick actions menu"
+                aria-label={t('nav.quickActionsMenu')}
                 aria-haspopup="menu"
                 aria-expanded={isOpen}
-                title="Quick Actions"
+                title={t('nav.quickActions')}
                 variant="ghost"
                 size="sm"
             >
@@ -305,6 +307,7 @@ export function NewButton({
     variant = 'default',
     className = '',
 }: NewButtonProps) {
+    const { t } = useI18n();
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
@@ -394,7 +397,7 @@ export function NewButton({
                     focus:outline-none focus:ring-2 focus:ring-primary-500
                     ${variant === 'compact' ? 'text-sm' : 'text-sm'}
                 `}
-                aria-label="Create new"
+                aria-label={t('nav.createNew')}
                 aria-haspopup="menu"
                 aria-expanded={isOpen}
                 size="sm"

@@ -18,6 +18,7 @@ import {
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
 import { Textarea } from '../../ui/Textarea';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 interface PlanTask {
     id: string;
@@ -55,6 +56,7 @@ const RISK_LEVELS: { value: RiskAssessment['level']; label: string; color: 'succ
 // ============================================================================
 
 export function PlanStep() {
+    const { t } = useI18n();
     const workflow = useAtomValue(currentWorkflowAtom);
     const draftData = useAtomValue(draftStepDataAtom) as PlanStepData | null;
     const updateDraft = useSetAtom(updateDraftStepDataAtom);
@@ -161,7 +163,7 @@ export function PlanStep() {
                             <TextField
                                 fullWidth
                                 size="small"
-                                placeholder="Task title"
+                                placeholder={t('workflow.plan.taskTitlePlaceholder')}
                                 value={newTaskTitle}
                                 onChange={(e) => setNewTaskTitle(e.target.value)}
                             />
@@ -177,7 +179,7 @@ export function PlanStep() {
                         <TextField
                             fullWidth
                             size="small"
-                            placeholder="Task description (optional)"
+                            placeholder={t('workflow.plan.taskDescriptionPlaceholder')}
                             value={newTaskDesc}
                             onChange={(e) => setNewTaskDesc(e.target.value)}
                         />
@@ -265,7 +267,7 @@ export function PlanStep() {
                                 <TextField
                                     fullWidth
                                     size="small"
-                                    placeholder="Add a risk factor..."
+                                    placeholder={t('workflow.plan.riskFactorPlaceholder')}
                                     value={newRiskFactor}
                                     onChange={(e) => setNewRiskFactor(e.target.value)}
                                     onKeyPress={(e) => e.key === 'Enter' && handleAddRiskFactor()}
@@ -306,7 +308,7 @@ export function PlanStep() {
                                 <TextField
                                     fullWidth
                                     size="small"
-                                    placeholder="Add a mitigation..."
+                                    placeholder={t('workflow.plan.mitigationPlaceholder')}
                                     value={newMitigation}
                                     onChange={(e) => setNewMitigation(e.target.value)}
                                     onKeyPress={(e) => e.key === 'Enter' && handleAddMitigation()}
@@ -345,7 +347,7 @@ export function PlanStep() {
                         <AccordionDetails>
                             <Textarea
                                 className="min-h-[96px] w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none dark:border-border"
-                                placeholder="Describe the rollback strategy if something goes wrong..."
+                                placeholder={t('workflow.plan.rollbackPlaceholder')}
                                 value={riskAssessment.rollbackPlan ?? ''}
                                 onChange={(e) => handleRiskChange('rollbackPlan', e.target.value)}
                                 fullWidth

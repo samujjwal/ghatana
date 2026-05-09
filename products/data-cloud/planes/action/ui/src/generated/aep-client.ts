@@ -367,7 +367,7 @@ export type paths = {
       };
     };
   };
-  "/api/v1/capabilities": {
+  "/api/v1/surfaces": {
     get: {
       responses: {
         200: { content: { "application/json": CapabilitiesManifest } };

@@ -11,6 +11,7 @@
  */
 
 import React from 'react';
+    const { t } = useI18n();
 import { Button } from '@ghatana/design-system';
 import {
     LifecyclePhase,
@@ -22,7 +23,7 @@ import { useLifecyclePhase } from '../../hooks/useLifecyclePhase';
 /**
  * Props for LifecyclePhaseNavigator component
  */
-export interface LifecyclePhaseNavigatorProps {
+            aria-label={t('lifecycle.phaseNavigation')}
     /** Visual layout orientation */
     orientation?: 'horizontal' | 'vertical';
     /** Show only phase names, or include descriptions */
@@ -86,7 +87,7 @@ export const LifecyclePhaseNavigator: React.FC<LifecyclePhaseNavigatorProps> = (
     return (
         <nav
             className={`${containerClasses} ${className}`}
-            aria-label="Lifecycle phase navigation"
+            aria-label={t('lifecycle.phaseNavigation')}
             role="navigation"
         >
             {ALL_PHASES.map((phase, index) => {
@@ -171,7 +172,11 @@ const PhaseButton: React.FC<PhaseButtonProps> = ({
             disabled={disabled}
             className={`${buttonClasses} ${sizeClasses}`}
             title={description}
-            aria-label={`${label} phase${isActive ? ' (current)' : ''}${!isAccessible ? ' (not accessible)' : ''}`}
+                aria-label={t('lifecycle.phaseButton', {
+                    label,
+                    current: isActive ? ' (current)' : '',
+                    unavailable: !isAccessible ? ' (not accessible)' : '',
+                })}
             aria-current={isActive ? 'step' : undefined}
         >
             <span className="font-semibold">{label}</span>

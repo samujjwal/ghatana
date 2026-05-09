@@ -31,7 +31,8 @@ export { AGENT_REGISTRY_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
 // =============================================================================
 
 export type AgentStatus = 'ACTIVE' | 'INACTIVE' | 'ERROR' | 'REGISTERING' | 'DEREGISTERING';
-export type ExecutionStatus = 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED' | 'PENDING';
+// DC-32: Canonical execution status aligned with OperatorState
+export type ExecutionStatus = 'CREATED' | 'INITIALIZED' | 'RUNNING' | 'STOPPED' | 'FAILED';
 
 export type AgentCapability = BackendAgentCapability;
 

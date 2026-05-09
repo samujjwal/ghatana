@@ -40,14 +40,14 @@ describe('StandardModal', () => {
 
     it('renders close button by default', () => {
         render(<StandardModal isOpen={true} onClose={vi.fn()} title="Title">content</StandardModal>);
-        const closeBtn = document.querySelector('[aria-label="Close dialog"]');
+        const closeBtn = document.querySelector("[aria-label='Close dialog']");
         expect(closeBtn).toBeTruthy();
     });
 
     it('calls onClose when close button clicked', () => {
         const onClose = vi.fn();
         render(<StandardModal isOpen={true} onClose={onClose} title="Title">content</StandardModal>);
-        const closeBtn = document.querySelector('[aria-label="Close dialog"]') as HTMLElement;
+        const closeBtn = document.querySelector("[aria-label='Close dialog']") as HTMLElement;
         fireEvent.click(closeBtn);
         expect(onClose).toHaveBeenCalled();
     });
@@ -74,7 +74,7 @@ describe('StandardModal', () => {
                 content
             </StandardModal>
         );
-        expect(document.querySelector('[aria-label="Close dialog"]')).toBeNull();
+        expect(document.querySelector("[aria-label='Close dialog']")).toBeNull();
     });
 });
 
@@ -108,7 +108,7 @@ describe('StandardDrawer', () => {
     it('calls onClose when close button clicked', () => {
         const onClose = vi.fn();
         render(<StandardDrawer isOpen={true} onClose={onClose} title="Title">content</StandardDrawer>);
-        const closeBtn = document.querySelector('[aria-label="Close drawer"]') as HTMLElement;
+        const closeBtn = document.querySelector("[aria-label='Close drawer']") as HTMLElement;
         if (closeBtn) fireEvent.click(closeBtn);
         expect(onClose).toHaveBeenCalled();
     });

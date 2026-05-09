@@ -18,12 +18,14 @@ import { Search, Plus as Add, Settings } from 'lucide-react';
 import type { RailPanelProps } from '../UnifiedLeftRail.types';
 import type { ComponentLibraryItem } from '../panel-types';
 import { railService } from '@/services/rail/RailServiceClient';
+import { useI18n } from '../../../../i18n/I18nProvider';
 
 /**
  * Components Panel - Reusable component library
  * Fetches components from backend and provides drag-drop insertion
  */
 export function ComponentsPanel({ context, onInsertNode }: RailPanelProps) {
+  const { t } = useI18n();
   const [searchQuery, setSearchQuery] = useState('');
   const [components, setComponents] = useState<ComponentLibraryItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -115,7 +117,7 @@ export function ComponentsPanel({ context, onInsertNode }: RailPanelProps) {
 
       <TextField
         size="small"
-        placeholder="Search components..."
+        placeholder={t('canvas.components.search')}
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         InputProps={{

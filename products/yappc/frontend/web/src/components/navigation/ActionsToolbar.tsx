@@ -17,6 +17,7 @@ import { Plus as Add, Search, Bell as Notifications, Share2 as Share, Settings, 
 import { IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider, Tooltip } from '@ghatana/design-system';
 import { Button, Badge } from '../design-system';
 import { cn } from '../../lib/utils';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export type ActionContext = 'global' | 'project' | 'canvas';
 
@@ -66,6 +67,7 @@ export function ActionsToolbar({
     onNotifications,
     className,
 }: ActionsToolbarProps) {
+    const { t } = useI18n();
     const [moreMenuAnchor, setMoreMenuAnchor] = React.useState<null | HTMLElement>(null);
 
     // Show more actions inline on desktop to match visual guide density
@@ -108,7 +110,7 @@ export function ActionsToolbar({
     };
 
     return (
-        <div className={cn('flex items-center gap-2', className)} role="toolbar" aria-label="Actions toolbar">
+        <div className={cn('flex items-center gap-2', className)} role="toolbar" aria-label={t('actionsToolbar.toolbarLabel')}>
             {/* Context Actions */}
             {inlineActions.length > 0 && (
                 <div className="hidden md:flex items-center gap-1">
@@ -129,24 +131,24 @@ export function ActionsToolbar({
             {/* Overflow Menu */}
             {(overflowActions.length > 0 || contextActions.length > 0) && (
                 <>
-                    <Tooltip title="More actions">
+                    <Tooltip title={t('actionsToolbar.moreActions')}>
                         <IconButton
                             size="sm"
                             onClick={handleMoreClick}
                             className="md:hidden"
-                            aria-label="More actions"
+                            aria-label={t('actionsToolbar.moreActions')}
                         >
                             <MoreVert />
                         </IconButton>
                     </Tooltip>
 
                     {overflowActions.length > 0 && (
-                        <Tooltip title="More actions">
+                        <Tooltip title={t('actionsToolbar.moreActions')}>
                             <IconButton
                                 size="sm"
                                 onClick={handleMoreClick}
                                 className="hidden md:inline-flex"
-                                aria-label="More actions"
+                                aria-label={t('actionsToolbar.moreActions')}
                             >
                                 <MoreVert />
                             </IconButton>
@@ -215,7 +217,7 @@ export function ActionsToolbar({
                         size="sm"
                         type="button"
                         className="fixed inset-0 min-h-0 cursor-default rounded-none bg-transparent p-0 hover:bg-transparent"
-                        aria-label="Close actions menu"
+                        aria-label={t('actionsToolbar.closeMenu')}
                         onClick={handleMoreClose}
                     />
                     </div>
@@ -232,12 +234,12 @@ export function ActionsToolbar({
             <div className="flex items-center gap-1">
                 {/* New Button */}
                 {onNew && (
-                    <Tooltip title="Create new">
+                    <Tooltip title={t('actionsToolbar.createNew')}>
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={onNew}
-                            aria-label="Create new"
+                            aria-label={t('actionsToolbar.createNew')}
                         >
                             <Add />
                         </Button>
@@ -246,12 +248,12 @@ export function ActionsToolbar({
 
                 {/* Search Button */}
                 {onSearch && (
-                    <Tooltip title="Search">
+                    <Tooltip title={t('actionsToolbar.search')}>
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={onSearch}
-                            aria-label="Search"
+                            aria-label={t('actionsToolbar.search')}
                         >
                             <Search />
                         </Button>
@@ -265,7 +267,7 @@ export function ActionsToolbar({
                             variant="ghost"
                             size="sm"
                             onClick={onNotifications}
-                            aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
+                            aria-label={t('actionsToolbar.notifications', { suffix: notificationCount > 0 ? ` (${notificationCount} unread)` : '' })}
                         >
                             <span className="flex items-center gap-2">
                                 <Notifications />

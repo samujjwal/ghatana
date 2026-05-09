@@ -48,7 +48,7 @@ describe('AuditTrail', () => {
   it('shows refresh button', () => {
     const onRefresh = vi.fn();
     render(<AuditTrail events={[]} onRefresh={onRefresh} />);
-    // IconButton from design-system renders with aria-label="Icon button"
+    // IconButton from design-system renders with an accessible icon-button label
     const refreshBtn = screen.getByRole('button', { name: /Icon button/i });
     expect(refreshBtn).toBeInTheDocument();
   });

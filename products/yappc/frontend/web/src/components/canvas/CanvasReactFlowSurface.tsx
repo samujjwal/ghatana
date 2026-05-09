@@ -29,6 +29,7 @@ import { EnhancedSketchLayer } from './sketch/EnhancedSketchLayer';
 import { SketchToolbar } from './toolbar/SketchToolbar';
 import { DiagramToolbar } from './toolbar/DiagramToolbar';
 import { type CanvasInteractionMode, type SketchTool } from './workspace/canvasSharedState';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -105,8 +106,10 @@ export const CanvasReactFlowSurface: React.FC<CanvasReactFlowSurfaceProps> = ({
     handleZoomToPhase,
     handleGhostNodeCreate,
     setIsAIModalOpen,
-}) => (
-    <Box
+}) => {
+    const { t } = useI18n();
+
+    return (<Box
         id="canvas-surface"
         ref={canvasSurfaceRef}
         className={`flex-1 relative ${dragDrop.isDragOver ? 'ring-2 ring-info-border ring-inset' : ''}`}
@@ -115,7 +118,7 @@ export const CanvasReactFlowSurface: React.FC<CanvasReactFlowSurfaceProps> = ({
         onDragOver={interactionMode === 'navigate' ? dragDrop.handleCanvasDragOver : undefined}
         onDragLeave={interactionMode === 'navigate' ? dragDrop.handleCanvasDragLeave : undefined}
         tabIndex={0}
-        aria-label="Canvas surface — use Tab to navigate nodes, arrow keys to move them"
+        aria-label={t('canvas.surface.aria')}
     >
             <ReactFlow
                 nodes={styledNodes}
@@ -187,7 +190,7 @@ export const CanvasReactFlowSurface: React.FC<CanvasReactFlowSurfaceProps> = ({
                     }}
                     className="bg-white dark:bg-surface"
                     showInteractive={false}
-                    aria-label="Zoom controls"
+                    aria-label={t('canvas.surface.zoomControls')}
                 />
 
                 <MiniMap
@@ -207,7 +210,7 @@ export const CanvasReactFlowSurface: React.FC<CanvasReactFlowSurfaceProps> = ({
                         margin: 20, height: 120, width: 180,
                         boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
                     }}
-                    aria-label="Minimap overview"
+                    aria-label={t('canvas.surface.minimap')}
                 />
 
                 {/* Context-sensitive alignment toolbar — appears when ≥2 nodes selected */}
@@ -230,5 +233,5 @@ export const CanvasReactFlowSurface: React.FC<CanvasReactFlowSurfaceProps> = ({
             )}
         {interactionMode === 'sketch' && <SketchToolbar />}
         {interactionMode === 'diagram' && <DiagramToolbar />}
-    </Box>
-);
+    </Box>);
+};

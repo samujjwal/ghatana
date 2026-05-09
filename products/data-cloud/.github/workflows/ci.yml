@@ -1,0 +1,154 @@
+name: Data Cloud CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  JAVA_VERSION: '21'
+  GRADLE_VERSION: '8.5'
+
+jobs:
+  # ====================================================================================
+  # Build and Test
+  # ====================================================================================
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew :products:data-cloud:build -x spotbugsMain -x spotbugsTest
+
+      - name: Run unit tests
+        run: ./gradlew :products:data-cloud:test
+
+      - name: Run ArchUnit architecture tests (DC-13)
+        run: ./gradlew :products:data-cloud:delivery:launcher:test --tests "*DataCloudPlaneBoundaryTest"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: products/data-cloud/**/build/test-results/
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports
+          path: products/data-cloud/**/build/reports/tests/
+
+  # ====================================================================================
+  # Integration Tests
+  # ====================================================================================
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run integration tests
+        run: ./gradlew :products:data-cloud:integration-tests:test
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: products/data-cloud/integration-tests/build/test-results/
+
+  # ====================================================================================
+  # OpenAPI Route Parity Check (DC-30)
+  # ====================================================================================
+  openapi-parity:
+    name: OpenAPI Route Parity Check
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run OpenAPI route parity test (DC-30)
+        run: ./gradlew :products:data-cloud:delivery:launcher:test --tests "*OpenApiRouteParity*"
+
+  # ====================================================================================
+  # AEP Equivalence Check (DC-31)
+  # ====================================================================================
+  aep-equivalence:
+    name: AEP Equivalence Check
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run AEP equivalence test (DC-31)
+        run: ./gradlew :products:data-cloud:delivery:launcher:test --tests "*ActionPlaneAepEquivalence*"

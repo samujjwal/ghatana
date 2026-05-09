@@ -13,6 +13,7 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface Shortcut {
   keys: string[];
@@ -76,6 +77,7 @@ interface KeyboardShortcutsPanelProps {
 
 export function KeyboardShortcutsPanel({ open, onClose }: KeyboardShortcutsPanelProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const { t } = useI18n();
 
   // Filter shortcuts by search query
   const filteredShortcuts = useMemo(() => {
@@ -117,14 +119,14 @@ export function KeyboardShortcutsPanel({ open, onClose }: KeyboardShortcutsPanel
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-divider">
           <h2 className="text-lg font-semibold text-text-primary">
-            Keyboard Shortcuts
+            {t('keyboardShortcuts.title')}
           </h2>
           <Button
             onClick={onClose}
             variant="ghost"
             size="small"
             className="p-2 rounded-lg hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors"
-            aria-label="Close"
+            aria-label={t('keyboardShortcuts.close')}
           >
             <svg className="w-5 h-5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -145,7 +147,7 @@ export function KeyboardShortcutsPanel({ open, onClose }: KeyboardShortcutsPanel
             </svg>
             <Input
               type="text"
-              placeholder="Search shortcuts..."
+              placeholder={t('keyboardShortcuts.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-grey-50 dark:bg-grey-900 border border-divider rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -157,7 +159,7 @@ export function KeyboardShortcutsPanel({ open, onClose }: KeyboardShortcutsPanel
         <div className="overflow-y-auto max-h-[calc(80vh-140px)] p-6">
           {Object.keys(groupedShortcuts).length === 0 ? (
             <div className="text-center py-8 text-text-secondary">
-              No shortcuts found for "{searchQuery}"
+              {t('keyboardShortcuts.noResults', { query: searchQuery })}
             </div>
           ) : (
             <div className="space-y-6">

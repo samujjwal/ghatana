@@ -1,5 +1,5 @@
 /**
- * P1-01: Fail-closed tests for analytics AI feature gate.
+ * P1-01: HTTP 503 tests for analytics AI feature gate when unavailable in production.
  *
  * These tests are isolated from analytics.service.test.ts to avoid
  * the pre-existing zod resolution chain triggered by TestWrapper / design-system imports.
@@ -27,7 +27,7 @@ import {
 } from '../../api/analytics.service';
 import SessionBootstrap from '../../lib/auth/session';
 
-describe('analytics AI feature gate (fail-closed)', () => {
+describe('analytics AI feature gate (HTTP 503 when unavailable in production)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     SessionBootstrap.setTenantId('tenant-a');

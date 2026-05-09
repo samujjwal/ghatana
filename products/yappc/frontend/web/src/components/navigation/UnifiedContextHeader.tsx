@@ -49,6 +49,7 @@ import { NewButton } from './QuickActionsPanel';
 import { AgentActivityBadge } from '../workspace/AgentActivityBadge';
 import type { HeaderRoleInfo } from '../../state/atoms/layoutAtom';
 import { cn } from '../../lib/utils';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface UserInfo {
   id: string;
@@ -160,6 +161,7 @@ export function UnifiedContextHeader({
   onCreateWorkflow,
   className,
 }: UnifiedContextHeaderProps) {
+  const { t } = useI18n();
   const [userMenuAnchor, setUserMenuAnchor] =
     React.useState<null | HTMLElement>(null);
 
@@ -197,7 +199,7 @@ export function UnifiedContextHeader({
         <Link
           to="/projects"
           className="flex items-center gap-2 flex-shrink-0 group no-underline"
-          aria-label="YAPPC Home"
+          aria-label={t('nav.yappcHome')}
         >
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center transition-transform group-hover:scale-105">
             <span className="text-white font-bold text-lg">Y</span>
@@ -288,7 +290,7 @@ export function UnifiedContextHeader({
               size="sm"
               onClick={onHelp}
               className="hidden lg:inline-flex"
-              aria-label="Help"
+              aria-label={t('nav.help')}
             >
               <HelpOutline />
             </IconButton>
@@ -302,7 +304,7 @@ export function UnifiedContextHeader({
               size="sm"
               onClick={onKeyboardShortcuts}
               className="hidden lg:inline-flex"
-              aria-label="Keyboard shortcuts"
+              aria-label={t('nav.keyboardShortcuts')}
             >
               <KeyboardCommandKey />
             </IconButton>
@@ -319,7 +321,7 @@ export function UnifiedContextHeader({
               size="sm"
               onClick={onThemeToggle}
               className="hidden sm:inline-flex"
-              aria-label="Toggle theme"
+              aria-label={t('nav.toggleTheme')}
             >
               {darkMode ? <LightMode /> : <DarkMode />}
             </IconButton>
@@ -333,7 +335,7 @@ export function UnifiedContextHeader({
               <IconButton
                 onClick={handleUserMenuOpen}
                 size="sm"
-                aria-label="User menu"
+                aria-label={t('nav.userMenu')}
                 aria-controls={
                   Boolean(userMenuAnchor) ? 'user-menu' : undefined
                 }

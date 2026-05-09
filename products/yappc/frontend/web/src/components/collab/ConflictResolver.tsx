@@ -3,6 +3,7 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import type { Conflict, ResolutionSuggestion } from 'yappc-collab/crdt';
 import { Button } from '../ui/Button';
 import { Textarea } from '../ui/Textarea';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface ManualConflictResolution {
   conflictId: string;
@@ -151,6 +152,7 @@ export function ConflictResolver({
   onResolve,
   onCancel,
 }: ConflictResolverProps) {
+  const { t } = useI18n();
   const mergeInputId = useId();
   const notesInputId = useId();
   const [mergeValue, setMergeValue] = useState<string>(() =>
@@ -190,7 +192,7 @@ export function ConflictResolver({
 
   return (
     <section
-      aria-label="Manual conflict resolution"
+      aria-label={t('collab.manualConflictResolution')}
       className={[
         'rounded-[28px] border border-border bg-[radial-gradient(circle_at_top_left,_rgba(45,212,191,0.12),_transparent_35%),linear-gradient(180deg,_rgba(9,9,11,0.98),_rgba(24,24,27,0.98))] p-6 text-fg-muted shadow-2xl shadow-zinc-950/40',
         className,
@@ -298,7 +300,7 @@ export function ConflictResolver({
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
               className="min-h-24 w-full rounded-2xl border border-border bg-surface/90 px-4 py-3 text-sm leading-6 text-fg-muted outline-none transition focus:border-info-border"
-              placeholder="Explain why this resolution should be applied."
+              placeholder={t('conflictResolver.notesPlaceholder')}
               fullWidth
             />
           </div>

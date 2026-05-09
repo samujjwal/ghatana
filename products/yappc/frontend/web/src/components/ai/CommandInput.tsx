@@ -14,6 +14,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Sparkles as AutoAwesome, Send, X as Close } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================
 // Types
@@ -58,6 +59,7 @@ export function CommandInput({
     onCancel,
     className = '',
 }: CommandInputProps) {
+    const { t } = useI18n();
     // Internal state for uncontrolled mode
     const [internalValue, setInternalValue] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
@@ -142,7 +144,7 @@ export function CommandInput({
                         text-text-primary placeholder:text-text-secondary
                         disabled:opacity-50 disabled:cursor-not-allowed
                     `}
-                    aria-label="AI command input"
+                    aria-label={t('ai.commandInput.input')}
                     fullWidth
                 />
 
@@ -155,7 +157,7 @@ export function CommandInput({
                             className="p-1 min-h-0 rounded-full hover:bg-grey-100 dark:hover:bg-grey-800 text-text-secondary transition-colors"
                             variant="ghost"
                             size="sm"
-                            aria-label="Clear input"
+                            aria-label={t('ai.commandInput.clear')}
                         >
                             <Close className="w-4 h-4" />
                         </Button>
@@ -171,7 +173,7 @@ export function CommandInput({
                                 : 'bg-grey-200 dark:bg-grey-700 text-grey-400 cursor-not-allowed'
                             }
                         `}
-                        aria-label="Submit command"
+                        aria-label={t('ai.commandInput.submit')}
                     >
                         {isProcessing ? (
                             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

@@ -41,9 +41,18 @@ public interface EntityStore {
     /**
      * Save multiple entities in batch.
      *
+     * <p><b>DC-19: Batch Semantics</b><br>
+     * By default, batch operations allow partial success - some entities may succeed while
+     * others fail. The returned BatchResult provides detailed counts and per-item errors.
+     * For transactional (all-or-nothing) semantics, implementations must either:
+     * <ul>
+     *   <li>Throw an exception if any entity fails, rolling back all writes</li>
+     *   <li>Or provide a separate transactional batch method with explicit semantics</li>
+     * </ul>
+     *
      * @param tenant tenant context
      * @param entities entities to save
-     * @return promise of batch result
+     * @return promise of batch result with success/failure counts and per-item errors
      */
     Promise<BatchResult<String>> saveBatch(TenantContext tenant, List<Entity> entities);
 
@@ -146,9 +155,18 @@ public interface EntityStore {
      * <p><strong>Deprecated</strong>: Use {@link #deleteByRefs(TenantContext, List)} for
      * collection-scoped batch delete (DC-P0-001).
      *
+     * <p><b>DC-19: Batch Semantics</b><br>
+     * By default, batch operations allow partial success - some entities may succeed while
+     * others fail. The returned BatchResult provides detailed counts and per-item errors.
+     * For transactional (all-or-nothing) semantics, implementations must either:
+     * <ul>
+     *   <li>Throw an exception if any entity fails, rolling back all deletes</li>
+     *   <li>Or provide a separate transactional batch method with explicit semantics</li>
+     * </ul>
+     *
      * @param tenant tenant context
      * @param ids entity IDs
-     * @return promise of batch result
+     * @return promise of batch result with actual deleted count
      * @deprecated Use {@link #deleteByRefs(TenantContext, List)} instead.
      */
     @Deprecated

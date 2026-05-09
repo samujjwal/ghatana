@@ -17,6 +17,7 @@ import { Textarea } from '../../ui/Textarea';
 import React, { useState, useCallback } from 'react';
 import { Plus as Add, Minus as Remove, ChevronDown as ExpandMore, ChevronUp as ExpandLess, Sparkles as AutoAwesome, Save, Check } from 'lucide-react';
 import type { RequirementsPayload } from '@/shared/types/lifecycle-artifacts';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 export interface RequirementsPanelProps {
     data?: RequirementsPayload;
@@ -89,6 +90,7 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
     onClose,
     isLoading = false,
 }) => {
+    const { t } = useI18n();
     const [epics, setEpics] = useState<Epic[]>(
         data?.epics?.length ? data.epics : [defaultEpic()]
     );
@@ -282,14 +284,14 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                     type="text"
                                     value={epic.title}
                                     onChange={(e) => updateEpic(epic.id, { title: e.target.value })}
-                                    placeholder="Epic title"
+                                    placeholder={t('canvas.requirements.epicTitlePlaceholder')}
                                     className="w-full px-2 py-1 text-sm font-medium border-none bg-transparent text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-0"
                                 />
                                 <Input
                                     type="text"
                                     value={epic.description || ''}
                                     onChange={(e) => updateEpic(epic.id, { description: e.target.value })}
-                                    placeholder="Epic description (optional)"
+                                    placeholder={t('canvas.requirements.epicDescriptionPlaceholder')}
                                     className="w-full px-2 py-0.5 text-xs border-none bg-transparent text-text-secondary placeholder:text-text-secondary focus:outline-none focus:ring-0"
                                 />
                             </div>
@@ -297,7 +299,7 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                 <Button variant="ghost" size="sm"
                                     onClick={() => removeEpic(epic.id)}
                                     className="p-1 text-text-secondary hover:text-error-color transition-colors"
-                                    aria-label="Remove epic"
+                                    aria-label={t('canvas.requirements.removeEpic')}
                                 >
                                     <Remove className="w-4 h-4" />
                                 </Button>
@@ -329,14 +331,14 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                                 onChange={(e) =>
                                                     updateCapability(epic.id, cap.id, { title: e.target.value })
                                                 }
-                                                placeholder="Capability title"
+                                                placeholder={t('canvas.requirements.capabilityTitlePlaceholder')}
                                                 className="flex-1 px-2 py-0.5 text-sm border-none bg-transparent text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-0"
                                             />
                                             {epic.capabilities.length > 1 && (
                                                 <Button variant="ghost" size="sm"
                                                     onClick={() => removeCapability(epic.id, cap.id)}
                                                     className="p-0.5 text-text-secondary hover:text-error-color transition-colors"
-                                                    aria-label="Remove capability"
+                                                    aria-label={t('canvas.requirements.removeCapability')}
                                                 >
                                                     <Remove className="w-4 h-4" />
                                                 </Button>
@@ -362,7 +364,7 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                                                         statement: e.target.value,
                                                                     })
                                                                 }
-                                                                placeholder="Requirement statement"
+                                                                placeholder={t('canvas.requirements.statementPlaceholder')}
                                                                 rows={2}
                                                                 className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border resize-none"
                                                             />
@@ -386,7 +388,7 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                                                         removeRequirement(epic.id, cap.id, req.id)
                                                                     }
                                                                     className="p-0.5 text-text-secondary hover:text-error-color transition-colors"
-                                                                    aria-label="Remove requirement"
+                                                                    aria-label={t('canvas.requirements.removeRequirement')}
                                                                 >
                                                                     <Remove className="w-4 h-4" />
                                                                 </Button>
@@ -438,7 +440,7 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
                                                                                 acceptanceCriteria: next,
                                                                             });
                                                                         }}
-                                                                        placeholder="Given... When... Then..."
+                                                                        placeholder={t('canvas.requirements.acceptancePlaceholder')}
                                                                         className="flex-1 px-2 py-0.5 text-xs border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
                                                                     />
                                                                     {req.acceptanceCriteria.length > 1 && (

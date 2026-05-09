@@ -76,28 +76,6 @@ describe('surfaces.service compatibility behavior', () => {
     expect(capability?.key).toBe('ai_assist');
   });
 
-  it('falls back to compatibility endpoint when surfaces endpoint is unavailable', async () => {
-    apiClientGet
-      .mockRejectedValueOnce(new Error('not found'))
-      .mockResolvedValueOnce({
-        data: {
-          capabilities: {
-            analytics: 'ACTIVE',
-          },
-          generatedAt: '2026-04-17T10:00:00Z',
-        },
-        meta: {
-          requestId: 'req-fallback',
-          tenantId: TEST_TENANT_ID,
-          timestamp: '2026-04-17T10:00:00Z',
-          apiVersion: 'v1',
-        },
-      });
-
-    const snapshot = await fetchCapabilityRegistry();
-
-    expect(snapshot.requestId).toBe('req-fallback');
-    expect(apiClientGet).toHaveBeenNthCalledWith(1, '/surfaces');
-    expect(apiClientGet).toHaveBeenNthCalledWith(2, '/capabilities');
-  });
+  // DC-P1.12: Removed fallback test - compatibility /capabilities endpoint no longer exists
+  // The canonical /surfaces endpoint must be available; no fallback behavior is supported.
 });

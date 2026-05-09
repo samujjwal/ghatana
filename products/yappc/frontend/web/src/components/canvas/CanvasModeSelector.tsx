@@ -16,6 +16,7 @@ import { Lightbulb, GitBranch as AccountTree, Palette, Code, FlaskConical as Sci
 import { useCanvasMode, useCanvasModeShortcuts } from '../../hooks/useCanvasMode';
 import type { CanvasMode } from '../../types/canvasMode';
 import { CANVAS_MODE_CONFIG } from '../../types/canvasMode';
+import { useI18n } from '../../i18n/I18nProvider';
 import { Button } from '../ui/Button';
 
 // ============================================================================
@@ -60,6 +61,7 @@ export function CanvasModeSelector({
     className = '',
     onModeChange,
 }: CanvasModeSelectorProps) {
+    const { t } = useI18n();
     // Enable keyboard shortcuts
     useCanvasModeShortcuts();
 
@@ -112,7 +114,7 @@ export function CanvasModeSelector({
                 ${className}
             `}
             role="tablist"
-            aria-label="Canvas mode selector"
+            aria-label={t('canvas.modeSelector.label')}
         >
             {allModes.map((mode) => {
                 const config = CANVAS_MODE_CONFIG[mode];

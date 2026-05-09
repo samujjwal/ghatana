@@ -64,7 +64,7 @@ test.describe('AEP Critical Journeys - Real Backend Integration', () => {
     await expect(page.locator('h1, h2')).toBeVisible({ timeout: 15000 });
     
     // Verify we're not using mocked data
-    const response = await page.request.get(`${baseUrl}/api/v1/capabilities`, {
+    const response = await page.request.get(`${baseUrl}/api/v1/surfaces`, {
       headers: { 'X-Tenant-Id': testTenant }
     });
     expect(response.ok()).toBeTruthy();

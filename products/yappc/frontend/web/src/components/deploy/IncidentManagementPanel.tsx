@@ -26,6 +26,7 @@ import type { ArtifactSummary, LifecycleArtifact } from '../../services/canvas/l
 import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
 import type { IncidentReportPayload } from '@/shared/types/lifecycle-artifacts';
 import { useCurrentUser } from '../../providers/AuthProvider';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface IncidentManagementPanelProps {
     projectId: string;
@@ -144,6 +145,7 @@ function getIncidentPayload(artifact: LifecycleArtifact): IncidentArtifactPayloa
 }
 
 export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = ({ projectId }) => {
+    const { t } = useI18n();
     const { artifacts, createArtifact, updateArtifact, service } = useLifecycleArtifacts(projectId);
     const currentUser = useCurrentUser();
 
@@ -425,7 +427,7 @@ export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = (
                                 type="button"
                                 onClick={() => setShowNewIncidentDialog(false)}
                                 className="text-text-secondary hover:text-text-primary"
-                                aria-label="Close dialog"
+                                aria-label={t('incident.closeDialog')}
                             >
                                 <Close className="w-5 h-5" />
                             </Button>
@@ -446,7 +448,7 @@ export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = (
                                     onChange={(e) =>
                                         setNewIncidentForm((f) => ({ ...f, title: e.target.value }))
                                     }
-                                    placeholder="Brief incident description"
+                                    placeholder={t('incident.briefDescriptionPlaceholder')}
                                     className="w-full px-3 py-2 text-sm border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600"
                                     required
                                 />
@@ -490,7 +492,7 @@ export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = (
                                     onChange={(e) =>
                                         setNewIncidentForm((f) => ({ ...f, impact: e.target.value }))
                                     }
-                                    placeholder="Describe the business or user impact"
+                                    placeholder={t('incident.impactPlaceholder')}
                                     rows={3}
                                     className="w-full px-3 py-2 text-sm border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600"
                                 />

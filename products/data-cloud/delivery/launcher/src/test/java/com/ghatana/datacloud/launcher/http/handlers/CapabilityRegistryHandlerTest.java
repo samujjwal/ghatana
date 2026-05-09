@@ -52,15 +52,15 @@ class CapabilityRegistryHandlerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("returns capability envelope when tenant header is present")
-    void returnsCapabilityEnvelopeWhenTenantPresent() { 
+    void returnsCapabilityEnvelopeWhenTenantPresent() {
         when(httpSupport.requireTenantIdOrFail(request)).thenReturn("tenant-capabilities");
         when(httpSupport.resolveCorrelationId(request)).thenReturn("req-1");
-        when(httpSupport.envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class))).thenReturn(successResponse); 
+        when(httpSupport.envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class))).thenReturn(successResponse);
 
-        HttpResponse response = runPromise(() -> handler.handleCapabilities(request)); 
+        HttpResponse response = runPromise(() -> handler.handleSurfaces(request));
 
-        assertThat(response).isSameAs(successResponse); 
-        verify(httpSupport).envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class)); 
+        assertThat(response).isSameAs(successResponse);
+        verify(httpSupport).envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class));
     }
 
     @Test
@@ -78,14 +78,14 @@ class CapabilityRegistryHandlerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("returns 400 when tenant header is missing")
-    void returns400WhenTenantHeaderMissing() { 
-        when(httpSupport.requireTenantIdOrFail(request)).thenReturn(null); 
-        when(httpSupport.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
+    void returns400WhenTenantHeaderMissing() {
+        when(httpSupport.requireTenantIdOrFail(request)).thenReturn(null);
+        when(httpSupport.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
 
-        HttpResponse response = runPromise(() -> handler.handleCapabilities(request)); 
+        HttpResponse response = runPromise(() -> handler.handleSurfaces(request));
 
-        assertThat(response).isSameAs(errorResponse); 
-        verify(httpSupport).errorResponse(400, "X-Tenant-Id header is required"); 
+        assertThat(response).isSameAs(errorResponse);
+        verify(httpSupport).errorResponse(400, "X-Tenant-Id header is required");
     }
 
     @Test

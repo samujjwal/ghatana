@@ -44,6 +44,7 @@ import { Input } from '@ghatana/design-system';
 
 import { selectedTemplateAtom } from '../../state/atoms';
 import { ROUTES } from '../../router/paths';
+import { useI18n } from '../../i18n/I18nProvider';
 
 // =============================================================================
 // Types
@@ -453,6 +454,7 @@ const TemplateDetail: React.FC<TemplateDetailProps> = ({ template, onUse }) => {
 const TemplateSelectionPage: React.FC = () => {
   const navigate = useNavigate();
   const setSelectedTemplate = useSetAtom(selectedTemplateAtom);
+  const { t } = useI18n();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<TemplateCategory | null>(
@@ -536,7 +538,7 @@ const TemplateSelectionPage: React.FC = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" />
               <Input
-                placeholder="Search templates..."
+                placeholder={t('templateSelection.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"

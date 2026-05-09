@@ -15,6 +15,7 @@ import type { UxSpecPayload } from '@/shared/types/lifecycle-artifacts';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
 import { Textarea } from '../../ui/Textarea';
+import { useI18n } from '../../../i18n/I18nProvider';
 
 export interface UxSpecPanelProps {
     data?: UxSpecPayload;
@@ -54,6 +55,7 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
     onClose,
     isLoading = false,
 }) => {
+    const { t } = useI18n();
     const [uxSpec, setUxSpec] = useState<UxSpecPayload>({
         ...defaultData,
         ...data,
@@ -267,7 +269,7 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
                                         type="text"
                                         value={flow.name}
                                         onChange={(e) => updateFlow(flowIdx, { name: e.target.value })}
-                                        placeholder="Flow name (e.g., User Registration)"
+                                        placeholder={t('canvas.ux.flowNamePlaceholder')}
                                         fullWidth
                                         size="sm"
                                         className="flex-1 px-2 py-1 text-sm font-medium border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
@@ -278,7 +280,7 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
                                             variant="ghost"
                                             size="sm"
                                             className="p-1 text-text-secondary hover:text-error-color transition-colors"
-                                            aria-label="Remove flow"
+                                            aria-label={t('canvas.ux.removeFlow')}
                                         >
                                             <Remove className="w-4 h-4" />
                                         </Button>
@@ -294,7 +296,7 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
                                                 type="text"
                                                 value={step}
                                                 onChange={(e) => updateFlowStep(flowIdx, stepIdx, e.target.value)}
-                                                placeholder="Step description"
+                                                placeholder={t('canvas.ux.stepDescriptionPlaceholder')}
                                                 fullWidth
                                                 size="sm"
                                                 className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-default text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
@@ -304,7 +306,7 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
                                                     onClick={() => removeFlowStep(flowIdx, stepIdx)}
                                                     variant="ghost"
                                                     size="sm"
-                                                    aria-label={`Remove step ${stepIdx + 1}`}
+                                                    aria-label={`${t('canvas.ux.removeStep')} ${stepIdx + 1}`}
                                                     className="p-0.5 text-text-secondary hover:text-error-color transition-colors"
                                                 >
                                                     <Remove className="w-4 h-4" />
@@ -323,7 +325,7 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
                                     <Textarea
                                         value={flow.notes || ''}
                                         onChange={(e) => updateFlow(flowIdx, { notes: e.target.value })}
-                                        placeholder="Additional notes for this flow..."
+                                        placeholder={t('canvas.ux.flowNotesPlaceholder')}
                                         rows={2}
                                         fullWidth
                                         resize="none"
@@ -354,7 +356,7 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
                                             type="text"
                                             value={edgeCase}
                                             onChange={(e) => updateEdgeCase(idx, e.target.value)}
-                                            placeholder="Edge case scenario"
+                                            placeholder={t('canvas.ux.edgeCasePlaceholder')}
                                             fullWidth
                                             size="sm"
                                             className="flex-1 px-2 py-1 text-sm border border-divider rounded bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-info-border"
@@ -364,7 +366,7 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
                                                 onClick={() => removeEdgeCase(idx)}
                                                 variant="ghost"
                                                 size="sm"
-                                                aria-label={`Remove edge case ${idx + 1}`}
+                                                aria-label={`${t('canvas.ux.removeEdgeCase')} ${idx + 1}`}
                                                 className="p-0.5 text-text-secondary hover:text-error-color transition-colors"
                                             >
                                                 <Remove className="w-4 h-4" />
@@ -394,7 +396,7 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
                             <Textarea
                                 value={uxSpec.a11yNotes}
                                 onChange={(e) => updateField('a11yNotes', e.target.value)}
-                                placeholder="Document accessibility considerations, keyboard navigation, screen reader support, color contrast requirements..."
+                                placeholder={t('canvas.ux.a11yPlaceholder')}
                                 rows={8}
                                 fullWidth
                                 resize="none"
@@ -424,7 +426,7 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
                             <Textarea
                                 value={uxSpec.iaNotes}
                                 onChange={(e) => updateField('iaNotes', e.target.value)}
-                                placeholder="Navigation structure, page hierarchy, content organization..."
+                                placeholder={t('canvas.ux.iaPlaceholder')}
                                 rows={5}
                                 fullWidth
                                 resize="none"
@@ -438,7 +440,7 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
                             <Textarea
                                 value={uxSpec.contentNotes}
                                 onChange={(e) => updateField('contentNotes', e.target.value)}
-                                placeholder="Tone of voice, microcopy guidelines, error messages, empty states..."
+                                placeholder={t('canvas.ux.contentNotesPlaceholder')}
                                 rows={5}
                                 fullWidth
                                 resize="none"

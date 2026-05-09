@@ -14,6 +14,7 @@ import React, { useState } from 'react';
 import { ChevronRight, AlertTriangle, Shield, Zap, Activity, FileCheck, ArrowUp, MoreVertical } from 'lucide-react';
 import { Typography, Button, Chip, Box, Surface as Paper } from '@ghatana/design-system';
 import type { RiskAlert, RiskSeverity, RiskCategory } from '../../clients/dashboard';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface RiskAlertsProps {
   alerts: RiskAlert[];
@@ -41,6 +42,7 @@ export function RiskAlerts({
   onViewAll,
   projectId,
 }: RiskAlertsProps) {
+  const { t } = useI18n();
   const [selectedAlerts, setSelectedAlerts] = useState<Set<string>>(new Set());
   const [showEscalationDialog, setShowEscalationDialog] = useState<string | null>(null);
 
@@ -220,8 +222,8 @@ export function RiskAlerts({
                               size="sm"
                               onClick={() => handleEscalate(alert.id)}
                               className="p-2 rounded-md bg-info-bg text-info-color hover:bg-info-bg transition-colors"
-                              title="Escalate"
-                              aria-label="Escalate"
+                              title={t('risk.escalate')}
+                              aria-label={t('risk.escalate')}
                             >
                               <ArrowUp className="w-4 h-4" />
                             </Button>
@@ -232,8 +234,8 @@ export function RiskAlerts({
                               size="sm"
                               onClick={() => handleUpdateStatus(alert.id, 'mitigating')}
                               className="p-2 rounded-md bg-info-bg text-info-color hover:bg-info-bg transition-colors"
-                              title="Start Mitigation"
-                              aria-label="Start Mitigation"
+                              title={t('risk.startMitigation')}
+                              aria-label={t('risk.startMitigation')}
                             >
                               <Shield className="w-4 h-4" />
                             </Button>
@@ -244,8 +246,8 @@ export function RiskAlerts({
                               size="sm"
                               onClick={() => handleUpdateStatus(alert.id, 'mitigated')}
                               className="p-2 rounded-md bg-success-bg text-success-color hover:bg-success-bg transition-colors"
-                              title="Mark as Mitigated"
-                              aria-label="Mark as Mitigated"
+                              title={t('risk.markMitigated')}
+                              aria-label={t('risk.markMitigated')}
                             >
                               <FileCheck className="w-4 h-4" />
                             </Button>

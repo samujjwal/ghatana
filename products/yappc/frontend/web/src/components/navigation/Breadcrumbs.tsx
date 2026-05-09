@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router';
 import { useAtomValue } from 'jotai';
 
 import { breadcrumbItemsAtom } from '../../state/atoms/breadcrumbAtom';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export interface BreadcrumbsProps {
   /** Whether to show the home icon at the start */
@@ -52,6 +53,7 @@ function buildVisibleItems(
 }
 
 export function Breadcrumbs({ showHome = false, maxItems, className }: BreadcrumbsProps) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const breadcrumbs = useAtomValue(breadcrumbItemsAtom) as BreadcrumbEntry[];
 
@@ -75,10 +77,10 @@ export function Breadcrumbs({ showHome = false, maxItems, className }: Breadcrum
   const visibleItems = buildVisibleItems(breadcrumbs, maxItems);
 
   return (
-    <nav aria-label="Breadcrumb" className={className}>
+    <nav aria-label={t('nav.breadcrumb')} className={className}>
       {showHome && (
         <BreadcrumbButton
-          aria-label="Home"
+          aria-label={t('nav.home')}
           type="button"
           onClick={handleHomeClick}
           className="hover:text-fg"
