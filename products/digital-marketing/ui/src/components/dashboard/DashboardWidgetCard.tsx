@@ -25,7 +25,9 @@ export function DashboardWidgetCard({
     <div data-testid={testId} className="bg-white border border-gray-200 rounded-lg p-4">
       <h2 className="text-sm font-semibold text-gray-900 mb-3">{title}</h2>
 
-      {state === 'loading' && <div className="animate-pulse h-20 bg-gray-100 rounded" />}
+      {state === 'loading' && (
+        <div className="animate-pulse h-20 bg-gray-100 rounded" data-testid={stateMessageTestId} />
+      )}
 
       {state === 'error' && (
         <div className="text-sm text-red-600" role="alert" data-testid={stateMessageTestId}>

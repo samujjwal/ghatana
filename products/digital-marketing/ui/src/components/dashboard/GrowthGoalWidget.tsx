@@ -10,39 +10,30 @@
  */
 import React from 'react';
 import { FEATURE_FLAGS, isFeatureEnabled } from '@/lib/feature-flags';
+import { DashboardWidgetCard } from './DashboardWidgetCard';
 
 export const GrowthGoalWidget: React.FC = () => {
   if (!isFeatureEnabled(FEATURE_FLAGS.DASHBOARD_GROWTH_METRICS)) {
     return (
-      <article
-        aria-labelledby="growth-goal-title"
-        data-testid="growth-goal-widget"
-        className="border border-dashed border-gray-300 rounded-lg p-4"
-      >
-        <h2
-          id="growth-goal-title"
-          className="text-sm font-semibold text-gray-900"
-        >
-          Growth Goals
-        </h2>
-        <p className="text-xs text-gray-700 mt-2">Coming soon</p>
-      </article>
+      <DashboardWidgetCard
+        testId="growth-goal-widget"
+        title="Growth Goals"
+        state="unavailable"
+        message="Coming soon"
+        stateMessageTestId="growth-goal-unavailable"
+      />
     );
   }
 
   return (
-    <article
-      aria-labelledby="growth-goal-title"
-      data-testid="growth-goal-widget"
-      className="border rounded-lg p-4"
+    <DashboardWidgetCard
+      testId="growth-goal-widget"
+      title="Growth Goals"
+      state="ready"
     >
-      <h2
-        id="growth-goal-title"
-        className="text-sm font-semibold text-gray-900"
-      >
-        Growth Goals
-      </h2>
-      <p className="text-xs text-gray-700 mt-2">Metrics loading…</p>
-    </article>
+      <p className="text-xs text-gray-700 mt-2" data-testid="growth-goal-loading-placeholder">
+        Metrics loading…
+      </p>
+    </DashboardWidgetCard>
   );
 };

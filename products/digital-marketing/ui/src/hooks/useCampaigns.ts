@@ -1,10 +1,6 @@
 /**
  * Hook for fetching and managing campaigns.
  *
- * <p>P0-001: Supports paginated campaign listing with limit/offset parameters.</p>
- * <p>P1-030: Surfaces mutation errors with toast notifications and correlation ID.</p>
- * <p>P1-031: Per-row action pending states for concurrent operations.</p>
- *
  * @doc.type hook
  * @doc.purpose Fetch and mutate campaigns for a workspace with pagination and per-row states
  * @doc.layer frontend
@@ -68,7 +64,6 @@ export function useCreateCampaign(
 
   const mutation = useMutation<Campaign, ApiError, CreateCampaignRequest>({
     mutationFn: (body) => {
-      // P1-022: Generate idempotency key at mutation start
       const idempotencyKey = crypto.randomUUID();
       return createCampaign(workspaceId!, body, idempotencyKey);
     },
@@ -106,7 +101,6 @@ export function useLaunchCampaign(
     mutationFn: async (campaignId) => {
       setPendingIds((prev) => new Set(prev).add(campaignId));
       try {
-        // P1-022: Generate idempotency key at mutation start
         const idempotencyKey = crypto.randomUUID();
         const result = await launchCampaign(workspaceId!, campaignId, idempotencyKey);
         return result;
@@ -119,7 +113,7 @@ export function useLaunchCampaign(
       }
     },
     onSuccess: () => {
-      // P1-032: Invalidate campaigns and AI action log (PAID_SEARCH triggers Google Ads commands)
+      // Keep audit timeline in sync after launch commands.
       queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] });
       queryClient.invalidateQueries({ queryKey: ['ai-actions', workspaceId] });
     },
@@ -130,8 +124,7 @@ export function useLaunchCampaign(
 
   return {
     launch: mutation.mutateAsync,
-    // P1-002: Only the specific row's ID is checked — do NOT include mutation.isPending
-    // which would disable every row while any single mutation is in flight.
+    // Row-specific pending state allows concurrent mutations on different rows.
     isPendingFor: useCallback((campaignId: string) => pendingIds.has(campaignId), [pendingIds]),
     isError: mutation.isError,
     error: mutation.error ?? null,
@@ -156,7 +149,6 @@ export function usePauseCampaign(
     mutationFn: async (campaignId) => {
       setPendingIds((prev) => new Set(prev).add(campaignId));
       try {
-        // P1-022: Generate idempotency key at mutation start
         const idempotencyKey = crypto.randomUUID();
         const result = await pauseCampaign(workspaceId!, campaignId, idempotencyKey);
         return result;
@@ -178,15 +170,12 @@ export function usePauseCampaign(
 
   return {
     pause: mutation.mutateAsync,
-    // P1-002: Only the specific row's ID is checked — do NOT include mutation.isPending
-    // which would disable every row while any single mutation is in flight.
+    // Row-specific pending state allows concurrent mutations on different rows.
     isPendingFor: useCallback((campaignId: string) => pendingIds.has(campaignId), [pendingIds]),
     isError: mutation.isError,
     error: mutation.error ?? null,
   };
 }
-
-// ---------- P2-003: Complete, Archive, Rollback, Duplicate ----------
 
 export interface UseCampaignActionReturn {
   execute: (campaignId: string) => Promise<Campaign>;

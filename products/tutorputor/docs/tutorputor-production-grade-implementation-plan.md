@@ -1,1445 +1,523 @@
-# TutorPutor Production-Grade Implementation Plan
+# TutorPutor Production Readiness Audit
 
-**Repository:** `samujjwal/ghatana`  
-**Product scope:** `products/tutorputor/**`  
-**Audit commit:** `482df02f9b4bbb7d25821f093abd6320fb7ae315`  
-**Plan basis:** 45 TutorPutor audit TODOs covering automated content generation, TutorPutor learner/admin/mobile apps, AI/ML, i18n, privacy, security, simulations, assessment, telemetry, backend contracts, DevOps, and testing.
+Target commit: `cc2dfd68aa992fc61b3a9e8f8bb26d3e5df7837f`
 
----
+## Audit basis
 
-## 0. Execution Contract
+The target commit resolves successfully; its commit metadata shows the commit SHA and message `tutput ref 1`. The commit diff adds TutorPutor CI quality gates for typecheck, lint, tests, Java tests, contract validation, and route ownership validation, plus a mobile CI workflow. 
 
-This implementation plan must be executed with **zero production compromises**.
-
-### 0.1 Non-Negotiable Engineering Rules
-
-1. **Correctness first**
-   - Every behavior must be deterministic where determinism is required.
-   - Every edge case must be explicitly handled.
-   - Every computation, route, validation, scoring rule, content-generation decision, tenant boundary, and user-visible state must be testable and validated.
-
-2. **No duplication**
-   - Reuse existing `@ghatana/*` packages and TutorPutor modules.
-   - Do not create parallel API clients, validation schemas, design components, AI wrappers, simulation contracts, event schemas, route registries, or scoring implementations.
-   - If duplicate code exists, consolidate before expanding functionality.
-
-3. **Composition over repetition**
-   - Build small composable modules: validation engines, schema registries, generation pipeline stages, SimKit domain adapters, telemetry emitters, i18n providers, consent policies, dashboard widgets, and scoring services.
-   - Avoid “god components,” “god services,” and mixed-responsibility utilities.
-
-4. **Strict consistency**
-   - Follow existing repo naming, package boundaries, route naming, schema naming, test naming, UI design-system patterns, folder conventions, and API error envelopes.
-   - Any new structure must be documented and enforced with tests or lint checks.
-
-5. **No mocks, stubs, placeholders, or fake data in production**
-   - No `Math.random()` production metrics.
-   - No “demo” values in dashboards.
-   - No fake AI responses in production.
-   - No fake content-generation statuses.
-   - If a capability is incomplete, hide it behind a feature flag and expose a typed unavailable state.
-
-6. **No shortcuts or hacks**
-   - No frontend-only authorization, scoring, tenant filtering, i18n, or validation for production behavior.
-   - No swallowing errors.
-   - No broad `try/catch` that converts failures into successful empty states.
-   - No untyped `Json` without schema validation.
-   - No `any` or `ts-ignore` unless already allowed by a documented temporary allowlist with a removal task.
-
-7. **Test rigor**
-   - Tests must validate behavior, not implementation theater.
-   - Every implementation PR must include meaningful unit, integration, contract, accessibility, and E2E coverage appropriate to the change.
-   - Use deterministic seeds and golden datasets for generation, scoring, simulation, AI grading, and telemetry.
-
-8. **Observability and resilience**
-   - Every production path must have structured logs, correlation IDs, typed errors, retry/failure semantics, metrics, and alertable signals where applicable.
-   - AI/ML, content generation, simulation telemetry, and privacy/security workflows must be observable from day one.
+I reviewed the current TutorPutor snapshot around the product spec, canonical runtime target, platform setup, core plugins, module registration, route ownership registry, learning routes, AI routes, generation worker, generation execution service, request context, trusted proxy auth, config, and current content-generation roadmap.
 
 ---
 
-## 1. Target Architecture Principles
+# 7.1 Production Readiness Verdict
 
-### 1.1 Canonical Product Boundaries
+**Production ready: No**
 
-| Surface | Canonical Location | Rule |
-|---|---|---|
-| Learner web app | `products/tutorputor/apps/tutorputor-web/**` | Uses shared route/data/i18n/API/design-system abstractions only |
-| Admin/CMS app | `products/tutorputor/apps/tutorputor-admin/**` | No random/fake operational metrics; all panels API-backed |
-| Mobile app | `products/tutorputor/apps/tutorputor-mobile/**` | Must have real tests; no `passWithNoTests` |
-| Platform backend | `products/tutorputor/services/tutorputor-platform/**` | Source of truth for scoring, AI governance, validation, consent, tenant scope |
-| Content-generation services | `products/tutorputor/services/tutorputor-content-generation/**` and platform workers | No auto-publish without gated validation |
-| Core/domain library | `products/tutorputor/libs/tutorputor-core/**` | Domain types, validation contracts, canonical scoring/simulation/telemetry definitions |
-| UI library | `products/tutorputor/libs/tutorputor-ui/**` | Shared TutorPutor UI patterns composed from `@ghatana/*` |
-| AI library | `products/tutorputor/libs/tutorputor-ai/**` | Canonical AI request/response/prompt/versioning interfaces |
-| API contracts | `products/tutorputor/api/**` and generated clients | Every route must be contract-owned and tested |
-| Docs | `products/tutorputor/docs/**` | Architecture/design/vision docs only; no stale execution notes |
+**Confidence level: Medium-high**
 
-### 1.2 Canonical Cross-Cutting Services
+TutorPutor is moving in the right direction, but it is not production-ready. The implementation has strong foundations: a simulation-first product identity, a consolidated platform backend, route-owner documentation, claim/evidence/task modeling, simulation kernels, learning engines, AI agents, and CI quality gates. The product spec defines TutorPutor as a simulation-first AI learning platform where learners form hypotheses, manipulate simulations, observe outcomes, and build understanding through experimentation. 
 
-Implement or consolidate these as single-source modules:
+The highest-risk area is **end-to-end trust**: authentication/authorization, route-contract correctness, generated-content governance, AI audit correctness, and evidence-backed learning assessment.
 
-1. `TutorPutorI18nProvider`
-2. `TutorPutorApiClient`
-3. `TenantContextResolver`
-4. `ConsentPolicyEngine`
-5. `AiGovernanceAuditService`
-6. `GeneratedContentValidationPipeline`
-7. `GenerationFeatureFlagPolicy`
-8. `SimKitTemplateRegistry`
-9. `SimulationTelemetrySchemaRegistry`
-10. `AssessmentScoringService`
-11. `ConfidenceCalibrationService`
-12. `LearningEvidenceService`
-13. `LearningTelemetryIngestService`
-14. `RouteOwnershipRegistry`
-15. `DashboardMetricsService`
-16. `PrivacyRedactionService`
-17. `CriticalJourneySeedDataFactory`
+The implementation is significantly improving because:
+
+* the target architecture correctly centers `services/tutorputor-platform` as the primary backend for public APIs, persistence, policy, telemetry, analytics, compliance, LTI, credentials, and orchestration; 
+* the platform service is composed through deterministic plugin registration for core, content, business, admin, and worker modules; 
+* the product has real content-generation, simulation, assessment, AI, analytics, compliance, and credential surfaces; 
+* generation execution has improved tenant scoping in `recordJobResult`, including tenant verification before recording worker results. 
+
+However, key release blockers remain around route/auth completeness, malformed route ownership registry entries, fragmented generation contracts, weak source-grounded evidence, AI governance audit semantics, and non-production channels such as mobile/VR that are still partial or scaffolded. The product spec itself marks mobile as “storage/sync foundation; user-facing shell still pending,” offline as partial, and VR/AR as scaffolded. 
 
 ---
 
-## 2. Delivery Phases
+# 7.2 Root Architectural Blockers
 
-This work should be delivered in phases that reduce risk and prevent partially working production flows.
+## P0-1 Canonical authentication and route authorization are not proven end to end
 
-### Phase 1 — Product Safety Baseline
+**Why it matters:** TutorPutor handles minors, educational records, AI interactions, assessments, telemetry, and institutional data. Every backend route must be cryptographically authenticated, tenant-scoped, role-scoped, consent-aware, and test-covered.
 
-**Goal:** Stop unsafe/fake/incomplete production behavior before expanding features.
+**Root cause:** The core plugin registers JWT support, but the sampled platform setup did not show a global `jwtVerify` pre-handler. `requestContext.ts` expects `req.user` to already be populated by a global JWT pre-handler, while the core plugin only visibly registers `@fastify/jwt`, error handling, request IDs, rate limiting, consent enforcement, input sanitization, health checks, and metrics.  The request context then derives tenant/user/role from `req.user` or trusted proxy headers. 
 
-Scope:
-- Disable generated content auto-publish unless fully gated.
-- Remove fake/random production metrics from admin UI.
-- Add feature flags for incomplete autonomous generation, micro-viva, localization rollout, and mobile production readiness.
-- Add tenant context enforcement for knowledge base routes.
-- Add AI audit redaction.
-- Add CI failures for `passWithNoTests` in product apps.
+**Evidence:**
 
-Exit criteria:
-- No production dashboard uses random values.
-- No generated content can publish without policy gates.
-- No knowledge-base route uses default tenant scope.
-- AI audit logs are redacted.
-- CI fails for zero-test mobile execution.
+* `setupPlatform(...)` registers core, content, business, admin, and worker plugins but does not visibly install a global JWT verification hook. 
+* Trusted proxy auth is carefully guarded and disallowed in production, which is good, but it is a fallback rather than the primary production auth model. 
+* Many learning routes rely on `getTenantId()` and `getUserId()` inside handlers rather than a declarative route policy registry. 
 
-Mapped TODOs:
-- TODO 1, 5, 9, 14, 37, 44
+**Affected surfaces:** learner dashboard, learning paths, progress updates, assessment attempts, AI tutor, CMS, generation jobs, instructor dashboards, compliance exports, social features.
 
-### Phase 2 — Canonical Contracts and Infrastructure
+**Target pattern:** One canonical auth plugin that verifies JWT/session on all protected routes, then applies route ownership + permission + tenant + consent policy before handlers run.
 
-**Goal:** Establish shared contracts before feature implementation.
+**Required fix:**
 
-Scope:
-- i18n provider, catalogs, locale propagation.
-- OpenAPI/route ownership verification.
-- API client generation or shared typed client adoption.
-- Telemetry schema registry.
-- CBM scoring contract.
-- SimKit template registry.
-- Consent policy matrix.
-- JSON schema validation for string/JSON payload fields.
+1. Add a global `authenticate` pre-handler for protected route groups.
+2. Maintain an explicit allowlist for public routes: health, readiness, login, SSO callback, JWKS as applicable.
+3. Generate route-policy coverage from actual registered Fastify routes.
+4. Require route owner, auth mode, tenant mode, consent mode, and test owner for every route.
 
-Exit criteria:
-- Every public API route has contract ownership.
-- Every learner/admin app is under i18n context.
-- Telemetry events are versioned and schema-validated.
-- CBM scoring rules are centralized and golden-tested.
-- Generated simulations come from domain templates.
-- Consent categories are explicit and testable.
+**Required tests:**
 
-Mapped TODOs:
-- TODO 3, 8, 17, 18, 20, 22, 28, 38, 39, 40, 41
+* unauthenticated request matrix,
+* invalid JWT,
+* expired JWT,
+* valid JWT wrong tenant,
+* valid JWT wrong role,
+* trusted proxy disabled in production,
+* consent missing for AI/telemetry routes,
+* route-policy coverage test.
 
-### Phase 3 — Learning Correctness and AI Grounding
-
-**Goal:** Make learning, scoring, AI tutor, and generated content evidence-based.
-
-Scope:
-- Ground AI tutor in canonical module/content/claim/evidence/simulation state.
-- Fix domain/difficulty mapping.
-- Ground question generation in content evidence.
-- Implement AI fallback-to-human-review for grading.
-- Add mastery update from canonical claim/evidence/concept IDs.
-- Replace heuristic knowledge validation with governed semantic evidence search.
-- Implement generated-content review screen.
-
-Exit criteria:
-- AI prompts include canonical, tenant-scoped learning context.
-- AI-generated questions fail closed when evidence is insufficient.
-- Failed AI grading never penalizes learners.
-- Mastery is updated from real evidence, not heuristics.
-- Reviewer can inspect generated content provenance, model version, prompt version, evidence, validation, accessibility, and publish eligibility.
-
-Mapped TODOs:
-- TODO 7, 10, 11, 12, 13, 15, 16, 25, 26
-
-### Phase 4 — Simulation-First Content and Assessment
-
-**Goal:** Make SimKit, CBM, and assessment flows production-grade.
-
-Scope:
-- Domain-specific SimKit templates.
-- Deterministic simulation seeds.
-- Multi-item generated assessments.
-- Simulation-based assessment across all relevant domains.
-- Frontend confidence capture.
-- Assessment results route.
-- Assessment status vocabulary alignment.
-- Accessible simulations.
-
-Exit criteria:
-- Generated simulation artifacts are deterministic and domain-specific.
-- Assessments include simulation/process evidence where applicable.
-- Learner cannot submit answers without confidence.
-- Results route exists and is tested.
-- Status vocabulary is aligned across DB, API, and UI.
-- Simulations pass keyboard, screen-reader, reduced-motion, and high-contrast tests.
-
-Mapped TODOs:
-- TODO 2, 3, 4, 21, 23, 24, 35
-
-### Phase 5 — Product Journeys and Dashboards
-
-**Goal:** Make the TutorPutor app complete across learner, instructor, admin, and content-author journeys.
-
-Scope:
-- Learner critical journey.
-- Instructor analytics.
-- Admin content-generation dashboard backed by real metrics.
-- Split `UnifiedContentStudio`.
-- Remove placeholder/duplicate routes.
-- Apply shared design system.
-- Implement or complete micro-viva.
-- Offline/PWA sync.
-
-Exit criteria:
-- Learner journey passes end-to-end.
-- Instructor can review mastery, risk, CBM calibration, simulation evidence, and viva queue.
-- Admin dashboard values reconcile with backend metrics.
-- Content studio is modular and testable.
-- No dead placeholder learner route.
-- No duplicate admin route.
-- Offline sync supports progress, simulation telemetry, and assessments.
-
-Mapped TODOs:
-- TODO 6, 27, 29, 30, 31, 32, 33, 34, 36
-
-### Phase 6 — Compliance, Social Safety, Mobile, Observability, and Hardening
-
-**Goal:** Complete production readiness across privacy, security, mobile, social, monitoring, and critical journey tests.
-
-Scope:
-- Granular consent enforcement.
-- Social/child-safety moderation.
-- Mobile tests and production readiness.
-- Product-level critical E2E suites.
-- Content-generation observability and alerts.
-- Full CI enforcement.
-
-Exit criteria:
-- Consent behavior is tested by endpoint and data type.
-- Child-safety restrictions are enforced end-to-end.
-- Mobile has meaningful tests.
-- Critical journeys are required in CI.
-- Content-generation operations are observable and alertable.
-
-Mapped TODOs:
-- TODO 37, 42, 43, 44, 45
+**Cleanup implications:** Remove handler-local ad hoc auth checks where possible and converge on declarative route policy metadata.
 
 ---
 
-## 3. Workstream A — Automated Content Generation
+## P0-2 Route ownership and contract registry are not reliable enough for production
 
-### A1. Auto-Publish Safety Gate
+**Why it matters:** The product spec says every public route in `api/tutorputor-api.openapi.yaml` must map to a platform backend owner, contract owner, typed/generated client, and test owner.  That registry is foundational for route governance, API drift prevention, client parity, and release gates.
 
-Mapped TODO:
-- TODO 1
+**Root cause:** `API_ROUTE_OWNERS.json` exists, but sampled entries show malformed and duplicated route paths such as `${prefix}` placeholders and repeated path segments like `/evaluation/evaluation`, `/generation/generation`, and `/engagement/engagement`. 
 
-Implementation tasks:
-1. Create `GenerationPublishPolicy`.
-2. Add production feature flag `TUTORPUTOR_AUTONOMOUS_CONTENT_AUTO_PUBLISH_ENABLED`.
-3. Add policy inputs: validation score, semantic evidence score, simulation validation status, assessment validation status, accessibility status, source/citation completeness, SME/human-review requirement, AI risk score, tenant policy, age-band policy, and content domain risk.
-4. Make `executeEvaluation(...)` return a typed publish decision: `publishable`, `review_required`, `blocked`, or `invalid`.
-5. Store publish decision with model version, prompt version, evaluator version, validation version, timestamp, and reviewer override metadata.
-6. Ensure production cannot auto-publish unless the feature flag is enabled, all gates pass, tenant policy allows it, content type is eligible, and no safety/compliance issue exists.
+**Evidence:**
 
-Acceptance criteria:
-- Default behavior is review-required, not publish.
-- Auto-publish cannot be enabled by code path alone; it requires explicit config and policy pass.
-- All failed gates are visible to reviewers.
+* `API_ROUTE_OWNERS.json` declares canonical backend ownership for routes, but contains generated-looking malformed keys.
+* `content-modules.ts` registers content under `/api`, simulation under `/api/v1/simulations`, search under `/api/v1/search`, and kernel registry separately, creating several prefix-composition paths that must be mechanically verified. 
+* `business-modules.ts` registers many route groups under `/api/v1`, raising the cost of manual registry correctness. 
 
-Tests:
-- Unit tests for every policy branch.
-- Integration test for generation job lifecycle.
-- E2E admin review test.
-- Regression test proving low-score content cannot publish.
-- Test proving feature flag off overrides otherwise valid content.
+**Affected surfaces:** all OpenAPI clients, web/admin typed clients, route ownership validation, permission matrix, CI release gate.
 
-### A2. Domain-Specific SimKit Template Registry
+**Target pattern:** Generate the route registry from actual Fastify route declarations and diff it against OpenAPI + typed client + tests.
 
-Mapped TODOs:
-- TODO 2
-- TODO 3
-- TODO 35
+**Required fix:**
 
-Implementation tasks:
-1. Create `SimKitTemplateRegistry`.
-2. Define domain adapters: `MathGraphSimulationTemplate`, `PhysicsMotionSimulationTemplate`, `ChemistryMoleculeSimulationTemplate`, `BiologyVitalsSimulationTemplate`, `TechnologyLogicSchedulingTemplate`, `BusinessSupplyDemandTemplate`, and `EngineeringConstraintDesignTemplate`.
-3. Each template must define learning claim types, controls, parameter bounds, seed strategy, outputs, telemetry events, failure states, accessibility behavior, and export behavior.
-4. Replace generic `primary_parameter` generation with registry lookup.
-5. Use stable seed derivation: `hash(tenantId + generationRequestId + claimId + templateId + version)`.
-6. Add simulation versioning: `templateId`, `templateVersion`, and `schemaVersion`.
-7. Add accessibility metadata: keyboard map, reduced-motion behavior, chart/table text alternative, screen-reader summary, high-contrast encoding, and caption/transcript requirements for animations.
+1. Replace manually drift-prone route-owner entries with a generated route inventory.
+2. Fail CI if any route key contains `${`, duplicated path segments, missing owner, missing OpenAPI operation, missing typed client, or missing test owner.
+3. Normalize route prefixes at module registration time.
 
-Acceptance criteria:
-- No generated simulation uses generic placeholder controls.
-- Same request produces the same generated simulation config.
-- Every generated simulation is accessible by contract.
+**Required tests:** route inventory snapshot, OpenAPI parity, generated client parity, route ownership validation with malformed route fixture.
 
-Tests:
-- Golden generated output tests per domain.
-- Deterministic seed test.
-- Invalid bounds test.
-- Keyboard navigation E2E for at least one simulation per domain.
-- Accessibility audit for generated simulation player.
-
-### A3. Generated Assessment Expansion
-
-Mapped TODO:
-- TODO 4
-
-Implementation tasks:
-1. Update generation request schema to include requested item count, required evidence IDs, required claim IDs, domain, difficulty, age band, and assessment mode.
-2. Generate an item set, not a single item.
-3. Required item mix: prediction, constructed response, simulation task, multiple choice where useful, and reflection/explanation.
-4. Always include CBM metadata.
-5. Store item generation provenance.
-6. Add risk scoring for AI-generated assessments.
-7. Require human review for high-stakes domains, medicine/clinical content, underage learner assessment, low evidence grounding, and new template versions.
-
-Acceptance criteria:
-- Assessment generation returns a coherent assessment bundle.
-- Items link to claims and evidence.
-- Simulation-based tasks are available across all simulation-enabled domains.
-
-Tests:
-- Assessment bundle schema tests.
-- Golden assessment tests.
-- Simulation-based item tests.
-- Human-review gating tests.
-
-### A4. Generated Content Review UI
-
-Mapped TODO:
-- TODO 7
-
-Implementation tasks:
-1. Add admin route `/content/review/generated/:artifactId`.
-2. Show generated artifact, prompt version, model version, source evidence, evidence score, curriculum alignment, simulation config, assessment config, validation errors, accessibility report, i18n readiness status, privacy/security flags, and publish policy decision.
-3. Add actions: approve, reject, request changes, send to SME, regenerate with constraints, and publish when eligible.
-4. Add audit log for every reviewer action.
-
-Acceptance criteria:
-- Reviewer can make an informed decision without reading logs.
-- Every action is persisted and auditable.
-- Publish action is disabled unless policy allows.
-
-Tests:
-- Admin E2E review tests.
-- Access-control tests.
-- Audit-log tests.
-- Publish-disabled state tests.
+**Cleanup implications:** Remove stale generated route-owner entries and regenerate from canonical sources.
 
 ---
 
-## 4. Workstream B — Knowledge Base, Evidence, and Validation
+## P0-3 Content generation is still fragmented across competing contracts and runtime assumptions
 
-### B1. Extend Validation API to Simulations and Animations
+**Why it matters:** TutorPutor’s core differentiator depends on trustworthy autonomous content generation: claims, evidence, examples, simulations, animations, assessments, and review/publish gates must agree on one contract.
 
-Mapped TODO:
-- TODO 8
+**Root cause:** The roadmap identifies fragmentation as the main blocker: multiple content-generation architectures do not fully agree on contracts, the worker expects richer outputs than active services reliably produce, examples/animations/evidence are less structured than simulations, and validation is partly heuristic or LLM-based. 
 
-Implementation tasks:
-1. Update route body schema for validation content types: `claim`, `example`, `explanation`, `task`, `simulation`, and `animation`.
-2. Add `SimulationContentValidator` and `AnimationContentValidator`.
-3. Validate scientific/math correctness, parameter bounds, failure states, evidence linkage, accessibility metadata, telemetry contract, deterministic seed, and export behavior.
-4. Return typed validation results.
+**Evidence:**
 
-Acceptance criteria:
-- Simulation and animation validation cannot be bypassed.
-- Failed validation blocks auto-publish.
+* The roadmap says TutorPutor already has strong foundations: `LearningExperience`, `LearningClaim`, `LearningEvidence`, `ExperienceTask`, claim-linked modality tables, `ArtifactManifest`, a mature simulation stack, and quality-loop/publish-gating services. 
+* The same roadmap identifies multiple incompatible content-generation contracts, including worker expectations, a richer claim-oriented proto, and a separate content-generation proto. 
+* The generation worker now sends richer simulation, animation, and assessment options, which is positive, but those values are still partly generic and derived inside worker code rather than from a canonical claim/evidence/modality plan. 
 
-Tests:
-- API schema tests.
-- Simulation validation negative tests.
-- Animation validation accessibility tests.
+**Affected surfaces:** CMS, content generation requests, worker pipeline, Java/ActiveJ agents, gRPC/proto contracts, artifact materialization, publish gates, assessment generation.
 
-### B2. Tenant Scope Enforcement
+**Target pattern:** `LearningClaim + LearningEvidence + contentNeeds + ArtifactManifest` as the single canonical generation contract.
 
-Mapped TODO:
-- TODO 9
+**Required fix:**
 
-Implementation tasks:
-1. Add `TenantContextResolver` for knowledge-base routes.
-2. Remove all fallback usage of tenant `default` in production request paths.
-3. Pass tenant context into concept search, examples search, curriculum search, evidence bundle lookup, and validation context.
-4. Add failure behavior when tenant is missing.
+1. Pick one authoritative proto/schema set under `products/tutorputor/contracts`.
+2. Make generated examples, animations, simulations, and assessments all use a shared manifest envelope.
+3. Require claim IDs, evidence IDs, objective IDs, provenance, validation status, telemetry profile, and accessibility metadata before materialization.
+4. Treat simulations as the reference pattern for other modalities.
 
-Acceptance criteria:
-- Cross-tenant retrieval is impossible.
-- Missing tenant returns a typed error.
+**Required tests:** contract tests between worker and generation service, golden generated artifact tests, evidence-link tests, materialization tests, publish-gate tests.
 
-Tests:
-- Cross-tenant negative tests.
-- Missing tenant tests.
-- Route integration tests.
-
-### B3. Governed Knowledge and Curriculum Sources
-
-Mapped TODO:
-- TODO 10
-
-Implementation tasks:
-1. Replace empty retrieval functions with governed adapters.
-2. Every source must define source type, trust level, license, curriculum standard, version, retrieval timestamp, and canonical URL or internal ID.
-3. If no evidence exists, validation must return `review_required` and `insufficient_evidence`.
-4. Do not silently pass.
-
-Acceptance criteria:
-- Empty evidence cannot be interpreted as valid.
-- Every validation result explains evidence sufficiency.
-
-Tests:
-- Missing-evidence tests.
-- Trusted-source tests.
-- Expired-source tests.
-- Low-trust-source tests.
-
-### B4. Semantic Evidence Search
-
-Mapped TODO:
-- TODO 11
-
-Implementation tasks:
-1. Add canonical embedding abstraction or reuse existing platform AI integration.
-2. Store evidence embeddings in pgvector.
-3. Add semantic retrieval for claims, examples, explanations, tasks, misconceptions, and curriculum standards.
-4. Add contradiction/near-miss scoring.
-5. Keep deterministic lexical fallback for degraded mode.
-
-Acceptance criteria:
-- Paraphrased claims retrieve correct evidence.
-- Contradictory claims are flagged.
-- Tenant scope is preserved.
-
-Tests:
-- Semantic search golden tests.
-- Contradiction tests.
-- Tenant-scope vector tests.
-- Degraded-mode tests.
+**Cleanup implications:** Deprecate or remove duplicate content-generation services/protos after migration.
 
 ---
 
-## 5. Workstream C — AI Tutor, AI/ML, and Governance
+## P0-4 AI governance and audit metadata can misrepresent failures
 
-### C1. Canonical Tutor Context Retrieval
+**Why it matters:** AI tutoring and content generation require accurate compliance evidence. Missing consent, safety-blocked prompts, rate limiting, validation failures, and provider failures must not be conflated.
 
-Mapped TODOs:
-- TODO 12
-- TODO 13
+**Root cause:** In the sampled AI route implementation, `/tutor/query` builds audit/governance metadata in `finally`, but failure paths can be summarized as missing consent or blocked safety even when the failure was a rate limit, provider outage, validation error, or service error. 
 
-Implementation tasks:
-1. Replace regex parsing in `getModuleContext(...)`.
-2. Build `LearningContextAssembler`.
-3. Inputs: tenant ID, learner ID, module ID, current lesson/content block, simulation run ID, recent attempts, mastery profile, misconceptions, consent state, and locale.
-4. Retrieved context: module title, domain, difficulty, objectives, claims, evidence, content block excerpts, simulation state, learner progress, and recent mistakes.
-5. Fix domain mapping from canonical module domain, not `difficultyLevel`.
+**Evidence:**
 
-Acceptance criteria:
-- AI tutor prompt is grounded in real module data.
-- Domain and difficulty are separate.
-- Missing context fails gracefully.
+* AI routes enforce consent and build governance metadata, which is good.
+* Rate limiting is tenant-based via Redis, but failure of the rate-limit guard logs a warning and fails open. 
+* The same AI route contains several failure categories but audit metadata is still too coarse for production-grade compliance evidence. 
 
-Tests:
-- Prompt assembly snapshot tests.
-- Multi-domain tests.
-- Cross-tenant tests.
-- Missing module tests.
-- Consent-denied tests.
+**Affected surfaces:** AI tutor, AI question generation, concept generation, simulation generation, audit logs, compliance exports, model governance.
 
-### C2. AI Audit Redaction
+**Target pattern:** Typed AI decision envelope with separate fields for consent, safety, rate limit, provider status, validation, policy decision, and model result.
 
-Mapped TODO:
-- TODO 14
+**Required fix:**
 
-Implementation tasks:
-1. Create `PrivacyRedactionService`.
-2. Apply to learner prompt, AI response, simulation state, recent attempts, misconception summaries, and audit payload.
-3. Redaction rules: PII pattern removal, size limits, sensitive category masking, and safe structured metadata retention.
-4. Add audit payload versioning.
+1. Create `AIGovernanceDecision` with explicit fields.
+2. Do not infer `consentState` from success/failure.
+3. Do not infer `safetyFilterResult` from success/failure.
+4. Audit denied, blocked, throttled, unavailable, validation-failed, and success paths separately.
+5. Make rate-limit failure fail closed in production or explicitly emit degraded-health status.
 
-Acceptance criteria:
-- Audit logs preserve governance without storing raw sensitive data.
-- Redaction is deterministic and testable.
+**Required tests:** missing consent, safety block, rate-limit exceeded, provider timeout, validation failure, successful query, audit export.
 
-Tests:
-- PII redaction tests.
-- Large payload truncation tests.
-- AI audit integration tests.
-
-### C3. Grounded Question Generation
-
-Mapped TODO:
-- TODO 15
-
-Implementation tasks:
-1. Require module evidence before generating questions.
-2. Generate from objectives, claims, content excerpts, simulations, and misconceptions.
-3. Fail closed if grounding is insufficient.
-4. Store prompt version, model version, evidence IDs, grounding score, and reviewer status.
-
-Acceptance criteria:
-- No generated question exists without evidence linkage.
-- Content-poor modules produce review-required errors.
-
-Tests:
-- Rich-content generation tests.
-- Content-poor failure tests.
-- Cross-tenant evidence tests.
-
-### C4. Locale-Aware AI Policy
-
-Mapped TODO:
-- TODO 16
-
-Implementation tasks:
-1. Add `AiLocalePolicy`.
-2. Locale policy controls response language, units, reading level, cultural examples, citation style, and fallback behavior.
-3. Remove ad hoc prompt suffixes.
-4. Add locale into AI request context.
-
-Acceptance criteria:
-- AI behavior is locale-deterministic.
-- Locale fallback is explicit.
-
-Tests:
-- AI response metadata tests for `en`, `es`, `hi`, and `zh`.
-- Missing locale fallback tests.
-
-### C5. Granular AI Consent
-
-Mapped TODO:
-- TODO 41
-
-Implementation tasks:
-1. Extend consent categories: AI tutor, AI grading, AI personalization, generated content interaction, simulation telemetry, learning analytics, and marketing analytics.
-2. Enforce per endpoint.
-3. Add denial behavior: explain unavailable feature, offer consent settings link, and do not collect disallowed data.
-
-Acceptance criteria:
-- Consent is not a single global AI switch.
-- Every AI endpoint uses the consent policy engine.
-
-Tests:
-- Consent matrix tests.
-- Endpoint allow/deny tests.
-- Audit tests.
+**Cleanup implications:** Remove string-based failure inference and replace with typed outcome classification.
 
 ---
 
-## 6. Workstream D — i18n and Localization
+## P1-5 Assessment and simulation evidence path is not yet fully authoritative
 
-### D1. Canonical i18n Package and Provider
+**Why it matters:** TutorPutor’s learning model is evidence-based mastery, not completion tracking. Assessment scoring must be tied to immutable attempts, simulation traces, CBM confidence, rubrics, claim IDs, and learner state.
 
-Mapped TODOs:
-- TODO 17
-- TODO 18
+**Root cause:** Learning routes include useful assessment and CBM surfaces, but sampled routes still expose weakly governed paths such as simulation scoring from arbitrary request payloads and telemetry ingestion with `event: object` schema. 
 
-Implementation tasks:
-1. Select or reuse canonical i18n library according to repo standards.
-2. Add shared locale catalogs: `en`, `es`, `hi`, and `zh`.
-3. Create `TutorPutorI18nProvider`.
-4. Mount provider in web app, admin app, mobile app, and shared TutorPutor UI library.
-5. Persist locale through profile setting, local storage for anonymous users, request header, and API context.
-6. Add fallback rules: user locale, tenant locale, default locale, and English fallback.
+**Evidence:**
 
-Acceptance criteria:
-- Locale is available in every app and API request.
-- Reload preserves locale.
-- Missing translation keys fail CI.
+* `/attempts/:id/submit` requires confidence in responses, which supports CBM.
+* `/assessments/simulations/score` accepts an item and response body and returns a score; this is useful as a preview/helper but should not be the authoritative scoring path unless bound to an attempt and persisted trace.
+* `/events` accepts a broad object payload with a note that schema refinement is recommended in production. 
 
-Tests:
-- Provider tests.
-- Locale persistence tests.
-- API header tests.
-- Missing key CI test.
+**Affected surfaces:** simulation tasks, assessment attempts, mastery update, instructor dashboard, analytics, credentials.
 
-### D2. Extract User-Facing Strings
+**Target pattern:** All scoring flows must originate from persisted assessment attempt + simulation run + learner-owned trace.
 
-Mapped TODO:
-- TODO 19
+**Required fix:**
 
-Implementation tasks:
-1. Add lint/AST rule for raw user-facing strings.
-2. Extract strings from learner navigation, admin navigation, dashboard cards, assessment pages, content studio, command palette, forms, errors, empty states, and loading states.
-3. Maintain translation keys by domain: `common`, `learner`, `admin`, `assessment`, `contentStudio`, `ai`, `privacy`, `security`, `offline`, and `errors`.
+1. Make simulation scoring attempt-bound and tenant/user scoped.
+2. Validate telemetry events against canonical JSON schemas.
+3. Enforce CBM and claim/evidence linkage before score persistence.
+4. Store replayable simulation traces and scoring diagnostics.
+5. Derive progress/mastery from evidence, not client-reported progress alone.
 
-Acceptance criteria:
-- UI is not English-hardcoded.
-- Translation coverage is measured.
-
-Tests:
-- Raw string lint tests.
-- Locale switch Playwright tests.
-- Visual smoke tests per locale.
-
-### D3. Locale-Aware Backend Contracts
-
-Mapped TODO:
-- TODO 20
-
-Implementation tasks:
-1. Add localized fields for content title/body, assessment prompt/options/explanations, simulation labels/units/help text, animation captions, AI feedback, credential text, and server-provided dashboard labels.
-2. Add content fallback resolver.
-3. Add missing translation telemetry.
-
-Acceptance criteria:
-- Content fetch respects locale.
-- Fallback is deterministic and observable.
-
-Tests:
-- API locale tests.
-- Missing translation tests.
-- Generated content localization tests.
+**Required tests:** simulation replay scoring, tampered item rejection, wrong-user attempt rejection, missing confidence rejection, telemetry schema rejection, mastery reconciliation.
 
 ---
 
-## 7. Workstream E — Assessment, CBM, Mastery, and Micro-Viva
+## P1-6 Worker trust boundary is still incomplete
 
-### E1. Frontend Confidence Capture
+**Why it matters:** Generation job results create content assets and can trigger request completion and publish workflows. Only authenticated workers should be able to submit job results.
 
-Mapped TODO:
-- TODO 21
+**Root cause:** `GenerationExecutionService.recordJobResult(...)` now requires tenant ID and verifies tenant ownership, which is a strong improvement. However, the method’s worker ID is optional and the sampled implementation does not itself prove a worker-authenticated submission boundary. 
 
-Implementation tasks:
-1. Add confidence selector for every answer: low, medium, high.
-2. Block submit until confidence exists for each answered item.
-3. Persist confidence per response.
-4. Show confidence in review page.
+**Evidence:**
 
-Acceptance criteria:
-- Learner cannot submit without confidence.
-- Payload includes confidence.
+* `recordJobResult(...)` checks that the job belongs to the tenant before updating status and output.
+* It accepts optional `workerId`.
+* Route-level worker authentication was not verified in the sampled files.
 
-Tests:
-- Unit tests for form validation.
-- Playwright tests for submit blocking.
-- API payload tests.
+**Affected surfaces:** generation requests, job results, materialized assets, review queues, publish gates, telemetry streams.
 
-### E2. Canonical CBM Scoring
+**Target pattern:** Worker result submission must require worker JWT/mTLS/signed callback, job ID, request ID, tenant ID, nonce/replay protection, and strict schema validation.
 
-Mapped TODO:
-- TODO 22
-
-Implementation tasks:
-1. Create `AssessmentScoringService`.
-2. Implement correct answer multipliers, wrong answer penalties, Brier score, calibration gain, and per-item score breakdown.
-3. Remove scoring duplication.
-4. Persist score evidence.
-
-Acceptance criteria:
-- All CBM scoring happens in backend canonical service.
-- Frontend displays backend scores only.
-
-Tests:
-- Golden scoring matrix.
-- Edge cases: omitted answer, no confidence, invalid confidence, high-confidence wrong, retake, partial credit, and AI-grading pending.
-
-### E3. Assessment Results Route
-
-Mapped TODO:
-- TODO 23
-
-Implementation tasks:
-1. Add route `/assessments/:assessmentId/results`.
-2. Show score, confidence calibration, item feedback, explanations, simulation evidence, remediation, and retry policy.
-3. Add error states: pending grading, manual review required, expired attempt, missing attempt, and unauthorized.
-
-Acceptance criteria:
-- Submit navigation lands on valid route.
-- Results are backend-derived.
-
-Tests:
-- Full assessment E2E.
-- Pending review tests.
-- Unauthorized tests.
-
-### E4. Status Vocabulary Alignment
-
-Mapped TODO:
-- TODO 24
-
-Implementation tasks:
-1. Define canonical statuses for assessment lifecycle, attempt lifecycle, and grading lifecycle.
-2. Update DB enums, API schemas, frontend filters, documentation, and tests.
-3. Add migration if needed.
-
-Acceptance criteria:
-- No frontend-only status names.
-- All filters map to canonical statuses.
-
-Tests:
-- Contract tests.
-- UI filter tests.
-- Migration tests.
-
-### E5. Mastery from Evidence
-
-Mapped TODO:
-- TODO 25
-
-Implementation tasks:
-1. Create `LearningEvidenceService`.
-2. Update mastery from claim IDs, evidence IDs, concept IDs, confidence, process traces, and misconception tags.
-3. Remove module-ID string heuristics.
-4. Add domain mapping from canonical module metadata.
-
-Acceptance criteria:
-- Mastery updates are evidence-based.
-- Domain mapping is correct.
-
-Tests:
-- Mastery golden tests.
-- Multi-domain tests.
-- Simulation evidence tests.
-
-### E6. AI Grading Failure Review Path
-
-Mapped TODO:
-- TODO 26
-
-Implementation tasks:
-1. Add grading result statuses: `graded`, `pending_ai`, `pending_human_review`, and `failed`.
-2. On AI failure, create manual review task.
-3. Do not award zero because of infrastructure failure.
-4. Notify instructor/admin where appropriate.
-
-Acceptance criteria:
-- Learners are not penalized for AI outage.
-- Manual review is auditable.
-
-Tests:
-- AI timeout tests.
-- Malformed AI response tests.
-- Manual review completion tests.
-
-### E7. Micro-Viva Implementation
-
-Mapped TODO:
-- TODO 27
-
-Implementation tasks:
-1. Create viva selection engine: random 10%, anomaly flags, and instructor request.
-2. Add scheduling: available slots, learner confirmation, and instructor queue.
-3. Add rubric: conceptual accuracy, transfer/generalization, error diagnosis, and communication clarity.
-4. Add recording metadata; do not store raw recording unless storage/privacy policy is complete.
-5. Add remediation flow.
-
-Acceptance criteria:
-- Viva is a real workflow, not a document-only feature.
-- Failure leads to targeted remediation and re-viva.
-
-Tests:
-- Random selection tests.
-- Anomaly-trigger tests.
-- Instructor scheduling E2E.
-- Rubric scoring tests.
+**Required tests:** malformed result, missing job ID, wrong tenant, replayed callback, user token rejected, worker token accepted.
 
 ---
 
-## 8. Workstream F — Telemetry, Analytics, and Dashboards
+## P1-7 Production configuration still has fail-open/degraded assumptions
 
-### F1. Versioned Telemetry Schema Registry
+**Why it matters:** Production services must fail fast when required dependencies are missing or insecure.
 
-Mapped TODO:
-- TODO 28
+**Root cause:** The configuration is much stronger than before, but sampled config still includes optional platform services with graceful degradation and default AI/simulation URLs that appear inconsistent with URL validation. 
 
-Implementation tasks:
-1. Create schema registry for `sim.start`, `sim.control.change`, `sim.snapshot`, `sim.capture`, `assess.answer`, `assist.hint`, `ai.tutor.query`, `content.view`, and `module.progress`.
-2. Validate every ingested event.
-3. Reject unknown events, wrong schema versions, direct PII, and missing tenant/user/session/run/attempt context.
-4. Store validation error telemetry.
+**Evidence:**
 
-Acceptance criteria:
-- Telemetry is typed and replayable.
-- PII is rejected.
+* Production security validation checks DB SSL, Redis TLS, Sentry, S3, CORS, and secret length. That is good.
+* `AUTH_GATEWAY_URL`, `AI_REGISTRY_URL`, and `FEATURE_STORE_URL` are optional.
+* `AI_SERVICE_URL` and `SIM_RUNTIME_URL` default to localhost-like values despite URL validation expectations. 
 
-Tests:
-- Schema tests.
-- Invalid event tests.
-- PII rejection tests.
-- Replay tests.
+**Affected surfaces:** startup, AI routing, feature flags, model governance, production deployments.
 
-### F2. Real Content Generation Metrics
+**Target pattern:** Explicit environment profiles: local/dev can degrade; staging/prod must fail closed for required services.
 
-Mapped TODO:
-- TODO 29
-
-Implementation tasks:
-1. Create `ContentGenerationMetricsService`.
-2. Metrics: generated artifacts by status, validation failures by reason, review backlog, review SLA, auto-publish eligibility, AI latency, AI cost, queue depth, and DLQ count.
-3. Replace random dashboard values.
-4. Add degraded states.
-
-Acceptance criteria:
-- Admin metrics reconcile with backend data.
-- No fake/random values remain.
-
-Tests:
-- Seeded dashboard tests.
-- Empty/degraded/error state tests.
-
-### F3. Instructor Learning Analytics
-
-Mapped TODO:
-- TODO 30
-
-Implementation tasks:
-1. Add instructor analytics API for claim mastery, misconception clusters, CBM calibration, Brier score, simulation process evidence, viva queue, and remediation recommendations.
-2. Add instructor dashboard panels.
-3. Add export support if required.
-
-Acceptance criteria:
-- Instructor sees actionable mastery evidence.
-- Dashboard values reconcile with raw events.
-
-Tests:
-- Seeded classroom E2E.
-- Metric reconciliation tests.
+**Required tests:** config validation tests for dev, staging, prod; missing AI registry; invalid AI URL; missing Sentry; insecure Redis; insecure DB.
 
 ---
 
-## 9. Workstream G — TutorPutor Web/Admin/Mobile Apps
+## P1-8 Product surface is broader than production-ready channel maturity
 
-### G1. Learner Critical Journey
+**Why it matters:** Users and institutions should not see or rely on channels that are not production-ready.
 
-Mapped TODO:
-- TODO 31
+**Root cause:** The docs correctly mark mobile/offline/VR states as partial/scaffolded, but the repo contains workflows and services for these surfaces. Without strict product gating, this can confuse testing, release readiness, and audits.
 
-Implementation tasks:
-1. Seed tenant, learner, module, content blocks, simulation, assessment, and AI context.
-2. E2E flow: login, onboarding, diagnostic, pathway, module, simulation, AI tutor hint, assessment, confidence submission, feedback, remediation, and dashboard update.
+**Evidence:**
 
-Acceptance criteria:
-- One test proves the core learner product works.
+* Product spec says mobile has React Native storage/sync foundation but user-facing shell is pending.
+* Offline is partial.
+* VR/AR is a standalone runtime scaffold. 
 
-Tests:
-- Playwright critical journey.
+**Affected surfaces:** learner app, mobile CI, app store readiness, offline learning, VR/WebXR routes/docs.
 
-### G2. Remove Placeholder Home
+**Target pattern:** Web/admin are production candidates; mobile/offline/VR are explicitly gated as non-production until parity gates pass.
 
-Mapped TODO:
-- TODO 32
-
-Implementation tasks:
-1. Decide canonical landing behavior: authenticated learner to dashboard, unauthenticated user to marketing/landing page.
-2. Remove unused placeholder or convert it to a real landing page.
-3. Add route test.
-
-Acceptance criteria:
-- No learner lands on placeholder.
-
-Tests:
-- Redirect tests.
-- Auth state route tests.
-
-### G3. Admin Route Cleanup
-
-Mapped TODO:
-- TODO 33
-
-Implementation tasks:
-1. Remove duplicate `settings/marketplace`.
-2. Audit legacy route redirects.
-3. Keep only documented compatibility redirects, behind planned removal note if needed.
-
-Acceptance criteria:
-- One canonical route per admin page.
-
-Tests:
-- Route snapshot tests.
-- Redirect tests.
-
-### G4. Design-System Alignment
-
-Mapped TODO:
-- TODO 34
-
-Implementation tasks:
-1. Inventory non-canonical UI usage.
-2. Replace with `@ghatana/ui`, `@ghatana/theme`, `@ghatana/tokens`, and `@ghatana/design-system`.
-3. Standardize buttons, cards, forms, tables, dialogs, navigation, command palette, and charts.
-4. Add visual regression.
-
-Acceptance criteria:
-- UI follows shared design-system tokens and components.
-- No scattered one-off styles for common patterns.
-
-Tests:
-- Visual regression.
-- Accessibility tests.
-- Theme switch tests.
-
-### G5. Split Unified Content Studio
-
-Mapped TODO:
-- TODO 6
-
-Implementation tasks:
-1. Extract `GenerationDashboard`, `ContentAuthoringForm`, `GenerationQueueMonitor`, `TemplateLibraryPanel`, `ValidationReviewQueue`, `InfrastructureHealthPanel`, and `ContentAnalyticsPanel`.
-2. Add typed props and API hooks.
-3. Remove shared random state.
-4. Use composition in `UnifiedContentStudio`.
-
-Acceptance criteria:
-- Each panel is independently testable.
-- Data source ownership is clear.
-
-Tests:
-- Component tests.
-- API hook tests.
-- Admin E2E.
+**Required tests:** feature flag visibility, routing exclusion, deployment profile exclusion, docs/readiness alignment.
 
 ---
 
-## 10. Workstream H — Accessibility, Offline, and Mobile
+## P1-9 Documentation and TODO sprawl can keep causing repeated audits
 
-### H1. Accessible Simulations
+**Why it matters:** The audit prompt explicitly avoids old TODOs and historical implementation plans. TutorPutor still contains a current `docs/todo.md` with many remediation tasks, and root docs list audit/remediation artifacts as core documents, which can confuse source-of-truth boundaries.
 
-Mapped TODO:
-- TODO 35
+**Root cause:** Audit outputs, remediation trackers, roadmap reviews, and canonical specs are not cleanly separated.
 
-Implementation tasks:
-1. Add accessibility contract to SimKit.
-2. Every simulation must define keyboard operations, ARIA labels, screen-reader summary, non-visual state representation, high-contrast line/shape strategy, reduced-motion mode, and reset behavior.
-3. Validate in CMS and generator.
+**Evidence:**
 
-Acceptance criteria:
-- Simulation cannot publish without accessibility metadata.
+* `docs/todo.md` contains many detailed TODOs, including generation, AI governance, privacy, child safety, analytics, and classroom items. 
+* The content-generation roadmap is highly useful, but it is also a review/roadmap document rather than a stable contract. 
 
-Tests:
-- axe tests.
-- keyboard tests.
-- reduced-motion tests.
-- screen-reader snapshot tests where possible.
+**Target pattern:** Small canonical doc set plus archived audit/remediation history.
 
-### H2. Offline Learning Sync
-
-Mapped TODO:
-- TODO 36
-
-Implementation tasks:
-1. Define offline queue schema.
-2. Support queued progress updates, simulation telemetry, assessment attempts, and content completion.
-3. Add conflict resolution: server wins for graded attempts, telemetry is append-only, latest learner progress is merged with audit.
-4. Add unavailable AI tutor state.
-5. Add sync status UI.
-
-Acceptance criteria:
-- Offline learning does not lose evidence.
-- Reconnect sync is deterministic.
-
-Tests:
-- Offline E2E.
-- Conflict tests.
-- Sync retry tests.
-
-### H3. Mobile Production Tests
-
-Mapped TODO:
-- TODO 37
-
-Implementation tasks:
-1. Remove `--passWithNoTests`.
-2. Add mobile tests for login, navigation, API configuration, token storage, offline queue, sync, locale, and privacy settings.
-3. Add mobile CI target.
-
-Acceptance criteria:
-- Mobile package cannot pass with zero tests.
-
-Tests:
-- React Native unit/integration tests.
-- CI check for test count.
+**Required fix:** Move audit/TODO docs into archive or issue tracker after extracting canonical decisions into stable docs.
 
 ---
 
-## 11. Workstream I — Backend, API Contracts, and Data Model
+# 7.3 Migration / Completeness Matrix
 
-### I1. Replace String-Encoded JSON
-
-Mapped TODO:
-- TODO 38
-
-Implementation tasks:
-1. Inventory string JSON fields.
-2. Migrate to Prisma `Json` fields.
-3. Add Zod schemas.
-4. Add migration scripts.
-5. Add backward data migration if data exists.
-6. Remove parse/stringify scattered logic.
-
-Acceptance criteria:
-- JSON fields are typed and validated.
-
-Tests:
-- Migration tests.
-- Round-trip tests.
-- Invalid payload tests.
-
-### I2. API Route Ownership
-
-Mapped TODO:
-- TODO 39
-
-Implementation tasks:
-1. Create route ownership registry.
-2. Compare OpenAPI paths, Fastify/routes, gateway routes, generated clients, and tests.
-3. Fail CI on drift.
-
-Acceptance criteria:
-- Every route has one owner and tests.
-
-Tests:
-- Route ownership CI test.
-
-### I3. Shared Typed API Client
-
-Mapped TODO:
-- TODO 40
-
-Implementation tasks:
-1. Generate or consolidate typed API client.
-2. Replace hand-shaped frontend response assumptions.
-3. Use shared error handling.
-4. Use tenant and locale headers automatically.
-
-Acceptance criteria:
-- Frontend cannot call untyped APIs.
-
-Tests:
-- Type-level tests.
-- Runtime contract tests.
-- API integration tests.
+| Surface                       | Route Registry | Scope/Auth | Canonical Contract | Canonical Data Source | Simulation/Evidence | AI/ML Governance | Privacy | Security | i18n | a11y | Observability | Tests | Cleanup | Status                           |
+| ----------------------------- | -------------: | ---------: | -----------------: | --------------------: | ------------------: | ---------------: | ------: | -------: | ---: | ---: | ------------: | ----: | ------: | -------------------------------- |
+| Product shell/bootstrap       |             🟡 |         🟡 |                 🟡 |                    🟡 |                   ⚫ |                ⚫ |      🟡 |       🟡 |    ⚫ |    ⚫ |             ✅ |    🟡 |      🟡 | 🟡 Partial                       |
+| Learner dashboard             |             🟡 |         🟡 |                 🟡 |                    🟡 |                  🟡 |                ⚫ |      🟡 |       🟡 |   🔴 |   🔴 |            🟡 |    🟡 |      🟡 | 🟡 Partial                       |
+| Onboarding/diagnostic         |             🔴 |         🟡 |                 🔴 |                    🔴 |                   ⚫ |               🟡 |      🟡 |       🟡 |   🔴 |   🔴 |            🔴 |    🔴 |      🟡 | 🔴 Missing/Not verified          |
+| Learning path/recommendations |             🟡 |         🟡 |                 🟡 |                    🟡 |                  🟡 |               🟡 |      🟡 |       🟡 |   🔴 |   🔴 |            🟡 |    🟡 |      🟡 | 🟡 Partial                       |
+| Module catalog                |             🟡 |         🟡 |                 🟡 |                    🟡 |                   ⚫ |                ⚫ |      🟡 |       🟡 |   🔴 |   🔴 |            🟡 |    🟡 |      🟡 | 🟡 Partial                       |
+| Module learning interface     |             🟡 |         🟡 |                 🟡 |                    🟡 |                  🟡 |               🟡 |      🟡 |       🟡 |   🔴 |   🟡 |            🟡 |    🟡 |      🟡 | 🟡 Partial                       |
+| Simulation runtime            |             🟡 |         🟡 |                  ✅ |                    🟡 |                  🟡 |                ⚫ |      🟡 |       🟡 |   🔴 |   🟡 |            🟡 |    🟡 |      🟡 | 🟡 Strong but incomplete         |
+| Animation runtime             |             🟡 |         🟡 |                 🟡 |                    🟡 |                  🟡 |                ⚫ |      🟡 |       🟡 |   🔴 |   🟡 |            🟡 |    🔴 |      🟡 | 🟡 Partial                       |
+| Guided / independent practice |             🟡 |         🟡 |                 🟡 |                    🟡 |                  🟡 |               🟡 |      🟡 |       🟡 |   🔴 |   🔴 |            🟡 |    🟡 |      🟡 | 🟡 Partial                       |
+| Assessment flow               |             🟡 |         🟡 |                 🟡 |                    🟡 |                  🟡 |               🟡 |      🟡 |       🟡 |   🔴 |   🟡 |            🟡 |    🟡 |      🟡 | 🟡 Partial                       |
+| CBM scoring                   |             🟡 |         🟡 |                 🟡 |                    🟡 |                  🟡 |                ⚫ |      🟡 |       🟡 |    ⚫ |   🟡 |            🟡 |    🟡 |      🟡 | 🟡 Partial                       |
+| AI tutor                      |             🟡 |         🟡 |                 🟡 |                    🟡 |                  🟡 |               🔴 |      🟡 |       🟡 |   🟡 |   🔴 |            🟡 |    🟡 |      🟡 | 🟡 Partial, governance blocker   |
+| Adaptive engine               |             🟡 |         🟡 |                 🟡 |                    🟡 |                  🟡 |               🟡 |      🟡 |       🟡 |   🔴 |   🔴 |            🟡 |    🟡 |      🟡 | 🟡 Partial                       |
+| Instructor dashboard          |             🟡 |         🟡 |                 🟡 |                    🟡 |                  🟡 |               🟡 |      🟡 |       🟡 |   🔴 |   🔴 |            🟡 |    🔴 |      🟡 | 🟡 Not fully verified            |
+| Parent dashboard              |             🔴 |         🔴 |                 🔴 |                    🔴 |                   ⚫ |                ⚫ |      🟡 |       🟡 |   🔴 |   🔴 |            🔴 |    🔴 |      🟡 | 🔴 Not verified                  |
+| CMS / Content Studio          |             🟡 |         🟡 |                 🟡 |                    🟡 |                  🟡 |               🟡 |      🟡 |       🟡 |   🔴 |   🟡 |            🟡 |    🟡 |      🟡 | 🟡 Partial                       |
+| Content generation workflow   |             🟡 |         🟡 |                 🔴 |                    🟡 |                  🟡 |               🔴 |      🟡 |       🟡 |   🔴 |   🟡 |            🟡 |    🟡 |      🔴 | 🟡 Strong foundation, fragmented |
+| Telemetry ingest              |             🟡 |         🟡 |                 🔴 |                    🟡 |                  🟡 |               🟡 |      🟡 |       🟡 |    ⚫ |   🟡 |            🟡 |    🔴 |      🟡 | 🟡 Partial                       |
+| Privacy center / compliance   |             🟡 |         🟡 |                 🟡 |                    🟡 |                   ⚫ |               🟡 |      🟡 |       🟡 |   🔴 |   🔴 |            🟡 |    🟡 |      🟡 | 🟡 Partial                       |
+| Credentials                   |             🟡 |         🟡 |                 🟡 |                    🟡 |                  🟡 |                ⚫ |      🟡 |       🟡 |   🔴 |   🔴 |            🟡 |    🟡 |      🟡 | 🟡 Partial                       |
+| Social/gamification           |             🟡 |         🟡 |                 🟡 |                    🟡 |                   ⚫ |               🟡 |      🟡 |       🟡 |   🔴 |   🔴 |            🟡 |    🔴 |      🟡 | 🟡 Child-safety risk             |
+| B2B/LMS integrations          |             🟡 |         🟡 |                 🟡 |                    🟡 |                   ⚫ |                ⚫ |      🟡 |       🟡 |   🔴 |   🔴 |            🟡 |    🟡 |      🟡 | 🟡 Partial                       |
+| Mobile                        |              ⚫ |          ⚫ |                  ⚫ |                     ⚫ |                   ⚫ |                ⚫ |       ⚫ |        ⚫ |    ⚫ |    ⚫ |             ⚫ |    🟡 |      🟡 | ⚫ Not production channel         |
+| VR/WebXR                      |              ⚫ |          ⚫ |                  ⚫ |                     ⚫ |                  🟡 |                ⚫ |       ⚫ |        ⚫ |    ⚫ |    ⚫ |             ⚫ |    🔴 |      🟡 | ⚫ Scaffold/deferred              |
 
 ---
 
-## 12. Workstream J — Privacy, Security, Compliance, and Child Safety
+# 7.4 File-Level Gaps
 
-### J1. Consent Policy Engine
-
-Mapped TODO:
-- TODO 41
-
-Implementation tasks:
-1. Define consent matrix.
-2. Enforce at AI tutor, AI grading, simulation telemetry, learning analytics, personalization, and marketing.
-3. Add UI surface for consent settings.
-4. Add audit logs.
-
-Acceptance criteria:
-- Consent controls are granular and enforced server-side.
-
-Tests:
-- Consent matrix tests.
-- Privacy settings E2E.
-- Audit tests.
-
-### J2. Social and Child Safety
-
-Mapped TODO:
-- TODO 42
-
-Implementation tasks:
-1. Implement role/age restrictions: no unapproved adult-minor direct messaging, verified teacher channels only, and parent/guardian visibility where required.
-2. Add moderation: report, hide, review, approve/reject, and appeal.
-3. Add audit logs and notifications.
-4. Add AI moderation only as assistant signal, not sole authority.
-
-Acceptance criteria:
-- K-12 safety rules are enforced.
-
-Tests:
-- Minor/adult messaging tests.
-- Moderation flow E2E.
-- Audit-log tests.
+| Gap                                                                            | Where                                                                                 | Root blocker | Fix                                                      | Tests                                                               |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- | ------------ | -------------------------------------------------------- | ------------------------------------------------------------------- |
+| JWT plugin registered, but global JWT verification not proven in sampled setup | `services/tutorputor-platform/src/plugins/core.ts`, `src/core/http/requestContext.ts` | P0-1         | Add canonical auth pre-handler and route policy registry | Unauth/invalid/expired/wrong-role/wrong-tenant matrix               |
+| Route owner registry contains malformed route keys                             | `docs/architecture/API_ROUTE_OWNERS.json`                                             | P0-2         | Regenerate from actual Fastify route inventory + OpenAPI | Route inventory + OpenAPI + typed-client parity                     |
+| Broad content/business modules make route drift likely                         | `plugins/content-modules.ts`, `plugins/business-modules.ts`                           | P0-2         | Normalize prefixes and enforce generated route ownership | Prefix-composition tests                                            |
+| Content-generation contracts remain fragmented                                 | `contracts/proto/**`, `libs/tutorputor-ai/**`, generation worker/client paths         | P0-3         | Pick one authoritative content generation proto/schema   | Worker/service contract tests                                       |
+| AI failure audit semantics are too coarse                                      | `modules/ai/routes.ts`                                                                | P0-4         | Typed governance outcome envelope                        | Missing consent/safety/rate/provider/validation/success audit tests |
+| Simulation scoring accepts arbitrary scoring payload                           | `modules/learning/routes.ts`                                                          | P1-5         | Bind scoring to persisted attempt + simulation run       | Tamper/replay/wrong-user tests                                      |
+| Telemetry event schema is too loose                                            | `modules/learning/routes.ts`                                                          | P1-5         | JSON schema per event type                               | Event contract tests                                                |
+| Worker result auth not proven                                                  | `modules/content/generation/execution-service.ts`, generation result routes           | P1-6         | Worker JWT/mTLS/signed callback                          | Replay/wrong-tenant/user-token/worker-token tests                   |
+| Production config still allows optional shared services                        | `config/config.ts`                                                                    | P1-7         | Profile-based fail-fast dependency requirements          | Dev/staging/prod config tests                                       |
+| TODO/roadmap docs compete with canonical docs                                  | `products/tutorputor/docs/todo.md`, roadmap/spec docs                                 | P1-9         | Consolidate decisions; archive trackers                  | Documentation truth/lint tests                                      |
 
 ---
 
-## 13. Workstream K — DevOps, Observability, CI/CD, and Resilience
+# 7.5 Prioritized Implementation Sequence
 
-### K1. Product-Level Critical Journey Suite
+## 1. Product boundary, route registry, and canonical contracts
 
-Mapped TODO:
-- TODO 43
+**Goal:** Make actual runtime routes, OpenAPI, typed clients, route owners, permissions, and tests agree.
 
-Implementation tasks:
-1. Add suites for learner, instructor, admin/content author, operator, privacy/security, and LTI/institution.
-2. Use deterministic seed data.
-3. Run in CI.
+**Main files:** `API_ROUTE_OWNERS.json`, OpenAPI contract, `plugins/*`, route modules, generated client.
 
-Acceptance criteria:
-- Critical journeys block merge.
+**Outcome:** No malformed routes, no undocumented routes, no untested routes.
 
-Tests:
-- Playwright + backend integration suite.
+**Acceptance criteria:**
 
-### K2. CI Quality Gates
-
-Mapped TODO:
-- TODO 44
-
-Implementation tasks:
-1. Enforce typecheck, lint, unit tests, integration tests, API contract tests, route ownership tests, Playwright E2E, accessibility tests, tenant-scope validation, i18n missing-key validation, and mobile tests.
-2. Fail on `passWithNoTests`, fake/random production data, contract drift, accessibility critical issues, missing route owners, and missing translation keys.
-
-Acceptance criteria:
-- CI catches production-readiness gaps.
-
-Tests:
-- CI negative tests where feasible.
-
-### K3. Content Generation Observability
-
-Mapped TODO:
-- TODO 45
-
-Implementation tasks:
-1. Add metrics for job started/completed/failed, validation failure reason, AI latency, AI token/cost, DLQ count, queue depth, auto-publish blocked count, and human-review backlog.
-2. Add logs with correlation IDs.
-3. Add dashboards and alerts.
-4. Add runbooks.
-
-Acceptance criteria:
-- Operators can detect and diagnose generation failures.
-
-Tests:
-- Metrics tests.
-- Alert-rule tests.
-- DLQ simulation tests.
+* no `${prefix}` or duplicated path segments,
+* every route has owner/contract/client/test owner,
+* CI fails on route drift.
 
 ---
 
-## 14. Cross-Cutting Production Patterns
+## 2. User/role/tenant/consent authorization hardening
 
-### 14.1 Error Handling
+**Goal:** Every protected route must be authenticated and policy-checked before handler logic.
 
-All services must use typed errors:
+**Main files:** `plugins/core.ts`, `requestContext.ts`, auth module, ABAC module, consent middleware.
 
-- `ValidationError`
-- `TenantScopeError`
-- `ConsentDeniedError`
-- `FeatureDisabledError`
-- `InsufficientEvidenceError`
-- `ManualReviewRequiredError`
-- `AiProviderUnavailableError`
-- `TelemetrySchemaError`
-- `RouteOwnershipError`
-- `LocalizationMissingKeyError`
+**Outcome:** JWT/session/tenant/role/consent are enforced consistently.
 
-Rules:
-- Do not return silent empty states for missing required evidence.
-- Do not convert AI failures to learner failure.
-- Do not swallow validation or tenant-scope errors.
-- Do not leak internals to users.
-
-### 14.2 Feature Flags
-
-Incomplete features must be behind explicit flags:
-
-| Feature | Flag |
-|---|---|
-| Autonomous content auto-publish | `TUTORPUTOR_AUTONOMOUS_CONTENT_AUTO_PUBLISH_ENABLED` |
-| Micro-viva workflow | `TUTORPUTOR_MICRO_VIVA_ENABLED` |
-| Social learning | `TUTORPUTOR_SOCIAL_LEARNING_ENABLED` |
-| Mobile production sync | `TUTORPUTOR_MOBILE_SYNC_ENABLED` |
-| Semantic evidence search | `TUTORPUTOR_SEMANTIC_EVIDENCE_SEARCH_ENABLED` |
-| AI grading | `TUTORPUTOR_AI_GRADING_ENABLED` |
-| Multilingual generated content | `TUTORPUTOR_GENERATED_CONTENT_I18N_ENABLED` |
-
-Rules:
-- Feature flag off must produce typed unavailable state.
-- Feature flag on must require complete tests.
-- Do not expose incomplete UI without a disabled/coming-soon state.
-
-### 14.3 Observability
-
-Every production path must emit:
-
-- correlation ID
-- tenant ID
-- user role
-- operation name
-- duration
-- success/failure
-- typed error code
-- important policy decision outcome
-
-AI/content-generation paths must additionally emit:
-
-- model ID
-- model version
-- prompt version
-- token count or estimated cost
-- latency
-- retry count
-- validation result
-- review requirement
-- redaction status
-
-Telemetry/learning paths must additionally emit:
-
-- schema version
-- event type
-- run/attempt/session ID
-- validation status
-- no-PII validation result
+**Acceptance criteria:** full route auth matrix passes.
 
 ---
 
-## 15. Testing Strategy
+## 3. Learning path and module delivery contract hardening
 
-### 15.1 Required Test Types
+**Goal:** Learner progress, recommendations, pathways, and mastery derive from actual evidence, not client-side completion claims.
 
-| Type | Required For |
-|---|---|
-| Unit tests | Scoring, policies, schema validation, seed derivation, redaction, locale fallback |
-| Integration tests | API routes, DB writes, content-generation pipeline, AI service wrappers |
-| Contract tests | OpenAPI, typed clients, route ownership, telemetry schemas |
-| Golden tests | CBM scoring, generated simulations, generated assessments, AI grading rubrics |
-| E2E tests | Learner, admin, instructor, privacy, offline, LTI |
-| Accessibility tests | Learner shell, admin shell, simulation player, assessment UI, content studio |
-| Security tests | consent, tenant isolation, child-safety restrictions, audit logs |
-| Performance tests | telemetry ingest, AI proxy latency, dashboard metrics, assessment submission |
-| Migration tests | JSON field conversion, status vocabulary alignment |
+**Main files:** `modules/learning/**`, learner profile service, pathway service, content variation service.
 
-### 15.2 Golden Datasets
-
-Create canonical fixtures for:
-
-1. CBM scoring matrix
-2. Math graph simulation
-3. Physics motion simulation
-4. CS scheduling simulation
-5. Business supply-demand simulation
-6. Medicine vitals simulation
-7. AI short-answer grading
-8. Generated assessment bundle
-9. Semantic evidence search
-10. Cross-tenant isolation
-11. i18n locale fallback
-12. Offline sync conflict
-
-### 15.3 No Test Theater Rules
-
-A test is invalid if it only verifies:
-
-- component renders without checking behavior
-- function returns any value
-- API returns 200 without checking payload
-- AI returns text without checking grounding metadata
-- telemetry event writes without schema validation
-- dashboard renders without metric reconciliation
-- route exists without role/tenant/security behavior
+**Outcome:** deterministic learner state and explainable recommendations.
 
 ---
 
-## 16. Recommended Implementation Order
+## 4. Simulation/animation runtime and evidence pipeline
 
-### Sprint 1 — Safety and Contract Baseline
+**Goal:** Simulations, animations, and visualizations carry claim/evidence links, deterministic seeds, telemetry profiles, accessibility metadata, and replayability.
 
-1. Disable unsafe generated-content auto-publish.
-2. Remove random dashboard metrics.
-3. Add tenant scope to knowledge-base routes.
-4. Add AI audit redaction.
-5. Add CI failure for mobile `passWithNoTests`.
-6. Add route ownership registry scaffold.
-7. Add feature flag policy scaffold.
+**Main files:** simulation contracts, simulation runtime, animation runtime, generation worker, artifact materialization.
 
-### Sprint 2 — i18n, Consent, Telemetry, CBM Contracts
-
-1. Add i18n provider and catalogs.
-2. Add missing-key checks.
-3. Add consent policy engine.
-4. Add telemetry schema registry.
-5. Add canonical CBM scoring service.
-6. Add generated simulation deterministic seed derivation.
-7. Add API route ownership CI check.
-
-### Sprint 3 — AI Grounding and Evidence
-
-1. Implement learning context assembler.
-2. Fix AI domain/difficulty mapping.
-3. Ground question generation in content evidence.
-4. Implement semantic evidence search behind flag.
-5. Make AI grading failures become manual review.
-6. Add generated-content review screen skeleton.
-
-### Sprint 4 — SimKit and Assessment
-
-1. Implement domain SimKit templates.
-2. Generate multi-item assessment bundles.
-3. Add frontend confidence selection.
-4. Add results route.
-5. Align status vocabulary.
-6. Add accessible simulation metadata and validation.
-
-### Sprint 5 — App Journeys and Admin Refactor
-
-1. Split `UnifiedContentStudio`.
-2. Implement real content-generation metrics.
-3. Add learner critical journey.
-4. Add instructor analytics.
-5. Remove placeholder/duplicate routes.
-6. Apply design-system consistency pass.
-
-### Sprint 6 — Offline, Mobile, Social Safety, Observability
-
-1. Complete offline sync.
-2. Add mobile tests.
-3. Add social/child-safety enforcement.
-4. Add content-generation dashboards/alerts.
-5. Add micro-viva workflow.
-6. Enforce full CI quality gates.
+**Outcome:** simulation-first learning is measurable and auditable.
 
 ---
 
-## 17. Definition of Done
+## 5. Content generation, CMS workflow, and review gates
 
-A TODO is complete only when all conditions below are satisfied:
+**Goal:** Generated claims, examples, animations, simulations, and assessments flow through one canonical generation lifecycle.
 
-1. **Implementation**
-   - Production code is complete.
-   - No fake data, placeholders, or random production behavior.
-   - Feature flag exists if capability is intentionally incomplete.
+**Main files:** content studio, generation requests, generation workers, gRPC client, proto contracts, `ArtifactManifest`.
 
-2. **Architecture**
-   - Uses canonical shared abstractions.
-   - No duplicated schema/client/service/component logic.
-   - Proper separation of concerns.
-
-3. **Correctness**
-   - Edge cases are handled.
-   - Determinism is enforced where required.
-   - Tenant, role, consent, privacy, and locale are respected.
-
-4. **Tests**
-   - Meaningful unit tests exist.
-   - Integration/contract tests exist where relevant.
-   - E2E tests exist for user-facing journeys.
-   - Accessibility tests exist for UI and simulations.
-   - Golden tests exist for scoring/generation/simulation/AI behavior.
-
-5. **Observability**
-   - Structured logs.
-   - Metrics.
-   - Correlation IDs.
-   - Typed errors.
-   - Alerting for operationally critical paths.
-
-6. **Security and Privacy**
-   - Server-side authorization.
-   - Consent enforcement.
-   - PII redaction.
-   - Audit logs.
-   - Child-safety where relevant.
-
-7. **i18n**
-   - User-facing strings are localized.
-   - Locale propagates to API/AI/content.
-   - Fallback is deterministic.
-   - Missing keys fail CI.
-
-8. **Documentation**
-   - Architecture/design docs updated only where canonical.
-   - No stale TODO documents left behind.
-   - Runbooks added for operational flows.
+**Outcome:** no duplicate generation paths and no publish without evidence/review gates.
 
 ---
 
-## 18. Completion Matrix
+## 6. Assessment, CBM, AI grading, and micro-viva hardening
 
-| TODO | Workstream | Phase |
-|---|---|---|
-| 1 | A1 | 1 |
-| 2 | A2 | 4 |
-| 3 | A2 | 2 / 4 |
-| 4 | A3 | 4 |
-| 5 | F2 | 1 |
-| 6 | G5 | 5 |
-| 7 | A4 | 3 |
-| 8 | B1 | 2 |
-| 9 | B2 | 1 |
-| 10 | B3 | 3 |
-| 11 | B4 | 3 |
-| 12 | C1 | 3 |
-| 13 | C1 | 3 |
-| 14 | C2 | 1 |
-| 15 | C3 | 3 |
-| 16 | C4 | 3 |
-| 17 | D1 | 2 |
-| 18 | D1 | 2 |
-| 19 | D2 | 2 / 5 |
-| 20 | D3 | 2 |
-| 21 | E1 | 4 |
-| 22 | E2 | 2 / 4 |
-| 23 | E3 | 4 |
-| 24 | E4 | 4 |
-| 25 | E5 | 3 |
-| 26 | E6 | 3 |
-| 27 | E7 | 5 / 6 |
-| 28 | F1 | 2 |
-| 29 | F2 | 5 |
-| 30 | F3 | 5 |
-| 31 | G1 | 5 |
-| 32 | G2 | 5 |
-| 33 | G3 | 5 |
-| 34 | G4 | 5 |
-| 35 | H1 | 4 |
-| 36 | H2 | 5 / 6 |
-| 37 | H3 | 1 / 6 |
-| 38 | I1 | 2 |
-| 39 | I2 | 2 |
-| 40 | I3 | 2 |
-| 41 | J1 | 2 / 6 |
-| 42 | J2 | 6 |
-| 43 | K1 | 6 |
-| 44 | K2 | 1 / 6 |
-| 45 | K3 | 6 |
+**Goal:** Assessment scoring is immutable, replayable, evidence-linked, confidence-aware, and instructor-reviewable.
+
+**Main files:** assessment service, CBM processor, viva engine, simulation scoring, attempt lifecycle.
+
+**Outcome:** mastery is trustworthy.
 
 ---
 
-## 19. Final Production Readiness Gate
+## 7. AI tutor, recommender, adaptive engine, and AI governance
 
-Before marking the TutorPutor remediation complete, run and pass:
+**Goal:** AI outputs are grounded, consent-aware, policy-checked, audited, and safe.
 
-1. Full product typecheck.
-2. Full product lint.
-3. Unit tests.
-4. Integration tests.
-5. API contract tests.
-6. Route ownership tests.
-7. Tenant-scope tests.
-8. Consent matrix tests.
-9. i18n missing-key tests.
-10. Accessibility tests.
-11. Simulation golden tests.
-12. CBM scoring golden tests.
-13. AI grounding tests.
-14. Generated-content review and validation tests.
-15. Learner critical E2E.
-16. Admin content-generation E2E.
-17. Instructor analytics E2E.
-18. Privacy export/delete E2E.
-19. Offline sync E2E.
-20. Mobile tests.
-21. Observability and alert-rule tests.
+**Main files:** `modules/ai/routes.ts`, AI proxy, governance, audit, model registry clients.
 
-No release is acceptable if any critical path is untested, fake, unlocalized, non-observable, privacy-unsafe, tenant-unsafe, or dependent on mocks/stubs/placeholders in production code.
+**Outcome:** AI trust evidence is accurate.
+
+---
+
+## 8. Telemetry, analytics, dashboards, and privacy-safe evidence
+
+**Goal:** Telemetry is schema-valid, privacy-safe, consent-aware, and reconciled with dashboard metrics.
+
+**Main files:** analytics services, learning events, instructor dashboards, privacy/compliance modules.
+
+**Outcome:** dashboards show explainable raw-evidence-derived metrics.
+
+---
+
+## 9. Privacy/security/i18n/a11y/observability gates
+
+**Goal:** Make these native release gates, not manual review items.
+
+**Acceptance criteria:** all route, UI, simulation, AI, and telemetry flows pass privacy/security/i18n/a11y gates.
+
+---
+
+## 10. Test hardening and golden-master validation
+
+**Goal:** Prevent recurring regressions.
+
+**Required suites:**
+
+* route-contract tests,
+* auth matrix tests,
+* generation golden tests,
+* simulation determinism tests,
+* CBM scoring tests,
+* AI governance tests,
+* telemetry schema tests,
+* accessibility tests,
+* i18n catalog tests.
+
+---
+
+## 11. Repository cleanup and architectural consolidation
+
+**Goal:** Remove duplicate docs, duplicate contracts, dead routes, and stale TODOs.
+
+---
+
+# 7.6 Regression and Release Gates
+
+Minimum release gates before production:
+
+* full TutorPutor route traversal from actual registered route inventory;
+* route owner ↔ OpenAPI ↔ typed client ↔ test owner parity;
+* JWT/session auth required on every non-public route;
+* learner/parent/teacher/admin/platform-admin role matrix;
+* tenant/institution/classroom isolation tests;
+* parental consent tests for AI, telemetry, social, exports, and notifications;
+* content-generation contract tests;
+* generated claim → evidence → artifact → publish workflow tests;
+* simulation determinism/replay tests;
+* simulation accessibility tests;
+* animation caption/transcript/reduced-motion tests;
+* assessment CBM golden-master tests;
+* AI grading SME-comparison tests;
+* micro-viva trigger/rubric tests;
+* AI tutor groundedness and safety tests;
+* RAG/AI tenant-isolation tests;
+* telemetry event schema tests;
+* privacy export/delete tests;
+* credential issuance/revocation tests;
+* social child-safety tests;
+* production config fail-fast tests;
+* fake/stub/demo path scan;
+* dead-code and duplicate-contract scan;
+* build/lint/typecheck/unit/integration/e2e/contract tests pass.
+
+---
+
+# Repository Cleanup Plan
+
+| Priority | Classification                  | Path                                                                                   | Reason                                                                                                  | Evidence                                                                                              | Safe Fix                                                                         | Tests/Validation                  |
+| -------- | ------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | --------------------------------- |
+| P0       | Replace                         | `products/tutorputor/docs/architecture/API_ROUTE_OWNERS.json`                          | Contains malformed/generated-looking route keys and duplicated prefixes                                 | Sampled registry contains `${prefix}` and repeated route segments.                                    | Regenerate from actual Fastify routes and OpenAPI                                | Route-owner CI gate               |
+| P0       | Merge/Replace                   | Content-generation proto/schema families                                               | Multiple incompatible content-generation contracts                                                      | Roadmap identifies worker expectations, richer proto, and separate proto as misaligned.               | Pick one authoritative contract                                                  | Worker/service contract tests     |
+| P1       | Merge                           | `products/tutorputor/docs/architecture/specs/AUTONOMOUS_CONTENT_GENERATION_ROADMAP.md` | Valuable review/roadmap, but should not compete with canonical architecture                             | Roadmap itself documents reviewed scope and recommendations.                                          | Extract stable decisions into canonical generation architecture; archive roadmap | Documentation truth check         |
+| P1       | Archive / Move to issue tracker | `products/tutorputor/docs/todo.md`                                                     | Detailed remediation TODO file conflicts with audit instruction to avoid stale TODOs as source-of-truth | File contains old-style numbered remediation items.                                                   | Convert to issues or archive after extracting canonical unresolved decisions     | Docs lint blocks root TODO sprawl |
+| P1       | Keep but harden                 | `products/tutorputor/services/tutorputor-platform/src/plugins/core.ts`                 | Good core plugin, but global auth verification not proven                                               | JWT registration and global middleware setup are visible.                                             | Add canonical auth pre-handler and route-policy gate                             | Auth coverage tests               |
+| P1       | Replace                         | AI governance string inference in `modules/ai/routes.ts`                               | Failure semantics can misrepresent compliance state                                                     | AI route builds audit/governance metadata around multiple failure paths.                              | Typed AI decision envelope                                                       | AI audit matrix                   |
+| P1       | Keep but profile-gate           | Mobile/offline/VR docs and workflows                                                   | Non-production channels should not be release blockers or visible product claims                        | Product spec marks mobile shell pending, offline partial, VR scaffold.                                | Mark as non-production feature-flagged surfaces                                  | Release profile tests             |
+| P2       | Keep but organize               | `products/tutorputor/scripts/validate-*.mjs`                                           | Many useful validation scripts, but quality-gate ownership should be clearer                            | Search found many validation scripts for AI, consent, tenant, accessibility, contracts, placeholders. | Group into `scripts/quality-gates/` and document ownership                       | Script index lint                 |
+
+---
+
+## Canonical Docs Matrix
+
+| Doc                                        | Keep | Merge | Archive | Delete | Notes                                                                   |
+| ------------------------------------------ | ---: | ----: | ------: | -----: | ----------------------------------------------------------------------- |
+| `products/tutorputor/README.md`            |    ✅ |    🟡 |         |        | Keep as product entry; must reflect release reality                     |
+| `PRODUCT_SPEC.md`                          |    ✅ |    🟡 |         |        | Keep, but remove “reverse-engineered” ambiguity if now canonical        |
+| `CANONICAL_TARGET_ARCHITECTURE.md`         |    ✅ |       |         |        | Not fully inspected, but referenced as canonical target                 |
+| `API_ROUTE_OWNERS.json`                    |      |     ✅ |         |        | Regenerate, do not manually maintain malformed entries                  |
+| `AUTONOMOUS_CONTENT_GENERATION_ROADMAP.md` |      |     ✅ |       ✅ |        | Merge stable architecture decisions; archive review narrative           |
+| `docs/todo.md`                             |      |     ✅ |       ✅ |        | Convert to issues or implementation plan; stop using as source of truth |
+| Security/privacy/compliance docs           |    ✅ |    🟡 |         |        | Keep canonical, merge overlap                                           |
+| Accessibility/i18n docs                    |    ✅ |    🟡 |         |        | Ensure release gates, not only guidelines                               |
+| Testing docs                               |    ✅ |    🟡 |         |        | Add route/auth/generation/simulation/AI governance gates                |
+| Old audit/remediation docs                 |      |    🟡 |       ✅ |        | Archive outside canonical docs                                          |
+
+---
+
+## Final cleanup checklist
+
+* [ ] Legacy TutorPutor code removed or explicitly justified
+* [ ] Temporary/generated files removed
+* [ ] Old audit/TODO docs removed, archived, or converted to issues
+* [ ] Canonical docs consolidated
+* [ ] Duplicate content-generation contracts removed
+* [ ] Duplicate simulation/animation/assessment generation paths removed
+* [ ] Route ownership registry regenerated from actual runtime routes
+* [ ] Production stubs/fake/demo paths removed or feature-flagged
+* [ ] Mobile/offline/VR surfaces gated until production-ready
+* [ ] Auth/tenant/consent policy applied before handlers
+* [ ] AI audit semantics corrected
+* [ ] Telemetry schemas tightened
+* [ ] Tests updated after cleanup
+* [ ] Build/lint/typecheck/test/contract/e2e pass after cleanup
+* [ ] No hidden fallback runtime paths remain
+* [ ] No duplicate generation engines remain
+* [ ] No stale docs compete with canonical docs
+
+## Final conclusion
+
+TutorPutor has a strong architecture direction and meaningful implementation progress at `cc2dfd68aa992fc61b3a9e8f8bb26d3e5df7837f`. The core product concept, platform monolith, module boundaries, claim/evidence spine, simulation stack, content worker, and quality gates are real. The blockers are now mostly **convergence and trust** problems, not greenfield absence.
+
+The next improvement cycle should not add more features. It should harden the product around one route registry, one auth policy system, one generation contract, one evidence model, one telemetry schema, and one canonical documentation set.

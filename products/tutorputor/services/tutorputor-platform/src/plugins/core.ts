@@ -13,6 +13,7 @@ import {
   standardErrorResponseMiddleware,
   addRequestIdHook,
 } from "../core/middleware/standard-error-response.js";
+import { jwtAuthPreHandler } from "../core/http/jwtAuthPreHandler.js";
 
 interface CorePluginsOptions {
   jwtSecret?: string;
@@ -65,6 +66,10 @@ export const setupCorePlugins: FastifyPluginAsync<CorePluginsOptions> = async (
 
   // 5. Setup request ID generation
   app.addHook("onRequest", addRequestIdHook);
+
+  // 5.5. Setup global JWT authentication pre-handler
+  // This must run before route handlers to verify JWT tokens on protected routes
+  app.addHook("preHandler", jwtAuthPreHandler);
 
   // 6. Setup rate limiting
   await setupRateLimit(app);

@@ -45,7 +45,6 @@ export function CampaignsPage(): React.ReactElement {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { isAuthenticated, roles } = useAuth();
   const { toasts, showSuccess, showError, dismissToast } = useToast();
-  // Rollback remains feature-gated until the backend rollback workflow is enabled.
   const rollbackEnabled = false;
   const [name, setName] = useState('');
   const [type, setType] = useState<CampaignType>('EMAIL');
@@ -76,7 +75,6 @@ export function CampaignsPage(): React.ReactElement {
 
   const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
 
-  // P1-030: Error handlers with correlation ID for diagnostics
   const handleCreateError = useCallback((err: ApiError) => {
     showError(err.getUserMessage(), err.correlationId ?? undefined);
   }, [showError]);
@@ -99,7 +97,6 @@ export function CampaignsPage(): React.ReactElement {
 
   const { create, isPending: isCreating } = useCreateCampaign(workspaceId ?? null, handleCreateError);
 
-  // P1-031: Per-row pending states via isPendingFor
   const { launch, isPendingFor: isLaunchingFor } = useLaunchCampaign(workspaceId ?? null, handleLaunchError);
   const { pause, isPendingFor: isPausingFor } = usePauseCampaign(workspaceId ?? null, handlePauseError);
 
@@ -128,12 +125,21 @@ export function CampaignsPage(): React.ReactElement {
   const { execute: rollback, isPendingFor: isRollingBackFor } = useRollbackCampaign(workspaceId ?? null, handleRollbackError);
   const { execute: duplicate, isPendingFor: isDuplicatingFor } = useDuplicateCampaign(workspaceId ?? null, handleDuplicateError);
 
+  const handleUnexpectedMutationError = useCallback((error: unknown, context: string) => {
+    if (error instanceof ApiError) {
+      return;
+    }
+
+    showError(`${context}: An unexpected error occurred.`);
+  }, [showError]);
+
   const handleComplete = useCallback(async (campaignId: string, campaignName: string) => {
-    try {
-      await complete(campaignId);
-      showSuccess(`Campaign "${campaignName}" marked as completed`);
-    } catch { /* handled by handleCompleteError */ }
-  }, [complete, showSuccess]);
+    await complete(campaignId)
+      .then(() => {
+        showSuccess(`Campaign "${campaignName}" marked as completed`);
+      })
+      .catch((error: unknown) => handleUnexpectedMutationError(error, 'Failed to complete campaign'));
+  }, [complete, showSuccess, handleUnexpectedMutationError]);
 
   const openArchiveDialog = useCallback((campaignId: string, campaignName: string) => {
     if (!canArchiveCampaign) return;
@@ -142,12 +148,13 @@ export function CampaignsPage(): React.ReactElement {
 
   const confirmArchive = useCallback(async () => {
     if (!archiveTarget) return;
-    try {
-      await archive(archiveTarget.id);
-      showSuccess(`Campaign "${archiveTarget.name}" archived`);
-      setArchiveTarget(null);
-    } catch { /* handled by handleArchiveError */ }
-  }, [archive, archiveTarget, showSuccess]);
+    await archive(archiveTarget.id)
+      .then(() => {
+        showSuccess(`Campaign "${archiveTarget.name}" archived`);
+        setArchiveTarget(null);
+      })
+      .catch((error: unknown) => handleUnexpectedMutationError(error, 'Failed to archive campaign'));
+  }, [archive, archiveTarget, showSuccess, handleUnexpectedMutationError]);
 
   const openRollbackDialog = useCallback((campaignId: string, campaignName: string) => {
     if (!canRollbackCampaign) return;
@@ -156,12 +163,13 @@ export function CampaignsPage(): React.ReactElement {
 
   const confirmRollback = useCallback(async () => {
     if (!rollbackTarget) return;
-    try {
-      await rollback(rollbackTarget.id);
-      showSuccess(`Campaign "${rollbackTarget.name}" rolled back to draft`);
-      setRollbackTarget(null);
-    } catch { /* handled by handleRollbackError */ }
-  }, [rollback, rollbackTarget, showSuccess]);
+    await rollback(rollbackTarget.id)
+      .then(() => {
+        showSuccess(`Campaign "${rollbackTarget.name}" rolled back to draft`);
+        setRollbackTarget(null);
+      })
+      .catch((error: unknown) => handleUnexpectedMutationError(error, 'Failed to rollback campaign'));
+  }, [rollback, rollbackTarget, showSuccess, handleUnexpectedMutationError]);
 
   const openDuplicateDialog = useCallback((campaignId: string, campaignName: string) => {
     if (!canDuplicateCampaign) return;
@@ -177,15 +185,16 @@ export function CampaignsPage(): React.ReactElement {
       return;
     }
 
-    try {
-      const resolvedName = duplicateName.trim();
-      await duplicate(duplicateTarget.id, resolvedName);
-      showSuccess(`Campaign duplicated as "${resolvedName}"`);
-      setDuplicateTarget(null);
-      setDuplicateName('');
-      setDuplicateNameError(null);
-    } catch { /* handled by handleDuplicateError */ }
-  }, [duplicate, duplicateName, duplicateTarget, showSuccess]);
+    const resolvedName = duplicateName.trim();
+    await duplicate(duplicateTarget.id, resolvedName)
+      .then(() => {
+        showSuccess(`Campaign duplicated as "${resolvedName}"`);
+        setDuplicateTarget(null);
+        setDuplicateName('');
+        setDuplicateNameError(null);
+      })
+      .catch((error: unknown) => handleUnexpectedMutationError(error, 'Failed to duplicate campaign'));
+  }, [duplicate, duplicateName, duplicateTarget, showSuccess, handleUnexpectedMutationError]);
 
   const handleCreate = useCallback(
     async (e: React.FormEvent) => {
@@ -193,49 +202,59 @@ export function CampaignsPage(): React.ReactElement {
       if (!name.trim() || !workspaceId) return;
       const budget = parseFloat(budgetDollars);
       if (isNaN(budget) || budget <= 0) return;
-      try {
-        await create({
-          name: name.trim(),
-          type,
-          objective,
-          budgetCents: Math.round(budget * 100),
-          startDate,
-          endDate,
-          audience: audience.trim(),
-          landingPageUrl: landingPageUrl.trim() || undefined,
-        });
-        showSuccess(`Campaign "${name.trim()}" created successfully`);
-        setName('');
-        setBudgetDollars('');
-        setStartDate('');
-        setEndDate('');
-        setAudience('');
-        setLandingPageUrl('');
-        setPage(0);
-      } catch {
-        // Error is handled by handleCreateError callback
-      }
+      await create({
+        name: name.trim(),
+        type,
+        objective,
+        budgetCents: Math.round(budget * 100),
+        startDate,
+        endDate,
+        audience: audience.trim(),
+        landingPageUrl: landingPageUrl.trim() || undefined,
+      })
+        .then(() => {
+          showSuccess(`Campaign "${name.trim()}" created successfully`);
+          setName('');
+          setBudgetDollars('');
+          setStartDate('');
+          setEndDate('');
+          setAudience('');
+          setLandingPageUrl('');
+          setPage(0);
+        })
+        .catch((error: unknown) => handleUnexpectedMutationError(error, 'Failed to create campaign'));
     },
-    [create, name, type, objective, budgetDollars, startDate, endDate, audience, landingPageUrl, workspaceId, showSuccess],
+    [
+      create,
+      name,
+      type,
+      objective,
+      budgetDollars,
+      startDate,
+      endDate,
+      audience,
+      landingPageUrl,
+      workspaceId,
+      showSuccess,
+      handleUnexpectedMutationError,
+    ],
   );
 
   const handleLaunch = useCallback(async (campaignId: string, campaignName: string) => {
-    try {
-      await launch(campaignId);
-      showSuccess(`Campaign "${campaignName}" launched successfully`);
-    } catch {
-      // Error is handled by handleLaunchError callback
-    }
-  }, [launch, showSuccess]);
+    await launch(campaignId)
+      .then(() => {
+        showSuccess(`Campaign "${campaignName}" launched successfully`);
+      })
+      .catch((error: unknown) => handleUnexpectedMutationError(error, 'Failed to launch campaign'));
+  }, [launch, showSuccess, handleUnexpectedMutationError]);
 
   const handlePause = useCallback(async (campaignId: string, campaignName: string) => {
-    try {
-      await pause(campaignId);
-      showSuccess(`Campaign "${campaignName}" paused successfully`);
-    } catch {
-      // Error is handled by handlePauseError callback
-    }
-  }, [pause, showSuccess]);
+    await pause(campaignId)
+      .then(() => {
+        showSuccess(`Campaign "${campaignName}" paused successfully`);
+      })
+      .catch((error: unknown) => handleUnexpectedMutationError(error, 'Failed to pause campaign'));
+  }, [pause, showSuccess, handleUnexpectedMutationError]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -512,7 +531,6 @@ export function CampaignsPage(): React.ReactElement {
             </Table>
           </div>
 
-          {/* P1-001: Pagination controls */}
           <div
             data-testid="campaigns-pagination"
             className="flex items-center justify-between mt-4 text-sm text-gray-600"

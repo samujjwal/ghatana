@@ -53,7 +53,15 @@ export function BudgetPage(): React.ReactElement {
     );
   }, [showError]);
 
-  const { recommendation, isLoading, isError, error, refetch } = useBudgetRecommendation(workspaceId ?? null);
+  const handleUnexpectedMutationError = useCallback((error: unknown, context: string) => {
+    if (error instanceof ApiError) {
+      return;
+    }
+
+    showError(`${context}: An unexpected error occurred.`);
+  }, [showError]);
+
+  const { recommendation, isLoading, isError, error } = useBudgetRecommendation(workspaceId ?? null);
   const { strategy: approvedStrategy } = useStrategy(workspaceId ?? null);
   const approvedStrategyId = approvedStrategy?.status === 'APPROVED' ? approvedStrategy.strategyId : null;
   const { generate, isPending: isGenerating } = useGenerateBudget(workspaceId ?? null, {
@@ -73,17 +81,25 @@ export function BudgetPage(): React.ReactElement {
       const threshold = parseFloat(changeThreshold);
       const effectiveStrategyId = approvedStrategyId ?? strategyId.trim();
       if (!effectiveStrategyId || Number.isNaN(cap) || cap < 0 || Number.isNaN(threshold) || !workspaceId) return;
-      try {
-        await generate({ strategyId: effectiveStrategyId, totalMonthlyCap: cap, changeThreshold: threshold });
-        showSuccess('Budget recommendation generated successfully');
-        setStrategyId('');
-        setTotalMonthlyCap('');
-        setChangeThreshold('10');
-      } catch {
-        // Error is surfaced through the onError callback registered in useGenerateBudget
-      }
+      await generate({ strategyId: effectiveStrategyId, totalMonthlyCap: cap, changeThreshold: threshold })
+        .then(() => {
+          showSuccess('Budget recommendation generated successfully');
+          setStrategyId('');
+          setTotalMonthlyCap('');
+          setChangeThreshold('10');
+        })
+        .catch((error: unknown) => handleUnexpectedMutationError(error, 'Budget generation failed'));
     },
-    [generate, approvedStrategyId, strategyId, totalMonthlyCap, changeThreshold, workspaceId, showSuccess],
+    [
+      generate,
+      approvedStrategyId,
+      strategyId,
+      totalMonthlyCap,
+      changeThreshold,
+      workspaceId,
+      showSuccess,
+      handleUnexpectedMutationError,
+    ],
   );
 
   if (!isAuthenticated) {
@@ -281,7 +297,6 @@ export function BudgetPage(): React.ReactElement {
             </div>
           )}
 
-          {/* P2-004: AI Reasoning & Provenance panel */}
           <AIProvenancePanel
             modelVersion={recommendation.modelVersion}
             generatedAt={recommendation.generatedAt}

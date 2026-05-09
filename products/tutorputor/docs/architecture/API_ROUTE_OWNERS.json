@@ -212,28 +212,28 @@
       "method": "GET",
       "module": "content-needs"
     },
-    "GET /api/v1/content/cms${prefix}/health": {
+    "GET /api/v1/content/cms/health": {
       "backendOwner": "services/tutorputor-platform/src/modules/content/cms/routes.ts",
       "apiContract": "api/tutorputor-api.openapi.yaml",
       "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
       "method": "GET",
       "module": "content-cms"
     },
-    "GET /api/v1/content/evaluation/evaluation/discovery-system/validate": {
+    "GET /api/v1/content/evaluation/discovery-system/validate": {
       "backendOwner": "services/tutorputor-platform/src/modules/content/evaluation/routes.ts",
       "apiContract": "api/tutorputor-api.openapi.yaml",
       "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
       "method": "GET",
       "module": "content-evaluation"
     },
-    "GET /api/v1/content/experiments/experiments/ab": {
+    "GET /api/v1/content/experiments/ab": {
       "backendOwner": "services/tutorputor-platform/src/modules/content/experiments/ab-testing/routes.ts",
       "apiContract": "api/tutorputor-api.openapi.yaml",
       "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
       "method": "GET",
       "module": "content-experiments"
     },
-    "GET /api/v1/content/generation/generation/notifications/stream": {
+    "GET /api/v1/content/generation/notifications/stream": {
       "backendOwner": "services/tutorputor-platform/src/modules/content/generation/routes.ts",
       "apiContract": "api/tutorputor-api.openapi.yaml",
       "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
@@ -275,35 +275,35 @@
       "method": "GET",
       "module": "content-recommendation"
     },
-    "GET /api/v1/content/studio${prefix}/automation-rules": {
+    "GET /api/v1/content/studio/automation-rules": {
       "backendOwner": "services/tutorputor-platform/src/modules/content/studio/routes.ts",
       "apiContract": "api/tutorputor-api.openapi.yaml",
       "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
       "method": "GET",
       "module": "content-studio"
     },
-    "GET /api/v1/content/studio${prefix}/experiences/search-similar": {
+    "GET /api/v1/content/studio/experiences/search-similar": {
       "backendOwner": "services/tutorputor-platform/src/modules/content/studio/routes.ts",
       "apiContract": "api/tutorputor-api.openapi.yaml",
       "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
       "method": "GET",
       "module": "content-studio"
     },
-    "GET /api/v1/content/studio${prefix}/health": {
+    "GET /api/v1/content/studio/health": {
       "backendOwner": "services/tutorputor-platform/src/modules/content/studio/routes.ts",
       "apiContract": "api/tutorputor-api.openapi.yaml",
       "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
       "method": "GET",
       "module": "content-studio"
     },
-    "GET /api/v1/content/studio${prefix}/templates": {
+    "GET /api/v1/content/studio/templates": {
       "backendOwner": "services/tutorputor-platform/src/modules/content/studio/routes.ts",
       "apiContract": "api/tutorputor-api.openapi.yaml",
       "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
       "method": "GET",
       "module": "content-studio"
     },
-    "GET /api/v1/content/studio${prefix}/templates/categories": {
+    "GET /api/v1/content/studio/templates/categories": {
       "backendOwner": "services/tutorputor-platform/src/modules/content/studio/routes.ts",
       "apiContract": "api/tutorputor-api.openapi.yaml",
       "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",
@@ -338,7 +338,7 @@
       "method": "GET",
       "module": "engagement-credentials"
     },
-    "GET /api/v1/engagement/engagement/health": {
+    "GET /api/v1/engagement/health": {
       "backendOwner": "services/tutorputor-platform/src/modules/engagement/index.ts",
       "apiContract": "api/tutorputor-api.openapi.yaml",
       "typedClient": "apps/tutorputor-web/src/api/tutorputorClient.ts",

@@ -10,6 +10,7 @@
  */
 import React from 'react';
 import type { ApprovalRecordResponse, ApprovalStatus } from '@/types/approval';
+import { DashboardWidgetCard } from './DashboardWidgetCard';
 
 interface WorkflowStatusWidgetProps {
   approvals: ApprovalRecordResponse[];
@@ -39,39 +40,17 @@ export const WorkflowStatusWidget: React.FC<WorkflowStatusWidgetProps> = ({
   const activeApprovals = approvals.filter(
     (a) => a.status === 'PENDING',
   );
+  const state = isLoading ? 'loading' : isError ? 'error' : 'ready';
 
   return (
-    <article
-      aria-labelledby="workflow-status-title"
-      data-testid="workflow-status-widget"
-      className="border rounded-lg p-4"
+    <DashboardWidgetCard
+      testId="workflow-status-widget"
+      title="Pending Approvals"
+      state={state}
+      message="Failed to load workflows."
+      stateMessageTestId={state === 'loading' ? 'workflow-status-loading' : 'workflow-status-error'}
     >
-      <h2
-        id="workflow-status-title"
-        className="text-sm font-semibold text-gray-700"
-      >
-        Pending Approvals
-      </h2>
-
-      {isLoading && (
-        <p
-          data-testid="workflow-status-loading"
-          className="text-xs text-gray-400 mt-2"
-        >
-          Loading workflows…
-        </p>
-      )}
-
-      {isError && !isLoading && (
-        <p
-          data-testid="workflow-status-error"
-          className="text-xs text-red-500 mt-2"
-        >
-          Failed to load workflows.
-        </p>
-      )}
-
-      {!isLoading && !isError && activeApprovals.length === 0 && (
+      {activeApprovals.length === 0 && (
         <p
           data-testid="workflow-status-empty"
           className="text-xs text-gray-400 mt-2"
@@ -80,7 +59,7 @@ export const WorkflowStatusWidget: React.FC<WorkflowStatusWidgetProps> = ({
         </p>
       )}
 
-      {!isLoading && !isError && activeApprovals.length > 0 && (
+      {activeApprovals.length > 0 && (
         <ul
           data-testid="workflow-status-list"
           className="mt-2 space-y-1"
@@ -109,7 +88,7 @@ export const WorkflowStatusWidget: React.FC<WorkflowStatusWidgetProps> = ({
           )}
         </ul>
       )}
-    </article>
+    </DashboardWidgetCard>
   );
 };
 

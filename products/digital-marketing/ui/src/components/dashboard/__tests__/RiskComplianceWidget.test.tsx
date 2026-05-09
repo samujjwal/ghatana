@@ -114,10 +114,10 @@ describe('RiskComplianceWidget', () => {
     );
   });
 
-  it('renders the article element with data-testid', () => {
+  it('renders the widget container with data-testid', () => {
     render(<RiskComplianceWidget />);
-    const article = screen.getByTestId('risk-compliance-widget');
-    expect(article.tagName.toLowerCase()).toBe('article');
-    expect(article).toHaveAttribute('aria-labelledby', 'risk-compliance-title');
+    const widget = screen.getByTestId('risk-compliance-widget');
+    expect(widget).toBeInTheDocument();
+    expect(screen.getByText('Risk & Compliance')).toBeInTheDocument();
   });
 });

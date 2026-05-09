@@ -7,6 +7,7 @@
  */
 import React from 'react';
 import type { ApprovalRecordResponse } from '@/types/approval';
+import { DashboardWidgetCard } from './DashboardWidgetCard';
 
 const MAX_PENDING_THRESHOLD = 5;
 
@@ -23,39 +24,17 @@ export const RiskComplianceWidget: React.FC<RiskComplianceWidgetProps> = ({
 }) => {
   const pendingItems = approvals.filter((a) => a.status === 'PENDING');
   const hasComplianceAlert = pendingItems.length >= MAX_PENDING_THRESHOLD;
+  const state = isLoading ? 'loading' : isError ? 'error' : 'ready';
 
   return (
-    <article
-      aria-labelledby="risk-compliance-title"
-      data-testid="risk-compliance-widget"
-      className="border rounded-lg p-4"
+    <DashboardWidgetCard
+      testId="risk-compliance-widget"
+      title="Risk & Compliance"
+      state={state}
+      message="Failed to load compliance data."
+      stateMessageTestId={state === 'loading' ? 'risk-compliance-loading' : 'risk-compliance-error'}
     >
-      <h2
-        id="risk-compliance-title"
-        className="text-sm font-semibold text-gray-900"
-      >
-        Risk & Compliance
-      </h2>
-
-      {isLoading && (
-        <p
-          data-testid="risk-compliance-loading"
-          className="text-xs text-gray-700 mt-2"
-        >
-          Loading…
-        </p>
-      )}
-
-      {isError && !isLoading && (
-        <p
-          data-testid="risk-compliance-error"
-          className="text-xs text-red-500 mt-2"
-        >
-          Failed to load compliance data.
-        </p>
-      )}
-
-      {!isLoading && !isError && !hasComplianceAlert && (
+      {!hasComplianceAlert && (
         <p
           data-testid="risk-compliance-ok"
           className="text-xs text-green-800 mt-2"
@@ -64,7 +43,7 @@ export const RiskComplianceWidget: React.FC<RiskComplianceWidgetProps> = ({
         </p>
       )}
 
-      {!isLoading && !isError && hasComplianceAlert && (
+      {hasComplianceAlert && (
         <>
           <p
             data-testid="risk-compliance-alert"
@@ -96,6 +75,6 @@ export const RiskComplianceWidget: React.FC<RiskComplianceWidgetProps> = ({
           </ul>
         </>
       )}
-    </article>
+    </DashboardWidgetCard>
   );
 };

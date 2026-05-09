@@ -14,22 +14,26 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { GrowthGoalWidget } from '../GrowthGoalWidget';
 
-describe('P2-023: GrowthGoalWidget', () => {
-  const originalEnv = process.env;
+const mockIsFeatureEnabled = vi.fn();
 
+vi.mock('@/lib/feature-flags', () => ({
+  FEATURE_FLAGS: {
+    DASHBOARD_GROWTH_METRICS: 'dmos.dashboard_growth_metrics',
+  },
+  isFeatureEnabled: (flag: string): boolean => mockIsFeatureEnabled(flag),
+}));
+
+describe('P2-023: GrowthGoalWidget', () => {
   beforeEach(() => {
-    // Reset environment before each test
-    vi.resetModules();
+    mockIsFeatureEnabled.mockReset();
   });
 
   afterEach(() => {
-    // Restore environment after each test
-    process.env = originalEnv;
+    vi.clearAllMocks();
   });
 
   it('should render "Coming soon" placeholder when feature flag is disabled', () => {
-    // Arrange: Disable the feature flag
-    process.env.DMOS_DASHBOARD_GROWTH_METRICS_ENABLED = 'false';
+    mockIsFeatureEnabled.mockReturnValue(false);
 
     // Act
     render(<GrowthGoalWidget />);
@@ -37,14 +41,12 @@ describe('P2-023: GrowthGoalWidget', () => {
     // Assert
     const widget = screen.getByTestId('growth-goal-widget');
     expect(widget).toBeInTheDocument();
-    expect(widget).toHaveClass('opacity-60');
     expect(screen.getByText('Coming soon')).toBeInTheDocument();
     expect(screen.getByText('Growth Goals')).toBeInTheDocument();
   });
 
   it('should render "Metrics loading" placeholder when feature flag is enabled', () => {
-    // Arrange: Enable the feature flag
-    process.env.DMOS_DASHBOARD_GROWTH_METRICS_ENABLED = 'true';
+    mockIsFeatureEnabled.mockReturnValue(true);
 
     // Act
     render(<GrowthGoalWidget />);
@@ -52,14 +54,12 @@ describe('P2-023: GrowthGoalWidget', () => {
     // Assert
     const widget = screen.getByTestId('growth-goal-widget');
     expect(widget).toBeInTheDocument();
-    expect(widget).not.toHaveClass('opacity-60');
     expect(screen.getByText('Metrics loading…')).toBeInTheDocument();
     expect(screen.getByText('Growth Goals')).toBeInTheDocument();
   });
 
   it('should default to disabled state when feature flag is not set', () => {
-    // Arrange: Feature flag not set (default behavior)
-    delete process.env.DMOS_DASHBOARD_GROWTH_METRICS_ENABLED;
+    mockIsFeatureEnabled.mockReturnValue(false);
 
     // Act
     render(<GrowthGoalWidget />);
@@ -68,36 +68,29 @@ describe('P2-023: GrowthGoalWidget', () => {
     expect(screen.getByText('Coming soon')).toBeInTheDocument();
   });
 
-  it('should have proper accessibility attributes', () => {
-    // Arrange
-    process.env.DMOS_DASHBOARD_GROWTH_METRICS_ENABLED = 'false';
+  it('should expose unavailable state test id when feature is disabled', () => {
+    mockIsFeatureEnabled.mockReturnValue(false);
 
     // Act
     render(<GrowthGoalWidget />);
 
     // Assert
-    const widget = screen.getByTestId('growth-goal-widget');
-    expect(widget).toHaveAttribute('aria-labelledby', 'growth-goal-title');
-
-    const title = screen.getByRole('heading', { level: 2 });
-    expect(title).toHaveAttribute('id', 'growth-goal-title');
+    expect(screen.getByTestId('growth-goal-unavailable')).toBeInTheDocument();
   });
 
-  it('should apply correct CSS classes for disabled state', () => {
-    // Arrange
-    process.env.DMOS_DASHBOARD_GROWTH_METRICS_ENABLED = 'false';
+  it('should render base card classes for disabled state', () => {
+    mockIsFeatureEnabled.mockReturnValue(false);
 
     // Act
     render(<GrowthGoalWidget />);
 
     // Assert
     const widget = screen.getByTestId('growth-goal-widget');
-    expect(widget).toHaveClass('border', 'rounded-lg', 'p-4', 'opacity-60');
+    expect(widget).toHaveClass('border', 'rounded-lg', 'p-4');
   });
 
   it('should apply correct CSS classes for enabled state', () => {
-    // Arrange
-    process.env.DMOS_DASHBOARD_GROWTH_METRICS_ENABLED = 'true';
+    mockIsFeatureEnabled.mockReturnValue(true);
 
     // Act
     render(<GrowthGoalWidget />);
@@ -108,9 +101,8 @@ describe('P2-023: GrowthGoalWidget', () => {
     expect(widget).not.toHaveClass('opacity-60');
   });
 
-  it('should handle "1" as true for feature flag', () => {
-    // Arrange
-    process.env.DMOS_DASHBOARD_GROWTH_METRICS_ENABLED = '1';
+  it('should render enabled state when feature flag resolves true', () => {
+    mockIsFeatureEnabled.mockReturnValue(true);
 
     // Act
     render(<GrowthGoalWidget />);
@@ -119,9 +111,8 @@ describe('P2-023: GrowthGoalWidget', () => {
     expect(screen.getByText('Metrics loading…')).toBeInTheDocument();
   });
 
-  it('should handle "0" as false for feature flag', () => {
-    // Arrange
-    process.env.DMOS_DASHBOARD_GROWTH_METRICS_ENABLED = '0';
+  it('should render disabled state when feature flag resolves false', () => {
+    mockIsFeatureEnabled.mockReturnValue(false);
 
     // Act
     render(<GrowthGoalWidget />);

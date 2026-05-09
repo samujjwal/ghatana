@@ -26,7 +26,7 @@
   - Acceptance criteria: Dashboard never renders fake spend, budget, connector status, or sync timestamp.
   - Required tests: Dashboard with empty data; dashboard with real budget; connector disabled; connector unhealthy; API failure.
 
-- [ ] [P0] [API] Align canonical API error envelope across docs, server, client, and tests
+- [x] [P0] [API] Align canonical API error envelope across docs, server, client, and tests
   - Where: products/digital-marketing/docs/canonical/02-API_CONTRACTS.md; dm-api servlets; UI ApiError handling
   - Problem: Canonical docs define nested error object while servlet comments indicate flat error shape.
   - Required fix: Choose one canonical shape, update OpenAPI/docs/server/client/tests.
@@ -36,8 +36,9 @@
   - Progress update: UI `ApiError` now parses the canonical flat envelope (`error`, `message`, `status`, `correlationId`, `details`) and surfaces user-safe messages for 400/401/403/404/409/422/423/429/500. Added focused matrix coverage in `ui/src/lib/__tests__/http-client.test.ts` to keep client-side parsing behavior aligned with canonical status-code handling.
   - Progress update: Migrated the remaining agency/demo servlet family to the canonical flat envelope helper (`DmosAgencyRetainerServlet`, `DmosAgencyDeliverableServlet`, `DmosAgencyContractServlet`, `DmosAgencyApprovalSLAServlet`, `DmosDemoWorkspaceServlet`), removed ad hoc JSON 400/404/500 responses, threaded correlation IDs through `mapServiceError`, and fixed the demo-workspace route parameter bug so `demoWorkspaceId` is routed and read correctly. Focused backend validation passed via `:products:digital-marketing:dm-api:compileJava`.
   - Progress update: Verified remaining dm-api main Java sources for raw ad hoc `{"error":...}` responses via targeted source scan; no additional non-servlet outliers found in `products/digital-marketing/dm-api/src/main/java`.
+  - Progress update: Added focused backend canonical-envelope helper coverage in `dm-api/src/test/java/com/ghatana/digitalmarketing/api/DmosApiErrorResponsesTest.java`, including explicit status matrix assertions for 400/401/403/404/409/422/423/429/500 plus correlation-id/details propagation. Revalidated with `:products:digital-marketing:dm-api:test --tests "com.ghatana.digitalmarketing.api.DmosApiErrorResponsesTest"` (`BUILD SUCCESSFUL`).
 
-- [ ] [P0] [Permission] Implement action-level permission gates
+- [x] [P0] [Permission] Implement action-level permission gates
   - Where: routeManifest.tsx; api/capabilities.ts; CampaignsPage; StrategyPage; BudgetPage; approval components; backend servlets/services
   - Problem: Route-level gates exist, but user actions are not consistently gated by explicit action permission.
   - Required fix: Create canonical action-permission map for every routeManifest action and enforce in UI and backend.
@@ -47,6 +48,7 @@
   - Progress update: Added backend canonical action-role registry (`dm-api/src/main/java/com/ghatana/digitalmarketing/api/security/DmosActionPermissionRegistry.java`), integrated action enforcement in shared context factory (`DmosHttpContextFactory`) and wired mutation endpoints in campaign/strategy/budget plus approval decide flow to explicit actions. Added direct API role-denial/allow tests for viewer/brand-manager/marketing-director/exec-sponsor cases across `DmosCampaignServletTest`, `DmosStrategyServletTest`, `DmosBudgetRecommendationServletTest`, and `DmosApprovalServletTest`; focused backend validation passed via `:products:digital-marketing:dm-api:test --tests ...` for those four suites. Remaining work: extend matrix coverage to admin and read-only view cases where needed.
   - Progress update: Extended backend permission matrix to include admin mutation allow-cases and explicit viewer read-only allow-cases for campaign list, strategy get, budget recommendation get, and approval status get; added corresponding assertions in the four servlet suites and revalidated focused backend suites successfully (`BUILD SUCCESSFUL` for Campaign/Strategy/BudgetRecommendation/Approval tests).
   - Progress update: Approval UI now uses the canonical action-permission registry on both queue and detail surfaces instead of the older generic approver helpers. `ApprovalQueuePage` preserves review access while warning users who lack `approve`/`reject`; `ApprovalDetailPage` now requires both canonical action permission and the request's `requiredApproverRole` hierarchy before enabling decisions. Added focused viewer/admin/higher-required-role coverage in `ApprovalQueuePage.test.tsx` and `ApprovalDetailPage.test.tsx`; targeted validation passed (`pnpm vitest run src/pages/__tests__/ApprovalQueuePage.test.tsx src/pages/__tests__/ApprovalDetailPage.test.tsx`, `pnpm type-check`).
+  - Progress update: Added direct backend registry coverage in `dm-api/src/test/java/com/ghatana/digitalmarketing/api/security/DmosActionPermissionRegistryTest.java` to assert (1) every route-contract action is allowed for admin and recognized by the registry, (2) stricter actions (`approve-budget`) remain blocked for lower roles, and (3) unknown actions fail closed. Added UI canonical map assertions in `ui/src/lib/__tests__/action-permissions.test.ts` for route-action completeness and critical role matrix paths. Revalidated with focused runs (`pnpm vitest run src/lib/__tests__/action-permissions.test.ts` and `:products:digital-marketing:dm-api:test --tests "com.ghatana.digitalmarketing.api.security.DmosActionPermissionRegistryTest"`; both passing).
 
 - [ ] [P0] [Testing] Make DMOS build/type/lint/route/API contract gates mandatory in CI
   - Where: products/digital-marketing/ui/package.json; .github workflows; Gradle DMOS modules
@@ -60,6 +62,8 @@
   - Progress update: Identified concrete branch-protection required-check candidates from current DMOS workflows (job `name` values): `Test Gate` from `.github/workflows/dmos-test-matrix.yml`, `P0 Release Gate` from `.github/workflows/dmos-release-gate.yml`, and `Contract Drift Check` from `.github/workflows/dmos-openapi-client-gen.yml`. Apply these as required status checks in GitHub branch protection for `main` (and `release/*` where applicable).
   - Progress update: Ran wider regression validation after focused passes: UI gates succeeded (`pnpm lint`, `pnpm type-check`, `pnpm test:route-contract`), `:products:digital-marketing:dm-api:test` passed, and combined backend run surfaced 4 failures in `:products:digital-marketing:dm-persistence:test` under `FlywayMigrationValidationTest` (`Fresh migration from empty database succeeds`, `Migration from V20 to current succeeds`, `Migration from V10 to current succeeds`, `Migration info shows correct version history`). Focused Flyway test had passed earlier in isolation, so this is currently tracked as a suite-order/environment-sensitive regression to resolve before claiming full green broad backend matrix.
   - Progress update: Closed the persistence regression by scoping Flyway test migration discovery to the DMOS module migration directory (instead of global `classpath:db/migration`, which was pulling plugin migrations with duplicate versions). Revalidated `:products:digital-marketing:dm-persistence:test --tests "*FlywayMigrationValidationTest"` and full `:products:digital-marketing:dm-persistence:test`; both now pass (`BUILD SUCCESSFUL`).
+  - Progress update: Added operations handoff runbook with exact required check names and GitHub configuration steps in `products/digital-marketing/docs/runbooks/DMOS-BRANCH-PROTECTION-REQUIRED-CHECKS.md` (required checks: `Test Gate`, `Contract Drift Check`, `P0 Release Gate`).
+  - Progress update: Re-ran DMOS UI gates on current workspace state: `pnpm lint` passes, while `pnpm type-check` and `pnpm test:route-contract` currently fail due cross-workspace platform package resolution/import issues (`react`, `react/jsx-dev-runtime`, `clsx`, `lucide-react`, `zod`, `@ghatana/platform-events`, `@ghatana/ds-schema`) in `platform/typescript/*` dependencies outside DMOS UI feature code. P0 testing item remains open until (1) workspace dependency-resolution issue is stabilized and (2) repository admins apply required checks from the new runbook in branch protection.
 
 - [x] [P1] [Design System] Replace native confirm/prompt with design-system dialogs
   - Where: CampaignsPage archive/rollback/duplicate actions
@@ -148,7 +152,7 @@
   - Acceptance criteria: No boundary route shows fake analytics, fake reports, or fake operational data.
   - Required tests: Direct URL access by unauthorized/authorized users; capability disabled; capability enabled but API unavailable.
 
-- [ ] [P2] [Reuse] Consolidate duplicated status/loading/error/card patterns
+- [x] [P2] [Reuse] Consolidate duplicated status/loading/error/card patterns
   - Where: Dashboard widgets; route pages; approval/AI/campaign pages
   - Problem: Pages implement states and styling inconsistently.
   - Required fix: Create reusable page-state, card-state, mutation-state, and feature-unavailable components.
@@ -156,8 +160,9 @@
   - Required tests: Component tests for shared states.
   - Progress update: Added shared `PageStateNotice` primitive with component tests and refactored major pages (`CampaignsPage`, `BudgetPage`, `StrategyPage`, `ApprovalQueuePage`, `ApprovalDetailPage`, `AiActionLogPage`) to use the shared loading/error/empty/warning state rendering path.
   - Progress update: Added shared `DashboardWidgetCard` primitive for dashboard card loading/error/unavailable/ready states and refactored `CampaignStatusWidget`, `StrategyInsightsWidget`, `BudgetTrackingWidget`, and `ConnectorHealthWidget` to use it, including shared footer slots for freshness/link actions. Added focused component coverage in `DashboardWidgetCard.test.tsx` (loading/error/unavailable/ready rendering).
+  - Progress update: Completed dashboard-wide shared-card migration by refactoring `ApprovalWidget`, `WorkflowStatusWidget`, `RiskComplianceWidget`, `GrowthGoalWidget`, and `AiActionLogWidget` to `DashboardWidgetCard` state flows and aligned focused widget tests (`DashboardWidgetCard`, `GrowthGoalWidget`, `RiskComplianceWidget`, `WorkflowStatusWidget` all passing).
 
-- [ ] [P3] [Code Quality] Remove stale comments, duplicated comments, and unused imports
+- [x] [P3] [Code Quality] Remove stale comments, duplicated comments, and unused imports
   - Where: useCampaigns.ts; approval/AI/budget pages
   - Problem: Duplicated comments and unused imports reduce maintainability and may fail strict lint.
   - Required fix: Clean imports/comments and enforce lint.
@@ -165,3 +170,6 @@
   - Required tests: Lint gate.
   - Progress update: Subset completed for touched files (ApprovalDetail/AI/Budget and generated api types lint blockers); full repository-wide stale-comment and unused-import sweep remains open.
   - Progress update: Removed duplicated stale comments in `ui/src/hooks/useCampaigns.ts` pending-state logic and revalidated `pnpm run lint` (ESLint passes with zero warnings; only external TypeScript-version compatibility notice remains).
+  - Progress update: Removed stale inline ticket comments and comment-only catch blocks in `CampaignsPage` and `BudgetPage` by converting mutation handlers to explicit promise chains while preserving centralized error callbacks; `pnpm lint` continues to pass for `products/digital-marketing/ui`.
+  - Progress update: Removed silent no-op mutation catches in `CampaignsPage` and `BudgetPage`; handlers now surface unexpected failures explicitly while preserving existing typed `ApiError` callback flows. Focused UI tests covering touched areas pass (`http-client`, `action-permissions`, dashboard shared-widget suites), and `pnpm lint` remains green. Package-level `pnpm type-check` is still blocked by existing cross-workspace module-resolution issues in shared `platform/typescript/*` packages outside DMOS UI touched scope.
+  - Progress update: Completed remaining scoped cleanup in `ui/src/hooks/useCampaigns.ts`, `ui/src/pages/ApprovalQueuePage.tsx`, and `ui/src/pages/BudgetPage.tsx` by removing stale ticket comments, duplicate comment blocks, and unused values (`tenantId`, `refetch`). Revalidated with `pnpm lint` (zero ESLint warnings/errors) plus focused regression suites (`pnpm vitest run src/lib/__tests__/action-permissions.test.ts src/lib/__tests__/http-client.test.ts src/components/dashboard/__tests__/DashboardWidgetCard.test.tsx src/components/dashboard/__tests__/GrowthGoalWidget.test.tsx src/components/dashboard/__tests__/RiskComplianceWidget.test.tsx src/components/dashboard/__tests__/WorkflowStatusWidget.test.tsx`, all passing).

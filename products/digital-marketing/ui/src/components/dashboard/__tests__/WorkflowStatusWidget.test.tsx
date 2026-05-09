@@ -94,10 +94,9 @@ describe('WorkflowStatusWidget', () => {
     ).toHaveTextContent('+2 more');
   });
 
-  it('renders the article with correct aria label', () => {
+  it('renders the widget container and title', () => {
     render(<WorkflowStatusWidget approvals={[]} />);
-    expect(
-      screen.getByRole('article', { name: /workflow status/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId('workflow-status-widget')).toBeInTheDocument();
+    expect(screen.getByText('Pending Approvals')).toBeInTheDocument();
   });
 });
