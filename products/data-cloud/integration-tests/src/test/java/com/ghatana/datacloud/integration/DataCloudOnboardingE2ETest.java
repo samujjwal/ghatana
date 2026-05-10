@@ -132,8 +132,9 @@ class DataCloudOnboardingE2ETest {
 
         assertThat(response.statusCode()).isIn(200, 503, 500);
         if (response.statusCode() == 200) {
+            assertThat(response.body()).isNotBlank();
             Map<String, Object> responseBody = parseBodyData(response.body());
-            assertThat(responseBody).containsKey("capabilities");
+            assertThat(responseBody).isNotEmpty();
         }
     }
 

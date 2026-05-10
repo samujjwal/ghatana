@@ -203,6 +203,8 @@ abstract class CheckDataCloudOpenApiRouterSync : DefaultTask() {
         val paramPattern = Regex(""":[^/]+""")
         return source.readLines()
             .mapNotNull { line -> routePattern.find(line)?.groupValues?.get(1) }
+            // Treat Action Plane aliases as canonical product routes for drift checks.
+            .map { path -> path.replaceFirst("/api/v1/action/", "/api/v1/") }
             .map { path -> paramPattern.replace(path, ":p") }
             .toSet()
     }

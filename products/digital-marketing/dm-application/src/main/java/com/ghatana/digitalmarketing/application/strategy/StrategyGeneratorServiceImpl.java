@@ -106,13 +106,11 @@ public final class StrategyGeneratorServiceImpl implements StrategyGeneratorServ
             GenerateStrategyCommand command) {
         String prompt = buildPromptFromCommand(command);
         return governedWorkflowService.executeGovernedWorkflow(
+                ctx,
                 DmAgentOrchestrationPort.AgentType.STRATEGY_GENERATOR,
                 prompt,
                 "gpt-4",
-                Map.of(),
-                ctx.getTenantId(),
-                ctx.getWorkspaceId(),
-                ctx.getActor().getPrincipalId()
+                Map.of()
             )
             .then(result -> {
                 if (!result.success()) {
@@ -126,7 +124,7 @@ public final class StrategyGeneratorServiceImpl implements StrategyGeneratorServ
                 return repository.save(strategy)
                     .then(saved -> {
                         // If approval required, mark for approval (DMOS-P1-019)
-                        if (result.approvalRequired()) {
+                        if (result.approvalRequirement() != com.ghatana.digitalmarketing.application.ai.AiPolicyCheckService.ApprovalRequirement.AUTO_APPROVE) {
                             return Promise.of(saved.submitForApproval());
                         }
                         return Promise.of(saved);

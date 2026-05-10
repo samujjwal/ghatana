@@ -1,3 +1,5 @@
+# DEPRECATED: This file is superseded by action-plane.yaml. Use action-plane.yaml as the canonical contract.
+# This file is retained for historical reference only.
 openapi: 3.0.3
 info:
   title: Ghatana AEP (Agentic Event Processor) API
@@ -32,8 +34,8 @@ tags:
     description: Pattern registration and management
   - name: Analytics
     description: Anomaly detection and forecasting
-  - name: Capabilities
-    description: Platform schema/encoding/connector introspection
+  - name: Surfaces
+    description: Runtime surface schema and connector introspection
   - name: Sessions
     description: Session management
   - name: Event Design
@@ -1137,7 +1139,7 @@ paths:
     get:
       summary: List supported schema formats
       operationId: listSchemaFormats
-      tags: [Capabilities]
+      tags: [Surfaces]
       responses:
         '200':
           description: Available schema formats
@@ -1162,7 +1164,7 @@ paths:
     get:
       summary: List supported encodings
       operationId: listEncodings
-      tags: [Capabilities]
+      tags: [Surfaces]
       responses:
         '200':
           description: Available wire encodings
@@ -1180,7 +1182,7 @@ paths:
     get:
       summary: List supported connectors
       operationId: listConnectors
-      tags: [Capabilities]
+      tags: [Surfaces]
       responses:
         '200':
           description: Available connectors
@@ -1206,7 +1208,7 @@ paths:
     get:
       summary: List supported transforms
       operationId: listTransforms
-      tags: [Capabilities]
+      tags: [Surfaces]
       responses:
         '200':
           description: Available transform functions
@@ -3802,3 +3804,4 @@ components:
         timestamp:
           type: string
           format: date-time
+

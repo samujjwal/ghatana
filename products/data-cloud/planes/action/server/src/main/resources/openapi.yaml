@@ -6,7 +6,7 @@ info:
   description: |
     REST API for the Agentic Event Processor (AEP).
 
-    Data Cloud Action Plane provides an agentic orchestration runtime for event-driven execution,
+    AEP provides an agentic orchestration runtime for event-driven execution,
     including pattern detection, anomaly analysis, time-series forecasting,
     and pipeline governance/operation surfaces.
     All multi-tenant endpoints accept an `X-Tenant-Id` header or
@@ -3804,3 +3804,4 @@ components:
         timestamp:
           type: string
           format: date-time
+

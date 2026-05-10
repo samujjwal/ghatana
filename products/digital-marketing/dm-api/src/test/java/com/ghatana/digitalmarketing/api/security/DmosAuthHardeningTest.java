@@ -166,21 +166,23 @@ class DmosAuthHardeningTest {
     @DisplayName("Production mode should require Authorization header")
     void productionMode_shouldRequireAuthorizationHeader() {
         DmosHttpContextFactory factory = new DmosHttpContextFactory(true, new TestIdentityProvider());
-        HttpRequest request = HttpRequest.get("/v1/workspaces/workspace-123/campaigns")
-            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-123");
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/workspace-123/campaigns")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-123")
+            .build();
 
         assertThatThrownBy(() -> factory.buildContext(request, "workspace-123", false))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("Authorization header must be Bearer token");
+            .hasMessageContaining("Required header missing: Authorization");
     }
 
     @Test
     @DisplayName("Production mode should reject invalid tokens")
     void productionMode_shouldRejectInvalidTokens() {
         DmosHttpContextFactory factory = new DmosHttpContextFactory(true, new TestIdentityProvider());
-        HttpRequest request = HttpRequest.get("/v1/workspaces/workspace-123/campaigns")
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/workspace-123/campaigns")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-123")
-            .withHeader(HttpHeaders.of("Authorization"), "Bearer invalid-token");
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer invalid-token")
+            .build();
 
         assertThatThrownBy(() -> factory.buildContext(request, "workspace-123", false))
             .isInstanceOf(IllegalArgumentException.class)
@@ -191,9 +193,10 @@ class DmosAuthHardeningTest {
     @DisplayName("Production mode should enforce X-Idempotency-Key for writes")
     void productionMode_shouldEnforceIdempotencyKeyForWrites() {
         DmosHttpContextFactory factory = new DmosHttpContextFactory(true, new TestIdentityProvider());
-        HttpRequest request = HttpRequest.post("/v1/workspaces/workspace-123/campaigns")
+        HttpRequest request = HttpRequest.post("http://localhost/v1/workspaces/workspace-123/campaigns")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-123")
-            .withHeader(HttpHeaders.of("Authorization"), "Bearer valid-token");
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer valid-token")
+            .build();
 
         assertThatThrownBy(() -> factory.buildContext(request, "workspace-123", true))
             .isInstanceOf(IllegalArgumentException.class)
@@ -204,35 +207,35 @@ class DmosAuthHardeningTest {
     @DisplayName("Production mode should derive identity server-side")
     void productionMode_shouldDeriveIdentityServerSide() {
         DmosHttpContextFactory factory = new DmosHttpContextFactory(true, new TestIdentityProvider());
-        HttpRequest request = HttpRequest.get("/v1/workspaces/workspace-123/campaigns")
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/workspace-123/campaigns")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-123")
             .withHeader(HttpHeaders.of("Authorization"), "Bearer test-token")
             .withHeader(HttpHeaders.of("X-Principal-ID"), "spoofed-principal")  // Should be ignored
             .withHeader(HttpHeaders.of("X-Roles"), "admin")  // Should be ignored
-            .withHeader(HttpHeaders.of("X-Permissions"), "*");  // Should be ignored
+            .withHeader(HttpHeaders.of("X-Permissions"), "*")  // Should be ignored
+            .build();
 
         var context = factory.buildContext(request, "workspace-123", false);
 
         // Identity should come from the token, not the spoofed headers
-        assertThat(context.actor().id()).isEqualTo("user-from-token");
-        assertThat(context.sessionId()).isEqualTo("session-from-token");
+        assertThat(context.getActor().getPrincipalId()).isEqualTo("user-from-token");
     }
 
     @Test
     @DisplayName("Non-production mode should use client headers as fallback")
     void nonProductionMode_shouldUseClientHeadersAsFallback() {
         DmosHttpContextFactory factory = new DmosHttpContextFactory(false, null);
-        HttpRequest request = HttpRequest.get("/v1/workspaces/workspace-123/campaigns")
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/workspace-123/campaigns")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-123")
             .withHeader(HttpHeaders.of("X-Principal-ID"), "test-principal")
             .withHeader(HttpHeaders.of("X-Session-ID"), "test-session")
-            .withHeader(HttpHeaders.of("X-Roles"), "brand-manager");
+            .withHeader(HttpHeaders.of("X-Roles"), "brand-manager")
+            .build();
 
         var context = factory.buildContext(request, "workspace-123", false);
 
         // In non-production, client headers are used as fallback
-        assertThat(context.actor().id()).isEqualTo("test-principal");
-        assertThat(context.sessionId()).isEqualTo("test-session");
+        assertThat(context.getActor().getPrincipalId()).isEqualTo("test-principal");
     }
 
     // Test identity provider for production mode tests

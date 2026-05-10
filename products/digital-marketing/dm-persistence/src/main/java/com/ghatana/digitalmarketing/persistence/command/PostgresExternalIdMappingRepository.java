@@ -34,7 +34,7 @@ public final class PostgresExternalIdMappingRepository implements ExternalIdMapp
 
     @Override
     public Promise<Void> save(DmOperationContext ctx, ExternalIdMapping mapping) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 INSERT INTO external_id_mappings (
                     id, internal_id, external_id, external_system, resource_type,
@@ -59,12 +59,12 @@ public final class PostgresExternalIdMappingRepository implements ExternalIdMapp
                 ps.executeUpdate();
             }
             return null;
-        }, executor);
+        });
     }
 
     @Override
     public Promise<Optional<String>> findExternalId(DmOperationContext ctx, String internalId, String externalSystem) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT external_id
                 FROM external_id_mappings
@@ -86,12 +86,12 @@ public final class PostgresExternalIdMappingRepository implements ExternalIdMapp
                     return Optional.empty();
                 }
             }
-        }, executor);
+        });
     }
 
     @Override
     public Promise<Optional<String>> findInternalId(DmOperationContext ctx, String externalId, String externalSystem) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT internal_id
                 FROM external_id_mappings
@@ -113,12 +113,12 @@ public final class PostgresExternalIdMappingRepository implements ExternalIdMapp
                     return Optional.empty();
                 }
             }
-        }, executor);
+        });
     }
 
     @Override
     public Promise<Void> delete(DmOperationContext ctx, String internalId, String externalSystem) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 DELETE FROM external_id_mappings
                 WHERE tenant_id = ? AND internal_id = ? AND external_system = ?
@@ -132,6 +132,6 @@ public final class PostgresExternalIdMappingRepository implements ExternalIdMapp
                 ps.executeUpdate();
             }
             return null;
-        }, executor);
+        });
     }
 }

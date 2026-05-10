@@ -214,7 +214,8 @@ public class EntityCrudHandler {
                     // Register rollback handler for entity save (delete the saved entity)
                     context.registerRollbackHandler(() -> {
                         log.debug("[DC-BE-003] Rolling back entity save: {}", entity.id());
-                        client.delete(tenantId, collection, entity.id()).toCompletableFuture().join();
+                        // Best-effort rollback in sync rollback hook; keep this non-blocking for ActiveJ event loop discipline.
+                        client.delete(tenantId, collection, entity.id());
                     });
                     
                     // Event append operation

@@ -212,7 +212,9 @@ class OpenApiRouteParity_DC_CON_001_Test {
      * Converts OpenAPI-style path parameters ({paramName}) to ActiveJ colon style (:paramName).
      */
     private String normalizeToColonStyle(String path) {
-        return path.replaceAll("\\{([^}]+)}", ":$1");
+        return path
+                .replaceFirst("^/api/v1/action/", "/api/v1/")
+                .replaceAll("\\{([^}]+)}", ":$1");
     }
 
     /**

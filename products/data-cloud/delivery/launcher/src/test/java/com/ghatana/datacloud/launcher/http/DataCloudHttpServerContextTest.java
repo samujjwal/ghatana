@@ -44,7 +44,7 @@ class DataCloudHttpServerContextTest {
         httpClient = HttpClient.newHttpClient(); 
         port = findFreePort(); 
         provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60_000L); 
-        token = provider.createToken("test-user", List.of("viewer"), Map.of("tenant_id", "tenant-ctx"));
+        token = provider.createToken("test-user", List.of("operator"), Map.of("tenant_id", "tenant-ctx"));
 
         server = new DataCloudHttpServer(mock(DataCloudClient.class), port) 
             .withJwtProvider(provider); 

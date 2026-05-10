@@ -94,7 +94,8 @@ class OpenApiRouteAlignmentTest {
     }
 
     private static String normalizeRoutePath(String route) { 
-        return PATH_PARAMETER_PATTERN.matcher(route).replaceAll("{$1}");
+        String normalized = route.replaceFirst("^/api/v1/action/", "/api/v1/");
+        return PATH_PARAMETER_PATTERN.matcher(normalized).replaceAll("{$1}");
     }
 
     private static Path resolveRepoRoot() { 

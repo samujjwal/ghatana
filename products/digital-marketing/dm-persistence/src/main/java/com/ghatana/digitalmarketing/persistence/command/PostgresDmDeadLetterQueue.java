@@ -37,7 +37,7 @@ public final class PostgresDmDeadLetterQueue implements DmDeadLetterQueue {
 
     @Override
     public Promise<Void> moveToDlq(DmOperationContext ctx, DmCommand command, String finalFailureReason) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String dlqEntryId = UUID.randomUUID().toString();
             String sql = """
                 INSERT INTO dm_command_dlq (
@@ -64,12 +64,12 @@ public final class PostgresDmDeadLetterQueue implements DmDeadLetterQueue {
                 ps.executeUpdate();
             }
             return null;
-        }, executor);
+        });
     }
 
     @Override
     public Promise<Optional<DlqEntry>> findById(DmOperationContext ctx, String commandId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT id, original_command_id, command_type, tenant_id, workspace_id,
                        serialized_payload, failure_reason, attempt_count, moved_to_dlq_at,
@@ -90,12 +90,12 @@ public final class PostgresDmDeadLetterQueue implements DmDeadLetterQueue {
                     return Optional.empty();
                 }
             }
-        }, executor);
+        });
     }
 
     @Override
     public Promise<List<DlqEntry>> list(DmOperationContext ctx, int limit) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT id, original_command_id, command_type, tenant_id, workspace_id,
                        serialized_payload, failure_reason, attempt_count, moved_to_dlq_at,
@@ -119,12 +119,12 @@ public final class PostgresDmDeadLetterQueue implements DmDeadLetterQueue {
                 }
                 return entries;
             }
-        }, executor);
+        });
     }
 
     @Override
     public Promise<String> replay(DmOperationContext ctx, String dlqEntryId, String replayedBy) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT serialized_payload, command_type, workspace_id, correlation_id
                 FROM dm_command_dlq
@@ -152,12 +152,12 @@ public final class PostgresDmDeadLetterQueue implements DmDeadLetterQueue {
                     return payload; // Return payload for the caller to create a new command
                 }
             }
-        }, executor);
+        });
     }
 
     @Override
     public Promise<Void> delete(DmOperationContext ctx, String dlqEntryId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 DELETE FROM dm_command_dlq
                 WHERE id = ? AND tenant_id = ?
@@ -170,7 +170,7 @@ public final class PostgresDmDeadLetterQueue implements DmDeadLetterQueue {
                 ps.executeUpdate();
             }
             return null;
-        }, executor);
+        });
     }
 
     private DlqEntry mapRow(ResultSet rs) throws SQLException {

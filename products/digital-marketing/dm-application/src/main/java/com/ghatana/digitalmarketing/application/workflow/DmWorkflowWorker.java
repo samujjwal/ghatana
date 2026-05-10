@@ -4,6 +4,7 @@ import com.ghatana.digitalmarketing.application.DmosObservability;
 import com.ghatana.digitalmarketing.application.command.DmCommandDispatcher;
 import com.ghatana.digitalmarketing.application.command.DmCommandRepository;
 import com.ghatana.digitalmarketing.application.command.DmDeadLetterQueue;
+import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
@@ -261,14 +262,12 @@ public final class DmWorkflowWorker {
             LOG.warn("[DMOS-WORKER] Command exceeded max retries, moving to DLQ: commandId={} attempts={}",
                 command.getId(), attemptCount);
             
-            DmOperationContext ctx = new DmOperationContext(
-                DmTenantId.of(command.getTenantId()),
-                DmWorkspaceId.of(command.getWorkspaceId()),
-                new com.ghatana.digitalmarketing.contracts.ActorRef(command.getIssuedBy(), "SYSTEM"),
-                command.getCorrelationId(),
-                java.util.Collections.emptySet(),
-                java.util.Collections.emptySet()
-            );
+            DmOperationContext ctx = DmOperationContext.builder()
+                .tenantId(DmTenantId.of(command.getTenantId()))
+                .workspaceId(DmWorkspaceId.of(command.getWorkspaceId()))
+                .actor(com.ghatana.digitalmarketing.contracts.ActorRef.SYSTEM)
+                .correlationId(DmCorrelationId.of(command.getCorrelationId()))
+                .build();
             
             return deadLetterQueue.moveToDlq(ctx, command, reason)
                 .then(ignored -> {
@@ -281,7 +280,7 @@ public final class DmWorkflowWorker {
                         .whenException(re -> LOG.error(
                             "[DMOS-WORKER] failed to mark workflow failed id={}: {}",
                             workflow.getId(), re.getMessage(), re));
-                    return Promise.of(null);
+                        return Promise.complete();
                 })
                 .whenException(dlqError -> {
                     LOG.error("[DMOS-WORKER] Failed to move command to DLQ: {}", dlqError.getMessage(), dlqError);
@@ -295,7 +294,6 @@ public final class DmWorkflowWorker {
                         .whenException(re -> LOG.error(
                             "[DMOS-WORKER] failed to mark workflow failed id={}: {}",
                             workflow.getId(), re.getMessage(), re));
-                    return Promise.of(null);
                 });
         }
         

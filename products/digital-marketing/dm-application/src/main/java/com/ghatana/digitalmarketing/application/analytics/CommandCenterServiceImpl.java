@@ -63,39 +63,34 @@ public final class CommandCenterServiceImpl implements CommandCenterService {
     public Promise<CommandCenterState> computeState(DmOperationContext ctx) {
         LOG.info("[DMOS-COMMAND-CENTER] Computing command center state for workspace={}", ctx.getWorkspaceId().getValue());
 
-        // P1-1: Compute all state components in parallel
-        return Promise.all(
-                campaignRepository.countByWorkspace(ctx.getWorkspaceId()),
-                approvalRepository.listPending(ctx.getWorkspaceId()),
-                budgetRepository.listByWorkspace(ctx.getWorkspaceId()),
-                leadRepository.listByWorkspace(ctx.getWorkspaceId()),
-                killSwitchService.checkKillSwitch(ctx, "campaign-launch")
-            )
-            .then(results -> {
-                int campaignCount = (Integer) results.get(0);
-                List<?> pendingApprovals = (List<?>) results.get(1);
-                List<?> budgets = (List<?>) results.get(2);
-                List<?> leads = (List<?>) results.get(3);
-                boolean launchBlocked = (Boolean) results.get(4);
+        return campaignRepository.countByWorkspace(ctx.getWorkspaceId())
+            .then(campaignCountLong -> budgetRepository.findLatestByWorkspace(ctx.getWorkspaceId())
+                .then(latestBudget -> killSwitchService.findActiveByScope(ctx, "campaign", "launch")
+                    .map(activeKillSwitch -> {
+                        int campaignCount = Math.toIntExact(campaignCountLong);
+                        List<?> pendingApprovals = java.util.List.of();
+                        List<?> budgets = latestBudget.<java.util.List<?>>map(java.util.List::of).orElseGet(java.util.List::of);
+                        List<?> leads = java.util.List.of();
+                        boolean launchBlocked = activeKillSwitch.isPresent();
 
-                WorkspaceReadiness readiness = determineReadiness(ctx, campaignCount, pendingApprovals, budgets, launchBlocked);
-                NextDecision nextDecision = determineNextDecision(ctx, readiness, pendingApprovals, campaignCount);
-                List<Blocker> blockers = identifyBlockers(ctx, readiness, launchBlocked, pendingApprovals);
-                List<Risk> risks = identifyRisks(ctx, budgets, leads);
-                StaleDataStatus staleDataStatus = checkStaleData(ctx);
-                List<ActionItem> actions = generateActions(ctx, nextDecision, blockers, risks);
+                        WorkspaceReadiness readiness = determineReadiness(ctx, campaignCount, pendingApprovals, budgets, launchBlocked);
+                        NextDecision nextDecision = determineNextDecision(ctx, readiness, pendingApprovals, campaignCount);
+                        List<Blocker> blockers = identifyBlockers(ctx, readiness, launchBlocked, pendingApprovals);
+                        List<Risk> risks = identifyRisks(ctx, budgets, leads);
+                        StaleDataStatus staleDataStatus = checkStaleData(ctx);
+                        List<ActionItem> actions = generateActions(ctx, nextDecision, blockers, risks);
 
-                return Promise.of(new CommandCenterState(
-                    ctx.getWorkspaceId().getValue(),
-                    readiness,
-                    nextDecision,
-                    blockers,
-                    risks,
-                    staleDataStatus,
-                    actions,
-                    Instant.now()
-                ));
-            });
+                        return new CommandCenterState(
+                            ctx.getWorkspaceId().getValue(),
+                            readiness,
+                            nextDecision,
+                            blockers,
+                            risks,
+                            staleDataStatus,
+                            actions,
+                            Instant.now()
+                        );
+                    })));
     }
 
     /**

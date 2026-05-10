@@ -23,12 +23,7 @@ public final class DmosActionPermissionRegistry {
         "brand-manager", 1,
         "exec-sponsor", 3,
         "marketing-director", 2,
-        "viewer", 0,
-        "viewer", 0,
-        "brand-manager", 1,
-        "marketing-director", 2,
-        "exec-sponsor", 3,
-        "admin", 4
+        "viewer", 0
     );
 
     private static final Map<String, String> ACTION_MINIMUM_ROLES = Map.ofEntries(
@@ -64,17 +59,7 @@ public final class DmosActionPermissionRegistry {
         Map.entry("view-recommendations", "brand-manager"),
         Map.entry("view-research", "brand-manager"),
         Map.entry("view-roi", "marketing-director"),
-        Map.entry("view-strategy", "brand-manager"),
-        Map.entry("view-dashboard", "viewer"),
-        Map.entry("review-approval", "viewer"),
-        Map.entry("approve", "brand-manager"),
-        Map.entry("reject", "brand-manager"),
-        Map.entry("view-audit-log", "viewer"),
-        Map.entry("launch-campaign", "brand-manager"),
-        Map.entry("submit-strategy", "brand-manager"),
-        Map.entry("approve-strategy", "marketing-director"),
-        Map.entry("submit-budget", "marketing-director"),
-        Map.entry("approve-budget", "exec-sponsor")
+        Map.entry("view-strategy", "brand-manager")
     );
 
     private DmosActionPermissionRegistry() {
@@ -83,7 +68,7 @@ public final class DmosActionPermissionRegistry {
     public static boolean isActionAllowed(Set<String> roles, String action) {
         Objects.requireNonNull(action, "action must not be null");
 
-        String normalizedAction = action.trim().toLowerCase(Locale.ROOT);
+        String normalizedAction = normalizeAction(action);
         String minimumRole = ACTION_MINIMUM_ROLES.get(normalizedAction);
         if (minimumRole == null) {
             throw new IllegalArgumentException("Unknown DMOS action: " + action);
@@ -108,6 +93,13 @@ public final class DmosActionPermissionRegistry {
         }
 
         return role.trim()
+            .toLowerCase(Locale.ROOT)
+            .replace('_', '-')
+            .replace(' ', '-');
+    }
+
+    private static String normalizeAction(String action) {
+        return action.trim()
             .toLowerCase(Locale.ROOT)
             .replace('_', '-')
             .replace(' ', '-');

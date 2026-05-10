@@ -11,6 +11,8 @@ import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.application.observability.TraceExportService;
 import com.ghatana.datacloud.launcher.settings.SettingsStore;
 import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
+import com.ghatana.datacloud.spi.TransactionManager;
+import com.ghatana.datacloud.spi.WriteIdempotencyStore;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
@@ -72,6 +74,8 @@ class DataCloudHttpServerAiAssistTest {
     private PolicyEngine mockPolicyEngine;
     private SettingsStore mockSettingsStore;
     private EntityWriteIdempotencyStore mockIdempotencyStore;
+    private WriteIdempotencyStore mockGenericIdempotencyStore;
+    private TransactionManager mockTransactionManager;
     private EventLogStore mockEventLogStore;
     private MetricsCollector mockMetricsCollector;
     private TraceExportService mockTraceExportService;
@@ -89,6 +93,8 @@ class DataCloudHttpServerAiAssistTest {
         mockPolicyEngine = mock(PolicyEngine.class);
         mockSettingsStore = mock(SettingsStore.class);
         mockIdempotencyStore = mock(EntityWriteIdempotencyStore.class);
+        mockGenericIdempotencyStore = mock(WriteIdempotencyStore.class);
+        mockTransactionManager = mock(TransactionManager.class);
         mockEventLogStore = mock(EventLogStore.class);
         mockMetricsCollector = mock(MetricsCollector.class);
         mockTraceExportService = mock(TraceExportService.class);
@@ -166,14 +172,19 @@ class DataCloudHttpServerAiAssistTest {
         @Test
         @DisplayName("returns 503 when LLM is not wired in production mode")
         void withoutLlm_inProduction_returns503() throws Exception {
+            when(mockCompletion.complete(any()))
+                .thenReturn(Promise.ofException(new RuntimeException("LLM unavailable")));
             when(mockSettingsStore.getStorageMode()).thenReturn("jdbc");
             server = new DataCloudHttpServer(mockClient, port)
+                .withCompletionService(mockCompletion)
                 .withDeploymentMode("production")
                 .withApiKeyResolver(mockApiKeyResolver)
                 .withSettingsStore(mockSettingsStore)
                 .withAuditService(mockAuditService)
                 .withPolicyEngine(mockPolicyEngine)
                 .withIdempotencyStore(mockIdempotencyStore)
+                .withGenericIdempotencyStore(mockGenericIdempotencyStore)
+                .withTransactionManager(mockTransactionManager)
                 .withEventLogStore(mockEventLogStore)
                 .withMetricsCollector(mockMetricsCollector)
                 .withTraceExportService(mockTraceExportService);
@@ -222,6 +233,8 @@ class DataCloudHttpServerAiAssistTest {
                 .withAuditService(mockAuditService)
                 .withPolicyEngine(mockPolicyEngine)
                 .withIdempotencyStore(mockIdempotencyStore)
+                .withGenericIdempotencyStore(mockGenericIdempotencyStore)
+                .withTransactionManager(mockTransactionManager)
                 .withEventLogStore(mockEventLogStore)
                 .withMetricsCollector(mockMetricsCollector)
                 .withTraceExportService(mockTraceExportService);

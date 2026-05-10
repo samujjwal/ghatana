@@ -162,7 +162,7 @@ public final class QuerySpec implements QuerySpecInterface {
 
     @Override
     public Integer getLimit() {
-        return limit > 0 ? limit : null;
+        return limit;
     }
 
     @Override
@@ -180,7 +180,7 @@ public final class QuerySpec implements QuerySpecInterface {
 
     @Override
     public Integer getOffset() {
-        return offset > 0 ? offset : null;
+        return offset;
     }
 
     @Override

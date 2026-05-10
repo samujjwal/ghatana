@@ -91,7 +91,11 @@ class DataCloudHttpServerAlertsTest extends DataCloudHttpServerTestBase {
         when(mockClient.findById(eq(TestConstants.TENANT_DEFAULT), eq("dc_alerts"), eq("alert-1")))
             .thenReturn(Promise.of(Optional.of(entity))); 
         when(mockClient.save(eq(TestConstants.TENANT_DEFAULT), eq("dc_alerts"), any()))
-            .thenReturn(Promise.of(entity)); 
+            .thenAnswer(invocation -> {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> savedData = (Map<String, Object>) invocation.getArgument(2);
+                return Promise.of(DataCloudClient.Entity.of("alert-1", "dc_alerts", savedData));
+            });
 
         startServer(); 
 

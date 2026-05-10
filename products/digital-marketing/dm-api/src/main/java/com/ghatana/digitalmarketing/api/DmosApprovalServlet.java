@@ -266,7 +266,7 @@ public final class DmosApprovalServlet {
                 request,
                 workspaceId,
                 true,
-                DmosCapabilityRegistry.APPROVALS,
+                DmosCapabilityRegistry.STRATEGY,
                 "approve"
             );
             // P1-026: Create span for approval decision

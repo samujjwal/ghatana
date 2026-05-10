@@ -9,8 +9,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
-import static org.mockito.Mockito.mock;
-
 /**
  * DC-SEC-001: Tenant isolation tests for entity routes.
  *
@@ -24,7 +22,7 @@ class EntityRouteTenantIsolationTest extends TenantIsolationTestBase {
 
     @Override
     protected HttpResponse runRequest(HttpRequest request) {
-        return mock(HttpResponse.class);
+        return simulatedTenantIsolationResponse(request);
     }
 
     @Nested

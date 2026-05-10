@@ -87,24 +87,22 @@ public final class GovernedAgentWorkflowService {
         Objects.requireNonNull(prompt, "prompt must not be null");
         Objects.requireNonNull(model, "model must not be null");
 
-        // P0-007: Create operation context for policy checks
-        DmOperationContext policyCtx = new DmOperationContext(
-            ctx.getTenantId(),
-            ctx.getWorkspaceId(),
-            ctx.getActor(),
-            ctx.getCorrelationId(),
-            ctx.getScopeIds(),
-            ctx.getSupportAccessIds()
-        );
+        DmOperationContext policyCtx = ctx;
 
         // P0-007: Pre-execution policy check
         AiProvenance preExecutionProvenance = AiProvenance.builder()
+            .provenanceId(UUID.randomUUID().toString())
+            .modelProvider("dmos-agent-orchestration")
+            .modelName(model)
             .modelVersion(model)
             .promptVersion("v1.0")
             .confidenceScore(1.0) // Pre-execution assumes high confidence
+            .invokedAt(Instant.now())
+            .invokedBy(ctx.getActor().getPrincipalId())
+            .correlationId(ctx.getCorrelationId().getValue())
             .build();
 
-        AiOutputType outputType = mapAgentTypeToOutputType(agentType);
+        AiPolicyCheckService.AiOutputType outputType = mapAgentTypeToOutputType(agentType);
 
         return policyCheckService.checkPolicy(policyCtx, preExecutionProvenance, prompt, outputType)
             .then(preCheckResult -> {
@@ -113,7 +111,7 @@ public final class GovernedAgentWorkflowService {
                     return Promise.of(new GovernedWorkflowResult(
                         null, model, 0.0, null, Duration.ZERO, false,
                         "Pre-execution policy check failed: " + preCheckResult.failureReason(),
-                        ApprovalRequirement.BLOCKED, null, preCheckResult, null, null
+                        AiPolicyCheckService.ApprovalRequirement.BLOCKED, null, preCheckResult, null, null
                     ));
                 }
 
@@ -122,9 +120,15 @@ public final class GovernedAgentWorkflowService {
                     .then(response -> {
                         // P0-007: Create post-execution provenance
                         AiProvenance postExecutionProvenance = AiProvenance.builder()
+                            .provenanceId(UUID.randomUUID().toString())
+                            .modelProvider("dmos-agent-orchestration")
+                            .modelName(response.model())
                             .modelVersion(response.model())
                             .promptVersion("v1.0")
                             .confidenceScore(response.confidence())
+                            .invokedAt(Instant.now())
+                            .invokedBy(ctx.getActor().getPrincipalId())
+                            .correlationId(ctx.getCorrelationId().getValue())
                             .build();
 
                         // P0-007: Post-execution policy checks
@@ -132,45 +136,34 @@ public final class GovernedAgentWorkflowService {
                             ? List.of(response.evidenceLocation())
                             : List.of();
 
-                        return Promise.all(
-                                policyCheckService.checkPolicy(policyCtx, postExecutionProvenance, response.output(), outputType),
-                                policyCheckService.validateEvidence(policyCtx, evidenceLinks, outputType),
-                                policyCheckService.checkUnsafeClaims(policyCtx, response.output())
-                            )
-                            .then(results -> {
-                                AiPolicyCheckService.PolicyCheckResult policyResult = 
-                                    (AiPolicyCheckService.PolicyCheckResult) results.get(0);
-                                AiPolicyCheckService.EvidenceValidationResult evidenceResult = 
-                                    (AiPolicyCheckService.EvidenceValidationResult) results.get(1);
-                                AiPolicyCheckService.UnsafeClaimCheckResult unsafeClaimResult = 
-                                    (AiPolicyCheckService.UnsafeClaimCheckResult) results.get(2);
+                        return policyCheckService.checkPolicy(policyCtx, postExecutionProvenance, response.output(), outputType)
+                            .then(policyResult -> policyCheckService.validateEvidence(policyCtx, evidenceLinks, outputType)
+                                .then(evidenceResult -> policyCheckService.checkUnsafeClaims(policyCtx, response.output())
+                                    .then(unsafeClaimResult -> {
+                                        AiPolicyCheckService.ApprovalRequirement approvalRequirement =
+                                            policyCheckService.determineApprovalRequirement(
+                                                policyResult, evidenceResult, unsafeClaimResult);
 
-                                // P0-007: Determine approval requirement
-                                AiPolicyCheckService.ApprovalRequirement approvalRequirement = 
-                                    policyCheckService.determineApprovalRequirement(
-                                        policyResult, evidenceResult, unsafeClaimResult);
+                                        AiActionLogEntry logEntry = createLogEntry(
+                                            agentType, prompt, model, response, ctx, policyResult, evidenceResult, unsafeClaimResult
+                                        );
 
-                                // P0-007: Log AI action with provenance and policy check results
-                                AiActionLogEntry logEntry = createLogEntry(
-                                    agentType, prompt, model, response, ctx, policyResult, evidenceResult, unsafeClaimResult
-                                );
-
-                                return aiActionLogRepository.save(logEntry)
-                                    .map(savedLog -> new GovernedWorkflowResult(
-                                        response.output(),
-                                        response.model(),
-                                        response.confidence(),
-                                        response.evidenceLocation(),
-                                        response.duration(),
-                                        response.success(),
-                                        response.errorMessage(),
-                                        approvalRequirement,
-                                        savedLog.actionId(),
-                                        policyResult,
-                                        evidenceResult,
-                                        unsafeClaimResult
-                                    ));
-                            });
+                                        return aiActionLogRepository.save(logEntry)
+                                            .map(savedLog -> new GovernedWorkflowResult(
+                                                response.output(),
+                                                response.model(),
+                                                response.confidence(),
+                                                response.evidenceLocation(),
+                                                response.duration(),
+                                                response.success(),
+                                                response.errorMessage(),
+                                                approvalRequirement,
+                                                savedLog.actionId(),
+                                                policyResult,
+                                                evidenceResult,
+                                                unsafeClaimResult
+                                            ));
+                                    })));
                     });
             });
     }
@@ -178,13 +171,12 @@ public final class GovernedAgentWorkflowService {
     /**
      * P0-007: Maps agent type to AI output type for policy checks.
      */
-    private AiOutputType mapAgentTypeToOutputType(DmAgentOrchestrationPort.AgentType agentType) {
+    private AiPolicyCheckService.AiOutputType mapAgentTypeToOutputType(DmAgentOrchestrationPort.AgentType agentType) {
         return switch (agentType) {
-            case STRATEGY -> AiOutputType.STRATEGY;
-            case BUDGET -> AiOutputType.BUDGET;
-            case CONTENT -> AiOutputType.CONTENT;
-            case RESEARCH -> AiOutputType.STRATEGY; // Research outputs similar to strategy
-            default -> AiOutputType.CONTENT;
+            case STRATEGY_GENERATOR, PROPOSAL_SOW_GENERATOR -> AiPolicyCheckService.AiOutputType.STRATEGY;
+            case AD_COPY_GENERATOR, LANDING_PAGE_GENERATOR, EMAIL_FOLLOW_UP_GENERATOR -> AiPolicyCheckService.AiOutputType.CONTENT;
+            case REPORT_NARRATIVE_GENERATOR -> AiPolicyCheckService.AiOutputType.ANALYTICS;
+            case RECOMMENDATION_ENGINE -> AiPolicyCheckService.AiOutputType.RECOMMENDATION;
         };
     }
 

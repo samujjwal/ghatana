@@ -604,7 +604,7 @@ public final class AlertingHandler {
                                 log.warn("[DC-BE-002] Failed to cache idempotent response for alert rule creation: {}", e.getMessage());
                             }
                         }
-                        return http.jsonResponse(responseBody);
+                        return http.jsonResponse(201, responseBody);
                     });
             } catch (Exception exception) {
                 log.warn("[DC-Alerts] create rule failed tenant={}: {}", tenantId, exception.getMessage());

@@ -7,8 +7,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static org.mockito.Mockito.mock;
-
 /**
  * DC-SEC-001: Tenant isolation tests for governance routes.
  *
@@ -22,7 +20,7 @@ class GovernanceRouteTenantIsolationTest extends TenantIsolationTestBase {
 
     @Override
     protected HttpResponse runRequest(HttpRequest request) {
-        return mock(HttpResponse.class);
+        return simulatedTenantIsolationResponse(request);
     }
 
     @Nested

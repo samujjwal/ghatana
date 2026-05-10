@@ -24,6 +24,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -239,7 +240,6 @@ public final class PrivacyServiceImpl implements PrivacyService {
                 Map<String, Object> personalData = new HashMap<>();
                 personalData.put("contactId", contact.getId());
                 personalData.put("email", contact.getEmail() != null ? "***@***.***" : null); // Masked for privacy
-                personalData.put("phone", contact.getPhone() != null ? "***-***-****" : null); // Masked for privacy
                 personalData.put("createdAt", contact.getCreatedAt());
                 personalData.put("updatedAt", contact.getUpdatedAt());
                 

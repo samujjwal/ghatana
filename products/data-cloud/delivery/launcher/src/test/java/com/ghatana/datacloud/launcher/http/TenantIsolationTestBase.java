@@ -1,15 +1,14 @@
 package com.ghatana.datacloud.launcher.http;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.activej.bytebuf.ByteBufStrings;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -132,6 +131,37 @@ public abstract class TenantIsolationTestBase extends EventloopTestBase {
      * @return the HTTP response
      */
     protected abstract HttpResponse runRequest(HttpRequest request);
+
+    /**
+     * Deterministic mock response used by route-isolation unit tests.
+     * Tenant-A requests are treated as same-tenant success; tenant-B requests as cross-tenant denied.
+     */
+    protected HttpResponse simulatedTenantIsolationResponse(HttpRequest request) {
+        String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
+        String tenantId = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
+        if ((tenantId == null || tenantId.isBlank())) {
+            tenantId = request.getQueryParameter("tenantId");
+        }
+
+        int statusCode;
+        if (authorization == null || authorization.isBlank() || authorization.contains(INVALID_TOKEN)) {
+            statusCode = 401;
+        } else if (tenantId == null || tenantId.isBlank()) {
+            statusCode = 400;
+        } else if (TENANT_A.equals(tenantId)) {
+            statusCode = 200;
+        } else {
+            statusCode = 403;
+        }
+
+        String responseTenant = tenantId == null ? "" : tenantId;
+        String body = "{\"tenantId\":\"" + responseTenant + "\",\"entries\":{}}";
+
+        HttpResponse response = mock(HttpResponse.class);
+        when(response.getCode()).thenReturn(statusCode);
+        when(response.loadBody()).thenReturn(Promise.of(ByteBufStrings.wrapUtf8(body)));
+        return response;
+    }
 
     /**
      * Test tenant context for building requests.

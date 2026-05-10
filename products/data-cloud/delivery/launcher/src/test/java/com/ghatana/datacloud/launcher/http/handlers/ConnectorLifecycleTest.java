@@ -477,7 +477,7 @@ class ConnectorLifecycleTest extends EventloopTestBase {
 
             HttpRequest request = buildRequest(HttpMethod.POST,
                 "http://localhost/api/v1/connectors/" + CONN_ID + "/rotate-credentials",
-                "{\"credentials\":{\"password\":\"newSecret\"}}");
+                "{\"secretRef\":\"vault://data-cloud/connectors/mydb\"}");
 
             HttpResponse response = runPromise(() -> handler.handleRotateCredentials(request));
 

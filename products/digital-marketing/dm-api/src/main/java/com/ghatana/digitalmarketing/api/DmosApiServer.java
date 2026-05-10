@@ -3,6 +3,7 @@ package com.ghatana.digitalmarketing.api;
 import com.ghatana.digitalmarketing.application.DmosObservability;
 import com.ghatana.digitalmarketing.application.ai.GovernedAgentWorkflowService;
 import com.ghatana.digitalmarketing.application.ai.KernelAgentOrchestrationAdapter;
+import com.ghatana.digitalmarketing.application.ai.AiPolicyCheckServiceImpl;
 import com.ghatana.digitalmarketing.application.approval.ApprovalSnapshotRepository;
 import com.ghatana.digitalmarketing.application.approval.ApprovalWorkflowService;
 import com.ghatana.digitalmarketing.application.approval.ApprovalWorkflowServiceImpl;
@@ -797,7 +798,11 @@ public final class DmosApiServer extends Launcher {
                 }
                 KernelAgentOrchestrationAdapter agentPort =
                     new KernelAgentOrchestrationAdapter(kernelEndpoint, true);
-                governedWorkflowService = new GovernedAgentWorkflowService(agentPort, aiLogRepo);
+                governedWorkflowService = new GovernedAgentWorkflowService(
+                    agentPort,
+                    aiLogRepo,
+                    new AiPolicyCheckServiceImpl()
+                );
             } else {
                 LOG.warn("[PRODUCTION] Governed AI workflow disabled via DMOS_GOVERNED_AI_ENABLED=false; strategy generation will use deterministic fallback");
             }

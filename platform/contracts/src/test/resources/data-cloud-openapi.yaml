@@ -12,6 +12,7 @@ info:
     Data-Cloud now exposes plugin-backed workflow execution endpoints for pipeline execution,
     execution status inspection, and execution log retrieval inside the standalone launcher.
     In this API, workflow and pipeline execution means data-local plugin runtime execution.
+    AEP still owns broader agentic orchestration outside these data-local runtime surfaces.
     Data Cloud includes the Action Plane runtime implementation for plugin-backed workflow execution and observability.
 
     The Data-Cloud platform provides:

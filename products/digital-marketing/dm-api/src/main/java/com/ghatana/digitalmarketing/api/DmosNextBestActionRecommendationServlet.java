@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ghatana.digitalmarketing.application.capabilities.DmosCapabilityRegistry;
 import com.ghatana.digitalmarketing.application.optimization.NextBestActionRecommendationService;
 import com.ghatana.digitalmarketing.domain.optimization.NextBestActionType;
 import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
@@ -96,7 +97,12 @@ public final class DmosNextBestActionRecommendationServlet {
         return request.loadBody().then(__ -> {
             try {
                 String workspaceId = request.getPathParameter("workspaceId");
-                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+                DmOperationContext ctx = httpContextFactory.buildContext(
+                    request,
+                    workspaceId,
+                    true,
+                    DmosCapabilityRegistry.AI_OPTIMIZATION
+                );
                 PublishRequest body = MAPPER.readValue(request.getBody().getString(StandardCharsets.UTF_8), PublishRequest.class);
 
                 io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /next-best-action-recommendations", ctx).startSpan();
@@ -140,7 +146,12 @@ public final class DmosNextBestActionRecommendationServlet {
             try {
                 String workspaceId = request.getPathParameter("workspaceId");
                 String recId = request.getPathParameter("recId");
-                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+                DmOperationContext ctx = httpContextFactory.buildContext(
+                    request,
+                    workspaceId,
+                    true,
+                    DmosCapabilityRegistry.AI_OPTIMIZATION
+                );
                 ApproveRequest body = MAPPER.readValue(request.getBody().getString(StandardCharsets.UTF_8), ApproveRequest.class);
 
                 io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /next-best-action-recommendations/:recId/approve", ctx).startSpan();
@@ -173,7 +184,12 @@ public final class DmosNextBestActionRecommendationServlet {
             try {
                 String workspaceId = request.getPathParameter("workspaceId");
                 String recId = request.getPathParameter("recId");
-                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+                DmOperationContext ctx = httpContextFactory.buildContext(
+                    request,
+                    workspaceId,
+                    true,
+                    DmosCapabilityRegistry.AI_OPTIMIZATION
+                );
                 RejectRequest body = MAPPER.readValue(request.getBody().getString(StandardCharsets.UTF_8), RejectRequest.class);
 
                 io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /next-best-action-recommendations/:recId/reject", ctx).startSpan();
@@ -204,7 +220,12 @@ public final class DmosNextBestActionRecommendationServlet {
     private Promise<HttpResponse> handleListByWorkspace(HttpRequest request) {
         try {
             String workspaceId = request.getPathParameter("workspaceId");
-            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
+            DmOperationContext ctx = httpContextFactory.buildContext(
+                request,
+                workspaceId,
+                false,
+                DmosCapabilityRegistry.AI_OPTIMIZATION
+            );
             return service.listByWorkspace(ctx)
                 .map(recs -> jsonResponse(200, recs.stream().map(NextBestActionResponse::from).collect(Collectors.toList())))
                 .then(r -> Promise.of(r), e -> mapServiceError("list recommendations", e, request));
@@ -222,7 +243,12 @@ public final class DmosNextBestActionRecommendationServlet {
         try {
             String workspaceId = request.getPathParameter("workspaceId");
             String recId = request.getPathParameter("recId");
-            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
+            DmOperationContext ctx = httpContextFactory.buildContext(
+                request,
+                workspaceId,
+                false,
+                DmosCapabilityRegistry.AI_OPTIMIZATION
+            );
             return service.findById(ctx, recId)
                 .map(opt -> opt
                     .map(rec -> jsonResponse(200, NextBestActionResponse.from(rec)))

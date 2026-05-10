@@ -1,6 +1,9 @@
 package com.ghatana.digitalmarketing.application.ai;
 
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
+import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
+import com.ghatana.digitalmarketing.contracts.ActorRef;
+import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.transparency.AiActionLogEntry;
 import com.ghatana.digitalmarketing.application.transparency.AiActionLogRepository;
@@ -33,7 +36,7 @@ class GovernedAgentWorkflowServiceTest {
     void setUp() {
         aiActionLogRepository = new InMemoryAiActionLogRepository();
         agentPort = new InMemoryAgentPort();
-        service = new GovernedAgentWorkflowService(agentPort, aiActionLogRepository);
+        service = new GovernedAgentWorkflowService(agentPort, aiActionLogRepository, new AiPolicyCheckServiceImpl());
     }
 
     @Test
@@ -50,19 +53,17 @@ class GovernedAgentWorkflowServiceTest {
         ));
 
         GovernedAgentWorkflowService.GovernedWorkflowResult result = service.executeGovernedWorkflow(
-            DmAgentOrchestrationPort.AgentType.STRATEGY_GENERATOR,
+            operationContext(),
+            DmAgentOrchestrationPort.AgentType.AD_COPY_GENERATOR,
             "Generate a strategy",
             "gpt-4",
-            Map.of(),
-            DmTenantId.of("tenant-123"),
-            DmWorkspaceId.of("workspace-456"),
-            "user-789"
+            Map.of()
         ).getResult();
 
         assertThat(result.success()).isTrue();
         assertThat(result.output()).isEqualTo("Generated strategy output");
         assertThat(result.confidence()).isEqualTo(0.95);
-        assertThat(result.approvalRequired()).isFalse(); // High confidence, no approval required
+        assertThat(result.approvalRequirement()).isEqualTo(AiPolicyCheckService.ApprovalRequirement.AUTO_APPROVE);
         assertThat(result.logEntryId()).isNotNull();
     }
 
@@ -80,16 +81,14 @@ class GovernedAgentWorkflowServiceTest {
         ));
 
         GovernedAgentWorkflowService.GovernedWorkflowResult result = service.executeGovernedWorkflow(
-            DmAgentOrchestrationPort.AgentType.STRATEGY_GENERATOR,
+            operationContext(),
+            DmAgentOrchestrationPort.AgentType.AD_COPY_GENERATOR,
             "Generate a strategy",
             "gpt-4",
-            Map.of(),
-            DmTenantId.of("tenant-123"),
-            DmWorkspaceId.of("workspace-456"),
-            "user-789"
+            Map.of()
         ).getResult();
 
-        assertThat(result.approvalRequired()).isTrue(); // Low confidence, approval required
+        assertThat(result.approvalRequirement()).isNotEqualTo(AiPolicyCheckService.ApprovalRequirement.AUTO_APPROVE);
     }
 
     @Test
@@ -106,18 +105,24 @@ class GovernedAgentWorkflowServiceTest {
         ));
 
         GovernedAgentWorkflowService.GovernedWorkflowResult result = service.executeGovernedWorkflow(
-            DmAgentOrchestrationPort.AgentType.STRATEGY_GENERATOR,
+            operationContext(),
+            DmAgentOrchestrationPort.AgentType.AD_COPY_GENERATOR,
             "Generate a strategy",
             "gpt-4",
-            Map.of(),
-            DmTenantId.of("tenant-123"),
-            DmWorkspaceId.of("workspace-456"),
-            "user-789"
+            Map.of()
         ).getResult();
 
         assertThat(result.success()).isFalse();
-        assertThat(result.approvalRequired()).isFalse(); // Failed response, no approval needed
         assertThat(result.errorMessage()).isEqualTo("Agent invocation failed");
+    }
+
+    private DmOperationContext operationContext() {
+        return DmOperationContext.builder()
+            .tenantId(DmTenantId.of("tenant-123"))
+            .workspaceId(DmWorkspaceId.of("workspace-456"))
+            .actor(ActorRef.user("user-789"))
+            .correlationId(DmCorrelationId.of("corr-789"))
+            .build();
     }
 
     // ── test doubles ─────────────────────────────────────────────────────────

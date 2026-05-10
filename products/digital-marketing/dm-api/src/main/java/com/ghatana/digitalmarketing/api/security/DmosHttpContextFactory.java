@@ -344,7 +344,8 @@ public final class DmosHttpContextFactory {
             // AI action log is governance, not a feature capability
             return null;
         }
-        if (path.contains("/ai-optimization")) {
+        if (path.contains("/ai-optimization")
+            || path.contains("/next-best-action-recommendations")) {
             return DmosCapability.DMOS_AI_OPTIMIZATION.getKey();
         }
         if (path.contains("/funnel-analytics")
