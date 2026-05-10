@@ -1,13 +1,20 @@
 package com.ghatana.buildlogic
 
 import org.gradle.api.GradleException
+import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
 import java.io.File
 import java.nio.file.Files
@@ -21,6 +28,48 @@ abstract class ProductPackValidationExtension @Inject constructor(objects: Objec
     val complianceClassFileName: Property<String> = objects.property(String::class.java)
     val complianceSourceFile: RegularFileProperty = objects.fileProperty()
     val complianceRulePrefix: Property<String> = objects.property(String::class.java)
+}
+
+abstract class ValidateComplianceRulePackTask : DefaultTask() {
+    @get:Optional
+    @get:InputFile
+    abstract val complianceSourceFile: RegularFileProperty
+
+    @get:InputDirectory
+    abstract val javaMainSourceDir: DirectoryProperty
+
+    @get:Input
+    abstract val complianceRulePrefix: Property<String>
+
+    @TaskAction
+    fun validate() {
+        val prefix = complianceRulePrefix.get()
+        if (complianceSourceFile.isPresent) {
+            val sourceFile = complianceSourceFile.get().asFile
+            require(sourceFile.exists()) {
+                "Compliance rule pack source is missing: ${sourceFile.absolutePath}"
+            }
+            validateComplianceSourceFile(sourceFile, prefix)
+            return
+        }
+
+        val javaMainSrc = javaMainSourceDir.get().asFile
+        require(javaMainSrc.exists()) {
+            "No complianceSourceFile configured and src/main/java does not exist in ${javaMainSrc.absolutePath}"
+        }
+
+        val complianceFiles = javaMainSrc.walk()
+            .filter { it.isFile && it.extension == "java" && it.readText().contains("ComplianceRule") }
+            .toList()
+        require(complianceFiles.isNotEmpty()) {
+            "No Java source files containing ComplianceRule declarations found under ${javaMainSrc.absolutePath}. " +
+                "Configure 'complianceSourceFile' explicitly or add a ComplianceRule factory class."
+        }
+
+        for (file in complianceFiles) {
+            validateComplianceSourceFile(file, prefix)
+        }
+    }
 }
 
 class ProductPackValidationConventionPlugin : Plugin<Project> {
@@ -86,37 +135,13 @@ class ProductPackValidationConventionPlugin : Plugin<Project> {
             }
 
             val buildDirProvider = project.layout.buildDirectory.dir("classes/java/main")
-            project.tasks.register("validateComplianceRulePack") {
+            project.tasks.register("validateComplianceRulePack", ValidateComplianceRulePackTask::class.java) {
                 group = "verification"
                 description = "Validates product compliance rule pack wiring."
+                javaMainSourceDir.set(project.layout.projectDirectory.dir("src/main/java"))
+                complianceRulePrefix.set(extension.complianceRulePrefix)
                 if (extension.complianceSourceFile.isPresent) {
-                    inputs.file(extension.complianceSourceFile)
-                }
-                doLast {
-                    if (extension.complianceSourceFile.isPresent) {
-                        val sourceFile = extension.complianceSourceFile.get().asFile
-                        require(sourceFile.exists()) {
-                            "Compliance rule pack source is missing: ${sourceFile.absolutePath}"
-                        }
-                        validateComplianceSourceFile(sourceFile, extension.complianceRulePrefix.get())
-                    } else {
-                        // No explicit source file configured: scan src/main/java for compliance rule sources
-                        val javaMainSrc = project.projectDir.resolve("src/main/java")
-                        require(javaMainSrc.exists()) {
-                            "No complianceSourceFile configured and src/main/java does not exist in ${project.projectDir}"
-                        }
-                        val complianceFiles = javaMainSrc.walk()
-                            .filter { it.isFile && it.extension == "java" && it.readText().contains("ComplianceRule") }
-                            .toList()
-                        require(complianceFiles.isNotEmpty()) {
-                            "No Java source files containing ComplianceRule declarations found under ${javaMainSrc.absolutePath}. " +
-                                "Configure 'complianceSourceFile' explicitly or add a ComplianceRule factory class."
-                        }
-                        val prefix = extension.complianceRulePrefix.get()
-                        for (file in complianceFiles) {
-                            validateComplianceSourceFile(file, prefix)
-                        }
-                    }
+                    complianceSourceFile.set(extension.complianceSourceFile)
                 }
             }
 

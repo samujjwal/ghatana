@@ -46,6 +46,7 @@ tasks.register("checkPluginPurity") {
     description = "Fails the build if product domain terms appear in plugin main sources."
     group = "verification"
     val srcDir = layout.projectDirectory.file("src/main/java").asFile
+    val projectBaseDir = layout.projectDirectory.asFile
     doLast {
         val PLUGIN_BANNED_TERMS = listOf(
             "\\bPHR\\b", "CLINICAL", "\\bFinance\\b", "FINANCE", "SOX", "HIPAA",
@@ -57,7 +58,7 @@ tasks.register("checkPluginPurity") {
             val content = javaFile.readText()
             PLUGIN_BANNED_TERMS.forEach { term ->
                 if (Regex(term).containsMatchIn(content)) {
-                    violations += "${javaFile.relativeTo(projectDir)}: contains banned product term '$term'"
+                    violations += "${javaFile.relativeTo(projectBaseDir)}: contains banned product term '$term'"
                 }
             }
         }

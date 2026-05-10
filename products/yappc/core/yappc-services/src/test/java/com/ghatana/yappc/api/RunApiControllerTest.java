@@ -165,12 +165,14 @@ class RunApiControllerTest extends EventloopTestBase {
     }
 
     private HttpRequest post(String path, Object body) throws Exception {
-        return HttpRequest.post("http://localhost" + path)
+        HttpRequest request = HttpRequest.post("http://localhost" + path)
             .withHeader(HttpHeaders.of("X-Workspace-Id"), "workspace-1")
             .withHeader(HttpHeaders.of("X-Project-Id"), "project-1")
             .withHeader(HttpHeaders.of("X-Correlation-ID"), "corr-1")
             .withBody(ByteBuf.wrapForReading(JsonMapper.toJson(body).getBytes(StandardCharsets.UTF_8)))
             .build();
+        request.attach(Principal.class, new Principal("user-1", List.of("builder"), "tenant-1"));
+        return request;
     }
 
     private static final class RecordingAuditLogger implements AuditLogger {

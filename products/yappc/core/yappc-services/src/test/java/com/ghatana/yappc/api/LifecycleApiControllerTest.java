@@ -81,6 +81,22 @@ class LifecycleApiControllerTest extends EventloopTestBase {
         eventloop = Eventloop.create();
         httpClient = HttpClient.create(eventloop,
             DnsClient.builder(eventloop, java.net.InetAddress.getLoopbackAddress()).build());
+        LifecycleExecutionRepository lifecycleExecutionRepository = new LifecycleExecutionRepository() {
+            @Override
+            public Promise<Void> persist(LifecycleExecution execution) {
+                return Promise.complete();
+            }
+
+            @Override
+            public Promise<LifecycleExecution> findById(String executionId) {
+                return Promise.of(null);
+            }
+
+            @Override
+            public Promise<List<LifecycleExecution>> findByProject(String tenantId, String projectId, int limit) {
+                return Promise.of(List.of());
+            }
+        };
         controller = new LifecycleApiController(
             intentService,
             shapeService,
@@ -91,7 +107,8 @@ class LifecycleApiControllerTest extends EventloopTestBase {
             learningService,
             evolutionService,
             eventloop,
-            httpClient
+            httpClient,
+            lifecycleExecutionRepository
         );
     }
 
@@ -162,10 +179,18 @@ class LifecycleApiControllerTest extends EventloopTestBase {
         learningService.setAnalyzeResult(insights);
         evolutionService.setProposeResult(evolutionPlan);
 
-        String requestJson = JsonMapper.toJson(new LifecycleRequest(IntentInput.of("Build an order service"), "staging"));
+        String requestJson = JsonMapper.toJson(new LifecycleRequest(
+            IntentInput.of("Build an order service"),
+            "tenant-1",
+            "project-1",
+            "workspace-1",
+            "staging"
+        ));
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute")
             .withBody(ByteBuf.wrapForReading(requestJson.getBytes(StandardCharsets.UTF_8)))
             .build();
+        request.attach(com.ghatana.platform.governance.security.Principal.class,
+            new com.ghatana.platform.governance.security.Principal("user-1", List.of("builder"), "tenant-1"));
 
         HttpResponse response = runPromise(() -> controller.executeFullLifecycle(request));
 
@@ -204,10 +229,18 @@ class LifecycleApiControllerTest extends EventloopTestBase {
         shapeService.setDeriveResult(shapeSpec);
         validationService.setValidateResult(validationResult);
 
-        String requestJson = JsonMapper.toJson(new LifecycleRequest(IntentInput.of("Build an order service"), "staging"));
+        String requestJson = JsonMapper.toJson(new LifecycleRequest(
+            IntentInput.of("Build an order service"),
+            "tenant-1",
+            "project-1",
+            "workspace-1",
+            "staging"
+        ));
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute")
             .withBody(ByteBuf.wrapForReading(requestJson.getBytes(StandardCharsets.UTF_8)))
             .build();
+        request.attach(com.ghatana.platform.governance.security.Principal.class,
+            new com.ghatana.platform.governance.security.Principal("user-1", List.of("builder"), "tenant-1"));
 
         HttpResponse response = runPromise(() -> controller.executeFullLifecycle(request));
 
@@ -222,7 +255,13 @@ class LifecycleApiControllerTest extends EventloopTestBase {
         assertThat(evolutionService.getProposeCallCount()).isEqualTo(0);
     }
 
-    private record LifecycleRequest(IntentInput intentInput, String environment) {
+    private record LifecycleRequest(
+        IntentInput intentInput,
+        String tenantId,
+        String projectId,
+        String workspaceId,
+        String environment
+    ) {
     }
 
     private static final class InMemoryIntentService implements IntentService {

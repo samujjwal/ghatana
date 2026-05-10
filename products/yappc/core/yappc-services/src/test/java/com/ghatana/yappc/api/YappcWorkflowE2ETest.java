@@ -74,7 +74,23 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         MetricsCollector metrics = MetricsCollector.create();
-        AuditLogger audit = AuditLogger.noop();
+                AuditLogger audit = event -> Promise.complete();
+                LifecycleExecutionRepository lifecycleExecutionRepository = new LifecycleExecutionRepository() {
+                        @Override
+                        public Promise<Void> persist(LifecycleExecution execution) {
+                                return Promise.complete();
+                        }
+
+                        @Override
+                        public Promise<LifecycleExecution> findById(String executionId) {
+                                return Promise.of(null);
+                        }
+
+                        @Override
+                        public Promise<List<LifecycleExecution>> findByProject(String tenantId, String projectId, int limit) {
+                                return Promise.of(List.of());
+                        }
+                };
         PolicyEngine policy = new AllowAllPolicyEngine();
         CompletionService llm = new ScriptedCompletionService(metrics);
         CiCdPort ciCd = new NoOpCiCdAdapter();
@@ -95,7 +111,7 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
         controller = new LifecycleApiController(
                 intentService, shapeService, validationService,
                 generationService, runService, observeService,
-                learningService, evolutionService, el, httpClient);
+                learningService, evolutionService, el, httpClient, lifecycleExecutionRepository);
     }
 
     // =========================================================================
@@ -107,7 +123,10 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
     void ideaToArtifactFullPipelineSucceeds() throws Exception {
         String json = JsonMapper.toJson(new LifecycleRequest(
                 IntentInput.of("Build a resilient payment processing service with observability"),
-                "staging"));
+                                "tenant-1",
+                                "project-1",
+                                "workspace-1",
+                                "staging"));
 
         HttpResponse response = runPromise(() ->
                 controller.executeFullLifecycle(post(json)));
@@ -129,7 +148,10 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
     void allEightPhasesExecutedInOrder() throws Exception {
         String json = JsonMapper.toJson(new LifecycleRequest(
                 IntentInput.of("Create an event-driven order orchestration system"),
-                "production"));
+                                "tenant-1",
+                                "project-1",
+                                "workspace-1",
+                                "production"));
 
         HttpResponse response = runPromise(() ->
                 controller.executeFullLifecycle(post(json)));
@@ -154,7 +176,10 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
     void refactorIntentProducesEvolutionPlan() throws Exception {
         String json = JsonMapper.toJson(new LifecycleRequest(
                 IntentInput.of("Refactor the authentication module to use JWT key rotation"),
-                "staging"));
+                                "tenant-1",
+                                "project-1",
+                                "workspace-1",
+                                "staging"));
 
         HttpResponse response = runPromise(() ->
                 controller.executeFullLifecycle(post(json)));
@@ -182,7 +207,10 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
     void previewDryRunReturnsArtifactsWithoutRun() throws Exception {
         String json = JsonMapper.toJson(new LifecycleRequest(
                 IntentInput.of("Preview the generated API for a notifications service"),
-                "preview"));
+                                "tenant-1",
+                                "project-1",
+                                "workspace-1",
+                                "preview"));
 
         HttpResponse response = runPromise(() ->
                 controller.executeFullLifecycle(post(json)));
@@ -206,7 +234,23 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
     void approvalGateBlocksValidationFailingIntent() throws Exception {
         // Wire a policy engine that blocks all requests
         MetricsCollector metrics = MetricsCollector.create();
-        AuditLogger audit = AuditLogger.noop();
+                AuditLogger audit = event -> Promise.complete();
+                LifecycleExecutionRepository lifecycleExecutionRepository = new LifecycleExecutionRepository() {
+                        @Override
+                        public Promise<Void> persist(LifecycleExecution execution) {
+                                return Promise.complete();
+                        }
+
+                        @Override
+                        public Promise<LifecycleExecution> findById(String executionId) {
+                                return Promise.of(null);
+                        }
+
+                        @Override
+                        public Promise<List<LifecycleExecution>> findByProject(String tenantId, String projectId, int limit) {
+                                return Promise.of(List.of());
+                        }
+                };
         PolicyEngine blockAll = new BlockAllPolicyEngine();
         CompletionService llm = new ScriptedCompletionService(metrics);
         CiCdPort ciCd = new NoOpCiCdAdapter();
@@ -225,10 +269,13 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
                 new ObserveServiceImpl(metrics, audit),
                 new LearningServiceImpl(llm, audit, metrics),
                 new EvolutionServiceImpl(llm, audit, metrics),
-                el, httpClient);
+                el, httpClient, lifecycleExecutionRepository);
 
         String json = JsonMapper.toJson(new LifecycleRequest(
                 IntentInput.of("Deploy a system that would violate compliance rules"),
+                "tenant-1",
+                "project-1",
+                "workspace-1",
                 "production"));
 
         HttpResponse response = runPromise(() ->
@@ -255,7 +302,10 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
     void rollbackIntentProducesEvolutionPlanWithRollbackInstructions() throws Exception {
         String json = JsonMapper.toJson(new LifecycleRequest(
                 IntentInput.of("Rollback the recent deployment due to increased error rate"),
-                "production"));
+                                "tenant-1",
+                                "project-1",
+                                "workspace-1",
+                                "production"));
 
         HttpResponse response = runPromise(() ->
                 controller.executeFullLifecycle(post(json)));
@@ -285,7 +335,12 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
     @Test
     @DisplayName("empty intentInput.rawText returns 400")
     void emptyRawTextReturns400() throws Exception {
-        String json = JsonMapper.toJson(new LifecycleRequest(IntentInput.of(""), "staging"));
+        String json = JsonMapper.toJson(new LifecycleRequest(
+                IntentInput.of(""),
+                "tenant-1",
+                "project-1",
+                "workspace-1",
+                "staging"));
 
         HttpResponse response = runPromise(() ->
                 controller.executeFullLifecycle(post(json)));
@@ -311,7 +366,10 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
     void phaseDurationsArePresentAndNonNegative() throws Exception {
         String json = JsonMapper.toJson(new LifecycleRequest(
                 IntentInput.of("Build a multi-tenant SaaS dashboard"),
-                "staging"));
+                                "tenant-1",
+                                "project-1",
+                                "workspace-1",
+                                "staging"));
 
         HttpResponse response = runPromise(() ->
                 controller.executeFullLifecycle(post(json)));
@@ -329,16 +387,24 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
     // =========================================================================
 
     private static HttpRequest post(String json) {
-        return HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute")
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute")
                 .withBody(ByteBuf.wrapForReading(json.getBytes(StandardCharsets.UTF_8)))
                 .build();
+        request.attach(com.ghatana.platform.governance.security.Principal.class,
+                new com.ghatana.platform.governance.security.Principal("user-1", List.of("builder"), "tenant-1"));
+        return request;
     }
 
     private static String body(HttpResponse response) {
         return response.getBody().asString(StandardCharsets.UTF_8);
     }
 
-    private record LifecycleRequest(IntentInput intentInput, String environment) {}
+    private record LifecycleRequest(
+            IntentInput intentInput,
+            String tenantId,
+            String projectId,
+            String workspaceId,
+            String environment) {}
 
     /**
      * Scripted LLM that returns deterministic structured JSON for each prompt role.

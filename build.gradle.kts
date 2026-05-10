@@ -574,9 +574,10 @@ tasks.register("checkPluginPurity") {
     group = "verification"
     description = "Fails the build if product domain terms appear in platform-plugin main sources."
     notCompatibleWithConfigurationCache("Plugin purity check reads filesystem at execution time")
+    val pluginsRoot = layout.projectDirectory.dir("platform-plugins").asFile
+    val repositoryRoot = layout.projectDirectory.asFile
     
     doLast {
-        val pluginsRoot = file("platform-plugins")
         if (!pluginsRoot.exists()) return@doLast
         val violations = mutableListOf<String>()
         pluginsRoot.walkTopDown()
@@ -591,7 +592,7 @@ tasks.register("checkPluginPurity") {
                 PLUGIN_BANNED_TERMS.forEach { term ->
                     val regex = Regex(term)
                     if (regex.containsMatchIn(content)) {
-                        violations += "${javaFile.relativeTo(rootDir)}: contains banned term '$term'"
+                        violations += "${javaFile.relativeTo(repositoryRoot)}: contains banned term '$term'"
                     }
                 }
             }

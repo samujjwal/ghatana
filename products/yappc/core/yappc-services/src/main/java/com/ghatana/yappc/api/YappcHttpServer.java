@@ -137,8 +137,7 @@ public class YappcHttpServer extends HttpServerLauncher {
             RouteAuthorizationFilter routeAuthorizationFilter,
             AsyncServlet delegate,
             ApiVersionPolicy versionPolicy) {
-        AsyncServlet authenticated = authFilter.secure(delegate);
-        AsyncServlet authorized = request -> routeAuthorizationFilter.apply(request, authenticated);
+        AsyncServlet authorized = authFilter.secure(request -> routeAuthorizationFilter.apply(request, delegate));
         return versionPolicy.apply(authorized);
     }
 

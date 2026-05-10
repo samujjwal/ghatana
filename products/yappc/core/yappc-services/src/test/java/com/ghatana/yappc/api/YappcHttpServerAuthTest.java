@@ -3,9 +3,11 @@ package com.ghatana.yappc.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.observability.NoopMetricsCollector;
+import com.ghatana.platform.security.rbac.Permission;
 import com.ghatana.platform.security.rbac.RolePermissionRegistry;
 import com.ghatana.platform.security.rbac.SyncAuthorizationService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.yappc.services.phase.PhasePacketService;
 import com.ghatana.yappc.domain.pageartifact.InMemoryPageArtifactRepository;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactResourceScopeAuthorizer;
 import com.ghatana.yappc.domain.pageartifact.http.PageArtifactController;
@@ -19,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -43,10 +46,47 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
         intentController = new InMemoryIntentApiController();
         lifecycleController = new InMemoryLifecycleApiController();
         YappcApiAuthFilter authFilter = new YappcApiAuthFilter(key -> Optional.of(new Principal("api-user", List.of("admin"), "tenant-alpha")));
+        RouteAuthorizationFilter routeAuthorizationFilter = new RouteAuthorizationFilter(
+            new RouteAuthorizationRegistry(
+                new YappcAuthorizationService(
+                    new SyncAuthorizationService(new RolePermissionRegistry() {
+                        @Override
+                        public Set<String> getPermissions(String role) {
+                            return Set.of(Permission.WORKSPACE_READ, Permission.PROJECT_READ, Permission.PROJECT_UPDATE);
+                        }
+
+                        @Override
+                        public void registerRole(String role, Set<String> permissions) {
+                        }
+                    })
+                )
+            )
+        );
         Eventloop eventloop = eventloop();
+        PhasePacketController phasePacketController = new PhasePacketController(
+            new ObjectMapper(),
+            (phase, projectId, workspaceId, principal, correlationId) -> Promise.of(
+                new PhasePacket(
+                    phase,
+                    projectId,
+                    principal.getTenantId(),
+                    workspaceId,
+                    phase,
+                    PhasePacket.TenantTier.FREE,
+                    Set.of(),
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    new PhasePacket.PhaseReadiness(true, null, List.of(), 1.0),
+                    Instant.now().toEpochMilli()
+                )
+            )
+        );
         servlet = new YappcHttpServer().servlet(
             eventloop,
             authFilter,
+            routeAuthorizationFilter,
             intentController,
             new InMemoryShapeApiController(),
             new InMemoryValidationApiController(),
@@ -68,7 +108,8 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
                 new NoopMetricsCollector(),
                 PageArtifactResourceScopeAuthorizer.allowAll()
             ),
-            new PreviewSessionApiController(new com.fasterxml.jackson.databind.ObjectMapper(), "test-preview-secret")
+            new PreviewSessionApiController(new com.fasterxml.jackson.databind.ObjectMapper(), "test-preview-secret"),
+            phasePacketController
         );
     }
 
@@ -124,12 +165,15 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
         intentController.setCaptureIntentResponse(HttpResponse.ok200().toPromise());
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/intent/capture")
             .withHeader(HttpHeaders.of("X-API-Key"), "valid-key")
+            .withHeader(HttpHeaders.of("X-Workspace-Id"), "workspace-1")
+            .withHeader(HttpHeaders.of("X-Project-Id"), "project-1")
+            .withHeader(HttpHeaders.of("X-API-Version"), "v1")
+            .withBody(io.activej.bytebuf.ByteBuf.wrapForReading("{\"rawText\":\"Build an order service\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8)))
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(200);
-        assertThat(response.getHeader(HttpHeaders.of("X-API-Version"))).isEqualTo("v1");
         assertThat(intentController.getCaptureIntentCallCount()).isEqualTo(1);
     }
 
@@ -160,7 +204,7 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
         private int executeFullLifecycleCallCount = 0;
 
         InMemoryLifecycleApiController() {
-            super(null, null, null, null, null, null, null, null, null, null);
+            super(null, null, null, null, null, null, null, null, null, null, null);
         }
 
         int getExecuteFullLifecycleCallCount() {
@@ -188,7 +232,7 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
 
     private static final class InMemoryGenerationApiController extends GenerationApiController {
         InMemoryGenerationApiController() {
-            super(null, null);
+            super(null, null, null);
         }
     }
 

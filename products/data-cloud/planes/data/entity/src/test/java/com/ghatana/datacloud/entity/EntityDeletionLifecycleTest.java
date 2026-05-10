@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -236,6 +237,7 @@ class EntityDeletionLifecycleTest {
         @DisplayName("Should calculate retention period for soft delete")
         void shouldCalculateRetentionPeriodForSoftDelete() {
             EntityRecord entity = EntityRecord.builder()
+                .id(java.util.UUID.randomUUID())
                 .tenantId("tenant-123")
                 .collectionName("test-collection")
                 .data(Map.of("name", "test"))
@@ -249,15 +251,15 @@ class EntityDeletionLifecycleTest {
             // Tombstone should not be expired immediately after creation
             assertThat(tombstone.isExpired(retentionPeriod)).isFalse();
 
-            // Tombstone should be expired after retention period
-            Instant expiredTime = entity.getDeletedAt().plus(retentionPeriod);
-            assertThat(expiredTime).isBefore(Instant.now().plus(retentionPeriod));
+            // A negative retention window guarantees expiry deterministically.
+            assertThat(tombstone.isExpired(java.time.Duration.ofSeconds(-1))).isTrue();
         }
 
         @Test
         @DisplayName("Should calculate retention period for archive")
         void shouldCalculateRetentionPeriodForArchive() {
             EntityRecord entity = EntityRecord.builder()
+                .id(java.util.UUID.randomUUID())
                 .tenantId("tenant-123")
                 .collectionName("test-collection")
                 .data(Map.of("name", "test"))

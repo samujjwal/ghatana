@@ -60,7 +60,7 @@ public final class RouteAuthorizationRegistry {
      */
     public void authorize(@NotNull HttpRequest request) {
         HttpMethod method = request.getMethod();
-        String path = request.getRelativePath();
+        String path = firstNonBlank(request.getRelativePath(), request.getPath());
         RouteKey key = new RouteKey(method, path);
         RouteDefinition definition = routes.get(key);
 
@@ -324,6 +324,16 @@ public final class RouteAuthorizationRegistry {
             value = request.getHeader(HttpHeaders.of(headerName.replace("_", "-")));
         }
         return value;
+    }
+
+    private String firstNonBlank(String first, String second) {
+        if (first != null && !first.isBlank()) {
+            return first;
+        }
+        if (second != null && !second.isBlank()) {
+            return second;
+        }
+        return "";
     }
 
     private String extractPathParameter(String path, String paramMarker) {

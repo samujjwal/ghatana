@@ -60,7 +60,23 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { 
         MetricsCollector metrics = MetricsCollector.create(); 
-        AuditLogger auditLogger = AuditLogger.noop(); 
+        AuditLogger auditLogger = event -> Promise.complete(); 
+        LifecycleExecutionRepository lifecycleExecutionRepository = new LifecycleExecutionRepository() {
+            @Override
+            public Promise<Void> persist(LifecycleExecution execution) {
+                return Promise.complete();
+            }
+
+            @Override
+            public Promise<LifecycleExecution> findById(String executionId) {
+                return Promise.of(null);
+            }
+
+            @Override
+            public Promise<List<LifecycleExecution>> findByProject(String tenantId, String projectId, int limit) {
+                return Promise.of(List.of());
+            }
+        };
 
         CompletionService completionService = new DeterministicCompletionService(metrics); 
         PolicyEngine policyEngine = new InMemoryAllowPolicyEngine(); 
@@ -90,19 +106,25 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
                 learningService,
                 evolutionService,
                 testEventloop,
-                testHttpClient);
+          testHttpClient,
+          lifecycleExecutionRepository);
     }
 
     @Test
     @DisplayName("executes full lifecycle successfully with concrete services")
     void executesFullLifecycleSuccessfullyWithConcreteServices() throws Exception { 
-        String requestJson = JsonMapper.toJson(new LifecycleRequest( 
-                IntentInput.of("Build a resilient order processing API with observability"),
-                "staging"));
+        String requestJson = JsonMapper.toJson(new LifecycleRequest(
+          IntentInput.of("Build a resilient order processing API with observability"),
+          "tenant-1",
+          "project-1",
+          "workspace-1",
+          "staging"));
 
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute")
                 .withBody(ByteBuf.wrapForReading(requestJson.getBytes(StandardCharsets.UTF_8))) 
                 .build(); 
+        request.attach(com.ghatana.platform.governance.security.Principal.class,
+          new com.ghatana.platform.governance.security.Principal("user-1", List.of("builder"), "tenant-1"));
 
         HttpResponse response = runPromise(() -> controller.executeFullLifecycle(request)); 
 
@@ -120,7 +142,12 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
         assertThat(body).contains("\"evolution\""); 
     }
 
-    private record LifecycleRequest(IntentInput intentInput, String environment) { 
+        private record LifecycleRequest(
+          IntentInput intentInput,
+          String tenantId,
+          String projectId,
+          String workspaceId,
+          String environment) { 
     }
 
     private static final class DeterministicCompletionService implements CompletionService {

@@ -67,6 +67,7 @@ class GenerationApiControllerTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/generate")
             .withBody(ByteBuf.wrapForReading(JsonMapper.toJson(invalidSpec).getBytes(StandardCharsets.UTF_8)))
             .build();
+        request.attach(Principal.class, new Principal("user-1", List.of("builder"), "tenant-1"));
 
         HttpResponse response = runPromise(() -> controller.generateArtifacts(request));
 
@@ -105,6 +106,7 @@ class GenerationApiControllerTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/generate/diff")
             .withBody(ByteBuf.wrapForReading(requestJson.getBytes(StandardCharsets.UTF_8)))
             .build();
+        request.attach(Principal.class, new Principal("user-1", List.of("builder"), "tenant-1"));
 
         HttpResponse response = runPromise(() -> controller.regenerateWithDiff(request));
 
@@ -169,23 +171,23 @@ class GenerationApiControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("generation review decisions reject missing actor scope")
-    void reviewDecisionRejectsMissingActor() throws Exception {
+    @DisplayName("generation review decisions derive actor from authenticated principal")
+    void reviewDecisionUsesAuthenticatedActorWhenBodyActorMissing() throws Exception {
         String body = JsonMapper.toJson(new ReviewDecisionBody("proj-42", "", "missing actor"));
 
         HttpResponse response = serveReviewDecision("/api/v1/yappc/generate/runs/run-1/apply", body);
 
-        assertThat(response.getCode()).isEqualTo(400);
-        assertThat(generationService.getReviewDecisionCallCount()).isEqualTo(0);
+        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(generationService.getReviewDecisionCallCount()).isEqualTo(1);
         assertThat(auditLogger.events()).hasSize(1);
         assertThat(auditLogger.events().get(0))
             .containsEntry("type", "generation.review.request")
-            .containsEntry("outcome", "rejected")
+            .containsEntry("outcome", "succeeded")
             .containsEntry("runId", "run-1");
         Map<?, ?> metadata = (Map<?, ?>) auditLogger.events().get(0).get("metadata");
         assertThat(metadata.get("route")).isEqualTo("generate-review");
         assertThat(metadata.get("action")).isEqualTo("apply");
-        assertThat(metadata.get("reason")).isEqualTo("actorId is required");
+        assertThat(metadata.get("actorId")).isEqualTo("user-1");
     }
 
     private HttpResponse serveReviewDecision(String path, String body) {
@@ -197,6 +199,7 @@ class GenerationApiControllerTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.post("http://localhost" + path)
             .withBody(ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8)))
             .build();
+        request.attach(Principal.class, new Principal("user-1", List.of("builder"), "tenant-1"));
         return runPromise(() -> servlet.serve(request));
     }
 
