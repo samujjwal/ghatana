@@ -58,7 +58,7 @@
     "@types/dagre": "^0.7.54",
     "@xyflow/react": "^12.10.2",
     "yappc-ai": "workspace:*",
-    "yappc-api": "workspace:*",
+    "@ghatana/yappc-api-app": "workspace:*",
     "yappc-auth": "workspace:*",
     "yappc-chat": "workspace:*",
     "yappc-config-schema": "workspace:*",

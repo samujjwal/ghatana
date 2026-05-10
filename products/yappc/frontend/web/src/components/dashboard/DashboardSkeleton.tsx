@@ -17,7 +17,7 @@ export function DashboardSkeleton() {
             {/* Main Grid */}
             <Grid container spacing={6}>
                 {/* Left Column: Tasks */}
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                     <div className="mb-4 flex justify-between items-center">
                         <Skeleton className="h-8 w-40" />
                         <Skeleton className="h-8 w-20" />
@@ -39,7 +39,7 @@ export function DashboardSkeleton() {
                 </Grid>
 
                 {/* Right Column: Projects & Workflows */}
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                     {/* Projects */}
                     <div className="mb-8">
                         <div className="mb-4 flex justify-between items-center">
@@ -48,7 +48,7 @@ export function DashboardSkeleton() {
                         </div>
                         <Grid container spacing={2}>
                             {[1, 2].map((i) => (
-                                <Grid item xs={12} sm={6} key={i}>
+                                <Grid xs={12} sm={6} key={i}>
                                     <Paper variant="outlined" className="p-4 rounded-lg h-[140px]">
                                         <Skeleton className="h-6 w-1/2 mb-2" />
                                         <Skeleton className="h-4 w-full mb-4" />
@@ -67,7 +67,7 @@ export function DashboardSkeleton() {
                         </div>
                         <Grid container spacing={2}>
                             {[1, 2].map((i) => (
-                                <Grid item xs={12} sm={6} key={i}>
+                                <Grid xs={12} sm={6} key={i}>
                                     <Paper variant="outlined" className="p-4 rounded-lg h-[100px]">
                                         <div className="flex justify-between mb-2">
                                             <Skeleton className="h-6 w-1/2" />

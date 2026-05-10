@@ -49,7 +49,7 @@ import {
   type UserPresence,
   type Activity as ActivityType,
   type TeamRole,
-} from 'yappc-api';
+} from '@ghatana/yappc-api-app';
 import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================

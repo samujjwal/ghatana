@@ -108,15 +108,19 @@ export function usePhaseCockpitData({
   });
 
   const activityQuery = useQuery<PhaseActivityResponse>({
-    queryKey: ['project-activity', projectId],
+    queryKey: ['project-activity', projectId, workspaceId],
     queryFn: async () => {
       if (!projectId) {
         throw new Error('Missing project id for phase activity.');
       }
+      if (!workspaceId) {
+        throw new Error('Workspace context is required for activity fetch - project access must be scoped');
+      }
 
-      return yappcApi.projects.activity(projectId);
+      return yappcApi.projects.activity(projectId, workspaceId);
     },
-    enabled: Boolean(projectId),
+    enabled: Boolean(projectId && workspaceId),
+    retry: false,
   });
 
   const projectPhase = projectQuery.data?.lifecyclePhase;

@@ -67,6 +67,7 @@ public final class ReleaseGateStep implements WorkflowStep {
     Instant startTime = Instant.now();
 
     return validateInput(context)
+        .then($ -> validateExecutionMode(context))
         .then($ -> loadTestResults(context, tenantId))
         .then(results -> evaluateReleaseGate(results, tenantId, gateId))
         .then(gateDecision -> persistGateDecision(gateDecision, tenantId, gateId))
@@ -79,6 +80,22 @@ public final class ReleaseGateStep implements WorkflowStep {
     if (!context.containsKey("tenantId")) {
       return Promise.ofException(new IllegalArgumentException("Missing required input: tenantId"));
     }
+    return Promise.complete();
+  }
+
+  private Promise<Void> validateExecutionMode(WorkflowContext context) {
+    boolean isProduction = Boolean.TRUE.equals(context.get("production"));
+    String executionMode = (String) context.getOrDefault("executionMode", "evidence");
+
+    // Production releases must use execute mode
+    if (isProduction && !"execute".equalsIgnoreCase(executionMode)) {
+      return Promise.ofException(
+          new IllegalStateException(
+              "Production releases require execution mode 'execute'. "
+                  + "Evidence-only mode is not allowed for production releases. "
+                  + "Tests must be executed and results verified."));
+    }
+
     return Promise.complete();
   }
 

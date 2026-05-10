@@ -505,6 +505,7 @@ public class DataCloudRouterBuilder {
     public DataCloudRouterBuilder withSurfaceRoutes(SurfaceRegistryHandler surfaceRegistryHandler) {
         builder.with(HttpMethod.GET, "/api/v1/surfaces", surfaceRegistryHandler::handleSurfaces);
         builder.with(HttpMethod.GET, "/api/v1/surfaces/schema", surfaceRegistryHandler::handleSurfaceSchema);
+        builder.with(HttpMethod.GET, "/api/v1/surfaces/typed", surfaceRegistryHandler::handleTypedSurfaces);
         return this;
     }
 

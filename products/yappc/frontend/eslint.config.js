@@ -21,13 +21,13 @@ import designSystemEnforcement from './web/eslint-rules/design-system-enforcemen
  */
 
 // ============================================================================
-// GOVERNANCE RULES (Phase 3 - Warning Mode)
+// GOVERNANCE RULES (Phase 6 - Error Mode)
 // ============================================================================
 
 const governanceRules = {
   // Import order enforcement
   'import/order': [
-    'warn',
+    'error',
     {
       groups: [
         'builtin', // Node.js built-ins (fs, path)
@@ -75,18 +75,18 @@ const governanceRules = {
   // No self-imports
   'import/no-self-import': 'error',
 
-  // No cycle dependencies (warning during Phase 3)
+  // No cycle dependencies (error in Phase 6)
   'import/no-cycle': [
-    'warn',
+    'error',
     {
       maxDepth: 3,
       ignoreExternal: true,
     },
   ],
 
-  // Naming convention warnings
+  // Naming convention errors
   'import/no-restricted-paths': [
-    'warn',
+    'error',
     {
       zones: [
         // Rule: Products should not depend on each other directly
@@ -121,7 +121,7 @@ const governanceRules = {
 
   // Flag StateManager usage - deprecated in favor of @ghatana/state primitives
   'no-restricted-imports': [
-    'warn',
+    'error',
     {
       patterns: [
         {
@@ -247,13 +247,13 @@ const standardRules = {
   'unicorn/no-array-reduce': 'off',
 
   // Accessibility
-  'jsx-a11y/anchor-is-valid': 'warn',
-  'jsx-a11y/alt-text': 'warn',
-  'jsx-a11y/aria-props': 'warn',
-  'jsx-a11y/aria-proptypes': 'warn',
-  'jsx-a11y/aria-unsupported-elements': 'warn',
-  'jsx-a11y/role-has-required-aria-props': 'warn',
-  'jsx-a11y/role-supports-aria-props': 'warn',
+  'jsx-a11y/anchor-is-valid': 'error',
+  'jsx-a11y/alt-text': 'error',
+  'jsx-a11y/aria-props': 'error',
+  'jsx-a11y/aria-proptypes': 'error',
+  'jsx-a11y/aria-unsupported-elements': 'error',
+  'jsx-a11y/role-has-required-aria-props': 'error',
+  'jsx-a11y/role-supports-aria-props': 'error',
 };
 
 // ============================================================================
@@ -323,33 +323,20 @@ const governanceOverrides = [
       ],
     },
   },
+
+  // Design-system enforcement for ALL production UI (excluding tests and examples)
   {
-    files: [
-      'web/src/components/dashboard/**/*.{ts,tsx}',
-      'web/src/components/command/**/*.{ts,tsx}',
-      'web/src/components/compiler/**/*.{ts,tsx}',
-      'web/src/components/phase/**/*.{ts,tsx}',
-      'web/src/routes/app/project/**/*.{ts,tsx}',
-    ],
-    rules: {
-      'design-system-enforcement/no-raw-buttons': 'error',
-      'design-system-enforcement/no-raw-inputs': 'error',
-      'design-system-enforcement/no-raw-select': 'error',
-      'design-system-enforcement/no-hardcoded-color-tokens': 'error',
-      'design-system-enforcement/no-ad-hoc-card-classes': 'error',
-    },
-  },
-  {
-    files: [
-      'web/src/components/dashboard/NextActionDashboard.tsx',
-      'web/src/components/command/ActionDiscoveryPalette.tsx',
-      'web/src/components/compiler/ResidualIslandReviewPanel.tsx',
-      'web/src/components/phase/PhaseCockpitLayout.tsx',
-      'web/src/components/phase/PhasePrimaryActionCard.tsx',
-      'web/src/components/phase/PhaseSuggestedNextStep.tsx',
-      'web/src/components/phase/PhaseBlockerPanel.tsx',
-      'web/src/routes/app/project/_phaseCockpit.tsx',
-      'web/src/routes/app/project/PhaseStatusPanels.tsx',
+    files: ['web/src/**/*.{ts,tsx}'],
+    excludedFiles: [
+      '**/*.test.{ts,tsx}',
+      '**/*.spec.{ts,tsx}',
+      '**/__tests__/**/*',
+      '**/test/**/*',
+      '**/test-utils/**/*',
+      '**/__examples__/**',
+      '**/*.examples.{ts,tsx}',
+      '**/stories/**/*',
+      '**/*.stories.{ts,tsx}',
     ],
     rules: {
       'design-system-enforcement/no-raw-buttons': 'error',
@@ -490,17 +477,16 @@ export default tseslint.config(
 // ============================================================================
 
 /**
- * To switch to Phase 6 (Error Mode):
+ * Phase 6 (Error Mode) - COMPLETED
  *
- * 1. Change 'warn' to 'error' for:
- *    - import/order
- *    - import/no-restricted-paths
- *    - import/no-cycle
- *    - @typescript-eslint/consistent-type-imports
+ * The following rules have been promoted from 'warn' to 'error':
+ * - import/order
+ * - import/no-restricted-paths
+ * - import/no-cycle
+ * - no-restricted-imports (StateManager deprecation)
+ * - jsx-a11y/* (accessibility rules)
  *
- * 2. Update lint-staged to block commits on errors
+ * Lint-staged and CI should be configured to block commits on errors.
  *
- * 3. Update CI to fail on lint errors
- *
- * 4. Remove this comment block after transition
+ * This comment block documents the transition for future reference.
  */

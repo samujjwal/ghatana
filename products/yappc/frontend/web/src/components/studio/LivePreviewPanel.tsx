@@ -77,7 +77,18 @@ export function LivePreviewPanel({
   const previewServiceRef = useRef<PreviewHostService | null>(null);
   const mountedDocumentIdRef = useRef<string | null>(null);
   const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const previewDevModeEnabled = import.meta.env.DEV && import.meta.env.VITE_FEATURE_PREVIEW_DEV_MODE === 'true';
+  
+  // Fail-safe: In production builds, never enable dev mode regardless of feature flag
+  const previewDevModeEnabled = (() => {
+    const isDevelopmentBuild = import.meta.env.DEV;
+    const isFeatureFlagEnabled = import.meta.env.VITE_FEATURE_PREVIEW_DEV_MODE === 'true';
+    
+    if (!isDevelopmentBuild) {
+      return false;
+    }
+    
+    return isFeatureFlagEnabled;
+  })();
 
   const previewPolicy = useMemo(() => {
     // Default to the built-in same-origin preview runtime so postMessage can flow.

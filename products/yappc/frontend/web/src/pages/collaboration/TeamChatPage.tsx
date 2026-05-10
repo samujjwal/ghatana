@@ -62,7 +62,7 @@ import {
   type Reaction,
   type Thread,
   type UserPresence,
-} from 'yappc-api';
+} from '@ghatana/yappc-api-app';
 import { useI18n } from '../../i18n/I18nProvider';
 
 // ============================================================================

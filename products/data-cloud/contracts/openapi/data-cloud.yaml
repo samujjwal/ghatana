@@ -202,6 +202,55 @@ components:
       description: Arbitrary JSON object.
       additionalProperties: true
 
+    SurfaceRecord:
+      type: object
+      description: Typed surface record with dependency-probe evidence (DC-P1-5).
+      properties:
+        surfaceId:
+          type: string
+          description: Surface identifier.
+        state:
+          type: string
+          description: Current surface state (JSON value).
+        status:
+          type: string
+          description: Legacy status value.
+        ownerPlane:
+          type: string
+          description: Owning plane (unknown if null).
+        requiredDependencies:
+          type: array
+          description: List of required dependency names.
+          items:
+            type: string
+        dependencyProbes:
+          type: array
+          description: Per-dependency probe results.
+          items:
+            $ref: "#/components/schemas/FreeformObject"
+        tenantScope:
+          type: string
+          description: Tenant scope (global or tenant-specific).
+        runtimeProfile:
+          type: string
+          description: Runtime profile (local, dev, staging, production).
+        lastCheckedAt:
+          type: string
+          format: date-time
+          description: Last check timestamp.
+        evidence:
+          type: object
+          description: Evidence map.
+          additionalProperties: true
+        limitations:
+          type: string
+          description: Known limitations.
+        actionsAllowed:
+          type: array
+          description: Allowed actions for this surface.
+          items:
+            type: string
+
     VoiceIntentRequest:
       type: object
       required: [utterance]
@@ -5983,6 +6032,47 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/surfaces/typed:
+    get:
+      summary: Get typed surface records with dependency-probe evidence (DC-P1-5)
+      operationId: apiV1SurfacesTypedGet
+      tags: [surfaces]
+      description: |
+        Returns typed SurfaceRecord instances that include required dependencies,
+        per-dependency probe results, tenant scope, runtime profile, evidence,
+        and action gates for each surface. Consumers should prefer this endpoint
+        over the raw /api/v1/surfaces when gate logic depends on probe evidence.
+      responses:
+        "200":
+          description: Typed surface records with probe evidence.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      surfaces:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/SurfaceRecord"
+                      count:
+                        type: integer
+                      generatedAt:
+                        type: string
+                        format: date-time
+                  meta:
+                    type: object
+                    properties:
+                      requestId:
+                        type: string
+                      tenantId:
+                        type: string
+                      apiVersion:
+                        type: string
+                additionalProperties: true
 
   # DC-P1.12: Removed compatibility /api/v1/capabilities endpoints; use canonical /api/v1/surfaces only
 

@@ -19,7 +19,7 @@ import cors from 'cors';
 import { randomUUID } from 'crypto';
 
 const app = express();
-const PORT = 3000;
+const PORT = 7003;
 
 app.use(cors());
 app.use(express.json());
@@ -34,6 +34,7 @@ const db = {
     auditEvents: [],
     tasks: new Map(),
     devSecOpsItems: new Map(),
+    workspaces: new Map(),
 };
 
 // Seed some initial data
@@ -96,7 +97,23 @@ const seedData = () => {
     seedProjectData(projectId);
     seedProjectData(projectId2);
 
-    console.log('✅ Seed data loaded: Artifacts, Evidence, Audit, DevSecOps, Tasks');
+    // Seed workspaces
+    db.workspaces.set('ws-1', {
+        id: 'ws-1',
+        name: 'Demo Workspace 1',
+        description: 'Sample workspace for testing',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+    db.workspaces.set('ws-2', {
+        id: 'ws-2',
+        name: 'Demo Workspace 2',
+        description: 'Another sample workspace',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+
+    console.log('✅ Seed data loaded: Artifacts, Evidence, Audit, DevSecOps, Tasks, Workspaces');
 };
 
 seedData();
@@ -108,6 +125,32 @@ seedData();
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date() });
+});
+
+// ============================================================================
+// Workspaces
+// ============================================================================
+
+app.get('/api/workspaces', (req, res) => {
+    const workspaces = Array.from(db.workspaces.values());
+    res.json(workspaces);
+});
+
+app.get('/api/workspaces/:workspaceId', (req, res) => {
+    const { workspaceId } = req.params;
+    const workspace = db.workspaces.get(workspaceId);
+    if (!workspace) return res.status(404).json({ error: 'Workspace not found' });
+    res.json(workspace);
+});
+
+app.get('/api/projects/dashboard-actions', (req, res) => {
+    const { workspaceId } = req.query;
+    // Return mock dashboard actions
+    res.json([
+        { id: 'action-1', title: 'Create new project', type: 'create' },
+        { id: 'action-2', title: 'View reports', type: 'view' },
+        { id: 'action-3', title: 'Manage team', type: 'manage' },
+    ]);
 });
 
 // ============================================================================
@@ -247,7 +290,7 @@ app.get('/api/projects/:projectId/tasks/next-best', (req, res) => {
         6: { id: 'task-improve-1', title: 'Review insights', type: 'analyze', description: 'Analyze improvement opportunities' },
     };
 
-    const task = tasks[parseInt(phase as string) || 0];
+    const task = tasks[parseInt(phase) || 0];
     res.json(task);
 });
 
@@ -289,7 +332,7 @@ app.get('/api/projects/:projectId/ai/recommendations', (req, res) => {
             title: 'Complete artifact validation',
             message: 'AI suggests completing validation checks before proceeding',
             priority: 'Medium',
-            phase: parseInt(phase as string) || 0,
+            phase: parseInt(phase) || 0,
         },
     ]);
 });

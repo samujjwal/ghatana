@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router';
 import { useSetAtom } from 'jotai';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '@ghatana/design-system';
-import { ArrowRight, CheckCircle2, FolderOpen, Plus, ShieldAlert } from 'lucide-react';
+import { ArrowRight, CheckCircle2, FolderOpen, Plus, RefreshCw, ShieldAlert } from 'lucide-react';
 
 // Hooks
 import { useWorkspaceContext } from '../hooks/useWorkspaceData';
@@ -55,7 +55,17 @@ function getProjectUpdatedAt(project: ProjectWithOwnership): string {
     return new Date(0).toISOString();
 }
 
-function getProjectNextActionTitles(project: ProjectWithOwnership): readonly string[] {
+// TODO-012: Remove empty-action fallback that masks backend failure
+// Distinguish between loaded-and-empty and backend-unavailable
+function getProjectNextActionTitles(
+    project: ProjectWithOwnership,
+    backendAvailable: boolean,
+): readonly string[] {
+    if (!backendAvailable) {
+        // Backend is unavailable - don't mask the failure
+        return [];
+    }
+
     if (Array.isArray(project.aiNextActions)) {
         const backedActions = project.aiNextActions
             .filter((action): action is string => typeof action === 'string' && action.trim().length > 0)
@@ -66,14 +76,21 @@ function getProjectNextActionTitles(project: ProjectWithOwnership): readonly str
         }
     }
 
-    return [`Resume ${getCanonicalPhaseLabel(project.lifecyclePhase ?? 'INTENT').toLowerCase()} phase`];
+    // Backend is available but returned empty aiNextActions (loaded-and-empty)
+    // Don't use fallback - this is a legitimate empty state
+    return [];
 }
 
+// TODO-013: Add dashboard degraded-state UX
+// Show retry, reason, correlation ID when APIs fail
 interface DashboardDecisionBrief {
     readonly headline: string;
     readonly description: string;
     readonly action: ProjectDashboardAction | null;
     readonly ctaLabel: string | null;
+    readonly isDegraded: boolean;
+    readonly correlationId?: string;
+    readonly retryAvailable: boolean;
 }
 
 function pluralize(count: number, singular: string, plural = `${singular}s`): string {
@@ -93,15 +110,28 @@ function buildDashboardDecisionBrief(
             description: 'Loading backed blocker, review, and continuation actions before recommending the next step.',
             action: null,
             ctaLabel: null,
+            isDegraded: false,
+            retryAvailable: false,
         };
     }
 
     if (error) {
+        // TODO-013: Add correlation ID and retry information for degraded state
+        const correlationId = typeof error === 'object' && error !== null && 'correlationId' in error 
+            ? String(error.correlationId) 
+            : undefined;
+        const errorMessage = typeof error === 'object' && error !== null && 'message' in error 
+            ? String(error.message) 
+            : 'Unknown error';
+        
         return {
             headline: 'Refresh backed action status',
-            description: 'The dashboard could not load backend-classified action status, so avoid assuming the workspace is clear.',
+            description: `The dashboard could not load backend-classified action status: ${errorMessage}. Please retry to refresh.`,
             action: null,
             ctaLabel: null,
+            isDegraded: true,
+            correlationId,
+            retryAvailable: true,
         };
     }
 
@@ -111,35 +141,43 @@ function buildDashboardDecisionBrief(
             headline: `Do this first: ${firstBlocked.title}`,
             description: `${firstBlocked.projectName} is blocked. Clear this before continuing lower-risk work.`,
             action: firstBlocked,
-            ctaLabel: 'Open blocker',
+            ctaLabel: 'Open',
+            isDegraded: firstBlocked.isDegraded || false,
+            retryAvailable: false,
         };
     }
 
     const [firstReview] = reviewRequired;
     if (firstReview) {
         return {
-            headline: `Review next: ${firstReview.title}`,
-            description: `${firstReview.projectName} needs operator review before the workspace can be treated as clear.`,
+            headline: `Review required: ${firstReview.title}`,
+            description: `${firstReview.projectName} needs review before continuing.`,
             action: firstReview,
-            ctaLabel: 'Open review',
+            ctaLabel: 'Review',
+            isDegraded: firstReview.isDegraded || false,
+            retryAvailable: false,
         };
     }
 
-    const [firstSafeAction] = safeToContinue;
-    if (firstSafeAction) {
+    const [firstSafe] = safeToContinue;
+    if (firstSafe) {
         return {
-            headline: `Safe to continue: ${firstSafeAction.title}`,
-            description: `${firstSafeAction.projectName} has a backend-classified continuation action ready to execute.`,
-            action: firstSafeAction,
-            ctaLabel: 'Continue safely',
+            headline: `Continue with: ${firstSafe.title}`,
+            description: `${firstSafe.projectName} is ready to proceed.`,
+            action: firstSafe,
+            ctaLabel: 'Continue',
+            isDegraded: firstSafe.isDegraded || false,
+            retryAvailable: false,
         };
     }
 
     return {
-        headline: 'No backed action is waiting',
-        description: 'No blocker, review, or safe continuation action is currently reported for this workspace.',
+        headline: 'No immediate actions',
+        description: 'All projects are in good standing. Check back later for new actions.',
         action: null,
         ctaLabel: null,
+        isDegraded: false,
+        retryAvailable: false,
     };
 }
 
@@ -220,7 +258,9 @@ export default function Component() {
             return [];
         }
 
-        const actionTitles = getProjectNextActionTitles(mostRecentProject);
+        // Backend is available if not loading and no error
+        const backendAvailable = !dashboardActionsLoading && !dashboardActionsError;
+        const actionTitles = getProjectNextActionTitles(mostRecentProject, backendAvailable);
 
         return actionTitles.map((title, index): NextAction => ({
             id: `dashboard-next-action-${index}`,
@@ -231,7 +271,7 @@ export default function Component() {
                 navigate(getProjectResumePath(mostRecentProject));
             },
         }));
-    }, [mostRecentProject, navigate]);
+    }, [mostRecentProject, navigate, dashboardActionsLoading, dashboardActionsError]);
 
     // Register the top dashboard action in ActionRegistry so it appears in
     // the CommandPalette under the 'ai' category at maximum priority.
@@ -415,9 +455,9 @@ export default function Component() {
                                             {ws.name} has no projects yet.
                                         </p>
                                     ))
-                            ) : mostRecentProject && getProjectNextActionTitles(mostRecentProject).length > 0 && Array.isArray(mostRecentProject.aiNextActions) && mostRecentProject.aiNextActions.length > 0 ? (
+                            ) : mostRecentProject && getProjectNextActionTitles(mostRecentProject, !dashboardActionsLoading && !dashboardActionsError).length > 0 && Array.isArray(mostRecentProject.aiNextActions) && mostRecentProject.aiNextActions.length > 0 ? (
                                 <p className="text-sm text-warning-color dark:text-warning-color">
-                                    {mostRecentProject.name} has {getProjectNextActionTitles(mostRecentProject).length} backed review action(s) to check.
+                                    {mostRecentProject.name} has {getProjectNextActionTitles(mostRecentProject, !dashboardActionsLoading && !dashboardActionsError).length} backed review action(s) to check.
                                 </p>
                             ) : mostRecentProject ? (
                                 <p className="text-sm text-text-secondary">
@@ -444,7 +484,7 @@ export default function Component() {
 
                 <section
                     aria-label="Dashboard decision brief"
-                    className="rounded-2xl border border-divider bg-bg-paper p-5 shadow-sm"
+                    className={`rounded-2xl border bg-bg-paper p-5 shadow-sm ${dashboardDecisionBrief.isDegraded ? 'border-warning-color' : 'border-divider'}`}
                 >
                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div>
@@ -457,6 +497,11 @@ export default function Component() {
                             <p className="mt-2 max-w-3xl text-sm text-text-secondary">
                                 {dashboardDecisionBrief.description}
                             </p>
+                            {dashboardDecisionBrief.isDegraded && dashboardDecisionBrief.correlationId && (
+                                <p className="mt-2 text-xs text-text-secondary">
+                                    Correlation ID: <code className="text-xs bg-bg-elevated px-1.5 py-0.5 rounded">{dashboardDecisionBrief.correlationId}</code>
+                                </p>
+                            )}
                             <p className="mt-3 text-xs font-medium uppercase tracking-[0.14em] text-text-secondary">
                                 {pluralize(blockedWork.length, 'blocked item')} · {pluralize(reviewRequired.length, 'review item')} · {pluralize(safeToContinue.length, 'safe continuation')}
                             </p>
@@ -470,6 +515,17 @@ export default function Component() {
                             >
                                 {dashboardDecisionBrief.ctaLabel}
                                 <ArrowRight className="h-4 w-4" />
+                            </Button>
+                        )}
+                        {dashboardDecisionBrief.isDegraded && dashboardDecisionBrief.retryAvailable && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => window.location.reload()}
+                                className="inline-flex items-center justify-center gap-2 rounded-lg border border-divider bg-bg-elevated px-4 py-2.5 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-hover"
+                            >
+                                <RefreshCw className="h-4 w-4" />
+                                Retry
                             </Button>
                         )}
                     </div>

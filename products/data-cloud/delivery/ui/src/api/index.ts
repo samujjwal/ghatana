@@ -34,7 +34,7 @@ export * from "./schema.service";
 // Suggestion (existing)
 export * from "./suggestion.service";
 
-// Events — AEP event fabric explorer
+// Events — Data Cloud Event Plane explorer
 export * from "./events.service";
 export { eventsService } from "./events.service";
 

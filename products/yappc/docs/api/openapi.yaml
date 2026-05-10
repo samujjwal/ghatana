@@ -703,6 +703,22 @@ paths:
       tags: [intent]
       summary: Capture product intent
       operationId: captureIntent
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -725,6 +741,22 @@ paths:
       summary: Analyze captured intent
       description: Sends the captured intent through the guided enrichment pipeline for decomposition and review.
       operationId: analyzeIntent
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -744,6 +776,21 @@ paths:
       operationId: getIntent
       parameters:
         - $ref: "#/components/parameters/ResourceId"
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       responses:
         "200":
           description: Intent record
@@ -757,6 +804,22 @@ paths:
       tags: [shape]
       summary: Derive system shape from intent
       operationId: deriveShape
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -772,6 +835,22 @@ paths:
       tags: [shape]
       summary: Generate system model (domain entities, APIs)
       operationId: generateSystemModel
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -802,6 +881,22 @@ paths:
       tags: [generate]
       summary: Generate project artifacts (code, config, CI)
       operationId: generateArtifacts
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -823,6 +918,22 @@ paths:
       tags: [generate]
       summary: Regenerate artifacts with a change diff
       operationId: regenerateWithDiff
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -845,6 +956,21 @@ paths:
       parameters:
         - name: runId
           in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
           required: true
           schema:
             type: string
@@ -872,6 +998,21 @@ paths:
       parameters:
         - name: runId
           in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
           required: true
           schema:
             type: string
@@ -1030,17 +1171,17 @@ paths:
             type: string
         - name: X-Tenant-ID
           in: header
-          required: false
+          required: true
           schema:
             type: string
         - name: X-Workspace-ID
           in: header
-          required: false
+          required: true
           schema:
             type: string
         - name: X-Project-ID
           in: header
-          required: false
+          required: true
           schema:
             type: string
       requestBody:
@@ -1083,17 +1224,17 @@ paths:
             type: string
         - name: X-Tenant-ID
           in: header
-          required: false
+          required: true
           schema:
             type: string
         - name: X-Workspace-ID
           in: header
-          required: false
+          required: true
           schema:
             type: string
         - name: X-Project-ID
           in: header
-          required: false
+          required: true
           schema:
             type: string
       requestBody:
@@ -1173,6 +1314,22 @@ paths:
       tags: [validate]
       summary: Run default validation suite
       operationId: validate
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -1188,6 +1345,22 @@ paths:
       tags: [validate]
       summary: Run validation with a custom config
       operationId: validateWithConfig
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -2658,6 +2831,22 @@ paths:
       tags: [run]
       summary: Execute a YAPPC run
       operationId: executeRun
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -2675,6 +2864,22 @@ paths:
       tags: [run]
       summary: Execute a run with embedded observation collection
       operationId: executeRunWithObservation
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -2692,6 +2897,22 @@ paths:
       tags: [run]
       summary: Rollback the last executed run
       operationId: rollback
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -2709,6 +2930,22 @@ paths:
       tags: [run]
       summary: Promote the last validated run to the next environment
       operationId: promote
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -2728,6 +2965,22 @@ paths:
       tags: [observe]
       summary: Collect an observation for a run
       operationId: collectObservation
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -2747,6 +3000,22 @@ paths:
       tags: [learn]
       summary: Analyze a completed run and record learning signals
       operationId: analyze
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -2764,6 +3033,22 @@ paths:
       tags: [learn]
       summary: Analyze with explicit contextual metadata
       operationId: analyzeWithContext
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -2783,6 +3068,22 @@ paths:
       tags: [evolve]
       summary: Propose evolutions based on accumulated learning signals
       operationId: propose
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -2800,6 +3101,22 @@ paths:
       tags: [evolve]
       summary: Propose evolutions within explicit architectural constraints
       operationId: proposeWithConstraints
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -2838,6 +3155,22 @@ paths:
       tags: [artifact-graph]
       summary: Ingest artifacts into the knowledge graph
       operationId: ingestArtifactGraph
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -2853,6 +3186,22 @@ paths:
       tags: [artifact-graph]
       summary: Analyze the artifact knowledge graph
       operationId: analyzeArtifactGraph
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -2868,6 +3217,22 @@ paths:
       tags: [artifact-graph]
       summary: Merge two artifact graphs
       operationId: mergeArtifactGraph
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -2883,6 +3248,22 @@ paths:
       tags: [artifact-graph]
       summary: Query the artifact knowledge graph
       operationId: queryArtifactGraph
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -2898,6 +3279,22 @@ paths:
       tags: [artifact-graph]
       summary: Analyze residual artifacts not yet incorporated into the graph
       operationId: analyzeResidual
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -5986,14 +6383,23 @@ components:
 
     CreatePreviewSessionRequest:
       type: object
-      required: [projectId, artifactId]
+      required: [tenantId, workspaceId, projectId, artifactId, userId]
       properties:
+        tenantId:
+          type: string
+          description: ID of the tenant (organization)
+        workspaceId:
+          type: string
+          description: ID of the workspace
         projectId:
           type: string
           description: ID of the project containing the artifact
         artifactId:
           type: string
           description: ID of the artifact to preview
+        userId:
+          type: string
+          description: ID of the user requesting the preview session
         duration:
           type: integer
           description: Session duration in seconds (max 86400)

@@ -410,8 +410,12 @@ export const gates = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface PreviewSessionContext {
+  readonly tenantId: string;
+  readonly workspaceId: string;
   readonly projectId: string;
   readonly artifactId: string;
+  readonly userId: string;
+  readonly expiration?: number; // seconds until expiration, defaults to server default
   readonly viewport?: { width: number; height: number };
   readonly theme?: 'light' | 'dark' | 'auto';
   readonly locale?: string;

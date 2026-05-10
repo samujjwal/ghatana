@@ -198,4 +198,31 @@ describe('BuilderPreviewRoute security', () => {
     });
     expect(screen.getByText('Waiting for document…')).toBeInTheDocument();
   });
+
+  it('validates iframe sandbox configuration in CSP headers', () => {
+    const cspHeader = PREVIEW_BUILDER_RESPONSE_HEADERS['Content-Security-Policy'];
+    
+    // Verify sandbox restrictions are enforced
+    expect(cspHeader).toContain("sandbox 'allow-scripts allow-same-origin'");
+    expect(cspHeader).not.toContain('allow-popups');
+    expect(cspHeader).not.toContain('allow-forms');
+    expect(cspHeader).not.toContain('allow-top-navigation');
+  });
+
+  it('rejects expired preview session tokens', async () => {
+    vi.mocked(validatePreviewSessionToken).mockResolvedValue({
+      valid: false,
+      reason: 'Token expired',
+    });
+    const postMessageSpy = vi.spyOn(window, 'postMessage');
+
+    render(<BuilderPreviewRoute />);
+
+    expect(await screen.findByText('Preview access denied')).toBeInTheDocument();
+    expect(screen.getByText('Token expired')).toBeInTheDocument();
+    expect(postMessageSpy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'READY' }),
+      expect.any(String),
+    );
+  });
 });

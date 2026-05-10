@@ -19,18 +19,6 @@
     "noFallthroughCasesInSwitch": true,
     "ignoreDeprecations": "6.0",
     "baseUrl": ".",
-    "rootDir": "../../../../",
-    "rootDirs": [
-      ".",
-      "./.react-router/types",
-      "../../../../platform/typescript/ds-schema/src",
-      "../../../../platform/typescript/ui-builder/src",
-      "../libs/yappc-ui/src/components/components/Toast",
-      "../libs/yappc-ui/src/components/utils",
-      "../libs/yappc-ui/src/components/theme",
-      "../libs/yappc-ui/src/components/tokens",
-      "../libs/yappc-product-theme/src"
-    ],
     "types": ["vite/client", "@react-router/node", "node"],
     "paths": {
       "yappc-ai": ["../libs/yappc-ai/src/index.ts"],
@@ -93,10 +81,9 @@
     }
   },
   "include": [
-    "src",
-    ".react-router/types/**/*.ts",
-    "../../../../platform/typescript/ds-schema/src/**/*",
-    "../../../../platform/typescript/ui-builder/src/**/*"
+    "src/**/*",
+    "src/routes.ts",
+    ".react-router/types/**/*.ts"
   ],
   "files": ["src/utils/Logger.ts"],
   "references": [
@@ -116,7 +103,6 @@
     "src/components/ui",
     "src/__tests__",
     "src/services/ai",
-    "src/services/anomaly",
     "src/clients/ai",
     "src/hooks/useWorkspaceAdmin.ts",
     "src/hooks/useContextualAI.ts",
@@ -181,6 +167,8 @@
     "../../libs/**/__tests__/**/*",
     "../../libs/**/?(*.)+(spec|test).[tj]s?(x)",
     "../../libs/**/stories/**/*",
-    "../../libs/**/storybook/**/*"
+    "../../libs/**/storybook/**/*",
+    "src/pages/collaboration/TeamDashboardPage.tsx",
+    "src/pages/collaboration/TeamChatPage.tsx"
   ]
 }

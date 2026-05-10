@@ -61,4 +61,17 @@ export type ProjectShellContract = {
 	workspaceId?: string;
 	currentPhase: string;
 	phaseProgress?: number;
+	// TODO-004: Include backend capability contract
+	userId?: string;
+	role?: string;
+	capabilities?: {
+		read: boolean;
+		create: boolean;
+		update: boolean;
+		delete: boolean;
+		include?: boolean;
+		comment?: boolean;
+	};
+	isOwner?: boolean;
+	isIncluded?: boolean;
 };

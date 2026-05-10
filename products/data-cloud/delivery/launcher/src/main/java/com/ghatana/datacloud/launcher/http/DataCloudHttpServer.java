@@ -117,6 +117,10 @@ import com.ghatana.datacloud.launcher.http.voice.VoiceSttPort;
 import com.ghatana.datacloud.launcher.http.voice.VoiceTtsConfig;
 import com.ghatana.datacloud.launcher.http.voice.WhisperSttConfig;
 
+import com.ghatana.datacloud.launcher.RuntimeProfileValidator;
+import com.ghatana.datacloud.launcher.http.SurfaceRecord;
+import com.ghatana.datacloud.launcher.http.DependencyProbeResult;
+
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -1326,6 +1330,24 @@ public class DataCloudHttpServer {
         boolean tenantResolverAvailable = authConfigured;
         boolean entityStoreDurable = isDurableStoreBacking(client != null ? client.entityStore() : null);
         boolean coreEventStoreDurable = isDurableStoreBacking(client != null ? client.eventLogStore() : null);
+
+        // DC-P0-001: Centralized fail-closed gate — accumulates ALL violations before throwing.
+        RuntimeProfileValidator.builder()
+            .deploymentProfile(deploymentMode)
+            .strictTenantResolution(strictTenantResolution)
+            .authConfigured(authConfigured)
+            .auditConfigured(auditService != null)
+            .policyEngineConfigured(policyEngine != null)
+            .durableEntityStore(entityStoreDurable)
+            .durableEventStore(coreEventStoreDurable)
+            .durableIdempotencyStore(genericIdempotencyStore != null)
+            .transactionManagerConfigured(transactionManager != null)
+            .metricsConfigured(metricsCollectorConfigured)
+            .traceExportConfigured(traceExportService != null)
+            .completionServiceConfigured(completionService != null)
+            .build()
+            .validate();
+
         validateSecurityConfiguration(apiKeyResolver != null || jwtProvider != null, strictTenantResolution, log);
         enforceLoopbackInInsecureMode(authConfigured, strictTenantResolution, listenHost, log);
         validateSettingsStorageConfiguration(strictTenantResolution, deploymentMode, settingsStore, log);
@@ -1520,7 +1542,8 @@ public class DataCloudHttpServer {
         surfaceRegistryHandler = new SurfaceRegistryHandler(
             httpSupport,
             objectMapper,
-            this::buildSurfaceSnapshot);
+            this::buildSurfaceSnapshot,
+            this::buildTypedSurfaceSnapshot);
 
         // P3.1: Tenant-scoped runtime context layer — in-memory key-value store
         contextLayerHandler = new ContextLayerHandler(httpSupport, objectMapper, knowledgeGraphPlugin);
@@ -1781,20 +1804,28 @@ public class DataCloudHttpServer {
         boolean entityStoreDurable = isDurableStoreBacking(client != null ? client.entityStore() : null);
         boolean coreEventStoreDurable = isDurableStoreBacking(client != null ? client.eventLogStore() : null);
 
-        Map<String, Object> runtimePosture = new LinkedHashMap<>();
-        runtimePosture.put("productionLikeProfile", isProductionMode(deploymentMode));
-        runtimePosture.put("authenticationConfigured", authConfigured);
+        // DC-P0-001: Publish the canonical validator posture so /api/v1/surfaces is an authoritative truth.
+        RuntimeProfileValidator validator = RuntimeProfileValidator.builder()
+            .deploymentProfile(deploymentMode)
+            .strictTenantResolution(strictTenantResolution)
+            .authConfigured(authConfigured)
+            .auditConfigured(auditService != null)
+            .policyEngineConfigured(policyEngine != null)
+            .durableEntityStore(entityStoreDurable)
+            .durableEventStore(coreEventStoreDurable)
+            .durableIdempotencyStore(genericIdempotencyStore != null)
+            .transactionManagerConfigured(transactionManager != null)
+            .metricsConfigured(metricsCollectorConfigured)
+            .traceExportConfigured(traceExportService != null)
+            .completionServiceConfigured(completionService != null)
+            .build();
+
+        Map<String, Object> runtimePosture = new LinkedHashMap<>(validator.toPostureSnapshot());
         runtimePosture.put("settingsStorageMode", settingsStorageMode);
         runtimePosture.put("settingsDurable", settingsDurable);
-        runtimePosture.put("entityStoreDurable", entityStoreDurable);
         runtimePosture.put("eventStoreWired", eventLogStore != null);
-        runtimePosture.put("coreEventStoreDurable", coreEventStoreDurable);
         runtimePosture.put("eventTail", buildEventTailPosture(client != null ? client.eventLogStore() : null));
         runtimePosture.put("idempotencyStoreDurable", entityWriteIdempotencyStore != null);
-        runtimePosture.put("auditConfigured", auditService != null);
-        runtimePosture.put("policyConfigured", policyEngine != null);
-        runtimePosture.put("metricsConfigured", metricsCollectorConfigured);
-        runtimePosture.put("traceConfigured", traceExportService != null);
 
         surfaces.put("_meta", Map.of(
             "deploymentMode", deploymentMode,
@@ -1914,6 +1945,154 @@ public class DataCloudHttpServer {
         surfaces.put("featureFlags", featureFlags);
 
         return surfaces;
+    }
+
+    private java.util.List<SurfaceRecord> buildTypedSurfaceSnapshot() {
+        boolean authConfigured = apiKeyResolver != null || jwtProvider != null;
+        boolean entityStoreDurable = isDurableStoreBacking(client != null ? client.entityStore() : null);
+        boolean coreEventStoreDurable = isDurableStoreBacking(client != null ? client.eventLogStore() : null);
+
+        java.util.List<SurfaceRecord> records = new java.util.ArrayList<>();
+
+        records.add(SurfaceRecord.builder("authentication.apiKey")
+            .ownerPlane("governance")
+            .state(apiKeyResolver != null ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("DATACLOUD_API_KEYS"))
+            .probe(apiKeyResolver != null
+                ? DependencyProbeResult.pass("api-key-resolver", "API key resolver is configured")
+                : DependencyProbeResult.fail("api-key-resolver", "DATACLOUD_API_KEYS not set"))
+            .tenantScope("global")
+            .runtimeProfile(deploymentMode)
+            .actionsAllowed(List.of("authenticate"))
+            .build());
+
+        records.add(SurfaceRecord.builder("authentication.jwt")
+            .ownerPlane("governance")
+            .state(jwtProvider != null ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("DATACLOUD_JWT_SECRET"))
+            .probe(jwtProvider != null
+                ? DependencyProbeResult.pass("jwt-provider", "JWT provider is configured")
+                : DependencyProbeResult.fail("jwt-provider", "DATACLOUD_JWT_SECRET not set"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .actionsAllowed(List.of("authenticate", "exchange-token"))
+            .build());
+
+        records.add(SurfaceRecord.builder("governance.audit")
+            .ownerPlane("governance")
+            .state(auditService != null ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("DATACLOUD_AUDIT_ENABLED", "event-log-store"))
+            .probe(auditService != null
+                ? DependencyProbeResult.pass("audit-service", "Audit service is active")
+                : DependencyProbeResult.fail("audit-service", "DATACLOUD_AUDIT_ENABLED=false or event store absent"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .actionsAllowed(List.of("emit-audit-event", "query-audit-log"))
+            .build());
+
+        records.add(SurfaceRecord.builder("governance.policyEngine")
+            .ownerPlane("governance")
+            .state(policyEngine != null ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("DATACLOUD_POLICY_ENGINE_URL"))
+            .probe(policyEngine != null
+                ? DependencyProbeResult.pass("policy-engine", "Policy engine is configured")
+                : DependencyProbeResult.fail("policy-engine", "DATACLOUD_POLICY_ENGINE_URL not set"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .actionsAllowed(List.of("evaluate-policy", "enforce-policy"))
+            .build());
+
+        records.add(SurfaceRecord.builder("data.entityStore")
+            .ownerPlane("data")
+            .state(entityStoreDurable ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DEGRADED)
+            .requiredDependencies(List.of("DATACLOUD_DB_ENABLED", "DATACLOUD_DB_URL"))
+            .probe(entityStoreDurable
+                ? DependencyProbeResult.pass("entity-store", "Durable JDBC-backed entity store")
+                : DependencyProbeResult.degraded("entity-store", "In-memory entity store — data lost on restart"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .limitations(entityStoreDurable ? null : "Data is non-durable — in-memory only, lost on process restart")
+            .actionsAllowed(List.of("read-entity", "write-entity", "delete-entity", "query"))
+            .build());
+
+        records.add(SurfaceRecord.builder("event.store")
+            .ownerPlane("event")
+            .state(coreEventStoreDurable ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DEGRADED)
+            .requiredDependencies(List.of("DATACLOUD_KAFKA_ENABLED", "DATACLOUD_KAFKA_BOOTSTRAP"))
+            .probe(coreEventStoreDurable
+                ? DependencyProbeResult.pass("event-log-store", "Durable event log store")
+                : DependencyProbeResult.degraded("event-log-store", "In-memory event log — events lost on restart"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .limitations(coreEventStoreDurable ? null : "Events are non-durable — lost on process restart")
+            .actionsAllowed(List.of("append-event", "tail-events", "replay-events"))
+            .build());
+
+        records.add(SurfaceRecord.builder("operations.idempotency")
+            .ownerPlane("operations")
+            .state(genericIdempotencyStore != null ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DEGRADED)
+            .requiredDependencies(List.of("DATACLOUD_DB_ENABLED"))
+            .probe(genericIdempotencyStore != null
+                ? DependencyProbeResult.pass("generic-idempotency-store", "Durable write idempotency store")
+                : DependencyProbeResult.degraded("generic-idempotency-store", "In-memory idempotency — keys lost on restart"))
+            .tenantScope("global")
+            .runtimeProfile(deploymentMode)
+            .limitations(genericIdempotencyStore != null ? null : "Idempotency keys are in-memory only — retries may cause duplicate writes after restart")
+            .actionsAllowed(List.of("idempotent-write"))
+            .build());
+
+        records.add(SurfaceRecord.builder("operations.transactionManager")
+            .ownerPlane("operations")
+            .state(transactionManager != null ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("DATACLOUD_DB_ENABLED"))
+            .probe(transactionManager != null
+                ? DependencyProbeResult.pass("transaction-manager", "Transaction manager active for atomic multi-step writes")
+                : DependencyProbeResult.fail("transaction-manager", "No transaction manager — multi-step writes are NOT atomic"))
+            .tenantScope("global")
+            .runtimeProfile(deploymentMode)
+            .limitations(transactionManager != null ? null : "Multi-step writes (entity + event + audit) are not atomic")
+            .actionsAllowed(List.of("atomic-write"))
+            .build());
+
+        records.add(SurfaceRecord.builder("observability.metrics")
+            .ownerPlane("operations")
+            .state(metricsCollectorConfigured ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("DATACLOUD_METRICS_ENABLED"))
+            .probe(metricsCollectorConfigured
+                ? DependencyProbeResult.pass("metrics-collector", "Prometheus metrics collector active")
+                : DependencyProbeResult.fail("metrics-collector", "DATACLOUD_METRICS_ENABLED=false — metrics are noop"))
+            .tenantScope("global")
+            .runtimeProfile(deploymentMode)
+            .actionsAllowed(List.of("emit-metric", "scrape-prometheus"))
+            .build());
+
+        records.add(SurfaceRecord.builder("observability.tracing")
+            .ownerPlane("operations")
+            .state(traceExportService != null ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("CLICKHOUSE_HOST"))
+            .probe(traceExportService != null
+                ? DependencyProbeResult.pass("trace-export-service", "Spans exported to ClickHouse")
+                : DependencyProbeResult.fail("trace-export-service", "CLICKHOUSE_HOST not set — spans are discarded"))
+            .tenantScope("global")
+            .runtimeProfile(deploymentMode)
+            .limitations(traceExportService == null ? "Spans are generated but not persisted — no distributed tracing" : null)
+            .actionsAllowed(List.of("export-span", "query-trace"))
+            .build());
+
+        records.add(SurfaceRecord.builder("intelligence.aiCompletion")
+            .ownerPlane("intelligence")
+            .state(completionService != null ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .requiredDependencies(List.of("AI_PROVIDER or OPENAI_API_KEY or OLLAMA_HOST"))
+            .probe(completionService != null
+                ? DependencyProbeResult.pass("completion-service", "LLM completion service is wired")
+                : DependencyProbeResult.fail("completion-service", "No AI provider configured — AI routes return 503"))
+            .tenantScope("tenant")
+            .runtimeProfile(deploymentMode)
+            .limitations(completionService == null ? "AI assist, voice gateway, and heuristic AI routes return 503" : null)
+            .actionsAllowed(List.of("ai-assist", "recommend", "explain", "voice-intent"))
+            .build());
+
+        return java.util.Collections.unmodifiableList(records);
     }
 
     @SuppressWarnings("unchecked")

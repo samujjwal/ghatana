@@ -41,7 +41,25 @@ jobs:
           chmod +x scripts/scan-todos.sh
           scripts/scan-todos.sh --ci --max 100
         working-directory: products/yappc
-      
+
+      - name: Validate Documentation Index
+        run: |
+          chmod +x scripts/validate-docs-index.sh
+          scripts/validate-docs-index.sh --ci
+        working-directory: products/yappc
+
+      - name: Check i18n Coverage
+        run: |
+          chmod +x scripts/check-i18n-coverage.sh
+          scripts/check-i18n-coverage.sh --ci
+        working-directory: products/yappc
+
+      - name: Check API Parity
+        run: |
+          chmod +x scripts/check-api-parity.sh
+          scripts/check-api-parity.sh --ci
+        working-directory: products/yappc
+
       - name: Run Backend Tests
         run: ./gradlew test
         working-directory: products/yappc
@@ -51,6 +69,12 @@ jobs:
           cd frontend
           pnpm install
           pnpm test
+        working-directory: products/yappc
+
+      - name: Run Preview Security Tests
+        run: |
+          cd frontend
+          pnpm test -- preview-builder-security
         working-directory: products/yappc
 
       - name: Prevent new @ts-nocheck debt
@@ -114,6 +138,70 @@ jobs:
           else
             echo "⚠️  dist/ not found — skipping bundle size check"
           fi
+        working-directory: products/yappc
+
+  visual-accessibility-tests:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+      
+      - name: Install dependencies
+        run: |
+          cd frontend
+          pnpm install
+        working-directory: products/yappc
+      
+      - name: Run Visual Regression Tests
+        run: |
+          cd frontend
+          pnpm playwright install --with-deps chromium
+          pnpm exec playwright test visual-regression \
+            --reporter=list \
+            --project=chromium \
+            --update-snapshots=false
+        working-directory: products/yappc
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:7002
+      
+      - name: Run Accessibility Tests
+        run: |
+          cd frontend
+          pnpm playwright install --with-deps chromium
+          pnpm exec playwright test accessibility \
+            --reporter=list \
+            --project=chromium
+        working-directory: products/yappc
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:7002
+      
+      - name: Upload Visual Regression Artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-regression-screenshots
+          path: frontend/test-results/
+          retention-days: 7
+        working-directory: products/yappc
+      
+      - name: Upload Accessibility Report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-report
+          path: frontend/test-results/
+          retention-days: 7
         working-directory: products/yappc
 
   architecture-validation:

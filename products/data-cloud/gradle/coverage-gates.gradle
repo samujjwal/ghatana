@@ -26,7 +26,6 @@ def coverageTargets = [
     'platform-config': [line: 0.50, branch: 0.30, method: 0.50],
     'platform-launcher': [line: 0.50, branch: 0.30, method: 0.50],
     'platform-plugins': [line: 0.50, branch: 0.30, method: 0.50],
-    'feature-store-ingest':   [line: 0.50, branch: 0.30, method: 0.50],
     'platform-event-store':   [line: 0.60, branch: 0.40, method: 0.60],
     'agent-registry': [line: 0.50, branch: 0.30, method: 0.50],
     'kernel-bridge': [line: 0.50, branch: 0.30, method: 0.50],

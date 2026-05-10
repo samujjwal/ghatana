@@ -112,17 +112,20 @@ export function Layout() {
   const { setLastOpenedProject } = useLastOpenedProject();
   const { currentWorkspace, workspaces, ownedProjects, includedProjects } = useWorkspaceContext();
 
-  // Fetch project data
-  const { data: project, isLoading } = useQuery({
+  // Fetch project data - MANDATORY scoped fetch only
+  const { data: project, isLoading, error } = useQuery({
     queryKey: ['project', projectId, currentWorkspace?.id],
     queryFn: async () => {
-      if (!projectId) return null;
-      if (currentWorkspace?.id) {
-        return yappcApi.projects.getScoped(projectId, currentWorkspace.id) as Promise<ProjectShellContract>;
+      if (!projectId) {
+        throw new Error('Project ID is required');
       }
-      return yappcApi.projects.get(projectId) as Promise<ProjectShellContract>;
+      if (!currentWorkspace?.id) {
+        throw new Error('Workspace context is required - project access must be scoped');
+      }
+      return yappcApi.projects.getScoped(projectId, currentWorkspace.id) as Promise<ProjectShellContract>;
     },
-    enabled: !!projectId,
+    enabled: !!projectId && !!currentWorkspace?.id,
+    retry: false,
   });
 
   const currentUser = useAtomValue(currentUserAtom);
@@ -130,33 +133,34 @@ export function Layout() {
 
   // SIMP-Y18: Eagerly prefetch data that child routes commonly need,
   // so navigating to any phase tab starts without a loading spinner.
+  // All prefetches must use scoped access (TODO-001, TODO-002)
   useEffect(() => {
-    if (!projectId) return;
+    if (!projectId || !currentWorkspace?.id) return;
 
     void queryClient.prefetchQuery({
-      queryKey: ['project-artifacts', projectId],
-      queryFn: () => yappcApi.projects.artifacts(projectId),
+      queryKey: ['project-artifacts', projectId, currentWorkspace.id],
+      queryFn: () => yappcApi.projects.artifacts(projectId, currentWorkspace.id),
       staleTime: 60_000,
     });
 
     void queryClient.prefetchQuery({
-      queryKey: ['project-sprint-current', projectId],
-      queryFn: () => yappcApi.projects.sprintCurrent(projectId),
+      queryKey: ['project-sprint-current', projectId, currentWorkspace.id],
+      queryFn: () => yappcApi.projects.sprintCurrent(projectId, currentWorkspace.id),
       staleTime: 60_000,
     });
 
     void queryClient.prefetchQuery({
-      queryKey: ['project-backlog', projectId],
-      queryFn: () => yappcApi.projects.backlog(projectId, 20),
+      queryKey: ['project-backlog', projectId, currentWorkspace.id],
+      queryFn: () => yappcApi.projects.backlog(projectId, currentWorkspace.id, 20),
       staleTime: 60_000,
     });
 
     void queryClient.prefetchQuery({
-      queryKey: ['project-runs-recent', projectId],
-      queryFn: () => yappcApi.projects.recentRuns(projectId, 10),
+      queryKey: ['project-runs-recent', projectId, currentWorkspace.id],
+      queryFn: () => yappcApi.projects.recentRuns(projectId, currentWorkspace.id, 10),
       staleTime: 60_000,
     });
-  }, [projectId, queryClient]);
+  }, [projectId, currentWorkspace?.id, queryClient]);
   const currentUserProfile = currentUser as
     | { firstName?: string; lastName?: string; email?: string }
     | null;
@@ -173,17 +177,18 @@ export function Layout() {
       }
     : { id: 'guest', name: 'Guest', email: '', initials: 'G' };
 
-  // Prepare workspace info
+  // Prepare workspace info - TODO-004: Use backend capability contract instead of hardcoding
+  // For now, we derive from currentWorkspace but should come from backend capabilities
   const workspaceInfo = currentWorkspace ? {
     id: currentWorkspace.id,
     name: currentWorkspace.name,
-    isOwner: true,
+    isOwner: project?.isOwner ?? false, // Use backend-provided ownership
   } : undefined;
 
   const workspacesList = workspaces.map(ws => ({
     id: ws.id,
     name: ws.name,
-    isOwner: true,
+    isOwner: ws.id === project?.workspaceId, // Derive from project workspace context
   }));
 
   // Prepare project info
@@ -232,10 +237,11 @@ export function Layout() {
             onClick: () => {
               void (async () => {
                 try {
-                  if (!projectId) {
+                  if (!projectId || !currentWorkspace?.id) {
+                    alert('Project and workspace context are required for export');
                     return;
                   }
-                  const res = await yappcApi.projects.export(projectId);
+                  const res = await yappcApi.projects.export(projectId, currentWorkspace.id);
                   const blob = await res.blob();
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');
@@ -244,6 +250,8 @@ export function Layout() {
                   a.click();
                   URL.revokeObjectURL(url);
                 } catch (err) {
+                  const message = err instanceof Error ? err.message : 'Export failed';
+                  alert(`Export failed: ${message}. Please check your permissions and try again.`);
                   console.error('[ProjectShell] Export failed:', err);
                 }
               })();
@@ -285,6 +293,46 @@ export function Layout() {
       setHeaderPhaseInfo(undefined);
     };
   }, [project, setHeaderActionContext, setHeaderContextActions, setHeaderPhaseInfo]);
+
+  // Handle missing scope or authorization errors
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8 bg-bg-default">
+        <div className="max-w-md text-center">
+          <h2 className="text-2xl font-bold text-text-primary mb-4">Project Access Error</h2>
+          <p className="text-text-secondary mb-6">
+            {error instanceof Error ? error.message : 'Unable to load project. Project access must be scoped to a workspace.'}
+          </p>
+          <button
+            onClick={() => navigate('/workspaces')}
+            className="px-4 py-2 bg-info-color text-white rounded-md hover:bg-info-color/90 transition-colors"
+          >
+            Go to Workspaces
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle missing workspace context
+  if (!currentWorkspace?.id && projectId) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8 bg-bg-default">
+        <div className="max-w-md text-center">
+          <h2 className="text-2xl font-bold text-text-primary mb-4">Workspace Context Required</h2>
+          <p className="text-text-secondary mb-6">
+            Project access must be scoped to a workspace. Please select a workspace to access this project.
+          </p>
+          <button
+            onClick={() => navigate('/workspaces')}
+            className="px-4 py-2 bg-info-color text-white rounded-md hover:bg-info-color/90 transition-colors"
+          >
+            Select Workspace
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const projectName = project?.name || 'Loading...';
   const projectTabs = [...BASE_PROJECT_TABS].filter(tab => isPhaseEnabled(tab.key as any)) as (typeof BASE_PROJECT_TABS[number])[];

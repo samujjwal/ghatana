@@ -683,43 +683,16 @@ export function useIncludeProject() {
 
 /**
  * Hook to get AI name suggestions
+ * @throws Error when backend suggestion fails - UI should show degraded state with retry
  */
 export function useNameSuggestions() {
   const suggestWorkspace = useCallback(async () => {
-    try {
-      return await suggestWorkspaceName();
-    } catch {
-      // Fallback suggestions
-      const suggestions = [
-        'Innovation Lab',
-        'Project Alpha',
-        'Creative Studio',
-        'Growth Hub',
-        'Digital Forge',
-      ];
-      return suggestions[Math.floor(Math.random() * suggestions.length)];
-    }
+    return await suggestWorkspaceName();
   }, []);
 
   const suggestProject = useCallback(
     async (workspaceId: string, type?: ProjectTypeContract) => {
-      try {
-        return await suggestProjectName(workspaceId, type);
-      } catch {
-        const typeDefaults: Record<string, string[]> = {
-          webapp: ['Web Portal', 'Dashboard', 'Client App'],
-          api: ['Core API', 'Gateway Service', 'Data API'],
-          mobile: ['Mobile App', 'Companion App', 'Field App'],
-          library: ['Core Utils', 'Shared Components', 'Common Lib'],
-          microservice: [
-            'Auth Service',
-            'Notification Service',
-            'Analytics Engine',
-          ],
-        };
-        const options = typeDefaults[type ?? 'webapp'] ?? typeDefaults.webapp;
-        return options[Math.floor(Math.random() * options.length)];
-      }
+      return await suggestProjectName(workspaceId, type);
     },
     []
   );

@@ -12,7 +12,7 @@
  */
 
 /** Decision options for a residual island review action. */
-export type ResidualIslandDecision = 'ACCEPTED' | 'REJECTED';
+export type ResidualIslandDecision = 'ACCEPTED' | 'REJECTED' | 'PROMOTED';
 
 /** Input to a single residual island review operation. */
 export interface ResidualIslandReviewRequest {
@@ -56,7 +56,7 @@ function isResidualIslandReviewResponse(value: unknown): value is ResidualIsland
   return (
     typeof v['artifactId'] === 'string' &&
     typeof v['residualIslandId'] === 'string' &&
-    (v['decision'] === 'ACCEPTED' || v['decision'] === 'REJECTED') &&
+    (v['decision'] === 'ACCEPTED' || v['decision'] === 'REJECTED' || v['decision'] === 'PROMOTED') &&
     typeof v['auditRecordId'] === 'string' &&
     typeof v['reviewedAt'] === 'string'
   );

@@ -1153,7 +1153,16 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     { preHandler: requirePermission('workflow', 'create') },
     async (request, reply) => {
       const prisma = getPrismaClient();
-      const userId = request.user?.userId ?? 'system';
+      const userId = request.user?.userId;
+      
+      // Require authenticated user context for production artifact saves
+      if (!userId) {
+        return reply.status(401).send({
+          error: 'Unauthorized',
+          message: 'Artifact creation requires authenticated user context',
+        });
+      }
+      
       const body = request.body as unknown;
 
       const artifactBody = body as {
@@ -1244,7 +1253,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
           status: artifactBody.status ?? 'draft',
           phase: (artifactBody.phase ?? 'INTENT') as LifecyclePhase,
           flowStage: artifactBody.flowStage ?? 0,
-          createdBy: artifactBody.createdBy ?? userId,
+          createdBy: userId, // Always use authenticated userId, not request body override
           linkedArtifacts: artifactBody.linkedArtifacts ?? [],
           metadata: (artifactBody.metadata ?? {}) as Prisma.InputJsonValue,
         },

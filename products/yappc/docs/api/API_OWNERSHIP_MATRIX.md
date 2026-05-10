@@ -26,6 +26,62 @@ Backend    (Port 7003)
 
 ---
 
+## REST vs GraphQL Ownership
+
+### REST-Owned Surfaces
+
+**Protocol**: HTTP REST (GET, POST, PUT, PATCH, DELETE)  
+**Use When**: Simple CRUD, resource-oriented operations, cacheable operations, browser-based clients
+
+| Domain              | Endpoints                           | Owner    | Rationale                                     |
+| ------------------- | ----------------------------------- | -------- | --------------------------------------------- |
+| **Workspaces**      | `/api/workspaces/*`                 | Node.js  | Standard CRUD, resource-oriented               |
+| **Projects**        | `/api/projects/*`                   | Node.js  | Standard CRUD, resource-oriented               |
+| **Canvas**          | `/api/canvas/*`                     | Node.js  | File-like operations, versioning              |
+| **Lifecycle**      | `/api/lifecycle/*`                  | Node.js  | State machine transitions, artifact CRUD       |
+| **Preview Sessions**| `/api/preview/session/*`            | Node.js  | Token-based access, short-lived sessions      |
+| **Health**          | `/health`, `/ready`                 | Both     | Simple status checks, no auth required         |
+
+### GraphQL-Owned Surfaces
+
+**Protocol**: GraphQL (POST /graphql)  
+**Use When**: Complex queries, nested relationships, real-time subscriptions, type-safe operations
+
+| Domain              | Operations                          | Owner    | Rationale                                     |
+| ------------------- | ----------------------------------- | -------- | --------------------------------------------- |
+| **Workflows**       | workflows, workflowExecutions       | Node.js  | Complex nested queries, state machine queries  |
+| **Requirements**    | requirements, approvals             | Java     | Complex relationships, approval workflows       |
+| **AI Agents**       | agents, agentExecutions             | Java     | Complex orchestration, execution tracking      |
+| **Versioning**      | promptVersions, abTests             | Node.js  | Complex A/B testing queries, version history   |
+| **DevSecOps**       | vulnerabilities, compliance         | Java     | Complex filtering, aggregation queries        |
+| **Observability**   | telemetry, metrics                  | Java     | Time-series queries, complex aggregations      |
+
+### Decision Criteria
+
+**Choose REST When**:
+- Simple CRUD operations (Create, Read, Update, Delete)
+- Resource-oriented URLs map naturally to domain model
+- HTTP caching semantics are beneficial
+- Browser-based clients need direct access
+- Simple request/response pattern
+
+**Choose GraphQL When**:
+- Complex nested queries with multiple relationships
+- Clients need to shape response data precisely
+- Real-time subscriptions are required
+- Type safety across the stack is critical
+- Multiple data sources need to be unified
+- Complex filtering and aggregation
+
+### Enforcement Mechanisms
+
+1. **Code Review Checklist**: PRs must verify the correct protocol is used for new endpoints
+2. **Lint Rule**: (Future) ESLint rule to prevent direct REST calls to GraphQL-owned domains
+3. **API Documentation**: All new endpoints must specify REST vs GraphQL in OpenAPI spec
+4. **Client Library**: Typed client libraries enforce the correct protocol per domain
+
+---
+
 ## API Ownership by Service
 
 ### Node.js Backend (Port 7002 - Internal Handlers)

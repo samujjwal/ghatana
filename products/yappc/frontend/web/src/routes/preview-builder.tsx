@@ -163,7 +163,16 @@ function isDevPreviewModeRequested(): boolean {
 
 function isDevPreviewModeEnabled(): boolean {
   // YAPPC-P0-002: Dev-only mode requires explicit opt-in via environment variable
-  return import.meta.env.DEV && import.meta.env.VITE_FEATURE_PREVIEW_DEV_MODE === 'true';
+  // Additionally, ensure we're in a development build (not production)
+  const isDevelopmentBuild = import.meta.env.DEV;
+  const isFeatureFlagEnabled = import.meta.env.VITE_FEATURE_PREVIEW_DEV_MODE === 'true';
+  
+  // Fail-safe: In production builds, never enable dev mode regardless of feature flag
+  if (!isDevelopmentBuild) {
+    return false;
+  }
+  
+  return isFeatureFlagEnabled;
 }
 
 /**

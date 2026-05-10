@@ -7,6 +7,23 @@ import path from 'path';
 import fs from 'fs';
 import type { Plugin } from 'vite';
 
+// Simple tsconfig for react-router to use
+const simpleTsconfig = {
+  compilerOptions: {
+    target: 'ES2022',
+    module: 'ESNext',
+    lib: ['ES2022', 'DOM', 'DOM.Iterable'],
+    moduleResolution: 'bundler',
+    skipLibCheck: true,
+    jsx: 'react-jsx',
+    strict: true,
+    allowImportingTsExtensions: true,
+    resolveJsonModule: true,
+    isolatedModules: true,
+    noEmit: true,
+  },
+};
+
 const enableBuildSourcemaps = process.env.VITE_BUILD_SOURCEMAP === 'true';
 
 // F-Y049: Sentry release tagging + source maps.
@@ -460,12 +477,12 @@ export default defineConfig({
     // Frontend is unaware of multiple backend services and always talks to a single gateway
     proxy: {
       '/api': {
-        target: `http://localhost:${process.env.VITE_API_PORT || '7001'}`,
+        target: `http://localhost:${process.env.VITE_API_PORT || '7003'}`,
         changeOrigin: true,
         secure: false,
       },
       '/graphql': {
-        target: `http://localhost:${process.env.VITE_API_PORT || '7001'}`,
+        target: `http://localhost:${process.env.VITE_API_PORT || '7003'}`,
         changeOrigin: true,
         secure: false,
         ws: true,

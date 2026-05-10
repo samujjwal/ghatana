@@ -18,8 +18,8 @@
  */
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { Sparkles as AutoAwesome, Send, X as Close, ChevronDown as ExpandMore, ChevronUp as ExpandLess, History } from 'lucide-react';
-import { Tooltip, Chip, Spinner as CircularProgress } from '@ghatana/design-system';
+import { Sparkles as AutoAwesome, Send, X as Close, ChevronDown as ExpandMore, ChevronUp as ExpandLess, History, AlertTriangle } from 'lucide-react';
+import { Tooltip, Chip, Spinner as CircularProgress, Typography, Paper, Box, Button as DesignSystemButton, IconButton } from '@ghatana/design-system';
 
 import { TRANSITIONS, RADIUS } from '../../styles/design-tokens';
 import type { CanvasMode } from '../../types/canvasMode';
@@ -61,6 +61,11 @@ export interface AISubmitOptions {
     includeCanvas?: boolean;
     /** Action type hint */
     actionType?: 'generate' | 'explain' | 'improve' | 'fix' | 'ask';
+}
+
+interface AIError {
+    message: string;
+    correlationId: string;
 }
 
 // ============================================================================
@@ -134,6 +139,8 @@ export function AICommandBar({
     const [isExpanded, setIsExpanded] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
     const [showSlashCommands, setShowSlashCommands] = useState(false);
+    const [aiError, setAiError] = useState<AIError | null>(null);
+    const [lastPrompt, setLastPrompt] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -184,14 +191,28 @@ export function AICommandBar({
             }
         }
 
+        setAiError(null);
+        setLastPrompt(prompt);
+        const correlationId = `ai-submit-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+        
         try {
             await onSubmit(prompt, { actionType, includeCanvas: true });
             setValue('');
             setIsExpanded(false);
         } catch (error) {
-            console.error('AI submit error:', error);
+            const errorMessage = error instanceof Error ? error.message : 'AI request failed';
+            setAiError({
+                message: errorMessage,
+                correlationId,
+            });
         }
     }, [value, isProcessing, onSubmit]);
+
+    const handleRetrySubmit = useCallback(() => {
+        if (lastPrompt) {
+            handleSubmit();
+        }
+    }, [lastPrompt, handleSubmit]);
 
     // Handle key events
     const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -482,6 +503,52 @@ export function AICommandBar({
                         </Button>
                     ))}
                 </div>
+            )}
+
+            {/* Error Display */}
+            {aiError && (
+                <Paper
+                    elevation={2}
+                    className="flex items-start gap-2 p-3 mt-2 border border-danger-border bg-danger-bg"
+                    style={{ maxWidth: 400 }}
+                >
+                    <AlertTriangle size={16} className="text-danger mt-0.5 flex-shrink-0" />
+                    <Box className="flex-1 min-w-0">
+                        <Typography variant="body2" style={{ fontWeight: 600 }}>
+                            AI request failed
+                        </Typography>
+                        <Typography variant="caption" className="block mt-1 text-danger">
+                            {aiError.message}
+                        </Typography>
+                        <Typography variant="caption" className="block mt-1 text-muted">
+                            Correlation ID: {aiError.correlationId}
+                        </Typography>
+                        <Box className="flex gap-2 mt-2">
+                            <DesignSystemButton
+                                variant="outline"
+                                size="small"
+                                onClick={handleRetrySubmit}
+                                disabled={isProcessing}
+                            >
+                                Retry
+                            </DesignSystemButton>
+                            <DesignSystemButton
+                                variant="ghost"
+                                size="small"
+                                onClick={() => setAiError(null)}
+                            >
+                                Dismiss
+                            </DesignSystemButton>
+                        </Box>
+                    </Box>
+                    <IconButton
+                        size="small"
+                        onClick={() => setAiError(null)}
+                        aria-label="Dismiss error"
+                    >
+                        <Close size={14} />
+                    </IconButton>
+                </Paper>
             )}
         </div>
     );

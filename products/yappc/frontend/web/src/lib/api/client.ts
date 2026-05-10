@@ -529,6 +529,9 @@ export interface ProjectDashboardAction {
   readonly summary: string;
   readonly severity: ProjectDashboardActionSeverity;
   readonly source: 'project.aiNextActions' | 'project.lifecyclePhase';
+  // TODO-011: Mark client-derived actions as degraded/fallback
+  readonly isDegraded: boolean;
+  readonly isFallback: boolean;
   readonly requiresReview: boolean;
   readonly safeToRun: boolean;
   readonly updatedAt: string;
@@ -568,8 +571,12 @@ export interface PhaseTransitionPreviewResponse {
 }
 
 export interface PreviewSessionContext {
+  readonly tenantId: string;
+  readonly workspaceId: string;
   readonly projectId: string;
   readonly artifactId: string;
+  readonly userId: string;
+  readonly expiration?: number; // seconds until expiration, defaults to server default
 }
 
 export interface PreviewSessionIssueResponse {
@@ -656,16 +663,31 @@ export const projects = {
     post<typeof body, unknown>('/api/projects/setup-suggestion', body, 'projects.setupSuggestion'),
   current: (projectId: string) =>
     get<Project>(`/api/projects/${encodeURIComponent(projectId)}/current`, 'projects.current'),
-  activity: (projectId: string) =>
-    get<ProjectActivityResponse>(`/api/projects/${encodeURIComponent(projectId)}/activity`, 'projects.activity'),
-  artifacts: (projectId: string) =>
-    get<ProjectArtifactsResponse>(`/api/projects/${encodeURIComponent(projectId)}/artifacts`, 'projects.artifacts'),
-  sprintCurrent: (projectId: string) =>
-    get<ProjectSprintCurrentResponse>(`/api/projects/${encodeURIComponent(projectId)}/sprints/current`, 'projects.sprintCurrent'),
-  backlog: (projectId: string, limit: number = 20) =>
-    get<ProjectBacklogResponse>(`/api/projects/${encodeURIComponent(projectId)}/backlog${encodeQuery({ limit: String(limit) })}`, 'projects.backlog'),
-  recentRuns: (projectId: string, limit: number = 10) =>
-    get<ProjectRunsResponse>(`/api/projects/${encodeURIComponent(projectId)}/runs${encodeQuery({ limit: String(limit) })}`, 'projects.recentRuns'),
+  activity: (projectId: string, workspaceId?: string) =>
+    get<ProjectActivityResponse>(
+      `/api/projects/${encodeURIComponent(projectId)}/activity${encodeQuery({ workspaceId })}`,
+      'projects.activity',
+    ),
+  artifacts: (projectId: string, workspaceId?: string) =>
+    get<ProjectArtifactsResponse>(
+      `/api/projects/${encodeURIComponent(projectId)}/artifacts${encodeQuery({ workspaceId })}`,
+      'projects.artifacts',
+    ),
+  sprintCurrent: (projectId: string, workspaceId?: string) =>
+    get<ProjectSprintCurrentResponse>(
+      `/api/projects/${encodeURIComponent(projectId)}/sprints/current${encodeQuery({ workspaceId })}`,
+      'projects.sprintCurrent',
+    ),
+  backlog: (projectId: string, workspaceId?: string, limit: number = 20) =>
+    get<ProjectBacklogResponse>(
+      `/api/projects/${encodeURIComponent(projectId)}/backlog${encodeQuery({ workspaceId, limit: String(limit) })}`,
+      'projects.backlog',
+    ),
+  recentRuns: (projectId: string, workspaceId?: string, limit: number = 10) =>
+    get<ProjectRunsResponse>(
+      `/api/projects/${encodeURIComponent(projectId)}/runs${encodeQuery({ workspaceId, limit: String(limit) })}`,
+      'projects.recentRuns',
+    ),
   availableForInclusion: (workspaceId: string) =>
     get<Project[]>(
       `/api/projects/available-for-inclusion${encodeQuery({ workspaceId })}`,
@@ -695,8 +717,11 @@ export const projects = {
       {},
       'projects.refreshAiDetails',
     ),
-  export: (projectId: string) =>
-    getResponse(`/api/projects/${encodeURIComponent(projectId)}/export`, 'projects.export'),
+  export: (projectId: string, workspaceId?: string) =>
+    getResponse(
+      `/api/projects/${encodeURIComponent(projectId)}/export${encodeQuery({ workspaceId })}`,
+      'projects.export',
+    ),
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────

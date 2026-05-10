@@ -447,8 +447,118 @@ describe('projectRoutes audit logging', () => {
       error: 'Included projects are read-only in this workspace',
       reason: 'included_project_read_only',
       projectId: 'project-included',
-      workspaceId: 'ws-123',
     });
     expect(lifecycleActivityLogCreateMock).not.toHaveBeenCalled();
+  });
+
+  // TODO-014: Test dashboard safe-to-run action execution
+  describe('safe-to-run action execution', () => {
+    it('executes safe actions through backend', async () => {
+      projectFindUniqueMock.mockResolvedValueOnce({
+        id: 'project-safe',
+        name: 'Safe Project',
+        ownerWorkspaceId: 'ws-123',
+        lifecyclePhase: 'SHAPE',
+        aiNextActions: [],
+        updatedAt: new Date('2026-05-03T00:00:00.000Z'),
+      });
+      lifecycleActivityLogCreateMock.mockResolvedValueOnce({
+        id: 'activity-1',
+        projectId: 'project-safe',
+        action: 'PHASE_TRANSITION_REQUESTED',
+        summary: 'Dashboard action executed',
+        timestamp: new Date(),
+        actor: 'user-1',
+        severity: 'info',
+        success: true,
+      });
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/projects/project-safe/dashboard-actions/execute',
+        payload: {
+          workspaceId: 'ws-123',
+          actionId: 'project-safe-safe-to-continue-0',
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toMatchObject({
+        projectId: 'project-safe',
+        actionId: 'project-safe-safe-to-continue-0',
+        outcome: 'opened-phase-cockpit',
+        targetPath: '/p/project-safe/shape',
+        auditRecorded: true,
+      });
+      expect(lifecycleActivityLogCreateMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          projectId: 'project-safe',
+          action: 'PHASE_TRANSITION_REQUESTED',
+          summary: expect.stringContaining('dashboard action'),
+        })
+      );
+    });
+
+    it('prevents review-required actions from executing directly', async () => {
+      projectFindUniqueMock.mockResolvedValueOnce({
+        id: 'project-review',
+        name: 'Review Project',
+        ownerWorkspaceId: 'ws-123',
+        lifecyclePhase: 'GENERATE',
+        aiNextActions: ['Review generated diff'],
+        updatedAt: new Date('2026-05-02T00:00:00.000Z'),
+      });
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/projects/project-review/dashboard-actions/execute',
+        payload: {
+          workspaceId: 'ws-123',
+          actionId: 'project-review-review-0',
+        },
+      });
+
+      expect(response.statusCode).toBe(409);
+      expect(response.json()).toMatchObject({
+        error: 'Dashboard action requires review before execution',
+        action: {
+          projectId: 'project-review',
+          safeToRun: false,
+          requiresReview: true,
+        },
+      });
+      expect(lifecycleActivityLogCreateMock).not.toHaveBeenCalled();
+    });
+
+    it('prevents unsafe blocker actions from executing directly', async () => {
+      projectFindUniqueMock.mockResolvedValueOnce({
+        id: 'project-blocked',
+        name: 'Blocked Project',
+        ownerWorkspaceId: 'ws-123',
+        lifecyclePhase: 'RUN',
+        aiNextActions: ['Resolve critical security blocker'],
+        updatedAt: new Date('2026-05-01T00:00:00.000Z'),
+      });
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/projects/project-blocked/dashboard-actions/execute',
+        payload: {
+          workspaceId: 'ws-123',
+          actionId: 'project-blocked-blocker-0',
+        },
+      });
+
+      expect(response.statusCode).toBe(409);
+      expect(response.json()).toMatchObject({
+        error: 'Dashboard action requires review before execution',
+        action: {
+          projectId: 'project-blocked',
+          safeToRun: false,
+          requiresReview: true,
+        },
+      });
+      expect(lifecycleActivityLogCreateMock).not.toHaveBeenCalled();
+    });
   });
 });

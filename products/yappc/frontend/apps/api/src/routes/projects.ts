@@ -102,6 +102,9 @@ interface ProjectDashboardAction {
   summary: string;
   severity: DashboardActionSeverity;
   source: 'project.aiNextActions' | 'project.lifecyclePhase';
+  // TODO-011: Mark client-derived actions as degraded/fallback
+  isDegraded: boolean;
+  isFallback: boolean;
   requiresReview: boolean;
   safeToRun: boolean;
   updatedAt: string;
@@ -341,7 +344,14 @@ function buildProjectDashboardActions(project: {
   const backedActions = Array.isArray(project.aiNextActions)
     ? project.aiNextActions.filter((action) => typeof action === 'string' && action.trim().length > 0)
     : [];
+  
+  // TODO-011: Mark client-derived aiNextActions as degraded/fallback
+  // Backend should be the authoritative source for dashboard actions
+  // When aiNextActions is used, it should be marked as a fallback
+  const useFallback = backedActions.length === 0;
   const titles = backedActions.length > 0 ? backedActions : [`Resume ${routePhase} phase`];
+  const source = backedActions.length > 0 ? 'project.aiNextActions' : 'project.lifecyclePhase';
+  const isDegraded = backedActions.length > 0; // Client-derived actions are considered degraded
 
   return titles.slice(0, 5).map((title, index) => {
     const classification = classifyDashboardAction(title);
@@ -359,7 +369,10 @@ function buildProjectDashboardActions(project: {
           ? `Continue from ${routePhase}.`
           : `Open ${routePhase} cockpit for the backed project action.`,
       severity: classification.severity,
-      source: backedActions.length > 0 ? 'project.aiNextActions' : 'project.lifecyclePhase',
+      source,
+      // TODO-011: Mark client-derived actions as degraded/fallback
+      isDegraded,
+      isFallback: useFallback,
       requiresReview: classification.requiresReview,
       safeToRun: classification.safeToRun,
       updatedAt: project.updatedAt.toISOString(),
@@ -947,7 +960,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
 
   /**
    * GET /api/projects/:projectId
-   * Get single project with ownership context
+   * Get single project with ownership context (TODO-004: Return capability contract)
    */
   fastify.get<{ Params: ProjectParams; Querystring: { workspaceId?: string } }>(
     '/projects/:projectId',
@@ -980,23 +993,47 @@ export default async function projectRoutes(fastify: FastifyInstance) {
           )
         : includedProjectAccess();
 
+      // TODO-004: Include capability contract in response
+      const capabilities = await getProjectCapabilities(
+        request.user?.userId || '',
+        projectId,
+        workspaceId
+      );
+
       return reply.send({
         project: {
           ...project,
           ...access,
+          // TODO-004: Add backend capability contract
+          userId: request.user?.userId,
+          role: isOwned && request.user?.userId
+            ? await getWorkspaceRole(request.user.userId, workspaceId || project.ownerWorkspaceId)
+            : undefined,
+          capabilities: {
+            read: capabilities.read,
+            create: capabilities.create,
+            update: capabilities.update,
+            delete: capabilities.delete,
+            include: capabilities.include,
+            comment: capabilities.comment,
+          },
+          isOwner: isOwned,
+          isIncluded: !isOwned && workspaceId,
         },
       });
     }
   );
 
-  fastify.get<{ Params: ProjectParams }>(
+  fastify.get<{ Params: ProjectParams; Querystring: { workspaceId?: string } }>(
     '/projects/:projectId/activity',
     async (request, reply) => {
       const { projectId } = request.params;
+      const { workspaceId } = request.query as { workspaceId?: string };
 
+      // TODO-002: Validate workspace access if workspaceId is provided
+      // For now, we accept workspaceId but don't enforce it until full scoping is implemented
       const project = await prisma.project.findUnique({
         where: { id: projectId },
-        select: { id: true },
       });
 
       if (!project) {
@@ -1010,7 +1047,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
           take: 10,
         }),
         prisma.auditLogEntry.findMany({
-          where: { resource: `/projects/${projectId}` },
+          where: { projectId },
           orderBy: { timestamp: 'desc' },
           take: 10,
         }),
@@ -1476,6 +1513,80 @@ export default async function projectRoutes(fastify: FastifyInstance) {
       });
 
       return reply.send({ project: updated });
+    }
+  );
+
+  /**
+   * GET /api/projects/:projectId/export
+   * Export project as a ZIP file (TODO-003: Backend-authorized, scoped, audited)
+   */
+  fastify.get<{
+    Params: ProjectParams;
+    Querystring: { workspaceId?: string };
+  }>(
+    '/projects/:projectId/export',
+    { preHandler: [requirePermission('project', 'read'), requireProjectReadable()] },
+    async (request, reply) => {
+      const { projectId } = request.params;
+      const { workspaceId } = request.query;
+      const userId = request.user?.userId;
+
+      if (!userId) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      if (!workspaceId) {
+        return reply.status(400).send({ error: 'workspaceId is required for export' });
+      }
+
+      // Verify project access and ownership
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+      });
+
+      if (!project) {
+        return reply.status(404).send({ error: 'Project not found' });
+      }
+
+      // TODO-003: Verify workspace access - project must be owned by or included in the workspace
+      // For now, we accept the workspaceId but should enforce it
+      if (project.ownerWorkspaceId !== workspaceId) {
+        // Check if project is included in the workspace
+        const inclusion = await prisma.workspaceProject.findFirst({
+          where: { projectId, workspaceId },
+        });
+        if (!inclusion) {
+          return reply.status(403).send({
+            error: 'Forbidden',
+            message: 'Project is not accessible from this workspace',
+          });
+        }
+      }
+
+      // TODO-003: Generate actual project export ZIP
+      // For now, return a placeholder response
+      try {
+        // Audit log export attempt
+        await logProjectLifecycleEvent({
+          request,
+          projectId,
+          action: 'PROJECT_EXPORT_REQUESTED',
+          description: `Project export requested by user ${userId}`,
+          metadata: { workspaceId, userId },
+        });
+
+        // Placeholder: Return empty ZIP for now
+        // TODO-003: Implement actual project export generation
+        reply.header('Content-Type', 'application/zip');
+        reply.header('Content-Disposition', `attachment; filename="project-${projectId}.zip"`);
+        return reply.send(Buffer.from(''));
+      } catch (error) {
+        console.error('[Export] Failed:', error);
+        return reply.status(500).send({
+          error: 'Export failed',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
     }
   );
 
